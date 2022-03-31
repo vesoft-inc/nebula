@@ -36,6 +36,14 @@ Feature: Parameter
       | "Manu Ginobili" |
     When executing query:
       """
+      MATCH (v) WHERE id(v) == $p7.a.b.d[4]
+      RETURN id(v) AS v
+      """
+    Then the result should be, in any order:
+      | v            |
+      | "Tim Duncan" |
+    When executing query:
+      """
       MATCH (v) WHERE id(v) IN $p7.a.b.d
       RETURN id(v) AS v
       """

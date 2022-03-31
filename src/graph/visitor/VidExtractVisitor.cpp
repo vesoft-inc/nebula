@@ -189,7 +189,8 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
         (expr->right()->kind() != Expression::Kind::kConstant &&
-         expr->right()->kind() != Expression::Kind::kVar)) {
+         expr->right()->kind() != Expression::Kind::kVar &&
+         expr->right()->kind() != Expression::Kind::kSubscript)) {
       vidPattern_ = VidPattern{};
       return;
     }
@@ -208,7 +209,8 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{fCallExpr->args()->args().front()->toString(),
                                  {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
-    } else if (expr->right()->kind() == Expression::Kind::kVar &&
+    } else if ((expr->right()->kind() == Expression::Kind::kVar ||
+                expr->right()->kind() == Expression::Kind::kSubscript) &&
                ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
       auto rValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
       if (SchemaUtil::isValidVid(rValue)) {
