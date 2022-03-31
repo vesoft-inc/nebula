@@ -185,8 +185,7 @@ jobs:
       - name: coverage
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
-            pip3 install fastcov
-            fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
