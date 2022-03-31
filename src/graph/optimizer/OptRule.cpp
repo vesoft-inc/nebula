@@ -31,6 +31,13 @@ const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
   return DCHECK_NOTNULL(result->node)->node();
 }
 
+void MatchedResult::collectBoundary(std::vector<OptGroup *> &boundary) const {
+  boundary.insert(boundary.end(), boundary_.begin(), boundary_.end());
+  for (const auto &dep : dependencies) {
+    dep.collectBoundary(boundary);
+  }
+}
+
 Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns) {
   return Pattern(kind, std::move(patterns));
 }
@@ -46,7 +53,8 @@ StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
   }
 
   if (dependencies_.empty()) {
-    return MatchedResult{groupNode, {}};
+    DCHECK(!groupNode->dependencies().empty());
+    return MatchedResult{groupNode, {}, groupNode->dependencies()};
   }
 
   if (groupNode->dependencies().size() != dependencies_.size()) {
@@ -74,6 +82,12 @@ StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
     }
   }
   return Status::Error();
+}
+
+void OptRule::TransformResult::rebuildInputRelationship(const std::vector<OptGroup *> &boundary) {
+  for (auto *groupNode : newGroupNodes) {
+    groupNode->rebuildInputRelationship(boundary);
+  }
 }
 
 StatusOr<MatchedResult> OptRule::match(OptContext *ctx, const OptGroupNode *groupNode) const {

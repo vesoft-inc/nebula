@@ -66,7 +66,6 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   if (remainedExpr != nullptr) {
     auto newFilter = Filter::make(qctx, nullptr, remainedExpr);
     newFilter->setOutputVar(filter->outputVar());
-    newFilter->setInputVar(filter->inputVar());
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
 

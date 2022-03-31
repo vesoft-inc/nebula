@@ -25,7 +25,7 @@ PlanNode::PlanNode(QueryContext* qctx, Kind kind) : qctx_(qctx), kind_(kind) {
   auto varName = folly::stringPrintf("__%s_%ld", toString(kind_), id_);
   auto* variable = qctx_->symTable()->newVariable(varName);
   VLOG(1) << "New variable: " << varName;
-  outputVars_.emplace_back(variable);
+  outputVar_ = variable;
   qctx_->symTable()->writtenBy(varName, this);
 }
 
@@ -332,11 +332,10 @@ void PlanNode::calcCost() {
 }
 
 void PlanNode::setOutputVar(const std::string& var) {
-  DCHECK_EQ(1, outputVars_.size());
   auto* outputVarPtr = qctx_->symTable()->getVar(var);
   DCHECK(outputVarPtr != nullptr);
-  auto oldVar = outputVars_[0]->name;
-  outputVars_[0] = outputVarPtr;
+  auto oldVar = outputVar_->name;
+  outputVar_ = outputVarPtr;
   qctx_->symTable()->updateWrittenBy(oldVar, var, this);
 }
 
@@ -357,7 +356,7 @@ std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
   auto desc = std::make_unique<PlanNodeDescription>();
   desc->id = id_;
   desc->name = toString(kind_);
-  desc->outputVar = folly::toJson(util::toJson(outputVars_));
+  desc->outputVar = folly::toJson(util::toJson(outputVar_));
   return desc;
 }
 
@@ -370,17 +369,13 @@ void PlanNode::releaseSymbols() {
   for (auto in : inputVars_) {
     in && symTbl->deleteReadBy(in->name, this);
   }
-  for (auto out : outputVars_) {
-    out && symTbl->deleteWrittenBy(out->name, this);
-  }
+  outputVar_ && symTbl->deleteWrittenBy(outputVar_->name, this);
 }
 
 void PlanNode::updateSymbols() {
   auto symTbl = qctx_->symTable();
-  for (auto out : outputVars_) {
-    if (out != nullptr) {
-      symTbl->updateWrittenBy(out->name, out->name, this);
-    }
+  if (outputVar_ != nullptr) {
+    symTbl->updateWrittenBy(outputVar_->name, outputVar_->name, this);
   }
 }
 
@@ -442,8 +437,8 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
 }
 
 void PlanNode::setColNames(std::vector<std::string> cols) {
-  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr(0)->name);
-  outputVarPtr(0)->colNames = std::move(cols);
+  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr()->name);
+  outputVarPtr()->colNames = std::move(cols);
 }
 }  // namespace graph
 }  // namespace nebula

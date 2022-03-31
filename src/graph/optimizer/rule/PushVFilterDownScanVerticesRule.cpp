@@ -91,7 +91,6 @@ StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
   auto newAppendVertices = appendVertices->clone();
   newAppendVertices->setVertexFilter(remainedExpr);
   newAppendVertices->setOutputVar(appendVertices->outputVar());
-  newAppendVertices->setInputVar(appendVertices->inputVar());
   newAppendVerticesGroupNode =
       OptGroupNode::create(ctx, newAppendVertices, appendVerticesGroupNode->group());
 

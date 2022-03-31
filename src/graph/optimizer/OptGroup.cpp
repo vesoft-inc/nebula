@@ -9,6 +9,7 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
+#include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -44,11 +45,21 @@ OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   DCHECK(groupNode != nullptr);
   DCHECK(groupNode->group() == this);
+  if (outputVar_.empty()) {
+    outputVar_ = groupNode->node()->outputVar();
+  } else {
+    DCHECK_EQ(outputVar_, groupNode->node()->outputVar());
+  }
   groupNodes_.emplace_back(groupNode);
   groupNode->node()->updateSymbols();
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
+  if (outputVar_.empty()) {
+    outputVar_ = node->outputVar();
+  } else {
+    DCHECK_EQ(outputVar_, node->outputVar());
+  }
   groupNodes_.emplace_back(OptGroupNode::create(ctx_, node, this));
   return groupNodes_.back();
 }
@@ -80,6 +91,10 @@ Status OptGroup::explore(const OptRule *rule) {
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
+    // rebuild input by dependencies
+    auto boundary = std::vector<OptGroup *>();
+    matched.collectBoundary(boundary);
+    result.rebuildInputRelationship(boundary);
     if (result.eraseAll) {
       for (auto gnode : groupNodes_) {
         gnode->node()->releaseSymbols();
@@ -208,6 +223,29 @@ const PlanNode *OptGroupNode::getPlan() const {
     node_->setDep(i, dependencies_[i]->getPlan());
   }
   return node_;
+}
+
+void OptGroupNode::rebuildInputRelationship(const std::vector<OptGroup *> &boundary) {
+  // reach the boundary
+  if (std::all_of(dependencies_.begin(), dependencies_.end(), [&boundary](OptGroup *dep) {
+        return std::find(boundary.begin(), boundary.end(), dep) != boundary.end();
+      })) {
+    return;
+  }
+  if (std::find(boundary.begin(), boundary.end(), group_) != boundary.end()) {
+    return;
+  }
+  // Rebuild input
+  if (node_->inputVars().size() == dependencies_.size()) {
+    // Can't build input for some nodes, maybe need redesign it and corresponding rule.
+    for (std::size_t i = 0; i < dependencies_.size(); i++) {
+      const OptGroup *dep = dependencies_[i];
+      node_->setInputVar(dep->outputVar(), i);
+      for (auto *groupNode : dep->groupNodes()) {
+        groupNode->rebuildInputRelationship(boundary);
+      }
+    }
+  }
 }
 
 }  // namespace opt

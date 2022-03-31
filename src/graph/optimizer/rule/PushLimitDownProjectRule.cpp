@@ -42,18 +42,17 @@ StatusOr<OptRule::TransformResult> PushLimitDownProjectRule::transform(
 
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroup = OptGroup::create(octx);
-  auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
   auto projInputVar = proj->inputVar();
-  newLimit->setOutputVar(proj->outputVar());
   newLimit->setInputVar(projInputVar);
   auto *varPtr = octx->qctx()->symTable()->getVar(projInputVar);
   DCHECK(!!varPtr);
   newLimit->setColNames(varPtr->colNames);
+  auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
 
   auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroupNode = OptGroupNode::create(octx, newProj, limitGroupNode->group());
   newProj->setOutputVar(limit->outputVar());
   newProj->setInputVar(newLimit->outputVar());
+  auto newProjGroupNode = OptGroupNode::create(octx, newProj, limitGroupNode->group());
 
   newProjGroupNode->dependsOn(const_cast<OptGroup *>(newLimitGroupNode->group()));
   for (auto dep : projGroupNode->dependencies()) {

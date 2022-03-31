@@ -30,6 +30,8 @@ class OptGroup;
 struct MatchedResult {
   const OptGroupNode *node{nullptr};
   std::vector<MatchedResult> dependencies;
+  // Boundary of the whole matched result, aka the dependencies of leaf node in MatchedResult.
+  std::vector<OptGroup *> boundary_;
 
   // params       | plan node
   // -------------+------------
@@ -40,6 +42,9 @@ struct MatchedResult {
   // {0, 1, 0}    | this->dependencies[1].dependencies[0]
   // {0, 1, 0, 1} | this->dependencies[1].dependencies[0].dependencies[1]
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
+
+  // Check is input group boundary of current matched result
+  void collectBoundary(std::vector<OptGroup *> &boundary) const;
 };
 
 // Match plan node by trait or kind of plan node.
@@ -85,6 +90,9 @@ class OptRule {
       static TransformResult kNoTrans{false, false, {}};
       return kNoTrans;
     }
+
+    // Build input relationship by dependencies.
+    void rebuildInputRelationship(const std::vector<OptGroup *> &boundary);
 
     bool eraseCurr{false};
     bool eraseAll{false};

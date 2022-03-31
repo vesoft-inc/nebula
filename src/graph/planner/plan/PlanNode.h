@@ -217,21 +217,16 @@ class PlanNode {
 
   void setOutputVar(const std::string& var);
 
-  const std::string& outputVar(size_t index = 0) const {
-    return outputVarPtr(index)->name;
+  const std::string& outputVar() const {
+    return outputVarPtr()->name;
   }
 
-  Variable* outputVarPtr(size_t index = 0) const {
-    DCHECK_LT(index, outputVars_.size());
-    return outputVars_[index];
-  }
-
-  const std::vector<Variable*>& outputVars() const {
-    return outputVars_;
+  Variable* outputVarPtr() const {
+    return outputVar_;
   }
 
   const std::vector<std::string>& colNames() const {
-    return outputVarPtr(0)->colNames;
+    return outputVarPtr()->colNames;
   }
 
   void setId(int64_t id) {
@@ -315,7 +310,8 @@ class PlanNode {
   void cloneMembers(const PlanNode& node) {
     // TODO maybe shall copy cost_ and dependencies_ too
     inputVars_ = node.inputVars_;
-    outputVars_ = node.outputVars_;
+    // OutputVar will generated in constructor
+    setColNames(node.colNames());
   }
 
   QueryContext* qctx_{nullptr};
@@ -324,7 +320,7 @@ class PlanNode {
   double cost_{0.0};
   std::vector<const PlanNode*> dependencies_;
   std::vector<Variable*> inputVars_;
-  std::vector<Variable*> outputVars_;
+  Variable* outputVar_;
   // nested loop layers of current node
   std::size_t loopLayers_{0};
   bool deleted_{false};

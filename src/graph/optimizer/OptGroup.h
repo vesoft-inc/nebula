@@ -44,6 +44,10 @@ class OptGroup final {
   double getCost() const;
   const graph::PlanNode *getPlan() const;
 
+  const std::string &outputVar() const {
+    return outputVar_;
+  }
+
  private:
   explicit OptGroup(OptContext *ctx) noexcept;
 
@@ -54,6 +58,8 @@ class OptGroup final {
   OptContext *ctx_{nullptr};
   std::list<OptGroupNode *> groupNodes_;
   std::vector<const OptRule *> exploredRules_;
+  // The output variable should be same across the whole group.
+  std::string outputVar_;
 };
 
 class OptGroupNode final {
@@ -101,6 +107,9 @@ class OptGroupNode final {
   Status explore(const OptRule *rule);
   double getCost() const;
   const graph::PlanNode *getPlan() const;
+
+  // Build input relationship by dependencies.
+  void rebuildInputRelationship(const std::vector<OptGroup *> &boundary);
 
  private:
   OptGroupNode(graph::PlanNode *node, const OptGroup *group) noexcept;

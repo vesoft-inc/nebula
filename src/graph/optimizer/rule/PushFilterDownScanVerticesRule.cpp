@@ -53,6 +53,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
 
   auto remainedExpr = std::move(visitor).remainedExpr();
   OptGroupNode *newFilterGroupNode = nullptr;
+  // PlanNode *newFilter = nullptr;
   if (remainedExpr != nullptr) {
     auto newFilter = Filter::make(qctx, nullptr, remainedExpr);
     newFilter->setOutputVar(filter->outputVar());
@@ -74,6 +75,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
     // Filter(A&&B)<-ScanVertices(C) => Filter(A)<-ScanVertices(B&&C)
     auto newGroup = OptGroup::create(ctx);
     newSvGroupNode = newGroup->makeGroupNode(newSV);
+    // newFilter->setInputVar(newSV->outputVar());
     newFilterGroupNode->dependsOn(newGroup);
   } else {
     // Filter(A)<-ScanVertices(C) => ScanVertices(A&&C)
