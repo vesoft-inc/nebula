@@ -160,8 +160,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: coverage
-        run: |
-            fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+        run: fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
         with:
           files: fastcov.info
