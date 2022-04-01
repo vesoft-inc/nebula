@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/algo/SubgraphExecutor.h"
 
@@ -20,10 +19,8 @@ folly::Future<Status> SubgraphExecutor::execute() {
   const auto& currentStepVal = ectx_->getValue(subgraph->currentStepVar());
   DCHECK(currentStepVal.isInt());
   auto currentStep = currentStepVal.getInt();
-  VLOG(1) << "Current Step is: " << currentStep << " Total Steps is: " << steps;
   auto resultVar = subgraph->resultVar();
 
-  VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
   auto iter = ectx_->getResult(subgraph->inputVar()).iter();
   auto gnSize = iter->size();
 

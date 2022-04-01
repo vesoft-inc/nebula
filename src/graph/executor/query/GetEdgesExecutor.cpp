@@ -1,14 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/GetEdgesExecutor.h"
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -23,7 +18,6 @@ folly::Future<Status> GetEdgesExecutor::execute() {
 
 DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();
-  VLOG(1) << "GE input var:" << ge->inputVar() << " iter kind: " << valueIter->kind();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   nebula::DataSet edges({kSrc, kType, kRank, kDst});
@@ -41,7 +35,6 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
       continue;
     }
     if (!rank.isInt()) {
-      LOG(WARNING) << "wrong rank type";
       continue;
     }
     edges.emplace_back(Row({std::move(src), type, rank, std::move(dst)}));

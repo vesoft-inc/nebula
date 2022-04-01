@@ -155,7 +155,6 @@ using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
 using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
 
-using clientAddrMap = folly::ConcurrentHashMap<HostAddr, int64_t>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -634,13 +633,6 @@ class MetaClient : public BaseMetaClient {
       nebula::cpp2::ErrorCode taskErrCode,
       cpp2::StatsItem* statisticItem);
 
-  folly::Future<StatusOr<bool>> download(const std::string& hdfsHost,
-                                         int32_t hdfsPort,
-                                         const std::string& hdfsPath,
-                                         GraphSpaceID spaceId);
-
-  folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
-
   folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
 
   folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length) override;
@@ -655,10 +647,6 @@ class MetaClient : public BaseMetaClient {
 
   std::string getLocalIp() {
     return options_.localHost_.toString();
-  }
-
-  clientAddrMap& getClientAddrMap() {
-    return clientAddrMap_;
   }
 
  protected:
@@ -747,9 +735,6 @@ class MetaClient : public BaseMetaClient {
 
   Status verifyVersion();
 
-  // Removes expired keys in the clientAddrMap_
-  void clearClientAddrMap();
-
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
@@ -829,18 +814,6 @@ class MetaClient : public BaseMetaClient {
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;
-
-  // TODO(Aiee) This is a walkaround to address the problem that using a lower version(< v2.6.0)
-  // client to connect with higher version(>= v3.0.0) Nebula service will cause a crash.
-  //
-  // The key here is the host of the client that sends the request, and the value indicates the
-  // expiration of the key because we don't want to keep the key forever.
-  //
-  // The assumption here is that there is ONLY ONE VERSION of the client in the host.
-  //
-  // This map will be updated when verifyVersion() is called. Only the clients since v2.6.0 will
-  // call verifyVersion(), thus we could determine whether the client version is lower than v2.6.0
-  clientAddrMap clientAddrMap_;
 
   // Global service client
   ServiceClientsList serviceClientList_;

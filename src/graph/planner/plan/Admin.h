@@ -558,57 +558,6 @@ class ShowListener final : public SingleDependencyNode {
       : SingleDependencyNode(qctx, Kind::kShowListener, input) {}
 };
 
-class Download final : public SingleDependencyNode {
- public:
-  static Download* make(QueryContext* qctx,
-                        PlanNode* input,
-                        std::string hdfsHost,
-                        int32_t hdfsPort,
-                        std::string hdfsPath) {
-    return qctx->objPool()->makeAndAdd<Download>(qctx, input, hdfsHost, hdfsPort, hdfsPath);
-  }
-
-  const std::string& getHdfsHost() const {
-    return hdfsHost_;
-  }
-
-  int32_t getHdfsPort() const {
-    return hdfsPort_;
-  }
-
-  const std::string& getHdfsPath() const {
-    return hdfsPath_;
-  }
-
- private:
-  friend ObjectPool;
-  Download(QueryContext* qctx,
-           PlanNode* dep,
-           std::string hdfsHost,
-           int32_t hdfsPort,
-           std::string hdfsPath)
-      : SingleDependencyNode(qctx, Kind::kDownload, dep),
-        hdfsHost_(hdfsHost),
-        hdfsPort_(hdfsPort),
-        hdfsPath_(hdfsPath) {}
-
- private:
-  std::string hdfsHost_;
-  int32_t hdfsPort_;
-  std::string hdfsPath_;
-};
-
-class Ingest final : public SingleDependencyNode {
- public:
-  static Ingest* make(QueryContext* qctx, PlanNode* dep) {
-    return qctx->objPool()->makeAndAdd<Ingest>(qctx, dep);
-  }
-
- private:
-  friend ObjectPool;
-  Ingest(QueryContext* qctx, PlanNode* dep) : SingleDependencyNode(qctx, Kind::kIngest, dep) {}
-};
-
 // User related Node
 class CreateUser final : public CreateNode {
  public:

@@ -14,7 +14,9 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/DataBalanceJobExecutor.h"
+#include "meta/processors/job/DownloadJobExecutor.h"
 #include "meta/processors/job/FlushJobExecutor.h"
+#include "meta/processors/job/IngestJobExecutor.h"
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
 #include "meta/processors/job/RebuildFTJobExecutor.h"
@@ -48,6 +50,16 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
     case cpp2::JobType::COMPACT:
       ret.reset(new CompactJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
+    case cpp2::JobType::FLUSH:
+      ret.reset(new FlushJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::JobType::DOWNLOAD:
+      ret.reset(
+          new DownloadJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::JobType::INGEST:
+      ret.reset(new IngestJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      break;
     case cpp2::JobType::DATA_BALANCE:
       ret.reset(new DataBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
@@ -57,9 +69,6 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
     case cpp2::JobType::LEADER_BALANCE:
       ret.reset(
           new LeaderBalanceJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
-      break;
-    case cpp2::JobType::FLUSH:
-      ret.reset(new FlushJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_TAG_INDEX:
       ret.reset(

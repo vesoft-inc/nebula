@@ -76,6 +76,19 @@ else()
     set(GETTIME_LIB)
 endif()
 
+# Breakpad
+if (ENABLE_BREAKPAD)
+    if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND NOT ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+	    MESSAGE(FATAL_ERROR "Breakpad need debug info.")
+    endif()
+endif()
+if (NOT ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
+    set(ENABLE_BREAKPAD OFF)
+endif()
+if (ENABLE_BREAKPAD)
+    add_compile_options(-DENABLE_BREAKPAD=1)
+endif()
+
 message("")
 
 find_package(Bzip2 REQUIRED)

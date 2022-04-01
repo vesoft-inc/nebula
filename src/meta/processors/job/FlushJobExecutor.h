@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Executor for flush job, always called by job manager
+ * @brief Executor for flush job, always called by job manager.
  */
 class FlushJobExecutor : public SimpleConcurrentJobExecutor {
  public:

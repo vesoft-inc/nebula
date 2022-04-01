@@ -28,8 +28,6 @@
 #include "version/Version.h"
 #include "webservice/Common.h"
 
-DECLARE_int32(ws_meta_http_port);
-
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
@@ -2484,11 +2482,6 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     }
   }
 
-  // TTL for clientAddrMap
-  // If multiple connections are created but do not authenticate, the clientAddrMap_ will keep
-  // growing. This is to clear the clientAddrMap_ regularly.
-  clearClientAddrMap();
-
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
   // reported every time it changes
@@ -3535,48 +3528,6 @@ folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
-                                                   int32_t hdfsPort,
-                                                   const std::string& hdfsPath,
-                                                   GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 hdfsHost.c_str(),
-                                 hdfsPort,
-                                 hdfsPath.c_str(),
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile dispatch successfully") {
-      LOG(INFO) << "Download Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Download Failed: " << result.value();
-      return false;
-    }
-  };
-  return folly::async(func);
-}
-
-folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/ingest-dispatch?space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile ingest successfully") {
-      LOG(INFO) << "Ingest Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Ingest Failed";
-      return false;
-    }
-  };
-  return folly::async(func);
-}
-
 folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {
   auto req = cpp2::GetSegmentIdReq();
   req.length_ref() = length;
@@ -3658,20 +3609,5 @@ Status MetaClient::verifyVersion() {
   return Status::OK();
 }
 
-void MetaClient::clearClientAddrMap() {
-  if (clientAddrMap_.size() == 0) {
-    return;
-  }
-
-  auto curTimestamp = time::WallClock::fastNowInSec();
-  for (auto it = clientAddrMap_.cbegin(); it != clientAddrMap_.cend();) {
-    // The clientAddr is expired
-    if (it->second < curTimestamp) {
-      it = clientAddrMap_.erase(it);
-    } else {
-      ++it;
-    }
-  }
-}
 }  // namespace meta
 }  // namespace nebula

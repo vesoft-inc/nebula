@@ -2,13 +2,11 @@ FROM vesoft/nebula-dev:centos7 as builder
 
 ARG BRANCH=master
 ARG VERSION=
+
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && [[ -z "${VERSION}" ]] \
-  && ./package.sh -n OFF -b ${BRANCH} -t RelWithDebInfo -s TRUE -c OFF -k ON \
-  || ./package.sh -n OFF -v ${VERSION} -b ${BRANCH} -t RelWithDebInfo -s TRUE -c OFF -k ON 
-
+  && ./package.sh -n OFF -v "${VERSION}" -b ${BRANCH} -t RelWithDebInfo -s TRUE -c OFF -k ON 
 FROM centos:7 as graphd
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm

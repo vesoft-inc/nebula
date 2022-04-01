@@ -1,14 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/SnapshotExecutor.h"
-
 #include <thrift/lib/cpp/util/EnumUtils.h>
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
@@ -19,7 +14,7 @@ folly::Future<Status> CreateSnapshotExecutor::execute() {
 
   return qctx()->getMetaClient()->createSnapshot().via(runner()).thenValue([](StatusOr<bool> resp) {
     if (!resp.ok()) {
-      LOG(ERROR) << resp.status();
+      LOG(WARNING) << "Create snapshot fail: " << resp.status();
       return resp.status();
     }
     return Status::OK();
@@ -36,7 +31,7 @@ folly::Future<Status> DropSnapshotExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Drop snapshot fail: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -49,7 +44,7 @@ folly::Future<Status> ShowSnapshotsExecutor::execute() {
   return qctx()->getMetaClient()->listSnapshots().via(runner()).thenValue(
       [this](StatusOr<std::vector<meta::cpp2::Snapshot>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Show snapshot fail: " << resp.status();
           return resp.status();
         }
 

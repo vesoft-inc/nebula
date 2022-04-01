@@ -1,13 +1,13 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_
 #define GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_
 
 #include "graph/executor/Executor.h"
-
+// like for logic in c language
+// when the finally_ is true, execute the loopBody operator, otherwise terminate the loop
 namespace nebula {
 namespace graph {
 

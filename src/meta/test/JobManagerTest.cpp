@@ -4,25 +4,34 @@
  */
 
 #include <folly/synchronization/Baton.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
 #include "kvstore/Common.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/job/DownloadJobExecutor.h"
+#include "meta/processors/job/IngestJobExecutor.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/processors/job/TaskDescription.h"
 #include "meta/test/MockAdminClient.h"
+#include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
 #include "webservice/WebService.h"
-
-DECLARE_int32(ws_storage_http_port);
 
 namespace nebula {
 namespace meta {
 
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::ByMove;
 using ::testing::DefaultValue;
+using ::testing::NaggyMock;
 using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::SetArgPointee;
+using ::testing::StrictMock;
 
 class JobManagerTest : public ::testing::Test {
  protected:
@@ -111,6 +120,56 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
+}
+
+TEST_F(JobManagerTest, DownloadJob) {
+  auto rootPath = std::make_unique<fs::TempDir>("/tmp/JobManagerTest.XXXXXX");
+  mock::MockCluster cluster;
+  std::unique_ptr<kvstore::KVStore> kv = cluster.initMetaKV(rootPath->path());
+  ASSERT_TRUE(TestUtils::createSomeHosts(kv.get()));
+  TestUtils::assembleSpace(kv.get(), 1, 1);
+  std::vector<std::string> paras{"hdfs://127.0.0.1:9000/test_space"};
+  GraphSpaceID space = 1;
+  JobID jobId = 11;
+  JobDescription job(space, jobId, cpp2::JobType::DOWNLOAD, paras);
+
+  MockAdminClient adminClient;
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
+      .WillOnce(Return(ByMove(folly::makeFuture<Status>(Status::OK()))));
+
+  auto executor = std::make_unique<DownloadJobExecutor>(
+      space, job.getJobId(), kv.get(), &adminClient, job.getParas());
+  executor->helper_ = std::make_unique<meta::MockHdfsOKHelper>();
+
+  ASSERT_TRUE(executor->check());
+  auto code = executor->prepare();
+  ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+  code = executor->execute();
+  ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+}
+
+TEST_F(JobManagerTest, IngestJob) {
+  auto rootPath = std::make_unique<fs::TempDir>("/tmp/DownloadAndIngestTest.XXXXXX");
+  mock::MockCluster cluster;
+  std::unique_ptr<kvstore::KVStore> kv = cluster.initMetaKV(rootPath->path());
+  ASSERT_TRUE(TestUtils::createSomeHosts(kv.get()));
+  TestUtils::assembleSpace(kv.get(), 1, 1);
+  std::vector<std::string> paras{};
+  GraphSpaceID space = 1;
+  JobID jobId = 11;
+  JobDescription job(space, jobId, cpp2::JobType::INGEST, paras);
+
+  MockAdminClient adminClient;
+  EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
+      .WillOnce(Return(ByMove(folly::makeFuture<Status>(Status::OK()))));
+  auto executor = std::make_unique<IngestJobExecutor>(
+      space, job.getJobId(), kv.get(), &adminClient, job.getParas());
+
+  ASSERT_TRUE(executor->check());
+  auto code = executor->prepare();
+  ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+  code = executor->execute();
+  ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
 TEST_F(JobManagerTest, StatsJob) {
@@ -368,7 +427,7 @@ TEST_F(JobManagerTest, ShowJob) {
   jd.setStatus(cpp2::JobStatus::FINISHED);
   jobMgr->addJob(jd, adminClient_.get());
 
-  int32_t jobId2 = jd.getJobId();
+  JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
   auto host1 = toHost("127.0.0.1");
 
@@ -434,7 +493,7 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
   jd.setStatus(cpp2::JobStatus::FINISHED);
   jobMgr->addJob(jd, adminClient_.get());
 
-  int32_t jobId2 = jd.getJobId();
+  JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
   auto host1 = toHost("127.0.0.1");
 
@@ -470,7 +529,6 @@ TEST_F(JobManagerTest, RecoverJob) {
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
   jobMgr->bgThread_.join();
   GraphSpaceID spaceId = 1;
-
   int32_t nJob = 3;
   for (auto jobId = 0; jobId < nJob; ++jobId) {
     JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH);
@@ -518,7 +576,7 @@ TEST(JobDescriptionTest, Ctor2) {
 
 TEST(JobDescriptionTest, ParseKey) {
   GraphSpaceID spaceId = 1;
-  int32_t jobId = std::pow(2, 16);
+  JobID jobId = std::pow(2, 16);
   JobDescription jd(spaceId, jobId, cpp2::JobType::COMPACT);
   ASSERT_EQ(jobId, jd.getJobId());
   ASSERT_EQ(cpp2::JobType::COMPACT, jd.getJobType());
@@ -531,7 +589,7 @@ TEST(JobDescriptionTest, ParseKey) {
 
 TEST(JobDescriptionTest, ParseVal) {
   GraphSpaceID spaceId = 1;
-  int32_t jobId = std::pow(2, 15);
+  JobID jobId = std::pow(2, 15);
   JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH);
   auto status = cpp2::JobStatus::FINISHED;
   jd.setStatus(cpp2::JobStatus::RUNNING);
@@ -558,8 +616,8 @@ TEST(JobDescriptionTest, ParseVal) {
 
 TEST(TaskDescriptionTest, Ctor) {
   GraphSpaceID spaceId = 1;
-  int32_t jobId = std::pow(2, 4);
-  int32_t taskId = 2;
+  JobID jobId = std::pow(2, 4);
+  TaskID taskId = 2;
   auto dest = toHost("");
   TaskDescription td(spaceId, jobId, taskId, dest);
   auto status = cpp2::JobStatus::RUNNING;
@@ -574,8 +632,8 @@ TEST(TaskDescriptionTest, Ctor) {
 
 TEST(TaskDescriptionTest, ParseKey) {
   GraphSpaceID spaceId = 1;
-  int32_t jobId = std::pow(2, 5);
-  int32_t taskId = 2;
+  JobID jobId = std::pow(2, 5);
+  TaskID taskId = 2;
   std::string dest{"127.0.0.1"};
   TaskDescription td(spaceId, jobId, taskId, toHost(dest));
 
@@ -589,8 +647,8 @@ TEST(TaskDescriptionTest, ParseKey) {
 
 TEST(TaskDescriptionTest, ParseVal) {
   GraphSpaceID spaceId = 1;
-  int32_t jobId = std::pow(2, 5);
-  int32_t taskId = 3;
+  JobID jobId = std::pow(2, 5);
+  TaskID taskId = 3;
   std::string dest{"127.0.0.1"};
 
   TaskDescription td(spaceId, jobId, taskId, toHost(dest));

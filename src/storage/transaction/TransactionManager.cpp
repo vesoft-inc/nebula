@@ -180,7 +180,7 @@ void TransactionManager::addPrime(GraphSpaceID spaceId,
 }
 
 void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
-  LOG(INFO) << folly::sformat("space={}, part={} added", part->spaceId(), part->partitionId());
+  DLOG(INFO) << folly::sformat("space={}, part={} added", part->spaceId(), part->partitionId());
   auto fnLeaderReady =
       std::bind(&TransactionManager::onLeaderElectedWrapper, this, std::placeholders::_1);
   auto fnLeaderLost =
@@ -190,10 +190,10 @@ void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
 }
 
 void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& opt) {
-  LOG(INFO) << folly::sformat("leader lost, del space={}, part={}, term={} from white list",
-                              opt.spaceId,
-                              opt.partId,
-                              opt.term);
+  DLOG(INFO) << folly::sformat("leader lost, del space={}, part={}, term={} from white list",
+                               opt.spaceId,
+                               opt.partId,
+                               opt.term);
   // clean some out-dated item in memory lock
   for (auto cit = memLocks_.cbegin(); cit != memLocks_.cend();) {
     auto& [spaceId, partId, termId] = cit->first;
@@ -210,13 +210,13 @@ void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::Call
 
 void TransactionManager::onLeaderElectedWrapper(
     const ::nebula::kvstore::Part::CallbackOptions& opt) {
-  LOG(INFO) << folly::sformat(
+  DLOG(INFO) << folly::sformat(
       "leader get do scanPrimes space={}, part={}, term={}", opt.spaceId, opt.partId, opt.term);
   scanPrimes(opt.spaceId, opt.partId, opt.term);
 }
 
 void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId, TermID termId) {
-  LOG(INFO) << folly::sformat(
+  DLOG(INFO) << folly::sformat(
       "{}(), space={}, part={}, term={}", __func__, spaceId, partId, termId);
   std::vector<std::string> prefixVec{ConsistUtil::primePrefix(partId),
                                      ConsistUtil::doublePrimePrefix(partId)};
@@ -264,8 +264,8 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId, Te
   currTerm_.insert_or_assign(termKey, termId);
   prevTerms_.insert_or_assign(termKey, prevTerm);
 
-  LOG(INFO) << "set curr term spaceId = " << spaceId << ", partId = " << partId
-            << ", termId = " << termId;
+  DLOG(INFO) << "set curr term spaceId = " << spaceId << ", partId = " << partId
+             << ", termId = " << termId;
 }
 
 folly::EventBase* TransactionManager::getEventBase() {

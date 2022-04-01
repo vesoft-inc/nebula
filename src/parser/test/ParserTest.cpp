@@ -3220,6 +3220,12 @@ TEST_F(ParserTest, JobTest) {
   };
   checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
   checkTest("SUBMIT JOB FLUSH", "SUBMIT JOB FLUSH");
+
+  checkTest("SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"",
+            "SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"");
+
+  checkTest("SUBMIT JOB INGEST", "SUBMIT JOB INGEST");
+
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB BALANCE IN ZONE", "SUBMIT JOB BALANCE IN ZONE");
   checkTest(
