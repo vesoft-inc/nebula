@@ -13,6 +13,7 @@
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
+#include "common/expression/FunctionCallExpression.h"
 #include "common/function/FunctionManager.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/TimezoneInfo.h"
@@ -1906,6 +1907,36 @@ TEST_F(FunctionManagerTest, DataSetRowCol) {
     TEST_FUNCTION(
         dataSetRowCol, std::vector<Value>({datasetValue, Value(1), Value(2)}), Value("456"));
   }
+}
+
+TEST_F(FunctionManagerTest, PurityTest) {
+  // Always non-pure
+  auto result = FunctionManager::getIsPure("now", 0);
+  ASSERT_TRUE(result.ok() && result.value() == false);
+
+  // Always pure
+  result = FunctionManager::getIsPure("coalesce", 1);
+  ASSERT_TRUE(result.ok() && result.value() == true);
+  result = FunctionManager::getIsPure("coalesce", 100);
+  ASSERT_TRUE(result.ok() && result.value() == true);
+  result = FunctionManager::getIsPure("coalesce", INT64_MAX);
+  ASSERT_TRUE(result.ok() && result.value() == true);
+
+  // Not always pure, purity depends on arity number
+  result = FunctionManager::getIsPure("time", 0);
+  ASSERT_TRUE(result.ok() && result.value() == false);
+  result = FunctionManager::getIsPure("time", 1);
+  ASSERT_TRUE(result.ok() && result.value() == true);
+
+  result = FunctionManager::getIsPure("timestamp", 0);
+  ASSERT_TRUE(result.ok() && result.value() == false);
+  result = FunctionManager::getIsPure("timestamp", 1);
+  ASSERT_TRUE(result.ok() && result.value() == true);
+
+  result = FunctionManager::getIsPure("date", 0);
+  ASSERT_TRUE(result.ok() && result.value() == false);
+  result = FunctionManager::getIsPure("date", 1);
+  ASSERT_TRUE(result.ok() && result.value() == true);
 }
 
 }  // namespace nebula
