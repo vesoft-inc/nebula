@@ -166,7 +166,7 @@ TEST(NebulaStoreTest, PartsTest) {
   // disk2: 5, 6, 7, 15
 
   KVOptions options;
-  options.dataPaths_ = std::move(paths);
+  options.dataPaths_ = paths;
   options.partMan_ = std::move(partMan);
   HostAddr local = {"", 0};
   auto store =
@@ -291,11 +291,12 @@ TEST(NebulaStoreTest, PersistPeersTest) {
   // disk2: 5, 6, 7, 15
 
   KVOptions options;
-  options.dataPaths_ = std::move(paths);
+  options.dataPaths_ = paths;
   options.partMan_ = std::move(partMan);
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
   store->init();
+
   auto check = [&](GraphSpaceID spaceId) {
     for (int i = 0; i < static_cast<int>(paths.size()); i++) {
       ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, spaceId),

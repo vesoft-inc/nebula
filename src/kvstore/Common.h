@@ -186,7 +186,7 @@ struct Peers {
   std::string toString() const {
     std::stringstream os;
     os << "version:1,"
-       << "count:" << peers.size() << "\n";
+       << "count:" << peers.size() << ",ts:" << createdTime << "\n";
     for (const auto& [_, p] : peers) {
       os << p << "\n";
     }

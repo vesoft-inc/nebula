@@ -122,13 +122,10 @@ void NebulaStore::loadPartFromDataPath() {
             auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
             if (!metaStatus.ok()) {
               LOG(INFO) << "space: " << spaceId << "; partId: " << partId
-                        << " does not exist in part manager.";
-              continue;
-            }
-
-            auto partMeta = metaStatus.value();
-            for (auto& h : partMeta.hosts_) {
-              if (h != storeSvcAddr_) {
+                        << " does not exist in part manager when join balancing.";
+            } else {
+              auto partMeta = metaStatus.value();
+              for (auto& h : partMeta.hosts_) {
                 auto raftAddr = getRaftAddr(h);
                 if (!raftPeers.exist(raftAddr)) {
                   VLOG(1) << "Add raft peer " << raftAddr;
@@ -136,12 +133,12 @@ void NebulaStore::loadPartFromDataPath() {
                 }
               }
             }
+
             partRaftPeers.emplace(partId, raftPeers);
           }
         }
 
         // load normal part ids which persisted to local engine.
-        std::map<PartitionID, Peers> normalPartPeers;
         for (auto& partId : engine->allParts()) {
           // first priority: balancing
           bool inBalancing = partRaftPeers.find(partId) != partRaftPeers.end();
@@ -168,12 +165,10 @@ void NebulaStore::loadPartFromDataPath() {
             auto partMeta = metaStatus.value();
             Peers peers;
             for (auto& h : partMeta.hosts_) {
-              if (h != storeSvcAddr_) {
-                VLOG(1) << "Add raft peer " << getRaftAddr(h);
-                peers.addOrUpdate(Peer(getRaftAddr(h)));
-              }
+              VLOG(1) << "Add raft peer " << getRaftAddr(h);
+              peers.addOrUpdate(Peer(getRaftAddr(h)));
             }
-            normalPartPeers.emplace(partId, peers);
+            partRaftPeers.emplace(partId, peers);
           }
         }
 
