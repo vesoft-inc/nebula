@@ -66,7 +66,7 @@ Status MatchValidator::validateImpl() {
             auto withYieldCtx = getContext<YieldClauseContext>();
             withClauseCtx->yield = std::move(withYieldCtx);
             withClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-            withClauseCtx->yield->projCols_ = qctx_->objPool()->add(new YieldColumns());
+            withClauseCtx->yield->projCols_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
             for (const auto &var : aliasesAvailable) {
               withClauseCtx->yield->projCols_->addColumn(
                   new YieldColumn(LabelExpression::make(qctx_->objPool(), var.first)));
@@ -407,7 +407,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
                                       const std::vector<QueryPart> &queryParts,
                                       ReturnClauseContext &retClauseCtx,
                                       std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = qctx_->objPool()->makeAndAdd<YieldColumns>();
   if (ret->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -502,7 +502,7 @@ Status MatchValidator::validateWith(const WithClause *with,
                                     const std::vector<QueryPart> &queryParts,
                                     WithClauseContext &withClauseCtx,
                                     std::vector<std::unique_ptr<MatchClauseContext>> &matchs) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = qctx_->objPool()->makeAndAdd<YieldColumns>();
   if (with->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -855,7 +855,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx,
     return Status::OK();
   }
 
-  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
+  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (!yieldCtx.hasAgg_) {
     for (auto &col : yieldCtx.yieldColumns->columns()) {
       NG_RETURN_IF_ERROR(validateMatchPathExpr(col->expr(), yieldCtx.aliasesAvailable, matchs));

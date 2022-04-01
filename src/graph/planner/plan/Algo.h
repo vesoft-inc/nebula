@@ -14,10 +14,11 @@ namespace graph {
 class ProduceSemiShortestPath : public SingleInputNode {
  public:
   static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceSemiShortestPath(qctx, input));
+    return qctx->objPool()->makeAndAdd<ProduceSemiShortestPath>(qctx, input);
   }
 
  private:
+  friend ObjectPool;
   ProduceSemiShortestPath(QueryContext* qctx, PlanNode* input)
       : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
 };
@@ -25,10 +26,11 @@ class ProduceSemiShortestPath : public SingleInputNode {
 class BFSShortestPath : public SingleInputNode {
  public:
   static BFSShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new BFSShortestPath(qctx, input));
+    return qctx->objPool()->makeAndAdd<BFSShortestPath>(qctx, input);
   }
 
  private:
+  friend ObjectPool;
   BFSShortestPath(QueryContext* qctx, PlanNode* input)
       : SingleInputNode(qctx, Kind::kBFSShortest, input) {}
 };
@@ -44,7 +46,7 @@ class ConjunctPath : public BinaryInputNode {
 
   static ConjunctPath* make(
       QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps) {
-    return qctx->objPool()->add(new ConjunctPath(qctx, left, right, pathKind, steps));
+    return qctx->objPool()->makeAndAdd<ConjunctPath>(qctx, left, right, pathKind, steps);
   }
 
   PathKind pathKind() const {
@@ -73,6 +75,7 @@ class ConjunctPath : public BinaryInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
+  friend ObjectPool;
   ConjunctPath(QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps)
       : BinaryInputNode(qctx, Kind::kConjunctPath, left, right) {
     pathKind_ = pathKind;
@@ -88,7 +91,7 @@ class ConjunctPath : public BinaryInputNode {
 class ProduceAllPaths final : public SingleInputNode {
  public:
   static ProduceAllPaths* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceAllPaths(qctx, input));
+    return qctx->objPool()->makeAndAdd<ProduceAllPaths>(qctx, input);
   }
 
   bool noLoop() const {
@@ -101,6 +104,7 @@ class ProduceAllPaths final : public SingleInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
+  friend ObjectPool;
   ProduceAllPaths(QueryContext* qctx, PlanNode* input)
       : SingleInputNode(qctx, Kind::kProduceAllPaths, input) {}
 
@@ -111,7 +115,7 @@ class ProduceAllPaths final : public SingleInputNode {
 class CartesianProduct final : public SingleDependencyNode {
  public:
   static CartesianProduct* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new CartesianProduct(qctx, input));
+    return qctx->objPool()->makeAndAdd<CartesianProduct>(qctx, input);
   }
 
   Status addVar(std::string varName);
@@ -124,6 +128,7 @@ class CartesianProduct final : public SingleDependencyNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
+  friend ObjectPool;
   CartesianProduct(QueryContext* qctx, PlanNode* input)
       : SingleDependencyNode(qctx, Kind::kCartesianProduct, input) {}
 
@@ -137,7 +142,7 @@ class Subgraph final : public SingleInputNode {
                         const std::string& resultVar,
                         const std::string& currentStepVar,
                         uint32_t steps) {
-    return qctx->objPool()->add(new Subgraph(qctx, input, resultVar, currentStepVar, steps));
+    return qctx->objPool()->makeAndAdd<Subgraph>(qctx, input, resultVar, currentStepVar, steps);
   }
 
   const std::string& resultVar() const {
@@ -161,6 +166,7 @@ class Subgraph final : public SingleInputNode {
   }
 
  private:
+  friend ObjectPool;
   Subgraph(QueryContext* qctx,
            PlanNode* input,
            const std::string& resultVar,
@@ -180,12 +186,13 @@ class Subgraph final : public SingleInputNode {
 class BiCartesianProduct final : public BinaryInputNode {
  public:
   static BiCartesianProduct* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
-    return qctx->objPool()->add(new BiCartesianProduct(qctx, left, right));
+    return qctx->objPool()->makeAndAdd<BiCartesianProduct>(qctx, left, right);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
+  friend ObjectPool;
   BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
 };
 }  // namespace graph

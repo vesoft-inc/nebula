@@ -22,13 +22,13 @@ class InsertVertices final : public SingleDependencyNode {
                               std::unordered_map<TagID, std::vector<std::string>> tagPropNames,
                               bool ifNotExists,
                               bool ignoreExistedIndex) {
-    return qctx->objPool()->add(new InsertVertices(qctx,
-                                                   input,
-                                                   spaceId,
-                                                   std::move(vertices),
-                                                   std::move(tagPropNames),
-                                                   ifNotExists,
-                                                   ignoreExistedIndex));
+    return qctx->objPool()->makeAndAdd<InsertVertices>(qctx,
+                                                       input,
+                                                       spaceId,
+                                                       std::move(vertices),
+                                                       std::move(tagPropNames),
+                                                       ifNotExists,
+                                                       ignoreExistedIndex);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -54,6 +54,7 @@ class InsertVertices final : public SingleDependencyNode {
   }
 
  private:
+  friend ObjectPool;
   InsertVertices(QueryContext* qctx,
                  PlanNode* input,
                  GraphSpaceID spaceId,
@@ -86,14 +87,14 @@ class InsertEdges final : public SingleDependencyNode {
                            bool ifNotExists,
                            bool ignoreExistedIndex,
                            bool useChainInsert = false) {
-    return qctx->objPool()->add(new InsertEdges(qctx,
-                                                input,
-                                                spaceId,
-                                                std::move(edges),
-                                                std::move(propNames),
-                                                ifNotExists,
-                                                ignoreExistedIndex,
-                                                useChainInsert));
+    return qctx->objPool()->makeAndAdd<InsertEdges>(qctx,
+                                                    input,
+                                                    spaceId,
+                                                    std::move(edges),
+                                                    std::move(propNames),
+                                                    ifNotExists,
+                                                    ignoreExistedIndex,
+                                                    useChainInsert);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -123,6 +124,7 @@ class InsertEdges final : public SingleDependencyNode {
   }
 
  private:
+  friend ObjectPool;
   InsertEdges(QueryContext* qctx,
               PlanNode* input,
               GraphSpaceID spaceId,
@@ -183,6 +185,7 @@ class Update : public SingleDependencyNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  protected:
+  friend ObjectPool;
   Update(QueryContext* qctx,
          Kind kind,
          PlanNode* input,
@@ -225,17 +228,17 @@ class UpdateVertex final : public Update {
                             std::vector<std::string> returnProps,
                             std::string condition,
                             std::vector<std::string> yieldNames) {
-    return qctx->objPool()->add(new UpdateVertex(qctx,
-                                                 input,
-                                                 spaceId,
-                                                 std::move(name),
-                                                 std::move(vId),
-                                                 tagId,
-                                                 insertable,
-                                                 std::move(updatedProps),
-                                                 std::move(returnProps),
-                                                 std::move(condition),
-                                                 std::move(yieldNames)));
+    return qctx->objPool()->makeAndAdd<UpdateVertex>(qctx,
+                                                     input,
+                                                     spaceId,
+                                                     std::move(name),
+                                                     std::move(vId),
+                                                     tagId,
+                                                     insertable,
+                                                     std::move(updatedProps),
+                                                     std::move(returnProps),
+                                                     std::move(condition),
+                                                     std::move(yieldNames));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -249,6 +252,7 @@ class UpdateVertex final : public Update {
   }
 
  private:
+  friend ObjectPool;
   UpdateVertex(QueryContext* qctx,
                PlanNode* input,
                GraphSpaceID spaceId,
@@ -293,19 +297,19 @@ class UpdateEdge final : public Update {
                           std::vector<std::string> returnProps,
                           std::string condition,
                           std::vector<std::string> yieldNames) {
-    return qctx->objPool()->add(new UpdateEdge(qctx,
-                                               input,
-                                               spaceId,
-                                               std::move(name),
-                                               std::move(srcId),
-                                               std::move(dstId),
-                                               edgeType,
-                                               rank,
-                                               insertable,
-                                               std::move(updatedProps),
-                                               std::move(returnProps),
-                                               std::move(condition),
-                                               std::move(yieldNames)));
+    return qctx->objPool()->makeAndAdd<UpdateEdge>(qctx,
+                                                   input,
+                                                   spaceId,
+                                                   std::move(name),
+                                                   std::move(srcId),
+                                                   std::move(dstId),
+                                                   edgeType,
+                                                   rank,
+                                                   insertable,
+                                                   std::move(updatedProps),
+                                                   std::move(returnProps),
+                                                   std::move(condition),
+                                                   std::move(yieldNames));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -331,6 +335,7 @@ class UpdateEdge final : public Update {
   }
 
  private:
+  friend ObjectPool;
   UpdateEdge(QueryContext* qctx,
              PlanNode* input,
              GraphSpaceID spaceId,
@@ -372,7 +377,7 @@ class DeleteVertices final : public SingleInputNode {
                               PlanNode* input,
                               GraphSpaceID spaceId,
                               Expression* vidRef_) {
-    return qctx->objPool()->add(new DeleteVertices(qctx, input, spaceId, vidRef_));
+    return qctx->objPool()->makeAndAdd<DeleteVertices>(qctx, input, spaceId, vidRef_);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -386,6 +391,7 @@ class DeleteVertices final : public SingleInputNode {
   }
 
  private:
+  friend ObjectPool;
   DeleteVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID spaceId, Expression* vidRef)
       : SingleInputNode(qctx, Kind::kDeleteVertices, input), space_(spaceId), vidRef_(vidRef) {}
 
@@ -401,7 +407,7 @@ class DeleteTags final : public SingleInputNode {
                           GraphSpaceID spaceId,
                           Expression* vidRef,
                           std::vector<TagID> tagIds) {
-    return qctx->objPool()->add(new DeleteTags(qctx, input, spaceId, vidRef, tagIds));
+    return qctx->objPool()->makeAndAdd<DeleteTags>(qctx, input, spaceId, vidRef, tagIds);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -419,6 +425,7 @@ class DeleteTags final : public SingleInputNode {
   }
 
  private:
+  friend ObjectPool;
   DeleteTags(QueryContext* qctx,
              PlanNode* input,
              GraphSpaceID spaceId,
@@ -441,7 +448,7 @@ class DeleteEdges final : public SingleInputNode {
                            PlanNode* input,
                            GraphSpaceID spaceId,
                            EdgeKeyRef* edgeKeyRef) {
-    return qctx->objPool()->add(new DeleteEdges(qctx, input, spaceId, edgeKeyRef));
+    return qctx->objPool()->makeAndAdd<DeleteEdges>(qctx, input, spaceId, edgeKeyRef);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -455,6 +462,7 @@ class DeleteEdges final : public SingleInputNode {
   }
 
  private:
+  friend ObjectPool;
   DeleteEdges(QueryContext* qctx, PlanNode* input, GraphSpaceID spaceId, EdgeKeyRef* edgeKeyRef)
       : SingleInputNode(qctx, Kind::kDeleteEdges, input),
         space_(spaceId),

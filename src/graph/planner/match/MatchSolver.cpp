@@ -212,7 +212,7 @@ void MatchSolver::extractAndDedupVidColumn(QueryContext* qctx,
                                            PlanNode* dep,
                                            const std::string& inputVar,
                                            SubPlan& plan) {
-  auto columns = qctx->objPool()->add(new YieldColumns);
+  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
   auto* var = qctx->symTable()->getVar(inputVar);
   Expression* vidExpr = initialExprOrEdgeDstExpr(qctx, initialExpr, var->colNames.back());
   if (initialExpr) {
@@ -306,7 +306,7 @@ Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
   }
 
   // Normalize all columns to one
-  auto columns = pool->add(new YieldColumns);
+  auto columns = pool->makeAndAdd<YieldColumns>();
   auto pathExpr = PathBuildExpression::make(pool);
   pathExpr->add(VertexExpression::make(pool));
   columns->addColumn(new YieldColumn(pathExpr));

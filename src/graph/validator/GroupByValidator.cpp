@@ -35,7 +35,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
   }
 
   auto* pool = qctx_->objPool();
-  projCols_ = pool->add(new YieldColumns);
+  projCols_ = pool->makeAndAdd<YieldColumns>();
   for (auto* col : columns) {
     auto colOldName = col->name();
     auto* colExpr = col->expr();

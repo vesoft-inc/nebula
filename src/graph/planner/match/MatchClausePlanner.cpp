@@ -441,7 +441,7 @@ Status MatchClausePlanner::expandFromEdge(
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
                                                    SubPlan& plan) {
   auto qctx = matchClauseCtx->qctx;
-  auto columns = qctx->objPool()->add(new YieldColumns);
+  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
   std::vector<std::string> colNames;
   for (auto& path : matchClauseCtx->paths) {
     auto& nodeInfos = path.nodeInfos;

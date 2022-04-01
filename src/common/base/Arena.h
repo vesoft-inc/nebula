@@ -41,10 +41,14 @@ class Arena : public boost::noncopyable, cpp::NonMovable {
   void *allocateAligned(const std::size_t alloc);
 
 #ifndef NDEBUG
-  std::size_t allocatedSize() const { return allocatedSize_; }
+  std::size_t allocatedSize() const {
+    return allocatedSize_;
+  }
 #endif
 
-  std::size_t availableSize() const { return availableSize_; }
+  std::size_t availableSize() const {
+    return availableSize_;
+  }
 
  private:
   static constexpr std::size_t kMinChunkSize = 4096;

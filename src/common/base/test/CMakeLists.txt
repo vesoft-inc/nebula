@@ -97,6 +97,7 @@ target_compile_options(range_vs_transform_bm PRIVATE -O3)
 nebula_add_test(
     NAME object_pool_test
     SOURCES ObjectPoolTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj>
     LIBRARIES gtest gtest_main
 )
 

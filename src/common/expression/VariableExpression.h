@@ -14,7 +14,7 @@ class VariableExpression final : public Expression {
   static VariableExpression* make(ObjectPool* pool,
                                   const std::string& var = "",
                                   bool isInner = false) {
-    return pool->add(new VariableExpression(pool, var, isInner));
+    return pool->makeAndAdd<VariableExpression>(pool, var, isInner);
   }
 
   const std::string& var() const {
@@ -43,6 +43,7 @@ class VariableExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit VariableExpression(ObjectPool* pool, const std::string& var = "", bool isInner = false)
       : Expression(pool, Kind::kVar), isInner_(isInner), var_(var) {}
 
@@ -63,7 +64,7 @@ class VersionedVariableExpression final : public Expression {
   static VersionedVariableExpression* make(ObjectPool* pool,
                                            const std::string& var = "",
                                            Expression* version = nullptr) {
-    return pool->add(new VersionedVariableExpression(pool, var, version));
+    return pool->makeAndAdd<VersionedVariableExpression>(pool, var, version);
   }
 
   const std::string& var() const {
@@ -94,6 +95,7 @@ class VersionedVariableExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit VersionedVariableExpression(ObjectPool* pool,
                                        const std::string& var = "",
                                        Expression* version = nullptr)

@@ -150,7 +150,7 @@ PlanNode* PathPlanner::allPairStartVidDataSet(PlanNode* dep, const std::string& 
   auto* listExpr = ListExpression::make(pool, exprList);
   auto* path = new YieldColumn(listExpr, kPathStr);
 
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(vid);
   columns->addColumn(path);
 
@@ -180,7 +180,7 @@ PlanNode* PathPlanner::multiPairStartVidDataSet(PlanNode* dep, const std::string
   auto* listExpr = ListExpression::make(pool, exprList);
   auto* path = new YieldColumn(listExpr, kPathStr);
 
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(dst);
   columns->addColumn(src);
   columns->addColumn(cost);
@@ -392,7 +392,7 @@ PlanNode* PathPlanner::buildVertexPlan(PlanNode* dep, const std::string& input) 
   auto funNodes = FunctionCallExpression::make(pool, "nodes", args);
 
   auto* column = new YieldColumn(funNodes, "nodes");
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(column);
 
   auto* project = Project::make(qctx, dep, columns);
@@ -425,7 +425,7 @@ PlanNode* PathPlanner::buildEdgePlan(PlanNode* dep, const std::string& input) {
   auto funEdges = FunctionCallExpression::make(pool, "relationships", args);
 
   auto* column = new YieldColumn(funEdges, "edges");
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(column);
 
   auto* project = Project::make(qctx, dep, columns);

@@ -43,7 +43,7 @@ void YieldClausePlanner::rewriteGroupExprs(const YieldClauseContext* yctx,
 Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan) {
   auto* currentRoot = subplan.root;
   DCHECK(!currentRoot);
-  auto* newProjCols = yctx->qctx->objPool()->add(new YieldColumns());
+  auto* newProjCols = yctx->qctx->objPool()->makeAndAdd<YieldColumns>();
   rewriteYieldColumns(yctx, yctx->projCols_, newProjCols);
   if (!yctx->hasAgg_) {
     auto* project = Project::make(yctx->qctx, currentRoot, newProjCols);
