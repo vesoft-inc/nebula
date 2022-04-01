@@ -587,7 +587,7 @@ bool JobManager::checkOnRunningJobExist(GraphSpaceID spaceId,
   return false;
 }
 
-nebula::cpp2::ErrorCode JobManager::checkNotFinishedJobExist(GraphSpaceID spaceId,
+nebula::cpp2::ErrorCode JobManager::checkNeedRecoverJobExist(GraphSpaceID spaceId,
                                                              const cpp2::JobType& jobType) {
   if (jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) {
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -606,10 +606,8 @@ nebula::cpp2::ErrorCode JobManager::checkNotFinishedJobExist(GraphSpaceID spaceI
       auto type = std::get<0>(tup);
       auto status = std::get<2>(tup);
       if (type == cpp2::JobType::DATA_BALANCE || type == cpp2::JobType::ZONE_BALANCE) {
-        if (status != cpp2::JobStatus::FINISHED && status != cpp2::JobStatus::INVALID) {
-          LOG(INFO) << "There are some data balance or zone balance jobs that did not complete "
-                       "successfully";
-          return nebula::cpp2::ErrorCode::E_JOB_MAYBE_RECOVER;
+        if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::STOPPED) {
+          return nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER;
         }
       }
     }

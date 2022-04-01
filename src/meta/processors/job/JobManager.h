@@ -105,14 +105,15 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
                               const std::vector<std::string>& paras,
                               JobID& jobId);
   /**
-   * @brief In the space, for jobs of DATA_BALANCE and ZONE_BALANCE,
-   * except for FINISHED and INVALID status, only one job of other status is allowed in the queue.
+   * @brief In the current space, if there is a data balance job or zone balance job
+   *  whose status is stopped or failed, need to recover the job first, otherwise cannot
+   *  add this type of job.
    *
    * @param spaceId
    * @param jobType
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode checkNotFinishedJobExist(GraphSpaceID spaceId,
+  nebula::cpp2::ErrorCode checkNeedRecoverJobExist(GraphSpaceID spaceId,
                                                    const cpp2::JobType& jobType);
 
   /**

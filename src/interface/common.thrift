@@ -391,7 +391,7 @@ enum ErrorCode {
     E_JOB_NOT_FINISHED                = -2048,
     E_TASK_REPORT_OUT_DATE            = -2049,
     E_JOB_NOT_IN_SPACE                = -2050,
-    E_JOB_MAYBE_RECOVER               = -2051,
+    E_JOB_NEED_RECOVER               = -2051,
     E_INVALID_JOB                     = -2065,
 
     // Backup Failure

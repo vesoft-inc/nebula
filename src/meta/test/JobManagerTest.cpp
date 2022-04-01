@@ -104,8 +104,8 @@ TEST_F(JobManagerTest, AddJob) {
                                      jobDesc3.getErrorCode());
   jobMgr->save(std::move(jobKey), std::move(jobVal));
 
-  rc = jobMgr->checkNotFinishedJobExist(spaceId, jobDesc3.getJobType());
-  ASSERT_EQ(rc, nebula::cpp2::ErrorCode::E_JOB_MAYBE_RECOVER);
+  rc = jobMgr->checkNeedRecoverJobExist(spaceId, jobDesc3.getJobType());
+  ASSERT_EQ(rc, nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER);
 }
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
