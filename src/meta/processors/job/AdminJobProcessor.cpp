@@ -134,7 +134,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
 
   auto retCode = jobMgr_->checkNeedRecoverJobExist(spaceId_, type);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "There is a data balance or zone balance job whose status is stopped or failed.";
+    LOG(INFO) << "There is a failed data balance or zone balance job, need to recover it firstly!";
     return retCode;
   }
 

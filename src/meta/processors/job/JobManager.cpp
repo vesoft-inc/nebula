@@ -248,7 +248,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
 
   // Set the errorcode of the job
   nebula::cpp2::ErrorCode jobErrCode = nebula::cpp2::ErrorCode::SUCCEEDED;
-  if (jobStatus != cpp2::JobStatus::FINISHED) {
+  if (jobStatus == cpp2::JobStatus::FAILED) {
     // Traverse the tasks and find the first task errorcode unsuccessful
     auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -606,7 +606,7 @@ nebula::cpp2::ErrorCode JobManager::checkNeedRecoverJobExist(GraphSpaceID spaceI
       auto type = std::get<0>(tup);
       auto status = std::get<2>(tup);
       if (type == cpp2::JobType::DATA_BALANCE || type == cpp2::JobType::ZONE_BALANCE) {
-        if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::STOPPED) {
+        if (status == cpp2::JobStatus::FAILED) {
           return nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER;
         }
       }
