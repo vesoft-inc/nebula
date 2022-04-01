@@ -624,6 +624,7 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 void Executor::drop() {
+  time::Duration dur;
   if (node()->kind() == PlanNode::Kind::kLoop) {
     // Release body when loop exit
     const auto *loopExecutor = static_cast<const LoopExecutor *>(this);
@@ -655,6 +656,7 @@ void Executor::drop() {
   }
   // Normal node
   drop(node());
+  LOG(ERROR) << "Free variable time:" << node()->outputVar() << " " << dur.elapsedInUSec();
 }
 
 void Executor::drop(const PlanNode *node) {
