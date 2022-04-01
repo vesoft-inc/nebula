@@ -16,6 +16,8 @@
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/common_types.h"
 
+DECLARE_int32(balance_expired_sesc);
+
 namespace nebula {
 namespace kvstore {
 
@@ -176,7 +178,8 @@ struct Peers {
   }
 
   bool isExpired() const {
-    return static_cast<int>(time::WallClock::fastNowInSec()) - createdTime > 3600 * 24;
+    return static_cast<int>(time::WallClock::fastNowInSec()) - createdTime >
+           static_cast<int>(FLAGS_balance_expired_sesc);
   }
 
   void setCreatedTime(int time) {

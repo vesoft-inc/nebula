@@ -114,6 +114,12 @@ void NebulaStore::loadPartFromDataPath() {
         for (auto& [partId, raftPeers] : engine->balancePartPeers()) {
           CHECK_NE(raftPeers.size(), 0);
 
+          if (raftPeers.isExpired()) {
+            LOG(INFO) << "Space: " << spaceId << ", part:" << partId
+                      << " balancing info expired, ignore it.";
+            continue;
+          }
+
           auto spacePart = std::make_pair(spaceId, partId);
           if (partSet.find(spacePart) == partSet.end()) {
             partSet.insert(std::make_pair(spaceId, partId));
@@ -121,7 +127,7 @@ void NebulaStore::loadPartFromDataPath() {
             // join the balancing peers with meta peers
             auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
             if (!metaStatus.ok()) {
-              LOG(INFO) << "space: " << spaceId << "; partId: " << partId
+              LOG(INFO) << "Space: " << spaceId << "; partId: " << partId
                         << " does not exist in part manager when join balancing.";
             } else {
               auto partMeta = metaStatus.value();
