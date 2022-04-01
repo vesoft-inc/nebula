@@ -84,7 +84,7 @@ class FunctionManager final {
   // Sets the function to NON-pure for all numbers of arity it take, which means the function is
   // always NON-pure.
   void setCompleteNonPure(FunctionAttributes &attr) {
-    for (auto i = attr.minArity_; i <= attr.maxArity_; i++) {
+    for (auto i = attr.minArity_; i <= attr.maxArity_; ++i) {
       attr.isPure_[i] = false;
     }
   }
