@@ -92,7 +92,10 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   nebula::cpp2::ErrorCode addJob(JobDescription& jobDesc, AdminClient* client);
 
   /**
-   * @brief The same job is queue or running status.
+   * @brief The same job in inFlightJobs_.
+   * Jobs in inFlightJobs_ have three status:
+   * QUEUE: when adding a job
+   * FAILED or STOPPED: when recover job
    *
    * @param spaceId
    * @param type
