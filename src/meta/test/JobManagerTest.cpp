@@ -137,8 +137,8 @@ TEST_F(JobManagerTest, DownloadJob) {
   EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .WillOnce(Return(ByMove(folly::makeFuture<Status>(Status::OK()))));
 
-  auto executor =
-      new DownloadJobExecutor(space, job.getJobId(), kv.get(), &adminClient, job.getParas());
+  auto executor = std::make_unique<DownloadJobExecutor>(
+      space, job.getJobId(), kv.get(), &adminClient, job.getParas());
   executor->helper_ = std::make_unique<meta::MockHdfsOKHelper>();
 
   ASSERT_TRUE(executor->check());
@@ -162,8 +162,8 @@ TEST_F(JobManagerTest, IngestJob) {
   MockAdminClient adminClient;
   EXPECT_CALL(adminClient, addTask(_, _, _, _, _, _, _))
       .WillOnce(Return(ByMove(folly::makeFuture<Status>(Status::OK()))));
-  auto executor =
-      new IngestJobExecutor(space, job.getJobId(), kv.get(), &adminClient, job.getParas());
+  auto executor = std::make_unique<IngestJobExecutor>(
+      space, job.getJobId(), kv.get(), &adminClient, job.getParas());
 
   ASSERT_TRUE(executor->check());
   auto code = executor->prepare();
