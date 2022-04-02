@@ -15,7 +15,7 @@
 #include "kvstore/KVStore.h"
 
 DEFINE_bool(move_files, false, "Move the SST files instead of copy when ingest into dataset");
-DEFINE_int32(balance_expired_sesc,
+DEFINE_int64(balance_expired_sesc,
              86400,
              "The expired time of balancing part info persisted in the storaged");
 

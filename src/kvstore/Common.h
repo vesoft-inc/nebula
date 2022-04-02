@@ -9,6 +9,8 @@
 #include <folly/Function.h>
 #include <rocksdb/slice.h>
 
+#include <sstream>
+
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/thrift/ThriftTypes.h"
@@ -16,7 +18,7 @@
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/common_types.h"
 
-DECLARE_int32(balance_expired_sesc);
+DECLARE_int64(balance_expired_sesc);
 
 namespace nebula {
 namespace kvstore {
@@ -110,11 +112,11 @@ inline std::ostream& operator<<(std::ostream& os, const Peer& peer) {
 struct Peers {
  private:
   std::map<HostAddr, Peer> peers;
-  int createdTime;
+  int64_t createdTime;
 
  public:
   Peers() {
-    createdTime = static_cast<int>(time::WallClock::fastNowInSec());
+    createdTime = time::WallClock::fastNowInSec();
   }
   explicit Peers(const std::vector<HostAddr>& addrs) {  // from normal peers
     for (auto& addr : addrs) {
@@ -178,8 +180,7 @@ struct Peers {
   }
 
   bool isExpired() const {
-    return static_cast<int>(time::WallClock::fastNowInSec()) - createdTime >
-           static_cast<int>(FLAGS_balance_expired_sesc);
+    return time::WallClock::fastNowInSec() - createdTime > FLAGS_balance_expired_sesc;
   }
 
   void setCreatedTime(int time) {
@@ -196,26 +197,20 @@ struct Peers {
     return os.str();
   }
 
-  static std::tuple<int, int, int> extractHeader(const std::string& header) {
-    auto pos = header.find(":");
-    if (pos == std::string::npos) {
-      LOG(INFO) << "Parse version from part peers header error:" << header;
+  static std::tuple<int, int, int64_t> extractHeader(const std::string& header) {
+    std::vector<std::string> fields;
+    folly::split(":", header, fields, true);
+    if (fields.size() != 4) {
+      LOG(INFO) << "Parse part peers header error:" << header;
       return {0, 0, 0};
     }
-    int version = std::stoi(header.substr(pos + 1));
-    pos = header.find(":", pos + 1);
-    if (pos == std::string::npos) {
-      LOG(INFO) << "Parse count from part peers header error:" << header;
-      return {0, 0, 0};
-    }
-    int count = std::stoi(header.substr(pos + 1));
 
-    pos = header.find(":", pos + 1);
-    if (pos == std::string::npos) {
-      LOG(INFO) << "Parse created time from part peers header error:" << header;
-      return {0, 0, 0};
-    }
-    int createdTime = std::stoi(header.substr(pos + 1));
+    int version = std::stoi(fields[1]);
+    int count = std::stoi(fields[2]);
+
+    int64_t createdTime;
+    std::istringstream iss(fields[3]);
+    iss >> createdTime;
 
     return {version, count, createdTime};
   }
