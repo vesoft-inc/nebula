@@ -122,7 +122,7 @@ void NebulaStore::loadPartFromDataPath() {
 
           auto spacePart = std::make_pair(spaceId, partId);
           if (partSet.find(spacePart) == partSet.end()) {
-            partSet.insert(std::make_pair(spaceId, partId));
+            partSet.emplace(std::make_pair(spaceId, partId));
 
             // join the balancing peers with meta peers
             auto metaStatus = options_.partMan_->partMeta(spaceId, partId);

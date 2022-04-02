@@ -183,7 +183,7 @@ struct Peers {
     return time::WallClock::fastNowInSec() - createdTime > FLAGS_balance_expired_sesc;
   }
 
-  void setCreatedTime(int time) {
+  void setCreatedTime(int64_t time) {
     createdTime = time;
   }
 
