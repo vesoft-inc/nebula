@@ -20,7 +20,7 @@
 set -e
 
 version=""
-package_one=OFF
+package_one=ON
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
@@ -28,7 +28,7 @@ build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
-build_console="ON"
+build_console="OFF"
 branch=$(git rev-parse --abbrev-ref HEAD)
 jobs=$(nproc)
 enable_compressed_debug_info=ON
