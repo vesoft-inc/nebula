@@ -64,13 +64,30 @@ class FunctionManager final {
                                              const std::vector<Value::Type> &argsType);
 
  private:
+  // The attributes of the function call
   struct FunctionAttributes final {
     size_t minArity_{0};
     size_t maxArity_{0};
-    // pure means same input same result
-    bool isPure_{true};
+    // Pure means if the function takes the same input, it returns the same result
+    // The key here is the number of arity, and the key represents whether the function is pure for
+    // that number of arity.
+    // For example, timestamp() is non-pure because it returns the current timestamp, while
+    // timestamp(1) is pure because the output is always 1.
+    std::unordered_map<size_t, bool> isPure_;
+    // The flag indicates whether the function is always pure.
+    // Some functions allow using int64_max as the maxArity_, so add isAlwaysPure_ to avoid
+    // allocating huge amount of memory for these functions.
+    bool isAlwaysPure_{false};
     Function body_;
   };
+
+  // Sets the function to NON-pure for all numbers of arity it take, which means the function is
+  // always NON-pure.
+  void setCompleteNonPure(FunctionAttributes &attr) {
+    for (auto i = attr.minArity_; i <= attr.maxArity_; ++i) {
+      attr.isPure_[i] = false;
+    }
+  }
 
   /**
    * FunctionManager functions as a singleton, since the dynamic loading is
