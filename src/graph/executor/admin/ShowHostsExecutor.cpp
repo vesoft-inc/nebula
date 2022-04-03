@@ -1,14 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/ShowHostsExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
@@ -149,7 +145,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       .via(runner())
       .thenValue([=, type = shNode->getType()](auto &&resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Show host fail: " << resp.status();
           return resp.status();
         }
         auto value = std::forward<decltype(resp)>(resp).value();

@@ -29,6 +29,8 @@ class RebuildIndexTask : public AdminTask {
     LOG(INFO) << "Release Rebuild Task";
   }
 
+  bool check() override;
+
   /**
    * @brief Generate subtasks for rebuilding index.
    *
@@ -46,12 +48,6 @@ class RebuildIndexTask : public AdminTask {
                                                    PartitionID part,
                                                    const IndexItems& items,
                                                    kvstore::RateLimiter* rateLimiter) = 0;
-
-  void cancel() override {
-    canceled_ = true;
-    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
-    rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
-  }
 
   nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space,
                                                  PartitionID part,

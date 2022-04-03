@@ -198,6 +198,11 @@ void ChainDeleteEdgesLocalProcessor::doRpc(folly::Promise<Code>&& promise,
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
     rcRemote_ = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
+    // we treat it E_RAFT_UNKNOWN_APPEND_LOG as SUCCEEDED
+    // please check this error in RaftPart.cpp for more details
+    if (rcRemote_ == Code::E_RAFT_UNKNOWN_APPEND_LOG) {
+      rcRemote_ = Code::SUCCEEDED;
+    }
     switch (rcRemote_) {
       case Code::E_LEADER_CHANGED:
         doRpc(std::move(p), std::move(req), ++retry);

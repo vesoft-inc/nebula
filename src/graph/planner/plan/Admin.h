@@ -10,12 +10,10 @@
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/meta_types.h"
 
-/**
- * All admin-related nodes would be put in this file.
- * These nodes would not exist in a same plan with maintain-related/
- * mutate-related/query-related nodes. And they are also isolated
- * from each other. This would be guaranteed by parser and validator.
- */
+// All admin-related nodes would be put in this file.
+// These nodes would not exist in a same plan with maintain-related/
+// mutate-related/query-related nodes. And they are also isolated
+// from each other. This would be guaranteed by parser and validator.
 namespace nebula {
 namespace graph {
 
@@ -539,55 +537,6 @@ class ShowListener final : public SingleDependencyNode {
       : SingleDependencyNode(qctx, Kind::kShowListener, input) {}
 };
 
-class Download final : public SingleDependencyNode {
- public:
-  static Download* make(QueryContext* qctx,
-                        PlanNode* input,
-                        std::string hdfsHost,
-                        int32_t hdfsPort,
-                        std::string hdfsPath) {
-    return qctx->objPool()->add(new Download(qctx, input, hdfsHost, hdfsPort, hdfsPath));
-  }
-
-  const std::string& getHdfsHost() const {
-    return hdfsHost_;
-  }
-
-  int32_t getHdfsPort() const {
-    return hdfsPort_;
-  }
-
-  const std::string& getHdfsPath() const {
-    return hdfsPath_;
-  }
-
- private:
-  Download(QueryContext* qctx,
-           PlanNode* dep,
-           std::string hdfsHost,
-           int32_t hdfsPort,
-           std::string hdfsPath)
-      : SingleDependencyNode(qctx, Kind::kDownload, dep),
-        hdfsHost_(hdfsHost),
-        hdfsPort_(hdfsPort),
-        hdfsPath_(hdfsPath) {}
-
- private:
-  std::string hdfsHost_;
-  int32_t hdfsPort_;
-  std::string hdfsPath_;
-};
-
-class Ingest final : public SingleDependencyNode {
- public:
-  static Ingest* make(QueryContext* qctx, PlanNode* dep) {
-    return qctx->objPool()->add(new Ingest(qctx, dep));
-  }
-
- private:
-  Ingest(QueryContext* qctx, PlanNode* dep) : SingleDependencyNode(qctx, Kind::kIngest, dep) {}
-};
-
 // User related Node
 class CreateUser final : public CreateNode {
  public:
@@ -910,21 +859,21 @@ class SubmitJob final : public SingleDependencyNode {
  public:
   static SubmitJob* make(QueryContext* qctx,
                          PlanNode* dep,
-                         meta::cpp2::AdminJobOp op,
-                         meta::cpp2::AdminCmd cmd,
+                         meta::cpp2::JobOp op,
+                         meta::cpp2::JobType type,
                          const std::vector<std::string>& params) {
-    return qctx->objPool()->add(new SubmitJob(qctx, dep, op, cmd, params));
+    return qctx->objPool()->add(new SubmitJob(qctx, dep, op, type, params));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  public:
-  meta::cpp2::AdminJobOp jobOp() const {
+  meta::cpp2::JobOp jobOp() const {
     return op_;
   }
 
-  meta::cpp2::AdminCmd cmd() const {
-    return cmd_;
+  meta::cpp2::JobType jobType() const {
+    return type_;
   }
 
   const std::vector<std::string>& params() const {
@@ -934,14 +883,14 @@ class SubmitJob final : public SingleDependencyNode {
  private:
   SubmitJob(QueryContext* qctx,
             PlanNode* dep,
-            meta::cpp2::AdminJobOp op,
-            meta::cpp2::AdminCmd cmd,
+            meta::cpp2::JobOp op,
+            meta::cpp2::JobType type,
             const std::vector<std::string>& params)
-      : SingleDependencyNode(qctx, Kind::kSubmitJob, dep), op_(op), cmd_(cmd), params_(params) {}
+      : SingleDependencyNode(qctx, Kind::kSubmitJob, dep), op_(op), type_(type), params_(params) {}
 
  private:
-  meta::cpp2::AdminJobOp op_;
-  meta::cpp2::AdminCmd cmd_;
+  meta::cpp2::JobOp op_;
+  meta::cpp2::JobType type_;
   const std::vector<std::string> params_;
 };
 

@@ -219,7 +219,7 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
+    leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::nullopt; })
         .thenValue([&baton](nebula::cpp2::ErrorCode res) {
           ASSERT_EQ(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED, res);
           baton.post();

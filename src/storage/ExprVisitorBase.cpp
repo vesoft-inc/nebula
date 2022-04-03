@@ -144,5 +144,9 @@ void ExprVisitorBase::visit(SubscriptRangeExpression *expr) {
   fatal(expr);
 }
 
+void ExprVisitorBase::visit(MatchPathPatternExpression *expr) {
+  fatal(expr);
+}
+
 }  // namespace storage
 }  // namespace nebula

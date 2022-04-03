@@ -14,35 +14,75 @@
 namespace nebula {
 namespace storage {
 
+/**
+ * @brief Storage iterate Interface
+ *
+ */
 class StorageIterator {
  public:
   virtual ~StorageIterator() = default;
 
+  /**
+   * @brief check if there is any data
+   *
+   * @return true if there is still data to be accessed
+   * @return false if there is no data to be accessed
+   */
   virtual bool valid() const = 0;
 
-  // next will skip invalid data, until it points to a valid data or it is
-  // invalid
+  /**
+   * @brief next will skip invalid data, until it points to a valid data or it is invalid
+   *
+   */
   virtual void next() = 0;
 
+  /**
+   * @brief Return the key of current data.
+   *
+   * All data is iterated in key-value format.
+   *
+   * @return folly::StringPiece
+   */
   virtual folly::StringPiece key() const = 0;
 
+  /**
+   * @brief Return the value of current data.
+   *
+   */
   virtual folly::StringPiece val() const = 0;
 
+  /**
+   * @brief Returns the encapsulation of key-value data
+   *
+   * @see RowReader
+   */
   virtual RowReader* reader() const = 0;
 };
 
-// Iterator of single specified type
+/**
+ * @brief Iterator of single specified type
+ *
+ */
 class SingleEdgeIterator : public StorageIterator {
  public:
   SingleEdgeIterator() = default;
+  /**
+   * @brief Construct a new Single Edge Iterator object
+   *
+   * @param context
+   * @param iter Kvstore's iterator.
+   * @param edgeType EdgeType to be read.
+   * @param schemas EdgeType's all version schemas.
+   * @param ttl
+   */
   SingleEdgeIterator(RuntimeContext* context,
                      std::unique_ptr<kvstore::KVIterator> iter,
                      EdgeType edgeType,
                      const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
-                     const folly::Optional<std::pair<std::string, int64_t>>* ttl)
+                     const std::optional<std::pair<std::string, int64_t>>* ttl)
       : context_(context), iter_(std::move(iter)), edgeType_(edgeType), schemas_(schemas) {
     CHECK(!!iter_);
-    if (ttl->hasValue()) {
+    if (ttl->has_value()) {
       hasTtl_ = true;
       ttlCol_ = ttl->value().first;
       ttlDuration_ = ttl->value().second;
@@ -83,7 +123,9 @@ class SingleEdgeIterator : public StorageIterator {
   }
 
  protected:
-  // return true when the value iter to a valid edge value
+  /**
+   * @brief return true when the value iter to a valid edge value
+   */
   bool check() {
     reader_.reset(*schemas_, iter_->val());
     if (!reader_) {
@@ -113,11 +155,14 @@ class SingleEdgeIterator : public StorageIterator {
   VertexID lastDstId_ = "";
 };
 
-// Iterator of multiple SingleEdgeIterator, it will iterate over edges of
-// different types
+/**
+ * @brief Iterator of multiple SingleEdgeIterator, it will iterate over edges of different types
+ */
 class MultiEdgeIterator : public StorageIterator {
  public:
-  // will move to a valid SingleEdgeIterator if there is one
+  /**
+   * @brief will move to a valid SingleEdgeIterator if there is one
+   */
   explicit MultiEdgeIterator(std::vector<SingleEdgeIterator*> iters) : iters_(std::move(iters)) {
     moveToNextValidIterator();
   }
@@ -149,7 +194,9 @@ class MultiEdgeIterator : public StorageIterator {
     return iters_[curIter_]->edgeType();
   }
 
-  // return the index of multiple iterators
+  /**
+   * @brief return the index of multiple iterators
+   */
   size_t getIdx() const {
     return curIter_;
   }
@@ -168,91 +215,6 @@ class MultiEdgeIterator : public StorageIterator {
   std::vector<SingleEdgeIterator*> iters_;
   size_t curIter_ = 0;
 };
-
-class IndexIterator : public StorageIterator {
- public:
-  explicit IndexIterator(std::unique_ptr<kvstore::KVIterator> iter) : iter_(std::move(iter)) {}
-
-  virtual IndexID indexId() const = 0;
-
-  bool valid() const override {
-    return !!iter_ && iter_->valid();
-  }
-
-  void next() override {
-    iter_->next();
-  }
-
-  folly::StringPiece key() const override {
-    return iter_->key();
-  }
-
-  folly::StringPiece val() const override {
-    return iter_->val();
-  }
-
- protected:
-  std::unique_ptr<kvstore::KVIterator> iter_;
-};
-
-class VertexIndexIterator : public IndexIterator {
- public:
-  VertexIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
-      : IndexIterator(std::move(iter)), vIdLen_(vIdLen) {}
-
-  RowReader* reader() const override {
-    return nullptr;
-  }
-
-  IndexID indexId() const override {
-    return IndexKeyUtils::getIndexId(iter_->key());
-  }
-
-  VertexID vId() const {
-    return IndexKeyUtils::getIndexVertexID(vIdLen_, iter_->key()).str();
-  }
-
-  folly::StringPiece val() const override {
-    return iter_->val();
-  }
-
- protected:
-  size_t vIdLen_;
-};
-
-class EdgeIndexIterator : public IndexIterator {
- public:
-  EdgeIndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
-      : IndexIterator(std::move(iter)), vIdLen_(vIdLen) {}
-
-  RowReader* reader() const override {
-    return nullptr;
-  }
-
-  IndexID indexId() const override {
-    return IndexKeyUtils::getIndexId(iter_->key());
-  }
-
-  VertexID srcId() const {
-    return IndexKeyUtils::getIndexSrcId(vIdLen_, iter_->key()).str();
-  }
-
-  VertexID dstId() const {
-    return IndexKeyUtils::getIndexDstId(vIdLen_, iter_->key()).str();
-  }
-
-  EdgeRanking ranking() const {
-    return IndexKeyUtils::getIndexRank(vIdLen_, iter_->key());
-  }
-
-  folly::StringPiece val() const override {
-    return iter_->val();
-  }
-
- protected:
-  size_t vIdLen_;
-};
-
 }  // namespace storage
 }  // namespace nebula
 

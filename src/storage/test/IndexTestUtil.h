@@ -301,8 +301,12 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID,
-                                                    std::vector<::nebula::kvstore::KV>) override {
+  std::unique_ptr<nebula::kvstore::WriteBatch> startBatchWrite() override {
+    LOG(FATAL) << "Unexpect";
+    return nullptr;
+  }
+  nebula::cpp2::ErrorCode batchWriteWithoutReplicator(
+      GraphSpaceID, std::unique_ptr<nebula::kvstore::WriteBatch>) override {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }

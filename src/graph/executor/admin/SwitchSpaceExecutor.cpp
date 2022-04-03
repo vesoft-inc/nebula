@@ -1,13 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 
 #include "clients/meta/MetaClient.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/PermissionManager.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -23,7 +20,7 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
   return qctx()->getMetaClient()->getSpace(spaceName).via(runner()).thenValue(
       [spaceName, this](StatusOr<meta::cpp2::SpaceItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Switch space :`" << spaceName << "' fail: " << resp.status();
           return resp.status();
         }
 

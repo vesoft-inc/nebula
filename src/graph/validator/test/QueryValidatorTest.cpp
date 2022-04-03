@@ -186,6 +186,23 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
+    std::string query = "YIELD \"1\" AS id | GO FROM $-.id OVER like YIELD id($$) as id";
+    std::vector<PlanNode::Kind> expected = {PK::kProject,
+                                            PK::kInnerJoin,
+                                            PK::kProject,
+                                            PK::kGetNeighbors,
+                                            PK::kDedup,
+                                            PK::kProject,
+                                            PK::kProject,
+                                            PK::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
+  }
+  {
+    std::string query = "GO FROM 'Tim' OVER * YIELD id($$) as id";
+    std::vector<PlanNode::Kind> expected = {PK::kProject, PK::kGetNeighbors, PK::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
+  }
+  {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 1 STEPS FROM $-.id OVER like YIELD $-.id, like._dst";

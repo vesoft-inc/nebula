@@ -10,6 +10,8 @@
 #include <gtest/gtest.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <optional>
+
 #include "common/fs/TempDir.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
@@ -39,9 +41,9 @@ class FakeChainDeleteEdgesProcessor : public ChainDeleteEdgesLocalProcessor {
                                           int32_t limit = std::numeric_limits<int>::max());
 
  public:
-  folly::Optional<Code> rcPrepareLocal;
-  folly::Optional<Code> rcProcessRemote;
-  folly::Optional<Code> rcProcessLocal;
+  std::optional<Code> rcPrepareLocal;
+  std::optional<Code> rcProcessRemote;
+  std::optional<Code> rcProcessLocal;
 };
 
 // make sure test utils works

@@ -76,6 +76,8 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(ListComprehensionExpression* expr) override;
   void visit(SubscriptRangeExpression* expr) override;
   void visit(LogicalExpression* expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression* expr) override;
 
   void visitBinaryExpr(BinaryExpression* expr) override;
   void findInCurrentExpr(Expression* expr);

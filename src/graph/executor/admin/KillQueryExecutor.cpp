@@ -1,11 +1,8 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/KillQueryExecutor.h"
-
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
@@ -28,7 +25,7 @@ folly::Future<Status> KillQueryExecutor::execute() {
         if (listResp.ok()) {
           sessionsInMeta = std::move(listResp.value()).get_sessions();
         } else {
-          LOG(ERROR) << listResp.status();
+          LOG(WARNING) << "List session fail: " << listResp.status();
         }
 
         auto status = verifyTheQueriesByMetaInfo(toBeVerifiedQueries, sessionsInMeta);

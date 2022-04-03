@@ -26,8 +26,6 @@
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
-#include "meta/http/MetaHttpDownloadHandler.h"
-#include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/stats/MetaStats.h"
@@ -56,7 +54,7 @@ static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 static void signalHandler(apache::thrift::ThriftServer* metaServer, int sig);
 static void waitForStop();
 static Status setupSignalHandler(apache::thrift::ThriftServer* metaServer);
-#if defined(__x86_64__)
+#if defined(ENABLE_BREAKPAD)
 extern Status setupBreakpad();
 #endif
 
@@ -74,7 +72,7 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-#if defined(__x86_64__)
+#if defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
   if (!status.ok()) {
     LOG(ERROR) << status;
@@ -152,7 +150,7 @@ int main(int argc, char* argv[]) {
   pool->start(FLAGS_meta_http_thread_num, "http thread pool");
 
   auto webSvc = std::make_unique<nebula::WebService>();
-  status = initWebService(webSvc.get(), gKVStore.get(), helper.get(), pool.get());
+  status = initWebService(webSvc.get(), gKVStore.get());
   if (!status.ok()) {
     LOG(ERROR) << "Init web service failed: " << status;
     return EXIT_FAILURE;

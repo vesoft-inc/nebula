@@ -27,7 +27,7 @@ std::string encodeLearner(const HostAddr& addr);
 
 HostAddr decodeLearner(const folly::StringPiece& log);
 
-folly::Optional<std::string> compareAndSet(const std::string& log);
+std::optional<std::string> compareAndSet(const std::string& log);
 
 std::string encodeTransferLeader(const HostAddr& addr);
 
@@ -79,14 +79,15 @@ class TestShard : public RaftPart {
   void onDiscoverNewLeader(HostAddr) override {}
 
   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
-                                                                bool wait) override;
+                                                                bool wait,
+                                                                bool needLock) override;
 
   bool preProcessLog(LogID, TermID, ClusterID, const std::string& log) override {
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::ADD_LEARNER: {
           auto learner = decodeLearner(log);
-          addLearner(learner);
+          addLearner(learner, false);
           LOG(INFO) << idStr_ << "Add learner " << learner;
           break;
         }
@@ -116,10 +117,11 @@ class TestShard : public RaftPart {
     return true;
   }
 
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override;
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
   nebula::cpp2::ErrorCode cleanup() override;
 

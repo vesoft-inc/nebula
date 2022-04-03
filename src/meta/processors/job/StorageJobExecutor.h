@@ -24,11 +24,12 @@ class StorageJobExecutor : public JobExecutor {
  public:
   enum class TargetHosts { LEADER = 0, LISTENER, DEFAULT };
 
-  StorageJobExecutor(JobID jobId,
+  StorageJobExecutor(GraphSpaceID space,
+                     JobID jobId,
                      kvstore::KVStore* kvstore,
                      AdminClient* adminClient,
                      const std::vector<std::string>& paras)
-      : JobExecutor(kvstore), jobId_(jobId), adminClient_(adminClient), paras_(paras) {}
+      : JobExecutor(kvstore, space), jobId_(jobId), adminClient_(adminClient), paras_(paras) {}
 
   virtual ~StorageJobExecutor() = default;
 
@@ -73,10 +74,6 @@ class StorageJobExecutor : public JobExecutor {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  void setSpaceId(GraphSpaceID spaceId) override {
-    space_ = spaceId;
-  }
-
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) override {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -103,7 +100,6 @@ class StorageJobExecutor : public JobExecutor {
   JobID jobId_{INT_MIN};
   TaskID taskId_{0};
   AdminClient* adminClient_{nullptr};
-  GraphSpaceID space_;
   std::vector<std::string> paras_;
   TargetHosts toHost_{TargetHosts::DEFAULT};
   volatile bool stopped_{false};

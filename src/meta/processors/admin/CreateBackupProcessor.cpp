@@ -83,7 +83,9 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   JobManager* jobMgr = JobManager::getInstance();
 
   // make sure there is no index job
-  auto result = jobMgr->checkIndexJobRunning();
+  std::unordered_set<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
+                                             cpp2::JobType::REBUILD_EDGE_INDEX};
+  auto result = jobMgr->checkTypeJobRunning(jobTypes);
   if (!nebula::ok(result)) {
     LOG(INFO) << "Get Index status failed, not allowed to create backup.";
     handleErrorCode(nebula::error(result));
@@ -145,7 +147,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     handleErrorCode(ret);
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
     }
     onFinished();
     return;
@@ -159,7 +161,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     handleErrorCode(nebula::error(sret));
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Cancel write blocking error";
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
     }
     onFinished();
     return;
@@ -170,6 +172,10 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   if (!nebula::ok(backupFiles)) {
     LOG(INFO) << "Failed backup meta";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_FAILED);
+    ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Cancel write blocking error:" << apache::thrift::util::enumNameSafe(ret);
+    }
     onFinished();
     return;
   }

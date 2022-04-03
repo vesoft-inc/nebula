@@ -122,6 +122,49 @@ class RocksCommonIter : public KVIterator {
   std::unique_ptr<rocksdb::Iterator> iter_;
 };
 
+/***************************************
+ *
+ * Implementation of WriteBatch
+ *
+ **************************************/
+class RocksWriteBatch : public WriteBatch {
+ private:
+  rocksdb::WriteBatch batch_;
+
+ public:
+  RocksWriteBatch() : batch_(FLAGS_rocksdb_batch_size) {}
+
+  virtual ~RocksWriteBatch() = default;
+
+  nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) override {
+    if (batch_.Put(toSlice(key), toSlice(value)).ok()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else {
+      return nebula::cpp2::ErrorCode::E_UNKNOWN;
+    }
+  }
+
+  nebula::cpp2::ErrorCode remove(folly::StringPiece key) override {
+    if (batch_.Delete(toSlice(key)).ok()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else {
+      return nebula::cpp2::ErrorCode::E_UNKNOWN;
+    }
+  }
+
+  // Remove all keys in the range [start, end)
+  nebula::cpp2::ErrorCode removeRange(folly::StringPiece start, folly::StringPiece end) override {
+    if (batch_.DeleteRange(toSlice(start), toSlice(end)).ok()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    } else {
+      return nebula::cpp2::ErrorCode::E_UNKNOWN;
+    }
+  }
+
+  rocksdb::WriteBatch* data() {
+    return &batch_;
+  }
+};
 /**
  * @brief An implementation of KVEngine based on Rocksdb
  *
@@ -348,13 +391,23 @@ class RocksEngine : public KVEngine {
   /*********************
    * Non-data operation
    ********************/
-
   /**
    * @brief Write the part key into rocksdb for persistance
    *
    * @param partId
+   * @param raftPeers partition raft peers, including peers created during balance which are not in
+   * the meta
    */
-  void addPart(PartitionID partId) override;
+  void addPart(PartitionID partId, const Peers& raftPeers = {}) override;
+
+  /**
+   * @brief Update part info. Could only update the persist peers info now.
+   *
+   * @param partId
+   * @param raftPeer 1. if raftPeer.status is kDeleted, delete this peer.
+   *                 2. if raftPeer.status is others, add or update this peer
+   */
+  void updatePart(PartitionID partId, const Peer& raftPeer) override;
 
   /**
    * @brief Remove the part key from rocksdb
@@ -364,11 +417,18 @@ class RocksEngine : public KVEngine {
   void removePart(PartitionID partId) override;
 
   /**
-   * @brief Return all partitions in rocksdb instance by scanning system part key
+   * @brief Return all partitions in rocksdb instance by scanning system part key.
    *
-   * @return std::vector<PartitionID> Partition ids
+   * @return std::vector<PartitionID>
    */
   std::vector<PartitionID> allParts() override;
+
+  /**
+   * @brief Retrun all the part->raft peers in rocksdb engine by scanning system part key.
+   *
+   * @return std::map<Partition, Peers>
+   */
+  std::map<PartitionID, Peers> allPartPeers() override;
 
   /**
    * @brief Return total partition numbers

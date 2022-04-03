@@ -51,12 +51,12 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
   return deserializeHostAddr(rawlog);
 }
 
-folly::Optional<std::string> compareAndSet(const std::string& log) {
+std::optional<std::string> compareAndSet(const std::string& log) {
   switch (log[0]) {
     case 'T':
       return log.substr(1);
     default:
-      return folly::none;
+      return std::nullopt;
   }
 }
 
@@ -166,7 +166,8 @@ void TestShard::onLeaderReady(TermID term) {
 }
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
-    std::unique_ptr<LogIterator> iter, bool) {
+    std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
+  UNUSED(wait);
   LogID lastId = kNoCommitLogId;
   TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
@@ -178,12 +179,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::TRANSFER_LEADER: {
           auto nLeader = decodeTransferLeader(log);
-          commitTransLeader(nLeader);
+          commitTransLeader(nLeader, needLock);
           break;
         }
         case CommandType::REMOVE_PEER: {
           auto peer = decodeRemovePeer(log);
-          commitRemovePeer(peer);
+          commitRemovePeer(peer, needLock);
           break;
         }
         case CommandType::ADD_PEER:
@@ -214,10 +215,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
   return {nebula::cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
 }
 
-std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::string>& data,
-                                                      LogID committedLogId,
-                                                      TermID committedLogTerm,
-                                                      bool finished) {
+std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> TestShard::commitSnapshot(
+    const std::vector<std::string>& data,
+    LogID committedLogId,
+    TermID committedLogTerm,
+    bool finished) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   int64_t count = 0;
   int64_t size = 0;
@@ -233,7 +235,7 @@ std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::str
     LOG(INFO) << idStr_ << "Commit the snapshot committedLogId " << committedLogId << ", term "
               << committedLogTerm;
   }
-  return std::make_pair(count, size);
+  return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
 }
 
 nebula::cpp2::ErrorCode TestShard::cleanup() {

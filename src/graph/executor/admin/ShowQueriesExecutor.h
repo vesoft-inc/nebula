@@ -1,7 +1,6 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_ADMIN_SHOWQUERIESEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_SHOWQUERIESEXECUTOR_H_

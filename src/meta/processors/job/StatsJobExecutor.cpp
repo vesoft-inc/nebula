@@ -13,8 +13,7 @@ namespace nebula {
 namespace meta {
 
 bool StatsJobExecutor::check() {
-  // Only one parameter, the current space name
-  return paras_.size() == 1;
+  return paras_.empty();
 }
 
 nebula::cpp2::ErrorCode StatsJobExecutor::save(const std::string& key, const std::string& val) {
@@ -42,13 +41,11 @@ nebula::cpp2::ErrorCode StatsJobExecutor::doRemove(const std::string& key) {
 }
 
 nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
-  std::string spaceName = paras_.back();
-  auto spaceRet = getSpaceIdFromName(spaceName);
-  if (!nebula::ok(spaceRet)) {
-    LOG(INFO) << "Can't find the space: " << spaceName;
-    return nebula::error(spaceRet);
+  auto spaceRet = spaceExist();
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Can't find the space, spaceId " << space_;
+    return spaceRet;
   }
-  space_ = nebula::value(spaceRet);
 
   // Set the status of the stats job to running
   cpp2::StatsItem statsItem;
@@ -63,13 +60,8 @@ folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::STATS,
-                jobId_,
-                taskId_++,
-                space_,
-                std::move(address),
-                {},
-                std::move(parts))
+      ->addTask(
+          cpp2::JobType::STATS, jobId_, taskId_++, space_, std::move(address), {}, std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
         CHECK(!t.hasException());
         auto status = std::move(t).value();
@@ -149,11 +141,9 @@ nebula::cpp2::ErrorCode StatsJobExecutor::saveSpecialTaskStatus(const cpp2::Repo
 }
 
 /**
- * @brief
- *      if two stats job run at the same time.
- *      (this may happens if leader changed)
- *      they will write to the same kv data
- *      so separate the partial result by job
+ * @brief If two stats job run at the same time.
+ * This may happens if leader changed. They will write to the same kv data,
+ * so separate the partial result by job.
  * @return std::string
  */
 std::string StatsJobExecutor::toTempKey(int32_t jobId) {

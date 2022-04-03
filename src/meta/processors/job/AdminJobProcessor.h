@@ -32,6 +32,7 @@ class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
  private:
   /**
    * @brief Check whether the parameters are legal, then construct the job and join the queue.
+   * All jobs here are the space level, the last parameter is no longer spaceName.
    *
    * @param req
    * @param result
@@ -42,6 +43,7 @@ class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
  protected:
   AdminClient* adminClient_{nullptr};
   JobManager* jobMgr_{nullptr};
+  GraphSpaceID spaceId_;
 };
 
 }  // namespace meta

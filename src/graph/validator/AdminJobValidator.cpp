@@ -11,21 +11,24 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
-  if (sentence_->getCmd() == meta::cpp2::AdminCmd::DATA_BALANCE ||
-      sentence_->getCmd() == meta::cpp2::AdminCmd::ZONE_BALANCE) {
-    return Status::SemanticError("Data balance not support");
+  if (sentence_->getJobType() == meta::cpp2::JobType::DATA_BALANCE ||
+      sentence_->getJobType() == meta::cpp2::JobType::ZONE_BALANCE) {
+    if (!FLAGS_enable_experimental_feature) {
+      return Status::SemanticError("Data balance not support");
+    }
   }
-  if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
-    auto cmd = sentence_->getCmd();
+
+  // Note: The last parameter of paras is no longer spacename
+  if (sentence_->getOp() == meta::cpp2::JobOp::ADD) {
+    auto jobType = sentence_->getJobType();
     if (requireSpace()) {
       const auto &spaceInfo = vctx_->whichSpace();
       auto spaceId = spaceInfo.id;
       const auto &spaceName = spaceInfo.name;
-      sentence_->addPara(spaceName);
 
-      if (cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX ||
-          cmd == meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX) {
-        auto ret = cmd == meta::cpp2::AdminCmd::REBUILD_TAG_INDEX
+      if (jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX ||
+          jobType == meta::cpp2::JobType::REBUILD_EDGE_INDEX) {
+        auto ret = jobType == meta::cpp2::JobType::REBUILD_TAG_INDEX
                        ? qctx()->indexMng()->getTagIndexes(spaceId)
                        : qctx()->indexMng()->getEdgeIndexes(spaceId);
         if (!ret.ok()) {
@@ -35,10 +38,10 @@ Status AdminJobValidator::validateImpl() {
         }
         auto indexes = std::move(ret).value();
         const auto &paras = sentence_->getParas();
-        if (paras.size() == 1 && indexes.empty()) {
+        if (paras.empty() && indexes.empty()) {
           return Status::SemanticError("Space `%s' without indexes", spaceName.c_str());
         }
-        for (auto i = 0u; i < paras.size() - 1; i++) {
+        for (auto i = 0u; i < paras.size(); i++) {
           const auto &indexName = paras[i];
           auto it = std::find_if(indexes.begin(),
                                  indexes.end(),
@@ -52,15 +55,13 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
-  } else {
-    sentence_->addPara(qctx()->rctx()->session()->space().name);
   }
   return Status::OK();
 }
 
 Status AdminJobValidator::toPlan() {
   auto *doNode = SubmitJob::make(
-      qctx_, nullptr, sentence_->getOp(), sentence_->getCmd(), sentence_->getParas());
+      qctx_, nullptr, sentence_->getOp(), sentence_->getJobType(), sentence_->getParas());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

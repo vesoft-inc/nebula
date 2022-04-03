@@ -22,57 +22,9 @@ namespace kvstore {
 using fs::FileType;
 using fs::FileUtils;
 
-namespace {
-
 /***************************************
  *
- * Implementation of WriteBatch
- *
- **************************************/
-class RocksWriteBatch : public WriteBatch {
- private:
-  rocksdb::WriteBatch batch_;
-
- public:
-  RocksWriteBatch() : batch_(FLAGS_rocksdb_batch_size) {}
-
-  virtual ~RocksWriteBatch() = default;
-
-  nebula::cpp2::ErrorCode put(folly::StringPiece key, folly::StringPiece value) override {
-    if (batch_.Put(toSlice(key), toSlice(value)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  nebula::cpp2::ErrorCode remove(folly::StringPiece key) override {
-    if (batch_.Delete(toSlice(key)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  // Remove all keys in the range [start, end)
-  nebula::cpp2::ErrorCode removeRange(folly::StringPiece start, folly::StringPiece end) override {
-    if (batch_.DeleteRange(toSlice(start), toSlice(end)).ok()) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
-    } else {
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
-  }
-
-  rocksdb::WriteBatch* data() {
-    return &batch_;
-  }
-};
-
-}  // Anonymous namespace
-
-/***************************************
- *
- * Implementation of WriteBatch
+ * Implementation of RocksEngine
  *
  **************************************/
 RocksEngine::RocksEngine(GraphSpaceID spaceId,
@@ -368,11 +320,32 @@ std::string RocksEngine::partKey(PartitionID partId) {
   return NebulaKeyUtils::systemPartKey(partId);
 }
 
-void RocksEngine::addPart(PartitionID partId) {
-  auto ret = put(partKey(partId), "");
+void RocksEngine::addPart(PartitionID partId, const Peers& raftPeers) {
+  auto ret = put(partKey(partId), raftPeers.toString());
   if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
     partsNum_++;
     CHECK_GE(partsNum_, 0);
+  }
+}
+
+void RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
+  std::string val;
+  auto ret = get(partKey(partId), &val);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Update part failed when get, partId=" << partId;
+    return;
+  }
+
+  auto peers = Peers::fromString(val);
+  if (raftPeer.status == Peer::Status::kDeleted) {
+    peers.remove(raftPeer.addr);
+  } else {
+    peers.addOrUpdate(raftPeer);
+  }
+
+  ret = put(partKey(partId), peers.toString());
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Update part failed when put back, partId=" << partId;
   }
 }
 
@@ -400,19 +373,42 @@ std::vector<PartitionID> RocksEngine::allParts() {
 
   while (iter->valid()) {
     auto key = iter->key();
-    CHECK_EQ(key.size(), sizeof(PartitionID) + sizeof(NebulaSystemKeyType));
-    PartitionID partId = *reinterpret_cast<const PartitionID*>(key.data());
     if (!NebulaKeyUtils::isSystemPart(key)) {
-      VLOG(3) << "Skip: " << std::bitset<32>(partId);
       iter->next();
       continue;
     }
 
+    PartitionID partId = *reinterpret_cast<const PartitionID*>(key.data());
     partId = partId >> 8;
     parts.emplace_back(partId);
     iter->next();
   }
   return parts;
+}
+
+std::map<PartitionID, Peers> RocksEngine::allPartPeers() {
+  std::unique_ptr<KVIterator> iter;
+  std::map<PartitionID, Peers> partRaftPeers;
+  static const std::string prefixStr = NebulaKeyUtils::systemPrefix();
+  auto retCode = this->prefix(prefixStr, &iter);
+  if (nebula::cpp2::ErrorCode::SUCCEEDED != retCode) {
+    return partRaftPeers;
+  }
+
+  while (iter->valid()) {
+    auto key = iter->key();
+    if (!NebulaKeyUtils::isSystemPart(key)) {
+      iter->next();
+      continue;
+    }
+
+    PartitionID partId = *reinterpret_cast<const PartitionID*>(key.data());
+    auto raftPeers = Peers::fromString(iter->val().toString());
+    partId = partId >> 8;
+    partRaftPeers.emplace(partId, raftPeers);
+    iter->next();
+  }
+  return partRaftPeers;
 }
 
 int32_t RocksEngine::totalPartsNum() {

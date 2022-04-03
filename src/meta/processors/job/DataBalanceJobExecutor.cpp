@@ -7,9 +7,10 @@
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 
+#include <memory>
+
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
-#include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -18,6 +19,10 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
+      if (status == Status::Balanced()) {
+        executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+        return Status::OK();
+      }
       return status;
     }
   }
@@ -175,7 +180,7 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
   if (empty) {
     return Status::Balanced();
   }
-  plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
+  plan_ = std::make_unique<BalancePlan>(jobDescription_, kvstore_, adminClient_);
   std::for_each(existTasks.begin(),
                 existTasks.end(),
                 [this](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
@@ -195,18 +200,18 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::stop() {
 }
 
 nebula::cpp2::ErrorCode DataBalanceJobExecutor::prepare() {
-  auto spaceRet = getSpaceIdFromName(paras_.back());
-  if (!nebula::ok(spaceRet)) {
-    LOG(INFO) << "Can't find the space: " << paras_.back();
-    return nebula::error(spaceRet);
+  auto spaceRet = spaceExist();
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Can't find the space, spaceId " << space_;
+    return spaceRet;
   }
-  GraphSpaceID spaceId = nebula::value(spaceRet);
-  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(spaceId, kvstore_);
+
+  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(space_, kvstore_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }
-  lostHosts_.reserve(paras_.size() - 1);
-  for (size_t i = 0; i < paras_.size() - 1; i++) {
+  lostHosts_.reserve(paras_.size());
+  for (size_t i = 0; i < paras_.size(); i++) {
     lostHosts_.emplace_back(HostAddr::fromString(paras_[i]));
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;

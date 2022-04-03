@@ -1,14 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/DedupExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
-
 namespace nebula {
 namespace graph {
 folly::Future<Status> DedupExecutor::execute() {
@@ -23,9 +19,7 @@ folly::Future<Status> DedupExecutor::execute() {
   }
 
   if (UNLIKELY(iter->isGetNeighborsIter() || iter->isDefaultIter())) {
-    auto e = Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
-    LOG(ERROR) << e;
-    return e;
+    return Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
   }
   std::unordered_set<const Row*> unique;
   unique.reserve(iter->size());

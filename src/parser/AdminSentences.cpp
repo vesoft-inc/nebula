@@ -60,17 +60,17 @@ std::string ShowCollationSentence::toString() const {
 std::string SpaceOptItem::toString() const {
   switch (optType_) {
     case OptionType::PARTITION_NUM:
-      return folly::stringPrintf("partition_num = %ld", boost::get<int64_t>(optValue_));
+      return folly::stringPrintf("partition_num = %ld", std::get<int64_t>(optValue_));
     case OptionType::REPLICA_FACTOR:
-      return folly::stringPrintf("replica_factor = %ld", boost::get<int64_t>(optValue_));
+      return folly::stringPrintf("replica_factor = %ld", std::get<int64_t>(optValue_));
     case OptionType::VID_TYPE: {
-      auto &typeDef = boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+      auto &typeDef = std::get<meta::cpp2::ColumnTypeDef>(optValue_);
       return folly::stringPrintf("vid_type = %s", graph::SchemaUtil::typeToString(typeDef).c_str());
     }
     case OptionType::CHARSET:
-      return folly::stringPrintf("charset = %s", boost::get<std::string>(optValue_).c_str());
+      return folly::stringPrintf("charset = %s", std::get<std::string>(optValue_).c_str());
     case OptionType::COLLATE:
-      return folly::stringPrintf("collate = %s", boost::get<std::string>(optValue_).c_str());
+      return folly::stringPrintf("collate = %s", std::get<std::string>(optValue_).c_str());
     case OptionType::ATOMIC_EDGE:
       return folly::stringPrintf("atomic_edge = %s", getAtomicEdge() ? "true" : "false");
     case OptionType::GROUP_NAME:
@@ -243,26 +243,25 @@ std::string ShowListenerSentence::toString() const {
 
 std::string AdminJobSentence::toString() const {
   switch (op_) {
-    case meta::cpp2::AdminJobOp::ADD: {
-      switch (cmd_) {
-        case meta::cpp2::AdminCmd::COMPACT:
+    case meta::cpp2::JobOp::ADD: {
+      switch (type_) {
+        case meta::cpp2::JobType::COMPACT:
           return "SUBMIT JOB COMPACT";
-        case meta::cpp2::AdminCmd::FLUSH:
+        case meta::cpp2::JobType::FLUSH:
           return "SUBMIT JOB FLUSH";
-        case meta::cpp2::AdminCmd::REBUILD_TAG_INDEX:
+        case meta::cpp2::JobType::REBUILD_TAG_INDEX:
           return folly::stringPrintf("REBUILD TAG INDEX %s", folly::join(",", paras_).c_str());
-        case meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX:
+        case meta::cpp2::JobType::REBUILD_EDGE_INDEX:
           return folly::stringPrintf("REBUILD EDGE INDEX %s", folly::join(",", paras_).c_str());
-        case meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX:
+        case meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX:
           return "REBUILD FULLTEXT INDEX";
-        case meta::cpp2::AdminCmd::STATS:
+        case meta::cpp2::JobType::STATS:
           return "SUBMIT JOB STATS";
-        case meta::cpp2::AdminCmd::DOWNLOAD:
-          return paras_.empty() ? "DOWNLOAD HDFS "
-                                : folly::stringPrintf("DOWNLOAD HDFS %s", paras_[0].c_str());
-        case meta::cpp2::AdminCmd::INGEST:
-          return "INGEST";
-        case meta::cpp2::AdminCmd::DATA_BALANCE:
+        case meta::cpp2::JobType::DOWNLOAD:
+          return folly::stringPrintf("SUBMIT JOB DOWNLOAD HDFS \"%s\"", paras_[0].c_str());
+        case meta::cpp2::JobType::INGEST:
+          return "SUBMIT JOB INGEST";
+        case meta::cpp2::JobType::DATA_BALANCE:
           if (paras_.empty()) {
             return "SUBMIT JOB BALANCE IN ZONE";
           } else {
@@ -273,7 +272,7 @@ std::string AdminJobSentence::toString() const {
             }
             return str;
           }
-        case meta::cpp2::AdminCmd::ZONE_BALANCE:
+        case meta::cpp2::JobType::ZONE_BALANCE:
           if (paras_.empty()) {
             return "SUBMIT JOB BALANCE ACROSS ZONE";
           } else {
@@ -284,22 +283,22 @@ std::string AdminJobSentence::toString() const {
             }
             return str;
           }
-        case meta::cpp2::AdminCmd::LEADER_BALANCE:
+        case meta::cpp2::JobType::LEADER_BALANCE:
           return "SUBMIT JOB BALANCE LEADER";
-        case meta::cpp2::AdminCmd::UNKNOWN:
-          return folly::stringPrintf("Unsupported AdminCmd: %s",
-                                     apache::thrift::util::enumNameSafe(cmd_).c_str());
+        case meta::cpp2::JobType::UNKNOWN:
+          return folly::stringPrintf("Unsupported JobType: %s",
+                                     apache::thrift::util::enumNameSafe(type_).c_str());
       }
     }
-    case meta::cpp2::AdminJobOp::SHOW_All:
+    case meta::cpp2::JobOp::SHOW_All:
       return "SHOW JOBS";
-    case meta::cpp2::AdminJobOp::SHOW:
+    case meta::cpp2::JobOp::SHOW:
       CHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("SHOW JOB %s", paras_[0].c_str());
-    case meta::cpp2::AdminJobOp::STOP:
+    case meta::cpp2::JobOp::STOP:
       CHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("STOP JOB %s", paras_[0].c_str());
-    case meta::cpp2::AdminJobOp::RECOVER:
+    case meta::cpp2::JobOp::RECOVER:
       if (paras_.empty()) {
         return "RECOVER JOB";
       } else {
@@ -313,12 +312,12 @@ std::string AdminJobSentence::toString() const {
   LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
 }
 
-meta::cpp2::AdminJobOp AdminJobSentence::getOp() const {
+meta::cpp2::JobOp AdminJobSentence::getOp() const {
   return op_;
 }
 
-meta::cpp2::AdminCmd AdminJobSentence::getCmd() const {
-  return cmd_;
+meta::cpp2::JobType AdminJobSentence::getJobType() const {
+  return type_;
 }
 
 const std::vector<std::string> &AdminJobSentence::getParas() const {

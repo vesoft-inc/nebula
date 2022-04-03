@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "common/expression/ExprVisitor.h"
+#include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
 
 namespace nebula {
@@ -25,7 +26,7 @@ namespace graph {
 //    other vid make it eval to TRUE!
 class VidExtractVisitor final : public ExprVisitor {
  public:
-  VidExtractVisitor() = default;
+  explicit VidExtractVisitor(const QueryContext *qctx = nullptr) : qctx_(qctx) {}
 
   struct VidPattern {
     enum class Special {
@@ -103,11 +104,14 @@ class VidExtractVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match path pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
  private:
   void visitBinaryExpr(BinaryExpression *expr);
 
   VidPattern vidPattern_{};
+  const QueryContext *qctx_{nullptr};
 };
 
 std::ostream &operator<<(std::ostream &os, const VidExtractVisitor::VidPattern &vp);

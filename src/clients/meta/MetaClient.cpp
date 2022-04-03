@@ -28,8 +28,6 @@
 #include "version/Version.h"
 #include "webservice/Common.h"
 
-DECLARE_int32(ws_meta_http_port);
-
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
@@ -674,106 +672,105 @@ void MetaClient::getResponse(Request req,
     folly::RWSpinLock::ReadHolder holder(&hostLock_);
     host = toLeader ? leader_ : active_;
   }
-  folly::via(
-      evb,
-      [host,
-       evb,
-       req = std::move(req),
-       remoteFunc = std::move(remoteFunc),
-       respGen = std::move(respGen),
-       pro = std::move(pro),
-       toLeader,
-       retry,
-       retryLimit,
-       this]() mutable {
-        auto client = clientsMan_->client(host, evb, false, FLAGS_meta_client_timeout_ms);
-        VLOG(1) << "Send request to meta " << host;
-        remoteFunc(client, req)
-            .via(evb)
-            .then([host,
-                   req = std::move(req),
-                   remoteFunc = std::move(remoteFunc),
-                   respGen = std::move(respGen),
-                   pro = std::move(pro),
-                   toLeader,
-                   retry,
-                   retryLimit,
-                   evb,
-                   this](folly::Try<RpcResponse>&& t) mutable {
-              // exception occurred during RPC
-              if (t.hasException()) {
-                stats::StatsManager::addValue(kNumRpcSentToMetadFailed);
-                if (toLeader) {
-                  updateLeader();
-                } else {
-                  updateActive();
-                }
-                if (retry < retryLimit) {
-                  evb->runAfterDelay(
-                      [req = std::move(req),
-                       remoteFunc = std::move(remoteFunc),
-                       respGen = std::move(respGen),
-                       pro = std::move(pro),
-                       toLeader,
-                       retry,
-                       retryLimit,
-                       this]() mutable {
-                        getResponse(std::move(req),
-                                    std::move(remoteFunc),
-                                    std::move(respGen),
-                                    std::move(pro),
-                                    toLeader,
-                                    retry + 1,
-                                    retryLimit);
-                      },
-                      FLAGS_meta_client_retry_interval_secs * 1000);
-                  return;
-                } else {
-                  LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
-                  LOG(ERROR) << "RpcResponse exception: " << t.exception().what().c_str();
-                  pro.setValue(
-                      Status::Error("RPC failure in MetaClient: %s", t.exception().what().c_str()));
-                }
-                return;
-              }
+  folly::via(evb,
+             [host,
+              evb,
+              req = std::move(req),
+              remoteFunc = std::move(remoteFunc),
+              respGen = std::move(respGen),
+              pro = std::move(pro),
+              toLeader,
+              retry,
+              retryLimit,
+              this]() mutable {
+               auto client = clientsMan_->client(host, evb, false, FLAGS_meta_client_timeout_ms);
+               VLOG(1) << "Send request to meta " << host;
+               remoteFunc(client, req)
+                   .via(evb)
+                   .then([host,
+                          req = std::move(req),
+                          remoteFunc = std::move(remoteFunc),
+                          respGen = std::move(respGen),
+                          pro = std::move(pro),
+                          toLeader,
+                          retry,
+                          retryLimit,
+                          evb,
+                          this](folly::Try<RpcResponse>&& t) mutable {
+                     // exception occurred during RPC
+                     if (t.hasException()) {
+                       stats::StatsManager::addValue(kNumRpcSentToMetadFailed);
+                       if (toLeader) {
+                         updateLeader();
+                       } else {
+                         updateActive();
+                       }
+                       if (retry < retryLimit) {
+                         evb->runAfterDelay(
+                             [req = std::move(req),
+                              remoteFunc = std::move(remoteFunc),
+                              respGen = std::move(respGen),
+                              pro = std::move(pro),
+                              toLeader,
+                              retry,
+                              retryLimit,
+                              this]() mutable {
+                               getResponse(std::move(req),
+                                           std::move(remoteFunc),
+                                           std::move(respGen),
+                                           std::move(pro),
+                                           toLeader,
+                                           retry + 1,
+                                           retryLimit);
+                             },
+                             FLAGS_meta_client_retry_interval_secs * 1000);
+                         return;
+                       } else {
+                         LOG(ERROR) << "Send request to " << host << ", exceed retry limit";
+                         LOG(ERROR) << "RpcResponse exception: " << t.exception().what().c_str();
+                         pro.setValue(Status::Error("RPC failure in MetaClient: %s",
+                                                    t.exception().what().c_str()));
+                       }
+                       return;
+                     }
 
-              auto&& resp = t.value();
-              auto code = resp.get_code();
-              if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-                // succeeded
-                pro.setValue(respGen(std::move(resp)));
-                return;
-              } else if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
-                         code == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
-                updateLeader(resp.get_leader());
-                if (retry < retryLimit) {
-                  evb->runAfterDelay(
-                      [req = std::move(req),
-                       remoteFunc = std::move(remoteFunc),
-                       respGen = std::move(respGen),
-                       pro = std::move(pro),
-                       toLeader,
-                       retry,
-                       retryLimit,
-                       this]() mutable {
-                        getResponse(std::move(req),
-                                    std::move(remoteFunc),
-                                    std::move(respGen),
-                                    std::move(pro),
-                                    toLeader,
-                                    retry + 1,
-                                    retryLimit);
-                      },
-                      FLAGS_meta_client_retry_interval_secs * 1000);
-                  return;
-                }
-              } else if (code == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
-                pro.setValue(respGen(std::move(resp)));
-                return;
-              }
-              pro.setValue(this->handleResponse(resp));
-            });  // then
-      });        // via
+                     auto&& resp = t.value();
+                     auto code = resp.get_code();
+                     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+                       // succeeded
+                       pro.setValue(respGen(std::move(resp)));
+                       return;
+                     } else if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
+                                code == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
+                       updateLeader(resp.get_leader());
+                       if (retry < retryLimit) {
+                         evb->runAfterDelay(
+                             [req = std::move(req),
+                              remoteFunc = std::move(remoteFunc),
+                              respGen = std::move(respGen),
+                              pro = std::move(pro),
+                              toLeader,
+                              retry,
+                              retryLimit,
+                              this]() mutable {
+                               getResponse(std::move(req),
+                                           std::move(remoteFunc),
+                                           std::move(respGen),
+                                           std::move(pro),
+                                           toLeader,
+                                           retry + 1,
+                                           retryLimit);
+                             },
+                             FLAGS_meta_client_retry_interval_secs * 1000);
+                         return;
+                       }
+                     } else if (code == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
+                       pro.setValue(respGen(std::move(resp)));
+                       return;
+                     }
+                     pro.setValue(this->handleResponse(resp));
+                   });  // then
+             });        // via
 }
 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
@@ -917,7 +914,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
-      return Status::Error("Job not in chosen space!");
+      return Status::Error("Job not existed in chosen space!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -1150,10 +1147,11 @@ PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
 }
 
 folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
-    cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras) {
+    GraphSpaceID spaceId, cpp2::JobOp op, cpp2::JobType type, std::vector<std::string> paras) {
   cpp2::AdminJobReq req;
+  req.space_id_ref() = spaceId;
   req.op_ref() = op;
-  req.cmd_ref() = cmd;
+  req.type_ref() = type;
   req.paras_ref() = std::move(paras);
   folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
   auto future = promise.getFuture();
@@ -2484,11 +2482,6 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     }
   }
 
-  // TTL for clientAddrMap
-  // If multiple connections are created but do not authenticate, the clientAddrMap_ will keep
-  // growing. This is to clear the clientAddrMap_ regularly.
-  clearClientAddrMap();
-
   // info used in the agent, only set once
   // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
   // reported every time it changes
@@ -3236,12 +3229,14 @@ folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID space
 }
 
 folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
+    GraphSpaceID spaceId,
     int32_t jobId,
     int32_t taskId,
     nebula::cpp2::ErrorCode taskErrCode,
     cpp2::StatsItem* statisticItem) {
   cpp2::ReportTaskReq req;
   req.code_ref() = taskErrCode;
+  req.space_id_ref() = spaceId;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
   if (statisticItem) {
@@ -3533,46 +3528,19 @@ folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
-                                                   int32_t hdfsPort,
-                                                   const std::string& hdfsPath,
-                                                   GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 hdfsHost.c_str(),
-                                 hdfsPort,
-                                 hdfsPath.c_str(),
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile dispatch successfully") {
-      LOG(INFO) << "Download Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Download Failed: " << result.value();
-      return false;
-    }
-  };
-  return folly::async(func);
-}
+folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {
+  auto req = cpp2::GetSegmentIdReq();
+  req.length_ref() = length;
 
-folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/ingest-dispatch?space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile ingest successfully") {
-      LOG(INFO) << "Ingest Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Ingest Failed";
-      return false;
-    }
-  };
-  return folly::async(func);
+  folly::Promise<StatusOr<int64_t>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getSegmentId(request); },
+      [](cpp2::GetSegmentIdResp&& resp) -> int64_t { return std::move(resp).get_segment_id(); },
+      std::move(promise),
+      true);
+  return future;
 }
 
 bool MetaClient::loadSessions() {
@@ -3641,20 +3609,5 @@ Status MetaClient::verifyVersion() {
   return Status::OK();
 }
 
-void MetaClient::clearClientAddrMap() {
-  if (clientAddrMap_.size() == 0) {
-    return;
-  }
-
-  auto curTimestamp = time::WallClock::fastNowInSec();
-  for (auto it = clientAddrMap_.cbegin(); it != clientAddrMap_.cend();) {
-    // The clientAddr is expired
-    if (it->second < curTimestamp) {
-      it = clientAddrMap_.erase(it);
-    } else {
-      ++it;
-    }
-  }
-}
 }  // namespace meta
 }  // namespace nebula

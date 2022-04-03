@@ -51,7 +51,7 @@ jobs:
         id: tagname
       - id: docker
         run: |
-          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d'.')
+          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d".")
           tag=""
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
             tag="latest"

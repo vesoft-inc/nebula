@@ -156,7 +156,7 @@ class ShowCollationSentence final : public Sentence {
 
 class SpaceOptItem final {
  public:
-  using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
+  using Value = std::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
 
   enum OptionType : uint8_t {
     PARTITION_NUM,
@@ -189,27 +189,27 @@ class SpaceOptItem final {
   }
 
   int64_t asInt() const {
-    return boost::get<int64_t>(optValue_);
+    return std::get<int64_t>(optValue_);
   }
 
   const std::string& asString() const {
-    return boost::get<std::string>(optValue_);
+    return std::get<std::string>(optValue_);
   }
 
   const meta::cpp2::ColumnTypeDef& asTypeDef() const {
-    return boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+    return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
   bool isInt() const {
-    return optValue_.which() == 0;
+    return optValue_.index() == 0;
   }
 
   bool isString() const {
-    return optValue_.which() == 1;
+    return optValue_.index() == 1;
   }
 
   bool isTypeDef() const {
-    return optValue_.which() == 2;
+    return optValue_.index() == 2;
   }
 
   int64_t getPartitionNum() const {
@@ -255,15 +255,6 @@ class SpaceOptItem final {
       return asString();
     } else {
       LOG(ERROR) << "collate value illegal.";
-      return "";
-    }
-  }
-
-  std::string getGroupName() const {
-    if (isString()) {
-      return asString();
-    } else {
-      LOG(ERROR) << "group name value illegal.";
       return "";
     }
   }
@@ -659,10 +650,10 @@ class ShowListenerSentence final : public Sentence {
 
 class AdminJobSentence final : public Sentence {
  public:
-  explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
-                            meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
-      : op_(op), cmd_(cmd) {
-    if (op == meta::cpp2::AdminJobOp::SHOW || op == meta::cpp2::AdminJobOp::SHOW_All) {
+  explicit AdminJobSentence(meta::cpp2::JobOp op,
+                            meta::cpp2::JobType type = meta::cpp2::JobType::UNKNOWN)
+      : op_(op), type_(type) {
+    if (op == meta::cpp2::JobOp::SHOW || op == meta::cpp2::JobOp::SHOW_All) {
       kind_ = Kind::kAdminShowJobs;
     } else {
       kind_ = Kind::kAdminJob;
@@ -672,13 +663,13 @@ class AdminJobSentence final : public Sentence {
   void addPara(const std::string& para);
   void addPara(const NameLabelList& NameLabelList);
   std::string toString() const override;
-  meta::cpp2::AdminJobOp getOp() const;
-  meta::cpp2::AdminCmd getCmd() const;
+  meta::cpp2::JobOp getOp() const;
+  meta::cpp2::JobType getJobType() const;
   const std::vector<std::string>& getParas() const;
 
  private:
-  meta::cpp2::AdminJobOp op_;
-  meta::cpp2::AdminCmd cmd_;
+  meta::cpp2::JobOp op_;
+  meta::cpp2::JobType type_;
   std::vector<std::string> paras_;
 };
 

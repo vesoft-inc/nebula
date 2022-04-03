@@ -9,6 +9,7 @@
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "common/utils/Utils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -210,7 +211,7 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
 }
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
-    std::unique_ptr<LogIterator> iter, bool wait) {
+    std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   LogID lastId = kNoCommitLogId;
@@ -308,12 +309,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        commitTransLeader(newLeader);
+        commitTransLeader(newLeader, needLock);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        commitRemovePeer(peer);
+        commitRemovePeer(peer, needLock);
         break;
       }
       default: {
@@ -342,10 +343,11 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
   }
 }
 
-std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
-                                                 LogID committedLogId,
-                                                 TermID committedLogTerm,
-                                                 bool finished) {
+std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Part::commitSnapshot(
+    const std::vector<std::string>& rows,
+    LogID committedLogId,
+    TermID committedLogTerm,
+    bool finished) {
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;
@@ -354,25 +356,26 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
     count++;
     size += row.size();
     auto kv = decodeKV(row);
-    if (nebula::cpp2::ErrorCode::SUCCEEDED != batch->put(kv.first, kv.second)) {
+    auto code = batch->put(kv.first, kv.second);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(3) << idStr_ << "Failed to call WriteBatch::put()";
-      return std::make_pair(0, 0);
+      return {code, kNoSnapshotCount, kNoSnapshotSize};
     }
   }
   if (finished) {
-    auto retCode = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
-    if (nebula::cpp2::ErrorCode::SUCCEEDED != retCode) {
+    auto code = putCommitMsg(batch.get(), committedLogId, committedLogTerm);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(3) << idStr_ << "Put commit id into batch failed";
-      return std::make_pair(0, 0);
+      return {code, kNoSnapshotCount, kNoSnapshotSize};
     }
   }
   // For snapshot, we open the rocksdb's wal to avoid loss data if crash.
   auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return std::make_pair(0, 0);
+    return {code, kNoSnapshotCount, kNoSnapshotSize};
   }
-  return std::make_pair(count, size);
+  return {code, count, size};
 }
 
 nebula::cpp2::ErrorCode Part::putCommitMsg(WriteBatch* batch,
@@ -392,7 +395,9 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
       case OP_ADD_LEARNER: {
         auto learner = decodeHost(OP_ADD_LEARNER, log);
         LOG(INFO) << idStr_ << "preprocess add learner " << learner;
-        addLearner(learner);
+        addLearner(learner, false);
+        // persist the part learner info in case of storaged restarting
+        engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
         break;
       }
       case OP_TRANS_LEADER: {
@@ -405,12 +410,15 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
         auto peer = decodeHost(OP_ADD_PEER, log);
         LOG(INFO) << idStr_ << "preprocess add peer " << peer;
         addPeer(peer);
+        engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
         LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
         preProcessRemovePeer(peer);
+        // remove peer in the persist info
+        engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
         break;
       }
       default: {
@@ -425,9 +433,19 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
+
+  const auto& kvPre = NebulaKeyUtils::kvPrefix(partId_);
+  auto ret =
+      batch->removeRange(NebulaKeyUtils::firstKey(kvPre, 128), NebulaKeyUtils::lastKey(kvPre, 128));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup kvdata, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
+
   const auto& tagPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
-                                NebulaKeyUtils::lastKey(tagPre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
+                           NebulaKeyUtils::lastKey(tagPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup tag, error "
             << apache::thrift::util::enumNameSafe(ret);

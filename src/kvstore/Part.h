@@ -252,11 +252,15 @@ class Part : public raftex::RaftPart {
    *
    * @param iter Wal log iterator
    * @param wait Whether we should until all data applied to state machine
+   * @param needLock Whether need to acquire raftLock_ before operations. When the raftLock_ has
+   * been acquired before commitLogs is invoked, needLock is false (e.g. commitLogs by follower). If
+   * the lock has not been acquired, needLock is true (e.g. commitLogs by leader).
    * @return std::tuple<nebula::cpp2::ErrorCode, LogID, TermID>
    *
    */
   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
-                                                                bool wait) override;
+                                                                bool wait,
+                                                                bool needLock) override;
 
   /**
    * @brief Some special log need to be pre-processed when appending to wal
@@ -281,12 +285,14 @@ class Part : public raftex::RaftPart {
    * @param committedLogId Commit log id of snapshot
    * @param committedLogTerm Commit log term of snapshot
    * @param finished Whether spapshot is finished
-   * @return std::pair<int64_t, int64_t> Return count and size of in the data
+   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
+   * succeed, else return {errorcode, -1, -1}
    */
-  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                             LogID committedLogId,
-                                             TermID committedLogTerm,
-                                             bool finished) override;
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
   /**
    * @brief Encode the commit log id and commit log term to write batch

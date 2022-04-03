@@ -1,21 +1,34 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 #define EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 
-#include <vector>
-
-#include "clients/storage/StorageClient.h"
-#include "common/base/StatusOr.h"
-#include "common/datatypes/Value.h"
-#include "common/datatypes/Vertex.h"
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
-
+// only used in match scenarios
+// invoke the getNeighbors interface, according to the number of times specified by the user,
+// and assemble the result into paths
+//
+//  The definition of path is : array of vertex and edges
+//  Eg a->b->c. path is [Vertex(a), [Edge(a->b), Vertex(b), Edge(b->c), Vertex(c)]]
+//  the purpose is to extract the path by pathBuildExpression
+// `resDs_` : keep result dataSet
+//
+// Member:
+// `paths_` : hash table array, paths_[i] means that the length that paths in the i-th array
+//  element is i
+//    KEY in the hash table   : the vid of the destination Vertex
+//    VALUE in the hash table : collection of paths that destionation vid is `KEY`
+//
+// Functions:
+// `buildRequestDataSet` : constructs the input DataSet for getNeightbors
+// `buildInterimPath` : construct collection of paths after expanded and put it into the paths_
+// `getNeighbors` : invoke the getNeightbors interface
+// `releasePrevPaths` : deleted The path whose length does not meet the user-defined length
+// `hasSameEdge` : check if there are duplicate edges in path
 namespace nebula {
 namespace graph {
 

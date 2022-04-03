@@ -75,6 +75,7 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 2],
             ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
             ['GRAPH', 'disable_octal_escape_char', 'bool', 'MUTABLE', False],
+            ['GRAPH', 'max_sessions_per_ip_per_user', 'int', 'MUTABLE', 300],
         ]
         self.check_out_of_order_result(resp, expected_result)
 

@@ -8,18 +8,19 @@
 namespace nebula {
 namespace meta {
 
-CompactJobExecutor::CompactJobExecutor(JobID jobId,
+CompactJobExecutor::CompactJobExecutor(GraphSpaceID space,
+                                       JobID jobId,
                                        kvstore::KVStore* kvstore,
                                        AdminClient* adminClient,
                                        const std::vector<std::string>& paras)
-    : SimpleConcurrentJobExecutor(jobId, kvstore, adminClient, paras) {}
+    : SimpleConcurrentJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 folly::Future<Status> CompactJobExecutor::executeInternal(HostAddr&& address,
                                                           std::vector<PartitionID>&& parts) {
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   adminClient_
-      ->addTask(cpp2::AdminCmd::COMPACT,
+      ->addTask(cpp2::JobType::COMPACT,
                 jobId_,
                 taskId_++,
                 space_,

@@ -6,7 +6,6 @@
 #ifndef STORAGE_ADMIN_STATSTASK_H_
 #define STORAGE_ADMIN_STATSTASK_H_
 
-#include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/NebulaStore.h"
@@ -28,6 +27,8 @@ class StatsTask : public AdminTask {
     LOG(INFO) << "Release Stats Task";
   }
 
+  bool check() override;
+
   /**
    * @brief Generate sub tasks for StatsTask.
    *
@@ -43,16 +44,6 @@ class StatsTask : public AdminTask {
   void finish(nebula::cpp2::ErrorCode rc) override;
 
  protected:
-  /**
-   * @brief Cancel task and set result to be cancelled.
-   *
-   */
-  void cancel() override {
-    canceled_ = true;
-    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
-    rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
-  }
-
   nebula::cpp2::ErrorCode genSubTask(GraphSpaceID space,
                                      PartitionID part,
                                      std::unordered_map<TagID, std::string> tags,

@@ -1,11 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/SortExecutor.h"
-
-#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -23,7 +20,6 @@ folly::Future<Status> SortExecutor::execute() {
   if (UNLIKELY(!iter->isSequentialIter())) {
     std::stringstream ss;
     ss << "Internal error: Sort executor does not supported " << iter->kind();
-    LOG(ERROR) << ss.str();
     return Status::Error(ss.str());
   }
 

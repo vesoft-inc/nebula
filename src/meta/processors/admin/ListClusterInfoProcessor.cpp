@@ -5,6 +5,10 @@
 
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 
+DECLARE_int32(heartbeat_interval_secs);
+DECLARE_int32(agent_heartbeat_interval_secs);
+DECLARE_uint32(expired_time_factor);
+
 namespace nebula {
 namespace meta {
 
@@ -39,6 +43,18 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
   for (; iter->valid(); iter->next()) {
     auto addr = MetaKeyUtils::parseHostKey(iter->key());
     auto info = HostInfo::decode(iter->val());
+
+    if (addr.host == "") {
+      LOG(INFO) << folly::sformat("Bad format host:{}, skip it", addr.toString());
+      continue;
+    }
+
+    if (!isAlive(info)) {
+      LOG(INFO) << folly::sformat("{}:{} is not alive, will skip it",
+                                  apache::thrift::util::enumNameSafe(info.role_),
+                                  addr.toString());
+      continue;
+    }
 
     cpp2::ServiceInfo service;
     service.role_ref() = info.role_;
@@ -89,16 +105,27 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
     hostServices[metaAddr.host].push_back(service);
   }
 
-  // check: there should be only one agent in each host
-  for (const auto& [host, services] : hostServices) {
+  // Check there is at least one agent in each host. If there are many ones, we will pick the first.
+  std::unordered_map<std::string, std::vector<cpp2::ServiceInfo>> agentServices;
+  for (auto& [host, services] : hostServices) {
     int agentCount = 0;
-    for (auto& s : services) {
-      if (s.get_role() == cpp2::HostRole::AGENT) {
+    for (auto it = services.begin(); it != services.end();) {
+      if (it->get_role() == cpp2::HostRole::AGENT) {
         agentCount++;
+
+        if (agentCount > 1) {
+          LOG(INFO) << folly::sformat(
+              "Will erase redundant agent {} from host {}", it->get_addr().toString(), host);
+          it = services.erase(it);
+          continue;
+        }
       }
+
+      it++;
     }
+
     if (agentCount < 1) {
-      LOG(INFO) << folly::sformat("There are {} agent count is host {}", agentCount, host);
+      LOG(INFO) << folly::sformat("There is no agent in host {}", host);
       handleErrorCode(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_NO_AGENT_FAILURE);
       onFinished();
       return;
@@ -114,5 +141,18 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq&) {
   resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
 }
+
+bool ListClusterInfoProcessor::isAlive(const HostInfo& info) {
+  int64_t expiredTime =
+      FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor;  // meta/storage/graph
+  if (info.role_ == cpp2::HostRole::AGENT) {                      // agent
+    expiredTime = FLAGS_agent_heartbeat_interval_secs * FLAGS_expired_time_factor;
+  }
+  int64_t threshold = expiredTime * 1000;
+  auto now = time::WallClock::fastNowInMilliSec();
+
+  return now - info.lastHBTimeInMilliSec_ < threshold;
+}
+
 }  // namespace meta
 }  // namespace nebula

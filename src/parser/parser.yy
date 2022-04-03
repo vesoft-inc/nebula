@@ -1,9 +1,12 @@
+// Bison options
 %language "C++"
-%skeleton "lalr1.cc"
+%skeleton "glr.cc"
+%glr-parser
 %no-lines
 %locations
 %define api.namespace { nebula }
 %define api.parser.class { GraphParser }
+// Parameters of scanner and parser
 %lex-param { nebula::GraphScanner& scanner }
 %parse-param { nebula::GraphScanner& scanner }
 %parse-param { std::string &errmsg }
@@ -42,6 +45,8 @@ class GraphScanner;
 static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 static constexpr size_t kCommentLengthLimit = 256;
 
+using namespace nebula;
+
 }
 
 %code {
@@ -54,6 +59,7 @@ static constexpr size_t kCommentLengthLimit = 256;
                       const nebula::GraphParser::location_type& loc);
 }
 
+// Define types of semantic values
 %union {
     bool                                    boolval;
     int64_t                                 intval;
@@ -250,6 +256,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> text_search_expression
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
+%type <expr> match_path_pattern_expression
+%type <expr> parenthesized_expression
 %type <argument_list> argument_list opt_argument_list
 %type <geo_shape> geo_shape_type
 %type <type> type_spec
@@ -311,7 +319,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> case_condition
 %type <expr> case_default
 
-%type <match_path> match_path_pattern
+%type <match_path> match_path_pattern match_relationships_pattern
 %type <match_path> match_path
 %type <match_path_list> match_path_list
 %type <match_node> match_node
@@ -402,14 +410,29 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <boolval> opt_with_properties
 %type <boolval> opt_ignore_existed_index
 
+// Define precedence and associativity of tokens.
+// Associativity:
+// The associativity of an operator op determines how repeated uses of the operator nest:
+// whether ‘x op y op z’ is parsed by grouping x with y first or by grouping y with z first.
+// %left specifies left-associativity (grouping x with y first) and %right specifies right-associativity (grouping y with z first).
+// %nonassoc specifies no associativity, which means that ‘x op y op z’ is considered a syntax error.
+//
+// Precedence:
+// The precedence of an operator determines how it nests with other operators.
+// All the tokens declared in a single precedence declaration have equal precedence and nest together according to their associativity.
+// When two tokens declared in different precedence declarations associate, the one declared later has the higher precedence and is grouped first.
+
 %left QM COLON
 %left KW_OR KW_XOR
 %left KW_AND
 %right KW_NOT
 %left EQ NE LT LE GT GE REG KW_IN KW_NOT_IN KW_CONTAINS KW_NOT_CONTAINS KW_STARTS_WITH KW_ENDS_WITH KW_NOT_STARTS_WITH KW_NOT_ENDS_WITH KW_IS_NULL KW_IS_NOT_NULL KW_IS_EMPTY KW_IS_NOT_EMPTY
+%nonassoc DUMMY_LOWER_THAN_MINUS
 %left PLUS MINUS
 %left STAR DIV MOD
 %right NOT
+%nonassoc DUMMY_LOWER_THAN_L_BRACE
+%nonassoc L_BRACE KW_MAP
 %nonassoc UNARY_PLUS
 %nonassoc UNARY_MINUS
 %nonassoc CASTING
@@ -724,8 +747,11 @@ constant_expression
     ;
 
 compound_expression
-    : L_PAREN expression_internal R_PAREN {
-        $$ = $2;
+    : match_path_pattern_expression %dprec 2 {
+        $$ = $1;
+    }
+    | parenthesized_expression %dprec 1 {
+        $$ = $1;
     }
     | property_expression {
         $$ = $1;
@@ -744,6 +770,11 @@ compound_expression
     }
     | attribute_expression {
         $$ = $1;
+    }
+    ;
+parenthesized_expression
+    : L_PAREN expression_internal R_PAREN {
+        $$ = $2;
     }
     ;
 
@@ -1115,6 +1146,12 @@ function_call_expression
 uuid_expression
     : KW_UUID L_PAREN R_PAREN {
         $$ = UUIDExpression::make(qctx->objPool());
+    }
+    ;
+
+match_path_pattern_expression
+    : match_relationships_pattern %prec DUMMY_LOWER_THAN_MINUS {
+        $$ = MatchPathPatternExpression::make(qctx->objPool(), std::unique_ptr<MatchPath>($1));
     }
     ;
 
@@ -1705,6 +1742,17 @@ match_sentence
     }
     ;
 
+match_relationships_pattern
+    : match_node match_edge match_node {
+        $$ = new MatchPath($1);
+        $$->add($2, $3);
+    }
+    | match_relationships_pattern match_edge match_node {
+        $$ = $1;
+        $$->add($2, $3);
+    }
+    ;
+
 match_path_pattern
     : match_node {
         $$ = new MatchPath($1);
@@ -1770,7 +1818,7 @@ match_node_label_list
     ;
 
 match_alias
-    : %empty {
+    : %empty %prec DUMMY_LOWER_THAN_L_BRACE {
         $$ = new std::string();
     }
     | name_label {
@@ -2392,22 +2440,13 @@ create_schema_prop_item
 
 create_tag_sentence
     : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($7 == nullptr) {
-            $7 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7, $3);
+        $$ = new CreateTagSentence($4, new ColumnSpecificationList(), $7 == nullptr ? new SchemaPropList() : $7, $3);
     }
     | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
-        if ($8 == nullptr) {
-            $8 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, $6, $8, $3);
+        $$ = new CreateTagSentence($4, $6, $8 == nullptr ? new SchemaPropList() : $8, $3);
     }
     | KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
-        if ($9 == nullptr) {
-            $9 = new SchemaPropList();
-        }
-        $$ = new CreateTagSentence($4, $6, $9, $3);
+        $$ = new CreateTagSentence($4, $6, $9 == nullptr ? new SchemaPropList() : $9, $3);
     }
     ;
 
@@ -2473,22 +2512,13 @@ alter_schema_prop_item
 
 create_edge_sentence
     : KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
-        if ($7 == nullptr) {
-            $7 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7, $3);
+        $$ = new CreateEdgeSentence($4,  new ColumnSpecificationList(), $7 == nullptr ? new SchemaPropList() : $7, $3);
     }
     | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list R_PAREN opt_create_schema_prop_list {
-        if ($8 == nullptr) {
-            $8 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4, $6, $8, $3);
+        $$ = new CreateEdgeSentence($4, $6, $8 == nullptr ? new SchemaPropList() : $8, $3);
     }
     | KW_CREATE KW_EDGE opt_if_not_exists name_label L_PAREN column_spec_list COMMA R_PAREN opt_create_schema_prop_list {
-        if ($9 == nullptr) {
-            $9 = new SchemaPropList();
-        }
-        $$ = new CreateEdgeSentence($4, $6, $9, $3);
+        $$ = new CreateEdgeSentence($4, $6, $9 == nullptr ? new SchemaPropList() : $9, $3);
     }
     ;
 
@@ -2776,36 +2806,36 @@ describe_edge_index_sentence
 
 rebuild_tag_index_sentence
     : KW_REBUILD KW_TAG KW_INDEX name_label_list {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                             meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::REBUILD_TAG_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
     }
     | KW_REBUILD KW_TAG KW_INDEX {
-        $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                  meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
+        $$ = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                  meta::cpp2::JobType::REBUILD_TAG_INDEX);
     }
     ;
 
 rebuild_edge_index_sentence
     : KW_REBUILD KW_EDGE KW_INDEX name_label_list {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                             meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::REBUILD_EDGE_INDEX);
         sentence->addPara(*$4);
         delete $4;
         $$ = sentence;
     }
     | KW_REBUILD KW_EDGE KW_INDEX {
-        $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                  meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
+        $$ = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                  meta::cpp2::JobType::REBUILD_EDGE_INDEX);
     }
     ;
 
 rebuild_fulltext_index_sentence
     : KW_REBUILD KW_FULLTEXT KW_INDEX {
-        $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                  meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
+        $$ = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                  meta::cpp2::JobType::REBUILD_FULLTEXT_INDEX);
     }
     ;
 
@@ -3207,10 +3237,19 @@ delete_tag_sentence
 
 download_sentence
     : KW_DOWNLOAD KW_HDFS STRING {
-        auto sentence = new DownloadSentence();
-        sentence->setUrl(*$3);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::DOWNLOAD);
+        sentence->addPara(*$3);
         $$ = sentence;
         delete $3;
+    }
+    ;
+
+ingest_sentence
+    : KW_INGEST {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::INGEST);
+        $$ = sentence;
     }
     ;
 
@@ -3226,49 +3265,54 @@ delete_edge_sentence
     }
     ;
 
-ingest_sentence
-    : KW_INGEST {
-        auto sentence = new IngestSentence();
-        $$ = sentence;
-    }
-    ;
-
 admin_job_sentence
     : KW_SUBMIT KW_JOB KW_COMPACT {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                             meta::cpp2::AdminCmd::COMPACT);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::COMPACT);
         $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_FLUSH {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                             meta::cpp2::AdminCmd::FLUSH);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::FLUSH);
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_DOWNLOAD KW_HDFS STRING {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::DOWNLOAD);
+        sentence->addPara(*$5);
+        $$ = sentence;
+        delete($5);
+    }
+    | KW_SUBMIT KW_JOB KW_INGEST {
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::INGEST);
         $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_STATS {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                             meta::cpp2::AdminCmd::STATS);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                             meta::cpp2::JobType::STATS);
         $$ = sentence;
     }
     | KW_SHOW KW_JOBS {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::SHOW_All);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::SHOW_All);
         $$ = sentence;
     }
     | KW_SHOW KW_JOB legal_integer {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::SHOW);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::SHOW);
         sentence->addPara(std::to_string($3));
         $$ = sentence;
     }
     | KW_STOP KW_JOB legal_integer {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::STOP);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::STOP);
         sentence->addPara(std::to_string($3));
         $$ = sentence;
     }
     | KW_RECOVER KW_JOB {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::RECOVER);
         $$ = sentence;
     }
     | KW_RECOVER KW_JOB integer_list {
-        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
+        auto sentence = new AdminJobSentence(meta::cpp2::JobOp::RECOVER);
         std::vector<int32_t>*intVec=$3;
         for(int32_t i = 0; i<intVec->size(); i++){
           sentence->addPara(std::to_string(intVec->at(i)));
@@ -3277,18 +3321,18 @@ admin_job_sentence
         $$ = sentence;
         }
     | KW_SUBMIT KW_JOB KW_BALANCE KW_LEADER {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::LEADER_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::LEADER_BALANCE);
          $$ = sentence;
         }
     | KW_SUBMIT KW_JOB KW_BALANCE KW_IN KW_ZONE {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::DATA_BALANCE);
          $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_BALANCE KW_IN KW_ZONE KW_REMOVE host_list {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::DATA_BALANCE);
          HostList* hl = $7;
          std::vector<HostAddr> has = hl->hosts();
          for (HostAddr& ha: has) {
@@ -3298,13 +3342,13 @@ admin_job_sentence
          $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_BALANCE KW_ACROSS KW_ZONE {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::ZONE_BALANCE);
          $$ = sentence;
     }
     | KW_SUBMIT KW_JOB KW_BALANCE KW_ACROSS KW_ZONE KW_REMOVE zone_name_list {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::ZONE_BALANCE);
          ZoneNameList* nl = $7;
          std::vector<std::string> names = nl->zoneNames();
          for (std::string& name: names) {
@@ -3745,19 +3789,19 @@ integer_list
 
 balance_sentence
     : KW_BALANCE KW_LEADER {
-            auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                                 meta::cpp2::AdminCmd::LEADER_BALANCE);
+            auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                                 meta::cpp2::JobType::LEADER_BALANCE);
             $$ = sentence;
         }
     |
     KW_BALANCE KW_IN KW_ZONE {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::DATA_BALANCE);
          $$ = sentence;
     }
     | KW_BALANCE KW_IN KW_ZONE KW_REMOVE host_list {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::DATA_BALANCE);
          HostList* hl = $5;
          std::vector<HostAddr> has = hl->hosts();
          for (HostAddr& ha: has) {
@@ -3767,13 +3811,13 @@ balance_sentence
          $$ = sentence;
     }
     | KW_BALANCE KW_ACROSS KW_ZONE {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::ZONE_BALANCE);
          $$ = sentence;
     }
     | KW_BALANCE KW_ACROSS KW_ZONE KW_REMOVE zone_name_list {
-         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
-                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
+                                              meta::cpp2::JobType::ZONE_BALANCE);
          ZoneNameList* nl = $5;
          std::vector<std::string> names = nl->zoneNames();
          for (std::string& name: names) {

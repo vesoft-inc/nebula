@@ -851,5 +851,40 @@ void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
   BiJoin::cloneMembers(l);
 }
 
+std::unique_ptr<PlanNodeDescription> RollUpApply::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("compareCols", folly::toJson(util::toJson(compareCols_)), desc.get());
+  addDescription("collectCol", folly::toJson(util::toJson(collectCol_)), desc.get());
+  return desc;
+}
+
+void RollUpApply::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
+RollUpApply::RollUpApply(QueryContext* qctx,
+                         Kind kind,
+                         PlanNode* left,
+                         PlanNode* right,
+                         std::vector<Expression*> compareCols,
+                         InputPropertyExpression* collectCol)
+    : BinaryInputNode(qctx, kind, left, right),
+      compareCols_(std::move(compareCols)),
+      collectCol_(collectCol) {}
+
+void RollUpApply::cloneMembers(const RollUpApply& r) {
+  BinaryInputNode::cloneMembers(r);
+  for (const auto* col : r.compareCols_) {
+    compareCols_.emplace_back(col->clone());
+  }
+  collectCol_ = static_cast<InputPropertyExpression*>(DCHECK_NOTNULL(r.collectCol_)->clone());
+}
+
+PlanNode* RollUpApply::clone() const {
+  auto* newRollUpApply = RollUpApply::make(qctx_, nullptr, nullptr, {}, nullptr);
+  newRollUpApply->cloneMembers(*this);
+  return newRollUpApply;
+}
+
 }  // namespace graph
 }  // namespace nebula

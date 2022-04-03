@@ -19,7 +19,7 @@ TEST_F(JobTest, JobFinishTime) {
     meta::cpp2::AdminJobResult resp;
     resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.id_ref() = 0;
+    jobDesc.job_id_ref() = 0;
     jobDesc.start_time_ref() = 123;
     jobDesc.stop_time_ref() = 0;
     resp.job_desc_ref() = {std::move(jobDesc)};
@@ -30,10 +30,10 @@ TEST_F(JobTest, JobFinishTime) {
 
     auto qctx = std::make_unique<QueryContext>();
     auto submitJob = SubmitJob::make(
-        qctx.get(), nullptr, meta::cpp2::AdminJobOp::SHOW, meta::cpp2::AdminCmd::UNKNOWN, {});
+        qctx.get(), nullptr, meta::cpp2::JobOp::SHOW, meta::cpp2::JobType::UNKNOWN, {});
     auto submitJobExe = std::make_unique<SubmitJobExecutor>(submitJob, qctx.get());
 
-    auto status = submitJobExe->buildResult(meta::cpp2::AdminJobOp::SHOW, std::move(resp));
+    auto status = submitJobExe->buildResult(meta::cpp2::JobOp::SHOW, std::move(resp));
     EXPECT_TRUE(status.ok());
     auto result = std::move(status).value();
     EXPECT_EQ(result.rows.size(), 2);
@@ -46,17 +46,17 @@ TEST_F(JobTest, JobFinishTime) {
     meta::cpp2::AdminJobResult resp;
     resp.job_id_ref() = 0;
     meta::cpp2::JobDesc jobDesc;
-    jobDesc.id_ref() = 0;
+    jobDesc.job_id_ref() = 0;
     jobDesc.start_time_ref() = 123;
     jobDesc.stop_time_ref() = 0;
     resp.job_desc_ref() = {std::move(jobDesc)};
 
     auto qctx = std::make_unique<QueryContext>();
     auto submitJob = SubmitJob::make(
-        qctx.get(), nullptr, meta::cpp2::AdminJobOp::SHOW_All, meta::cpp2::AdminCmd::UNKNOWN, {});
+        qctx.get(), nullptr, meta::cpp2::JobOp::SHOW_All, meta::cpp2::JobType::UNKNOWN, {});
     auto submitJobExe = std::make_unique<SubmitJobExecutor>(submitJob, qctx.get());
 
-    auto status = submitJobExe->buildResult(meta::cpp2::AdminJobOp::SHOW_All, std::move(resp));
+    auto status = submitJobExe->buildResult(meta::cpp2::JobOp::SHOW_All, std::move(resp));
     EXPECT_TRUE(status.ok());
     auto result = std::move(status).value();
     EXPECT_EQ(result.rows.size(), 1);

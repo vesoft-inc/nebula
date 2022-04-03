@@ -49,6 +49,7 @@ struct SpaceListenerInfo {
 class NebulaStore : public KVStore, public Handler {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
   FRIEND_TEST(NebulaStoreTest, PartsTest);
+  FRIEND_TEST(NebulaStoreTest, PersistPeersTest);
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
   FRIEND_TEST(NebulaStoreTest, TransLeaderTest);
   FRIEND_TEST(NebulaStoreTest, CheckpointTest);
@@ -110,7 +111,7 @@ class NebulaStore : public KVStore, public Handler {
   bool init();
 
   /**
-   * @brief Stop the raft service and kv engine
+   * @brief Stop the engine
    */
   void stop() override;
 
@@ -552,12 +553,12 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param partId
    * @param asLearner Whether start partition as learner
-   * @param peers Raft peers
+   * @param peers Storage peers, do not contain learner address
    */
   void addPart(GraphSpaceID spaceId,
                PartitionID partId,
                bool asLearner,
-               const std::vector<HostAddr>& peers = {}) override;
+               const std::vector<HostAddr>& peers) override;
 
   /**
    * @brief Remove a space, called from part manager
@@ -580,8 +581,10 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partId
+   * @param needLock if lock_ has already been locked, we need
+   * to set needLock as false, or we set it as true
    */
-  void removePart(GraphSpaceID spaceId, PartitionID partId) override;
+  void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) override;
 
   /**
    * @brief Retrive the leader distribution
@@ -661,14 +664,21 @@ class NebulaStore : public KVStore, public Handler {
   void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
 
   /**
-   * @brief Write data to local storage engine only
+   * @brief return a WriteBatch object to do batch operation
+   *
+   * @return std::unique_ptr<WriteBatch>
+   */
+  std::unique_ptr<WriteBatch> startBatchWrite() override;
+
+  /**
+   * @brief Write batch to local storage engine only
    *
    * @param spaceId
-   * @param keyValues Key/values to write into only local storage engine instead of multiple replica
+   * @param batch
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                                    std::vector<KV> keyValues) override;
+  nebula::cpp2::ErrorCode batchWriteWithoutReplicator(GraphSpaceID spaceId,
+                                                      std::unique_ptr<WriteBatch> batch) override;
 
   /**
    * @brief Get the kvstore propery, only used in rocksdb
@@ -769,14 +779,14 @@ class NebulaStore : public KVStore, public Handler {
    * @param partId
    * @param engine Partition's related kv engine
    * @param asLearner Whether start as raft learner
-   * @param defaultPeers The raft peer's address
+   * @param peers All partition raft peers
    * @return std::shared_ptr<Part>
    */
   std::shared_ptr<Part> newPart(GraphSpaceID spaceId,
                                 PartitionID partId,
                                 KVEngine* engine,
                                 bool asLearner,
-                                const std::vector<HostAddr>& defaultPeers);
+                                const std::vector<HostAddr>& raftPeers);
 
   /**
    * @brief Start a new listener part

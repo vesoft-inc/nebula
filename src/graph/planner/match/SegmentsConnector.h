@@ -13,10 +13,7 @@
 
 namespace nebula {
 namespace graph {
-/**
- * The SegmentsConnector was designed to be a util to help connecting the
- * plan segment.
- */
+// The SegmentsConnector is a util to help connecting the plan segment.
 class SegmentsConnector final {
  public:
   SegmentsConnector() = delete;
@@ -41,6 +38,12 @@ class SegmentsConnector final {
    * Simply do a CartesianProduct of two plan root.
    */
   static SubPlan cartesianProduct(QueryContext* qctx, const SubPlan& left, const SubPlan& right);
+
+  static SubPlan rollUpApply(QueryContext* qctx,
+                             const SubPlan& left,
+                             const SubPlan& right,
+                             const std::vector<std::string>& compareCols,
+                             const std::string& collectCol);
 
   /*
    * left->right

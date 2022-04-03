@@ -43,10 +43,6 @@ nebula::cpp2::ErrorCode MetaJobExecutor::finish(bool) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void MetaJobExecutor::setSpaceId(GraphSpaceID spaceId) {
-  space_ = spaceId;
-}
-
 bool MetaJobExecutor::isMetaJob() {
   return true;
 }

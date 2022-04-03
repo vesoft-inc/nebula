@@ -28,11 +28,11 @@ const Value &LogicalExpression::evalAnd(ExpressionContext &ctx) {
   result_ = true;
   for (auto i = 0u; i < operands_.size(); i++) {
     auto &value = operands_[i]->eval(ctx);
-    if (value.isBadNull() || (value.isBool() && !value.getBool())) {
+    if (value.isBadNull() || (value.isImplicitBool() && !value.implicitBool())) {
       result_ = value;
       return result_;
     }
-    if (!value.isBool()) {
+    if (!value.isImplicitBool()) {
       if (value.isNull()) {
         result_ = value;
       } else if (value.empty() && !result_.isNull()) {
@@ -52,11 +52,11 @@ const Value &LogicalExpression::evalOr(ExpressionContext &ctx) {
   result_ = false;
   for (auto i = 0u; i < operands_.size(); i++) {
     auto &value = operands_[i]->eval(ctx);
-    if (value.isBadNull() || (value.isBool() && value.getBool())) {
+    if (value.isBadNull() || (value.isImplicitBool() && value.implicitBool())) {
       result_ = value;
       return result_;
     }
-    if (!value.isBool()) {
+    if (!value.isImplicitBool()) {
       if (value.isNull()) {
         result_ = value;
       } else if (value.empty() && !result_.isNull()) {
@@ -81,7 +81,7 @@ const Value &LogicalExpression::evalXor(ExpressionContext &ctx) {
       result_ = value;
       return result_;
     }
-    if (!value.isBool()) {
+    if (!value.isImplicitBool()) {
       if (value.empty()) {
         result_ = value;
         hasEmpty = 1;
@@ -92,10 +92,10 @@ const Value &LogicalExpression::evalXor(ExpressionContext &ctx) {
     }
     if (hasEmpty) continue;
     if (firstBool) {
-      result_ = static_cast<bool>(value.getBool());
+      result_ = static_cast<bool>(value.implicitBool());
       firstBool = 0u;
     } else {
-      result_ = static_cast<bool>(result_.getBool() ^ value.getBool());
+      result_ = static_cast<bool>(result_.implicitBool() ^ value.implicitBool());
     }
   }
 

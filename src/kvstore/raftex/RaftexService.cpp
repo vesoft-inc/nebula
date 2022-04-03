@@ -21,93 +21,37 @@ namespace raftex {
  *
  ******************************************************/
 std::shared_ptr<RaftexService> RaftexService::createService(
-    std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
     std::shared_ptr<folly::Executor> workers,
     uint16_t port) {
-  auto svc = std::shared_ptr<RaftexService>(new RaftexService());
-  CHECK(svc != nullptr) << "Failed to create a raft service";
-
-  svc->server_ = std::make_unique<apache::thrift::ThriftServer>();
-  CHECK(svc->server_ != nullptr) << "Failed to create a thrift server";
-  svc->server_->setInterface(svc);
-
-  svc->initThriftServer(pool, workers, port);
-  return svc;
-}
-
-RaftexService::~RaftexService() {}
-
-bool RaftexService::start() {
-  serverThread_.reset(new std::thread([&] { serve(); }));
-
-  waitUntilReady();
-
-  // start failed, reclaim resource
-  if (status_.load() != STATUS_RUNNING) {
-    waitUntilStop();
-    return false;
-  }
-
-  return true;
-}
-
-void RaftexService::waitUntilReady() {
-  while (status_.load() == STATUS_NOT_RUNNING) {
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
-  }
-}
-
-void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-                                     std::shared_ptr<folly::Executor> workers,
-                                     uint16_t port) {
-  LOG(INFO) << "Init thrift server for raft service, port: " << port;
-  if (FLAGS_enable_ssl) {
-    server_->setSSLConfig(nebula::sslContextConfig());
-  }
-  server_->setPort(port);
-  server_->setIdleTimeout(std::chrono::seconds(0));
-  if (pool != nullptr) {
-    server_->setIOThreadPool(pool);
-  }
-  if (workers != nullptr) {
-    server_->setThreadManager(
-        std::dynamic_pointer_cast<apache::thrift::concurrency::ThreadManager>(workers));
-  }
-  server_->setStopWorkersOnStopListening(false);
-}
-
-bool RaftexService::setup() {
   try {
-    server_->setup();
-    serverPort_ = server_->getAddress().getPort();
-
-    LOG(INFO) << "Starting the Raftex Service on " << serverPort_;
+    auto svc = std::shared_ptr<RaftexService>(new RaftexService());
+    auto server = std::make_unique<apache::thrift::ThriftServer>();
+    server->setPort(port);
+    server->setIdleTimeout(std::chrono::seconds(0));
+    if (ioPool != nullptr) {
+      server->setIOThreadPool(ioPool);
+    }
+    if (workers != nullptr) {
+      server->setThreadManager(
+          std::dynamic_pointer_cast<apache::thrift::concurrency::ThreadManager>(workers));
+    }
+    if (FLAGS_enable_ssl) {
+      server->setSSLConfig(nebula::sslContextConfig());
+    }
+    server->setInterface(svc);
+    server->setup();
+    svc->server_ = std::move(server);
+    svc->serverPort_ = svc->server_->getAddress().getPort();
+    LOG(INFO) << "Start raft service on " << svc->serverPort_;
+    return svc;
   } catch (const std::exception& e) {
-    LOG(ERROR) << "Setup the Raftex Service failed, error: " << e.what();
-    return false;
+    LOG(ERROR) << "Start raft service failed: " << e.what();
+    return nullptr;
+  } catch (...) {
+    LOG(ERROR) << "Start raft service failed";
+    return nullptr;
   }
-
-  return true;
-}
-
-void RaftexService::serve() {
-  LOG(INFO) << "Starting the Raftex Service";
-
-  if (!setup()) {
-    status_.store(STATUS_SETUP_FAILED);
-    return;
-  }
-
-  SCOPE_EXIT {
-    server_->cleanUp();
-  };
-
-  status_.store(STATUS_RUNNING);
-  LOG(INFO) << "Start the Raftex Service successfully";
-  server_->getEventBaseManager()->getEventBase()->loopForever();
-
-  status_.store(STATUS_NOT_RUNNING);
-  LOG(INFO) << "The Raftex Service stopped";
 }
 
 std::shared_ptr<folly::IOThreadPoolExecutor> RaftexService::getIOThreadPool() const {
@@ -119,32 +63,19 @@ std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
 }
 
 void RaftexService::stop() {
-  int expected = STATUS_RUNNING;
-  if (!status_.compare_exchange_strong(expected, STATUS_NOT_RUNNING)) {
-    return;
-  }
-
   // stop service
   LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
+  std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts;
   {
     folly::RWSpinLock::WriteHolder wh(partsLock_);
-    for (auto& p : parts_) {
-      p.second->stop();
-    }
-    parts_.clear();
-    LOG(INFO) << "All partitions have stopped";
+    // partsLock_ should not be hold when waiting for parts stop, so swap them out first
+    parts.swap(parts_);
   }
+  for (auto& p : parts) {
+    p.second->stop();
+  }
+  LOG(INFO) << "All partitions have stopped";
   server_->stop();
-}
-
-void RaftexService::waitUntilStop() {
-  if (serverThread_) {
-    serverThread_->join();
-    serverThread_.reset();
-    server_.reset();
-    LOG(INFO) << "Server thread has stopped. Service on port " << serverPort_
-              << " is ready to be destroyed";
-  }
 }
 
 void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {

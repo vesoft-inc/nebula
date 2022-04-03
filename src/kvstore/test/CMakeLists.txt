@@ -26,6 +26,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
@@ -41,6 +42,21 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:meta_client_stats_obj>
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
+)
+
+nebula_add_test(
+    NAME
+        kvstore_common_test
+    SOURCES
+        CommonTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_test(
