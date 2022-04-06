@@ -39,6 +39,7 @@
 // `preRightPaths_` : same as preLeftPaths_
 namespace nebula {
 namespace graph {
+class ProduceAllPaths;
 class ProduceAllPathsExecutor final : public Executor {
  public:
   ProduceAllPathsExecutor(const PlanNode* node, QueryContext* qctx)
@@ -50,15 +51,20 @@ class ProduceAllPathsExecutor final : public Executor {
   // k: dst, v: paths to dst
   using Interims = std::unordered_map<Value, std::vector<Path>>;
 
-  void buildPath(Iterator* iter, Interims& currentPaths, bool reverse);
-  void conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
+  Status buildPath(bool reverse);
+  folly::Future<Status> conjunctPath();
+  DataSet doConjunct(Interims::iterator startIter, Interims::iterator endIter, bool oddStep);
   void setNextStepVid(Interims& paths, const string& var);
 
  private:
+  const ProduceAllPaths* pathNode_{nullptr};
   bool noLoop_{false};
   size_t step_{1};
   Interims preLeftPaths_;
+  Interims leftPaths_;
   Interims preRightPaths_;
+  Interims rightPaths_;
+  DataSet currentDs_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -47,6 +47,7 @@
 //  the loop will terminate
 namespace nebula {
 namespace graph {
+class MultiShortestPath;
 class MultiShortestPathExecutor final : public Executor {
  public:
   MultiShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
@@ -59,16 +60,21 @@ class MultiShortestPathExecutor final : public Executor {
   using Interims = std::unordered_map<Value, std::vector<Path>>;
 
   void init();
-  void buildPath(Iterator* iter, Interims& currentPaths, bool reverse);
-  bool conjunctPath(Interims& leftPaths, Interims& rightPaths, DataSet& ds);
-  void setNextStepVid(Interims& paths, const string& var);
+  Status buildPath(bool reverse);
+  folly::Future<bool> conjunctPath(bool oddStep);
+  DataSet doConjunct(Interims::iterator startIter, Interims::iterator endIter, bool oddStep);
+  void setNextStepVid(const Interims& paths, const string& var);
 
  private:
+  const MultiShortestPath* pathNode_{nullptr};
   size_t step_{1};
   std::string terminationVar_;
   std::unordered_multimap<Value, std::pair<Value, bool>> terminationMap_;
+  Interims leftPaths_;
   Interims preLeftPaths_;
   Interims preRightPaths_;
+  Interims rightPaths_;
+  DataSet currentDs_;
 };
 
 }  // namespace graph

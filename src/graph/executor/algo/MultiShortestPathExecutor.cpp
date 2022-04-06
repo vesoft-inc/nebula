@@ -9,41 +9,44 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> MultiShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* path = asNode<MultiShortestPath>(node());
-  auto leftIter = ectx_->getResult(path->leftInputVar()).iter();
-  auto rightIter = ectx_->getResult(path->rightInputVar()).iter();
-  terminationVar_ = path->terminationVar();
-  DCHECK(!!leftIter && !!rightIter);
-  DataSet ds;
-  ds.colNames = node()->colNames();
+  pathNode_ = asNode<MultiShortestPath>(node());
+  terminationVar_ = pathNode_->terminationVar();
 
   if (step_ == 1) {
     init();
   }
 
-  Interims leftPaths, rightPaths;
-  buildPath(leftIter.get(), leftPaths, false);
+  std::vector<folly::Future<Status>> futures;
+  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
+  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  futures.emplace_back(std::move(leftFuture));
+  futures.emplace_back(std::move(rightFuture));
 
-  conjunctPath(leftPaths, preRightPaths_, ds);
-
-  if (step_ * 2 <= path->steps()) {
-    buildPath(rightIter.get(), rightPaths, true);
-    conjunctPath(leftPaths, rightPaths, ds);
-  }
-
-  setNextStepVid(leftPaths, path->leftVidVar());
-  setNextStepVid(rightPaths, path->rightVidVar());
-  // update history
-  preLeftPaths_.swap(leftPaths);
-  preRightPaths_.swap(rightPaths);
-  step_++;
-  return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& status) {
+        UNUSED(status);
+        return conjunctPath(true);
+      })
+      .thenValue([this](auto&& termination) {
+        if (termination || step_ * 2 > pathNode_->steps()) {
+          return folly::makeFuture<bool>(true);
+        }
+        return conjunctPath(false);
+      })
+      .thenValue([this](auto&& resp) {
+        UNUSED(resp);
+        step_++;
+        DataSet ds;
+        ds.colNames = pathNode_->colNames();
+        ds.rows.swap(currentDs_.rows);
+        return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      });
 }
 
 void MultiShortestPathExecutor::init() {
-  auto* path = asNode<MultiShortestPath>(node());
-  auto lIter = ectx_->getResult(path->leftVidVar()).iter();
-  auto rIter = ectx_->getResult(path->rightVidVar()).iter();
+  auto lIter = ectx_->getResult(pathNode_->leftVidVar()).iter();
+  auto rIter = ectx_->getResult(pathNode_->rightVidVar()).iter();
   std::set<Value> rightVids;
   for (; rIter->valid(); rIter->next()) {
     auto& vid = rIter->getColumn(0);
@@ -66,7 +69,11 @@ void MultiShortestPathExecutor::init() {
   }
 }
 
-void MultiShortestPathExecutor::buildPath(Iterator* iter, Interims& currentPaths, bool reverse) {
+Status MultiShortestPathExecutor::buildPath(bool reverse) {
+  auto iter = reverse ? ectx_->getResult(pathNode_->rightInputVar()).iter()
+                      : ectx_->getResult(pathNode_->leftInputVar()).iter();
+  DCHECK(!!iter);
+  auto& currentPaths = reverse ? rightPaths_ : leftPaths_;
   if (step_ == 1) {
     for (; iter->valid(); iter->next()) {
       auto edgeVal = iter->getEdge();
@@ -84,40 +91,46 @@ void MultiShortestPathExecutor::buildPath(Iterator* iter, Interims& currentPaths
       path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
       currentPaths[dst].emplace_back(std::move(path));
     }
-    return;
-  }
-  auto& historyPaths = reverse ? preRightPaths_ : preLeftPaths_;
-  for (; iter->valid(); iter->next()) {
-    auto edgeVal = iter->getEdge();
-    if (UNLIKELY(!edgeVal.isEdge())) {
-      continue;
-    }
-    auto& edge = edgeVal.getEdge();
-    auto& src = edge.src;
-    auto& dst = edge.dst;
-    for (const auto& histPath : historyPaths[src]) {
-      Path path = histPath;
-      path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
-      if (path.hasDuplicateVertices()) {
+  } else {
+    auto& historyPaths = reverse ? preRightPaths_ : preLeftPaths_;
+    for (; iter->valid(); iter->next()) {
+      auto edgeVal = iter->getEdge();
+      if (UNLIKELY(!edgeVal.isEdge())) {
         continue;
       }
-      currentPaths[dst].emplace_back(std::move(path));
+      auto& edge = edgeVal.getEdge();
+      auto& src = edge.src;
+      auto& dst = edge.dst;
+      for (const auto& histPath : historyPaths[src]) {
+        Path path = histPath;
+        path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
+        if (path.hasDuplicateVertices()) {
+          continue;
+        }
+        currentPaths[dst].emplace_back(std::move(path));
+      }
     }
   }
+  // set nextVid
+  const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
+  setNextStepVid(currentPaths, nextVidVar);
+  return Status::OK();
 }
 
-bool MultiShortestPathExecutor::conjunctPath(Interims& leftPaths,
-                                             Interims& rightPaths,
-                                             DataSet& ds) {
-  for (auto& leftPath : leftPaths) {
-    auto find = rightPaths.find(leftPath.first);
-    if (find == rightPaths.end()) {
+DataSet MultiShortestPathExecutor::doConjunct(Interims::iterator startIter,
+                                              Interims::iterator endIter,
+                                              bool oddStep) {
+  auto& rightPaths = oddStep ? preRightPaths_ : rightPaths_;
+  DataSet ds;
+  for (; startIter != endIter; ++startIter) {
+    auto found = rightPaths.find(startIter->first);
+    if (found == rightPaths.end()) {
       continue;
     }
-    for (const auto& lPath : leftPath.second) {
+    for (const auto& lPath : startIter->second) {
       const auto& srcVid = lPath.src.vid;
       auto range = terminationMap_.equal_range(srcVid);
-      for (const auto& rPath : find->second) {
+      for (const auto& rPath : found->second) {
         const auto& dstVid = rPath.src.vid;
         for (auto iter = range.first; iter != range.second; ++iter) {
           if (iter->second.first == dstVid) {
@@ -131,27 +144,62 @@ bool MultiShortestPathExecutor::conjunctPath(Interims& leftPaths,
             Row row;
             row.values.emplace_back(std::move(forwardPath));
             ds.rows.emplace_back(std::move(row));
-            iter->second.second = false;
           }
         }
       }
     }
   }
-  for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-    if (!iter->second.second) {
-      iter = terminationMap_.erase(iter);
-    } else {
-      ++iter;
-    }
-  }
-  if (terminationMap_.empty()) {
-    ectx_->setValue(terminationVar_, true);
-    return true;
-  }
-  return false;
+  return ds;
 }
 
-void MultiShortestPathExecutor::setNextStepVid(Interims& paths, const string& var) {
+folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
+  static size_t NUM_PROC = 5;
+  size_t batchSize = leftPaths_.size() / NUM_PROC;
+  std::vector<folly::Future<DataSet>> futures;
+  size_t i = 0;
+
+  auto startIter = leftPaths_.begin();
+  for (auto leftIter = leftPaths_.begin(); leftIter != leftPaths_.end(); ++leftIter) {
+    if (i++ == batchSize) {
+      auto endIter = leftIter;
+      endIter++;
+      auto future = folly::via(runner(), [this, startIter, endIter, oddStep]() {
+        return doConjunct(startIter, endIter, oddStep);
+      });
+      futures.emplace_back(std::move(future));
+      i = 0;
+      startIter = endIter;
+    }
+  }
+  if (i != 0) {
+    auto endIter = leftPaths_.end();
+    auto future = folly::via(runner(), [this, startIter, endIter, oddStep]() {
+      return doConjunct(startIter, endIter, oddStep);
+    });
+    futures.emplace_back(std::move(future));
+  }
+
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
+
+    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
+      if (!iter->second.second) {
+        iter = terminationMap_.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+    if (terminationMap_.empty()) {
+      ectx_->setValue(terminationVar_, true);
+      return true;
+    }
+    return false;
+  });
+}
+
+void MultiShortestPathExecutor::setNextStepVid(const Interims& paths, const string& var) {
   DataSet ds;
   ds.colNames = {nebula::kVid};
   for (const auto& path : paths) {
