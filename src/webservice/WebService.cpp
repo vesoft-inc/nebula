@@ -22,6 +22,7 @@ DEFINE_string(ws_ip, "0.0.0.0", "IP/Hostname to bind to");
 DEFINE_int32(ws_threads, 4, "Number of threads for the web service.");
 
 #ifdef BUILD_STANDALONE
+DEFINE_int32(ws_storage_http_port, 12000, "Port to listen on Storage with HTTP protocol");
 DEFINE_int32(ws_storage_threads, 4, "Number of threads for the web service.");
 #endif
 

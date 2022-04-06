@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Executor for balance in zone, always called by job manager
+ * @brief Executor for balance in zone, always called by job manager.
  */
 class DataBalanceJobExecutor : public BalanceJobExecutor {
   FRIEND_TEST(BalanceTest, BalanceDataPlanTest);
@@ -25,7 +25,8 @@ class DataBalanceJobExecutor : public BalanceJobExecutor {
                          kvstore::KVStore* kvstore,
                          AdminClient* adminClient,
                          const std::vector<std::string>& params)
-      : BalanceJobExecutor(jobDescription.getJobId(), kvstore, adminClient, params),
+      : BalanceJobExecutor(
+            jobDescription.getSpace(), jobDescription.getJobId(), kvstore, adminClient, params),
         jobDescription_(jobDescription) {}
 
   /**

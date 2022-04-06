@@ -97,8 +97,6 @@ class Sentence {
     kGrant,
     kRevoke,
     kChangePassword,
-    kDownload,
-    kIngest,
     kOrderBy,
     kShowConfigs,
     kSetConfig,

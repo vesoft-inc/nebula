@@ -4,7 +4,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-# Usage: install-gcc.sh --prefix=/opt/nebula/toolset
+# Usage: install-gcc.sh --prefix=/opt
 
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))

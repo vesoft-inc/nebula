@@ -2,9 +2,9 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-
 #include "graph/visitor/VidExtractVisitor.h"
 
+#include "graph/context/QueryContext.h"
 #include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
@@ -152,8 +152,9 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        expr->right()->kind() != Expression::Kind::kList ||
-        !ExpressionUtils::isEvaluableExpr(expr->right())) {
+        !(expr->right()->kind() == Expression::Kind::kList ||
+          expr->right()->kind() == Expression::Kind::kAttribute) ||
+        !ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
       vidPattern_ = VidPattern{};
       return;
     }
@@ -165,12 +166,11 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
 
-    auto *listExpr = static_cast<ListExpression *>(expr->right());
-    QueryExpressionContext ctx;
-    vidPattern_ =
-        VidPattern{VidPattern::Special::kInUsed,
-                   {{fCallExpr->args()->args().front()->toString(),
-                     {VidPattern::Vids::Kind::kIn, listExpr->eval(ctx(nullptr)).getList()}}}};
+    auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
+    DCHECK(rightListValue.isList());
+    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                             {{fCallExpr->args()->args().front()->toString(),
+                               {VidPattern::Vids::Kind::kIn, rightListValue.getList()}}}};
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
     // id(V) == vid
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
@@ -188,7 +188,9 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
     if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        expr->right()->kind() != Expression::Kind::kConstant) {
+        (expr->right()->kind() != Expression::Kind::kConstant &&
+         expr->right()->kind() != Expression::Kind::kVar &&
+         expr->right()->kind() != Expression::Kind::kSubscript)) {
       vidPattern_ = VidPattern{};
       return;
     }
@@ -198,14 +200,29 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       vidPattern_ = VidPattern{};
       return;
     }
-    const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
-    if (!SchemaUtil::isValidVid(constExpr->value())) {
-      vidPattern_ = VidPattern{};
-      return;
+    if (expr->right()->kind() == Expression::Kind::kConstant) {
+      const auto *constExpr = static_cast<const ConstantExpression *>(expr->right());
+      if (!SchemaUtil::isValidVid(constExpr->value())) {
+        vidPattern_ = VidPattern{};
+        return;
+      }
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{fCallExpr->args()->args().front()->toString(),
+                                 {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
+    } else if ((expr->right()->kind() == Expression::Kind::kVar ||
+                expr->right()->kind() == Expression::Kind::kSubscript) &&
+               ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+      auto rValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
+      if (SchemaUtil::isValidVid(rValue)) {
+        vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                                 {{fCallExpr->args()->args().front()->toString(),
+                                   {VidPattern::Vids::Kind::kIn, List({rValue})}}}};
+        return;
+      } else {
+        vidPattern_ = VidPattern{};
+        return;
+      }
     }
-    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
-                             {{fCallExpr->args()->args().front()->toString(),
-                               {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
   } else {
     if (ExpressionUtils::isPropertyExpr(expr->left())) {
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
@@ -468,6 +485,11 @@ void VidExtractVisitor::visit(ReduceExpression *expr) {
 }
 
 void VidExtractVisitor::visit(SubscriptRangeExpression *expr) {
+  UNUSED(expr);
+  vidPattern_ = VidPattern{};
+}
+
+void VidExtractVisitor::visit(MatchPathPatternExpression *expr) {
   UNUSED(expr);
   vidPattern_ = VidPattern{};
 }

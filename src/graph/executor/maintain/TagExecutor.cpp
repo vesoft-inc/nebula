@@ -1,12 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/maintain/TagExecutor.h"
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -24,8 +20,8 @@ folly::Future<Status> CreateTagExecutor::execute() {
       .via(runner())
       .thenValue([ctNode, spaceId](StatusOr<TagID> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Create tag `" << ctNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Create tag `" << ctNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -43,13 +39,14 @@ folly::Future<Status> DescTagExecutor::execute() {
       .via(runner())
       .thenValue([this, dtNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Desc tag `" << dtNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag `" << dtNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = SchemaUtil::toDescSchema(resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag `" << dtNode->getName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -68,8 +65,8 @@ folly::Future<Status> DropTagExecutor::execute() {
       .via(runner())
       .thenValue([dtNode, spaceId](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop tag `" << dtNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop tag `" << dtNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -83,7 +80,7 @@ folly::Future<Status> ShowTagsExecutor::execute() {
   return qctx()->getMetaClient()->listTagSchemas(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show tags failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show tags failed: " << resp.status();
           return resp.status();
         }
         auto tagItems = std::move(resp).value();
@@ -117,13 +114,14 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
       .via(runner())
       .thenValue([this, sctNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show create tag `" << sctNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag `" << sctNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto ret = SchemaUtil::toShowCreateSchema(true, sctNode->getName(), resp.value());
         if (!ret.ok()) {
-          LOG(ERROR) << ret.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag `" << sctNode->getName()
+                       << "' failed: " << resp.status();
           return ret.status();
         }
         return finish(
@@ -142,8 +140,8 @@ folly::Future<Status> AlterTagExecutor::execute() {
       .via(runner())
       .thenValue([aeNode](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << aeNode->space() << ", Alter tag `" << aeNode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << aeNode->space() << ", Alter tag `" << aeNode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();

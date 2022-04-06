@@ -20,6 +20,7 @@
 #include "common/expression/LabelExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/MatchPathPatternExpression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/PropertyExpression.h"
@@ -89,6 +90,8 @@ class ExprVisitor {
   virtual void visit(ReduceExpression *expr) = 0;
   // subscript range expression
   virtual void visit(SubscriptRangeExpression *expr) = 0;
+  // match path pattern expression
+  virtual void visit(MatchPathPatternExpression *expr) = 0;
 };
 
 }  // namespace nebula

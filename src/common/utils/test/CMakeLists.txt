@@ -14,6 +14,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
@@ -39,6 +40,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
@@ -67,6 +69,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>

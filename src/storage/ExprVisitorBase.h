@@ -62,6 +62,8 @@ class ExprVisitorBase : public ::nebula::ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // match pattern expression
+  void visit(MatchPathPatternExpression *expr) override;
 
  private:
   using ::nebula::ExprVisitor::visit;

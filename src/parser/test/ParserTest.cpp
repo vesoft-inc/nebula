@@ -2776,6 +2776,24 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
   }
 }
 
+TEST_F(ParserTest, MatchPathPatternExpression) {
+  {
+    std::string query = "WITH ()-[:like]->() AS l RETURN l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "RETURN (v:player)-[:like*0..2]->() AS l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "UNWIND (v)-[]->(v) AS l RETURN l";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 TEST_F(ParserTest, HOST) {
   {
     std::string query = "ADD HOSTS 127.0.0.1:8989";
@@ -3202,6 +3220,12 @@ TEST_F(ParserTest, JobTest) {
   };
   checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
   checkTest("SUBMIT JOB FLUSH", "SUBMIT JOB FLUSH");
+
+  checkTest("SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"",
+            "SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"");
+
+  checkTest("SUBMIT JOB INGEST", "SUBMIT JOB INGEST");
+
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB BALANCE IN ZONE", "SUBMIT JOB BALANCE IN ZONE");
   checkTest(

@@ -1,13 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/CreateUserExecutor.h"
 
 #include <proxygen/lib/utils/CryptUtil.h>
-
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {

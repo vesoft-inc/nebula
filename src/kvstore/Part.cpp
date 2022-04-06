@@ -211,7 +211,7 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
 }
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
-    std::unique_ptr<LogIterator> iter, bool wait) {
+    std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   LogID lastId = kNoCommitLogId;
@@ -309,12 +309,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        commitTransLeader(newLeader);
+        commitTransLeader(newLeader, needLock);
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        commitRemovePeer(peer);
+        commitRemovePeer(peer, needLock);
         break;
       }
       default: {
@@ -395,7 +395,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
       case OP_ADD_LEARNER: {
         auto learner = decodeHost(OP_ADD_LEARNER, log);
         LOG(INFO) << idStr_ << "preprocess add learner " << learner;
-        addLearner(learner);
+        addLearner(learner, false);
         // persist the part learner info in case of storaged restarting
         engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
         break;
@@ -433,9 +433,19 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
+
+  const auto& kvPre = NebulaKeyUtils::kvPrefix(partId_);
+  auto ret =
+      batch->removeRange(NebulaKeyUtils::firstKey(kvPre, 128), NebulaKeyUtils::lastKey(kvPre, 128));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup kvdata, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
+
   const auto& tagPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
-                                NebulaKeyUtils::lastKey(tagPre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(tagPre, vIdLen_),
+                           NebulaKeyUtils::lastKey(tagPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup tag, error "
             << apache::thrift::util::enumNameSafe(ret);

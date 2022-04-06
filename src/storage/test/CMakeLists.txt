@@ -1,4 +1,5 @@
 set(storage_test_deps
+    $<TARGET_OBJECTS:hdfs_helper_obj>
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
     $<TARGET_OBJECTS:meta_version_man_obj>
@@ -45,6 +46,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
@@ -462,40 +464,6 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        storage_http_download_test
-    SOURCES
-        StorageHttpDownloadHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        storage_http_ingest_test
-    SOURCES
-        StorageHttpIngestHandlerTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:storage_http_handler>
-        $<TARGET_OBJECTS:ws_obj>
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
         storage_http_property_test
     SOURCES
         StorageHttpPropertyHandlerTest.cpp
@@ -768,4 +736,3 @@ nebula_add_executable(
         wangle
         gtest
 )
-

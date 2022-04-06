@@ -5,7 +5,7 @@ on:
     types: [synchronize, reopened, labeled]
     branches:
       - master
-      - 'v[0-9]+.*'
+      - 'release-**'
 
 concurrency:
   group: ${{ github.head_ref }}
@@ -135,7 +135,9 @@ jobs:
       - name: CTest
         env:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        run: |
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
         working-directory: build/
         timeout-minutes: 20
       - name: Setup cluster
@@ -159,7 +161,7 @@ jobs:
             ;;
           esac
         working-directory: tests/
-        timeout-minutes: 2
+        timeout-minutes: 4
       - name: Pytest
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
@@ -181,11 +183,11 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: coverage
-        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
             ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
-        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
           files: fastcov.info
           fail_ci_if_error: false
@@ -225,7 +227,6 @@ jobs:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - name: Prepare environment
-        id: prepare
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
           make init -C tests
@@ -259,14 +260,16 @@ jobs:
       - name: CTest
         env:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        run: |
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
         working-directory: build/
         timeout-minutes: 20
       - name: Setup Cluster
         run: |
           make standalone-up
         working-directory: tests/
-        timeout-minutes: 60
+        timeout-minutes: 4
       - name: TCK
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck

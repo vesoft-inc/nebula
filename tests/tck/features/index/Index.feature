@@ -736,8 +736,8 @@ Feature: IndexTest_Vid_String
       SHOW TAG INDEX STATUS;
       """
     Then the result should contain:
-      | Name                                | Index Status |
-      | "rebuild_tag_space_all_tag_indexes" | "FINISHED"   |
+      | Name              | Index Status |
+      | "all_tag_indexes" | "FINISHED"   |
     When executing query:
       """
       LOOKUP ON id_tag WHERE id_tag.id == 100 YIELD id(vertex) as id
@@ -850,8 +850,8 @@ Feature: IndexTest_Vid_String
       SHOW EDGE INDEX STATUS;
       """
     Then the result should contain:
-      | Name                                  | Index Status |
-      | "rebuild_edge_space_all_edge_indexes" | "FINISHED"   |
+      | Name               | Index Status |
+      | "all_edge_indexes" | "FINISHED"   |
     When executing query:
       """
       LOOKUP ON id_edge WHERE id_edge.id == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank

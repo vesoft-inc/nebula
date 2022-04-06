@@ -4,7 +4,9 @@
 
 set(expression_test_common_libs
     $<TARGET_OBJECTS:parser_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
@@ -117,6 +119,7 @@ nebula_add_executable(
         FunctionCallExpressionBenchmark.cpp
     OBJECTS
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
@@ -140,6 +143,7 @@ nebula_add_executable(
         AggregateExpressionBenchmark.cpp
     OBJECTS
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>

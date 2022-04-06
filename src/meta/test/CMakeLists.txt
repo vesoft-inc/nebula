@@ -269,3 +269,18 @@ nebula_add_test(
         wangle
         gtest
 )
+
+nebula_add_test(
+    NAME
+        id_processor_test
+    SOURCES
+        IdProcessorTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)

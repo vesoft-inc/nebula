@@ -161,7 +161,6 @@ void setupRaft(int32_t numCopies,
   // Set up services
   for (int i = 0; i < numCopies; ++i) {
     services.emplace_back(RaftexService::createService(nullptr, nullptr));
-    if (!services.back()->start()) return;
     uint16_t port = services.back()->getServerPort();
     allHosts.emplace_back(ipStr, port);
   }
@@ -217,7 +216,7 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
   workers->wait();
   LOG(INFO) << "Waiting for all service stopped";
   for (auto& svc : services) {
-    svc->waitUntilStop();
+    svc->stop();
   }
 }
 

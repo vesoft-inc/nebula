@@ -1,13 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/SpaceExecutor.h"
 
 #include "common/stats/StatsManager.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
 #include "graph/stats/GraphStats.h"
@@ -26,7 +23,7 @@ folly::Future<Status> CreateSpaceExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Create space fail: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -45,7 +42,7 @@ folly::Future<Status> CreateSpaceAsExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Create space as node fail: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -56,13 +53,11 @@ folly::Future<Status> DescSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto *dsNode = asNode<DescSpace>(node());
-  return qctx()
-      ->getMetaClient()
-      ->getSpace(dsNode->getSpaceName())
-      .via(runner())
-      .thenValue([this](StatusOr<meta::cpp2::SpaceItem> resp) {
+  const auto &spaceName = dsNode->getSpaceName();
+  return qctx()->getMetaClient()->getSpace(spaceName).via(runner()).thenValue(
+      [this, spaceName](StatusOr<meta::cpp2::SpaceItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status();
+          LOG(WARNING) << "Desc space: " << spaceName << " fail: " << resp.status();
           return resp.status();
         }
         auto &spaceItem = resp.value();
@@ -139,7 +134,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
       .via(runner())
       .thenValue([this, dsNode, spaceIdRet, ftIndexes](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Drop space `" << dsNode->getSpaceName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Drop space `" << dsNode->getSpaceName() << "' failed: " << resp.status();
           return resp.status();
         }
         unRegisterSpaceLevelMetrics(dsNode->getSpaceName());
@@ -152,7 +147,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
         if (!ftIndexes.empty()) {
           auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
           if (!tsRet.ok()) {
-            LOG(WARNING) << "Get text search clients failed";
+            LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
             return Status::OK();
           }
           for (const auto &ftindex : ftIndexes) {
@@ -200,7 +195,8 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
       .via(runner())
       .thenValue([this, csNode, spaceIdRet, ftIndexes = std::move(ftIndexes)](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Clear space `" << csNode->getSpaceName() << "' failed: " << resp.status();
+          LOG(WARNING) << "Clear space `" << csNode->getSpaceName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         if (!ftIndexes.empty()) {
@@ -226,7 +222,7 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
   return qctx()->getMetaClient()->listSpaces().via(runner()).thenValue(
       [this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Show spaces failed: " << resp.status();
+          LOG(WARNING) << "Show spaces failed: " << resp.status();
           return resp.status();
         }
         auto spaceItems = std::move(resp).value();
@@ -261,8 +257,8 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
       .via(runner())
       .thenValue([this, scsNode](StatusOr<meta::cpp2::SpaceItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Show create space `" << scsNode->getSpaceName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "Show create space `" << scsNode->getSpaceName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto properties = resp.value().get_properties();
@@ -318,14 +314,15 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
 folly::Future<Status> AlterSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *asnode = asNode<AlterSpace>(node());
+  const auto &spaceName = asnode->getSpaceName();
   return qctx()
       ->getMetaClient()
       ->alterSpace(asnode->getSpaceName(), asnode->getAlterSpaceOp(), asnode->getParas())
       .via(runner())
-      .thenValue([this](StatusOr<bool> &&resp) {
+      .thenValue([this, spaceName](StatusOr<bool> &&resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status().toString();
+          LOG(WARNING) << "Alter space : " << spaceName << " fail: " << resp.status();
           return std::move(resp).status();
         }
         return Status::OK();

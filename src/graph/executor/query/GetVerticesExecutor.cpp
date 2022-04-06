@@ -1,13 +1,8 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/GetVerticesExecutor.h"
-
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
-#include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -67,7 +62,6 @@ DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
   // Accept Table such as | $a | $b | $c |... as input which one column indicate
   // src
   auto valueIter = ectx_->getResult(gv->inputVar()).iter();
-  VLOG(3) << "GV input var: " << gv->inputVar() << " iter kind: " << valueIter->kind();
   return buildRequestDataSetByVidType(valueIter.get(), gv->src(), gv->dedup());
 }
 

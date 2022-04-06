@@ -68,6 +68,7 @@ class PlanNode {
     kBiLeftJoin,
     kBiInnerJoin,
     kBiCartesianProduct,
+    kRollUpApply,
     kArgument,
 
     // Logic
@@ -174,8 +175,6 @@ class PlanNode {
     kShowFTIndexes,
     kSignInService,
     kSignOutService,
-    kDownload,
-    kIngest,
     kShowSessions,
     kUpdateSession,
 

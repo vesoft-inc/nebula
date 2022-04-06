@@ -19,11 +19,12 @@ namespace meta {
 
 class MetaJobExecutor : public JobExecutor {
  public:
-  MetaJobExecutor(JobID jobId,
+  MetaJobExecutor(GraphSpaceID space,
+                  JobID jobId,
                   kvstore::KVStore* kvstore,
                   AdminClient* adminClient,
                   const std::vector<std::string>& paras)
-      : JobExecutor(kvstore), jobId_(jobId), adminClient_(adminClient), paras_(paras) {
+      : JobExecutor(kvstore, space), jobId_(jobId), adminClient_(adminClient), paras_(paras) {
     executorOnFinished_ = [](meta::cpp2::JobStatus) { return nebula::cpp2::ErrorCode::SUCCEEDED; };
   }
 
@@ -60,8 +61,6 @@ class MetaJobExecutor : public JobExecutor {
 
   nebula::cpp2::ErrorCode finish(bool) override;
 
-  void setSpaceId(GraphSpaceID spaceId) override;
-
   bool isMetaJob() override;
 
   nebula::cpp2::ErrorCode recovery() override;
@@ -78,7 +77,6 @@ class MetaJobExecutor : public JobExecutor {
   JobID jobId_{INT_MIN};
   TaskID taskId_{0};
   AdminClient* adminClient_{nullptr};
-  GraphSpaceID space_;
   std::vector<std::string> paras_;
   volatile bool stopped_{false};
   std::mutex muInterrupt_;
