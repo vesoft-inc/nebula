@@ -125,7 +125,7 @@ bool MultiShortestPathExecutor::conjunctPath(Interims& leftPaths,
             auto backwardPath = rPath;
             backwardPath.reverse();
             forwardPath.append(std::move(backwardPath));
-            if (forwardPath.hasDuplicateEdges() || forwardPath.hasDuplicateVertices()) {
+            if (forwardPath.hasDuplicateVertices()) {
               continue;
             }
             Row row;
