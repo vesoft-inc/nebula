@@ -6,6 +6,7 @@
 #define GRAPH_GC_H_
 
 #include "common/base/Base.h"
+#include "common/thread/GenericWorker.h"
 #include "graph/context/Result.h"
 
 namespace nebula {
@@ -13,14 +14,15 @@ namespace graph {
 
 class GC {
  public:
-  static void clear(std::vector<Result>&& garbage) {
-    queue_.enqueue(garbage);
-  }
+  static GC& instance();
 
-  // TODO: async consumes and release the memory.
+  void clear(std::vector<Result>&& garbage);
 
  private:
-  static folly::UMPSCQueue<std::vector<Result>, false> queue_;
+  GC();
+  void periodicTask();
+  folly::UMPSCQueue<std::vector<Result>, false> queue_;
+  thread::GenericWorker worker_;
 };
 }  // namespace graph
 }  // namespace nebula

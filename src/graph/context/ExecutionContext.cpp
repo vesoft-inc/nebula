@@ -26,7 +26,7 @@ void ExecutionContext::setResult(const std::string& name, Result&& result) {
 
 void ExecutionContext::dropResult(const std::string& name) {
   auto& val = valueMap_[name];
-  GC::clear(std::move(val));
+  GC::instance().clear(std::move(val));
 }
 
 size_t ExecutionContext::numVersions(const std::string& name) const {

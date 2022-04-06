@@ -6,6 +6,23 @@
 
 namespace nebula {
 namespace graph {
-folly::UMPSCQueue<std::vector<Result>, false> GC::queue_;
+GC& GC::instance() {
+  static GC gc;
+  return gc;
+}
+
+GC::GC() {
+  worker_.addDelayTask(50, &GC::periodicTask, this);
+}
+
+void GC::clear(std::vector<Result>&& garbage) {
+  queue_.enqueue(garbage);
+}
+
+void GC::periodicTask() {
+  // TODO: maybe could release by batch
+  queue_.dequeue();
+  worker_.addDelayTask(50, &GC::periodicTask, this);
+}
 }  // namespace graph
 }  // namespace nebula
