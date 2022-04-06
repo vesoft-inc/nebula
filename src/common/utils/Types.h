@@ -26,6 +26,7 @@ enum class NebulaKeyType : uint32_t {
 enum class NebulaSystemKeyType : uint32_t {
   kSystemCommit = 0x00000001,
   kSystemPart = 0x00000002,
+  kSystemBalance = 0x00000003,
 };
 
 enum class NebulaOperationType : uint32_t {
