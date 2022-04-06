@@ -228,11 +228,10 @@ class KVEngine {
   virtual void addPart(PartitionID partId, const Peers& raftPeers) = 0;
 
   /**
-   * @brief Update part info. Could only update the peers' persist info now.
+   * @brief Update part info. Could only update the persist peers info in balancing now.
    *
    * @param partId
-   * @param raftPeer 1. if raftPeer.status is kDeleted, delete this peer.
-   *                 2. if raftPeer.status is others, add or update this peer
+   * @param raftPeer
    */
   virtual void updatePart(PartitionID partId, const Peer& raftPeer) = 0;
 
@@ -251,11 +250,11 @@ class KVEngine {
   virtual std::vector<PartitionID> allParts() = 0;
 
   /**
-   * @brief Return all partId->raft peers that current storage engine holds.
+   * @brief Return all balancing partId->raft peers that current storage engine holds.
    *
    * @return std::map<PartitionID, Peers> partId-> raft peers for each part, including learners
    */
-  virtual std::map<PartitionID, Peers> allPartPeers() = 0;
+  virtual std::map<PartitionID, Peers> balancePartPeers() = 0;
 
   /**
    * @brief Return total parts num
