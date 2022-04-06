@@ -394,7 +394,6 @@ void TraverseExecutor::releasePrevPaths(size_t cnt) {
     paths_.pop_front();
     totalPathCnt_ = cnt;
   }
-  LOG(ERROR) << "release prev time: " << dur.elapsedInUSec();
 }
 
 Status TraverseExecutor::handleZeroStep(const std::unordered_map<Value, Paths>& prev,

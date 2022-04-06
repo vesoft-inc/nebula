@@ -656,7 +656,6 @@ void Executor::drop() {
   }
   // Normal node
   drop(node());
-  LOG(ERROR) << "Free variable time:" << node()->outputVar() << " " << dur.elapsedInUSec();
 }
 
 void Executor::drop(const PlanNode *node) {
@@ -667,7 +666,6 @@ void Executor::drop(const PlanNode *node) {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << node->kind() << " Drop variable " << inputVar->name;
       }
     }
   }
@@ -741,7 +739,6 @@ size_t Executor::getBatchSize(size_t totalSize) const {
   size_t minBatchSize = FLAGS_min_batch_size;
   size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);
   size_t batchSize = batchSizeTmp > minBatchSize ? batchSizeTmp : minBatchSize;
-  VLOG(1) << "totalSize: " << totalSize << " batchSize:" << batchSize;
   return batchSize;
 }
 
