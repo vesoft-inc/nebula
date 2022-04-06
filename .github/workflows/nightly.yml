@@ -125,7 +125,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Debug \
               -DENABLE_TESTING=on \
               -DENABLE_COVERAGE=on \
-              -GNinja
+              -GNinja \
               -B build
       - name: Make
         run: |
