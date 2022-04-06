@@ -90,7 +90,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::JobOp::RECOVER: {
-      // Note that the last parameter is no longer spaceId
+      // Note that the last parameter is no longer spaceName
       std::vector<int32_t> jobIds;
       jobIds.reserve(paras.size());
       for (size_t i = 0; i < paras.size(); i++) {
