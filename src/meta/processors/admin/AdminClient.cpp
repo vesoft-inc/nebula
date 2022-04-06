@@ -43,6 +43,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   }
   auto target = dst;
   if (dst == kRandomPeer) {
+    // pick a alive host as target when dst not specified
     for (auto& p : peers) {
       if (p != src) {
         auto retCode = ActiveHostsMan::isLived(kv_, p);
@@ -52,6 +53,9 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
         }
       }
     }
+  }
+  if (target == kRandomPeer) {
+    return Status::Error("No active peers found");
   }
   req.new_leader_ref() = std::move(target);
   return getResponseFromPart(
