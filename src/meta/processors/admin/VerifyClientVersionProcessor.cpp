@@ -31,8 +31,7 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
     auto versionVal = MetaKeyUtils::versionVal(req.get_build_version().c_str());
     std::vector<kvstore::KV> versionData;
     versionData.emplace_back(std::move(versionKey), std::move(versionVal));
-    doSyncPut(versionData);
-    resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    handleErrorCode(doSyncPut(versionData));
   }
   onFinished();
 }
