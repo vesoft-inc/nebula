@@ -1,9 +1,11 @@
 name: rc
 
 on:
-  push:
-    branches:
-      - 'v[0-9]+.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version such as '3.1.0'"
+        required: true
 
 concurrency:
   group: rc
@@ -40,8 +42,8 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.16.7'
-      - uses: ./.github/actions/tagname-action
-        id: tag
+      - id: tag
+        run: echo ::set-output name=tagnum::${{ github.event.inputs.version }}
       - name: package
         run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE -k ON
       - name: output some vars
@@ -81,8 +83,11 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
-      - uses: ./.github/actions/tagname-action
-        id: tagname
+      - id: tagname
+        run: |
+          echo ::set-output name=tag::"v${{ github.event.inputs.version }}"
+          echo ::set-output name=tagnum::"${{ github.event.inputs.version }}"
+          echo ::set-output name=majorver::"v$(echo ${{ github.event.inputs.version }} | cut -f1 -d'.')"
       - id: docker
         run: |
           majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d".")

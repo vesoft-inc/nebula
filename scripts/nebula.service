@@ -234,6 +234,10 @@ function status_daemon {
             port=${GREEN}${port}${NC}
         else
             port=${BLINK}${RED}${port}${NC}
+            if [[ $daemon_name == nebula-storaged ]]; then
+                WARN "${daemon_name} after v3.0.0 will not start service until it is added to cluster."
+                WARN "See Manage Storage hosts:${RED}ADD HOSTS${NC} in https://docs.nebula-graph.io/"
+            fi
         fi
         INFO "${daemon_name}(${daemon_version}): Running as $(cat ${pid_file}), Listening on ${port}"
     else

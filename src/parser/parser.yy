@@ -576,6 +576,7 @@ unreserved_keyword
     | KW_MERGE              { $$ = new std::string("merge"); }
     | KW_DIVIDE             { $$ = new std::string("divide"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
+    | KW_CLEAR              { $$ = new std::string("clear"); }
     ;
 
 expression
@@ -3241,6 +3242,7 @@ download_sentence
                                              meta::cpp2::JobType::DOWNLOAD);
         sentence->addPara(*$3);
         $$ = sentence;
+        delete $3;
     }
     ;
 
@@ -3280,6 +3282,7 @@ admin_job_sentence
                                              meta::cpp2::JobType::DOWNLOAD);
         sentence->addPara(*$5);
         $$ = sentence;
+        delete($5);
     }
     | KW_SUBMIT KW_JOB KW_INGEST {
         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,

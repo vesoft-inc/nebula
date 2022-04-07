@@ -105,12 +105,13 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
   }
 
   auto right = expr->right();
-  if (expr->kind() == Expression::Kind::kRelIn) {  // container expressions
-    DCHECK(right->isContainerExpr());
-  } else {  // other expressions
-    DCHECK(right->kind() == Expression::Kind::kConstant);
-  }
 
+  // At this point all foldable expressions should already be folded.
+  if (right->kind() != Expression::Kind::kConstant) {
+    return Status::Error("The expression %s cannot be used to generate a index column hint",
+                         right->toString().c_str());
+  }
+  DCHECK(right->kind() == Expression::Kind::kConstant);
   const auto& value = static_cast<const ConstantExpression*>(right)->value();
 
   ScoredColumnHint hint;
