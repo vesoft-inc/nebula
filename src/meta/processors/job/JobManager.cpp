@@ -716,9 +716,14 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     // same type after this job.
     // If multiple jobs of the same type are specified, only starttime latest jobId
     // will can be recovered, no FINISHED job or FAILED job of the same type after this latest job.
-    // The same type of STOPPED job exists in the following form:
-    // STOPPED job, STOPPED job, FAILED job
-    // STOPPED job, STOPPED job, FINISHED job, STOPPED job
+    // The same type of STOPPED job exists in the following form, sorted by starttime:
+    // STOPPED job1, FAILED job2
+    // recover job job1        failed
+    // recover job job2        success
+    // STOPPED job1, FINISHED job2, STOPPED job3
+    // recover job job1        failed
+    // recover job job3        success
+    // recover job job1,job3   Only job3 can recover
     std::unordered_map<cpp2::JobType, std::tuple<JobID, int64_t, cpp2::JobStatus>> dupResult;
     std::unordered_map<JobID, std::pair<std::string, std::string>> dupkeyVal;
 
@@ -745,7 +750,6 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
           }
 
           // current recover job status is stopped
-          // Prioritize the recovery of not stopped jobs
           auto findJobIter = dupResult.find(jobType);
           if (findJobIter != dupResult.end()) {
             auto oldJobInfo = findJobIter->second;
@@ -754,7 +758,8 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
             }
           }
 
-          // For a stopped job, check whether there is a finished or failed job after it.
+          // For a stopped job, check whether there is the same type of finished or
+          // failed job after it.
           std::unique_ptr<kvstore::KVIterator> iter;
           auto jobPre = MetaKeyUtils::jobPrefix(spaceId);
           auto code = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobPre, &iter);
