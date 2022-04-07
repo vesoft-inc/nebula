@@ -5,6 +5,7 @@
 #include "graph/executor/admin/ListRolesExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
 
