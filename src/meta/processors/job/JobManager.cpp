@@ -705,14 +705,19 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     }
 
     // For DATA_BALANCE and ZONE_BALANCE job, jobs with STOPPED, FAILED, QUEUE status
-    // The following situations can be recovered:
-    // Queue: The job has not been executed, the machine restarted.
-    // FAILED: The failed jobid will be executed. FAILED and QUEUE jobs will not exist at the same
-    // time. STOPPED: If only one stopped jobId is specified, there will not be finished job or
-    // failed jobId after the job. If multiple jobIds are specified, only last jobId will be
-    // recovered. there will not be finished job or failed jobId after the job. The form in which
-    // the stop job exists STOPPED job, STOPPED job, FAILED job STOPPED job, STOPPED job, FINISHED
-    // job, STOPPED job
+    // !!! The following situations can be recovered:
+    // QUEUE: The job has not been executed, then the machine restarted.
+    // FAILED:
+    // The failed jobid will be recovered.
+    // FAILED and QUEUE jobs will not exist at the same time.
+    // STOPPED:
+    // If only one stopped jobId is specified, there will not be finished job or
+    // failed jobId after the job.
+    // If multiple jobIds are specified, only last jobId will can be recovered, there will not be
+    // finished job or failed jobId after the last job.
+    // The form in which the stop job exists:
+    // STOPPED job, STOPPED job, FAILED job
+    // STOPPED job, STOPPED job, FINISHED job, STOPPED job
     std::unordered_map<cpp2::JobType, std::tuple<JobID, int64_t, cpp2::JobStatus>> dupResult;
     std::unordered_map<JobID, std::pair<std::string, std::string>> dupkeyVal;
 
