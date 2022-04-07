@@ -248,7 +248,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
 
   // Set the errorcode of the job
   nebula::cpp2::ErrorCode jobErrCode = nebula::cpp2::ErrorCode::SUCCEEDED;
-  if (jobStatus != cpp2::JobStatus::FINISHED) {
+  if (jobStatus == cpp2::JobStatus::FAILED) {
     // Traverse the tasks and find the first task errorcode unsuccessful
     auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
     std::unique_ptr<kvstore::KVIterator> iter;
@@ -571,10 +571,10 @@ nebula::cpp2::ErrorCode JobManager::removeExpiredJobs(
   return ret;
 }
 
-bool JobManager::checkJobExist(GraphSpaceID spaceId,
-                               const cpp2::JobType& jobType,
-                               const std::vector<std::string>& paras,
-                               JobID& jobId) {
+bool JobManager::checkOnRunningJobExist(GraphSpaceID spaceId,
+                                        const cpp2::JobType& jobType,
+                                        const std::vector<std::string>& paras,
+                                        JobID& jobId) {
   JobDescription jobDesc(spaceId, 0, jobType, paras);
   auto it = inFlightJobs_.begin();
   while (it != inFlightJobs_.end()) {
@@ -585,6 +585,35 @@ bool JobManager::checkJobExist(GraphSpaceID spaceId,
     ++it;
   }
   return false;
+}
+
+nebula::cpp2::ErrorCode JobManager::checkNeedRecoverJobExist(GraphSpaceID spaceId,
+                                                             const cpp2::JobType& jobType) {
+  if (jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto jobPre = MetaKeyUtils::jobPrefix(spaceId);
+    auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobPre, &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Fetch jobs failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      return retCode;
+    }
+
+    for (; iter->valid(); iter->next()) {
+      if (!MetaKeyUtils::isJobKey(iter->key())) {
+        continue;
+      }
+      auto tup = MetaKeyUtils::parseJobVal(iter->val());
+      auto type = std::get<0>(tup);
+      auto status = std::get<2>(tup);
+      if (type == cpp2::JobType::DATA_BALANCE || type == cpp2::JobType::ZONE_BALANCE) {
+        // QUEUE: The job has not been executed, the machine restarted
+        if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::QUEUE) {
+          return nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER;
+        }
+      }
+    }
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
@@ -661,6 +690,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
   } else {
     std::vector<std::string> jobKeys;
     jobKeys.reserve(jobIds.size());
+    std::vector<std::pair<std::string, std::string>> totalJobKVs;
     for (int jobId : jobIds) {
       jobKeys.emplace_back(MetaKeyUtils::jobKey(spaceId, jobId));
     }
@@ -671,7 +701,132 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
       return retCode.first;
     }
     for (size_t i = 0; i < jobKeys.size(); i++) {
-      jobKVs.emplace_back(std::make_pair(jobKeys[i], jobVals[i]));
+      totalJobKVs.emplace_back(std::make_pair(jobKeys[i], jobVals[i]));
+    }
+
+    // For DATA_BALANCE and ZONE_BALANCE job, jobs with STOPPED, FAILED, QUEUE status
+    // !!! The following situations can be recovered, only for jobs of the same type
+    // of DATA_BALANCE or ZONE_BALANCE。
+    // QUEUE: The job has not been executed, then the machine restarted.
+    // FAILED:
+    // The failed job will be recovered.
+    // FAILED and QUEUE jobs will not exist at the same time.
+    // STOPPED:
+    // If only one stopped jobId is specified, No FINISHED job or FAILED job of the
+    // same type after this job.
+    // If multiple jobs of the same type are specified, only starttime latest jobId
+    // will can be recovered, no FINISHED job or FAILED job of the same type after this latest job.
+    // The same type of STOPPED job exists in the following form, sorted by starttime:
+    // STOPPED job1, FAILED job2
+    // recover job job1        failed
+    // recover job job2        success
+    // STOPPED job1, FINISHED job2, STOPPED job3
+    // recover job job1        failed
+    // recover job job3        success
+    // recover job job1,job3   Only job3 can recover
+    std::unordered_map<cpp2::JobType, std::tuple<JobID, int64_t, cpp2::JobStatus>> dupResult;
+    std::unordered_map<JobID, std::pair<std::string, std::string>> dupkeyVal;
+
+    for (auto& jobkv : totalJobKVs) {
+      auto optJobRet = JobDescription::makeJobDescription(jobkv.first, jobkv.second);
+      if (nebula::ok(optJobRet)) {
+        auto optJob = nebula::value(optJobRet);
+        auto jobStatus = optJob.getStatus();
+        auto jobId = optJob.getJobId();
+        auto jobType = optJob.getJobType();
+        auto jobStartTime = optJob.getStartTime();
+        if (jobStatus != cpp2::JobStatus::QUEUE && jobStatus != cpp2::JobStatus::FAILED &&
+            jobStatus != cpp2::JobStatus::STOPPED) {
+          continue;
+        }
+
+        // handle DATA_BALANCE and ZONE_BALANCE
+        if (jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) {
+          // FAILED and QUEUE jobs will not exist at the same time.
+          if (jobStatus == cpp2::JobStatus::FAILED || jobStatus == cpp2::JobStatus::QUEUE) {
+            dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
+            dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+            continue;
+          }
+
+          // current recover job status is stopped
+          auto findJobIter = dupResult.find(jobType);
+          if (findJobIter != dupResult.end()) {
+            auto oldJobInfo = findJobIter->second;
+            if (std::get<2>(oldJobInfo) != cpp2::JobStatus::STOPPED) {
+              continue;
+            }
+          }
+
+          // For a stopped job, check whether there is the same type of finished or
+          // failed job after it.
+          std::unique_ptr<kvstore::KVIterator> iter;
+          auto jobPre = MetaKeyUtils::jobPrefix(spaceId);
+          auto code = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobPre, &iter);
+          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            LOG(INFO) << "Fetch jobs failed, error: " << apache::thrift::util::enumNameSafe(code);
+            return code;
+          }
+
+          bool findRest = false;
+          for (; iter->valid(); iter->next()) {
+            if (!MetaKeyUtils::isJobKey(iter->key())) {
+              continue;
+            }
+
+            // eliminate oneself
+            auto keyPair = MetaKeyUtils::parseJobKey(iter->key());
+            auto destJobId = keyPair.second;
+            if (destJobId == jobId) {
+              continue;
+            }
+            auto tup = MetaKeyUtils::parseJobVal(iter->val());
+            auto destJobType = std::get<0>(tup);
+            auto destJobStatus = std::get<2>(tup);
+            auto destJobStartTime = std::get<3>(tup);
+            if (jobType == destJobType) {
+              // There is a specific type of failed job that does not allow recovery for the type of
+              // stopped job
+              if (destJobStatus == cpp2::JobStatus::FAILED) {
+                LOG(ERROR) << "There is a specific type of failed job that does not allow recovery "
+                              "for the type of stopped job";
+                findRest = true;
+                break;
+              } else if (destJobStatus == cpp2::JobStatus::FINISHED) {
+                // Compare the start time of the job
+                if (destJobStartTime > jobStartTime) {
+                  findRest = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (!findRest) {
+            auto findStoppedJobIter = dupResult.find(jobType);
+            if (findStoppedJobIter != dupResult.end()) {
+              // update stopped job
+              auto oldJobInfo = findStoppedJobIter->second;
+              auto oldJobStartTime = std::get<1>(oldJobInfo);
+              if (jobStartTime > oldJobStartTime) {
+                auto oldJobId = std::get<0>(oldJobInfo);
+                dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
+                dupkeyVal.erase(oldJobId);
+                dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+              }
+            } else {
+              // insert
+              dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
+              dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+            }
+          }
+        } else {
+          jobKVs.emplace_back(std::make_pair(jobkv.first, jobkv.second));
+        }
+      }
+    }
+    for (auto& key : dupResult) {
+      auto jId = std::get<0>(key.second);
+      jobKVs.emplace_back(dupkeyVal[jId]);
     }
   }
 
@@ -684,7 +839,8 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
                              optJob.getStatus() == cpp2::JobStatus::STOPPED))) {
         // Check if the job exists
         JobID jId = 0;
-        auto jobExist = checkJobExist(spaceId, optJob.getJobType(), optJob.getParas(), jId);
+        auto jobExist =
+            checkOnRunningJobExist(spaceId, optJob.getJobType(), optJob.getParas(), jId);
         if (!jobExist) {
           auto jobId = optJob.getJobId();
           enqueue(spaceId, jobId, JbOp::RECOVER, optJob.getJobType());

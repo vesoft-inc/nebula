@@ -159,8 +159,7 @@ class JobDescription {
   cpp2::JobDesc toJobDesc();
 
   bool operator==(const JobDescription& that) const {
-    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_ &&
-           status_ == that.status_;
+    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_;
   }
 
   bool operator!=(const JobDescription& that) const {
