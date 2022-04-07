@@ -90,7 +90,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::JobOp::RECOVER: {
-      // Note that the last parameter is no longer spaceId
+      // Note that the last parameter is no longer spaceName
       std::vector<int32_t> jobIds;
       jobIds.reserve(paras.size());
       for (size_t i = 0; i < paras.size(); i++) {
@@ -125,11 +125,17 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
 
   // Check if job not exists
   JobID jId = 0;
-  auto jobExist = jobMgr_->checkJobExist(spaceId_, type, paras, jId);
-  if (jobExist) {
+  auto runningJobExist = jobMgr_->checkOnRunningJobExist(spaceId_, type, paras, jId);
+  if (runningJobExist) {
     LOG(INFO) << "Job has already exists: " << jId;
     result.job_id_ref() = jId;
     return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  auto retCode = jobMgr_->checkNeedRecoverJobExist(spaceId_, type);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "There is a failed data balance or zone balance job, need to recover it firstly!";
+    return retCode;
   }
 
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());

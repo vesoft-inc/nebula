@@ -3,6 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/maintain/FTIndexExecutor.h"
+
 #include "graph/planner/plan/Maintain.h"
 #include "graph/util/FTIndexUtils.h"
 #include "interface/gen-cpp2/meta_types.h"

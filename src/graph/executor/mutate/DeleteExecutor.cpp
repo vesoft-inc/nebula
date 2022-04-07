@@ -3,6 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/mutate/DeleteExecutor.h"
+
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
