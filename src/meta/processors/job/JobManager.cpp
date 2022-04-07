@@ -606,7 +606,8 @@ nebula::cpp2::ErrorCode JobManager::checkNeedRecoverJobExist(GraphSpaceID spaceI
       auto type = std::get<0>(tup);
       auto status = std::get<2>(tup);
       if (type == cpp2::JobType::DATA_BALANCE || type == cpp2::JobType::ZONE_BALANCE) {
-        if (status == cpp2::JobStatus::FAILED) {
+        // QUEUE: The job has not been executed, the machine restarted
+        if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::QUEUE) {
           return nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER;
         }
       }
@@ -703,10 +704,15 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
       totalJobKVs.emplace_back(std::make_pair(jobKeys[i], jobVals[i]));
     }
 
-    // For DATA_BALANCE and ZONE_BALANCE, jobs with status stopped or failed
-    // If only one stopped jobId is specified, there will not be finished job or failed jobId after
-    // the job. If multiple jobIds are specified, only one jobId will be recovered. The failed jobid
-    // will be executed first. Otherwise recover the first stop jobId
+    // For DATA_BALANCE and ZONE_BALANCE job, jobs with STOPPED, FAILED, QUEUE status
+    // The following situations can be recovered:
+    // Queue: The job has not been executed, the machine restarted.
+    // FAILED: The failed jobid will be executed. FAILED and QUEUE jobs will not exist at the same
+    // time. STOPPED: If only one stopped jobId is specified, there will not be finished job or
+    // failed jobId after the job. If multiple jobIds are specified, only last jobId will be
+    // recovered. there will not be finished job or failed jobId after the job. The form in which
+    // the stop job exists STOPPED job, STOPPED job, FAILED job STOPPED job, STOPPED job, FINISHED
+    // job, STOPPED job
     std::unordered_map<cpp2::JobType, std::tuple<JobID, int64_t, cpp2::JobStatus>> dupResult;
     std::unordered_map<JobID, std::pair<std::string, std::string>> dupkeyVal;
 
@@ -725,7 +731,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
 
         // handle DATA_BALANCE and ZONE_BALANCE
         if (jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) {
-          // queue and failed, will not exist at the same time
+          // FAILED and QUEUE jobs will not exist at the same time.
           if (jobStatus == cpp2::JobStatus::FAILED || jobStatus == cpp2::JobStatus::QUEUE) {
             dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
             dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
@@ -736,7 +742,10 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
           // Prioritize the recovery of not stopped jobs
           auto findJobIter = dupResult.find(jobType);
           if (findJobIter != dupResult.end()) {
-            continue;
+            auto oldJobInfo = findJobIter->second;
+            if (std::get<2>(oldJobInfo) != cpp2::JobStatus::STOPPED) {
+              continue;
+            }
           }
 
           // For a stopped job, check whether there is a finished or failed job after it.
@@ -782,8 +791,22 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
             }
           }
           if (!findRest) {
-            dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
-            dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+            auto findStoppedJobIter = dupResult.find(jobType);
+            if (findStoppedJobIter != dupResult.end()) {
+              // update stopped job
+              auto oldJobInfo = findStoppedJobIter->second;
+              auto oldJobStartTime = std::get<1>(oldJobInfo);
+              if (jobStartTime > oldJobStartTime) {
+                auto oldJobId = std::get<0>(oldJobInfo);
+                dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
+                dupkeyVal.erase(oldJobId);
+                dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+              }
+            } else {
+              // insert
+              dupResult[jobType] = std::make_tuple(jobId, jobStartTime, jobStatus);
+              dupkeyVal.emplace(jobId, std::make_pair(jobkv.first, jobkv.second));
+            }
           }
         } else {
           jobKVs.emplace_back(std::make_pair(jobkv.first, jobkv.second));
