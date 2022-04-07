@@ -67,6 +67,21 @@ struct ScanInfo {
   bool anyLabel{false};
 };
 
+struct Path final {
+  bool anonymous{true};
+  std::string alias;
+  std::vector<NodeInfo> nodeInfos;
+  std::vector<EdgeInfo> edgeInfos;
+  PathBuildExpression* pathBuild{nullptr};
+
+  // True for pattern expresssion, to collect path to list
+  bool rollUpApply{false};
+  // vector ["v"] in (v)-[:like]->()
+  std::vector<std::string> compareVariables;
+  // "(v)-[:like]->()" in (v)-[:like]->()
+  std::string collectVariable;
+};
+
 struct CypherClauseContextBase : AstContext {
   explicit CypherClauseContextBase(CypherClauseKind k) : kind(k) {}
   virtual ~CypherClauseContextBase() = default;
@@ -76,6 +91,9 @@ struct CypherClauseContextBase : AstContext {
 
 struct WhereClauseContext final : CypherClauseContextBase {
   WhereClauseContext() : CypherClauseContextBase(CypherClauseKind::kWhere) {}
+
+  // from pattern expression
+  std::vector<Path> paths;
 
   Expression* filter{nullptr};
   std::unordered_map<std::string, AliasType> aliasesAvailable;
@@ -96,6 +114,9 @@ struct PaginationContext final : CypherClauseContextBase {
 
 struct YieldClauseContext final : CypherClauseContextBase {
   YieldClauseContext() : CypherClauseContextBase(CypherClauseKind::kYield) {}
+
+  // from pattern expression
+  std::vector<Path> paths;
 
   bool distinct{false};
   const YieldColumns* yieldColumns{nullptr};
@@ -128,19 +149,6 @@ struct WithClauseContext final : CypherClauseContextBase {
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
-struct Path final {
-  std::vector<NodeInfo> nodeInfos;
-  std::vector<EdgeInfo> edgeInfos;
-  PathBuildExpression* pathBuild{nullptr};
-
-  // True for pattern expresssion, to collect path to list
-  bool rollUpApply{false};
-  // vector ["v"] in (v)-[:like]->()
-  std::vector<std::string> compareVariables;
-  // "(v)-[:like]->()" in (v)-[:like]->()
-  std::string collectVariable;
-};
-
 struct MatchClauseContext final : CypherClauseContextBase {
   MatchClauseContext() : CypherClauseContextBase(CypherClauseKind::kMatch) {}
 
@@ -153,6 +161,9 @@ struct MatchClauseContext final : CypherClauseContextBase {
 
 struct UnwindClauseContext final : CypherClauseContextBase {
   UnwindClauseContext() : CypherClauseContextBase(CypherClauseKind::kUnwind) {}
+
+  // from pattern expression
+  std::vector<Path> paths;
 
   Expression* unwindExpr{nullptr};
   std::string alias;
@@ -179,15 +190,17 @@ struct CypherContext final : AstContext {
 };
 
 struct PatternContext {
-  PatternContext(PatternKind k, MatchClauseContext* m) : kind(k), matchClauseCtx(m) {}
+  explicit PatternContext(PatternKind k) : kind(k) {}
   const PatternKind kind;
-  MatchClauseContext* matchClauseCtx{nullptr};
 };
 
 struct NodeContext final : PatternContext {
-  NodeContext(MatchClauseContext* m, NodeInfo* i)
-      : PatternContext(PatternKind::kNode, m), info(i) {}
+  NodeContext(QueryContext* q, Expression* b, GraphSpaceID g, NodeInfo* i)
+      : PatternContext(PatternKind::kNode), qctx(q), bindFilter(b), spaceId(g), info(i) {}
 
+  QueryContext* qctx;
+  Expression* bindFilter;
+  GraphSpaceID spaceId;
   NodeInfo* info{nullptr};
   std::unordered_set<std::string>* nodeAliasesAvailable;
 
@@ -199,9 +212,12 @@ struct NodeContext final : PatternContext {
 };
 
 struct EdgeContext final : PatternContext {
-  EdgeContext(MatchClauseContext* m, EdgeInfo* i)
-      : PatternContext(PatternKind::kEdge, m), info(i) {}
+  EdgeContext(QueryContext* q, Expression* b, GraphSpaceID g, EdgeInfo* i)
+      : PatternContext(PatternKind::kEdge), qctx(q), bindFilter(b), spaceId(g), info(i) {}
 
+  QueryContext* qctx;
+  Expression* bindFilter;
+  GraphSpaceID spaceId;
   EdgeInfo* info{nullptr};
 
   // Output fields

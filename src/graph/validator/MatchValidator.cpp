@@ -178,6 +178,8 @@ Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &
   }
   pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   pathInfo.pathBuild = std::move(pathBuild);
+  pathInfo.anonymous = false;
+  pathInfo.alias = *pathAlias;
   return Status::OK();
 }
 

@@ -22,16 +22,16 @@ bool ArgumentFinder::matchEdge(EdgeContext* nodeCtx) {
 StatusOr<SubPlan> ArgumentFinder::transformNode(NodeContext* nodeCtx) {
   SubPlan subplan;
   auto alias = nodeCtx->info->alias;
-  auto argNode = Argument::make(nodeCtx->matchClauseCtx->qctx, alias);
+  auto argNode = Argument::make(nodeCtx->qctx, alias);
   argNode->setColNames({alias});
-  auto aliasGeneratedBy = nodeCtx->matchClauseCtx->qctx->symTable()->getAliasGeneratedBy(alias);
+  auto aliasGeneratedBy = nodeCtx->qctx->symTable()->getAliasGeneratedBy(alias);
   NG_RETURN_IF_ERROR(aliasGeneratedBy);
   argNode->setInputVar(aliasGeneratedBy.value());
   subplan.root = argNode;
   subplan.tail = argNode;
 
   // initialize start expression in project node
-  auto* pool = nodeCtx->matchClauseCtx->qctx->objPool();
+  auto* pool = nodeCtx->qctx->objPool();
   auto* args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, alias));
   nodeCtx->initialExpr = FunctionCallExpression::make(pool, "id", args);
