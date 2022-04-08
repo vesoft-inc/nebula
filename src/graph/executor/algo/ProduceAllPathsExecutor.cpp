@@ -29,12 +29,12 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
 
   return folly::collect(futures)
       .via(runner())
-      .thenValue([this](auto&& resps) {
-        UNUSED(resps);
+      .thenValue([this](auto&& status) {
+        UNUSED(status);
         return conjunctPath();
       })
-      .thenValue([this](auto&& resp) {
-        UNUSED(resp);
+      .thenValue([this](auto&& status) {
+        UNUSED(status);
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();

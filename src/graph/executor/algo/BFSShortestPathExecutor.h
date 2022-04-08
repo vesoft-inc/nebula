@@ -40,6 +40,7 @@
 // `rightVidVar_` : getNeighbors(right)'s inputVar
 namespace nebula {
 namespace graph {
+class BFSShortestPath;
 class BFSShortestPathExecutor final : public Executor {
  public:
   BFSShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
@@ -48,23 +49,24 @@ class BFSShortestPathExecutor final : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  void buildPath(Iterator* iter, bool reverse);
+  Status buildPath(bool reverse);
 
-  std::vector<Row> conjunctPath();
+  folly::Future<Status> conjunctPath();
+
+  DataSet doConjunct(const std::vector<Value> meetVids, bool oddStep);
 
   std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids,
                                                   bool reverse,
                                                   bool oddStep);
 
  private:
+  const BFSShortestPath* pathNode_{nullptr};
   size_t step_{1};
-  size_t steps_{1};
-  std::string leftVidVar_;
-  std::string rightVidVar_;
   std::unordered_set<Value> leftVisitedVids_;
   std::unordered_set<Value> rightVisitedVids_;
   std::vector<std::unordered_multimap<Value, Edge>> allLeftEdges_;
   std::vector<std::unordered_multimap<Value, Edge>> allRightEdges_;
+  DataSet currentDs_;
 };
 }  // namespace graph
 }  // namespace nebula

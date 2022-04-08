@@ -25,17 +25,24 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
+        // oddStep
         UNUSED(status);
         return conjunctPath(true);
       })
       .thenValue([this](auto&& termination) {
+        // termination is ture, all paths has found
         if (termination || step_ * 2 > pathNode_->steps()) {
           return folly::makeFuture<bool>(true);
         }
+        // evenStep
         return conjunctPath(false);
       })
       .thenValue([this](auto&& resp) {
         UNUSED(resp);
+        preLeftPaths_.swap(leftPaths_);
+        preRightPaths_.swap(rightPaths_);
+        leftPaths_.clear();
+        rightPaths_.clear();
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
@@ -144,6 +151,7 @@ DataSet MultiShortestPathExecutor::doConjunct(Interims::iterator startIter,
             Row row;
             row.values.emplace_back(std::move(forwardPath));
             ds.rows.emplace_back(std::move(row));
+            iter->second.second = false;
           }
         }
       }

@@ -10,17 +10,12 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* path = asNode<BFSShortestPath>(node());
-  auto leftIter = ectx_->getResult(path->leftInputVar()).iter();
-  auto rightIter = ectx_->getResult(path->rightInputVar()).iter();
-  DCHECK(!!leftIter && !!rightIter);
-  leftVidVar_ = path->leftVidVar();
-  rightVidVar_ = path->rightVidVar();
-  steps_ = path->steps();
+  pathNode_ = asNode<BFSShortestPath>(node());
+
   if (step_ == 1) {
     allRightEdges_.emplace_back();
     auto& currentEdges = allRightEdges_.back();
-    auto rIter = ectx_->getResult(rightVidVar_).iter();
+    auto rIter = ectx_->getResult(pathNode_->rightVidVar()).iter();
     std::unordered_set<Value> rightVids;
     for (; rIter->valid(); rIter->next()) {
       auto& vid = rIter->getColumn(0);
@@ -31,16 +26,32 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
     }
   }
 
-  DataSet ds;
-  ds.colNames = path->colNames();
-  buildPath(leftIter.get(), false);
-  buildPath(rightIter.get(), true);
-  ds.rows = conjunctPath();
-  step_++;
-  return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  std::vector<folly::Future<Status>> futures;
+  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
+  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  futures.emplace_back(std::move(leftFuture));
+  futures.emplace_back(std::move(rightFuture));
+
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& status) {
+        UNUSED(status);
+        return conjunctPath();
+      })
+      .thenValue([this](auto&& status) {
+        UNUSED(status);
+        step_++;
+        DataSet ds;
+        ds.colNames = pathNode_->colNames();
+        ds.rows.swap(currentDs_.rows);
+        return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      });
 }
 
-void BFSShortestPathExecutor::buildPath(Iterator* iter, bool reverse) {
+Status BFSShortestPathExecutor::buildPath(bool reverse) {
+  auto iter = reverse ? ectx_->getResult(pathNode_->rightInputVar()).iter()
+                      : ectx_->getResult(pathNode_->leftInputVar()).iter();
+  DCHECK(!!iter);
   auto& visitedVids = reverse ? rightVisitedVids_ : leftVisitedVids_;
   auto& allEdges = reverse ? allRightEdges_ : allLeftEdges_;
   allEdges.emplace_back();
@@ -85,14 +96,15 @@ void BFSShortestPathExecutor::buildPath(Iterator* iter, bool reverse) {
     }
   }
   // set nextVid
-  auto& nextVidVar = reverse ? rightVidVar_ : leftVidVar_;
+  const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
   ectx_->setResult(nextVidVar, ResultBuilder().value(std::move(nextStepVids)).build());
 
   visitedVids.insert(std::make_move_iterator(uniqueDst.begin()),
                      std::make_move_iterator(uniqueDst.end()));
+  return Status::OK();
 }
 
-std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
+folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   const auto& leftEdges = allLeftEdges_.back();
   const auto& preRightEdges = allRightEdges_[step_ - 1];
   std::vector<Value> meetVids;
@@ -102,7 +114,7 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
       meetVids.push_back(edge.first);
     }
   }
-  if (meetVids.empty() && step_ * 2 <= steps_) {
+  if (meetVids.empty() && step_ * 2 <= pathNode_->steps()) {
     const auto& rightEdges = allRightEdges_.back();
     for (const auto& edge : leftEdges) {
       if (rightEdges.find(edge.first) != rightEdges.end()) {
@@ -111,23 +123,49 @@ std::vector<Row> BFSShortestPathExecutor::conjunctPath() {
       }
     }
   }
-  std::vector<Row> rows;
-  if (!meetVids.empty()) {
-    auto leftPaths = createPath(meetVids, false, oddStep);
-    auto rightPaths = createPath(meetVids, true, oddStep);
-    for (auto& leftPath : leftPaths) {
-      auto range = rightPaths.equal_range(leftPath.first);
-      for (auto& rightPath = range.first; rightPath != range.second; ++rightPath) {
-        Path result = leftPath.second;
-        result.reverse();
-        result.append(rightPath->second);
-        Row row;
-        row.emplace_back(std::move(result));
-        rows.emplace_back(std::move(row));
-      }
+  if (meetVids.empty()) {
+    return Status::OK();
+  }
+  static size_t NUM_PROC = 5;
+  size_t totalSize = meetVids.size();
+  size_t batchSize = totalSize / NUM_PROC;
+  std::vector<Value> batchVids;
+  batchVids.reserve(batchSize);
+  std::vector<folly::Future<DataSet>> futures;
+  for (size_t i = 0; i < totalSize; ++i) {
+    batchVids.push_back(meetVids[i]);
+    if (i == totalSize - 1 || batchVids.size() == batchSize) {
+      auto future = folly::via(runner(), [this, vids = std::move(batchVids), oddStep]() {
+        return doConjunct(vids, oddStep);
+      });
+      futures.emplace_back(std::move(future));
     }
   }
-  return rows;
+
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
+    return Status::OK();
+  });
+}
+
+DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value> meetVids, bool oddStep) {
+  DataSet ds;
+  auto leftPaths = createPath(meetVids, false, oddStep);
+  auto rightPaths = createPath(meetVids, true, oddStep);
+  for (auto& leftPath : leftPaths) {
+    auto range = rightPaths.equal_range(leftPath.first);
+    for (auto& rightPath = range.first; rightPath != range.second; ++rightPath) {
+      Path result = leftPath.second;
+      result.reverse();
+      result.append(rightPath->second);
+      Row row;
+      row.emplace_back(std::move(result));
+      ds.rows.emplace_back(std::move(row));
+    }
+  }
+  return ds;
 }
 
 std::unordered_multimap<Value, Path> BFSShortestPathExecutor::createPath(
