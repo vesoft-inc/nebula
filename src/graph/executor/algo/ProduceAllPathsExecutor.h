@@ -37,6 +37,9 @@
 //    VALUE : all paths(the destination is KEY)
 //
 // `preRightPaths_` : same as preLeftPaths_
+// `leftPaths_` : same as preLeftPaths_(only keep the current step)
+// `rightPaths_` : same as preRightPaths_(only keep the current step)
+// `currentDs_`: keep the paths matched in current step
 namespace nebula {
 namespace graph {
 class ProduceAllPaths;

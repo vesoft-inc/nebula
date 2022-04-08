@@ -36,8 +36,7 @@
 //
 // `leftVisitedVids_` : keep already visited vid to avoid repeated visits (left)
 // `rightVisitedVids_` : keep already visited vid to avoid repeated visits (right)
-// `leftVidVar_` : getNeighbors(left)'s inputVar
-// `rightVidVar_` : getNeighbors(right)'s inputVar
+// `currentDs_`: keep the paths matched in current step
 namespace nebula {
 namespace graph {
 class BFSShortestPath;

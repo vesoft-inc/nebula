@@ -38,13 +38,14 @@
 //    VALUE : all paths(the destination is KEY)
 //
 // `preRightPaths_` : same as preLeftPaths_
-//
 // `terminationMap_` is hash table, cartesian product of From & To vid, In shortest path scenarios,
 //  when a pair of paths is found, the pair of data is deleted, and when it is empty, the expansion
 //  is terminated
-//
 // `terminationVar_`: when terminationMap_ is empty, then all paths are found, set it to true and
 //  the loop will terminate
+// `leftPaths_` : same as preLeftPaths_(only keep the current step)
+// `rightPaths_` : same as preRightPaths_(only keep the current step)
+// `currentDs_`: keep the paths matched in current step
 namespace nebula {
 namespace graph {
 class MultiShortestPath;
