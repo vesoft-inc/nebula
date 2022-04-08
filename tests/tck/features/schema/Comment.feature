@@ -47,7 +47,7 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | Space                  | Create Space                                                                                                                                                                          |
+      | Space                  | Create Space                                                                                                                                                       |
       | "test_comment_not_set" | /[CREATE SPACE `test_comment_not_set` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)/ |
     When executing query:
       """
@@ -74,7 +74,7 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | Space                | Create Space                                                                                                                                                                                         |
+      | Space                | Create Space                                                                                                                                                                      |
       | "test_comment_empty" | /[CREATE SPACE `test_comment_empty` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)\s[comment = '']+/ |
     When executing query:
       """
