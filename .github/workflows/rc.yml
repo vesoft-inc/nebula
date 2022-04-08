@@ -45,7 +45,7 @@ jobs:
       - id: tag
         run: echo ::set-output name=tagnum::${{ github.event.inputs.version }}
       - name: package
-        run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }} -t RelWithDebInfo -r OFF -p ON -s TRUE -k ON
+        run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }}
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-graph-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
