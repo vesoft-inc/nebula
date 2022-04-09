@@ -613,6 +613,21 @@ Feature: Basic Aggregate and GroupBy
       | sum |
       | 6   |
 
+  Scenario: Reference the output of group by
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER * YIELD dst(edge) as dst, $$.player.age as age 
+        | GROUP BY $-.dst YIELD (sum($-.age)+3) as age 
+        | ORDER BY $-.age
+      """
+    Then the result should be, in order:
+      | age |
+      | 3   |
+      | 34  |
+      | 36  |
+      | 75  |
+      | 85  |
+
   Scenario: Error Check
     When executing query:
       """
