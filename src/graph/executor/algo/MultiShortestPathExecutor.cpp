@@ -4,7 +4,7 @@
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
 
 #include "graph/planner/plan/Algo.h"
-
+DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> MultiShortestPathExecutor::execute() {
@@ -161,8 +161,7 @@ DataSet MultiShortestPathExecutor::doConjunct(Interims::iterator startIter,
 }
 
 folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
-  static size_t NUM_PROC = 5;
-  size_t batchSize = leftPaths_.size() / NUM_PROC;
+  size_t batchSize = leftPaths_.size() / static_cast<size_t>(FLAGS_num_operator_threads);
   std::vector<folly::Future<DataSet>> futures;
   size_t i = 0;
 
