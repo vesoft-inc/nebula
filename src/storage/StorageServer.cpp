@@ -42,6 +42,8 @@ DEFINE_bool(local_config, false, "meta client will not retrieve latest configura
 DEFINE_int32(storage_port, 44501, "Storage daemon listening port");
 DEFINE_int32(storage_num_worker_threads, 32, "Number of workers");
 DECLARE_bool(local_config);
+DEFINE_bool(add_local_host, true, "Whether add localhost automatically");
+DECLARE_string(local_ip);
 #endif
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
@@ -168,6 +170,28 @@ bool StorageServer::start() {
   options.dataPaths_ = dataPaths_;
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_, metaAddrs_, options);
+
+#ifdef BUILD_STANDALONE
+  if (FLAGS_add_local_host) {
+    std::vector<HostAddr> hosts = {{FLAGS_local_ip, FLAGS_storage_port}};
+    folly::Baton<> baton;
+    bool isAdded = false;
+    metaClient_->addHosts(hosts).thenValue([&isAdded, &baton](StatusOr<bool> resp) {
+      if (!resp.ok() || !resp.value()) {
+        LOG(ERROR) << "Add hosts for standalone failed.";
+      } else {
+        LOG(INFO) << "Add hosts for standalone succeed.";
+        isAdded = true;
+      }
+      baton.post();
+    });
+    baton.wait();
+    if (!isAdded) {
+      return false;
+    }
+  }
+#endif
+
   if (!metaClient_->waitForMetadReady()) {
     LOG(ERROR) << "waitForMetadReady error!";
     return false;
