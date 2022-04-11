@@ -616,8 +616,8 @@ Feature: Basic Aggregate and GroupBy
   Scenario: Reference the output of group by
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER * YIELD dst(edge) as dst, $$.player.age as age 
-        | GROUP BY $-.dst YIELD (sum($-.age)+3) as age 
+      GO FROM "Tim Duncan" OVER * YIELD dst(edge) as dst, $$.player.age as age
+        | GROUP BY $-.dst YIELD (sum($-.age)+3) as age
         | ORDER BY $-.age
       """
     Then the result should be, in order:
