@@ -7,6 +7,7 @@
 #include <folly/String.h>
 #include <folly/executors/InlineExecutor.h>
 
+#include <algorithm>
 #include <atomic>
 
 #include "common/base/ObjectPool.h"
@@ -716,9 +717,11 @@ Status Executor::finish(Result &&result) {
   } else {
     VLOG(1) << "Drop variable " << node()->outputVar();
   }
+  // time::Duration dur;
   if (FLAGS_enable_lifetime_optimize) {
     drop();
   }
+  // LOG(ERROR) << "drop: " << dur.elapsedInUSec();
   return Status::OK();
 }
 
