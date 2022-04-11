@@ -790,7 +790,6 @@ TEST(BalanceTest, NormalZoneTest) {
   ret = balancer.executeInternal();
   baton.wait();
   EXPECT_EQ(Status::OK(), ret.value());
-  verifyMetaZone(kv, balancer.spaceInfo_.spaceId_, {"1", "2", "3", "4"});
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 12);
 }
