@@ -1,14 +1,12 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
 #define GRAPH_EXECUTOR_QUERY_SCANVERTICESEXECUTOR_H
 
 #include "graph/executor/query/GetPropExecutor.h"
-#include "graph/planner/plan/Query.h"
-
+// full table scan vertices, but must have limit parameter
 namespace nebula {
 namespace graph {
 

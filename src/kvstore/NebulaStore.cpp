@@ -13,6 +13,8 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
+#include "common/time/WallClock.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
 
@@ -36,9 +38,6 @@ NebulaStore::~NebulaStore() {
   stop();
   LOG(INFO) << "Cut off the relationship with meta client";
   options_.partMan_.reset();
-  raftService_->stop();
-  LOG(INFO) << "Waiting for the raft service stop...";
-  raftService_->waitUntilStop();
   bgWorkers_->stop();
   bgWorkers_->wait();
   storeWorker_->stop();
@@ -56,7 +55,7 @@ bool NebulaStore::init() {
   CHECK(storeWorker_->start());
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
-  if (!raftService_->start()) {
+  if (raftService_ == nullptr) {
     LOG(ERROR) << "Start the raft service failed";
     return false;
   }
@@ -84,7 +83,8 @@ bool NebulaStore::init() {
 void NebulaStore::loadPartFromDataPath() {
   CHECK(!!options_.partMan_);
   LOG(INFO) << "Scan the local path, and init the spaces_";
-  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> spacePartIdSet;
+  // avoid duplicate engine created
+  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> partSet;
   for (auto& path : options_.dataPaths_) {
     auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
     auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
@@ -104,35 +104,78 @@ void NebulaStore::loadPartFromDataPath() {
           continue;
         }
 
-        // Load raft peers info which persisted to local engine.
-        // If the partition was in balancing process before restart, we should keep it
-        // though the part is not in the meta.
         auto engine = newEngine(spaceId, path, options_.walPath_);
         std::map<PartitionID, Peers> partRaftPeers;
-        for (auto& [partId, raftPeers] : engine->allPartPeers()) {
-          bool isNormalPeer = true;
 
-          Peer raftPeer;
-          bool exist = raftPeers.get(raftAddr_, &raftPeer);
-          if (exist) {
-            if (raftPeer.status != Peer::Status::kNormalPeer) {
-              isNormalPeer = false;
-            }
+        // load balancing part info which persisted to local engine.
+        for (auto& [partId, raftPeers] : engine->balancePartPeers()) {
+          CHECK_NE(raftPeers.size(), 0);
+
+          if (raftPeers.isExpired()) {
+            LOG(INFO) << "Space: " << spaceId << ", part:" << partId
+                      << " balancing info expired, ignore it.";
+            continue;
           }
 
-          if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok() && isNormalPeer) {
-            LOG(INFO) << "Part " << partId
-                      << " is a normal peer and does not exist in meta any more, will remove it!";
-            engine->removePart(partId);
-            continue;
-          } else {
-            auto spacePart = std::make_pair(spaceId, partId);
-            if (spacePartIdSet.find(spacePart) == spacePartIdSet.end()) {
-              spacePartIdSet.emplace(spacePart);
-              partRaftPeers.emplace(partId, raftPeers);
+          auto spacePart = std::make_pair(spaceId, partId);
+          if (partSet.find(spacePart) == partSet.end()) {
+            partSet.emplace(std::make_pair(spaceId, partId));
+
+            // join the balancing peers with meta peers
+            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+            if (!metaStatus.ok()) {
+              LOG(INFO) << "Space: " << spaceId << "; partId: " << partId
+                        << " does not exist in part manager when join balancing.";
+            } else {
+              auto partMeta = metaStatus.value();
+              for (auto& h : partMeta.hosts_) {
+                auto raftAddr = getRaftAddr(h);
+                if (!raftPeers.exist(raftAddr)) {
+                  VLOG(1) << "Add raft peer " << raftAddr;
+                  raftPeers.addOrUpdate(Peer(raftAddr));
+                }
+              }
             }
+
+            partRaftPeers.emplace(partId, raftPeers);
           }
         }
+
+        // load normal part ids which persisted to local engine.
+        for (auto& partId : engine->allParts()) {
+          // first priority: balancing
+          bool inBalancing = partRaftPeers.find(partId) != partRaftPeers.end();
+          if (inBalancing) {
+            continue;
+          }
+
+          // second priority: meta
+          if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
+            LOG(INFO)
+                << "Part " << partId
+                << " is not in balancing and does not exist in meta any more, will remove it!";
+            engine->removePart(partId);
+            continue;
+          }
+
+          auto spacePart = std::make_pair(spaceId, partId);
+          if (partSet.find(spacePart) == partSet.end()) {
+            partSet.emplace(spacePart);
+
+            // fill the peers
+            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+            CHECK(metaStatus.ok());
+            auto partMeta = metaStatus.value();
+            Peers peers;
+            for (auto& h : partMeta.hosts_) {
+              VLOG(1) << "Add raft peer " << getRaftAddr(h);
+              peers.addOrUpdate(Peer(getRaftAddr(h)));
+            }
+            partRaftPeers.emplace(partId, peers);
+          }
+        }
+
+        // there is no valid part in this engine, remove it
         if (partRaftPeers.empty()) {
           engine.reset();  // close engine
           if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
@@ -144,7 +187,7 @@ void NebulaStore::loadPartFromDataPath() {
           continue;
         }
 
-        // add to spaces if the part should exist
+        // add to spaces
         KVEngine* enginePtr = nullptr;
         {
           folly::RWSpinLock::WriteHolder wh(&lock_);
@@ -192,7 +235,7 @@ void NebulaStore::loadPartFromDataPath() {
                     }
 
                     if (raftPeer.status == Peer::Status::kLearner) {
-                      part->addLearner(addr);
+                      part->addLearner(addr, true);
                     }
                   }
                 }
@@ -273,6 +316,7 @@ void NebulaStore::stop() {
   LOG(INFO) << "Stop the raft service...";
   raftService_->stop();
 
+  LOG(INFO) << "Stop kv engine...";
   for (const auto& space : spaces_) {
     for (const auto& engine : space.second->engines_) {
       engine->stop();
@@ -883,33 +927,41 @@ nebula::cpp2::ErrorCode NebulaStore::ingest(GraphSpaceID spaceId) {
   if (!ok(spaceRet)) {
     return error(spaceRet);
   }
+
   LOG(INFO) << "Ingesting space " << spaceId;
   auto space = nebula::value(spaceRet);
+  std::vector<std::thread> threads;
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto& engine : space->engines_) {
-    auto parts = engine->allParts();
-    for (auto part : parts) {
-      auto ret = this->engine(spaceId, part);
-      if (!ok(ret)) {
-        return error(ret);
-      }
+    threads.emplace_back(std::thread([&engine, &code, this, spaceId] {
+      auto parts = engine->allParts();
+      for (auto part : parts) {
+        auto ret = this->engine(spaceId, part);
+        if (!ok(ret)) {
+          code = error(ret);
+        } else {
+          auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
+          if (!fs::FileUtils::exist(path)) {
+            LOG(INFO) << path << " not existed";
+            continue;
+          }
 
-      auto path = folly::stringPrintf("%s/download/%d", value(ret)->getDataRoot(), part);
-      if (!fs::FileUtils::exist(path)) {
-        VLOG(1) << path << " not existed while ingesting";
-        continue;
-      }
-
-      auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
-      for (auto file : files) {
-        VLOG(1) << "Ingesting extra file: " << file;
-        auto code = engine->ingest(std::vector<std::string>({file}));
-        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return code;
+          auto files = nebula::fs::FileUtils::listAllFilesInDir(path.c_str(), true, "*.sst");
+          auto result = engine->ingest(std::vector<std::string>(files));
+          if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            code = result;
+          }
         }
       }
-    }
+    }));
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+
+  // Wait for all threads to finish
+  for (auto& t : threads) {
+    t.join();
+  }
+  LOG(INFO) << "Space " << spaceId << " ingest done.";
+  return code;
 }
 
 nebula::cpp2::ErrorCode NebulaStore::setOption(GraphSpaceID spaceId,

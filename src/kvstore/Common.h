@@ -9,11 +9,16 @@
 #include <folly/Function.h>
 #include <rocksdb/slice.h>
 
+#include <sstream>
+
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 #include "common/thrift/ThriftTypes.h"
+#include "common/time/WallClock.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/common_types.h"
+
+DECLARE_int64(balance_expired_sesc);
 
 namespace nebula {
 namespace kvstore {
@@ -59,6 +64,7 @@ struct Peer {
   Status status;
 
   Peer() : addr(), status(Status::kNormalPeer) {}
+  explicit Peer(HostAddr a) : addr(a), status(Status::kNormalPeer) {}
   Peer(HostAddr a, Status s) : addr(a), status(s) {}
 
   std::string toString() const {
@@ -106,26 +112,37 @@ inline std::ostream& operator<<(std::ostream& os, const Peer& peer) {
 struct Peers {
  private:
   std::map<HostAddr, Peer> peers;
+  int64_t createdTime;
 
  public:
-  Peers() {}
+  Peers() {
+    createdTime = time::WallClock::fastNowInSec();
+  }
   explicit Peers(const std::vector<HostAddr>& addrs) {  // from normal peers
     for (auto& addr : addrs) {
       peers[addr] = Peer(addr, Peer::Status::kNormalPeer);
     }
+    createdTime = time::WallClock::fastNowInSec();
   }
   explicit Peers(const std::vector<Peer>& ps) {
     for (auto& p : ps) {
       peers[p.addr] = p;
     }
+    createdTime = time::WallClock::fastNowInSec();
   }
-  explicit Peers(std::map<HostAddr, Peer> ps) : peers(std::move(ps)) {}
+  explicit Peers(std::map<HostAddr, Peer> ps) : peers(std::move(ps)) {
+    createdTime = time::WallClock::fastNowInSec();
+  }
 
   void addOrUpdate(const Peer& peer) {
     peers[peer.addr] = peer;
   }
 
-  bool get(const HostAddr& addr, Peer* peer) {
+  bool exist(const HostAddr& addr) const {
+    return peers.find(addr) != peers.end();
+  }
+
+  bool get(const HostAddr& addr, Peer* peer) const {
     auto it = peers.find(addr);
     if (it == peers.end()) {
       return false;
@@ -141,7 +158,7 @@ struct Peers {
     peers.erase(addr);
   }
 
-  size_t size() {
+  size_t size() const {
     return peers.size();
   }
 
@@ -149,31 +166,53 @@ struct Peers {
     return peers;
   }
 
+  bool allNormalPeers() const {
+    for (const auto& [addr, peer] : peers) {
+      if (peer.status == Peer::Status::kDeleted) {
+        continue;
+      }
+
+      if (peer.status != Peer::Status::kNormalPeer) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool isExpired() const {
+    return time::WallClock::fastNowInSec() - createdTime > FLAGS_balance_expired_sesc;
+  }
+
+  void setCreatedTime(int64_t time) {
+    createdTime = time;
+  }
+
   std::string toString() const {
     std::stringstream os;
     os << "version:1,"
-       << "count:" << peers.size() << "\n";
+       << "count:" << peers.size() << ",ts:" << createdTime << "\n";
     for (const auto& [_, p] : peers) {
       os << p << "\n";
     }
     return os.str();
   }
 
-  static std::pair<int, int> extractHeader(const std::string& header) {
-    auto pos = header.find(":");
-    if (pos == std::string::npos) {
+  static std::tuple<int, int, int64_t> extractHeader(const std::string& header) {
+    std::vector<std::string> fields;
+    folly::split(":", header, fields, true);
+    if (fields.size() != 4) {
       LOG(INFO) << "Parse part peers header error:" << header;
-      return {0, 0};
+      return {0, 0, 0};
     }
-    int version = std::stoi(header.substr(pos + 1));
-    pos = header.find(":", pos + 1);
-    if (pos == std::string::npos) {
-      LOG(INFO) << "Parse part peers header error:" << header;
-      return {0, 0};
-    }
-    int count = std::stoi(header.substr(pos + 1));
 
-    return {version, count};
+    int version = std::stoi(fields[1]);
+    int count = std::stoi(fields[2]);
+
+    int64_t createdTime;
+    std::istringstream iss(fields[3]);
+    iss >> createdTime;
+
+    return {version, count, createdTime};
   }
 
   static Peers fromString(const std::string& str) {
@@ -186,7 +225,7 @@ struct Peers {
       return peers;
     }
 
-    auto [version, count] = extractHeader(lines[0]);
+    auto [version, count, createdTime] = extractHeader(lines[0]);
     if (version != 1) {
       LOG(INFO) << "Wrong peers format version:" << version;
       return peers;
@@ -197,6 +236,8 @@ struct Peers {
                 << " does not match real count:" << static_cast<int>(lines.size()) - 1;
       return peers;
     }
+
+    peers.setCreatedTime(createdTime);
 
     // skip header
     for (size_t i = 1; i < lines.size(); ++i) {

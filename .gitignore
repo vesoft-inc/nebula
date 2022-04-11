@@ -38,6 +38,7 @@ modules/
 
 # tests
 !tests/Makefile
+tests/secrets
 reformat-gherkin
 nebula-python
 

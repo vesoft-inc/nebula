@@ -1,14 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/UnwindExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
-#include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
@@ -37,7 +33,6 @@ folly::Future<Status> UnwindExecutor::execute() {
       ds.rows.emplace_back(std::move(row));
     }
   }
-  VLOG(1) << "Unwind result is: " << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

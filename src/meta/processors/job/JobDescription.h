@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef META_KVJOBDESCRIPTION_H_
-#define META_KVJOBDESCRIPTION_H_
+#ifndef META_JOBDESCRIPTION_H_
+#define META_JOBDESCRIPTION_H_
 
 #include <gtest/gtest_prod.h>
 
@@ -159,8 +159,7 @@ class JobDescription {
   cpp2::JobDesc toJobDesc();
 
   bool operator==(const JobDescription& that) const {
-    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_ &&
-           status_ == that.status_;
+    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_;
   }
 
   bool operator!=(const JobDescription& that) const {
@@ -182,4 +181,4 @@ class JobDescription {
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_KVJOBDESCRIPTION_H_
+#endif  // META_JOBDESCRIPTION_H_

@@ -211,7 +211,9 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
 }
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
-    std::unique_ptr<LogIterator> iter, bool wait) {
+    std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
+  // We should apply any membership change which happens before start time. Because when we start
+  // up, the peers comes from meta, has already contains all previous changes.
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   LogID lastId = kNoCommitLogId;
@@ -309,12 +311,26 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        commitTransLeader(newLeader);
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          commitTransLeader(newLeader, needLock);
+        } else {
+          VLOG(2) << idStr_ << "Skip commit stale transfer leader " << newLeader
+                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
+                  << ts;
+        }
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        commitRemovePeer(peer);
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          commitRemovePeer(peer, needLock);
+        } else {
+          VLOG(2) << idStr_ << "Skip commit stale remove peer " << peer
+                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
+                  << ts;
+        }
         break;
       }
       default: {
@@ -389,36 +405,63 @@ nebula::cpp2::ErrorCode Part::putCommitMsg(WriteBatch* batch,
 }
 
 bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const std::string& log) {
+  // We should apply any membership change which happens before start time. Because when we start
+  // up, the peers comes from meta, has already contains all previous changes.
   VLOG(4) << idStr_ << "logId " << logId << ", termId " << termId << ", clusterId " << clusterId;
   if (!log.empty()) {
     switch (log[sizeof(int64_t)]) {
       case OP_ADD_LEARNER: {
         auto learner = decodeHost(OP_ADD_LEARNER, log);
-        LOG(INFO) << idStr_ << "preprocess add learner " << learner;
-        addLearner(learner);
-        // persist the part learner info in case of storaged restarting
-        engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          VLOG(1) << idStr_ << "preprocess add learner " << learner;
+          addLearner(learner, false);
+          // persist the part learner info in case of storaged restarting
+          engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
+        } else {
+          VLOG(1) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
+                  << startTimeMs_ << ", but the log timestamp is " << ts;
+        }
         break;
       }
       case OP_TRANS_LEADER: {
         auto newLeader = decodeHost(OP_TRANS_LEADER, log);
-        LOG(INFO) << idStr_ << "preprocess trans leader " << newLeader;
-        preProcessTransLeader(newLeader);
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          VLOG(1) << idStr_ << "preprocess trans leader " << newLeader;
+          preProcessTransLeader(newLeader);
+        } else {
+          VLOG(1) << idStr_ << "Skip stale transfer leader " << newLeader
+                  << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
+                  << ts;
+        }
         break;
       }
       case OP_ADD_PEER: {
         auto peer = decodeHost(OP_ADD_PEER, log);
-        LOG(INFO) << idStr_ << "preprocess add peer " << peer;
-        addPeer(peer);
-        engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          VLOG(1) << idStr_ << "preprocess add peer " << peer;
+          addPeer(peer);
+          engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
+        } else {
+          VLOG(1) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
+                  << startTimeMs_ << ", but the log timestamp is " << ts;
+        }
         break;
       }
       case OP_REMOVE_PEER: {
         auto peer = decodeHost(OP_REMOVE_PEER, log);
-        LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
-        preProcessRemovePeer(peer);
-        // remove peer in the persist info
-        engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
+        auto ts = getTimestamp(log);
+        if (ts > startTimeMs_) {
+          VLOG(1) << idStr_ << "preprocess remove peer " << peer;
+          preProcessRemovePeer(peer);
+          // remove peer in the persist info
+          engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
+        } else {
+          VLOG(1) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
+                  << startTimeMs_ << ", but the log timestamp is " << ts;
+        }
         break;
       }
       default: {

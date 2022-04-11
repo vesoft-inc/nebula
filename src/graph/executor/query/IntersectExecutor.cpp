@@ -1,14 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/IntersectExecutor.h"
 
-#include <unordered_set>
-
-#include "common/time/ScopedTimer.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {

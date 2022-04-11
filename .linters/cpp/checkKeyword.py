@@ -75,7 +75,6 @@ reserved_key_words = [
     'KW_ADD',
     'KW_CREATE',
     'KW_DROP',
-    'KW_CLEAR',
     'KW_REMOVE',
     'KW_IF',
     'KW_NOT',

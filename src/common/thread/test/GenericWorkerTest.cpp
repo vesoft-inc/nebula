@@ -93,7 +93,7 @@ static testing::AssertionResult msAboutEqual(size_t expected, size_t actual) {
   return testing::AssertionFailure() << "actual: " << actual << ", expected: " << expected;
 }
 
-TEST(GenericWorker, addDelayTask) {
+TEST(GenericWorker, DISABLED_addDelayTask) {
   GenericWorker worker;
   ASSERT_TRUE(worker.start());
   {
@@ -108,7 +108,7 @@ TEST(GenericWorker, addDelayTask) {
   }
 }
 
-TEST(GenericWorker, addRepeatTask) {
+TEST(GenericWorker, DISABLED_addRepeatTask) {
   GenericWorker worker;
   ASSERT_TRUE(worker.start());
   {
@@ -120,7 +120,7 @@ TEST(GenericWorker, addRepeatTask) {
   }
 }
 
-TEST(GenericWorker, DISABLE_purgeRepeatTask) {
+TEST(GenericWorker, DISABLED_purgeRepeatTask) {
   GenericWorker worker;
   ASSERT_TRUE(worker.start());
   {

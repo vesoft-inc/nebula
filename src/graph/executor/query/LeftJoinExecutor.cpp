@@ -1,13 +1,9 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/LeftJoinExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -48,7 +44,6 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   }
 
   result.colNames = colNames;
-  VLOG(2) << node_->toString() << ", result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 

@@ -1,15 +1,12 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/SubmitJobExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/time/ScopedTimer.h"
 #include "common/time/TimeUtils.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
@@ -28,11 +25,11 @@ folly::Future<Status> SubmitJobExecutor::execute() {
       ->getMetaClient()
       ->submitJob(spaceId, jobOp, jobType, params)
       .via(runner())
-      .thenValue([jobOp, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
+      .thenValue([jobOp, spaceId, this](StatusOr<meta::cpp2::AdminJobResult> &&resp) {
         SCOPED_TIMER(&execTime_);
 
         if (!resp.ok()) {
-          LOG(ERROR) << resp.status().toString();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Submit job fail: " << resp.status();
           return std::move(resp).status();
         }
         auto status = buildResult(jobOp, std::move(resp).value());
@@ -156,7 +153,8 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                         folly::sformat("Succeeded:{}", succeeded),
                         folly::sformat("Failed:{}", failed),
                         folly::sformat("In Progress:{}", inProgress),
-                        folly::sformat("Invalid:{}", invalid)}));
+                        folly::sformat("Invalid:{}", invalid),
+                        ("")}));
     return v;
   } else {
     nebula::DataSet v(

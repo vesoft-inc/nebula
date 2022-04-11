@@ -41,6 +41,8 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   FRIEND_TEST(JobManagerTest, RecoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
+  FRIEND_TEST(JobManagerTest, DownloadJob);
+  FRIEND_TEST(JobManagerTest, IngestJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
@@ -90,18 +92,31 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   nebula::cpp2::ErrorCode addJob(JobDescription& jobDesc, AdminClient* client);
 
   /**
-   * @brief The same job is in jobMap
+   * @brief The same job in inFlightJobs_.
+   * Jobs in inFlightJobs_ have three status:
+   * QUEUE: when adding a job
+   * FAILED or STOPPED: when recover job
    *
    * @param spaceId
    * @param type
    * @param paras
    * @param jobId If the job exists, jobId is the id of the existing job
-   * @return
+   * @return True if job exists.
    */
-  bool checkJobExist(GraphSpaceID spaceId,
-                     const cpp2::JobType& type,
-                     const std::vector<std::string>& paras,
-                     JobID& jobId);
+  bool checkOnRunningJobExist(GraphSpaceID spaceId,
+                              const cpp2::JobType& type,
+                              const std::vector<std::string>& paras,
+                              JobID& jobId);
+  /**
+   * @brief In the current space, if there is a failed data balance job or zone balance job,
+   * need to recover the job first, otherwise cannot add this type of job.
+   *
+   * @param spaceId
+   * @param jobType
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode checkNeedRecoverJobExist(GraphSpaceID spaceId,
+                                                   const cpp2::JobType& jobType);
 
   /**
    * @brief Load all jobs of the space from kvStore and convert to cpp2::JobDesc

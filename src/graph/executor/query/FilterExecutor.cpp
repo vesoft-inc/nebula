@@ -1,12 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/FilterExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -22,9 +19,6 @@ folly::Future<Status> FilterExecutor::execute() {
     LOG(ERROR) << status;
     return status;
   }
-
-  VLOG(2) << "Get input var: " << filter->inputVar()
-          << ", iterator type: " << static_cast<int16_t>(iter->kind());
 
   ResultBuilder builder;
   builder.value(result.valuePtr());

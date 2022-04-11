@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/AssignExecutor.h"
 
@@ -20,7 +19,6 @@ folly::Future<Status> AssignExecutor::execute() {
     auto varName = item.first;
     auto& valueExpr = item.second;
     auto value = valueExpr->eval(ctx);
-    VLOG(1) << "VarName is: " << varName << " value is : " << value;
     if (value.isDataSet()) {
       ectx_->setResult(varName, ResultBuilder().value(std::move(value)).build());
     } else {

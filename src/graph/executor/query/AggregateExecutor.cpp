@@ -1,16 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/AggregateExecutor.h"
 
-#include "common/datatypes/List.h"
-#include "common/expression/AggregateExpression.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
-#include "graph/context/Result.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {

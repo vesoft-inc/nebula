@@ -1,7 +1,6 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/Executor.h"
 
@@ -13,9 +12,7 @@
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
 #include "common/stats/StatsManager.h"
-#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
-#include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
 #include "graph/executor/admin/AddHostsExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
@@ -23,11 +20,9 @@
 #include "graph/executor/admin/ConfigExecutor.h"
 #include "graph/executor/admin/CreateUserExecutor.h"
 #include "graph/executor/admin/DescribeUserExecutor.h"
-#include "graph/executor/admin/DownloadExecutor.h"
 #include "graph/executor/admin/DropHostsExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
-#include "graph/executor/admin/IngestExecutor.h"
 #include "graph/executor/admin/KillQueryExecutor.h"
 #include "graph/executor/admin/ListRolesExecutor.h"
 #include "graph/executor/admin/ListUserRolesExecutor.h"
@@ -517,12 +512,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kSignOutService: {
       return pool->add(new SignOutServiceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDownload: {
-      return pool->add(new DownloadExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kIngest: {
-      return pool->add(new IngestExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowSessions: {
       return pool->add(new ShowSessionsExecutor(node, qctx));

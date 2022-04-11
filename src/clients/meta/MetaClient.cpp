@@ -28,8 +28,6 @@
 #include "version/Version.h"
 #include "webservice/Common.h"
 
-DECLARE_int32(ws_meta_http_port);
-
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
 DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
@@ -848,9 +846,9 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
     case nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH:
-      return Status::Error("Zone not enough!");
+      return Status::Error("Host not enough!");
     case nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY:
-      return Status::Error("Zone is empty!");
+      return Status::Error("Host not exist!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
       return Status::Error("Store failure!");
     case nebula::cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
@@ -917,6 +915,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("No valid job!");
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
       return Status::Error("Job not existed in chosen space!");
+    case nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER:
+      return Status::Error("Need to recover failed data balance job or zone balance job firstly!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -3528,48 +3528,6 @@ folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
       std::move(promise),
       true);
   return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
-                                                   int32_t hdfsPort,
-                                                   const std::string& hdfsPath,
-                                                   GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/download-dispatch?host=%s&port=%d&path=%s&space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 hdfsHost.c_str(),
-                                 hdfsPort,
-                                 hdfsPath.c_str(),
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile dispatch successfully") {
-      LOG(INFO) << "Download Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Download Failed: " << result.value();
-      return false;
-    }
-  };
-  return folly::async(func);
-}
-
-folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
-  auto url = folly::stringPrintf("http://%s:%d/ingest-dispatch?space=%d",
-                                 leader_.host.c_str(),
-                                 FLAGS_ws_meta_http_port,
-                                 spaceId);
-  auto func = [url] {
-    auto result = http::HttpClient::get(url);
-    if (result.ok() && result.value() == "SSTFile ingest successfully") {
-      LOG(INFO) << "Ingest Successfully";
-      return true;
-    } else {
-      LOG(ERROR) << "Ingest Failed";
-      return false;
-    }
-  };
-  return folly::async(func);
 }
 
 folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {

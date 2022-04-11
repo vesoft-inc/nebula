@@ -1,12 +1,9 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/JoinExecutor.h"
 
-#include "graph/context/Iterator.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -16,7 +13,6 @@ Status JoinExecutor::checkInputDataSets() {
   auto* join = asNode<Join>(node());
   lhsIter_ = ectx_->getVersionedResult(join->leftVar().first, join->leftVar().second).iter();
   DCHECK(!!lhsIter_);
-  VLOG(1) << "lhs: " << join->leftVar().first << " " << lhsIter_->size();
   if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "Join executor does not support " << lhsIter_->kind();
@@ -24,7 +20,6 @@ Status JoinExecutor::checkInputDataSets() {
   }
   rhsIter_ = ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second).iter();
   DCHECK(!!rhsIter_);
-  VLOG(1) << "rhs: " << join->rightVar().first << " " << rhsIter_->size();
   if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "Join executor does not support " << rhsIter_->kind();
@@ -38,7 +33,6 @@ Status JoinExecutor::checkBiInputDataSets() {
   auto* join = asNode<BiJoin>(node());
   lhsIter_ = ectx_->getResult(join->leftInputVar()).iter();
   DCHECK(!!lhsIter_);
-  VLOG(1) << "lhs: " << join->leftInputVar() << " " << lhsIter_->size();
   if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "Join executor does not support " << lhsIter_->kind();
@@ -46,7 +40,6 @@ Status JoinExecutor::checkBiInputDataSets() {
   }
   rhsIter_ = ectx_->getResult(join->rightInputVar()).iter();
   DCHECK(!!rhsIter_);
-  VLOG(1) << "rhs: " << join->rightInputVar() << " " << rhsIter_->size();
   if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
     std::stringstream ss;
     ss << "Join executor does not support " << rhsIter_->kind();

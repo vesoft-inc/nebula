@@ -1,14 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/ProjectExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Query.h"
-#include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
@@ -21,7 +17,6 @@ folly::Future<Status> ProjectExecutor::execute() {
   DCHECK(!!iter);
   QueryExpressionContext ctx(ectx_);
 
-  VLOG(1) << "input: " << project->inputVar();
   DataSet ds;
   ds.colNames = project->colNames();
   ds.rows.reserve(!iter->isGetNeighborsIter() ? iter->size() : 0);
@@ -33,7 +28,6 @@ folly::Future<Status> ProjectExecutor::execute() {
     }
     ds.rows.emplace_back(std::move(row));
   }
-  VLOG(1) << node()->outputVar() << ":" << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

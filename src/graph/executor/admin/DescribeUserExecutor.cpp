@@ -1,13 +1,11 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/DescribeUserExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "interface/gen-cpp2/meta_types.h"
 
@@ -43,7 +41,8 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
               v.emplace_back(nebula::Row({apache::thrift::util::enumNameSafe(item.get_role_type()),
                                           spaceNameResult.value()}));
             } else {
-              LOG(ERROR) << " Space name of " << item.get_space_id() << " no found";
+              LOG(WARNING) << " Space name of " << item.get_space_id()
+                           << " no found: " << spaceNameResult.status();
               return Status::Error("Space not found");
             }
           }

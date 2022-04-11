@@ -1,11 +1,9 @@
-/* Copyright (c) 2021 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/maintain/FTIndexExecutor.h"
 
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/util/FTIndexUtils.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -22,8 +20,8 @@ folly::Future<Status> CreateFTIndexExecutor::execute() {
       .via(runner())
       .thenValue([inode](StatusOr<IndexID> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Create fulltext index `" << inode->getIndexName() << "' "
-                     << "failed: " << resp.status();
+          LOG(WARNING) << "Create fulltext index `" << inode->getIndexName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -39,13 +37,13 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
       .via(runner())
       .thenValue([this, inode, spaceId](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
-                     << "' failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
+                       << "' failed: " << resp.status();
           return resp.status();
         }
         auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
         if (!tsRet.ok()) {
-          LOG(WARNING) << "Get text search clients failed";
+          LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
         }
         auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), inode->getName());
         if (!ftRet.ok()) {
@@ -62,7 +60,8 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
   return qctx()->getMetaClient()->listFTIndexes().via(runner()).thenValue(
       [this, spaceId](StatusOr<std::unordered_map<std::string, meta::cpp2::FTIndex>> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show fulltext indexes failed" << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show fulltext indexes failed"
+                       << resp.status();
           return resp.status();
         }
 
@@ -79,7 +78,8 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
               isEdge ? this->qctx_->schemaMng()->toEdgeName(spaceId, shmId.get_edge_type())
                      : this->qctx_->schemaMng()->toTagName(spaceId, shmId.get_tag_id());
           if (!shmNameRet.ok()) {
-            LOG(ERROR) << "SpaceId: " << spaceId << ", Get schema name failed";
+            LOG(WARNING) << "SpaceId: " << spaceId
+                         << ", Get schema name failed: " << shmNameRet.status();
             return shmNameRet.status();
           }
           std::string fields;

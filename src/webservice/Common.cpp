@@ -7,9 +7,6 @@
 
 #include <gflags/gflags.h>
 
-DEFINE_int32(ws_meta_http_port, 11000, "Port to listen on Meta with HTTP protocol");
-DEFINE_int32(ws_storage_http_port, 12000, "Port to listen on Storage with HTTP protocol");
-
 namespace nebula {
 
 std::unordered_map<HttpStatusCode, std::string> WebServiceUtils::kStatusStringMap_ = {

@@ -16,7 +16,6 @@
 #include "graph/validator/AdminJobValidator.h"
 #include "graph/validator/AdminValidator.h"
 #include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/DownloadValidator.h"
 #include "graph/validator/ExplainValidator.h"
 #include "graph/validator/FetchEdgesValidator.h"
 #include "graph/validator/FetchVerticesValidator.h"
@@ -24,7 +23,6 @@
 #include "graph/validator/GetSubgraphValidator.h"
 #include "graph/validator/GoValidator.h"
 #include "graph/validator/GroupByValidator.h"
-#include "graph/validator/IngestValidator.h"
 #include "graph/validator/LimitValidator.h"
 #include "graph/validator/LookupValidator.h"
 #include "graph/validator/MaintainValidator.h"
@@ -238,10 +236,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<SignInServiceValidator>(sentence, context);
     case Sentence::Kind::kSignOutService:
       return std::make_unique<SignOutServiceValidator>(sentence, context);
-    case Sentence::Kind::kDownload:
-      return std::make_unique<DownloadValidator>(sentence, context);
-    case Sentence::Kind::kIngest:
-      return std::make_unique<IngestValidator>(sentence, context);
     case Sentence::Kind::kCreateFTIndex:
       return std::make_unique<CreateFTIndexValidator>(sentence, context);
     case Sentence::Kind::kDropFTIndex:

@@ -1,17 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/GetNeighborsExecutor.h"
 
-#include <sstream>
-
-#include "clients/storage/StorageClient.h"
-#include "common/datatypes/List.h"
-#include "common/datatypes/Vertex.h"
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageClient;
@@ -24,7 +16,6 @@ namespace graph {
 DataSet GetNeighborsExecutor::buildRequestDataSet() {
   SCOPED_TIMER(&execTime_);
   auto inputVar = gn_->inputVar();
-  VLOG(1) << node()->outputVar() << " : " << inputVar;
   auto iter = ectx_->getResult(inputVar).iter();
   return buildRequestDataSetByVidType(iter.get(), gn_->src(), gn_->dedup());
 }
@@ -99,7 +90,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
     if (dataset == nullptr) {
-      LOG(INFO) << "Empty dataset in response";
       continue;
     }
 

@@ -1,12 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
- *
- * This source code is licensed under Apache 2.0 License.
- */
+// Copyright (c) 2020 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/admin/ShowStatsExecutor.h"
 
-#include "common/time/ScopedTimer.h"
-#include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
 #include "graph/util/SchemaUtil.h"
@@ -21,7 +18,7 @@ folly::Future<Status> ShowStatsExecutor::execute() {
   return qctx()->getMetaClient()->getStats(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<meta::cpp2::StatsItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show status failed: " << resp.status();
+          LOG(WARNING) << "SpaceId: " << spaceId << ", Show status failed: " << resp.status();
           return resp.status();
         }
         auto statsItem = std::move(resp).value();

@@ -254,6 +254,7 @@ class Listener : public raftex::RaftPart {
    * @return std::tuple<SUCCEED, last log id, last log term>
    */
   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator>,
+                                                                bool,
                                                                 bool) override;
 
   /**

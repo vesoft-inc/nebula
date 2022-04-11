@@ -2009,34 +2009,6 @@ TEST_F(ParserTest, ConfigOperation) {
   }
 }
 
-TEST_F(ParserTest, BalanceOperation) {
-  {
-    std::string query = "BALANCE LEADER";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE IN ZONE";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE ACROSS ZONE";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,192.168.0.1:50001";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,\"localhost\":50001";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-}
-
 TEST_F(ParserTest, CrashByFuzzer) {
   {
     std::string query = ";YIELD\nI41( ,1)GEGE.INGEST";
@@ -3220,12 +3192,13 @@ TEST_F(ParserTest, JobTest) {
   };
   checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
   checkTest("SUBMIT JOB FLUSH", "SUBMIT JOB FLUSH");
+
+  checkTest("SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"",
+            "SUBMIT JOB DOWNLOAD HDFS \"hdfs://127.0.0.1:9090/data\"");
+
+  checkTest("SUBMIT JOB INGEST", "SUBMIT JOB INGEST");
+
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
-  checkTest("SUBMIT JOB BALANCE IN ZONE", "SUBMIT JOB BALANCE IN ZONE");
-  checkTest(
-      "SUBMIT JOB BALANCE IN ZONE REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
-      "SUBMIT JOB BALANCE IN ZONE REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
-      "\"192.168.0.1\":50002");
   checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
   checkTest("SHOW JOB 111", "SHOW JOB 111");

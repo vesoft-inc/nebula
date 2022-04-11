@@ -20,7 +20,7 @@ BalanceJobExecutor::BalanceJobExecutor(GraphSpaceID space,
     : MetaJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
 bool BalanceJobExecutor::check() {
-  return !paras_.empty();
+  return true;
 }
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
