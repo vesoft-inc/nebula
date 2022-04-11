@@ -77,7 +77,6 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                             "Collate",
                             "Vid Type",
                             "Atomic Edge",
-                            "Zones",
                             "Comment"};
         Row row;
         row.values.emplace_back(spaceId);
@@ -93,9 +92,6 @@ folly::Future<Status> DescSpaceExecutor::execute() {
           sAtomicEdge = true;
         }
         row.values.emplace_back(sAtomicEdge);
-
-        auto zoneNames = folly::join(",", properties.get_zone_names());
-        row.values.emplace_back(zoneNames);
 
         if (properties.comment_ref().has_value()) {
           row.values.emplace_back(*properties.comment_ref());
