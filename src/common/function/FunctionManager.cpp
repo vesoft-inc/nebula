@@ -2710,7 +2710,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["extract"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isStr() || !args[1].get().isStr()) {
         return Value::kNullBadType;
