@@ -359,14 +359,31 @@ ErrorOr<nebula::cpp2::ErrorCode, HostAddr> NebulaStore::partLeader(GraphSpaceID 
 void NebulaStore::addSpace(GraphSpaceID spaceId, bool isListener) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   if (!isListener) {
+    // Iterate over all engines to ensure that each dataPath has an engine
     if (this->spaces_.find(spaceId) != this->spaces_.end()) {
       LOG(INFO) << "Data space " << spaceId << " has existed!";
-      return;
-    }
-    LOG(INFO) << "Create data space " << spaceId;
-    this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
-    for (auto& path : options_.dataPaths_) {
-      this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
+      for (auto& path : options_.dataPaths_) {
+        bool engineExist = false;
+        auto dataPath = folly::stringPrintf("%s/nebula/%d", path.c_str(), spaceId);
+        for (auto iter = spaces_[spaceId]->engines_.begin();
+             iter != spaces_[spaceId]->engines_.end();
+             iter++) {
+          auto dPath = (*iter)->getDataRoot();
+          if (dataPath.compare(dPath) == 0) {
+            engineExist = true;
+            break;
+          }
+        }
+        if (!engineExist) {
+          spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
+        }
+      }
+    } else {
+      LOG(INFO) << "Create data space " << spaceId;
+      this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
+      for (auto& path : options_.dataPaths_) {
+        this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
+      }
     }
   } else {
     // listener don't need engine for now
