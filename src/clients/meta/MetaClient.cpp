@@ -846,9 +846,9 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
     case nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH:
-      return Status::Error("Zone not enough!");
+      return Status::Error("Host not enough!");
     case nebula::cpp2::ErrorCode::E_ZONE_IS_EMPTY:
-      return Status::Error("Zone is empty!");
+      return Status::Error("Host not exist!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
       return Status::Error("Store failure!");
     case nebula::cpp2::ErrorCode::E_BAD_BALANCE_PLAN:
