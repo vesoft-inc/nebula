@@ -20,6 +20,11 @@ Status GroupByValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateYield(groupBySentence->yieldClause()));
   NG_RETURN_IF_ERROR(groupClauseSemanticCheck());
 
+  for (auto* col : groupBySentence->yieldClause()->columns()) {
+    auto type = deduceExprType(col->expr());
+    outputs_.emplace_back(col->name(), std::move(type).value());
+  }
+
   return Status::OK();
 }
 
@@ -155,7 +160,6 @@ Status GroupByValidator::groupClauseSemanticCheck() {
   for (auto i = 0u; i < groupItems_.size(); ++i) {
     auto type = deduceExprType(groupItems_[i]);
     NG_RETURN_IF_ERROR(type);
-    outputs_.emplace_back(aggOutputColNames_[i], std::move(type).value());
   }
   // check exprProps
   if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty()) {

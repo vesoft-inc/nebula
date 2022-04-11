@@ -77,6 +77,8 @@ class NebulaKeyUtils final {
 
   static std::string systemPartKey(PartitionID partId);
 
+  static std::string systemBalanceKey(PartitionID partId);
+
   static std::string kvKey(PartitionID partId, const folly::StringPiece& name);
   static std::string kvPrefix(PartitionID partId);
 
@@ -187,6 +189,19 @@ class NebulaKeyUtils final {
     auto len = sizeof(NebulaSystemKeyType);
     auto type = readInt<uint32_t>(position, len);
     return static_cast<NebulaSystemKeyType>(type) == NebulaSystemKeyType::kSystemPart;
+  }
+
+  static bool isSystemBalance(const folly::StringPiece& rawKey) {
+    if (rawKey.size() != kSystemLen) {
+      return false;
+    }
+    if (!isSystem(rawKey)) {
+      return false;
+    }
+    auto position = rawKey.data() + sizeof(PartitionID);
+    auto len = sizeof(NebulaSystemKeyType);
+    auto type = readInt<uint32_t>(position, len);
+    return static_cast<NebulaSystemKeyType>(type) == NebulaSystemKeyType::kSystemBalance;
   }
 
   static VertexIDSlice getSrcId(size_t vIdLen, const folly::StringPiece& rawKey) {
