@@ -402,9 +402,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 return parseDecimal();
                             }
 
-{DEC}*\.{DEC}+              |
-{DEC}+\.{DEC}*              |
-{DEC}*\.{DEC}*{EXP}         |
+{DEC}*\.{DEC}+{EXP}?        |
+{DEC}+\.{DEC}*{EXP}?        |
 {DEC}+{EXP}                 {
                                 return parseDouble();
                             }
