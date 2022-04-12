@@ -152,7 +152,8 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   });
 }
 
-DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value> meetVids, bool oddStep) {
+DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
+                                            bool oddStep) const {
   DataSet ds;
   auto leftPaths = createPath(meetVids, false, oddStep);
   auto rightPaths = createPath(meetVids, true, oddStep);
@@ -171,7 +172,7 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value> meetVids, b
 }
 
 std::unordered_multimap<Value, Path> BFSShortestPathExecutor::createPath(
-    std::vector<Value> meetVids, bool reverse, bool oddStep) {
+    std::vector<Value> meetVids, bool reverse, bool oddStep) const {
   std::unordered_multimap<Value, Path> result;
   auto& allEdges = reverse ? allRightEdges_ : allLeftEdges_;
   for (auto& meetVid : meetVids) {

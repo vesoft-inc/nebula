@@ -52,11 +52,11 @@ class BFSShortestPathExecutor final : public Executor {
 
   folly::Future<Status> conjunctPath();
 
-  DataSet doConjunct(const std::vector<Value> meetVids, bool oddStep);
+  DataSet doConjunct(const std::vector<Value>& meetVids, bool oddStep) const;
 
   std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids,
                                                   bool reverse,
-                                                  bool oddStep);
+                                                  bool oddStep) const;
 
  private:
   const BFSShortestPath* pathNode_{nullptr};

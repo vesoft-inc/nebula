@@ -56,7 +56,7 @@ class ProduceAllPathsExecutor final : public Executor {
 
   Status buildPath(bool reverse);
   folly::Future<Status> conjunctPath();
-  DataSet doConjunct(Interims::iterator startIter, Interims::iterator endIter, bool oddStep);
+  DataSet doConjunct(Interims::iterator startIter, Interims::iterator endIter, bool oddStep) const;
   void setNextStepVid(Interims& paths, const string& var);
 
  private:

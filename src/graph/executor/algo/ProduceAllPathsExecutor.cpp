@@ -96,7 +96,7 @@ Status ProduceAllPathsExecutor::buildPath(bool reverse) {
 
 DataSet ProduceAllPathsExecutor::doConjunct(Interims::iterator startIter,
                                             Interims::iterator endIter,
-                                            bool oddStep) {
+                                            bool oddStep) const {
   auto& rightPaths = oddStep ? preRightPaths_ : rightPaths_;
   DataSet ds;
   for (; startIter != endIter; ++startIter) {
