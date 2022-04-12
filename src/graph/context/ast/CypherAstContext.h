@@ -87,6 +87,9 @@ struct CypherClauseContextBase : AstContext {
   virtual ~CypherClauseContextBase() = default;
 
   const CypherClauseKind kind;
+  // Input column names of current clause
+  // Now used by unwind clause planner
+  std::vector<std::string> inputColNames;
 };
 
 struct WhereClauseContext final : CypherClauseContextBase {

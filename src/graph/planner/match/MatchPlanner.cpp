@@ -69,12 +69,6 @@ void MatchPlanner::connectMatch(const MatchClauseContext* match,
     queryPartPlan = matchPlan;
     return;
   }
-  const auto& path = match->paths.back();
-  if (path.rollUpApply) {
-    queryPartPlan = SegmentsConnector::rollUpApply(
-        match->qctx, queryPartPlan, matchPlan, path.compareVariables, path.collectVariable);
-    return;
-  }
   std::unordered_set<std::string> intersectedAliases;
   for (auto& alias : match->aliasesGenerated) {
     if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
@@ -99,6 +93,23 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
                                        const SubPlan& partPlan,
                                        QueryContext* qctx,
                                        SubPlan& queryPlan) {
+  if (queryPlan.root == nullptr) {
+    if (partPlan.root != nullptr) {
+      queryPart.boundary->inputColNames = partPlan.root->colNames();
+    }
+  } else {
+    if (partPlan.root == nullptr) {
+      queryPart.boundary->inputColNames = queryPlan.root->colNames();
+    } else {
+      auto& inputColNames = queryPart.boundary->inputColNames;
+      inputColNames.reserve(queryPlan.root->colNames().size() + partPlan.root->colNames().size());
+      inputColNames.insert(inputColNames.end(),
+                           queryPlan.root->colNames().begin(),
+                           queryPlan.root->colNames().end());
+      inputColNames.insert(
+          inputColNames.end(), partPlan.root->colNames().begin(), partPlan.root->colNames().end());
+    }
+  }
   auto boundaryPlan = genPlan(queryPart.boundary.get());
   NG_RETURN_IF_ERROR(boundaryPlan);
   // If this is the first query part, there will be no CartesianProduct or Join

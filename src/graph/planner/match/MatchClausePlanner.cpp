@@ -56,6 +56,7 @@ Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, 
     return Status::OK();
   }
 
+  matchClauseCtx->where->inputColNames = subplan.root->colNames();
   auto wherePlan = std::make_unique<WhereClausePlanner>()->transform(matchClauseCtx->where.get());
   NG_RETURN_IF_ERROR(wherePlan);
   auto plan = std::move(wherePlan).value();
