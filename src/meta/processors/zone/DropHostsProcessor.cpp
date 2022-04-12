@@ -34,6 +34,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   auto spaceIterRet = doPrefix(spacePrefix);
   auto spaceIter = nebula::value(spaceIterRet).get();
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  std::map<GraphSpaceID, meta::cpp2::SpaceDesc> spaceMap;
   while (spaceIter->valid()) {
     auto spaceId = MetaKeyUtils::spaceId(spaceIter->key());
     auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
@@ -44,7 +45,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
                 << " error: " << apache::thrift::util::enumNameSafe(code);
       break;
     }
-
+    spaceMap.emplace(spaceId, MetaKeyUtils::parseSpace(spaceIter->val()));
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto partIterRet = doPrefix(partPrefix);
     auto partIter = nebula::value(partIterRet).get();
@@ -96,6 +97,14 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
       }
 
       holder->remove(MetaKeyUtils::zoneKey(zoneName));
+
+      for (auto& [spaceId, properties] : spaceMap) {
+        const std::vector<std::string>& curZones = properties.get_zone_names();
+        std::set<std::string> zm(curZones.begin(), curZones.end());
+        zm.erase(zoneName);
+        std::vector<std::string> newZones(zm.begin(), zm.end());
+        properties.zone_names_ref() = std::move(newZones);
+      }
     } else {
       // Delete some hosts in the zone
       for (auto& h : hosts) {
@@ -112,7 +121,9 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     CHECK_CODE_AND_BREAK();
     iter->next();
   }
-
+  for (auto& [spaceId, properties] : spaceMap) {
+    holder->put(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
+  }
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(code);
     onFinished();

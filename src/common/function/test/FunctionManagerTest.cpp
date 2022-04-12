@@ -342,6 +342,19 @@ TEST_F(FunctionManagerTest, functionCall) {
                   "1.true.world.09:39:21.000012000");
   }
   {
+    TEST_FUNCTION(extract,
+                  std::vector<Value>({"Hello Nebula Graph", "\\w+"}),
+                  List({"Hello", "Nebula", "Graph"}));
+    TEST_FUNCTION(extract,
+                  std::vector<Value>({"你好，Nebula 图数据库", "(图|数据库|测试|Nebula)"}),
+                  List({"Nebula", "图", "数据库"}));
+    TEST_FUNCTION(extract,
+                  std::vector<Value>({"Hello Nebula Graph", "(Nebula|Graph)"}),
+                  List({"Nebula", "Graph"}));
+    TEST_FUNCTION(extract, std::vector<Value>({"Hello Nebula Graph", "testing"}), List());
+    TEST_FUNCTION(extract, std::vector<Value>({"Hello 2022 year", "\\d+"}), List({"2022"}));
+  }
+  {
     TEST_FUNCTION(toBoolean, args_["int"], Value::kNullBadType);
     TEST_FUNCTION(toBoolean, args_["float"], Value::kNullBadType);
     TEST_FUNCTION(toBoolean, {true}, true);

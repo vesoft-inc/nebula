@@ -42,6 +42,7 @@ DECLARE_bool(containerized);
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
+  google::SetUsageMessage("Usage: " + std::string(argv[0]) + " [options]");
   if (argc == 1) {
     printHelp(argv[0]);
     return EXIT_FAILURE;

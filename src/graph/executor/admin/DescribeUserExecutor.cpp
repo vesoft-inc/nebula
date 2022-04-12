@@ -5,6 +5,7 @@
 #include "graph/executor/admin/DescribeUserExecutor.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "graph/planner/plan/Admin.h"
 #include "interface/gen-cpp2/meta_types.h"
 

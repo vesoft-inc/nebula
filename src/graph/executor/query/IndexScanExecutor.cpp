@@ -3,6 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 
 #include "graph/executor/query/IndexScanExecutor.h"
+
 #include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageClient;
