@@ -76,7 +76,6 @@ folly::Future<Status> DescSpaceExecutor::execute() {
                             "Charset",
                             "Collate",
                             "Vid Type",
-                            "Zones",
                             "Comment"};
         Row row;
         row.values.emplace_back(spaceId);

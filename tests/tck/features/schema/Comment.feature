@@ -22,8 +22,8 @@ Feature: Schema Comment
       DESC SPACE <space_name>;
       """
     Then the result should be, in any order:
-      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Zones     | Comment           |
-      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | /^.+?\d$/ | "<space_comment>" |
+      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment           |
+      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | "<space_comment>" |
     When executing query:
       """
       DROP SPACE <space_name>;
@@ -54,8 +54,8 @@ Feature: Schema Comment
       DESC SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Zones     | Comment |
-      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | /^.+?\d$/ | EMPTY   |
+      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
+      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | EMPTY   |
     When executing query:
       """
       DROP SPACE test_comment_not_set;
@@ -81,8 +81,8 @@ Feature: Schema Comment
       DESC SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Zones     | Comment |
-      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | /^.+?\d$/ | ""      |
+      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
+      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | ""      |
     When executing query:
       """
       DROP SPACE test_comment_empty;
