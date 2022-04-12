@@ -453,21 +453,9 @@ Feature: Integer Vid Shortest Path
     Then the result should be, in any order, with relax comparison:
       | p                                                                                                                                                                                                       |
       | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Bulls")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
       | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
       | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
-      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
       | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
     When executing query:
       """

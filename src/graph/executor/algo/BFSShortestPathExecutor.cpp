@@ -108,18 +108,18 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
 folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   const auto& leftEdges = allLeftEdges_.back();
   const auto& preRightEdges = allRightEdges_[step_ - 1];
-  std::vector<Value> meetVids;
+  std::unordered_set<Value> meetVids;
   bool oddStep = true;
   for (const auto& edge : leftEdges) {
     if (preRightEdges.find(edge.first) != preRightEdges.end()) {
-      meetVids.push_back(edge.first);
+      meetVids.emplace(edge.first);
     }
   }
   if (meetVids.empty() && step_ * 2 <= pathNode_->steps()) {
     const auto& rightEdges = allRightEdges_.back();
     for (const auto& edge : leftEdges) {
       if (rightEdges.find(edge.first) != rightEdges.end()) {
-        meetVids.push_back(edge.first);
+        meetVids.emplace(edge.first);
         oddStep = false;
       }
     }
@@ -127,19 +127,21 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   if (meetVids.empty()) {
     return Status::OK();
   }
+  size_t i = 0;
   size_t totalSize = meetVids.size();
   size_t batchSize = totalSize / static_cast<size_t>(FLAGS_num_operator_threads);
   std::vector<Value> batchVids;
   batchVids.reserve(batchSize);
   std::vector<folly::Future<DataSet>> futures;
-  for (size_t i = 0; i < totalSize; ++i) {
-    batchVids.push_back(meetVids[i]);
+  for (auto& vid : meetVids) {
+    batchVids.push_back(vid);
     if (i == totalSize - 1 || batchVids.size() == batchSize) {
       auto future = folly::via(runner(), [this, vids = std::move(batchVids), oddStep]() {
         return doConjunct(vids, oddStep);
       });
       futures.emplace_back(std::move(future));
     }
+    i++;
   }
 
   return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
