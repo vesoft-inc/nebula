@@ -419,7 +419,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
           // persist the part learner info in case of storaged restarting
           auto ret = engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-              return false;
+            return false;
           }
         } else {
           VLOG(1) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
@@ -448,7 +448,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
           addPeer(peer);
           auto ret = engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-              return false;
+            return false;
           }
         } else {
           VLOG(1) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
@@ -465,7 +465,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
           // remove peer in the persist info
           auto ret = engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-              return false;
+            return false;
           }
         } else {
           VLOG(1) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
