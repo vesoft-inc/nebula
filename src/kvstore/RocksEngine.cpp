@@ -339,18 +339,25 @@ void RocksEngine::addPart(PartitionID partId, const Peers& raftPeers) {
   }
 }
 
-void RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
+nebula::cpp2::ErrorCode RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
   std::string val;
   auto ret = get(balanceKey(partId), &val);
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+
+  Peers peers;
+  if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    peers = Peers::fromString(val);
+  } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    // do nothing
+  } else {
     LOG(INFO) << "Update part failed when get, partId=" << partId;
-    return;
+    return ret;
   }
 
-  auto peers = Peers::fromString(val);
   peers.addOrUpdate(raftPeer);
 
   if (peers.allNormalPeers()) {
+    // When all replica become normal peers, delete this temp key. (when learner is promoted to
+    // normal replica)
     ret = remove(balanceKey(partId));
   } else {
     ret = put(balanceKey(partId), peers.toString());
@@ -359,6 +366,7 @@ void RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Update part failed when put back, partId=" << partId;
   }
+  return ret;
 }
 
 void RocksEngine::removePart(PartitionID partId) {
