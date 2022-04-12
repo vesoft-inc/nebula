@@ -245,7 +245,12 @@ void NebulaStore::loadPartFromDataPath() {
                   folly::RWSpinLock::WriteHolder holder(&lock_);
                   auto iter = spaces_.find(spaceId);
                   CHECK(iter != spaces_.end());
-                  iter->second->parts_.emplace(partId, part);
+                  // Check if part already exists.
+                  // Prevent the same part from existing on different dataPaths.
+                  auto ret = iter->second->parts_.emplace(partId, part);
+                  if (!ret.second) {
+                    LOG(FATAL) << "Part already exists, partId " << partId;
+                  }
                 }
                 counter.fetch_sub(1);
                 if (counter.load() == 0) {
