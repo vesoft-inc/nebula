@@ -69,7 +69,8 @@ std::unique_ptr<PlanNodeDescription> Select::explain() const {
   return desc;
 }
 
-Argument::Argument(QueryContext* qctx, std::string alias) : PlanNode(qctx, Kind::kArgument) {
+Argument::Argument(QueryContext* qctx, std::string alias, const PlanNode* dep)
+    : SingleInputNode(qctx, Kind::kArgument, dep) {
   alias_ = alias;
   // An argument is a kind of leaf node, it has no dependencies but read a variable.
   inputVars_.emplace_back(nullptr);
