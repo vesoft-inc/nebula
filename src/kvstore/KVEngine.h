@@ -232,8 +232,9 @@ class KVEngine {
    *
    * @param partId
    * @param raftPeer
+   * @return nebula::cpp2::ErrorCode
    */
-  virtual void updatePart(PartitionID partId, const Peer& raftPeer) = 0;
+  virtual nebula::cpp2::ErrorCode updatePart(PartitionID partId, const Peer& raftPeer) = 0;
 
   /**
    * @brief Remove a partition from kv engine
