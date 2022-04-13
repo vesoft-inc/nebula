@@ -10,6 +10,7 @@
 #include "graph/planner/match/ReturnClausePlanner.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/UnwindClausePlanner.h"
+#include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/match/WithClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
@@ -28,14 +29,7 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
   auto* cypherCtx = static_cast<CypherContext*>(astCtx);
   SubPlan queryPlan;
   for (auto& queryPart : cypherCtx->queryParts) {
-    SubPlan queryPartPlan;
-    for (auto& match : queryPart.matchs) {
-      auto matchPlanStatus = genPlan(match.get());
-      NG_RETURN_IF_ERROR(matchPlanStatus);
-      auto matchPlan = std::move(matchPlanStatus).value();
-      connectMatch(match.get(), matchPlan, queryPartPlan);
-    }
-    NG_RETURN_IF_ERROR(connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan));
+    NG_RETURN_IF_ERROR(genQueryPartPlan(cypherCtx->qctx, queryPlan, queryPart));
   }
 
   return queryPlan;
@@ -62,89 +56,84 @@ StatusOr<SubPlan> MatchPlanner::genPlan(CypherClauseContextBase* clauseCtx) {
   return Status::OK();
 }
 
-void MatchPlanner::connectMatch(const MatchClauseContext* match,
-                                const SubPlan& matchPlan,
-                                SubPlan& queryPartPlan) {
-  if (queryPartPlan.root == nullptr) {
-    queryPartPlan = matchPlan;
-    return;
-  }
-  const auto& path = match->paths.back();
-  if (path.rollUpApply) {
-    queryPartPlan = SegmentsConnector::rollUpApply(
-        match->qctx, queryPartPlan, matchPlan, path.compareVariables, path.collectVariable);
-    return;
-  }
-  std::unordered_set<std::string> intersectedAliases;
-  for (auto& alias : match->aliasesGenerated) {
-    if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
-      intersectedAliases.emplace(alias.first);
-    }
-  }
+// Connect current match plan to previous queryPlan
+Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* matchCtx) {
+  // Generate current match plan
+  auto matchPlanStatus = genPlan(matchCtx);
+  NG_RETURN_IF_ERROR(matchPlanStatus);
+  auto matchPlan = std::move(matchPlanStatus).value();
 
-  if (!intersectedAliases.empty()) {
-    if (match->isOptional) {
-      queryPartPlan =
-          SegmentsConnector::leftJoin(match->qctx, queryPartPlan, matchPlan, intersectedAliases);
-    } else {
-      queryPartPlan =
-          SegmentsConnector::innerJoin(match->qctx, queryPartPlan, matchPlan, intersectedAliases);
-    }
-  } else {
-    queryPartPlan = SegmentsConnector::cartesianProduct(match->qctx, queryPartPlan, matchPlan);
-  }
-}
-
-Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
-                                       const SubPlan& partPlan,
-                                       QueryContext* qctx,
-                                       SubPlan& queryPlan) {
-  auto boundaryPlan = genPlan(queryPart.boundary.get());
-  NG_RETURN_IF_ERROR(boundaryPlan);
-  // If this is the first query part, there will be no CartesianProduct or Join
   if (queryPlan.root == nullptr) {
-    auto subplan = std::move(boundaryPlan).value();
-    if (partPlan.root != nullptr) {
-      subplan = SegmentsConnector::addInput(subplan, partPlan);
-    }
-    queryPlan = subplan;
-    if (queryPlan.tail->isSingleInput()) {
-      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
-    }
+    queryPlan = matchPlan;
+    return Status::OK();
+  }
+  // Connect to queryPlan
+  const auto& path = matchCtx->paths.back();
+  if (path.rollUpApply) {
+    queryPlan = SegmentsConnector::rollUpApply(
+        matchCtx->qctx, queryPlan, matchPlan, path.compareVariables, path.collectVariable);
     return Status::OK();
   }
 
-  // Otherwise, there might only a with/unwind/return in a query part
-  if (partPlan.root == nullptr) {
-    auto subplan = std::move(boundaryPlan).value();
-    queryPlan = SegmentsConnector::addInput(subplan, queryPlan);
-    return Status::OK();
-  }
-
-  auto& aliasesAvailable = queryPart.aliasesAvailable;
   std::unordered_set<std::string> intersectedAliases;
-  auto& firstMatch = queryPart.matchs.front();
-  for (auto& alias : firstMatch->aliasesGenerated) {
-    if (aliasesAvailable.find(alias.first) != aliasesAvailable.end()) {
+  for (auto& alias : matchCtx->aliasesGenerated) {
+    if (matchCtx->aliasesAvailable.find(alias.first) != matchCtx->aliasesAvailable.end()) {
       intersectedAliases.insert(alias.first);
     }
   }
-
   if (!intersectedAliases.empty()) {
-    if (firstMatch->isOptional) {
+    if (matchCtx->isOptional) {
       queryPlan =
-          SegmentsConnector::leftJoin(firstMatch->qctx, queryPlan, partPlan, intersectedAliases);
+          SegmentsConnector::leftJoin(matchCtx->qctx, matchPlan, queryPlan, intersectedAliases);
     } else {
       queryPlan =
-          SegmentsConnector::innerJoin(firstMatch->qctx, queryPlan, partPlan, intersectedAliases);
+          SegmentsConnector::innerJoin(matchCtx->qctx, matchPlan, queryPlan, intersectedAliases);
     }
   } else {
-    queryPlan.root = BiCartesianProduct::make(qctx, queryPlan.root, partPlan.root);
+    queryPlan.root = BiCartesianProduct::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
   }
 
-  queryPlan = SegmentsConnector::addInput(boundaryPlan.value(), queryPlan);
   return Status::OK();
 }
 
+Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
+                                      SubPlan& queryPlan,
+                                      const QueryPart& queryPart) {
+  // generate plan for matchs
+  for (auto& match : queryPart.matchs) {
+    connectMatchPlan(queryPlan, match.get());
+    // connect match filter
+    if (match->where != nullptr) {
+      auto wherePlanStatus = std::make_unique<WhereClausePlanner>()->transform(match->where.get());
+      NG_RETURN_IF_ERROR(wherePlanStatus);
+      auto wherePlan = std::move(wherePlanStatus).value();
+      queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
+    }
+  }
+
+  // generate plan for boundary
+  auto boundaryPlanStatus = genPlan(queryPart.boundary.get());
+  NG_RETURN_IF_ERROR(boundaryPlanStatus);
+  auto boundaryPlan = std::move(boundaryPlanStatus).value();
+  if (queryPlan.root == nullptr) {
+    queryPlan = boundaryPlan;
+  } else {
+    queryPlan = SegmentsConnector::addInput(boundaryPlan, queryPlan, false);
+  }
+
+  // TBD: need generate var for all queryPlan.tail?
+  if (queryPlan.tail->isSingleInput()) {
+    queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    if (!tailConnected_) {
+      auto start = StartNode::make(qctx);
+      queryPlan.tail->setDep(0, start);
+      tailConnected_ = true;
+      queryPlan.tail = start;
+    }
+  }
+  VLOG(1) << queryPlan;
+
+  return Status::OK();
+}
 }  // namespace graph
 }  // namespace nebula
