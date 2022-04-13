@@ -213,6 +213,7 @@ class PartManager {
  */
 class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
+  FRIEND_TEST(NebulaStoreTest, MultiPathTest);
   FRIEND_TEST(NebulaStoreTest, PartsTest);
   FRIEND_TEST(NebulaStoreTest, PersistPeersTest);
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesTest);
