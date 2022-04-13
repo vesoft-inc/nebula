@@ -68,6 +68,7 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
 
   auto newAppendVertices = appendVertices->clone();
   auto colSize = appendVertices->colNames().size();
+  newAppendVertices->setOutputVar(appendVertices->outputVar());
   newAppendVertices->setColNames(
       {appendVertices->colNames()[colSize - 2], appendVertices->colNames()[colSize - 1]});
   auto newAppendVerticesGroupNode =
