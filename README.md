@@ -65,7 +65,7 @@ In case you encounter any problems playing around **Nebula Graph**, please reach
 * [English](https://docs.nebula-graph.io/)
 
 ## Architecture
-![Nebula Graph Architechture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+![Nebula Graph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
 
 ## Contributing
 
