@@ -115,6 +115,10 @@ bool OptRule::TransformResult::checkDataFlow(const std::vector<OptGroup *> &boun
       if (node->inputVar(i) != dep->outputVar()) {
         return false;
       }
+      // Only use by father plan node
+      if (node->inputVars()[i]->readBy.size() != 1) {
+        return false;
+      }
       return std::all_of(
           dep->groupNodes().begin(), dep->groupNodes().end(), [&boundary](const OptGroupNode *gn) {
             return checkDataFlow(gn, boundary);
