@@ -170,17 +170,17 @@ Feature: Multi Line Multi Query Parts
       RETURN m.player.name AS n1, n.player.name AS n2, l AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2                  | n3   |
-      | "Tim Duncan" | "Aron Baynes"       | NULL |
-      | "Tim Duncan" | "Boris Diaw"        | NULL |
-      | "Tim Duncan" | "Danny Green"       | NULL |
-      | "Tim Duncan" | "Danny Green"       | NULL |
-      | "Tim Duncan" | "Dejounte Murray"   | NULL |
-      | "Tim Duncan" | "LaMarcus Aldridge" | NULL |
-      | "Tim Duncan" | "LaMarcus Aldridge" | NULL |
-      | "Tim Duncan" | "Manu Ginobili"     | NULL |
-      | "Tim Duncan" | "Manu Ginobili"     | NULL |
-      | "Tim Duncan" | "Manu Ginobili"     | NULL |
+      | n1         | n2       | n3                                                          |
+      | Tim Duncan | __NULL__ | ("Aron Baynes":player{age:32,name:Aron Baynes})             |
+      | Tim Duncan | __NULL__ | ("Boris Diaw":player{age:36,name:Boris Diaw})               |
+      | Tim Duncan | __NULL__ | ("Cory Joseph":player{age:27,name:Cory Joseph})             |
+      | Tim Duncan | __NULL__ | ("Danny Green":player{age:31,name:Danny Green})             |
+      | Tim Duncan | __NULL__ | ("David West":player{age:38,name:David West})               |
+      | Tim Duncan | __NULL__ | ("Dejounte Murray":player{age:29,name:Dejounte Murray})     |
+      | Tim Duncan | __NULL__ | ("Jonathon Simmons":player{age:29,name:Jonathon Simmons})   |
+      | Tim Duncan | __NULL__ | ("Kyle Anderson":player{age:25,name:Kyle Anderson})         |
+      | Tim Duncan | __NULL__ | ("LaMarcus Aldridge":player{age:33,name:LaMarcus Aldridge}) |
+      | Tim Duncan | __NULL__ | ("Manu Ginobili":player{age:41,name:Manu Ginobili})         |
     When executing query:
       """
       USE nba;
