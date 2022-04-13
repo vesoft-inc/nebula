@@ -446,6 +446,39 @@ Feature: Shortest Path
       | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                                                    |
       | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                        |
       | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                    |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Joel Embiid"  TO "Giannis Antetokounmpo" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                       |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Bulls")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                       |
+      | <("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                                                                                                          |
+      | <("Tim Duncan")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>                                                               |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:like@0 {}]->("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:like@0 {}]->("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                 |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                     |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                      |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                      |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                       |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                     |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Raptors")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                    |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Bulls")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
 
   Scenario: Shortest Path With PROP
     When executing query:
