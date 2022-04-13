@@ -109,11 +109,10 @@ bool OptRule::TransformResult::checkDataFlow(const std::vector<OptGroup *> &boun
       if (node->inputVar(i) != dep->outputVar()) {
         return false;
       }
-      return std::all_of(dep->groupNodes().begin(),
-                         dep->groupNodes().end(),
-                         [&boundary](const OptGroupNode *groupNode) {
-                           return checkDataFlow(groupNode, boundary);
-                         });
+      return std::all_of(
+          dep->groupNodes().begin(), dep->groupNodes().end(), [&boundary](const OptGroupNode *gn) {
+            return checkDataFlow(gn, boundary);
+          });
     }
   }
   return true;
