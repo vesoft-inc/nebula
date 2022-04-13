@@ -9,34 +9,28 @@
 namespace nebula {
 namespace graph {
 
-std::unique_ptr<PlanNodeDescription> ConjunctPath::explain() const {
+std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
-  switch (pathKind_) {
-    case PathKind::kBiBFS: {
-      addDescription("kind", "BFS", desc.get());
-      break;
-    }
-    case PathKind::kBiDijkstra: {
-      addDescription("kind", "Dijkstra", desc.get());
-      break;
-    }
-    case PathKind::kFloyd: {
-      addDescription("kind", "Floyd", desc.get());
-      break;
-    }
-    case PathKind::kAllPaths: {
-      addDescription("kind", "AllPath", desc.get());
-      break;
-    }
-  }
-  addDescription("conditionalVar", util::toJson(conditionalVar_), desc.get());
-  addDescription("noloop", util::toJson(noLoop_), desc.get());
+  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
+  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
+  addDescription("steps", util::toJson(steps_), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
+  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
+  addDescription("steps", util::toJson(steps_), desc.get());
   return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
-  auto desc = SingleDependencyNode::explain();
+  auto desc = BinaryInputNode::explain();
+  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
+  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
   addDescription("noloop ", util::toJson(noLoop_), desc.get());
+  addDescription("steps", util::toJson(steps_), desc.get());
   return desc;
 }
 
