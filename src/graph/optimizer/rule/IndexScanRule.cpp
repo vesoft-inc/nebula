@@ -81,6 +81,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   const auto* oldIN = groupNode->node();
   DCHECK_EQ(oldIN->kind(), graph::PlanNode::Kind::kIndexScan);
   auto* newIN = static_cast<IndexScan*>(oldIN->clone());
+  newIN->setOutputVar(oldIN->outputVar());
   newIN->setIndexQueryContext(std::move(iqctx));
   auto newGroupNode = OptGroupNode::create(ctx, newIN, groupNode->group());
   if (groupNode->dependencies().size() != 1) {

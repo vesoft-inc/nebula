@@ -40,12 +40,15 @@ Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Patter
   return Pattern(std::move(kinds), std::move(patterns));
 }
 
-StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
+StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode,
+                                       std::vector<OptGroup *> &boundary) const {
   if (!node_.match(groupNode->node())) {
     return Status::Error();
   }
 
   if (dependencies_.empty()) {
+    boundary.insert(
+        boundary.end(), groupNode->dependencies().begin(), groupNode->dependencies().end());
     return MatchedResult{groupNode, {}};
   }
 
@@ -59,16 +62,17 @@ StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
   for (size_t i = 0; i < dependencies_.size(); ++i) {
     auto group = groupNode->dependencies()[i];
     const auto &pattern = dependencies_[i];
-    auto status = pattern.match(group);
+    auto status = pattern.match(group, boundary);
     NG_RETURN_IF_ERROR(status);
     result.dependencies.emplace_back(std::move(status).value());
   }
   return result;
 }
 
-StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
+StatusOr<MatchedResult> Pattern::match(const OptGroup *group,
+                                       std::vector<OptGroup *> &boundary) const {
   for (auto node : group->groupNodes()) {
-    auto status = match(node);
+    auto status = match(node, boundary);
     if (status.ok()) {
       return status;
     }
@@ -76,9 +80,50 @@ StatusOr<MatchedResult> Pattern::match(const OptGroup *group) const {
   return Status::Error();
 }
 
-StatusOr<MatchedResult> OptRule::match(OptContext *ctx, const OptGroupNode *groupNode) const {
+bool OptRule::TransformResult::checkDataFlow(const std::vector<OptGroup *> &boundary) {
+  return std::all_of(
+      newGroupNodes.begin(), newGroupNodes.end(), [&boundary](const OptGroupNode *groupNode) {
+        return checkDataFlow(groupNode, boundary);
+      });
+}
+
+/*static*/ bool OptRule::TransformResult::checkDataFlow(const OptGroupNode *groupNode,
+                                                        const std::vector<OptGroup *> &boundary) {
+  const auto &deps = groupNode->dependencies();
+  // reach the boundary
+  if (std::all_of(deps.begin(), deps.end(), [&boundary](OptGroup *dep) {
+        return std::find(boundary.begin(), boundary.end(), dep) != boundary.end();
+      })) {
+    return true;
+  }
+  const auto *group = groupNode->group();
+  if (std::find(boundary.begin(), boundary.end(), group) != boundary.end()) {
+    return true;
+  }
+  // Check dataflow
+  const auto *node = groupNode->node();
+  if (node->inputVars().size() == deps.size()) {
+    // Don't check when count of dependencies is different from count of input variables
+    for (std::size_t i = 0; i < deps.size(); i++) {
+      const OptGroup *dep = deps[i];
+      if (node->inputVar(i) != dep->outputVar()) {
+        return false;
+      }
+      return std::all_of(dep->groupNodes().begin(),
+                         dep->groupNodes().end(),
+                         [&boundary](const OptGroupNode *groupNode) {
+                           return checkDataFlow(groupNode, boundary);
+                         });
+    }
+  }
+  return true;
+}
+
+StatusOr<MatchedResult> OptRule::match(OptContext *ctx,
+                                       const OptGroupNode *groupNode,
+                                       std::vector<OptGroup *> &boundary) const {
   const auto &pattern = this->pattern();
-  auto status = pattern.match(groupNode);
+  auto status = pattern.match(groupNode, boundary);
   NG_RETURN_IF_ERROR(status);
   auto matched = std::move(status).value();
   if (!this->match(ctx, matched)) {

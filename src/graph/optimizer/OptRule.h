@@ -64,7 +64,8 @@ class Pattern final {
   static Pattern create(std::initializer_list<graph::PlanNode::Kind> kinds,
                         std::initializer_list<Pattern> patterns = {});
 
-  StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
+  StatusOr<MatchedResult> match(const OptGroupNode *groupNode,
+                                std::vector<OptGroup *> &boundary) const;
 
  private:
   explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
@@ -72,7 +73,7 @@ class Pattern final {
   explicit Pattern(std::initializer_list<graph::PlanNode::Kind> kinds,
                    std::initializer_list<Pattern> patterns = {})
       : node_(std::move(kinds)), dependencies_(patterns) {}
-  StatusOr<MatchedResult> match(const OptGroup *group) const;
+  StatusOr<MatchedResult> match(const OptGroup *group, std::vector<OptGroup *> &boundary) const;
 
   MatchNode node_;
   std::vector<Pattern> dependencies_;
@@ -86,12 +87,19 @@ class OptRule {
       return kNoTrans;
     }
 
+    // The plan of result should keep dataflow same as dependencies
+    bool checkDataFlow(const std::vector<OptGroup *> &boundary);
+    static bool checkDataFlow(const OptGroupNode *groupNode,
+                              const std::vector<OptGroup *> &boundary);
+
     bool eraseCurr{false};
     bool eraseAll{false};
     std::vector<OptGroupNode *> newGroupNodes;
   };
 
-  StatusOr<MatchedResult> match(OptContext *ctx, const OptGroupNode *groupNode) const;
+  StatusOr<MatchedResult> match(OptContext *ctx,
+                                const OptGroupNode *groupNode,
+                                std::vector<OptGroup *> &boundary) const;
 
   virtual ~OptRule() = default;
 

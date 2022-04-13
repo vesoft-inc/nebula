@@ -50,6 +50,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
+  newLimit->setOutputVar(limit->outputVar());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto newGn = static_cast<GetNeighbors *>(gn->clone());
@@ -58,6 +59,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 
   newLimitGroupNode->dependsOn(newGnGroup);
+  newLimit->setInputVar(newGn->outputVar());
   for (auto dep : gnGroupNode->dependencies()) {
     newGnGroupNode->dependsOn(dep);
   }
