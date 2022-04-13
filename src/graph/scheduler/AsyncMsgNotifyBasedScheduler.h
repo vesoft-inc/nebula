@@ -63,6 +63,8 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
   folly::Future<Status> execute(Executor* executor) const;
 
   QueryContext* qctx_{nullptr};
+  // used for debugging when core on runtime
+  std::string query_;
 };
 }  // namespace graph
 }  // namespace nebula
