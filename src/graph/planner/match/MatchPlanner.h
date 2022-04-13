@@ -23,16 +23,10 @@ class MatchPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
+  bool tailConnected_{false};
   StatusOr<SubPlan> genPlan(CypherClauseContextBase* clauseCtx);
-
-  void connectMatch(const MatchClauseContext* match,
-                    const SubPlan& matchPlan,
-                    SubPlan& queryPartPlan);
-
-  Status connectQueryParts(const QueryPart& queryPart,
-                           const SubPlan& partPlan,
-                           QueryContext* qctx,
-                           SubPlan& queryPlan);
+  Status connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* matchCtx);
+  Status genQueryPartPlan(QueryContext* qctx, SubPlan& queryPlan, const QueryPart& queryPart);
 };
 }  // namespace graph
 }  // namespace nebula
