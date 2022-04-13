@@ -41,6 +41,7 @@ SymbolTable::SymbolTable(ObjectPool* objPool) {
 
 Variable* SymbolTable::newVariable(std::string name) {
   VLOG(1) << "New variable for: " << name;
+  DCHECK(vars_.find(name) == vars_.end());
   auto* variable = objPool_->makeAndAdd<Variable>(name);
   addVar(std::move(name), variable);
   return variable;

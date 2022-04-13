@@ -92,6 +92,7 @@ StatusOr<OptRule::TransformResult> PushTopNDownIndexScanRule::transform(
   }
 
   auto newTopN = static_cast<TopN *>(topN->clone());
+  newTopN->setOutputVar(topN->outputVar());
   auto newtopNGroupNode = OptGroupNode::create(octx, newTopN, topNGroupNode->group());
 
   auto newProject = static_cast<Project *>(project->clone());
@@ -105,7 +106,9 @@ StatusOr<OptRule::TransformResult> PushTopNDownIndexScanRule::transform(
   auto newIndexScanGroupNode = newIndexScanGroup->makeGroupNode(newIndexScan);
 
   newtopNGroupNode->dependsOn(newProjectGroup);
+  newTopN->setInputVar(newProject->outputVar());
   newProjectGroupNode->dependsOn(newIndexScanGroup);
+  newProject->setInputVar(newIndexScan->outputVar());
   for (auto dep : indexScanGroupNode->dependencies()) {
     newIndexScanGroupNode->dependsOn(dep);
   }

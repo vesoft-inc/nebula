@@ -12,6 +12,7 @@ namespace graph {
 
 AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) : Scheduler() {
   qctx_ = qctx;
+  query_ = qctx->rctx()->query();
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {

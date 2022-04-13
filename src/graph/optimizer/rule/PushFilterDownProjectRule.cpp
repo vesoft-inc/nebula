@@ -132,12 +132,15 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
     auto newProjGroup = OptGroup::create(octx);
     auto newProjGroupNode = newProjGroup->makeGroupNode(newProjNode);
     newProjGroupNode->setDeps({newBelowFilterGroup});
+    newProjNode->setInputVar(newBelowFilterNode->outputVar());
     newAboveFilterGroupNode->setDeps({newProjGroup});
+    newAboveFilterNode->setInputVar(newProjNode->outputVar());
     result.newGroupNodes.emplace_back(newAboveFilterGroupNode);
   } else {
     newProjNode->setOutputVar(oldFilterNode->outputVar());
     auto newProjGroupNode = OptGroupNode::create(octx, newProjNode, filterGroupNode->group());
     newProjGroupNode->setDeps({newBelowFilterGroup});
+    newProjNode->setInputVar(newBelowFilterNode->outputVar());
     result.newGroupNodes.emplace_back(newProjGroupNode);
   }
 
