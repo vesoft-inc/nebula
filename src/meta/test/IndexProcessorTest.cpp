@@ -16,6 +16,8 @@
 #include "meta/processors/index/GetTagIndexProcessor.h"
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
 #include "meta/processors/index/ListTagIndexesProcessor.h"
+#include "meta/processors/job/ListEdgeIndexStatusProcessor.h"
+#include "meta/processors/job/ListTagIndexStatusProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/schema/AlterEdgeProcessor.h"
 #include "meta/processors/schema/AlterTagProcessor.h"
@@ -2349,6 +2351,101 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     ASSERT_EQ(14, resp.get_id().get_index_id());
   }
 }
+
+// Check list tag index status
+TEST(IndexProcessorTest, ListTagIndexStatusTest) {
+  fs::TempDir rootPath("/tmp/ListTagIndexStatusTest.XXXXXX");
+  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+  TestUtils::createSomeHosts(kv.get());
+  GraphSpaceID spaceId = 1;
+  TestUtils::assembleSpace(kv.get(), spaceId, 1);
+  std::vector<kvstore::KV> data;
+
+  for (JobID jobId = 1; jobId < 3; jobId++) {
+    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+    std::vector<std::string> paras{"tag_index_name"};
+    cpp2::JobStatus jstatus;
+    if (jobId == 1) {
+      jstatus = cpp2::JobStatus::FAILED;
+    } else {
+      jstatus = cpp2::JobStatus::FINISHED;
+    }
+    auto jobVal = MetaKeyUtils::jobVal(
+        cpp2::JobType::REBUILD_TAG_INDEX, paras, jstatus, 1, 2, nebula::cpp2::ErrorCode::SUCCEEDED);
+    data.emplace_back(std::move(jobKey), std::move(jobVal));
+  }
+  folly::Baton<true, std::atomic> baton;
+  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = code;
+        baton.post();
+      });
+  baton.wait();
+  ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  // Allow to create edge index on no fields
+  cpp2::ListIndexStatusReq req;
+  req.space_id_ref() = 1;
+  auto* processor = ListTagIndexStatusProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  auto statuses = resp.get_statuses();
+  ASSERT_EQ(statuses.size(), 1);
+  ASSERT_TRUE(!(statuses[0].get_status().compare("FINISHED")));
+}
+
+// Check list edge index status
+TEST(IndexProcessorTest, ListEdgeIndexStatusTest) {
+  fs::TempDir rootPath("/tmp/ListEdgeIndexStatusTest.XXXXXX");
+  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+  TestUtils::createSomeHosts(kv.get());
+  GraphSpaceID spaceId = 1;
+  TestUtils::assembleSpace(kv.get(), spaceId, 1);
+  std::vector<kvstore::KV> data;
+
+  for (JobID jobId = 1; jobId < 3; jobId++) {
+    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+    std::vector<std::string> paras{"edge_index_name"};
+    cpp2::JobStatus jstatus;
+    if (jobId == 1) {
+      jstatus = cpp2::JobStatus::FAILED;
+    } else {
+      jstatus = cpp2::JobStatus::FINISHED;
+    }
+    auto jobVal = MetaKeyUtils::jobVal(cpp2::JobType::REBUILD_EDGE_INDEX,
+                                       paras,
+                                       jstatus,
+                                       1,
+                                       2,
+                                       nebula::cpp2::ErrorCode::SUCCEEDED);
+    data.emplace_back(std::move(jobKey), std::move(jobVal));
+  }
+  folly::Baton<true, std::atomic> baton;
+  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = code;
+        baton.post();
+      });
+  baton.wait();
+  ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  // Allow to create edge index on no fields
+  cpp2::ListIndexStatusReq req;
+  req.space_id_ref() = 1;
+  auto* processor = ListEdgeIndexStatusProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  auto statuses = resp.get_statuses();
+  ASSERT_EQ(statuses.size(), 1);
+  ASSERT_TRUE(!(statuses[0].get_status().compare("FINISHED")));
+}
+
 }  // namespace meta
 }  // namespace nebula
 
