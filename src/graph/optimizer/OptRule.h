@@ -40,6 +40,8 @@ struct MatchedResult {
   // {0, 1, 0}    | this->dependencies[1].dependencies[0]
   // {0, 1, 0, 1} | this->dependencies[1].dependencies[0].dependencies[1]
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
+
+  void collectBoundary(std::vector<OptGroup *> &boundary) const;
 };
 
 // Match plan node by trait or kind of plan node.
@@ -85,6 +87,11 @@ class OptRule {
       static TransformResult kNoTrans{false, false, {}};
       return kNoTrans;
     }
+
+    // The plan of result should keep dataflow same as dependencies
+    bool checkDataFlow(const std::vector<OptGroup *> &boundary);
+    static bool checkDataFlow(const OptGroupNode *groupNode,
+                              const std::vector<OptGroup *> &boundary);
 
     bool eraseCurr{false};
     bool eraseAll{false};

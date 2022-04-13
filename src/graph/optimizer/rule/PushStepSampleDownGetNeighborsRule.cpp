@@ -49,6 +49,7 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
   }
 
   auto newSample = static_cast<Sample *>(sample->clone());
+  newSample->setOutputVar(sample->outputVar());
   auto newSampleGroupNode = OptGroupNode::create(octx, newSample, sampleGroupNode->group());
 
   auto newGn = static_cast<GetNeighbors *>(gn->clone());
@@ -58,6 +59,7 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 
   newSampleGroupNode->dependsOn(newGnGroup);
+  newSample->setInputVar(newGn->outputVar());
   for (auto dep : gnGroupNode->dependencies()) {
     newGnGroupNode->dependsOn(dep);
   }
