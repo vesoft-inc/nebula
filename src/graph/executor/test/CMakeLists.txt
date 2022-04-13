@@ -94,15 +94,12 @@ nebula_add_test(
         FilterTest.cpp
         DedupTest.cpp
         LimitTest.cpp
+        FindPathTest.cpp
         SampleTest.cpp
         SortTest.cpp
         TopNTest.cpp
         AggregateTest.cpp
         JoinTest.cpp
-        BFSShortestTest.cpp
-        ConjunctPathTest.cpp
-        ProduceSemiShortestPathTest.cpp
-        ProduceAllPathsTest.cpp
         CartesianProductTest.cpp
         AssignTest.cpp
         ShowQueriesTest.cpp
