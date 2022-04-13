@@ -40,6 +40,8 @@ struct MatchedResult {
   // {0, 1, 0}    | this->dependencies[1].dependencies[0]
   // {0, 1, 0, 1} | this->dependencies[1].dependencies[0].dependencies[1]
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
+
+  void collectBoundary(std::vector<OptGroup *> &boundary) const;
 };
 
 // Match plan node by trait or kind of plan node.
@@ -64,8 +66,7 @@ class Pattern final {
   static Pattern create(std::initializer_list<graph::PlanNode::Kind> kinds,
                         std::initializer_list<Pattern> patterns = {});
 
-  StatusOr<MatchedResult> match(const OptGroupNode *groupNode,
-                                std::vector<OptGroup *> &boundary) const;
+  StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
  private:
   explicit Pattern(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {})
@@ -73,7 +74,7 @@ class Pattern final {
   explicit Pattern(std::initializer_list<graph::PlanNode::Kind> kinds,
                    std::initializer_list<Pattern> patterns = {})
       : node_(std::move(kinds)), dependencies_(patterns) {}
-  StatusOr<MatchedResult> match(const OptGroup *group, std::vector<OptGroup *> &boundary) const;
+  StatusOr<MatchedResult> match(const OptGroup *group) const;
 
   MatchNode node_;
   std::vector<Pattern> dependencies_;
@@ -97,9 +98,7 @@ class OptRule {
     std::vector<OptGroupNode *> newGroupNodes;
   };
 
-  StatusOr<MatchedResult> match(OptContext *ctx,
-                                const OptGroupNode *groupNode,
-                                std::vector<OptGroup *> &boundary) const;
+  StatusOr<MatchedResult> match(OptContext *ctx, const OptGroupNode *groupNode) const;
 
   virtual ~OptRule() = default;
 

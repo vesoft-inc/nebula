@@ -81,13 +81,14 @@ Status OptGroup::explore(const OptRule *rule) {
 
     // Find more equivalents
     std::vector<OptGroup *> boundary;
-    auto status = rule->match(ctx_, groupNode, boundary);
+    auto status = rule->match(ctx_, groupNode);
     if (!status.ok()) {
       ++iter;
       continue;
     }
     ctx_->setChanged(true);
     auto matched = std::move(status).value();
+    matched.collectBoundary(boundary);
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
