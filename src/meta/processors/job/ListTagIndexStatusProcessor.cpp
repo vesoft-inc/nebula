@@ -42,9 +42,8 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
     return a.get_job_id() > b.get_job_id();
   });
 
-  std::vector<cpp2::IndexStatus> statuses;
+  std::unordered_map<std::string, cpp2::JobStatus> tmp;
   for (auto& jobDesc : jobs) {
-    cpp2::IndexStatus status;
     auto paras = jobDesc.get_paras();
     std::string tagIndexJobName;
     if (paras.empty()) {
@@ -52,8 +51,14 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
     } else {
       tagIndexJobName = folly::join(",", paras);
     }
-    status.name_ref() = tagIndexJobName;
-    status.status_ref() = apache::thrift::util::enumNameSafe(jobDesc.get_status());
+    tmp.emplace(tagIndexJobName, jobDesc.get_status());
+  }
+
+  std::vector<cpp2::IndexStatus> statuses;
+  for (auto& kv : tmp) {
+    cpp2::IndexStatus status;
+    status.name_ref() = std::move(kv.first);
+    status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
     statuses.emplace_back(std::move(status));
   }
   resp_.statuses_ref() = std::move(statuses);
