@@ -125,7 +125,6 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 void GraphService::signout(int64_t sessionId) {
   VLOG(2) << "Sign out session " << sessionId;
   sessionManager_->removeSession(sessionId);
-  stats::StatsManager::decValue(kNumActiveSessions);
 }
 
 folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
