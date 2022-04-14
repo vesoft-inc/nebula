@@ -207,7 +207,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 2    |
+      | 2     |
     When executing query:
       """
       MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
@@ -216,7 +216,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 6    |
+      | 6     |
     When executing query:
       """
       OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
@@ -225,7 +225,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 6   |
+      | 6     |
     When executing query:
       """
       OPTIONAL MATCH (v:player) WHERE v.player.age>43
@@ -234,7 +234,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 2    |
+      | 2     |
     When executing query:
       """
       MATCH (v:player) WHERE v.player.age>43
@@ -243,7 +243,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 4    |
+      | 4     |
     When executing query:
       """
       OPTIONAL MATCH (v:player) WHERE v.player.age>43
@@ -252,7 +252,7 @@ Feature: Multi Line Multi Query Parts
       """
     Then the result should be, in any order:
       | count |
-      | 4    |
+      | 4     |
 
   Scenario: Multi Line Multi Query Parts
     When executing query:
