@@ -216,14 +216,18 @@ class Subgraph final : public SingleInputNode {
 
 class BiCartesianProduct final : public BinaryInputNode {
  public:
-  static BiCartesianProduct* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+  static BiCartesianProduct* make(QueryContext* qctx, const PlanNode* left, const PlanNode* right) {
     return qctx->objPool()->add(new BiCartesianProduct(qctx, left, right));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  PlanNode* clone() const override;
+
  private:
-  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
+  void cloneMembers(const BiCartesianProduct& r);
+
+  BiCartesianProduct(QueryContext* qctx, const PlanNode* left, const PlanNode* right);
 };
 }  // namespace graph
 }  // namespace nebula

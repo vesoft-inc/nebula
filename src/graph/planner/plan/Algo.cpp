@@ -67,7 +67,19 @@ std::unique_ptr<PlanNodeDescription> BiCartesianProduct::explain() const {
   return BinaryInputNode::explain();
 }
 
-BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right)
+PlanNode* BiCartesianProduct::clone() const {
+  auto* node = make(qctx_, dependencies_[0], dependencies_[1]);
+  node->cloneMembers(*this);
+  return node;
+}
+
+void BiCartesianProduct::cloneMembers(const BiCartesianProduct& r) {
+  BinaryInputNode::cloneMembers(r);
+}
+
+BiCartesianProduct::BiCartesianProduct(QueryContext* qctx,
+                                       const PlanNode* left,
+                                       const PlanNode* right)
     : BinaryInputNode(qctx, Kind::kBiCartesianProduct, left, right) {
   auto lColNames = left->colNames();
   auto rColNames = right->colNames();

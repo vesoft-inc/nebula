@@ -52,8 +52,7 @@ Feature: Remove Useless Project Rule
       | id | name           | dependencies | operator info |
       | 7  | DataCollect    | 6            |               |
       | 6  | Sort           | 8            |               |
-      | 8  | Aggregate      | 3            |               |
-      | 3  | Project        | 2            |               |
+      | 8  | Aggregate      | 2            |               |
       | 2  | AppendVertices | 1            |               |
       | 1  | IndexScan      | 0            |               |
       | 0  | Start          |              |               |

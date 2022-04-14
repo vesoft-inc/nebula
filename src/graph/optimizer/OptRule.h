@@ -57,7 +57,7 @@ class MatchNode {
   }
 
  private:
-  std::unordered_set<graph::PlanNode::Kind> node_;
+  const std::unordered_set<graph::PlanNode::Kind> node_;
 };
 
 class Pattern final {

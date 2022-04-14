@@ -414,7 +414,7 @@ class BinaryInputNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    LOG(FATAL) << "Shouldn't call the unimplemented method for " << kind_;
     return nullptr;
   }
 
