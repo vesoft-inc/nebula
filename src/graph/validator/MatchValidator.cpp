@@ -808,6 +808,11 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
     if (colExpr->kind() != Expression::Kind::kAggregate) {
       auto collectAggCol = colExpr->clone();
       auto aggs = ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
+      auto collectLabelCol = colExpr->clone();
+      auto labelExprs = ExpressionUtils::collectAll(collectLabelCol,
+                                                    {Expression::Kind::kLabel,
+                                                     Expression::Kind::kLabelAttribute,
+                                                     Expression::Kind::kLabelTagProperty});
       for (auto *agg : aggs) {
         DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
         if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(agg)).ok()) {
@@ -819,60 +824,16 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
 
         yieldCtx.needGenProject_ = true;
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
-      }
 
-      if (colExpr->kind() == Expression::Kind::kList) {
-        for (auto &item : static_cast<ListExpression *>(colExpr)->get()) {
-          if (item->kind() != Expression::Kind::kAggregate) {
-            yieldCtx.groupKeys_.emplace_back(item->clone());
-            yieldCtx.groupItems_.emplace_back(item->clone());
-          }
-          if (item->kind() == Expression::Kind::kLabelTagProperty) {
-            auto *label = static_cast<LabelTagPropertyExpression *>(item)->label();
-            if (label->kind() == Expression::Kind::kVarProperty) {
-              auto prop = static_cast<VariablePropertyExpression *>(label)->prop();
-              if (yieldCtx.aliasesAvailable.find(prop) != yieldCtx.aliasesAvailable.end()) {
-                yieldCtx.aggOutputColumnNames_.emplace_back(prop);
-              }
-            }
-          }
-        }
-      } else if (colExpr->kind() == Expression::Kind::kSet) {
-        for (auto &item : static_cast<SetExpression *>(colExpr)->get()) {
-          if (item->kind() != Expression::Kind::kAggregate) {
-            yieldCtx.groupKeys_.emplace_back(item->clone());
-            yieldCtx.groupItems_.emplace_back(item->clone());
-          }
-          if (item->kind() == Expression::Kind::kLabelTagProperty) {
-            auto *label = static_cast<LabelTagPropertyExpression *>(item)->label();
-            if (label->kind() == Expression::Kind::kVarProperty) {
-              auto prop = static_cast<VariablePropertyExpression *>(label)->prop();
-              if (yieldCtx.aliasesAvailable.find(prop) != yieldCtx.aliasesAvailable.end()) {
-                yieldCtx.aggOutputColumnNames_.emplace_back(prop);
-              }
-            }
-          }
-        }
-      } else if (colExpr->kind() == Expression::Kind::kMap) {
-        for (auto &item : static_cast<MapExpression *>(colExpr)->get()) {
-          if (item.second->kind() != Expression::Kind::kAggregate) {
-            yieldCtx.groupKeys_.emplace_back(item.second->clone());
-            yieldCtx.groupItems_.emplace_back(item.second->clone());
-          }
-          if (item.second->kind() == Expression::Kind::kLabelTagProperty) {
-            auto *label = static_cast<LabelTagPropertyExpression *>(item.second)->label();
-            if (label->kind() == Expression::Kind::kVarProperty) {
-              auto prop = static_cast<VariablePropertyExpression *>(label)->prop();
-              if (yieldCtx.aliasesAvailable.find(prop) != yieldCtx.aliasesAvailable.end()) {
-                yieldCtx.aggOutputColumnNames_.emplace_back(prop);
-              }
-            }
-          }
+        for (auto *labelExpr : labelExprs) {
+          yieldCtx.groupKeys_.emplace_back(labelExpr->clone());
+          yieldCtx.groupItems_.emplace_back(labelExpr->clone());
+          yieldCtx.aggOutputColumnNames_.emplace_back(labelExpr->toString());
         }
       }
 
       if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
+        auto *rewritedExpr = ExpressionUtils::rewriteLabelAgg2VarProp(colExpr->clone());
         yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;

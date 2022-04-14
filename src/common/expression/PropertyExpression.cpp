@@ -177,9 +177,6 @@ std::string VariablePropertyExpression::toString() const {
 const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
   const auto& var = label_->eval(ctx);
   if (var.type() != Value::Type::VERTEX) {
-    if (var.type() == Value::Type::STRING) {
-      return var;
-    }
     return Value::kNullBadType;
   }
   for (const auto& tag : var.getVertex().tags) {

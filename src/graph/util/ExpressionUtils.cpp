@@ -189,6 +189,21 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+Expression *ExpressionUtils::rewriteLabelAgg2VarProp(const Expression *expr) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kLabel ||
+           e->kind() == Expression::Kind::kLabelAttribute ||
+           e->kind() == Expression::Kind::kLabelTagProperty ||
+           e->kind() == Expression::Kind::kAggregate;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    return VariablePropertyExpression::make(pool, "", e->toString());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 // Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
 // Rewrite the IN expr to an OR expr if the right operand has more than 1 element.
 Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
