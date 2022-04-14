@@ -47,7 +47,6 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     NG_RETURN_IF_ERROR(connectPathPlan(
         nodeInfos, matchClauseCtx, std::move(result).value(), nodeAliasesSeen, matchClausePlan));
   }
-  NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
   return matchClausePlan;
 }
 

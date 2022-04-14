@@ -23,7 +23,9 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
     for (const auto& path : dataPaths) {
       auto absolute = boost::filesystem::absolute(path);
       if (!boost::filesystem::exists(absolute)) {
-        boost::filesystem::create_directories(absolute);
+        if (!boost::filesystem::create_directories(absolute)) {
+          LOG(FATAL) << folly::sformat("DataPath:{} does not exist, create failed.", path);
+        }
       } else if (!boost::filesystem::is_directory(absolute)) {
         LOG(FATAL) << "DataPath is not a valid directory: " << path;
       }

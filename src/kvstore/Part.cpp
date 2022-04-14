@@ -417,7 +417,10 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
           VLOG(1) << idStr_ << "preprocess add learner " << learner;
           addLearner(learner, false);
           // persist the part learner info in case of storaged restarting
-          engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
+          auto ret = engine_->updatePart(partId_, Peer(learner, Peer::Status::kLearner));
+          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            return false;
+          }
         } else {
           VLOG(1) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
                   << startTimeMs_ << ", but the log timestamp is " << ts;
@@ -443,7 +446,10 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
         if (ts > startTimeMs_) {
           VLOG(1) << idStr_ << "preprocess add peer " << peer;
           addPeer(peer);
-          engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
+          auto ret = engine_->updatePart(partId_, Peer(peer, Peer::Status::kPromotedPeer));
+          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            return false;
+          }
         } else {
           VLOG(1) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
                   << startTimeMs_ << ", but the log timestamp is " << ts;
@@ -457,7 +463,10 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
           VLOG(1) << idStr_ << "preprocess remove peer " << peer;
           preProcessRemovePeer(peer);
           // remove peer in the persist info
-          engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
+          auto ret = engine_->updatePart(partId_, Peer(peer, Peer::Status::kDeleted));
+          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            return false;
+          }
         } else {
           VLOG(1) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
                   << startTimeMs_ << ", but the log timestamp is " << ts;

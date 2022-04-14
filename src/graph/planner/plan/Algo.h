@@ -11,101 +11,138 @@
 
 namespace nebula {
 namespace graph {
-class ProduceSemiShortestPath : public SingleInputNode {
+class MultiShortestPath : public BinaryInputNode {
  public:
-  static ProduceSemiShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceSemiShortestPath(qctx, input));
-  }
-
- private:
-  ProduceSemiShortestPath(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kProduceSemiShortestPath, input) {}
-};
-
-class BFSShortestPath : public SingleInputNode {
- public:
-  static BFSShortestPath* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new BFSShortestPath(qctx, input));
-  }
-
- private:
-  BFSShortestPath(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kBFSShortest, input) {}
-};
-
-class ConjunctPath : public BinaryInputNode {
- public:
-  enum class PathKind : uint8_t {
-    kBiBFS,
-    kBiDijkstra,
-    kFloyd,
-    kAllPaths,
-  };
-
-  static ConjunctPath* make(
-      QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps) {
-    return qctx->objPool()->add(new ConjunctPath(qctx, left, right, pathKind, steps));
-  }
-
-  PathKind pathKind() const {
-    return pathKind_;
+  static MultiShortestPath* make(QueryContext* qctx,
+                                 PlanNode* left,
+                                 PlanNode* right,
+                                 size_t steps) {
+    return qctx->objPool()->add(new MultiShortestPath(qctx, left, right, steps));
   }
 
   size_t steps() const {
     return steps_;
   }
 
-  void setConditionalVar(std::string varName) {
-    conditionalVar_ = std::move(varName);
+  std::string leftVidVar() const {
+    return leftVidVar_;
   }
 
-  std::string conditionalVar() const {
-    return conditionalVar_;
+  std::string rightVidVar() const {
+    return rightVidVar_;
   }
 
-  bool noLoop() const {
-    return noLoop_;
+  std::string terminationVar() const {
+    return terminationVar_;
   }
 
-  void setNoLoop(bool noLoop) {
-    noLoop_ = noLoop;
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
   }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
+  void setTerminationVar(const std::string& var) {
+    terminationVar_ = var;
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
-  ConjunctPath(QueryContext* qctx, PlanNode* left, PlanNode* right, PathKind pathKind, size_t steps)
-      : BinaryInputNode(qctx, Kind::kConjunctPath, left, right) {
-    pathKind_ = pathKind;
-    steps_ = steps;
-  }
+  MultiShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
+      : BinaryInputNode(qctx, Kind::kMultiShortestPath, left, right), steps_(steps) {}
 
-  PathKind pathKind_;
+ private:
   size_t steps_{0};
-  std::string conditionalVar_;
-  bool noLoop_;
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  std::string terminationVar_;
 };
 
-class ProduceAllPaths final : public SingleInputNode {
+class BFSShortestPath : public BinaryInputNode {
  public:
-  static ProduceAllPaths* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ProduceAllPaths(qctx, input));
+  static BFSShortestPath* make(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps) {
+    return qctx->objPool()->add(new BFSShortestPath(qctx, left, right, steps));
+  }
+
+  size_t steps() const {
+    return steps_;
+  }
+
+  std::string leftVidVar() const {
+    return leftVidVar_;
+  }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  BFSShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
+      : BinaryInputNode(qctx, Kind::kBFSShortest, left, right), steps_(steps) {}
+
+ private:
+  std::string leftVidVar_;
+  std::string rightVidVar_;
+  size_t steps_{0};
+};
+
+class ProduceAllPaths final : public BinaryInputNode {
+ public:
+  static ProduceAllPaths* make(
+      QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop) {
+    return qctx->objPool()->add(new ProduceAllPaths(qctx, left, right, steps, noLoop));
+  }
+
+  size_t steps() const {
+    return steps_;
   }
 
   bool noLoop() const {
     return noLoop_;
   }
 
-  void setNoLoop(bool noLoop) {
-    noLoop_ = noLoop;
+  std::string leftVidVar() const {
+    return leftVidVar_;
   }
+
+  std::string rightVidVar() const {
+    return rightVidVar_;
+  }
+
+  void setLeftVidVar(const std::string& var) {
+    leftVidVar_ = var;
+  }
+
+  void setRightVidVar(const std::string& var) {
+    rightVidVar_ = var;
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
-  ProduceAllPaths(QueryContext* qctx, PlanNode* input)
-      : SingleInputNode(qctx, Kind::kProduceAllPaths, input) {}
+  ProduceAllPaths(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop)
+      : BinaryInputNode(qctx, Kind::kProduceAllPaths, left, right),
+        steps_(steps),
+        noLoop_(noLoop) {}
 
  private:
+  size_t steps_{0};
   bool noLoop_{false};
+  std::string leftVidVar_;
+  std::string rightVidVar_;
 };
 
 class CartesianProduct final : public SingleDependencyNode {

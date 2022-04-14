@@ -120,7 +120,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     uint32_t total = paras.size() - index - 1, succeeded = 0, failed = 0, inProgress = 0,
              invalid = 0;
     v.emplace_back(Row({jd.get_job_id(),
-                        apache::thrift::util::enumNameSafe(jd.get_type()),
+                        apache::thrift::util::enumNameSafe(meta::cpp2::JobType::DATA_BALANCE),
                         apache::thrift::util::enumNameSafe(jd.get_status()),
                         convertJobTimestampToDateTime(jd.get_start_time()).toString(),
                         convertJobTimestampToDateTime(jd.get_stop_time()).toString(),

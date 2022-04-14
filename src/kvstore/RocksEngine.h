@@ -405,9 +405,9 @@ class RocksEngine : public KVEngine {
    *
    * @param partId
    * @param raftPeer
-   *
+   * @return nebula::cpp2::ErrorCode
    */
-  void updatePart(PartitionID partId, const Peer& raftPeer) override;
+  nebula::cpp2::ErrorCode updatePart(PartitionID partId, const Peer& raftPeer) override;
 
   /**
    * @brief Remove the part key from rocksdb
