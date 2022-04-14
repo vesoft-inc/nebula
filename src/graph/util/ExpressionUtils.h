@@ -73,7 +73,7 @@ class ExpressionUtils {
   // rewrite Agg to VarProp
   static Expression* rewriteAgg2VarProp(const Expression* expr);
 
-  // rewrite Label, LabelAttr, LabelTagProperty to VarProp.
+  // rewrite Label, LabelAttr, LabelTagProperty and Agg to VarProp.
   static Expression* rewriteLabelAgg2VarProp(const Expression* expr);
 
   // rewrite var in VariablePropExpr to another var
