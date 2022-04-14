@@ -9,7 +9,6 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBaseManager.h>
 
-#include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 
 namespace nebula {

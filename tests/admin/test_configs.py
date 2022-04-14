@@ -106,7 +106,7 @@ class TestConfigs(NebulaTestSuite):
                                    max_write_buffer_number="4"}
                                    ''')
         self.check_resp_succeeded(resp)
-        
+
         # get result
         resp = self.client.execute('GET CONFIGS storage:rocksdb_column_family_options')
         self.check_resp_succeeded(resp)

@@ -43,6 +43,7 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:plan_obj>
+    $<TARGET_OBJECTS:runtime_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ssl_obj>
@@ -51,10 +52,10 @@ set(expression_test_common_libs
 
 
 if(ENABLE_STANDALONE_VERSION)
-set(expression_test_common_libs
-    ${expression_test_common_libs}
-    $<TARGET_OBJECTS:sa_test_graph_flags_obj>
-)
+    set(expression_test_common_libs
+        ${expression_test_common_libs}
+        $<TARGET_OBJECTS:sa_test_graph_flags_obj>
+    )
 endif()
 
 nebula_add_library(

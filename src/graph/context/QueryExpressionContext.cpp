@@ -7,6 +7,7 @@
 
 namespace nebula {
 namespace graph {
+
 const Value& QueryExpressionContext::getVar(const std::string& var) const {
   if (ectx_ == nullptr) {
     return Value::kEmpty;

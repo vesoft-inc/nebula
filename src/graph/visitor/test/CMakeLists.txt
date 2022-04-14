@@ -37,6 +37,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
+        $<TARGET_OBJECTS:runtime_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:network_obj>

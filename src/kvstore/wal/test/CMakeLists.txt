@@ -8,6 +8,7 @@ set(WAL_TEST_LIBS
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:runtime_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
 )

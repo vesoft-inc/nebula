@@ -1308,6 +1308,9 @@ TEST_F(FunctionManagerTest, returnType) {
     ASSERT_FALSE(result.ok());
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
   }
+}
+
+TEST_F(FunctionManagerTest, returnType2) {
   // time
   {
     auto result = FunctionManager::getReturnType("time", {Value::Type::BOOL});

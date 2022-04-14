@@ -5,6 +5,10 @@
 
 #include "graph/context/QueryContext.h"
 
+#include "common/runtime/NebulaTaskExecutor.h"
+
+using nebula::NebulaTaskExecutor;
+
 namespace nebula {
 namespace graph {
 
@@ -36,11 +40,14 @@ void QueryContext::init() {
     for (auto item : rctx_->parameterMap()) {
       ectx_->setValue(std::move(item.first), std::move(item.second));
     }
+    runner_ = std::make_unique<NebulaTaskExecutor>(rctx_->runner());
   }
   idGen_ = std::make_unique<IdGenerator>(0);
   symTable_ = std::make_unique<SymbolTable>(objPool_.get());
   vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));
 }
+
+QueryContext::~QueryContext() {}
 
 }  // namespace graph
 }  // namespace nebula

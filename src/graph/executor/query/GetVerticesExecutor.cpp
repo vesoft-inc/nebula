@@ -59,8 +59,7 @@ DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
   if (gv == nullptr) {
     return nebula::DataSet({kVid});
   }
-  // Accept Table such as | $a | $b | $c |... as input which one column indicate
-  // src
+  // Accept Table such as | $a | $b | $c |... as input which one column indicate src
   auto valueIter = ectx_->getResult(gv->inputVar()).iter();
   return buildRequestDataSetByVidType(valueIter.get(), gv->src(), gv->dedup());
 }

@@ -45,7 +45,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 
   auto status2 = postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
   if (!status2.ok()) {
-    DLOG(ERROR) << "Failed to postprocess plan: " << status2;
+    DLOG(INFO) << "Failed to postprocess plan: " << status2;
   }
   return newRoot;
 }

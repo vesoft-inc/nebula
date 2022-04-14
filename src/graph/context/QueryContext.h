@@ -49,7 +49,7 @@ class QueryContext {
                meta::MetaClient* metaClient,
                CharsetInfo* charsetInfo);
 
-  virtual ~QueryContext() = default;
+  virtual ~QueryContext();
 
   void setRCtx(RequestContextPtr rctx) {
     rctx_ = std::move(rctx);
@@ -140,6 +140,10 @@ class QueryContext {
     return ectx_->exist(param) && (ectx_->getValue(param).type() != Value::Type::DATASET);
   }
 
+  folly::Executor* runner() const {
+    return runner_.get();
+  }
+
  private:
   void init();
 
@@ -160,6 +164,9 @@ class QueryContext {
   std::unique_ptr<SymbolTable> symTable_;
 
   std::atomic<bool> killed_{false};
+
+  // All tasks of query plan will run on this runner
+  std::unique_ptr<folly::Executor> runner_;
 };
 
 }  // namespace graph

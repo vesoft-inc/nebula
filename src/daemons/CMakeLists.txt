@@ -35,6 +35,7 @@ set(common_deps
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
     $<TARGET_OBJECTS:log_monitor_obj>
+    $<TARGET_OBJECTS:runtime_obj>
 )
 
 set(storage_meta_deps

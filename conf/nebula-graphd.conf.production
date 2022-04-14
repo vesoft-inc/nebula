@@ -35,6 +35,8 @@
 --accept_partial_success=false
 # Maximum sentence length, unit byte
 --max_allowed_query_size=4194304
+# Maximum allowed threads per query, no limit if the value is 0
+--max_threads_per_query=0
 
 ########## networking ##########
 # Comma separated Meta Server Addresses

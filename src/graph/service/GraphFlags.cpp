@@ -18,7 +18,6 @@ DEFINE_int32(num_netio_threads,
              "The number of networking threads, 0 for number of physical CPU cores");
 DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connections");
 DEFINE_int32(num_worker_threads, 0, "Number of threads to execute user queries");
-DEFINE_int32(num_operator_threads, 5, "Number of threads to execute a single operator");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_int32(listen_backlog, 1024, "Backlog of the listen socket");
 DEFINE_string(listen_netdev, "any", "The network device to listen on");

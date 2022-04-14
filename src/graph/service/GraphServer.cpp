@@ -10,6 +10,9 @@
 #include "common/id/Snowflake.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
+
+using apache::thrift::concurrency::PriorityThreadManager;
+
 namespace nebula {
 namespace graph {
 
@@ -25,8 +28,7 @@ bool GraphServer::start() {
                                                                     std::move(threadFactory));
   int numThreads = FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads
                                                 : thriftServer_->getNumIOWorkerThreads();
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads));
+  auto threadManager = PriorityThreadManager::newPriorityThreadManager(numThreads);
   threadManager->setNamePrefix("executor");
   threadManager->start();
 

@@ -6,7 +6,8 @@
 
 #include "graph/planner/plan/Algo.h"
 
-DECLARE_int32(num_operator_threads);
+DECLARE_int32(max_threads_per_query);
+
 namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
@@ -129,7 +130,7 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   }
   size_t i = 0;
   size_t totalSize = meetVids.size();
-  size_t batchSize = totalSize / static_cast<size_t>(FLAGS_num_operator_threads);
+  size_t batchSize = totalSize / static_cast<size_t>(FLAGS_max_threads_per_query);
   std::vector<Value> batchVids;
   batchVids.reserve(batchSize);
   std::vector<folly::Future<DataSet>> futures;

@@ -34,7 +34,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
   std::queue<Executor*> queue2;
   std::unordered_set<Executor*> visited;
 
-  auto* runner = qctx_->rctx()->runner();
+  auto* runner = qctx_->runner();
   folly::Promise<Status> promiseForRoot;
   auto resultFuture = promiseForRoot.getFuture();
   promiseMap[root->id()].emplace_back(std::move(promiseForRoot));

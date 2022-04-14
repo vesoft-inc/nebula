@@ -661,7 +661,6 @@ void Executor::drop(const PlanNode *node) {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << node->kind() << " Drop variable " << inputVar->name;
       }
     }
   }
@@ -688,12 +687,11 @@ Status Executor::finish(Result &&result) {
     numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
     result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
-  } else {
-    VLOG(1) << "Drop variable " << node()->outputVar();
   }
   if (FLAGS_enable_lifetime_optimize) {
     drop();
   }
+
   return Status::OK();
 }
 
@@ -702,11 +700,11 @@ Status Executor::finish(Value &&value) {
 }
 
 folly::Executor *Executor::runner() const {
-  if (!qctx() || !qctx()->rctx() || !qctx()->rctx()->runner()) {
+  if (!qctx() || !qctx()->runner()) {
     // This is just for test
     return &folly::InlineExecutor::instance();
   }
-  return qctx()->rctx()->runner();
+  return qctx()->runner();
 }
 
 }  // namespace graph

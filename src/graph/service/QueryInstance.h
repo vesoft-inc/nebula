@@ -15,15 +15,14 @@
 #include "graph/scheduler/Scheduler.h"
 #include "parser/GQLParser.h"
 
+namespace nebula {
+namespace graph {
+
 /**
  * QueryInstance coordinates the execution process,
  * i.e. parse a query into a parsing tree, analyze the tree,
  * initiate and finalize the execution.
  */
-
-namespace nebula {
-namespace graph {
-
 class QueryInstance final : public boost::noncopyable, public cpp::NonMovable {
  public:
   QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);

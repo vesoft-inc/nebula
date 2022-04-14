@@ -6,7 +6,6 @@
 #ifndef CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 #define CLIENTS_STORAGE_STORAGECLIENTBASE_INL_H
 
-#include <folly/ExceptionWrapper.h>
 #include <folly/Try.h>
 #include <folly/futures/Future.h>
 

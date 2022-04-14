@@ -3,7 +3,9 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/planner/plan/Algo.h"
-DECLARE_int32(num_operator_threads);
+
+DECLARE_int32(max_threads_per_query);
+
 namespace nebula {
 namespace graph {
 folly::Future<Status> ProduceAllPathsExecutor::execute() {
@@ -126,7 +128,7 @@ DataSet ProduceAllPathsExecutor::doConjunct(Interims::iterator startIter,
 }
 
 folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
-  auto batchSize = leftPaths_.size() / static_cast<size_t>(FLAGS_num_operator_threads);
+  auto batchSize = leftPaths_.size() / static_cast<size_t>(FLAGS_max_threads_per_query);
   std::vector<folly::Future<DataSet>> futures;
   size_t i = 0;
 
