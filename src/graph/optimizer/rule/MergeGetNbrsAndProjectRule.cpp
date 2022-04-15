@@ -66,6 +66,7 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
   auto srcExpr = column->expr()->clone();
   newGN->setSrc(srcExpr);
   newGN->setInputVar(project->inputVar());
+  newGN->setOutputVar(gn->outputVar());
   auto newOptGV = OptGroupNode::create(ctx, newGN, optGN->group());
   for (auto dep : optProj->dependencies()) {
     newOptGV->dependsOn(dep);

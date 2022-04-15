@@ -180,6 +180,7 @@ void GraphSessionManager::removeSession(SessionID id) {
   auto sessionCopy = iter->second->getSession();
   std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
   activeSessions_.erase(iter);
+  stats::StatsManager::decValue(kNumActiveSessions);
   // delete session count from cache
   subSessionCount(key);
 }

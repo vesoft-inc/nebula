@@ -75,11 +75,20 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   }
   if (!intersectedAliases.empty()) {
     if (matchCtx->isOptional) {
+      // connect LeftJoin match filter
+      if (matchCtx->where != nullptr) {
+        matchCtx->where->inputColNames = matchPlan.root->colNames();
+        auto wherePlanStatus =
+            std::make_unique<WhereClausePlanner>()->transform(matchCtx->where.get());
+        NG_RETURN_IF_ERROR(wherePlanStatus);
+        auto wherePlan = std::move(wherePlanStatus).value();
+        matchPlan = SegmentsConnector::addInput(wherePlan, matchPlan, true);
+      }
       queryPlan =
-          SegmentsConnector::leftJoin(matchCtx->qctx, matchPlan, queryPlan, intersectedAliases);
+          SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
     } else {
       queryPlan =
-          SegmentsConnector::innerJoin(matchCtx->qctx, matchPlan, queryPlan, intersectedAliases);
+          SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
     }
   } else {
     queryPlan.root = BiCartesianProduct::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
@@ -95,7 +104,7 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
   for (auto& match : queryPart.matchs) {
     connectMatchPlan(queryPlan, match.get());
     // connect match filter
-    if (match->where != nullptr) {
+    if (match->where != nullptr && !match->isOptional) {
       match->where->inputColNames = queryPlan.root->colNames();
       auto wherePlanStatus = std::make_unique<WhereClausePlanner>()->transform(match->where.get());
       NG_RETURN_IF_ERROR(wherePlanStatus);

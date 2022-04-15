@@ -77,6 +77,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanEdgesAppendVerticesRule::tra
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
+  newLimit->setOutputVar(limit->outputVar());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto newAppendVertices = static_cast<AppendVertices *>(appendVertices->clone());
@@ -93,8 +94,11 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanEdgesAppendVerticesRule::tra
   auto newScanEdgesGroupNode = newScanEdgesGroup->makeGroupNode(newScanEdges);
 
   newLimitGroupNode->dependsOn(newAppendVerticesGroup);
+  newLimit->setInputVar(newAppendVertices->outputVar());
   newAppendVerticesGroupNode->dependsOn(newProjGroup);
+  newAppendVertices->setInputVar(newProj->outputVar());
   newProjGroupNode->dependsOn(newScanEdgesGroup);
+  newProj->setInputVar(newScanEdges->outputVar());
   for (auto dep : scanEdgesGroupNode->dependencies()) {
     newScanEdgesGroupNode->dependsOn(dep);
   }
