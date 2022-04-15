@@ -63,14 +63,14 @@ class MultiShortestPathExecutor final : public Executor {
   void init();
   Status buildPath(bool reverse);
   folly::Future<bool> conjunctPath(bool oddStep);
-  DataSet doConjunct(Interims::iterator startIter, Interims::iterator endIter, bool oddStep);
+  DataSet doConjunct(const std::vector<std::pair<Interims::iterator, Interims::iterator>>& iters);
   void setNextStepVid(const Interims& paths, const string& var);
 
  private:
   const MultiShortestPath* pathNode_{nullptr};
   size_t step_{1};
   std::string terminationVar_;
-  std::unordered_multimap<Value, std::pair<Value, bool>> terminationMap_;
+  std::unordered_map<std::pair<Value, Value>, bool> terminationMap_;
   Interims leftPaths_;
   Interims preLeftPaths_;
   Interims preRightPaths_;
