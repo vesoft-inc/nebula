@@ -52,6 +52,7 @@ nebula_add_library(
     processors/admin/ListClusterInfoProcessor.cpp
     processors/admin/GetMetaDirInfoProcessor.cpp
     processors/admin/VerifyClientVersionProcessor.cpp
+    processors/admin/SaveGraphVersionProcessor.cpp
     processors/config/RegConfigProcessor.cpp
     processors/config/GetConfigProcessor.cpp
     processors/config/ListConfigsProcessor.cpp

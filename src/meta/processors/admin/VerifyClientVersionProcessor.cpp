@@ -25,14 +25,8 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
         "Meta client version(%s) is not accepted, current meta client white list: %s.",
         req.get_client_version().c_str(),
         FLAGS_client_white_list.c_str());
-  } else {
-    const auto& host = req.get_host();
-    auto versionKey = MetaKeyUtils::versionKey(host);
-    auto versionVal = MetaKeyUtils::versionVal(req.get_build_version().c_str());
-    std::vector<kvstore::KV> versionData;
-    versionData.emplace_back(std::move(versionKey), std::move(versionVal));
-    handleErrorCode(doSyncPut(versionData));
   }
+
   onFinished();
 }
 }  // namespace meta
