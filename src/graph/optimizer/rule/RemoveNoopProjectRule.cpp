@@ -122,6 +122,10 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
     if (depColNames[i].compare(projColNames[i])) {
       return false;
     }
+    const auto* propExpr = static_cast<PropertyExpression*>(cols[i]->expr());
+    if (propExpr->prop() != projColNames[i]) {
+      return false;
+    }
   }
 
   return true;
