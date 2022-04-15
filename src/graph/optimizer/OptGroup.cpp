@@ -44,11 +44,21 @@ OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   DCHECK(groupNode != nullptr);
   DCHECK(groupNode->group() == this);
+  if (outputVar_.empty()) {
+    outputVar_ = groupNode->node()->outputVar();
+  } else {
+    DCHECK_EQ(outputVar_, groupNode->node()->outputVar());
+  }
   groupNodes_.emplace_back(groupNode);
   groupNode->node()->updateSymbols();
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
+  if (outputVar_.empty()) {
+    outputVar_ = node->outputVar();
+  } else {
+    DCHECK_EQ(outputVar_, node->outputVar());
+  }
   groupNodes_.emplace_back(OptGroupNode::create(ctx_, node, this));
   return groupNodes_.back();
 }
@@ -70,6 +80,7 @@ Status OptGroup::explore(const OptRule *rule) {
     NG_RETURN_IF_ERROR(groupNode->explore(rule));
 
     // Find more equivalents
+    std::vector<OptGroup *> boundary;
     auto status = rule->match(ctx_, groupNode);
     if (!status.ok()) {
       ++iter;
@@ -77,9 +88,13 @@ Status OptGroup::explore(const OptRule *rule) {
     }
     ctx_->setChanged(true);
     auto matched = std::move(status).value();
+    matched.collectBoundary(boundary);
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
+    DLOG_IF(WARNING, !result.checkDataFlow(boundary))
+        << "Plan of transfromed result should keep input variable same with dependencies in rule "
+        << rule->toString();
     if (result.eraseAll) {
       for (auto gnode : groupNodes_) {
         gnode->node()->releaseSymbols();

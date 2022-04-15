@@ -34,6 +34,20 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
 
   std::vector<kvstore::KV> data;
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  std::map<GraphSpaceID, meta::cpp2::SpaceDesc> spaceMap;
+  std::string spacePrefix = MetaKeyUtils::spacePrefix();
+  std::unique_ptr<kvstore::KVIterator> spaceIter;
+  auto spaceRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &spaceIter);
+  if (spaceRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(spaceRet);
+    onFinished();
+    return;
+  }
+  while (spaceIter->valid()) {
+    spaceMap.emplace(MetaKeyUtils::spaceId(spaceIter->key()),
+                     MetaKeyUtils::parseSpace(spaceIter->val()));
+    spaceIter->next();
+  }
   for (auto& host : hosts) {
     // Ensure that the node is not registered.
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
@@ -56,6 +70,16 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     auto zoneVal = MetaKeyUtils::zoneVal({host});
     data.emplace_back(std::move(machineKey), "");
     data.emplace_back(std::move(zoneKey), std::move(zoneVal));
+    for (auto& [spaceId, properties] : spaceMap) {
+      const std::vector<std::string>& curZones = properties.get_zone_names();
+      std::set<std::string> zm(curZones.begin(), curZones.end());
+      zm.emplace(zoneName);
+      std::vector<std::string> newZones(zm.begin(), zm.end());
+      properties.zone_names_ref() = std::move(newZones);
+    }
+  }
+  for (auto& [spaceId, properties] : spaceMap) {
+    data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

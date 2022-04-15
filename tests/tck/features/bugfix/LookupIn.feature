@@ -39,3 +39,42 @@ Feature: Lookup_In
       | "Luka Doncic"   | 20         |
       | "Kobe Bryant"   | 40         |
     Then drop the used space
+
+  # Crash caused by using function call as a part of the filter
+  # Fix https://github.com/vesoft-inc/nebula/issues/4097
+  Scenario: lookup in where filter contains a function call
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG tag_1(col1 date, col2 double);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX single_tag_index ON tag_1(col1);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX single_tag_index2 ON tag_1(col2);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      LOOKUP ON tag_1 WHERE tag_1.col1 == date('2022-03-25')
+      AND tag_1.col2 > 10 YIELD tag_1.col1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON tag_1 WHERE tag_1.col1 == date()
+      AND tag_1.col2 > 10 YIELD tag_1.col1
+      """
+    Then the execution should be successful
+    Then drop the used space

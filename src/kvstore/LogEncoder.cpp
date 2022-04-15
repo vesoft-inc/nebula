@@ -217,8 +217,6 @@ decodeBatchValue(folly::StringPiece encoded) {
 
 std::string encodeHost(LogType type, const HostAddr& host) {
   std::string encoded;
-  // 15 refers to "255.255.255.255"
-  encoded.reserve(sizeof(int64_t) + 1 + 15 + sizeof(int));
   int64_t ts = time::WallClock::fastNowInMilliSec();
   std::string encodedHost;
   apache::thrift::CompactSerializer::serialize(host, &encodedHost);
@@ -232,7 +230,7 @@ std::string encodeHost(LogType type, const HostAddr& host) {
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
   HostAddr addr;
 
-  CHECK_GE(encoded.size(), sizeof(int64_t) + 1 + sizeof(size_t) + sizeof(Port));
+  CHECK_GE(encoded.size(), sizeof(int64_t) + 1);
   CHECK(encoded[sizeof(int64_t)] == type);
 
   folly::StringPiece raw = encoded;

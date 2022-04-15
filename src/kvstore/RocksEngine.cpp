@@ -15,6 +15,9 @@
 #include "kvstore/KVStore.h"
 
 DEFINE_bool(move_files, false, "Move the SST files instead of copy when ingest into dataset");
+DEFINE_int64(balance_expired_sesc,
+             86400,
+             "The expired time of balancing part info persisted in the storaged");
 
 namespace nebula {
 namespace kvstore {
@@ -320,33 +323,50 @@ std::string RocksEngine::partKey(PartitionID partId) {
   return NebulaKeyUtils::systemPartKey(partId);
 }
 
+std::string RocksEngine::balanceKey(PartitionID partId) {
+  return NebulaKeyUtils::systemBalanceKey(partId);
+}
+
 void RocksEngine::addPart(PartitionID partId, const Peers& raftPeers) {
-  auto ret = put(partKey(partId), raftPeers.toString());
+  auto ret = put(partKey(partId), "");
   if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
     partsNum_++;
     CHECK_GE(partsNum_, 0);
   }
+
+  if (!raftPeers.allNormalPeers()) {
+    put(balanceKey(partId), raftPeers.toString());
+  }
 }
 
-void RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
+nebula::cpp2::ErrorCode RocksEngine::updatePart(PartitionID partId, const Peer& raftPeer) {
   std::string val;
-  auto ret = get(partKey(partId), &val);
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Update part failed when get, partId=" << partId;
-    return;
-  }
+  auto ret = get(balanceKey(partId), &val);
 
-  auto peers = Peers::fromString(val);
-  if (raftPeer.status == Peer::Status::kDeleted) {
-    peers.remove(raftPeer.addr);
+  Peers peers;
+  if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    peers = Peers::fromString(val);
+  } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    // do nothing
   } else {
-    peers.addOrUpdate(raftPeer);
+    LOG(INFO) << "Update part failed when get, partId=" << partId;
+    return ret;
   }
 
-  ret = put(partKey(partId), peers.toString());
+  peers.addOrUpdate(raftPeer);
+
+  if (peers.allNormalPeers()) {
+    // When all replica become normal peers, delete this temp key. (when learner is promoted to
+    // normal replica)
+    ret = remove(balanceKey(partId));
+  } else {
+    ret = put(balanceKey(partId), peers.toString());
+  }
+
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Update part failed when put back, partId=" << partId;
   }
+  return ret;
 }
 
 void RocksEngine::removePart(PartitionID partId) {
@@ -354,6 +374,7 @@ void RocksEngine::removePart(PartitionID partId) {
   options.disableWAL = FLAGS_rocksdb_disable_wal;
   std::vector<std::string> sysKeysToDelete;
   sysKeysToDelete.emplace_back(partKey(partId));
+  sysKeysToDelete.emplace_back(balanceKey(partId));
   sysKeysToDelete.emplace_back(NebulaKeyUtils::systemCommitKey(partId));
   auto code = multiRemove(sysKeysToDelete);
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -386,7 +407,7 @@ std::vector<PartitionID> RocksEngine::allParts() {
   return parts;
 }
 
-std::map<PartitionID, Peers> RocksEngine::allPartPeers() {
+std::map<PartitionID, Peers> RocksEngine::balancePartPeers() {
   std::unique_ptr<KVIterator> iter;
   std::map<PartitionID, Peers> partRaftPeers;
   static const std::string prefixStr = NebulaKeyUtils::systemPrefix();
@@ -397,7 +418,7 @@ std::map<PartitionID, Peers> RocksEngine::allPartPeers() {
 
   while (iter->valid()) {
     auto key = iter->key();
-    if (!NebulaKeyUtils::isSystemPart(key)) {
+    if (!NebulaKeyUtils::isSystemBalance(key)) {
       iter->next();
       continue;
     }

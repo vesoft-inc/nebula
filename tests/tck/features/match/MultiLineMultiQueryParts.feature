@@ -90,6 +90,26 @@ Feature: Multi Line Multi Query Parts
     When executing query:
       """
       USE nba;
+      MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
+      MATCH (n)-[]-(l) where n.player.age<m.player.age
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 64    |
+    When executing query:
+      """
+      USE nba;
+      MATCH (v:player) WHERE v.player.age>43
+      MATCH (n:player) WHERE v.player.age>40 and n.player.age>v.player.age
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 5     |
+    When executing query:
+      """
+      USE nba;
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       MATCH (n)-[]-(l), (l)-[]-(h)
       RETURN m.player.name AS n1, n.player.name AS n2, l.team.name AS n3, h.player.name AS n4
@@ -161,6 +181,36 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
+    When executing query:
+      """
+      USE nba;
+      MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
+      OPTIONAL MATCH (n)-[]-(l) where n.player.age < m.player.age
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 64    |
+    When executing query:
+      """
+      USE nba;
+      OPTIONAL match (v:player) WHERE v.player.age > 41
+      MATCH (v:player) WHERE v.player.age>40
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 7     |
+    When executing query:
+      """
+      USE nba;
+      OPTIONAL match (v:player) WHERE v.player.age>43
+      MATCH (n:player) WHERE n.player.age>40
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 32    |
 
   Scenario: Multi Line Multi Query Parts
     When executing query:
@@ -207,6 +257,69 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
+    When executing query:
+      """
+      USE nba;
+      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      OPTIONAL MATCH (n)-->(v) WHERE v.player.age < m.player.age
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 45    |
+    When executing query:
+      """
+      USE nba;
+      MATCH (a:player{age:42}) WITH a
+      MATCH (b:player{age:40}) WHERE b.player.age<a.player.age
+      UNWIND [1,2,3] as l
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 12    |
+    When executing query:
+      """
+      USE nba;
+      MATCH (a:player{age:42}) WITH a
+      MATCH (b:player{age:40}) WITH a,b WHERE b.player.age<a.player.age
+      UNWIND [1,2,3] as l
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 12    |
+    When executing query:
+      """
+      USE nba;
+      OPTIONAL match (v:player) WHERE v.player.age>43 WITH v
+      MATCH (v:player) WHERE v.player.age>40  WITH v
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 4     |
+    When executing query:
+      """
+      USE nba;
+      OPTIONAL match (v:player) WHERE v.player.age>43 WITH v
+      MATCH (n:player) WHERE n.player.age>40  WITH v, n
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 32    |
+    When executing query:
+      """
+      USE nba;
+      MATCH (a:player{age:42}) WITH a
+      MATCH (b:player{age:40}) WHERE b.player.age<a.player.age
+      UNWIND [1,2,3] AS l WITH a,b,l WHERE b.player.age+1 < a.player.age
+      RETURN count(*) AS count
+      """
+    Then the result should be, in order:
+      | count |
+      | 12    |
 
   Scenario: Multi Line Some Erros
     When executing query:

@@ -133,6 +133,93 @@ TEST(NebulaStoreTest, SimpleTest) {
   EXPECT_EQ(100, num);
 }
 
+TEST(NebulaStoreTest, MultiPathTest) {
+  fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
+
+  {
+    auto partMan = std::make_unique<MemPartManager>();
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    // GraphSpaceID =>  {PartitionIDs}
+    // 1 => {0, 1, 2, 3, 4, 5}
+    for (auto spaceId = 1; spaceId <= 1; spaceId++) {
+      for (auto partId = 0; partId < 6; partId++) {
+        partMan->partsMap_[spaceId][partId] = PartHosts();
+      }
+    }
+
+    VLOG(1) << "Total space num is " << partMan->partsMap_.size()
+            << ", total local partitions num is " << partMan->parts(HostAddr("", 0)).size();
+
+    std::vector<std::string> paths;
+    paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+
+    KVOptions options;
+    options.dataPaths_ = std::move(paths);
+    options.partMan_ = std::move(partMan);
+    HostAddr local = {"", 0};
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+    store->init();
+    sleep(1);
+    EXPECT_EQ(1, store->spaces_.size());
+
+    EXPECT_EQ(6, store->spaces_[1]->parts_.size());
+    EXPECT_EQ(2, store->spaces_[1]->engines_.size());
+    EXPECT_EQ(folly::stringPrintf("%s/disk1/nebula/1", rootPath.path()),
+              store->spaces_[1]->engines_[0]->getDataRoot());
+    EXPECT_EQ(folly::stringPrintf("%s/disk2/nebula/1", rootPath.path()),
+              store->spaces_[1]->engines_[1]->getDataRoot());
+
+    EXPECT_EQ(3, store->spaces_[1]->engines_[0]->allParts().size());
+    EXPECT_EQ(3, store->spaces_[1]->engines_[1]->allParts().size());
+
+    store->stop();
+    sleep(10);
+  }
+
+  // change paths
+  {
+    auto partMan = std::make_unique<MemPartManager>();
+    auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+    // GraphSpaceID =>  {PartitionIDs}
+    // 1 => {0, 1, 2, 3, 4, 5}
+    for (auto spaceId = 1; spaceId <= 1; spaceId++) {
+      for (auto partId = 0; partId < 6; partId++) {
+        partMan->partsMap_[spaceId][partId] = PartHosts();
+      }
+    }
+
+    VLOG(1) << "Total space num is " << partMan->partsMap_.size()
+            << ", total local partitions num is " << partMan->parts(HostAddr("", 0)).size();
+
+    std::vector<std::string> paths;
+    paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+    paths.emplace_back(folly::stringPrintf("%s/disk3", rootPath.path()));
+
+    KVOptions options;
+    options.dataPaths_ = std::move(paths);
+    options.partMan_ = std::move(partMan);
+    HostAddr local = {"", 0};
+    auto store =
+        std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+    store->init();
+    sleep(1);
+
+    EXPECT_EQ(1, store->spaces_.size());
+
+    EXPECT_EQ(6, store->spaces_[1]->parts_.size());
+    EXPECT_EQ(2, store->spaces_[1]->engines_.size());
+    EXPECT_EQ(folly::stringPrintf("%s/disk2/nebula/1", rootPath.path()),
+              store->spaces_[1]->engines_[0]->getDataRoot());
+    EXPECT_EQ(folly::stringPrintf("%s/disk3/nebula/1", rootPath.path()),
+              store->spaces_[1]->engines_[1]->getDataRoot());
+
+    EXPECT_EQ(3, store->spaces_[1]->engines_[0]->allParts().size());
+    EXPECT_EQ(3, store->spaces_[1]->engines_[1]->allParts().size());
+  }
+}
+
 TEST(NebulaStoreTest, PartsTest) {
   fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
   auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
@@ -166,7 +253,7 @@ TEST(NebulaStoreTest, PartsTest) {
   // disk2: 5, 6, 7, 15
 
   KVOptions options;
-  options.dataPaths_ = std::move(paths);
+  options.dataPaths_ = paths;
   options.partMan_ = std::move(partMan);
   HostAddr local = {"", 0};
   auto store =
@@ -291,11 +378,12 @@ TEST(NebulaStoreTest, PersistPeersTest) {
   // disk2: 5, 6, 7, 15
 
   KVOptions options;
-  options.dataPaths_ = std::move(paths);
+  options.dataPaths_ = paths;
   options.partMan_ = std::move(partMan);
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
   store->init();
+
   auto check = [&](GraphSpaceID spaceId) {
     for (int i = 0; i < static_cast<int>(paths.size()); i++) {
       ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, spaceId),

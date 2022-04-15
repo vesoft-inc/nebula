@@ -22,8 +22,8 @@ Feature: Schema Comment
       DESC SPACE <space_name>;
       """
     Then the result should be, in any order:
-      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones     | Comment           |
-      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | /^.+?\d$/ | "<space_comment>" |
+      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment           |
+      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | "<space_comment>" |
     When executing query:
       """
       DROP SPACE <space_name>;
@@ -47,15 +47,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | Space                  | Create Space                                                                                                                                                                          |
-      | "test_comment_not_set" | /[CREATE SPACE `test_comment_not_set` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), atomic_edge = false\) ON]+\s(\w*)/ |
+      | Space                  | Create Space                                                                                                                                                       |
+      | "test_comment_not_set" | /[CREATE SPACE `test_comment_not_set` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)/ |
     When executing query:
       """
       DESC SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones     | Comment |
-      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | /^.+?\d$/ | EMPTY   |
+      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
+      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | EMPTY   |
     When executing query:
       """
       DROP SPACE test_comment_not_set;
@@ -74,15 +74,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | Space                | Create Space                                                                                                                                                                                         |
-      | "test_comment_empty" | /[CREATE SPACE `test_comment_empty` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), atomic_edge = false\) ON]+\s(\w*)\s[comment = '']+/ |
+      | Space                | Create Space                                                                                                                                                                      |
+      | "test_comment_empty" | /[CREATE SPACE `test_comment_empty` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)\s[comment = '']+/ |
     When executing query:
       """
       DESC SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones     | Comment |
-      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | /^.+?\d$/ | ""      |
+      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
+      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | ""      |
     When executing query:
       """
       DROP SPACE test_comment_empty;

@@ -19,26 +19,44 @@
 
 set -e
 
-version=""
-package_one=ON
-strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
-enablesanitizer="OFF"
-static_sanitizer="OFF"
-build_type="Release"
-build_console="ON"
-branch=$(git rev-parse --abbrev-ref HEAD)
-jobs=$(nproc)
-enable_compressed_debug_info=ON
-dump_symbols="OFF"
-dump_syms_tool_dir=
-system_name=
 install_prefix=/usr/local/nebula
-enable_breakpad="OFF"
 
-while getopts v:n:s:b:d:t:r:p:j:c:k: opt;
+BUILD_IN_DOCKER=${BUILD_IN_DOCKER:-FALSE}
+
+# default variables when building release.
+function _default_release_variables {
+    version=""
+    package_one="ON"
+    strip_enable="TRUE"
+    enablesanitizer="OFF"
+    static_sanitizer="OFF"
+    build_type="RelWithDebInfo"
+    build_console="OFF"
+    jobs=$(nproc)
+    enable_compressed_debug_info="OFF"
+    dump_symbols="ON"
+    dump_syms_tool_dir=
+    system_name=
+    enable_breakpad="ON"
+
+}
+
+# change default variables. e.g. build release in docker
+function _extra_release_variables {
+    if [[ $BUILD_IN_DOCKER == TRUE ]]; then
+        package_one="OFF"
+        enable_compressed_debug_info="ON"
+        dump_symbols="OFF"
+    fi 
+}
+
+_default_release_variables
+_extra_release_variables
+
+while getopts v:n:s:d:t:r:p:j:c:k: opt;
 do
     case $opt in
         v)

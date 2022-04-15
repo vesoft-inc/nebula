@@ -44,6 +44,9 @@ class OptGroup final {
   Status exploreUntilMaxRound(const OptRule *rule);
   double getCost() const;
   const graph::PlanNode *getPlan() const;
+  const std::string &outputVar() const {
+    return outputVar_;
+  }
 
  private:
   friend ObjectPool;
@@ -56,6 +59,8 @@ class OptGroup final {
   OptContext *ctx_{nullptr};
   std::list<OptGroupNode *> groupNodes_;
   std::vector<const OptRule *> exploredRules_;
+  // The output variable should be same across the whole group.
+  std::string outputVar_;
 };
 
 class OptGroupNode final {

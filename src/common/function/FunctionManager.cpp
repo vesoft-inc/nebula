@@ -417,6 +417,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"duration",
      {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
+    {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
 };
 
 // static
@@ -456,7 +457,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["abs"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -478,21 +479,21 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["bit_and"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return args[0].get() & args[1].get(); };
   }
   {
     auto &attr = functions_["bit_or"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return args[0].get() | args[1].get(); };
   }
   {
     auto &attr = functions_["bit_xor"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return args[0].get() ^ args[1].get(); };
   }
   {
@@ -500,7 +501,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["floor"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -523,7 +524,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["ceil"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -546,7 +547,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -575,7 +576,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["sqrt"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -606,7 +607,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["cbrt"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -629,7 +630,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["hypot"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
         auto x = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
@@ -644,7 +645,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["pow"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isNumeric() && args[1].get().isNumeric()) {
         auto base = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
@@ -663,7 +664,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["e"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
       return M_E;
@@ -674,7 +675,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["exp"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -697,7 +698,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["exp2"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -720,7 +721,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["log"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -751,7 +752,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["log2"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -782,7 +783,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["log10"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -813,7 +814,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
       return M_PI;
@@ -824,7 +825,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["radians"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -845,7 +846,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["sin"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -867,7 +868,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["asin"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -889,7 +890,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["cos"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -911,7 +912,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["acos"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -933,7 +934,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["tan"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -955,7 +956,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["atan"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -977,7 +978,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["sign"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1001,7 +1002,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rand"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
       return folly::Random::randDouble01();
@@ -1012,7 +1013,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rand32"];
     attr.minArity_ = 0;
     attr.maxArity_ = 2;
-    attr.isPure_ = false;
+    setCompleteNonPure(attr);
     attr.body_ = [](const auto &args) -> Value {
       if (args.empty()) {
         auto value = folly::Random::rand32();
@@ -1049,7 +1050,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rand64"];
     attr.minArity_ = 0;
     attr.maxArity_ = 2;
-    attr.isPure_ = false;
+    setCompleteNonPure(attr);
     attr.body_ = [](const auto &args) -> Value {
       if (args.empty()) {
         return static_cast<int64_t>(folly::Random::rand64());
@@ -1080,7 +1081,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["now"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
-    attr.isPure_ = false;
+    setCompleteNonPure(attr);
     attr.body_ = [](const auto &args) -> Value {
       UNUSED(args);
       return ::time(NULL);
@@ -1090,7 +1091,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["strcasecmp"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isStr() && args[1].get().isStr()) {
         return static_cast<int64_t>(
@@ -1103,7 +1104,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["lower"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1125,7 +1126,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["upper"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1149,7 +1150,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["length"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1173,7 +1174,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["trim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1193,7 +1194,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["ltrim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1213,7 +1214,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rtrim"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1233,7 +1234,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["left"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1261,7 +1262,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["right"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1293,7 +1294,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["replace"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isNull() || args[1].get().isNull() || args[2].get().isNull()) {
         return Value::kNullValue;
@@ -1311,7 +1312,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["reverse"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1338,7 +1339,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["split"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1371,7 +1372,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["tostring"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
@@ -1412,35 +1413,35 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["toboolean"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toBool(); };
   }
   {
     auto &attr = functions_["tofloat"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toFloat(); };
   }
   {
     auto &attr = functions_["tointeger"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
   }
   {
     auto &attr = functions_["toset"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
   }
   {
     auto &attr = functions_["lpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
         auto value = args[0].get().getStr();
@@ -1469,7 +1470,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isStr() && args[1].get().isInt() && args[2].get().isStr()) {
         auto value = args[0].get().getStr();
@@ -1499,7 +1500,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["substr"];
     attr.minArity_ = 2;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       auto argSize = args.size();
       if (args[0].get().isNull()) {
@@ -1534,7 +1535,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["hash"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
@@ -1561,7 +1562,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["udf_is_in"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       return std::find(args.begin() + 1, args.end(), args[0].get()) != args.end();
     };
@@ -1570,7 +1571,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["near"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       // auto result = geo::GeoFilter::near(args);
       // if (!result.ok()) {
@@ -1587,7 +1588,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["cos_similarity"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args.size() % 2 != 0) {
         LOG(ERROR) << "The number of arguments must be even.";
@@ -1621,7 +1622,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["size"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
@@ -1658,7 +1659,8 @@ FunctionManager::FunctionManager() {
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
-    attr.isPure_ = false;
+    attr.isPure_[0] = false;
+    attr.isPure_[1] = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args.size()) {
         case 0: {
@@ -1696,7 +1698,8 @@ FunctionManager::FunctionManager() {
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
-    attr.isPure_ = false;
+    attr.isPure_[0] = false;
+    attr.isPure_[1] = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args.size()) {
         case 0: {
@@ -1730,7 +1733,8 @@ FunctionManager::FunctionManager() {
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
-    attr.isPure_ = false;
+    attr.isPure_[0] = false;
+    attr.isPure_[1] = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args.size()) {
         case 0: {
@@ -1762,7 +1766,8 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["timestamp"];
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
-    attr.isPure_ = false;
+    attr.isPure_[0] = false;
+    attr.isPure_[1] = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args.empty()) {
         return ::time(NULL);
@@ -1778,7 +1783,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["range"];
     attr.minArity_ = 2;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isInt() || !args[1].get().isInt()) {
         return Value::kNullBadType;
@@ -1808,7 +1813,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["id"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1827,7 +1832,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["tags"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1851,7 +1856,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["properties"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1882,7 +1887,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["type"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1901,7 +1906,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["typeid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1920,7 +1925,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["src"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1940,7 +1945,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1960,7 +1965,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -1995,7 +2000,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2014,7 +2019,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["startnode"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2036,7 +2041,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["endnode"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2062,7 +2067,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["head"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2081,7 +2086,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["last"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2100,7 +2105,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["coalesce"];
     attr.minArity_ = 1;
     attr.maxArity_ = INT64_MAX;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       for (size_t i = 0; i < args.size(); ++i) {
         if (args[i].get().type() != Value::Type::NULLVALUE) {
@@ -2114,7 +2119,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["keys"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       std::set<std::string> tmp;
       switch (args[0].get().type()) {
@@ -2154,7 +2159,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["nodes"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2179,7 +2184,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["tail"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2202,7 +2207,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["relationships"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
@@ -2236,7 +2241,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["hassameedgeinpath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
@@ -2249,7 +2254,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["hassamevertexinpath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
@@ -2262,7 +2267,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["reversepath"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isPath()) {
         return Value::kNullBadType;
@@ -2276,7 +2281,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["datasetrowcol"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isDataSet() || !args[1].get().isInt() ||
           !(args[2].get().isInt() || args[2].get().isStr())) {
@@ -2307,7 +2312,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["concat"];
     attr.minArity_ = 1;
     attr.maxArity_ = INT64_MAX;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       std::stringstream os;
       for (size_t i = 0; i < args.size(); ++i) {
@@ -2355,7 +2360,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["concat_ws"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (args[0].get().isNull() || !args[0].get().isStr()) {
         return Value::kNullValue;
@@ -2393,7 +2398,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_point"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isNumeric() || !args[1].get().isNumeric()) {
         return Value::kNullBadType;
@@ -2409,7 +2414,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_geogfromtext"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isStr()) {
         return Value::kNullBadType;
@@ -2447,7 +2452,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_astext"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
@@ -2474,7 +2479,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_centroid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
@@ -2487,7 +2492,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_isvalid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
@@ -2500,7 +2505,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_intersects"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
@@ -2513,7 +2518,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_covers"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
@@ -2525,7 +2530,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_coveredby"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
@@ -2538,7 +2543,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_dwithin"];
     attr.minArity_ = 3;
     attr.maxArity_ = 4;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
           !args[2].get().isNumeric()) {
@@ -2563,7 +2568,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["st_distance"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
@@ -2576,7 +2581,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["s2_cellidfrompoint"];
     attr.minArity_ = 1;
     attr.maxArity_ = 2;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
@@ -2607,7 +2612,7 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["s2_coveringcellids"];
     attr.minArity_ = 1;
     attr.maxArity_ = 5;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
@@ -2672,14 +2677,14 @@ FunctionManager::FunctionManager() {
     auto &attr = functions_["is_edge"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
   }
   {
     auto &attr = functions_["duration"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
-    attr.isPure_ = true;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       const auto &arg = args[0].get();
       switch (arg.type()) {
@@ -2701,6 +2706,25 @@ FunctionManager::FunctionManager() {
       }
     };
   }
+  {
+    auto &attr = functions_["extract"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr() || !args[1].get().isStr()) {
+        return Value::kNullBadType;
+      }
+
+      const auto &s = args[0].get().getStr();
+      std::regex rgx(args[1].get().getStr());
+      List res;
+      for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
+        res.emplace_back(beg->str());
+      }
+      return res;
+    };
+  }
 }  // NOLINT
 
 // static
@@ -2720,7 +2744,14 @@ Status FunctionManager::find(const std::string &func, const size_t arity) {
 /*static*/ StatusOr<bool> FunctionManager::getIsPure(const std::string &func, size_t arity) {
   auto result = instance().getInternal(func, arity);
   NG_RETURN_IF_ERROR(result);
-  return result.value().isPure_;
+  auto attr = std::move(result.value());
+
+  if (attr.isAlwaysPure_) {
+    return true;
+  }
+
+  // If the function is not always pure, lookup the map to find purity.
+  return attr.isPure_.at(arity);
 }
 
 /*static*/ StatusOr<const FunctionManager::FunctionAttributes> FunctionManager::getInternal(

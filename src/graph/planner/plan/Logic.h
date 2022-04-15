@@ -147,10 +147,10 @@ class PassThroughNode final : public SingleInputNode {
 };
 
 // This operator is used for getting a named alias from another executed operator.
-class Argument final : public PlanNode {
+class Argument final : public SingleInputNode {
  public:
-  static Argument* make(QueryContext* qctx, std::string alias) {
-    return qctx->objPool()->makeAndAdd<Argument>(qctx, alias);
+  static Argument* make(QueryContext* qctx, std::string alias, const PlanNode* dep = nullptr) {
+    return qctx->objPool()->makeAndAdd<Argument>(qctx, alias, dep);
   }
 
   PlanNode* clone() const override;
@@ -163,7 +163,7 @@ class Argument final : public PlanNode {
 
  private:
   friend ObjectPool;
-  Argument(QueryContext* qctx, std::string alias);
+  Argument(QueryContext* qctx, std::string alias, const PlanNode* dep = nullptr);
 
   void cloneMembers(const Argument&);
 

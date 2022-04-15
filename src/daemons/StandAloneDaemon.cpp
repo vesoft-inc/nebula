@@ -88,6 +88,7 @@ DEFINE_int32(meta_port, 45500, "Meta daemon listening port");
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
+  google::SetUsageMessage("Usage: " + std::string(argv[0]) + " [options]");
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   if (argc == 1) {

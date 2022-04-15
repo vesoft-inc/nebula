@@ -144,7 +144,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "ADD"                       { return TokenType::KW_ADD; }
 "CREATE"                    { return TokenType::KW_CREATE;}
 "DROP"                      { return TokenType::KW_DROP; }
-"CLEAR"                     { return TokenType::KW_CLEAR; } 
 "REMOVE"                    { return TokenType::KW_REMOVE; }
 "IF"                        { return TokenType::KW_IF; }
 "NOT"                       { return TokenType::KW_NOT; }
@@ -308,6 +307,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 "DIVIDE"                    { return TokenType::KW_DIVIDE; }
+"CLEAR"                     { return TokenType::KW_CLEAR; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
@@ -402,9 +402,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 return parseDecimal();
                             }
 
-{DEC}*\.{DEC}+              |
-{DEC}+\.{DEC}*              |
-{DEC}*\.{DEC}*{EXP}         |
+{DEC}*\.{DEC}+{EXP}?        |
+{DEC}+\.{DEC}*{EXP}?        |
 {DEC}+{EXP}                 {
                                 return parseDouble();
                             }

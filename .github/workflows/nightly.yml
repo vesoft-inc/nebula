@@ -37,7 +37,7 @@ jobs:
         with:
           go-version: '^1.16.7'
       - name: package
-        run: ./package/package.sh
+        run: ./package/package.sh -t Release -r ON -p OFF -s FALSE -k OFF
       - name: output some vars
         id: vars
         env:
@@ -125,7 +125,7 @@ jobs:
               -DCMAKE_BUILD_TYPE=Debug \
               -DENABLE_TESTING=on \
               -DENABLE_COVERAGE=on \
-              -GNinja
+              -GNinja \
               -B build
       - name: Make
         run: |

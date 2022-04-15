@@ -109,6 +109,7 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
 
   // 4. rebuild OptGroupNode
   newProj->setInputVar(projBelow->inputVar());
+  newProj->setOutputVar(projAbove->outputVar());
   auto* newGroupNode = OptGroupNode::create(octx, newProj, projGroup);
   newGroupNode->setDeps(groupNodeBelow->dependencies());
 

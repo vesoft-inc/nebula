@@ -121,6 +121,26 @@ Feature: Function Call Expression
       | result |
       | NULL   |
 
+  Scenario: extract
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.player.age > 45
+      RETURN extract(a.player.name, "\\w+") as result
+      """
+    Then the result should be, in any order:
+      | result                     |
+      | ["Shaquille", "O", "Neal"] |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.player.age > 45
+      RETURN extract(a.player.name, "hello") as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | []     |
+
   Scenario: round
     When executing query:
       """

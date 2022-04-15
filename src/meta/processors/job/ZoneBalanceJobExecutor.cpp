@@ -30,6 +30,13 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
   for (size_t i = 0; i < paras_.size(); i++) {
     lostZones_.emplace_back(paras_[i]);
   }
+  std::vector<std::string> newZones;
+  newZones.reserve(lostZones_.size());
+  for (auto& name : lostZones_) {
+    auto host = HostAddr::fromString(name);
+    newZones.emplace_back(folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port));
+  }
+  lostZones_.swap(newZones);
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -49,16 +56,7 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
       return status;
     }
   }
-  plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
-    if (status == meta::cpp2::JobStatus::FINISHED) {
-      folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-      nebula::cpp2::ErrorCode ret = updateMeta();
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        status = meta::cpp2::JobStatus::FAILED;
-      }
-    }
-    executorOnFinished_(status);
-  });
+  plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) { executorOnFinished_(status); });
   plan_->invoke();
   return Status::OK();
 }

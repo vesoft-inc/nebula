@@ -321,6 +321,7 @@ class NebulaService(object):
         self.graphd_param['password_lock_time_in_secs'] = '10'
         self.graphd_param['raft_heartbeat_interval_secs'] = '30'
         self.graphd_param['skip_wait_in_rate_limiter'] = 'true'
+        self.graphd_param['add_local_host'] = 'false'        
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)
 
