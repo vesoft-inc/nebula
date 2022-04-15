@@ -3638,7 +3638,8 @@ Status MetaClient::saveVersionToMeta() {
   }
   auto resp = std::move(respStatus).value();
   if (resp.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return Status::Error("Failed to save graph version into meta, error code: %d", resp.get_code());
+    return Status::Error("Failed to save graph version into meta, error code: %s",
+                         apache::thrift::util::enumNameSafe(resp.get_code()).c_str());
   }
   return Status::OK();
 }

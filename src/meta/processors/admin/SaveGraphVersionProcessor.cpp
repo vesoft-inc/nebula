@@ -20,7 +20,15 @@ void SaveGraphVersionProcessor::process(const cpp2::SaveGraphVersionReq& req) {
   versionData.emplace_back(std::move(versionKey), std::move(versionVal));
 
   // Save the version of the graph service
-  handleErrorCode(doSyncPut(versionData));
+  auto errCode = doSyncPut(versionData);
+  if (errCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Failed to save graph version, errorCode: "
+               << apache::thrift::util::enumNameSafe(errCode);
+    handleErrorCode(errCode);
+    onFinished();
+    return;
+  }
+  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
 
   onFinished();
 }
