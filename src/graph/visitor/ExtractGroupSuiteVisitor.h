@@ -63,7 +63,7 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
   // predicate expression
   void visit(PredicateExpression *expr) override;
   // list comprehension expression
-  void visit(ListComprehensionExpression *) override;
+  void visit(ListComprehensionExpression *expr) override;
   // reduce expression
   void visit(ReduceExpression *expr) override;
   // subscript range expression
@@ -72,7 +72,7 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
   void visit(MatchPathPatternExpression *expr) override;
 
  private:
-  void internalVisitor(Expression *expr);
+  void internalVisit(Expression *expr);
   void pushGroupSuite(Expression *expr);
 
   GroupSuite groupSuite_;
