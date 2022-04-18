@@ -174,15 +174,6 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
     When executing query:
       """
-      MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
-      OPTIONAL MATCH (n)-[]-(l) where n.player.age < m.player.age
-      RETURN count(*) AS count
-      """
-    Then the result should be, in order:
-      | count |
-      | 64    |
-    When executing query:
-      """
       OPTIONAL match (v:player) WHERE v.player.age > 41
       MATCH (v:player) WHERE v.player.age>40
       RETURN count(*) AS count
