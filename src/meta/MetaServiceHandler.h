@@ -226,6 +226,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
       const cpp2::VerifyClientVersionReq& req) override;
 
+  folly::Future<cpp2::SaveGraphVersionResp> future_saveGraphVersion(
+      const cpp2::SaveGraphVersionReq& req) override;
+
   folly::Future<cpp2::GetWorkerIdResp> future_getWorkerId(const cpp2::GetWorkerIdReq& req) override;
 
   folly::Future<cpp2::GetSegmentIdResp> future_getSegmentId(
