@@ -189,13 +189,16 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteLabelAgg2VarProp(const Expression *expr) {
+Expression *ExpressionUtils::rewriteSubparts2VarProp(const Expression *expr,
+                                                     std::vector<Expression *> &subExprs) {
   ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
-    return e->kind() == Expression::Kind::kLabel ||
-           e->kind() == Expression::Kind::kLabelAttribute ||
-           e->kind() == Expression::Kind::kLabelTagProperty ||
-           e->kind() == Expression::Kind::kAggregate;
+  auto matcher = [&subExprs](const Expression *e) -> bool {
+    for (auto subExpr : subExprs) {
+      if (e->toString() == subExpr->toString()) {
+        return true;
+      }
+    }
+    return false;
   };
   auto rewriter = [pool](const Expression *e) -> Expression * {
     return VariablePropertyExpression::make(pool, "", e->toString());

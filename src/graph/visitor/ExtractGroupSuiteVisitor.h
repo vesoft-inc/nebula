@@ -18,7 +18,7 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
     return true;
   }
 
-  const GroupSuite &groupSuite() {
+  GroupSuite groupSuite() {
     return groupSuite_;
   }
 
