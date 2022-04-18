@@ -57,10 +57,11 @@ class MultiShortestPathExecutor final : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  // k: dst, v: paths to dst
-  using Interims = std::unordered_map<Value, std::vector<Path>>;
+  // key: dst, value: {key : src, value: paths}
+  using Interims = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
 
   void init();
+  std::vector<Path> createPaths(const std::vector<Path>& paths, const Edge& edge);
   Status buildPath(bool reverse);
   folly::Future<bool> conjunctPath(bool oddStep);
   DataSet doConjunct(const std::vector<std::pair<Interims::iterator, Interims::iterator>>& iters);
@@ -70,11 +71,13 @@ class MultiShortestPathExecutor final : public Executor {
   const MultiShortestPath* pathNode_{nullptr};
   size_t step_{1};
   std::string terminationVar_;
-  std::unordered_map<std::pair<Value, Value>, bool> terminationMap_;
+  // {src, <dst, true>}
+  std::unordered_multimap<Value, std::pair<Value, bool>> terminationMap_;
   Interims leftPaths_;
-  Interims preLeftPaths_;
-  Interims preRightPaths_;
   Interims rightPaths_;
+  Interims preRightPaths_;
+  Interims historyLeftPaths_;
+  Interims historyRightPaths_;
   DataSet currentDs_;
 };
 

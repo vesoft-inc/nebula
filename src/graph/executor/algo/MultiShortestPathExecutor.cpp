@@ -39,10 +39,17 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
       })
       .thenValue([this](auto&& resp) {
         UNUSED(resp);
-        preLeftPaths_.swap(leftPaths_);
-        preRightPaths_.swap(rightPaths_);
-        leftPaths_.clear();
-        rightPaths_.clear();
+        preRightPaths_ = rightPaths_;
+        // update history
+        for (auto& iter : leftPaths_) {
+          historyLeftPaths_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                               std::make_move_iterator(iter.second.end()));
+        }
+        for (auto& iter : rightPaths_) {
+          historyRightPaths_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                                std::make_move_iterator(iter.second.end()));
+        }
+
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
@@ -58,7 +65,8 @@ void MultiShortestPathExecutor::init() {
   for (; rIter->valid(); rIter->next()) {
     auto& vid = rIter->getColumn(0);
     if (rightVids.emplace(vid).second) {
-      preRightPaths_[vid].push_back({Path(Vertex(vid, {}), {})});
+      std::vector<Path> tmp({Path(Vertex(vid, {}), {})});
+      preRightPaths_[vid].emplace(vid, std::move(tmp));
     }
   }
 
@@ -70,10 +78,22 @@ void MultiShortestPathExecutor::init() {
   for (const auto& leftVid : leftVids) {
     for (const auto& rightVid : rightVids) {
       if (leftVid != rightVid) {
-        terminationMap_.emplace(std::make_pair(leftVid, rightVid), true);
+        terminationMap_.emplace(leftVid, std::make_pair(rightVid, true));
       }
     }
   }
+}
+
+std::vector<Path> MultiShortestPathExecutor::createPaths(const std::vector<Path>& paths,
+                                                         const Edge& edge) {
+  std::vector<Path> newPaths;
+  newPaths.reserve(paths.size());
+  for (const auto& p : paths) {
+    Path path = p;
+    path.steps.emplace_back(Step(Vertex(edge.dst, {}), edge.type, edge.name, edge.ranking, {}));
+    newPaths.emplace_back(std::move(path));
+  }
+  return newPaths;
 }
 
 Status MultiShortestPathExecutor::buildPath(bool reverse) {
@@ -96,10 +116,25 @@ Status MultiShortestPathExecutor::buildPath(bool reverse) {
       Path path;
       path.src = Vertex(src, {});
       path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
-      currentPaths[dst].emplace_back(std::move(path));
+      auto foundDst = currentPaths.find(dst);
+      if (foundDst != currentPaths.end()) {
+        auto foundSrc = foundDst->second.find(src);
+        if (foundSrc != foundDst->second.end()) {
+          // same <src, dst>, different edge type or rank
+          foundSrc->second.emplace_back(std::move(path));
+        } else {
+          std::vector<Path> tmp({std::move(path)});
+          foundDst->second.emplace(src, std::move(tmp));
+        }
+      } else {
+        std::vector<Path> tmp({std::move(path)});
+        currentPaths[dst].emplace(src, std::move(tmp));
+      }
+      std::vector<Path> start({Path(Vertex(src, {}), {})});
+      currentPaths[src].emplace(src, std::move(start));
     }
   } else {
-    auto& historyPaths = reverse ? preRightPaths_ : preLeftPaths_;
+    auto& historyPaths = reverse ? historyRightPaths_ : historyLeftPaths_;
     for (; iter->valid(); iter->next()) {
       auto edgeVal = iter->getEdge();
       if (UNLIKELY(!edgeVal.isEdge())) {
@@ -108,16 +143,59 @@ Status MultiShortestPathExecutor::buildPath(bool reverse) {
       auto& edge = edgeVal.getEdge();
       auto& src = edge.src;
       auto& dst = edge.dst;
-      for (const auto& histPath : historyPaths[src]) {
-        Path path = histPath;
-        path.steps.emplace_back(Step(Vertex(dst, {}), edge.type, edge.name, edge.ranking, {}));
-        if (path.hasDuplicateVertices()) {
-          continue;
+      auto& prePaths = historyPaths[src];
+
+      auto foundHistDst = historyPaths.find(dst);
+      if (foundHistDst == historyPaths.end()) {
+        // dst not in history
+        auto foundDst = currentPaths.find(dst);
+        if (foundDst == currentPaths.end()) {
+          // dst not in current, new edge
+          for (const auto& prePath : prePaths) {
+            currentPaths[dst].emplace(prePath.first, createPaths(prePath.second, edge));
+          }
+        } else {
+          // dst in current
+          for (const auto& prePath : prePaths) {
+            auto newPaths = createPaths(prePath.second, edge);
+            auto foundSrc = foundDst->second.find(prePath.first);
+            if (foundSrc == foundDst->second.end()) {
+              foundDst->second.emplace(prePath.first, std::move(newPaths));
+            } else {
+              foundSrc->second.insert(foundSrc->second.begin(),
+                                      std::make_move_iterator(newPaths.begin()),
+                                      std::make_move_iterator(newPaths.end()));
+            }
+          }
         }
-        currentPaths[dst].emplace_back(std::move(path));
+      } else {
+        // dst in history
+        auto& historyDstPaths = foundHistDst->second;
+        for (const auto& prePath : prePaths) {
+          if (historyDstPaths.find(prePath.first) != historyDstPaths.end()) {
+            // loop: a->b->c->a or a->b->c->b,
+            // filter out path that with duplicate vertex or have already been found before
+            continue;
+          }
+          auto foundDst = currentPaths.find(dst);
+          if (foundDst == currentPaths.end()) {
+            currentPaths[dst].emplace(prePath.first, createPaths(prePath.second, edge));
+          } else {
+            auto newPaths = createPaths(prePath.second, edge);
+            auto foundSrc = foundDst->second.find(prePath.first);
+            if (foundSrc == foundDst->second.end()) {
+              foundDst->second.emplace(prePath.first, std::move(newPaths));
+            } else {
+              foundSrc->second.insert(foundSrc->second.begin(),
+                                      std::make_move_iterator(newPaths.begin()),
+                                      std::make_move_iterator(newPaths.end()));
+            }
+          }
+        }
       }
     }
   }
+
   // set nextVid
   const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
   setNextStepVid(currentPaths, nextVidVar);
@@ -126,46 +204,33 @@ Status MultiShortestPathExecutor::buildPath(bool reverse) {
 
 DataSet MultiShortestPathExecutor::doConjunct(
     const std::vector<std::pair<Interims::iterator, Interims::iterator>>& iters) {
+  auto buildPaths =
+      [](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
+        for (const auto& leftPath : leftPaths) {
+          for (const auto& rightPath : rightPaths) {
+            auto forwardPath = leftPath;
+            auto backwardPath = rightPath;
+            backwardPath.reverse();
+            forwardPath.append(std::move(backwardPath));
+            Row row;
+            row.values.emplace_back(std::move(forwardPath));
+            ds.rows.emplace_back(std::move(row));
+          }
+        }
+      };
+
   DataSet ds;
   for (const auto& iter : iters) {
     const auto& leftPaths = iter.first->second;
     const auto& rightPaths = iter.second->second;
-    if (leftPaths.size() < rightPaths.size()) {
-      for (const auto& leftPath : leftPaths) {
-        const auto& srcVid = leftPath.src.vid;
-        for (const auto& rightPath : rightPaths) {
-          const auto& dstVid = rightPath.src.vid;
-          auto found = terminationMap_.find({srcVid, dstVid});
-          if (found == terminationMap_.end()) {
-            continue;
-          }
-          auto forwardPath = leftPath;
-          auto backwardPath = rightPath;
-          backwardPath.reverse();
-          forwardPath.append(std::move(backwardPath));
-          Row row;
-          row.values.emplace_back(std::move(forwardPath));
-          ds.rows.emplace_back(std::move(row));
-          found->second = false;
-        }
-      }
-    } else {
+    for (const auto& leftPath : leftPaths) {
+      auto range = terminationMap_.equal_range(leftPath.first);
       for (const auto& rightPath : rightPaths) {
-        const auto& dstVid = rightPath.src.vid;
-        for (const auto& leftPath : leftPaths) {
-          const auto& srcVid = leftPath.src.vid;
-          auto found = terminationMap_.find({srcVid, dstVid});
-          if (found == terminationMap_.end()) {
-            continue;
+        for (auto found = range.first; found != range.second; ++found) {
+          if (found->second.first == rightPath.first) {
+            buildPaths(leftPath.second, rightPath.second, ds);
+            found->second.second = false;
           }
-          auto forwardPath = leftPath;
-          auto backwardPath = rightPath;
-          backwardPath.reverse();
-          forwardPath.append(std::move(backwardPath));
-          Row row;
-          row.values.emplace_back(std::move(forwardPath));
-          ds.rows.emplace_back(std::move(row));
-          found->second = false;
         }
       }
     }
@@ -228,7 +293,7 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     }
 
     for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-      if (!iter->second) {
+      if (!iter->second.second) {
         iter = terminationMap_.erase(iter);
       } else {
         ++iter;
