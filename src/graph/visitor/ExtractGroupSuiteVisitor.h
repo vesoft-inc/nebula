@@ -11,10 +11,15 @@
 
 namespace nebula {
 namespace graph {
+
 class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
  public:
   bool ok() const override {
     return true;
+  }
+
+  const GroupSuite &groupSuite() {
+    return groupSuite_;
   }
 
   void visit(ConstantExpression *expr) override;
