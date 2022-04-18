@@ -59,6 +59,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:gc_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)
