@@ -166,7 +166,8 @@ void ExtractGroupSuiteVisitor::visit(MatchPathPatternExpression *expr) {
   internalVisit(expr);
 }
 
-void ExtractGroupSuiteVisitor::internalVisit(Expression *expr) {
+template <typename T>
+void ExtractGroupSuiteVisitor::internalVisit(T *expr) {
   if (ExpressionUtils::hasAny(expr, {Expression::Kind::kAggregate})) {
     ExprVisitorImpl::visit(expr);
   } else {
@@ -174,7 +175,8 @@ void ExtractGroupSuiteVisitor::internalVisit(Expression *expr) {
   }
 }
 
-void ExtractGroupSuiteVisitor::pushGroupSuite(Expression *expr) {
+template <typename T>
+void ExtractGroupSuiteVisitor::pushGroupSuite(T *expr) {
   groupSuite_.groupKeys.emplace_back(expr->clone());
   groupSuite_.groupItems.emplace_back(expr->clone());
 }

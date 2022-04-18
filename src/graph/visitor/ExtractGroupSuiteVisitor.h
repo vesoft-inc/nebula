@@ -77,8 +77,11 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
   void visit(MatchPathPatternExpression *expr) override;
 
  private:
-  void internalVisit(Expression *expr);
-  void pushGroupSuite(Expression *expr);
+  template <typename T>
+  void internalVisit(T *expr);
+
+  template <typename T>
+  void pushGroupSuite(T *expr);
 
   GroupSuite groupSuite_;
 };
