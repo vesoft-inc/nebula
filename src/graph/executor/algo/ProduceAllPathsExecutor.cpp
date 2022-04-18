@@ -132,7 +132,7 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
 
   auto startIter = leftPaths_.begin();
   for (auto leftIter = leftPaths_.begin(); leftIter != leftPaths_.end(); ++leftIter) {
-    if (i++ == batchSize) {
+    if (++i == batchSize) {
       auto endIter = leftIter;
       endIter++;
       auto oddStepFuture = folly::via(

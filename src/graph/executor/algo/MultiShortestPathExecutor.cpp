@@ -49,6 +49,8 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
           historyRightPaths_[iter.first].insert(std::make_move_iterator(iter.second.begin()),
                                                 std::make_move_iterator(iter.second.end()));
         }
+        leftPaths_.clear();
+        rightPaths_.clear();
 
         step_++;
         DataSet ds;
@@ -66,6 +68,7 @@ void MultiShortestPathExecutor::init() {
     auto& vid = rIter->getColumn(0);
     if (rightVids.emplace(vid).second) {
       std::vector<Path> tmp({Path(Vertex(vid, {}), {})});
+      historyRightPaths_[vid].emplace(vid, tmp);
       preRightPaths_[vid].emplace(vid, std::move(tmp));
     }
   }
@@ -73,6 +76,8 @@ void MultiShortestPathExecutor::init() {
   std::set<Value> leftVids;
   for (; lIter->valid(); lIter->next()) {
     auto& vid = lIter->getColumn(0);
+    std::vector<Path> tmp({Path(Vertex(vid, {}), {})});
+    historyLeftPaths_[vid].emplace(vid, std::move(tmp));
     leftVids.emplace(vid);
   }
   for (const auto& leftVid : leftVids) {
@@ -130,8 +135,6 @@ Status MultiShortestPathExecutor::buildPath(bool reverse) {
         std::vector<Path> tmp({std::move(path)});
         currentPaths[dst].emplace(src, std::move(tmp));
       }
-      std::vector<Path> start({Path(Vertex(src, {}), {})});
-      currentPaths[src].emplace(src, std::move(start));
     }
   } else {
     auto& historyPaths = reverse ? historyRightPaths_ : historyLeftPaths_;
