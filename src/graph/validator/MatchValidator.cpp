@@ -803,6 +803,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
   DCHECK(!cols.empty());
   for (auto *col : cols) {
     auto *colExpr = col->expr();
+    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, matchs));
     auto colOldName = col->name();
     if (colExpr->kind() != Expression::Kind::kAggregate) {
       auto collectAggCol = colExpr->clone();
@@ -833,8 +834,6 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
     } else if (!ExpressionUtils::isEvaluableExpr(colExpr, qctx_)) {
       yieldCtx.groupKeys_.emplace_back(colExpr);
     }
-
-    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, matchs));
 
     yieldCtx.groupItems_.emplace_back(colExpr);
 
