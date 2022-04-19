@@ -771,7 +771,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   if (bufferOverFlow_) {
     VLOG_EVERY_N(2, 1000)
         << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
-        << "replicatingLogs_ :" << std::boolaplha << replicatingLogs_;
+        << "replicatingLogs_ :" << std::boolalpha << replicatingLogs_;
     return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
   }
   {
@@ -782,7 +782,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
     if (logs_.size() >= FLAGS_max_batch_size) {
       // Buffer is full
       VLOG(2) << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
-              << "replicatingLogs_ :" << std::boolaplha << replicatingLogs_;
+              << "replicatingLogs_ :" << std::boolalpha << replicatingLogs_;
       bufferOverFlow_ = true;
       return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
     }
