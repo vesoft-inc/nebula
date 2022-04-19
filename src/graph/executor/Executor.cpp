@@ -682,27 +682,6 @@ void Executor::dropBody(const PlanNode *body) {
   }
 }
 
-bool Executor::movable(const Variable *var) {
-  // Only support input variables of current executor
-  DCHECK(std::find(node_->inputVars().begin(), node_->inputVars().end(), DCHECK_NOTNULL(var)) !=
-         node_->inputVars().end());
-  // TODO support executor in loop
-  if (node()->kind() == PlanNode::Kind::kLoop) {
-    return false;
-  }
-  if (node()->loopLayers() != 0) {
-    // The lifetime of loop body is managed by Loop node
-    return false;
-  }
-
-  if (node()->kind() == PlanNode::Kind::kSelect) {
-    return false;
-  }
-  // Normal node
-  // Make sure drop happened-after count decrement
-  return var->userCount.load(std::memory_order_acquire) == 1;
-}
-
 Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
