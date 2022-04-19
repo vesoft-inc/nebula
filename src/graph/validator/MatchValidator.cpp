@@ -806,7 +806,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
     auto *colExpr = col->expr();
     NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, matchs));
     auto colOldName = col->name();
-    if (colExpr->kind() != Expression::Kind::kAggregate) {
+    if (colExpr->kind() != Expression::Kind::kAggregate &&
+        ExpressionUtils::hasAny(colExpr, {Expression::Kind::kAggregate})) {
       ExtractGroupSuiteVisitor visitor;
       colExpr->accept(&visitor);
       GroupSuite groupSuite = visitor.groupSuite();
