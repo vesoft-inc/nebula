@@ -177,6 +177,21 @@ void ExtractGroupSuiteVisitor::internalVisit(T *expr) {
 
 template <typename T>
 void ExtractGroupSuiteVisitor::pushGroupSuite(T *expr) {
+  auto specialExprs =
+      ExpressionUtils::collectAll(expr, {Expression::Kind::kVar, Expression::Kind::kAttribute});
+  for (auto *s : specialExprs) {
+    if (s->kind() == Expression::Kind::kVar &&
+        static_cast<const VariableExpression *>(s)->isInner()) {
+      return;
+    }
+    if (s->kind() == Expression::Kind::kAttribute) {
+      auto *left = static_cast<const AttributeExpression *>(s)->left();
+      if (left->kind() == Expression::Kind::kVar &&
+          static_cast<const VariableExpression *>(left)->isInner()) {
+        return;
+      }
+    }
+  }
   groupSuite_.groupKeys.emplace_back(expr->clone());
   groupSuite_.groupItems.emplace_back(expr->clone());
 }
