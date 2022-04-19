@@ -8,10 +8,11 @@ Feature: Test crash when aggregate with pattern expression
     Given a graph with space named "nba"
 
   Scenario: Crash when aggregate with pattern expression
+    # TODO aggregate should bypass all input, like `(v)--(:team)` here
     When executing query:
       """
-      MATCH (v:player) WHERE id(v) == 'Tim Duncan' return v.player.name AS name, size((v)--(:team)) AS len, count(v.player.name) * 2 AS count
+      MATCH (v:player) WHERE id(v) == 'Tim Duncan' return v.player.name AS name, size((v)--(:team)) + count(v.player.name) * 2 AS count
       """
     Then the result should be, in any order, with relax comparison:
-      | name         | len | count |
-      | 'Tim Duncan' | 1   | 2     |
+      | name         | count |
+      | 'Tim Duncan' | NULL  |
