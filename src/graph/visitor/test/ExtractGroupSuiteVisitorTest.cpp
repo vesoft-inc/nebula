@@ -1,0 +1,380 @@
+/* Copyright (c) 2022 vesoft inc. All rights reserved.
+ *
+ * This source code is licensed under Apache 2.0 License.
+ */
+
+#include <gtest/gtest.h>
+
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/visitor/ExtractGroupSuiteVisitor.h"
+#include "graph/visitor/test/VisitorTestBase.h"
+
+namespace nebula {
+namespace graph {
+class ExtractGroupSuiteVisitorTest : public VisitorTestBase {
+ public:
+  bool check(GroupSuite g1, GroupSuite g2) {
+    if (g1.groupKeys.size() != g2.groupKeys.size() ||
+        g1.groupItems.size() != g2.groupItems.size()) {
+      std::cout << "g1.groupKeys.size()=" << g1.groupKeys.size() << std::endl;
+      std::cout << "g2.groupKeys.size()=" << g2.groupKeys.size() << std::endl;
+      std::cout << "g1.groupItems.size()=" << g1.groupItems.size() << std::endl;
+      std::cout << "g2.groupItems.size()=" << g2.groupItems.size() << std::endl;
+      return false;
+    }
+    for (unsigned int i = 0; i < g1.groupKeys.size(); i++) {
+      if (g1.groupKeys[i]->toString() != g2.groupKeys[i]->toString()) {
+        std::cout << "g1.groupKeys[i]=" << g1.groupKeys[i]->toString() << std::endl;
+        std::cout << "g2.groupKeys[i]=" << g2.groupKeys[i]->toString() << std::endl;
+        return false;
+      }
+    }
+    for (unsigned int i = 0; i < g1.groupItems.size(); i++) {
+      if (g1.groupItems[i]->toString() != g2.groupItems[i]->toString()) {
+        std::cout << "g1.groupItems[i]=" << g1.groupItems[i]->toString() << std::endl;
+        std::cout << "g2.groupItems[i]=" << g2.groupItems[i]->toString() << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestConstantExpression) {
+  ExtractGroupSuiteVisitor visitor;
+  constantExpr(1)->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(constantExpr(1));
+  expect.groupItems.push_back(constantExpr(1));
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestUnaryExpression1) {
+  auto* e = notExpr(constantExpr(1));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestUnaryExpression2) {
+  auto* agg = aggExpr("collect", constantExpr(1), false);
+  auto* e = notExpr(agg);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  // expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(agg);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestTypeCastingExpression) {
+  auto* e = castExpr(Type::BOOL, constantExpr(0));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestLabelExpression) {
+  auto* e = labelExpr("aaaaa");
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestLabelAttributeExpression) {
+  auto* e = laExpr("abc", "10");
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestArithmeticExpression1) {
+  auto* left = constantExpr(0);
+  auto* right = constantExpr(1);
+  auto* e = addExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestArithmeticExpression2) {
+  auto* left = constantExpr(0);
+  auto* right = aggExpr("count", constantExpr(1), false);
+  auto* e = minusExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(left);
+  expect.groupItems.push_back(left);
+  expect.groupItems.push_back(right);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestRelationalExpression) {
+  auto* left = constantExpr(0);
+  auto* right = aggExpr("count", constantExpr(1), false);
+  auto* e = neExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(left);
+  expect.groupItems.push_back(left);
+  expect.groupItems.push_back(right);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestSubscriptExpression) {
+  auto* left = constantExpr(0);
+  auto* right = constantExpr(1);
+  auto* e = subExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestLogicalExpression1) {
+  auto* left = constantExpr(0);
+  auto* right = constantExpr(1);
+  auto* e = andExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestLogicalExpression2) {
+  auto* left = constantExpr(0);
+  auto* right = aggExpr("count", constantExpr(1), false);
+  auto* e = orExpr(left, right);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(left);
+  expect.groupItems.push_back(left);
+  expect.groupItems.push_back(right);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestFunctionCallExpression) {
+  auto* e = fnExpr("abc", {constantExpr("123")});
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestAggregateExpression) {
+  auto* e = aggExpr("count", constantExpr(1), false);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestVariableExpression) {
+  auto* e = varExpr("abc");
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestListExpression1) {
+  auto* a1 = constantExpr("abc");
+  auto* a2 = constantExpr("def");
+  auto* e = listExpr({a1, a2});
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestListExpression2) {
+  auto* a1 = constantExpr("abc");
+  auto* a2 = aggExpr("count", constantExpr(1), false);
+  auto* e = listExpr({a1, a2});
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(a1);
+  expect.groupItems.push_back(a1);
+  expect.groupItems.push_back(a2);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestSetExpression) {
+  auto* a1 = constantExpr("abc");
+  auto* a2 = aggExpr("count", constantExpr(1), false);
+  auto* e = setExpr({a1, a2});
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(a1);
+  expect.groupItems.push_back(a1);
+  expect.groupItems.push_back(a2);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestMapExpression) {
+  auto* a1 = constantExpr("abc");
+  auto* a2 = constantExpr("def");
+  auto* e = mapExpr({{"k1", a1}, {"k2", a2}});
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestVertexExpression) {
+  auto* e = vertexExpr("VERTEX");
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestPredicateExpression) {
+  auto* e = predExpr("p", "__VAR_0", listExpr({constantExpr("abc")}), constantExpr(1));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestListComprehensionExpression) {
+  auto* e = lcExpr("__VAR_0", listExpr({constantExpr("abc")}), constantExpr(1), constantExpr(1));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestReduceExpression) {
+  auto* e = reduceExpr(
+      "acu", constantExpr(1), "__VAR_0", listExpr({constantExpr("abc")}), constantExpr(1));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestSubscriptRangeExpression) {
+  auto* e = srExpr(constantExpr(1), constantExpr(1), constantExpr(1));
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(e);
+  expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+}  // namespace graph
+}  // namespace nebula
