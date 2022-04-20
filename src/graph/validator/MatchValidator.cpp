@@ -828,7 +828,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
       }
       if (!groupSuite.groupItems.empty()) {
         auto *rewritedExpr =
-            ExpressionUtils::rewriteSubparts2VarProp(colExpr->clone(), groupSuite.groupItems);
+            ExpressionUtils::rewriteSubExprs2VarProp(colExpr->clone(), groupSuite.groupItems);
         yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;

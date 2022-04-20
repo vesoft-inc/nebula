@@ -189,7 +189,7 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteSubparts2VarProp(const Expression *expr,
+Expression *ExpressionUtils::rewriteSubExprs2VarProp(const Expression *expr,
                                                      std::vector<Expression *> &subExprs) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [&subExprs](const Expression *e) -> bool {

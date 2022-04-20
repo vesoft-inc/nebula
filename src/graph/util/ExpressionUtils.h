@@ -73,8 +73,8 @@ class ExpressionUtils {
   // rewrite Agg to VarProp
   static Expression* rewriteAgg2VarProp(const Expression* expr);
 
-  // review the subExprs which are parts of expr.
-  static Expression* rewriteSubparts2VarProp(const Expression* expr,
+  // rewrite subExprs to VariablePropertyExpression
+  static Expression* rewriteSubExprs2VarProp(const Expression* expr,
                                              std::vector<Expression*>& subExprs);
 
   // rewrite var in VariablePropExpr to another var

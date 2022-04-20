@@ -177,6 +177,9 @@ void ExtractGroupSuiteVisitor::internalVisit(T *expr) {
 
 template <typename T>
 void ExtractGroupSuiteVisitor::pushGroupSuite(T *expr) {
+  // When expr is PredicateExpression, ListComprehensionExpression or ReduceExpression,
+  // it needs to check whether contains innerVar. If so, it doesn't need to push groupKeys and
+  // groupItems.
   auto specialExprs =
       ExpressionUtils::collectAll(expr, {Expression::Kind::kVar, Expression::Kind::kAttribute});
   for (auto *s : specialExprs) {
