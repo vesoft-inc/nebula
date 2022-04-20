@@ -6,7 +6,7 @@
 #define GRAPH_GC_H_
 
 #include "common/base/Base.h"
-#include "common/thread/GenericWorker.h"
+#include "common/thread/GenericThreadPool.h"
 #include "graph/context/Result.h"
 
 namespace nebula {
@@ -21,8 +21,8 @@ class GC {
  private:
   GC();
   void periodicTask();
-  folly::UMPSCQueue<std::vector<Result>, false> queue_;
-  thread::GenericWorker worker_;
+  folly::UMPMCQueue<std::vector<Result>, false> queue_;
+  thread::GenericThreadPool workers_;
 };
 }  // namespace graph
 }  // namespace nebula
