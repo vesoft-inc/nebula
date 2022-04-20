@@ -710,7 +710,7 @@ TEST_F(FindPathTest, multiSourceShortestPath) {
     {
       DataSet expectLeftVid;
       expectLeftVid.colNames = {nebula::kVid};
-      for (const auto& vid : {"a", "b", "c", "f", "g"}) {
+      for (const auto& vid : {"b", "f", "g"}) {
         Row row;
         row.values.emplace_back(vid);
         expectLeftVid.rows.emplace_back(std::move(row));
