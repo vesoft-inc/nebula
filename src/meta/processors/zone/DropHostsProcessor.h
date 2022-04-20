@@ -36,8 +36,8 @@ class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
    * @param holder
    * @return
    */
-  nebula::cpp2::ErrorCode checkRelatedSpaceAndCollect(const std::string& zoneName,
-                                                      kvstore::BatchHolder* holder);
+  nebula::cpp2::ErrorCode checkRelatedSpaceAndCollect(
+      const std::string& zoneName, std::map<GraphSpaceID, meta::cpp2::SpaceDesc>* spaceMap);
 };
 
 }  // namespace meta
