@@ -1148,11 +1148,24 @@ struct GetMetaDirInfoReq {
 struct VerifyClientVersionResp {
     1: common.ErrorCode         code,
     2: common.HostAddr          leader,
-    3: optional binary           error_msg;
+    3: optional binary          error_msg;
 }
 
-
 struct VerifyClientVersionReq {
+    1: required binary client_version = common.version;
+    2: common.HostAddr host;
+    3: binary build_version;
+}
+
+struct SaveGraphVersionResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: optional binary          error_msg;
+}
+
+// SaveGraphVersionReq is used to save the graph version of a graph service.
+// This is for internal using only.
+struct SaveGraphVersionReq {
     1: required binary client_version = common.version;
     2: common.HostAddr host;
     3: binary build_version;
@@ -1263,6 +1276,7 @@ service MetaService {
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 
     VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
+    SaveGraphVersionResp saveGraphVersion(1: SaveGraphVersionReq req)
 
     GetSegmentIdResp getSegmentId(1: GetSegmentIdReq req);
 }
