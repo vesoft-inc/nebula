@@ -104,14 +104,15 @@ StoragePlan<Cursor> ScanVertexProcessor::buildPlan(
   for (const auto& tc : tagContext_.propContexts_) {
     tags.emplace_back(std::make_unique<TagNode>(context, &tagContext_, tc.first, &tc.second));
   }
-  auto output = std::make_unique<ScanVertexPropNode>(context,
-                                                     std::move(tags),
-                                                     enableReadFollower_,
-                                                     limit_,
-                                                     cursors,
-                                                     result,
-                                                     expCtx,
-                                                     filter_->clone());
+  auto output =
+      std::make_unique<ScanVertexPropNode>(context,
+                                           std::move(tags),
+                                           enableReadFollower_,
+                                           limit_,
+                                           cursors,
+                                           result,
+                                           expCtx,
+                                           filter_ == nullptr ? nullptr : filter_->clone());
 
   plan.addNode(std::move(output));
   return plan;

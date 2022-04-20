@@ -108,7 +108,7 @@ StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
                                                    cursors,
                                                    result,
                                                    expCtx,
-                                                   filter_->clone());
+                                                   filter_ == nullptr ? nullptr : filter_->clone());
 
   plan.addNode(std::move(output));
   return plan;
