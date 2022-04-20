@@ -779,7 +779,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) {
   DCHECK(!cols.empty());
   for (auto *col : cols) {
     auto *colExpr = col->expr();
-    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, matchs));
+    NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, yieldCtx.paths));
     auto colOldName = col->name();
     if (colExpr->kind() != Expression::Kind::kAggregate) {
       auto collectAggCol = colExpr->clone();
