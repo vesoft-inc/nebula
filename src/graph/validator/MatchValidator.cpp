@@ -808,17 +808,15 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx,
     auto colOldName = col->name();
     if (colExpr->kind() != Expression::Kind::kAggregate &&
         ExpressionUtils::hasAny(colExpr, {Expression::Kind::kAggregate})) {
-      ExtractGroupSuiteVisitor visitor;
+      ExtractGroupSuiteVisitor visitor(qctx_);
       colExpr->accept(&visitor);
       GroupSuite groupSuite = visitor.groupSuite();
       yieldCtx.groupKeys_.insert(
           yieldCtx.groupKeys_.end(), groupSuite.groupKeys.begin(), groupSuite.groupKeys.end());
       for (auto *item : groupSuite.groupItems) {
         if (item->kind() == Expression::Kind::kAggregate) {
-          if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(item)).ok()) {
-            return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
-                                         colExpr->toString().c_str());
-          }
+          NG_RETURN_IF_ERROR(
+              ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(item)));
         }
 
         yieldCtx.groupItems_.emplace_back(item);

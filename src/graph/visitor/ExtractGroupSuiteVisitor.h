@@ -14,6 +14,8 @@ namespace graph {
 
 class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
  public:
+  explicit ExtractGroupSuiteVisitor(QueryContext *qctx = nullptr) : qctx_(qctx) {}
+
   bool ok() const override {
     return true;
   }
@@ -84,6 +86,7 @@ class ExtractGroupSuiteVisitor : public ExprVisitorImpl {
   void pushGroupSuite(T *expr);
 
   GroupSuite groupSuite_;
+  QueryContext *qctx_{nullptr};
 };
 
 }  // namespace graph

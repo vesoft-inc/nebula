@@ -171,7 +171,9 @@ void ExtractGroupSuiteVisitor::internalVisit(T *expr) {
   if (ExpressionUtils::hasAny(expr, {Expression::Kind::kAggregate})) {
     ExprVisitorImpl::visit(expr);
   } else {
-    pushGroupSuite(expr);
+    if (!ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
+      pushGroupSuite(expr);
+    }
   }
 }
 
@@ -180,20 +182,15 @@ void ExtractGroupSuiteVisitor::pushGroupSuite(T *expr) {
   // When expr is PredicateExpression, ListComprehensionExpression or ReduceExpression,
   // it needs to check whether contains innerVar. If so, it doesn't need to push groupKeys and
   // groupItems.
-  auto specialExprs =
-      ExpressionUtils::collectAll(expr, {Expression::Kind::kVar, Expression::Kind::kAttribute});
+  auto specialExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
   for (auto *s : specialExprs) {
     if (s->kind() == Expression::Kind::kVar &&
         static_cast<const VariableExpression *>(s)->isInner()) {
       return;
     }
-    if (s->kind() == Expression::Kind::kAttribute) {
-      auto *left = static_cast<const AttributeExpression *>(s)->left();
-      if (left->kind() == Expression::Kind::kVar &&
-          static_cast<const VariableExpression *>(left)->isInner()) {
-        return;
-      }
-    }
+  }
+  if (ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
+    return;
   }
   groupSuite_.groupKeys.emplace_back(expr->clone());
   groupSuite_.groupItems.emplace_back(expr->clone());

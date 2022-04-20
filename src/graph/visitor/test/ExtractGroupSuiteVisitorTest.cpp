@@ -45,8 +45,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestConstantExpression) {
   constantExpr(1)->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(constantExpr(1));
-  expect.groupItems.push_back(constantExpr(1));
+  // expect.groupKeys.push_back(constantExpr(1));
+  // expect.groupItems.push_back(constantExpr(1));
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -58,8 +58,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestUnaryExpression1) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -85,8 +85,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestTypeCastingExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -126,8 +126,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestArithmeticExpression1) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -141,8 +141,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestArithmeticExpression2) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(left);
-  expect.groupItems.push_back(left);
+  // expect.groupKeys.push_back(left);
+  // expect.groupItems.push_back(left);
   expect.groupItems.push_back(right);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
@@ -157,8 +157,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestRelationalExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(left);
-  expect.groupItems.push_back(left);
+  // expect.groupKeys.push_back(left);
+  // expect.groupItems.push_back(left);
   expect.groupItems.push_back(right);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
@@ -173,8 +173,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestSubscriptExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -188,8 +188,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestLogicalExpression1) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -203,8 +203,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestLogicalExpression2) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(left);
-  expect.groupItems.push_back(left);
+  // expect.groupKeys.push_back(left);
+  // expect.groupItems.push_back(left);
   expect.groupItems.push_back(right);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
@@ -217,8 +217,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestFunctionCallExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -257,8 +257,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestListExpression1) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -272,8 +272,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestListExpression2) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(a1);
-  expect.groupItems.push_back(a1);
+  // expect.groupKeys.push_back(a1);
+  // expect.groupItems.push_back(a1);
   expect.groupItems.push_back(a2);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
@@ -288,8 +288,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestSetExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(a1);
-  expect.groupItems.push_back(a1);
+  // expect.groupKeys.push_back(a1);
+  // expect.groupItems.push_back(a1);
   expect.groupItems.push_back(a2);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
@@ -304,8 +304,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestMapExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -330,8 +330,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestPredicateExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -343,8 +343,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestListComprehensionExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -357,8 +357,8 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestReduceExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  expect.groupKeys.push_back(e);
-  expect.groupItems.push_back(e);
+  // expect.groupKeys.push_back(e);
+  // expect.groupItems.push_back(e);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
@@ -372,6 +372,24 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestSubscriptRangeExpression) {
   GroupSuite expect;
   expect.groupKeys.push_back(e);
   expect.groupItems.push_back(e);
+
+  ASSERT_EQ(true, check(visitor.groupSuite(), expect));
+}
+
+TEST_F(ExtractGroupSuiteVisitorTest, TestInlineAgg) {
+  auto* la = laExpr("v", "age");
+  auto* fun = fnExpr("abs", {la});
+  auto* relationExpr = addExpr(fun, constantExpr(1));
+  auto* agg = aggExpr("count", laExpr("v", "name"), false);
+  auto* e = addExpr(relationExpr, agg);
+
+  ExtractGroupSuiteVisitor visitor;
+  e->accept(&visitor);
+
+  GroupSuite expect;
+  expect.groupKeys.push_back(relationExpr);
+  expect.groupItems.push_back(relationExpr);
+  expect.groupItems.push_back(agg);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
