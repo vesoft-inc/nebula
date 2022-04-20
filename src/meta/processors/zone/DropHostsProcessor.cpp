@@ -90,21 +90,13 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
           return std::find(hosts.begin(), hosts.end(), h) != hosts.end();
         })) {
       LOG(INFO) << "Drop zone " << zoneName;
-      code = checkRelatedSpaceAndCollect(zoneName, holder.get());
+      code = checkRelatedSpaceAndCollect(zoneName, &spaceMap);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "Check related space failed";
         break;
       }
 
       holder->remove(MetaKeyUtils::zoneKey(zoneName));
-
-      for (auto& [spaceId, properties] : spaceMap) {
-        const std::vector<std::string>& curZones = properties.get_zone_names();
-        std::set<std::string> zm(curZones.begin(), curZones.end());
-        zm.erase(zoneName);
-        std::vector<std::string> newZones(zm.begin(), zm.end());
-        properties.zone_names_ref() = std::move(newZones);
-      }
     } else {
       // Delete some hosts in the zone
       for (auto& h : hosts) {
@@ -162,38 +154,22 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
 }
 
 nebula::cpp2::ErrorCode DropHostsProcessor::checkRelatedSpaceAndCollect(
-    const std::string& zoneName, kvstore::BatchHolder* holder) {
-  const auto& prefix = MetaKeyUtils::spacePrefix();
-  auto ret = doPrefix(prefix);
-  if (!nebula::ok(ret)) {
-    auto retCode = nebula::error(ret);
-    LOG(INFO) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
-    return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
-  }
-
-  auto iter = nebula::value(ret).get();
-  while (iter->valid()) {
-    auto properties = MetaKeyUtils::parseSpace(iter->val());
-    size_t replicaFactor = properties.get_replica_factor();
-    auto zones = properties.get_zone_names();
-    LOG(INFO) << "replica_factor " << replicaFactor << " zone size " << zones.size();
-    auto it = std::find(zones.begin(), zones.end(), zoneName);
-    if (it != zones.end()) {
-      if (zones.size() == replicaFactor) {
+    const std::string& zoneName, std::map<GraphSpaceID, meta::cpp2::SpaceDesc>* spaceMap) {
+  for (auto& [spaceId, properties] : *spaceMap) {
+    const std::vector<std::string>& curZones = properties.get_zone_names();
+    std::set<std::string> zm(curZones.begin(), curZones.end());
+    if (zm.count(zoneName)) {
+      int32_t zoneSize = zm.size();
+      if (zoneSize == properties.get_replica_factor()) {
         LOG(INFO) << "Zone size is same with replica factor";
         return nebula::cpp2::ErrorCode::E_CONFLICT;
       } else {
-        zones.erase(it);
-        properties.zone_names_ref() = zones;
-
-        auto spaceKey = iter->key().data();
-        auto spaceVal = MetaKeyUtils::spaceVal(properties);
-        holder->put(std::move(spaceKey), std::move(spaceVal));
+        zm.erase(zoneName);
+        std::vector<std::string> newZones(zm.begin(), zm.end());
+        properties.zone_names_ref() = std::move(newZones);
       }
     }
-    iter->next();
   }
-
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
