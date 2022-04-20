@@ -24,7 +24,7 @@ void GC::clear(std::vector<Result>&& garbage) {
 
 void GC::periodicTask() {
   // TODO: maybe could release by batch
-  queue_.dequeue();
+  queue_.try_dequeue();
 }
 }  // namespace graph
 }  // namespace nebula
