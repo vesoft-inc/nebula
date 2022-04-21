@@ -270,6 +270,16 @@ inline rocksdb::Slice toSlice(const folly::StringPiece& str) {
 using KVMap = std::unordered_map<std::string, std::string>;
 using KVArrayIterator = std::vector<KV>::const_iterator;
 
+class MergeableAtomicOpResult {
+ public:
+  nebula::cpp2::ErrorCode code;
+  std::string batch;  // batched result, like before.
+  std::list<std::string> readSet;
+  std::list<std::string> writeSet;
+};
+
+using MergeableAtomicOp = folly::Function<MergeableAtomicOpResult(void)>;
+
 }  // namespace kvstore
 }  // namespace nebula
 
