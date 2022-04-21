@@ -441,7 +441,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
                                 sbufPos_ += yyleng;
                             }
-<LB_STR>[^\\\n\`]+          {
+<LB_STR>[^\\\n\`\.]+        {
                                 makeSpaceForString(yyleng);
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
                                 sbufPos_ += yyleng;
@@ -504,6 +504,11 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.
                                 yyterminate();
+                            }
+/* We use DOT to access property of entities, so it's meta character in this language.
+   Disable DOT in label to avoid mistakes in system and confusing to user. */
+<LB_STR>\.                  
+                                throw GraphParser::syntax_error(*yylloc, "Don't allow DOT in label:");
                             }
 
 [ \r\t]                     { }
