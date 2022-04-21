@@ -101,8 +101,14 @@ StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
     edges.emplace_back(
         std::make_unique<FetchEdgeNode>(context, &edgeContext_, ec.first, &ec.second));
   }
-  auto output = std::make_unique<ScanEdgePropNode>(
-      context, std::move(edges), enableReadFollower_, limit_, cursors, result, expCtx, filter_);
+  auto output = std::make_unique<ScanEdgePropNode>(context,
+                                                   std::move(edges),
+                                                   enableReadFollower_,
+                                                   limit_,
+                                                   cursors,
+                                                   result,
+                                                   expCtx,
+                                                   filter_ == nullptr ? nullptr : filter_->clone());
 
   plan.addNode(std::move(output));
   return plan;
