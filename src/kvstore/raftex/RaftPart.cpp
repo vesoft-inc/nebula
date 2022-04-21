@@ -57,7 +57,7 @@ using OpProcessor = folly::Function<std::optional<std::string>(AtomicOp op)>;
  *  MERGE_PREV: can merge with previous, can't merge any more.  (has to be tail)
  *  MERGE_BOTH: can merge with any other
  *
- *  Normal / heartbeat will alwayse be MERGE_BOTH
+ *  Normal / heartbeat will always be MERGE_BOTH
  *  Command will alwayse be MERGE_PREV
  *  ATOMIC_OP can be either MERGE_NEXT or MERGE_BOTH
  *                          depends on if it read a key in write set.

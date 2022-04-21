@@ -315,13 +315,6 @@ bool checkLog(std::shared_ptr<test::TestShard>& copy,
   for (size_t i = start; i <= end; i++) {
     folly::StringPiece msg;
     if (!copy->getLogMsg(i, msg) || msgs[i] != msg.toString()) {
-      // LOG(INFO) << "checkLog return false;";
-      // if (!copy->getLogMsg(i, msg)) {
-      //   LOG(INFO) << "!copy->getLogMsg(i, msg)";
-      // } else {
-      //   LOG(INFO) << "i = " << i << ", msgs[i] = " << msgs[i]
-      //             << ", msg.toString() = " << msg.toString();
-      // }
       return false;
     }
   }

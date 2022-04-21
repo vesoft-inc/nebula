@@ -267,7 +267,6 @@ kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
             auto oldIndexKeys = indexKeys(partId, oldReader.get(), key, index, nullptr);
             if (!oldIndexKeys.empty()) {
               ret.writeSet.insert(ret.writeSet.end(), oldIndexKeys.begin(), oldIndexKeys.end());
-              // ret.writeSet.push_back(oldIndexKeys);
               // Check the index is building for the specified partition or
               // not.
               auto indexState = env_->getIndexState(spaceId_, partId);
@@ -278,7 +277,6 @@ kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
                   batchHolder->put(std::string(delOpKey), std::move(idxKey));
                 }
               } else if (env_->checkIndexLocked(indexState)) {
-                // return folly::Optional<std::string>();
                 return ret;
               } else {
                 for (auto& idxKey : oldIndexKeys) {
