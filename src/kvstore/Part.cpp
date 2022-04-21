@@ -115,7 +115,7 @@ void Part::sync(KVCallback cb) {
       [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
-void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
+void Part::asyncAtomicOp(MergeableAtomicOp op, KVCallback cb) {
   atomicOpAsync(std::move(op))
       .thenValue(
           [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });

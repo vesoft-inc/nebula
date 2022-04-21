@@ -265,6 +265,7 @@ void appendLogs(int start,
   // Append 100 logs
   LOG(INFO) << "=====> Start appending logs from index " << start << " to " << end;
   for (int i = start; i <= end; ++i) {
+    LOG(INFO) << "=====> i = " << i;
     msgs.emplace_back(folly::stringPrintf("Test Log Message %03d", i));
     auto fut = leader->appendAsync(0, msgs.back());
     if (i == end && waitLastLog) {
@@ -278,6 +279,7 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t start,
                     size_t end,
                     std::vector<std::string>& msgs) {
+  LOG(INFO) << "checkConsensus()";
   int32_t count = 0;
   for (; count < 3; count++) {
     bool consensus = true;
@@ -287,10 +289,14 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
     // Check every copy
     for (auto& c : copies) {
       if (c != nullptr && c->isRunning()) {
+        LOG(INFO) << "====> checkConsensus(), msgs.size() " << msgs.size() << ", c->getNumLogs() "
+                  << c->getNumLogs();
         if (msgs.size() != c->getNumLogs() || !checkLog(c, start, end, msgs)) {
           consensus = false;
           break;
         }
+      } else {
+        LOG(INFO) << "====> checkConsensus(), c == nullptr || !c->isRunning()";
       }
     }
     if (consensus == true) {
