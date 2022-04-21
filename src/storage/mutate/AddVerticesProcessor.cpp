@@ -298,7 +298,7 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
     }
     // step 3, Insert new vertex data
     ret.writeSet.emplace_back(key);
-    batchHolder->put(std::move(key), std::move(value));
+    batchHolder->put(std::string(key), std::string(value));
   }
   ret.batch = encodeBatchValue(batchHolder->getBatch());
   ret.code = nebula::cpp2::ErrorCode::SUCCEEDED;
