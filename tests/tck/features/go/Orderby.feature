@@ -190,7 +190,7 @@ Feature: Orderby Sentence
       | "LaMarcus Aldridge" | 90       |
     When executing query:
       """
-      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; 
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst;
       ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst YIELD vertex as node | ORDER by $-.node DESC
       """
     Then the result should be, in order, with relax comparison:
