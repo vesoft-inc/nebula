@@ -190,12 +190,13 @@ Feature: Orderby Sentence
       | "LaMarcus Aldridge" | 90       |
     When executing query:
       """
-      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst YIELD vertex as node
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; 
+      ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst YIELD vertex as node | ORDER by $-.node DESC
       """
     Then the result should be, in order, with relax comparison:
       | node                                                                                                        |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
     When executing query:
       """
