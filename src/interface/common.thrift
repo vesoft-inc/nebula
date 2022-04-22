@@ -299,207 +299,204 @@ enum ErrorCode {
     // for common code
     SUCCEEDED                         = 0,
 
-    E_DISCONNECTED                    = -1,        // RPC Failure
-    E_FAIL_TO_CONNECT                 = -2,
-    E_RPC_FAILURE                     = -3,
-    E_LEADER_CHANGED                  = -4,
-
+    E_DISCONNECTED                    = -1,     // Lost connection
+    E_FAIL_TO_CONNECT                 = -2,     // Unable to establish connection
+    E_RPC_FAILURE                     = -3,     // RPC failure
+    E_LEADER_CHANGED                  = -4,     // Raft leader has been changed
 
     // only unify metad and storaged error code
-    E_SPACE_NOT_FOUND                 = -5,
-    E_TAG_NOT_FOUND                   = -6,
-    E_EDGE_NOT_FOUND                  = -7,
-    E_INDEX_NOT_FOUND                 = -8,
-    E_EDGE_PROP_NOT_FOUND             = -9,
-    E_TAG_PROP_NOT_FOUND              = -10,
-    E_ROLE_NOT_FOUND                  = -11,
-    E_CONFIG_NOT_FOUND                = -12,
-    E_MACHINE_NOT_FOUND               = -13,
-    E_ZONE_NOT_FOUND                  = -14,
-    E_LISTENER_NOT_FOUND              = -15,
-    E_PART_NOT_FOUND                  = -16,
-    E_KEY_NOT_FOUND                   = -17,
-    E_USER_NOT_FOUND                  = -18,
-    E_STATS_NOT_FOUND                 = -19,
-    E_SERVICE_NOT_FOUND               = -20,
+    E_SPACE_NOT_FOUND                 = -5,     // Graph space does not exist
+    E_TAG_NOT_FOUND                   = -6,     // Tag does not exist
+    E_EDGE_NOT_FOUND                  = -7,     // Edge type does not exist
+    E_INDEX_NOT_FOUND                 = -8,     // Index does not exist
+    E_EDGE_PROP_NOT_FOUND             = -9,     // Edge type property does not exist
+    E_TAG_PROP_NOT_FOUND              = -10,    // Tag property does not exist
+    E_ROLE_NOT_FOUND                  = -11,    // The current role does not exist
+    E_CONFIG_NOT_FOUND                = -12,    // The current configuration does not exist
+    E_MACHINE_NOT_FOUND               = -13,    // The current host does not exist
+    E_ZONE_NOT_FOUND                  = -14,    // The zone does not exist
+    E_LISTENER_NOT_FOUND              = -15,    // Listener does not exist
+    E_PART_NOT_FOUND                  = -16,    // The current partition does not exist
+    E_KEY_NOT_FOUND                   = -17,    // Key does not exist
+    E_USER_NOT_FOUND                  = -18,    // User does not exist
+    E_STATS_NOT_FOUND                 = -19,    // Statistics do not exist
+    E_SERVICE_NOT_FOUND               = -20,    // No current service found
 
     // backup failed
-    E_BACKUP_FAILED                   = -24,
-    E_BACKUP_EMPTY_TABLE              = -25,
-    E_BACKUP_TABLE_FAILED             = -26,
-    E_PARTIAL_RESULT                  = -27,
-    E_REBUILD_INDEX_FAILED            = -28,
-    E_INVALID_PASSWORD                = -29,
-    E_FAILED_GET_ABS_PATH             = -30,
-
+    E_BACKUP_FAILED                   = -24,    // Backup failed
+    E_BACKUP_EMPTY_TABLE              = -25,    // The backed-up table is empty
+    E_BACKUP_TABLE_FAILED             = -26,    // Table backup failure
+    E_PARTIAL_RESULT                  = -27,    // MultiGet could not get all data
+    E_REBUILD_INDEX_FAILED            = -28,    // Index rebuild failed
+    E_INVALID_PASSWORD                = -29,    // Password is invalid
+    E_FAILED_GET_ABS_PATH             = -30,    // Unable to get absolute path
 
     // 1xxx for graphd
-    E_BAD_USERNAME_PASSWORD           = -1001,     // Authentication error
-    E_SESSION_INVALID                 = -1002,     // Execution errors
-    E_SESSION_TIMEOUT                 = -1003,
-    E_SYNTAX_ERROR                    = -1004,
-    E_EXECUTION_ERROR                 = -1005,
-    E_STATEMENT_EMPTY                 = -1006,     // Nothing is executed When command is comment
+    E_BAD_USERNAME_PASSWORD           = -1001,  // Authentication failed
+    E_SESSION_INVALID                 = -1002,  // Invalid session
+    E_SESSION_TIMEOUT                 = -1003,  // Session timeout
+    E_SYNTAX_ERROR                    = -1004,  // Syntax error
+    E_EXECUTION_ERROR                 = -1005,  // Execution error
+    E_STATEMENT_EMPTY                 = -1006,  // Statement is empty
 
-    E_BAD_PERMISSION                  = -1008,
-    E_SEMANTIC_ERROR                  = -1009,     // semantic error
-    E_TOO_MANY_CONNECTIONS            = -1010,     // Exceeding the maximum number of connections
-    E_PARTIAL_SUCCEEDED               = -1011,
-
+    E_BAD_PERMISSION                  = -1008,  // Wrong permission
+    E_SEMANTIC_ERROR                  = -1009,  // Semantic error
+    E_TOO_MANY_CONNECTIONS            = -1010,  // Maximum number of connections exceeded
+    E_PARTIAL_SUCCEEDED               = -1011,  // Access to storage failed (only some requests succeeded)
 
     // 2xxx for metad
-    E_NO_HOSTS                        = -2001,     // Operation Failure
-    E_EXISTED                         = -2002,
-    E_INVALID_HOST                    = -2003,
-    E_UNSUPPORTED                     = -2004,
-    E_NOT_DROP                        = -2005,
-    E_BALANCER_RUNNING                = -2006,
-    E_CONFIG_IMMUTABLE                = -2007,
-    E_CONFLICT                        = -2008,
-    E_INVALID_PARM                    = -2009,
-    E_WRONGCLUSTER                    = -2010,
-    E_ZONE_NOT_ENOUGH                 = -2011,
-    E_ZONE_IS_EMPTY                   = -2012,
+    E_NO_HOSTS                        = -2001,  // Host does not exist
+    E_EXISTED                         = -2002,  // Host already exists
+    E_INVALID_HOST                    = -2003,  // Invalid host
+    E_UNSUPPORTED                     = -2004,  // The current command, statement, or function is not supported
+    E_NOT_DROP                        = -2005,  // Not allowed to drop
+    E_BALANCER_RUNNING                = -2006,  // The balancer is running
+    E_CONFIG_IMMUTABLE                = -2007,  // Configuration items cannot be changed
+    E_CONFLICT                        = -2008,  // Parameters conflict with meta data
+    E_INVALID_PARM                    = -2009,  // Invalid parameter
+    E_WRONGCLUSTER                    = -2010,  // Wrong cluster
+    E_ZONE_NOT_ENOUGH                 = -2011,  // Listener conflicts
+    E_ZONE_IS_EMPTY                   = -2012,  // Host not exist
 
-    E_STORE_FAILURE                   = -2021,
-    E_STORE_SEGMENT_ILLEGAL           = -2022,
-    E_BAD_BALANCE_PLAN                = -2023,
-    E_BALANCED                        = -2024,
-    E_NO_RUNNING_BALANCE_PLAN         = -2025,
-    E_NO_VALID_HOST                   = -2026,
-    E_CORRUPTED_BALANCE_PLAN          = -2027,
-    E_NO_INVALID_BALANCE_PLAN         = -2028,
+    E_STORE_FAILURE                   = -2021,  // Failed to store data
+    E_STORE_SEGMENT_ILLEGAL           = -2022,  // Illegal storage segment
+    E_BAD_BALANCE_PLAN                = -2023,  // Invalid data balancing plan
+    E_BALANCED                        = -2024,  // The cluster is already in the data balancing status
+    E_NO_RUNNING_BALANCE_PLAN         = -2025,  // There is no running data balancing plan
+    E_NO_VALID_HOST                   = -2026,  // Lack of valid hosts
+    E_CORRUPTED_BALANCE_PLAN          = -2027,  // A data balancing plan that has been corrupted
+    E_NO_INVALID_BALANCE_PLAN         = -2028,  // No invalid balance plan
 
 
     // Authentication Failure
-    E_IMPROPER_ROLE                   = -2030,
-    E_INVALID_PARTITION_NUM           = -2031,
-    E_INVALID_REPLICA_FACTOR          = -2032,
-    E_INVALID_CHARSET                 = -2033,
-    E_INVALID_COLLATE                 = -2034,
-    E_CHARSET_COLLATE_NOT_MATCH       = -2035,
+    E_IMPROPER_ROLE                   = -2030,  // Failed to recover user role
+    E_INVALID_PARTITION_NUM           = -2031,  // Number of invalid partitions
+    E_INVALID_REPLICA_FACTOR          = -2032,  // Invalid replica factor
+    E_INVALID_CHARSET                 = -2033,  // Invalid character set
+    E_INVALID_COLLATE                 = -2034,  // Invalid character sorting rules
+    E_CHARSET_COLLATE_NOT_MATCH       = -2035,  // Character set and character sorting rule mismatch
 
     // Admin Failure
-    E_SNAPSHOT_FAILURE                = -2040,
-    E_BLOCK_WRITE_FAILURE             = -2041,
+    E_SNAPSHOT_FAILURE                = -2040,  // Failed to generate a snapshot
+    E_BLOCK_WRITE_FAILURE             = -2041,  // Failed to write block data
     E_REBUILD_INDEX_FAILURE           = -2042,
-    E_INDEX_WITH_TTL                  = -2043,
-    E_ADD_JOB_FAILURE                 = -2044,
-    E_STOP_JOB_FAILURE                = -2045,
-    E_SAVE_JOB_FAILURE                = -2046,
-    E_BALANCER_FAILURE                = -2047,
-    E_JOB_NOT_FINISHED                = -2048,
-    E_TASK_REPORT_OUT_DATE            = -2049,
-    E_JOB_NOT_IN_SPACE                = -2050,
-    E_JOB_NEED_RECOVER                = -2051,
-    E_INVALID_JOB                     = -2065,
+    E_INDEX_WITH_TTL                  = -2043,  
+    E_ADD_JOB_FAILURE                 = -2044,  // Failed to add new task
+    E_STOP_JOB_FAILURE                = -2045,  // Failed to stop task
+    E_SAVE_JOB_FAILURE                = -2046,  // Failed to save task information
+    E_BALANCER_FAILURE                = -2047,  // Data balancing failed
+    E_JOB_NOT_FINISHED                = -2048,  // The current task has not been completed
+    E_TASK_REPORT_OUT_DATE            = -2049,  // Task report failed
+    E_JOB_NOT_IN_SPACE                = -2050,  // The current task is not in the graph space
+    E_JOB_NEED_RECOVER                = -2051,  // The current task needs to be resumed
+    E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure
-    E_BACKUP_BUILDING_INDEX           = -2066,
-    E_BACKUP_SPACE_NOT_FOUND          = -2067,
+    E_BACKUP_BUILDING_INDEX           = -2066,  // Backup terminated (index being created)
+    E_BACKUP_SPACE_NOT_FOUND          = -2067,  // Graph space does not exist at the time of backup
 
     // RESTORE Failure
-    E_RESTORE_FAILURE                 = -2068,
+    E_RESTORE_FAILURE                 = -2068,  // Backup recovery failed
 
-    E_SESSION_NOT_FOUND               = -2069,
+    E_SESSION_NOT_FOUND               = -2069,  // Session does not exist
 
     // ListClusterInfo Failure
-    E_LIST_CLUSTER_FAILURE              = -2070,
-    E_LIST_CLUSTER_GET_ABS_PATH_FAILURE = -2071,
-    E_LIST_CLUSTER_NO_AGENT_FAILURE     = -2072,
+    E_LIST_CLUSTER_FAILURE              = -2070,    // Failed to get cluster information
+    E_LIST_CLUSTER_GET_ABS_PATH_FAILURE = -2071,    // Failed to get absolute path when getting cluster information
+    E_LIST_CLUSTER_NO_AGENT_FAILURE     = -2072,    // Unable to get an agent when getting cluster information
 
-    E_QUERY_NOT_FOUND                 = -2073,
-    E_AGENT_HB_FAILUE                 = -2074,
+    E_QUERY_NOT_FOUND                 = -2073,  // Query not found
+    E_AGENT_HB_FAILUE                 = -2074,  // Failed to receive heartbeat from agent
 
     // 3xxx for storaged
-    E_CONSENSUS_ERROR                 = -3001,
-    E_KEY_HAS_EXISTS                  = -3002,
-    E_DATA_TYPE_MISMATCH              = -3003,
-    E_INVALID_FIELD_VALUE             = -3004,
-    E_INVALID_OPERATION               = -3005,
-    E_NOT_NULLABLE                    = -3006,     // Not allowed to be null
-    // The field neither can be NULL, nor has a default value
-    E_FIELD_UNSET                     = -3007,
-    // Value exceeds the range of type
-    E_OUT_OF_RANGE                    = -3008,
-    E_DATA_CONFLICT_ERROR             = -3010,     // data conflict, for index write without toss.
+    E_CONSENSUS_ERROR                 = -3001,  // Consensus cannot be reached during an election
+    E_KEY_HAS_EXISTS                  = -3002,  // Key already exists
+    E_DATA_TYPE_MISMATCH              = -3003,  // Data type mismatch
+    E_INVALID_FIELD_VALUE             = -3004,  // Invalid field value
+    E_INVALID_OPERATION               = -3005,  // Invalid operation
+    E_NOT_NULLABLE                    = -3006,  // Current value is not allowed to be empty
+    E_FIELD_UNSET                     = -3007,  // Field value must be set if the field value is NOT NULL or has no default value
+    E_OUT_OF_RANGE                    = -3008,  // The value is out of the range of the current type
+    E_DATA_CONFLICT_ERROR             = -3010,  // Data conflict, for index write without toss.
 
-    E_WRITE_STALLED                   = -3011,
+    E_WRITE_STALLED                   = -3011,  // Writes are delayed
 
     // meta failures
-    E_IMPROPER_DATA_TYPE              = -3021,
-    E_INVALID_SPACEVIDLEN             = -3022,
+    E_IMPROPER_DATA_TYPE              = -3021,  // Incorrect data type
+    E_INVALID_SPACEVIDLEN             = -3022,  // Invalid VID length
 
     // Invalid request
-    E_INVALID_FILTER                  = -3031,
-    E_INVALID_UPDATER                 = -3032,
-    E_INVALID_STORE                   = -3033,
-    E_INVALID_PEER                    = -3034,
-    E_RETRY_EXHAUSTED                 = -3035,
-    E_TRANSFER_LEADER_FAILED          = -3036,
-    E_INVALID_STAT_TYPE               = -3037,
-    E_INVALID_VID                     = -3038,
-    E_NO_TRANSFORMED                  = -3039,
+    E_INVALID_FILTER                  = -3031,  // Invalid filter
+    E_INVALID_UPDATER                 = -3032,  // Invalid field update
+    E_INVALID_STORE                   = -3033,  // Invalid KV storage
+    E_INVALID_PEER                    = -3034,  // Peer invalid
+    E_RETRY_EXHAUSTED                 = -3035,  // Out of retries
+    E_TRANSFER_LEADER_FAILED          = -3036,  // Leader change failed
+    E_INVALID_STAT_TYPE               = -3037,  // Invalid stat type
+    E_INVALID_VID                     = -3038,  // VID is invalid
+    E_NO_TRANSFORMED                  = -3039,  
 
     // meta client failed
-    E_LOAD_META_FAILED                = -3040,
+    E_LOAD_META_FAILED                = -3040,  // Failed to load meta information
 
     // checkpoint failed
-    E_FAILED_TO_CHECKPOINT            = -3041,
-    E_CHECKPOINT_BLOCKED              = -3042,
+    E_FAILED_TO_CHECKPOINT            = -3041,  // Failed to generate checkpoint
+    E_CHECKPOINT_BLOCKED              = -3042,  // Generating checkpoint is blocked
 
     // Filter out
-    E_FILTER_OUT                      = -3043,
-    E_INVALID_DATA                    = -3044,
+    E_FILTER_OUT                      = -3043,  // Data is filtered
+    E_INVALID_DATA                    = -3044,  // Invalid data
 
-    E_MUTATE_EDGE_CONFLICT            = -3045,
-    E_MUTATE_TAG_CONFLICT             = -3046,
+    E_MUTATE_EDGE_CONFLICT            = -3045,  // Concurrent write conflicts on the same edge
+    E_MUTATE_TAG_CONFLICT             = -3046,  // Concurrent write conflict on the same vertex
 
     // transaction
-    E_OUTDATED_LOCK                   = -3047,
+    E_OUTDATED_LOCK                   = -3047,  // Lock is invalid
 
     // task manager failed
-    E_INVALID_TASK_PARA               = -3051,
-    E_USER_CANCEL                     = -3052,
-    E_TASK_EXECUTION_FAILED           = -3053,
+    E_INVALID_TASK_PARA               = -3051,  // Invalid task parameter
+    E_USER_CANCEL                     = -3052,  // The user canceled the task
+    E_TASK_EXECUTION_FAILED           = -3053,  // Task execution failed
+    E_PLAN_IS_KILLED                  = -3060,  // Execution plan was cleared
 
-    E_PLAN_IS_KILLED                  = -3060,
     // toss
-    E_NO_TERM                         = -3070,
-    E_OUTDATED_TERM                   = -3071,
-    E_OUTDATED_EDGE                   = -3072,
-    E_WRITE_WRITE_CONFLICT            = -3073,
+    E_NO_TERM                         = -3070,  // The heartbeat process was not completed when the request was received
+    E_OUTDATED_TERM                   = -3071,  // Out-of-date heartbeat received from the old leader (the new leader has been elected)
+    E_OUTDATED_EDGE                   = -3072,  
+    E_WRITE_WRITE_CONFLICT            = -3073,  // Concurrent write conflicts with later requests
 
-    E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
-    // get id failed
-    E_ID_FAILED                       = -3062,
+    E_CLIENT_SERVER_INCOMPATIBLE      = -3061,  // Client and server versions are not compatible
+    E_ID_FAILED                       = -3062,  // Failed to get ID serial number
 
     // 35xx for storaged raft
-    E_RAFT_UNKNOWN_PART               = -3500,
-    // Raft consensus errors
-    E_RAFT_LOG_GAP                    = -3501,
-    E_RAFT_LOG_STALE                  = -3502,
-    E_RAFT_TERM_OUT_OF_DATE           = -3503,
-    E_RAFT_UNKNOWN_APPEND_LOG         = -3504,
-    // Raft state errors
-    E_RAFT_WAITING_SNAPSHOT           = -3511,
-    E_RAFT_SENDING_SNAPSHOT           = -3512,
-    E_RAFT_INVALID_PEER               = -3513,
-    E_RAFT_NOT_READY                  = -3514,
-    E_RAFT_STOPPED                    = -3515,
-    E_RAFT_BAD_ROLE                   = -3516,
-    // Local errors
-    E_RAFT_WAL_FAIL                   = -3521,
-    E_RAFT_HOST_STOPPED               = -3522,
-    E_RAFT_TOO_MANY_REQUESTS          = -3523,
-    E_RAFT_PERSIST_SNAPSHOT_FAILED    = -3524,
-    E_RAFT_RPC_EXCEPTION              = -3525,
-    E_RAFT_NO_WAL_FOUND               = -3526,
-    E_RAFT_HOST_PAUSED                = -3527,
-    E_RAFT_WRITE_BLOCKED              = -3528,
-    E_RAFT_BUFFER_OVERFLOW            = -3529,
-    E_RAFT_ATOMIC_OP_FAILED           = -3530,
-    E_LEADER_LEASE_FAILED             = -3531,
+    E_RAFT_UNKNOWN_PART               = -3500,  // Unknown partition
 
-    E_UNKNOWN                         = -8000,
+    // Raft consensus errors
+    E_RAFT_LOG_GAP                    = -3501,  // Raft logs lag behind
+    E_RAFT_LOG_STALE                  = -3502,  // Raft logs are out of date
+    E_RAFT_TERM_OUT_OF_DATE           = -3503,  // Heartbeat messages are out of date
+    E_RAFT_UNKNOWN_APPEND_LOG         = -3504,  // Unknown additional logs
+
+    // Raft state errors
+    E_RAFT_WAITING_SNAPSHOT           = -3511,  // Waiting for the snapshot to complete
+    E_RAFT_SENDING_SNAPSHOT           = -3512,  // There was an error sending the snapshot
+    E_RAFT_INVALID_PEER               = -3513,  // Invalid receiver
+    E_RAFT_NOT_READY                  = -3514,  // Raft did not start
+    E_RAFT_STOPPED                    = -3515,  // Raft has stopped
+    E_RAFT_BAD_ROLE                   = -3516,  // Wrong role
+
+    // Local errors
+    E_RAFT_WAL_FAIL                   = -3521,  // Write to a WAL failed
+    E_RAFT_HOST_STOPPED               = -3522,  // The host has stopped
+    E_RAFT_TOO_MANY_REQUESTS          = -3523,  // Too many requests
+    E_RAFT_PERSIST_SNAPSHOT_FAILED    = -3524,  // Persistent snapshot failed
+    E_RAFT_RPC_EXCEPTION              = -3525,  // RPC exception
+    E_RAFT_NO_WAL_FOUND               = -3526,  // No WAL logs found
+    E_RAFT_HOST_PAUSED                = -3527,  // Host suspended
+    E_RAFT_WRITE_BLOCKED              = -3528,  // Writes are blocked
+    E_RAFT_BUFFER_OVERFLOW            = -3529,  // Cache overflow
+    E_RAFT_ATOMIC_OP_FAILED           = -3530,  // Atomic operation failed
+    E_LEADER_LEASE_FAILED             = -3531,  // Leader lease expired
+
+    E_UNKNOWN                         = -8000,  // Unknown error
 } (cpp.enum_strict)
