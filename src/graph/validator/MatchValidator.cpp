@@ -472,9 +472,6 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
   }
-  if (max == std::numeric_limits<size_t>::max()) {
-    return Status::SemanticError("Cannot set maximum hop for variable length relationships");
-  }
   return Status::OK();
 }
 

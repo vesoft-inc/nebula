@@ -115,8 +115,8 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 }
 
 bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
-  NodeInfo* node = nodeCtx->info;
-  if (node->labels.size() != 1) {
+  auto& node = *nodeCtx->info;
+  if (node.labels.size() != 1) {
     // TODO multiple tag index seek need the IndexScan support
     VLOG(2) << "Multiple tag index seek is not supported now.";
     return false;
@@ -128,8 +128,8 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     filterInWhere = MatchSolver::makeIndexFilter(
         node.labels.back(), node.alias, nodeCtx->bindWhereClause->filter, nodeCtx->qctx);
   }
-  if (!nodeInfo->labelProps.empty()) {
-    auto props = nodeInfo->labelProps.back();
+  if (!node.labelProps.empty()) {
+    auto props = node.labelProps.back();
     if (props != nullptr) {
       filterInPattern = MatchSolver::makeIndexFilter(node.labels.back(), props, nodeCtx->qctx);
     }
@@ -137,7 +137,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 
   Expression* filter = nullptr;
   if (!filterInPattern && !filterInWhere) {
-    return {};
+    return false;
   } else if (!filterInPattern) {
     filter = filterInWhere;
   } else if (!filterInWhere) {
@@ -146,7 +146,11 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     filter = LogicalExpression::makeAnd(nodeCtx->qctx->objPool(), filterInPattern, filterInWhere);
   }
 
-  return filter;
+  nodeCtx->scanInfo.filter = filter;
+  nodeCtx->scanInfo.schemaIds = node.tids;
+  nodeCtx->scanInfo.schemaNames = node.labels;
+
+  return true;
 }
 
 StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {

@@ -18,8 +18,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
   StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
  private:
-  PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
-
   Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
 
   Status connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
@@ -27,15 +25,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
                          const SubPlan& subplan,
                          std::unordered_set<std::string>& nodeAliasesSeen,
                          SubPlan& matchClausePlan);
-
-  Status buildShortestPath(const std::vector<NodeInfo>& nodeInfos,
-                           std::vector<EdgeInfo>& edgeInfos,
-                           MatchClauseContext* matchClauseCtx,
-                           SubPlan& subplan,
-                           bool single);
-
-  StatusOr<std::vector<IndexID>> pickTagIndex(MatchClauseContext* matchClauseCtx,
-                                              NodeInfo nodeInfo);
 
  private:
   Expression* initialExpr_{nullptr};

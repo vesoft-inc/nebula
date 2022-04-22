@@ -5,21 +5,11 @@
 
 #include "graph/planner/match/MatchClausePlanner.h"
 
-#include "MatchPathPlanner.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchPathPlanner.h"
-#include "graph/planner/match/MatchSolver.h"
-#include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/SegmentsConnector.h"
-#include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/ExecutionPlan.h"
-#include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
