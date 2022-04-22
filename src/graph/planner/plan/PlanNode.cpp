@@ -410,7 +410,12 @@ BinaryInputNode::BinaryInputNode(QueryContext* qctx,
                                  const PlanNode* right)
     : PlanNode(qctx, kind) {
   addDep(left);
-  readVariable(left->outputVarPtr());
+  // Allow fill it later
+  if (left != nullptr) {
+    readVariable(left->outputVarPtr());
+  } else {
+    inputVars_.emplace_back(nullptr);
+  }
 
   addDep(right);
   readVariable(right->outputVarPtr());

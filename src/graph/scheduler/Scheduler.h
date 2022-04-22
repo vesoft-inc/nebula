@@ -23,6 +23,10 @@ class Scheduler : private boost::noncopyable, private cpp::NonMovable {
   virtual folly::Future<Status> schedule() = 0;
 
   static void analyzeLifetime(const PlanNode *node, std::size_t loopLayers = 0);
+
+ protected:
+  // use by debugger to check query which crash in runtime
+  std::string query_;
 };
 }  // namespace graph
 }  // namespace nebula

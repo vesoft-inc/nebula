@@ -67,6 +67,7 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
 
 /*static*/ SubPlan SegmentsConnector::rollUpApply(QueryContext* qctx,
                                                   const SubPlan& left,
+                                                  const std::vector<std::string>& inputColNames,
                                                   const SubPlan& right,
                                                   const std::vector<std::string>& compareCols,
                                                   const std::string& collectCol) {
@@ -77,31 +78,43 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
         qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
   }
   InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
-  auto* rollUpApply =
-      RollUpApply::make(qctx, left.root, right.root, std::move(compareProps), collectProp);
-  std::vector<std::string> colNames = left.root->colNames();
+  auto* rollUpApply = RollUpApply::make(
+      qctx, left.root, DCHECK_NOTNULL(right.root), std::move(compareProps), collectProp);
+  // Left side input may be nullptr, which will be filled in later
+  std::vector<std::string> colNames = left.root != nullptr ? left.root->colNames() : inputColNames;
   colNames.emplace_back(collectCol);
   rollUpApply->setColNames(std::move(colNames));
   newPlan.root = rollUpApply;
+  // The tail of subplan will be left most RollUpApply
+  newPlan.tail = (newPlan.tail == nullptr ? rollUpApply : newPlan.tail);
   return newPlan;
 }
 
 SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, bool copyColNames) {
   SubPlan newPlan = left;
   DCHECK(left.root->isSingleInput());
-  auto* mutableLeft = const_cast<PlanNode*>(left.tail);
-  auto* siLeft = static_cast<SingleInputNode*>(mutableLeft);
-  siLeft->dependsOn(const_cast<PlanNode*>(right.root));
-  siLeft->setInputVar(right.root->outputVar());
-  if (copyColNames) {
-    siLeft->setColNames(right.root->colNames());
-  } else if (siLeft->kind() == PlanNode::Kind::kUnwind) {
-    // An unwind bypass all aliases, so merge the columns here
-    auto colNames = right.root->colNames();
-    colNames.insert(colNames.end(), siLeft->colNames().begin(), siLeft->colNames().end());
-    siLeft->setColNames(std::move(colNames));
+  if (left.tail->isSingleInput()) {
+    auto* mutableLeft = const_cast<PlanNode*>(left.tail);
+    auto* siLeft = static_cast<SingleInputNode*>(mutableLeft);
+    siLeft->dependsOn(const_cast<PlanNode*>(right.root));
+    siLeft->setInputVar(right.root->outputVar());
+    if (copyColNames) {
+      siLeft->setColNames(right.root->colNames());
+    } else if (siLeft->kind() == PlanNode::Kind::kUnwind) {
+      // An unwind bypass all aliases, so merge the columns here
+      auto colNames = right.root->colNames();
+      colNames.insert(colNames.end(), siLeft->colNames().begin(), siLeft->colNames().end());
+      siLeft->setColNames(std::move(colNames));
+    }
+  } else if (left.tail->isBiInput()) {
+    auto* mutableLeft = const_cast<PlanNode*>(left.tail);
+    auto* siLeft = static_cast<BinaryInputNode*>(mutableLeft);
+    siLeft->setLeftDep(const_cast<PlanNode*>(right.root));
+    siLeft->setLeftVar(right.root->outputVar());
+  } else {
+    DLOG(FATAL) << "Unsupported plan node: " << left.tail->kind();
+    return newPlan;
   }
-
   newPlan.tail = right.tail;
   return newPlan;
 }

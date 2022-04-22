@@ -24,6 +24,7 @@ nebula_add_library(
     match/LabelIndexSeek.cpp
     match/ScanSeek.cpp
     match/ArgumentFinder.cpp
+    match/MatchPathPlanner.cpp
     ngql/PathPlanner.cpp
     ngql/GoPlanner.cpp
     ngql/SubgraphPlanner.cpp
