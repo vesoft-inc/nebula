@@ -346,6 +346,21 @@ Feature: Variable length Pattern match (m to n)
       RETURN p
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `e'
+    When executing query:
+      """
+      Match (a:player{name:"Tim Duncan"})-[e:like*]-(b) return b
+      """
+    Then a SemanticError should be raised at runtime: Maximum hop for variable length relationship must be set
+    When executing query:
+      """
+      Match (a:player{name:"Tim Duncan"})-[e:like*]->(b) return b
+      """
+    Then a SemanticError should be raised at runtime: Maximum hop for variable length relationship must be set
+    When executing query:
+      """
+      Match (a:player{name:"Tim Duncan"})<-[e:like*]-(b) return b
+      """
+    Then a SemanticError should be raised at runtime: Maximum hop for variable length relationship must be set
 
   Scenario: Over expand end
     When executing query:

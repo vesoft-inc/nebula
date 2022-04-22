@@ -467,6 +467,9 @@ Status MatchValidator::validateAliases(
 Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   auto min = range->min();
   auto max = range->max();
+  if (max == std::numeric_limits<size_t>::max()) {
+    return Status::SemanticError("Maximum hop for variable length relationship must be set");
+  }
   if (min > max) {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
