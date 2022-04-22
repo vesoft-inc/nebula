@@ -181,9 +181,10 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestRelationalExpression) {
   e->accept(&visitor);
 
   GroupSuite expect;
-  // expect.groupKeys.push_back(left);
-  // expect.groupItems.push_back(left);
-  expect.groupItems.push_back(right);
+  expect.groupKeys.push_back(e1);
+  expect.groupItems.push_back(e1);
+  expect.groupItems.push_back(e2);
+  expect.groupItems.push_back(e3);
 
   ASSERT_EQ(true, check(visitor.groupSuite(), expect));
 }
