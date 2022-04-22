@@ -16,6 +16,10 @@ class GC {
  public:
   static GC& instance();
 
+  ~GC() {
+    workers_.stop();
+  }
+
   void clear(std::vector<Result>&& garbage);
 
  private:
