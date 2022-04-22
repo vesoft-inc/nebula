@@ -152,36 +152,18 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
   const auto& partEdges = req.get_parts();
   const auto& propNames = req.get_prop_names();
-  for (auto& part : partEdges) {
-    IndexCountWrapper wrapper(env_);
-    std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
+  for (const auto& part : partEdges) {
     auto partId = part.first;
-    const auto& newEdges = part.second;
-    std::vector<EMLI> dummyLock;
-    dummyLock.reserve(newEdges.size());
+    const auto& edges = part.second;
+    // cache edgeKey
+    std::unordered_set<std::string> visited;
+    visited.reserve(edges.size());
+    std::vector<kvstore::KV> kvs;
+    kvs.reserve(edges.size());
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
-
-    deleteDupEdge(const_cast<std::vector<cpp2::NewEdge>&>(newEdges));
-    for (auto& newEdge : newEdges) {
-      auto edgeKey = *newEdge.key_ref();
-      auto l = std::make_tuple(spaceId_,
-                               partId,
-                               edgeKey.src_ref()->getStr(),
-                               *edgeKey.edge_type_ref(),
-                               *edgeKey.ranking_ref(),
-                               edgeKey.dst_ref()->getStr());
-      if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
-        if (!env_->edgesML_->try_lock(l)) {
-          LOG(ERROR) << folly::sformat("edge locked : src {}, type {}, rank {}, dst {}",
-                                       edgeKey.src_ref()->getStr(),
-                                       *edgeKey.edge_type_ref(),
-                                       *edgeKey.ranking_ref(),
-                                       edgeKey.dst_ref()->getStr());
-          code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-          break;
-        }
-        dummyLock.emplace_back(std::move(l));
-      }
+    deleteDupEdge(const_cast<std::vector<cpp2::NewEdge>&>(edges));
+    for (const auto& edge : edges) {
+      auto edgeKey = *edge.key_ref();
       VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
               << ", EdgeType: " << *edgeKey.edge_type_ref()
               << ", EdgeRanking: " << *edgeKey.ranking_ref()
@@ -191,8 +173,16 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                   << ", dstVid: " << *edgeKey.dst_ref();
+                   << ", dstVid: " << *edgeKey.dst_ref() << ", ifNotExists_: " << std::boolalpha
+                   << ifNotExists_;
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
+        break;
+      }
+
+      auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
+      if (!schema) {
+        LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
+        code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         break;
       }
 
@@ -201,247 +191,154 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                          edgeKey.src_ref()->getStr(),
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
-                                         edgeKey.dst_ref()->getStr());
-      auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
-      if (!schema) {
-        LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
-        code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-        break;
+                                         (*edgeKey.dst_ref()).getStr());
+      if (ifNotExists_ && !visited.emplace(key).second) {
+        LOG(INFO) << "skip " << edgeKey.src_ref()->getStr();
+        continue;
       }
 
-      auto props = newEdge.get_props();
-      WriteResult wRet;
-      auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
-      if (!retEnc.ok()) {
-        LOG(ERROR) << retEnc.status();
-        code = writeResultTo(wRet, true);
+      // collect values
+      WriteResult writeResult;
+      const auto& props = edge.get_props();
+      auto encode = encodeRowVal(schema.get(), propNames, props, writeResult);
+      if (!encode.ok()) {
+        LOG(ERROR) << encode.status();
+        code = writeResultTo(writeResult, true);
         break;
       }
-      if (*edgeKey.edge_type_ref() > 0) {
-        std::string oldVal;
-        RowReaderWrapper nReader;
-        RowReaderWrapper oReader;
-        if (!ignoreExistedIndex_) {
-          auto obsIdx = findOldValue(partId, key);
-          if (nebula::ok(obsIdx)) {
-            // already exists in kvstore
-            if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
-              continue;
-            }
-            if (!nebula::value(obsIdx).empty()) {
-              oldVal = std::move(value(obsIdx));
-              oReader = RowReaderWrapper::getEdgePropReader(
-                  env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), oldVal);
-            }
-          } else {
-            code = nebula::error(obsIdx);
-            break;
-          }
-        }
-        if (!retEnc.value().empty()) {
-          nReader = RowReaderWrapper::getEdgePropReader(
-              env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), retEnc.value());
-        }
-        for (auto& index : indexes_) {
-          if (*edgeKey.edge_type_ref() == index->get_schema_id().get_edge_type()) {
-            /*
-             * step 1 , Delete old version index if exists.
-             */
-            if (oReader != nullptr) {
-              auto ois = indexKeys(partId, oReader.get(), key, index, schema.get());
-              if (!ois.empty()) {
-                // Check the index is building for the specified partition or not.
-                auto indexState = env_->getIndexState(spaceId_, partId);
-                if (env_->checkRebuilding(indexState)) {
-                  auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                  for (auto& oi : ois) {
-                    batchHolder->put(std::string(delOpKey), std::move(oi));
-                  }
-                } else if (env_->checkIndexLocked(indexState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-                  break;
-                } else {
-                  for (auto& oi : ois) {
-                    batchHolder->remove(std::move(oi));
-                  }
-                }
-              }
-            }
-            /*
-             * step 2 , Insert new edge index
-             */
-            if (nReader != nullptr) {
-              auto niks = indexKeys(partId, nReader.get(), key, index, schema.get());
-              if (!niks.empty()) {
-                auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
-                auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-                // Check the index is building for the specified partition or not.
-                auto indexState = env_->getIndexState(spaceId_, partId);
-                if (env_->checkRebuilding(indexState)) {
-                  for (auto& nik : niks) {
-                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-                    batchHolder->put(std::move(opKey), std::string(niv));
-                  }
-                } else if (env_->checkIndexLocked(indexState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-                  break;
-                } else {
-                  for (auto& nik : niks) {
-                    batchHolder->put(std::move(nik), std::string(niv));
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        break;
-      }
-      batchHolder->put(std::move(key), std::move(retEnc.value()));
-      stats::StatsManager::addValue(kNumEdgesInserted);
+      kvs.emplace_back(std::move(key), std::move(encode.value()));
     }
+
+    auto atomicOp =
+        [partId, data = std::move(kvs), this]() mutable -> kvstore::MergeableAtomicOpResult {
+      return addEdgesWithIndex(partId, std::move(data));
+    };
+
+    auto cb = [partId, this](nebula::cpp2::ErrorCode ec) { handleAsync(spaceId_, partId, ec); };
+
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      env_->edgesML_->unlockBatch(dummyLock);
       handleAsync(spaceId_, partId, code);
-      continue;
+    } else {
+      env_->kvstore_->asyncAtomicOp(spaceId_, partId, std::move(atomicOp), std::move(cb));
     }
-    if (consistOp_) {
-      (*consistOp_)(*batchHolder, nullptr);
-    }
-    auto batch = encodeBatchValue(batchHolder->getBatch());
-    DCHECK(!batch.empty());
-    nebula::MemoryLockGuard<EMLI> lg(env_->edgesML_.get(), std::move(dummyLock), false, false);
-    env_->kvstore_->asyncAppendBatch(spaceId_,
-                                     partId,
-                                     std::move(batch),
-                                     [l = std::move(lg), icw = std::move(wrapper), partId, this](
-                                         nebula::cpp2::ErrorCode retCode) {
-                                       UNUSED(l);
-                                       UNUSED(icw);
-                                       handleAsync(spaceId_, partId, retCode);
-                                     });
   }
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
-    PartitionID partId, const std::vector<kvstore::KV>& edges) {
+kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
+    PartitionID partId, std::vector<kvstore::KV>&& data) {
+  kvstore::MergeableAtomicOpResult ret;
+  ret.code = nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED;
   IndexCountWrapper wrapper(env_);
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
-
-  /*
-   * Define the map newEdges to avoid inserting duplicate edge.
-   * This map means :
-   * map<edge_unique_key, prop_value> ,
-   * -- edge_unique_key is only used as the unique key , for example:
-   * insert below edges in the same request:
-   *     kv(part1_src1_edgeType1_rank1_dst1 , v1)
-   *     kv(part1_src1_edgeType1_rank1_dst1 , v2)
-   *     kv(part1_src1_edgeType1_rank1_dst1 , v3)
-   *     kv(part1_src1_edgeType1_rank1_dst1 , v4)
-   *
-   * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
-   */
-  std::unordered_map<std::string, std::string> newEdges;
-  std::for_each(
-      edges.begin(), edges.end(), [&newEdges](const auto& e) { newEdges[e.first] = e.second; });
-
-  for (auto& e : newEdges) {
-    std::string val;
-    RowReaderWrapper oReader;
-    RowReaderWrapper nReader;
-    auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, e.first);
+  for (auto& [key, value] : data) {
+    auto edgeType = NebulaKeyUtils::getEdgeType(spaceVidLen_, key);
+    RowReaderWrapper oldReader;
+    RowReaderWrapper newReader =
+        RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, std::abs(edgeType), value);
     auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
     if (!schema) {
-      LOG(ERROR) << "Space " << spaceId_ << ", Edge " << edgeType << " invalid";
-      return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+      return ret;
     }
-    for (auto& index : indexes_) {
-      if (edgeType == index->get_schema_id().get_edge_type()) {
-        /*
-         * step 1 , Delete old version index if exists.
-         */
-        if (!ignoreExistedIndex_ && val.empty()) {
-          auto obsIdx = findOldValue(partId, e.first);
-          if (!nebula::ok(obsIdx)) {
-            return nebula::error(obsIdx);
-          }
-          val = std::move(nebula::value(obsIdx));
-          if (!val.empty()) {
-            oReader =
-                RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, edgeType, val);
-            if (oReader == nullptr) {
-              LOG(ERROR) << "Bad format row";
-              return nebula::cpp2::ErrorCode::E_INVALID_DATA;
-            }
-          }
-        }
 
-        if (!val.empty()) {
-          auto ois = indexKeys(partId, oReader.get(), e.first, index, schema.get());
-          if (!ois.empty()) {
-            // Check the index is building for the specified partition or not.
-            auto indexState = env_->getIndexState(spaceId_, partId);
-            if (env_->checkRebuilding(indexState)) {
-              auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-              for (auto& oi : ois) {
-                batchHolder->put(std::string(deleteOpKey), std::move(oi));
+    // only out-edge need to handle index
+    if (edgeType > 0) {
+      std::string oldVal;
+      if (!ignoreExistedIndex_) {
+        // read the old key value and initialize row reader if exists
+        auto result = findOldValue(partId, key);
+        if (nebula::ok(result)) {
+          if (ifNotExists_ && !nebula::value(result).empty()) {
+            continue;
+          } else if (!nebula::value(result).empty()) {
+            oldVal = std::move(nebula::value(result));
+            oldReader =
+                RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, edgeType, oldVal);
+            ret.readSet.emplace_back(key);
+          }
+        } else {
+          // read old value failed
+          return ret;
+        }
+      }
+      for (const auto& index : indexes_) {
+        if (edgeType == index->get_schema_id().get_edge_type()) {
+          // step 1, Delete old version index if exists.
+          if (oldReader != nullptr) {
+            auto oldIndexKeys = indexKeys(partId, oldReader.get(), key, index, nullptr);
+            if (!oldIndexKeys.empty()) {
+              ret.writeSet.insert(ret.writeSet.end(), oldIndexKeys.begin(), oldIndexKeys.end());
+              // Check the index is building for the specified partition or
+              // not.
+              auto indexState = env_->getIndexState(spaceId_, partId);
+              if (env_->checkRebuilding(indexState)) {
+                auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                for (auto& idxKey : oldIndexKeys) {
+                  ret.writeSet.push_back(idxKey);
+                  batchHolder->put(std::string(delOpKey), std::move(idxKey));
+                }
+              } else if (env_->checkIndexLocked(indexState)) {
+                return ret;
+              } else {
+                for (auto& idxKey : oldIndexKeys) {
+                  ret.writeSet.push_back(idxKey);
+                  batchHolder->remove(std::move(idxKey));
+                }
               }
-            } else if (env_->checkIndexLocked(indexState)) {
-              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-            } else {
-              for (auto& oi : ois) {
-                batchHolder->remove(std::move(oi));
+            }
+          }
+
+          // step 2, Insert new edge index
+          if (newReader != nullptr) {
+            auto newIndexKeys = indexKeys(partId, newReader.get(), key, index, nullptr);
+            if (!newIndexKeys.empty()) {
+              // check if index has ttl field, write it to index value if exists
+              auto field = CommonUtils::ttlValue(schema.get(), newReader.get());
+              auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
+              auto indexState = env_->getIndexState(spaceId_, partId);
+              if (env_->checkRebuilding(indexState)) {
+                for (auto& idxKey : newIndexKeys) {
+                  auto opKey = OperationKeyUtils::modifyOperationKey(partId, idxKey);
+                  ret.writeSet.push_back(opKey);
+                  batchHolder->put(std::move(opKey), std::string(indexVal));
+                }
+              } else if (env_->checkIndexLocked(indexState)) {
+                // return folly::Optional<std::string>();
+                return ret;
+              } else {
+                for (auto& idxKey : newIndexKeys) {
+                  ret.writeSet.push_back(idxKey);
+                  batchHolder->put(std::move(idxKey), std::string(indexVal));
+                }
               }
-            }
-          }
-        }
-
-        /*
-         * step 2 , Insert new edge index
-         */
-        if (nReader == nullptr) {
-          nReader =
-              RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, edgeType, e.second);
-          if (nReader == nullptr) {
-            LOG(ERROR) << "Bad format row";
-            return nebula::cpp2::ErrorCode::E_INVALID_DATA;
-          }
-        }
-
-        auto niks = indexKeys(partId, nReader.get(), e.first, index, schema.get());
-        if (!niks.empty()) {
-          auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
-          auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-          // Check the index is building for the specified partition or not.
-          auto indexState = env_->getIndexState(spaceId_, partId);
-          if (env_->checkRebuilding(indexState)) {
-            for (auto& nik : niks) {
-              auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-              batchHolder->put(std::move(modifyOpKey), std::string(niv));
-            }
-          } else if (env_->checkIndexLocked(indexState)) {
-            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-            return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-          } else {
-            for (auto& nik : niks) {
-              batchHolder->put(std::move(nik), std::string(niv));
             }
           }
         }
       }
     }
-    /*
-     * step 3 , Insert new edge data
-     */
-    auto key = e.first;
-    auto prop = e.second;
-    batchHolder->put(std::move(key), std::move(prop));
+    // step 3, Insert new edge data
+    ret.writeSet.push_back(key);
+    // for why use a copy not move here:
+    // previously, we use atomicOp(a kind of raft log, raft send this log in sync)
+    //             this import an implicit constraint
+    //             that all atomicOp will execute only once
+    //             (because all atomicOp may fail or succeed, won't retry)
+    // but in mergeable mode of atomic:
+    //             an atomicOp may fail because of conflict
+    //             then it will retry after the prev batch commit
+    //             this mean now atomicOp may execute twice
+    //             (won't be more than twice)
+    //             but if we move the key out,
+    //             then the second run will core.
+    batchHolder->put(std::string(key), std::string(value));
   }
-  return encodeBatchValue(batchHolder->getBatch());
+
+  if (consistOp_) {
+    (*consistOp_)(*batchHolder, nullptr);
+  }
+
+  ret.code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  ret.batch = encodeBatchValue(batchHolder->getBatch());
+  return ret;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::findOldValue(
