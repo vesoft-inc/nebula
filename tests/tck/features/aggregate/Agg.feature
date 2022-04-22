@@ -522,6 +522,13 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in order, with relax comparison:
       | {name:m.player.name,start:collect({name:e.player.age})}                                                                                                                       |
       | {name: "Tim Duncan", start: [{name: 34}, {name: 47}, {name: 32}, {name: 33}, {name: 36}, {name: 36}, {name: 32}, {name: 29}, {name: 31}, {name: 41}, {name: 41}, {name: 36}]} |
+    When executing query:
+      """
+      match (v:player{name:"Tim Duncan"})--(n:team) return [n in collect(v.player.age) where n>40| n]
+      """
+    Then the result should be, in order, with relax comparison:
+      | [n IN collect(v.player.age) WHERE (n>40) | n] |
+      | [42]                                          |
 
   Scenario: Empty input
     When executing query:
