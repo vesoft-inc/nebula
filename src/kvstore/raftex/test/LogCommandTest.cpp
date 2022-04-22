@@ -48,8 +48,7 @@ TEST_F(LogCommandTest, CommandInMiddle) {
   leader_->sendCommandAsync("Command Log Message");
   msgs.emplace_back("Command Log Message");
 
-  bool waitLastLog = true;
-  appendLogs(6, 9, leader_, msgs, waitLastLog);
+  appendLogs(6, 9, leader_, msgs, true);
   LOG(INFO) << "<===== Finish appending logs";
 
   ASSERT_EQ(3, leader_->commitTimes_);
@@ -98,43 +97,16 @@ TEST_F(LogCommandTest, MixedLogs) {
   leader_->sendCommandAsync("Command log 1");
   msgs.emplace_back("Command log 1");
 
-  kvstore::MergeableAtomicOp op1 = []() {
-    kvstore::MergeableAtomicOpResult ret;
-    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-    auto optStr = test::compareAndSet("TCAS Log Message 2");
-    if (optStr) {
-      ret.batch = *optStr;
-    }
-    return ret;
-  };
-  leader_->atomicOpAsync(std::move(op1));
+  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message 2"); });
   msgs.emplace_back("CAS Log Message 2");
 
   leader_->appendAsync(0, "Normal log Message 3");
   msgs.emplace_back("Normal log Message 3");
 
-  kvstore::MergeableAtomicOp op2 = []() {
-    kvstore::MergeableAtomicOpResult ret;
-    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-    auto optStr = test::compareAndSet("TCAS Log Message 4");
-    if (optStr) {
-      ret.batch = *optStr;
-    }
-    return ret;
-  };
-  leader_->atomicOpAsync(std::move(op2));
+  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message 4"); });
   msgs.emplace_back("CAS Log Message 4");
 
-  kvstore::MergeableAtomicOp op3 = []() {
-    kvstore::MergeableAtomicOpResult ret;
-    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-    auto optStr = test::compareAndSet("TCAS Log Message 5");
-    if (optStr) {
-      ret.batch = *optStr;
-    }
-    return ret;
-  };
-  leader_->atomicOpAsync(std::move(op3));
+  leader_->atomicOpAsync([]() { return test::compareAndSet("TCAS Log Message 5"); });
   msgs.emplace_back("CAS Log Message 5");
 
   leader_->sendCommandAsync("Command log 6");
@@ -146,16 +118,7 @@ TEST_F(LogCommandTest, MixedLogs) {
   leader_->appendAsync(0, "Normal log Message 8");
   msgs.emplace_back("Normal log Message 8");
 
-  kvstore::MergeableAtomicOp op4 = []() {
-    kvstore::MergeableAtomicOpResult ret;
-    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-    auto optStr = test::compareAndSet("FCAS Log Message");
-    if (optStr) {
-      ret.batch = *optStr;
-    }
-    return ret;
-  };
-  leader_->atomicOpAsync(std::move(op4));
+  leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
 
   leader_->sendCommandAsync("Command log 9");
   msgs.emplace_back("Command log 9");
@@ -163,23 +126,12 @@ TEST_F(LogCommandTest, MixedLogs) {
   auto f = leader_->appendAsync(0, "Normal log Message 10");
   msgs.emplace_back("Normal log Message 10");
 
-  kvstore::MergeableAtomicOp op5 = []() {
-    kvstore::MergeableAtomicOpResult ret;
-    ret.code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-    auto optStr = test::compareAndSet("FCAS Log Message");
-    if (optStr) {
-      ret.batch = *optStr;
-    }
-    return ret;
-  };
-  leader_->atomicOpAsync(std::move(op5));
-  // leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
+  leader_->atomicOpAsync([]() { return test::compareAndSet("FCAS Log Message"); });
 
   f.wait();
   LOG(INFO) << "<===== Finish appending logs";
 
-  // previous is 8
-  ASSERT_EQ(5, leader_->commitTimes_);
+  ASSERT_EQ(8, leader_->commitTimes_);
   checkConsensus(copies_, 0, 9, msgs);
 }
 

@@ -27,6 +27,10 @@ class RebuildIndexTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
     LOG(INFO) << "SetUp RebuildIndexTest TestCase";
+    rootPath_ = std::make_unique<fs::TempDir>("/tmp/RebuildIndexTest.XXXXXX");
+    cluster_ = std::make_unique<nebula::mock::MockCluster>();
+    cluster_->initStorageKV(rootPath_->path());
+    env_ = cluster_->storageEnv_.get();
     manager_ = AdminTaskManager::instance();
     manager_->init();
   }
@@ -34,19 +38,13 @@ class RebuildIndexTest : public ::testing::Test {
   static void TearDownTestCase() {
     LOG(INFO) << "TearDown RebuildIndexTest TestCase";
     manager_->shutdown();
-  }
-
-  void SetUp() override {
-    rootPath_ = std::make_unique<fs::TempDir>("/tmp/RebuildIndexTest.XXXXXX");
-    cluster_ = std::make_unique<nebula::mock::MockCluster>();
-    cluster_->initStorageKV(rootPath_->path());
-    env_ = cluster_->storageEnv_.get();
-  }
-
-  void TearDown() override {
     cluster_.reset();
     rootPath_.reset();
   }
+
+  void SetUp() override {}
+
+  void TearDown() override {}
 
   static StorageEnv* env_;
   static AdminTaskManager* manager_;
@@ -93,7 +91,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the data count
@@ -179,7 +177,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the data count
@@ -279,7 +277,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   LOG(INFO) << "Check rebuild tag index...";
@@ -339,7 +337,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   LOG(INFO) << "Check rebuild tag index...";
@@ -351,11 +349,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
 
   RebuildIndexTest::env_->rebuildIndexGuard_->clear();
   writer->stop();
-
-  for (int i = 1; i <= 5; ++i) {
-    LOG(INFO) << "sleep for " << i << "s";
-    sleep(1);
-  }
+  sleep(1);
 }
 
 TEST_F(RebuildIndexTest, RebuildTagIndex) {
@@ -387,8 +381,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
 
   // Wait for the task finished
   do {
-    // usleep(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the result
@@ -400,10 +393,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   }
 
   RebuildIndexTest::env_->rebuildIndexGuard_->clear();
-  for (int i = 1; i <= 5; ++i) {
-    LOG(INFO) << "sleep for " << i << "s";
-    sleep(1);
-  }
+  sleep(1);
 }
 
 TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
@@ -448,8 +438,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
 
   // Wait for the task finished
   do {
-    // usleep(50);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the result
@@ -465,11 +454,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
 
   RebuildIndexTest::env_->rebuildIndexGuard_->clear();
   writer->stop();
-  // sleep(1);
-  for (int i = 1; i <= 5; ++i) {
-    LOG(INFO) << "sleep for " << i << "s";
-    sleep(1);
-  }
+  sleep(1);
 }
 
 TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
@@ -512,7 +497,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the result
@@ -526,10 +511,6 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   RebuildIndexTest::env_->rebuildIndexGuard_->clear();
   writer->stop();
   sleep(1);
-  for (int i = 1; i <= 5; ++i) {
-    LOG(INFO) << "sleep for " << i << "s";
-    sleep(1);
-  }
 }
 
 TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
@@ -560,7 +541,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
 
   // Wait for the task finished
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    usleep(50);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   // Check the result
@@ -569,10 +550,6 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
     std::string value;
     auto code = RebuildIndexTest::env_->kvstore_->get(1, key.first, key.second, &value);
     EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-  }
-  for (int i = 1; i <= 5; ++i) {
-    LOG(INFO) << "sleep for " << i << "s";
-    sleep(1);
   }
 }
 

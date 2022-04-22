@@ -918,7 +918,7 @@ void NebulaStore::asyncRemoveRange(GraphSpaceID spaceId,
 
 void NebulaStore::asyncAtomicOp(GraphSpaceID spaceId,
                                 PartitionID partId,
-                                MergeableAtomicOp op,
+                                raftex::AtomicOp op,
                                 KVCallback cb) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {

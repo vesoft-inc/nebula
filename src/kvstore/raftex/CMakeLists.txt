@@ -5,7 +5,6 @@ nebula_add_library(
     RaftexService.cpp
     Host.cpp
     SnapshotManager.cpp
-    ../LogEncoder.cpp
 )
 
 nebula_add_subdirectory(test)

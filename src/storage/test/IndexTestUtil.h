@@ -236,14 +236,10 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     }
   }
 
-  void asyncAtomicOp(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     ::nebula::kvstore::MergeableAtomicOp op,
-                     ::nebula::kvstore::KVCallback cb) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(cb);
-    UNUSED(op);
+  void asyncAtomicOp(GraphSpaceID,
+                     PartitionID,
+                     raftex::AtomicOp,
+                     ::nebula::kvstore::KVCallback) override {
     LOG(FATAL) << "Unexpect";
   }
   void asyncAppendBatch(GraphSpaceID,
@@ -340,7 +336,6 @@ class MockIndexNode : public IndexNode {
   }
   std::unique_ptr<IndexNode> copy() override {
     LOG(FATAL) << "Unexpect";
-    return nullptr;
   }
   std::function<Result()> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;

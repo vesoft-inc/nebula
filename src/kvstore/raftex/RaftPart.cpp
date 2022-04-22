@@ -50,81 +50,92 @@ using nebula::wal::FileBasedWalPolicy;
 
 using OpProcessor = folly::Function<std::optional<std::string>(AtomicOp op)>;
 
-/**
- * @brief code to describle if a log can be merged with others
- *  NO_MERGE: can't merge with any other
- *  MERGE_NEXT: can't previous logs, can merge with next. (has to be head)
- *  MERGE_PREV: can merge with previous, can't merge any more.  (has to be tail)
- *  MERGE_BOTH: can merge with any other
- *
- *  Normal / heartbeat will always be MERGE_BOTH
- *  Command will alwayse be MERGE_PREV
- *  ATOMIC_OP can be either MERGE_NEXT or MERGE_BOTH
- *                          depends on if it read a key in write set.
- *  no log type will judge as NO_MERGE
- */
-
-enum class MergeAbleCode {
-  NO_MERGE = 0,
-  MERGE_NEXT = 1,
-  MERGE_PREV = 2,
-  MERGE_BOTH = 3,
-};
-
-/**
- * @brief this is an Iterator deal with memory lock.
- */
 class AppendLogsIterator final : public LogIterator {
  public:
-  AppendLogsIterator(LogID firstLogId, TermID termId, RaftPart::LogCache logs)
-      : firstLogId_(firstLogId), termId_(termId), logId_(firstLogId), logs_(std::move(logs)) {}
+  AppendLogsIterator(LogID firstLogId, TermID termId, RaftPart::LogCache logs, OpProcessor opCB)
+      : firstLogId_(firstLogId),
+        termId_(termId),
+        logId_(firstLogId),
+        logs_(std::move(logs)),
+        opCB_(std::move(opCB)) {
+    leadByAtomicOp_ = processAtomicOp();
+    valid_ = idx_ < logs_.size();
+    hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
+    if (valid_) {
+      currLogType_ = lastLogType_ = logType();
+    }
+  }
+
   AppendLogsIterator(const AppendLogsIterator&) = delete;
   AppendLogsIterator(AppendLogsIterator&&) = default;
 
   AppendLogsIterator& operator=(const AppendLogsIterator&) = delete;
   AppendLogsIterator& operator=(AppendLogsIterator&&) = default;
 
-  ~AppendLogsIterator() {
-    if (!logs_.empty()) {
-      size_t notFulfilledPromise = 0;
-      for (auto& log : logs_) {
-        auto& promiseRef = std::get<4>(log);
-        if (!promiseRef.isFulfilled()) {
-          ++notFulfilledPromise;
-        }
-      }
-      if (notFulfilledPromise > 0) {
-        LOG(FATAL) << "notFulfilledPromise == " << notFulfilledPromise;
-      }
-    }
+  bool leadByAtomicOp() const {
+    return leadByAtomicOp_;
   }
 
-  void commit(nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto it = logs_.begin(); it != logs_.end(); ++it) {
-      auto& promiseRef = std::get<4>(*it);
-      if (!promiseRef.isFulfilled()) {
-        DCHECK(!promiseRef.isFulfilled());
-        promiseRef.setValue(code);
+  bool hasNonAtomicOpLogs() const {
+    return hasNonAtomicOpLogs_;
+  }
+
+  LogID firstLogId() const {
+    return firstLogId_;
+  }
+
+  LogID lastLogId() const {
+    return firstLogId_ + logs_.size() - 1;
+  }
+
+  // Return true if the current log is a AtomicOp, otherwise return false
+  bool processAtomicOp() {
+    while (idx_ < logs_.size()) {
+      auto& tup = logs_.at(idx_);
+      auto logType = std::get<1>(tup);
+      if (logType != LogType::ATOMIC_OP) {
+        // Not a AtomicOp
+        return false;
+      }
+
+      // Process AtomicOp log
+      CHECK(!!opCB_);
+      opResult_ = opCB_(std::move(std::get<3>(tup)));
+      if (opResult_.has_value()) {
+        // AtomicOp Succeeded
+        return true;
+      } else {
+        // AtomicOp failed, move to the next log, but do not increment the
+        // logId_
+        ++idx_;
       }
     }
+
+    // Reached the end
+    return false;
   }
 
   LogIterator& operator++() override {
     ++idx_;
     ++logId_;
+    if (idx_ < logs_.size()) {
+      currLogType_ = logType();
+      valid_ = currLogType_ != LogType::ATOMIC_OP;
+      if (valid_) {
+        hasNonAtomicOpLogs_ = true;
+      }
+      valid_ = valid_ && lastLogType_ != LogType::COMMAND;
+      lastLogType_ = currLogType_;
+    } else {
+      valid_ = false;
+    }
     return *this;
   }
 
+  // The iterator becomes invalid when exhausting the logs
+  // **OR** running into a AtomicOp log
   bool valid() const override {
-    return idx_ < logs_.size();
-  }
-
-  bool empty() const {
-    return logs_.empty();
-  }
-
-  LogID firstLogId() const {
-    return firstLogId_;
+    return valid_;
   }
 
   LogID logId() const override {
@@ -142,7 +153,31 @@ class AppendLogsIterator final : public LogIterator {
   }
 
   folly::StringPiece logMsg() const override {
-    return std::get<2>(logs_.at(idx_));
+    DCHECK(valid());
+    if (currLogType_ == LogType::ATOMIC_OP) {
+      CHECK(opResult_.has_value());
+      return opResult_.value();
+    } else {
+      return std::get<2>(logs_.at(idx_));
+    }
+  }
+
+  // Return true when there is no more log left for processing
+  bool empty() const {
+    return idx_ >= logs_.size();
+  }
+
+  // Resume the iterator so that we can continue to process the remaining logs
+  void resume() {
+    CHECK(!valid_);
+    if (!empty()) {
+      leadByAtomicOp_ = processAtomicOp();
+      valid_ = idx_ < logs_.size();
+      hasNonAtomicOpLogs_ = !leadByAtomicOp_ && valid_;
+      if (valid_) {
+        currLogType_ = lastLogType_ = logType();
+      }
+    }
   }
 
   LogType logType() const {
@@ -151,176 +186,17 @@ class AppendLogsIterator final : public LogIterator {
 
  private:
   size_t idx_{0};
+  bool leadByAtomicOp_{false};
+  bool hasNonAtomicOpLogs_{false};
+  bool valid_{true};
+  LogType lastLogType_{LogType::NORMAL};
+  LogType currLogType_{LogType::NORMAL};
+  std::optional<std::string> opResult_;
   LogID firstLogId_;
   TermID termId_;
   LogID logId_;
   RaftPart::LogCache logs_;
-};
-
-class AppendLogsIteratorFactory {
- public:
-  AppendLogsIteratorFactory() = default;
-  static void make(RaftPart::LogCache& cacheLogs, RaftPart::LogCache& sendLogs) {
-    DCHECK(sendLogs.empty());
-    std::unordered_set<std::string> memLock;
-    std::list<std::pair<std::string, std::string>> ranges;
-    for (auto& log : cacheLogs) {
-      auto code = mergeAble(log, memLock, ranges);
-      if (code == MergeAbleCode::MERGE_BOTH) {
-        sendLogs.emplace_back();
-        std::swap(cacheLogs.front(), sendLogs.back());
-        cacheLogs.pop_front();
-        continue;
-      } else if (code == MergeAbleCode::MERGE_PREV) {
-        sendLogs.emplace_back();
-        std::swap(cacheLogs.front(), sendLogs.back());
-        cacheLogs.pop_front();
-        break;
-      } else if (code == MergeAbleCode::NO_MERGE) {
-        // if we meet some failed atomicOp, we can just skip it.
-        cacheLogs.pop_front();
-        continue;
-      } else {  // MERGE_NEXT
-        break;
-      }
-    }
-  }
-
-  /**
-   * @brief check if a incoming log can be merged with previous logs
-   *
-   * @param logWrapper
-   */
-  static MergeAbleCode mergeAble(RaftPart::LogCacheItem& logWrapper,
-                                 std::unordered_set<std::string>& memLock,
-                                 std::list<std::pair<std::string, std::string>>& ranges) {
-    // log type:
-    switch (std::get<1>(logWrapper)) {
-      case LogType::NORMAL: {
-        std::vector<folly::StringPiece> updateSet;
-        auto& log = std::get<2>(logWrapper);
-        if (log.empty()) {
-          return MergeAbleCode::MERGE_BOTH;
-        }
-        decode(log, updateSet, ranges);
-        for (auto& key : updateSet) {
-          memLock.insert(key.str());
-        }
-        return MergeAbleCode::MERGE_BOTH;
-      }
-      case LogType::COMMAND: {
-        return MergeAbleCode::MERGE_PREV;
-      }
-      case LogType::ATOMIC_OP: {
-        auto& atomOp = std::get<3>(logWrapper);
-        auto [code, result, read, write] = atomOp();
-        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          DLOG(INFO) << "===> OOPs, atomOp failed!!!, code = "
-                     << apache::thrift::util::enumNameSafe(code);
-          auto& promiseRef = std::get<4>(logWrapper);
-          if (!promiseRef.isFulfilled()) {
-            DCHECK(!promiseRef.isFulfilled());
-            promiseRef.setValue(code);
-          }
-          return MergeAbleCode::NO_MERGE;
-        }
-        std::get<2>(logWrapper) = std::move(result);
-        /**
-         * @brief We accept same read/write key in a one log,
-         *        but reject if same in different logs.
-         */
-        for (auto& key : read) {
-          auto cit = memLock.find(key);
-          // read after write is not acceptable.
-          if (cit != memLock.end()) {
-            return MergeAbleCode::MERGE_NEXT;
-          }
-
-          // if we try to read a key, in any range
-          for (auto& it : ranges) {
-            auto* begin = it.first.c_str();
-            auto* end = it.second.c_str();
-            auto* pKey = key.c_str();
-            if ((std::strcmp(begin, pKey) <= 0) && (std::strcmp(pKey, end) <= 0)) {
-              return MergeAbleCode::MERGE_NEXT;
-            }
-          }
-        }
-
-        for (auto& key : write) {
-          // it doesn't matter if insert failed. (if write conflict, last write win)
-          memLock.insert(key);
-        }
-        return MergeAbleCode::MERGE_BOTH;
-      }
-      default:
-        LOG(ERROR) << "should not get here";
-    }
-    return MergeAbleCode::NO_MERGE;
-  }
-
-  static void decode(const std::string& log,
-                     std::vector<folly::StringPiece>& updateSet,
-                     std::list<std::pair<std::string, std::string>>& ranges) {
-    switch (log[sizeof(int64_t)]) {
-      case nebula::kvstore::OP_PUT: {
-        auto pieces = nebula::kvstore::decodeMultiValues(log);
-        updateSet.push_back(pieces[0]);
-        break;
-      }
-      case nebula::kvstore::OP_MULTI_PUT: {
-        auto kvs = nebula::kvstore::decodeMultiValues(log);
-        // Make the number of values are an even number
-        DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
-        for (size_t i = 0; i < kvs.size(); i += 2) {
-          updateSet.push_back(kvs[i]);
-        }
-        break;
-      }
-      case nebula::kvstore::OP_REMOVE: {
-        auto key = nebula::kvstore::decodeSingleValue(log);
-        updateSet.push_back(key);
-        break;
-      }
-      case nebula::kvstore::OP_MULTI_REMOVE: {
-        auto keys = nebula::kvstore::decodeMultiValues(log);
-        for (auto k : keys) {
-          updateSet.push_back(k);
-        }
-        break;
-      }
-      case nebula::kvstore::OP_REMOVE_RANGE: {
-        auto range = nebula::kvstore::decodeMultiValues(log);
-        auto item = std::make_pair(range[0].str(), range[1].str());
-        ranges.emplace_back(std::move(item));
-        break;
-      }
-      case nebula::kvstore::OP_BATCH_WRITE: {
-        auto data = nebula::kvstore::decodeBatchValue(log);
-        for (auto& op : data) {
-          if (op.first == nebula::kvstore::BatchLogType::OP_BATCH_PUT) {
-            updateSet.push_back(op.second.first);
-          } else if (op.first == nebula::kvstore::BatchLogType::OP_BATCH_REMOVE) {
-            updateSet.push_back(op.second.first);
-          } else if (op.first == nebula::kvstore::BatchLogType::OP_BATCH_REMOVE_RANGE) {
-            auto begin = op.second.first;
-            auto end = op.second.second;
-            ranges.emplace_back(std::make_pair(begin, end));
-          }
-        }
-        break;
-      }
-      case nebula::kvstore::OP_ADD_PEER:
-      case nebula::kvstore::OP_ADD_LEARNER:
-      case nebula::kvstore::OP_TRANS_LEADER:
-      case nebula::kvstore::OP_REMOVE_PEER: {
-        break;
-      }
-      default: {
-        VLOG(3) << "Unknown operation: " << static_cast<int32_t>(log[0]);
-      }
-    }
-  }
+  OpProcessor opCB_;
 };
 
 /********************************************************
@@ -371,6 +247,7 @@ RaftPart::RaftPart(
         return this->preProcessLog(logId, logTermId, logClusterId, log);
       },
       diskMan);
+  logs_.reserve(FLAGS_max_batch_size);
   CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
 
@@ -746,7 +623,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendAsync(ClusterID source, s
   return appendLogAsync(source, LogType::NORMAL, std::move(log));
 }
 
-folly::Future<nebula::cpp2::ErrorCode> RaftPart::atomicOpAsync(kvstore::MergeableAtomicOp op) {
+folly::Future<nebula::cpp2::ErrorCode> RaftPart::atomicOpAsync(AtomicOp op) {
   return appendLogAsync(clusterId_, LogType::ATOMIC_OP, "", std::move(op));
 }
 
@@ -757,7 +634,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::sendCommandAsync(std::string lo
 folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source,
                                                                 LogType logType,
                                                                 std::string log,
-                                                                kvstore::MergeableAtomicOp op) {
+                                                                AtomicOp op) {
   if (blocking_) {
     // No need to block heartbeats and empty log.
     if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
@@ -771,7 +648,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   if (bufferOverFlow_) {
     VLOG_EVERY_N(2, 1000)
         << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
-        << "replicatingLogs_ :" << std::boolalpha << replicatingLogs_;
+        << "replicatingLogs_ :" << replicatingLogs_;
     return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
   }
   {
@@ -782,7 +659,7 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
     if (logs_.size() >= FLAGS_max_batch_size) {
       // Buffer is full
       VLOG(2) << idStr_ << "The appendLog buffer is full. Please slow down the log appending rate."
-              << "replicatingLogs_ :" << std::boolalpha << replicatingLogs_;
+              << "replicatingLogs_ :" << replicatingLogs_;
       bufferOverFlow_ = true;
       return nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW;
     }
@@ -791,14 +668,26 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
 
     // Append new logs to the buffer
     DCHECK_GE(source, 0);
-    folly::Promise<nebula::cpp2::ErrorCode> promise;
-    retFuture = promise.getFuture();
-    logs_.emplace_back(source, logType, std::move(log), std::move(op), std::move(promise));
+    logs_.emplace_back(source, logType, std::move(log), std::move(op));
+    switch (logType) {
+      case LogType::ATOMIC_OP:
+        retFuture = cachingPromise_.getSingleFuture();
+        break;
+      case LogType::COMMAND:
+        retFuture = cachingPromise_.getAndRollSharedFuture();
+        break;
+      case LogType::NORMAL:
+        retFuture = cachingPromise_.getSharedFuture();
+        break;
+    }
 
     bool expected = false;
     if (replicatingLogs_.compare_exchange_strong(expected, true)) {
       // We need to send logs to all followers
       VLOG(4) << idStr_ << "Preparing to send AppendLog request";
+      sendingPromise_ = std::move(cachingPromise_);
+      cachingPromise_.reset();
+      std::swap(swappedOutLogs, logs_);
       bufferOverFlow_ = false;
     } else {
       VLOG(4) << idStr_ << "Another AppendLogs request is ongoing, just return";
@@ -821,22 +710,26 @@ folly::Future<nebula::cpp2::ErrorCode> RaftPart::appendLogAsync(ClusterID source
   if (!checkAppendLogResult(res)) {
     // Mosy likely failed because the partition is not leader
     VLOG_EVERY_N(2, 1000) << idStr_ << "Cannot append logs, clean the buffer";
-    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+    return res;
   }
   // Replicate buffered logs to all followers
   // Replication will happen on a separate thread and will block
   // until majority accept the logs, the leadership changes, or
   // the partition stops
-  {
-    std::lock_guard<std::mutex> lck(logsLock_);
-    AppendLogsIteratorFactory::make(logs_, sendingLogs_);
-    bufferOverFlow_ = false;
-    if (sendingLogs_.empty()) {
-      replicatingLogs_ = false;
-      return retFuture;
-    }
-  }
-  AppendLogsIterator it(firstId, termId, std::move(sendingLogs_));
+  VLOG(4) << idStr_ << "Calling appendLogsInternal()";
+  AppendLogsIterator it(
+      firstId,
+      termId,
+      std::move(swappedOutLogs),
+      [this](AtomicOp opCB) -> std::optional<std::string> {
+        CHECK(opCB != nullptr);
+        auto opRet = opCB();
+        if (!opRet.has_value()) {
+          // Failed
+          sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+        }
+        return opRet;
+      });
   appendLogsInternal(std::move(it), termId);
 
   return retFuture;
@@ -848,6 +741,14 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
   TermID prevLogTerm = 0;
   LogID committed = 0;
   LogID lastId = 0;
+  if (iter.valid()) {
+    VLOG(4) << idStr_ << "Ready to append logs from id " << iter.logId() << " (Current term is "
+            << currTerm << ")";
+  } else {
+    VLOG(4) << idStr_ << "Only happened when Atomic op failed";
+    replicatingLogs_ = false;
+    return;
+  }
   nebula::cpp2::ErrorCode res = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     std::lock_guard<std::mutex> g(raftLock_);
@@ -877,7 +778,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
   } while (false);
 
   if (!checkAppendLogResult(res)) {
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
     return;
   }
   // Step 2: Replicate to followers
@@ -910,7 +810,6 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
   if (!checkAppendLogResult(res)) {
     VLOG(3) << idStr_ << "replicateLogs failed because of not leader or term changed";
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
     return;
   }
 
@@ -1008,7 +907,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     }
   }
   if (!checkAppendLogResult(res)) {
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
     return;
   }
 
@@ -1016,6 +914,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     // Majority have succeeded
     VLOG(4) << idStr_ << numSucceeded << " hosts have accepted the logs";
 
+    LogID firstLogId = 0;
     do {
       std::lock_guard<std::mutex> g(raftLock_);
       res = canAppendLogs(currTerm);
@@ -1032,7 +931,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       VLOG(3) << idStr_
               << "processAppendLogResponses failed because of not leader "
                  "or term changed";
-      iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
       return;
     }
 
@@ -1053,6 +951,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
+        firstLogId = lastLogId_ + 1;
         lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
         lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
         if (!commitInThisTerm_) {
@@ -1067,32 +966,56 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
               << lastLogId;
     }
 
-    // at this monment, we have confidence logs should be succeeded replicated
-    LogID firstId = 0;
+    // Step 4: Fulfill the promise
+    if (iter.hasNonAtomicOpLogs()) {
+      sendingPromise_.setOneSharedValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+    }
+    if (iter.leadByAtomicOp()) {
+      sendingPromise_.setOneSingleValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+    }
+    // Step 5: Check whether need to continue
+    // the log replication
     {
       std::lock_guard<std::mutex> lck(logsLock_);
       CHECK(replicatingLogs_);
-      iter.commit();
-      if (logs_.empty()) {
-        // no incoming during log replication
-        replicatingLogs_ = false;
-        VLOG(4) << idStr_ << "No more log to be replicated";
-        return;
-      } else {
-        // we have some new coming logs during replication
-        // need to send them also
-        AppendLogsIteratorFactory::make(logs_, sendingLogs_);
-        bufferOverFlow_ = false;
-        if (sendingLogs_.empty()) {
+      // Continue to process the original AppendLogsIterator if necessary
+      iter.resume();
+      // If no more valid logs to be replicated in iter, create a new one if we
+      // have new log
+      if (iter.empty()) {
+        VLOG(4) << idStr_ << "logs size " << logs_.size();
+        if (logs_.size() > 0) {
+          // continue to replicate the logs
+          sendingPromise_ = std::move(cachingPromise_);
+          cachingPromise_.reset();
+          iter = AppendLogsIterator(firstLogId,
+                                    currTerm,
+                                    std::move(logs_),
+                                    [this](AtomicOp op) -> std::optional<std::string> {
+                                      auto opRet = op();
+                                      if (!opRet.has_value()) {
+                                        // Failed
+                                        sendingPromise_.setOneSingleValue(
+                                            nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED);
+                                      }
+                                      return opRet;
+                                    });
+          logs_.clear();
+          bufferOverFlow_ = false;
+        }
+        // Reset replicatingLogs_ one of the following is true:
+        // 1. old iter is empty && logs_.size() == 0
+        // 2. old iter is empty && logs_.size() > 0, but all logs in new iter is
+        // atomic op,
+        //    and all of them failed, which would make iter is empty again
+        if (iter.empty()) {
           replicatingLogs_ = false;
+          VLOG(4) << idStr_ << "No more log to be replicated";
           return;
         }
-        firstId = lastLogId_ + 1;
       }
     }
-    AppendLogsIterator it(firstId, currTerm, std::move(sendingLogs_));
-    this->appendLogsInternal(std::move(it), currTerm);
-    return;
+    this->appendLogsInternal(std::move(iter), currTerm);
   } else {
     // Not enough hosts accepted the log, re-try
     VLOG_EVERY_N(2, 1000) << idStr_ << "Only " << numSucceeded
@@ -2106,19 +2029,11 @@ bool RaftPart::checkAppendLogResult(nebula::cpp2::ErrorCode res) {
   if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
     {
       std::lock_guard<std::mutex> lck(logsLock_);
-      auto setPromiseForLogs = [&](LogCache& logs) {
-        for (auto& log : logs) {
-          auto& promiseRef = std::get<4>(log);
-          if (!promiseRef.isFulfilled()) {
-            promiseRef.setValue(res);
-          }
-        }
-      };
-      setPromiseForLogs(logs_);
-      setPromiseForLogs(sendingLogs_);
       logs_.clear();
-      sendingLogs_.clear();
+      cachingPromise_.setValue(res);
+      cachingPromise_.reset();
       bufferOverFlow_ = false;
+      sendingPromise_.setValue(res);
       replicatingLogs_ = false;
     }
     return false;

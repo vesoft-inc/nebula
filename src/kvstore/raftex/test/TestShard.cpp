@@ -169,7 +169,6 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
     std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
   UNUSED(wait);
   LogID lastId = kNoCommitLogId;
-  // LOG(INFO) << "TestShard::commitLogs() lastId = " << lastId;
   TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
   while (iter->valid()) {
@@ -207,13 +206,10 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
   }
   VLOG(2) << "TestShard: " << idStr_ << "Committed log "
           << " up to " << lastId;
-  LOG(INFO) << "TestShard: " << idStr_ << "Committed log "
-            << " up to " << lastId;
   if (lastId > -1) {
     lastCommittedLogId_ = lastId;
   }
   if (commitLogsNum > 0) {
-    // LOG(INFO) << "====>> commitTimes_++";
     commitTimes_++;
   }
   return {nebula::cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
