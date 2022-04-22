@@ -46,6 +46,11 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 
   void deleteDupVid(std::vector<cpp2::NewVertex>& vertices);
 
+  kvstore::MergeableAtomicOpResult addVerticesWithIndex(
+      PartitionID partId,
+      std::vector<kvstore::KV>&& data,
+      std::unique_ptr<kvstore::BatchHolder>&& batchHolder);
+
  private:
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;

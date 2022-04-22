@@ -24,16 +24,14 @@ bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
     return false;
   }
 
-  auto* matchClauseCtx = edgeCtx->matchClauseCtx;
   Expression* filter = nullptr;
-  if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
+  if (edgeCtx->bindFilter != nullptr) {
     filter = MatchSolver::makeIndexFilter(
-        edge.types.back(), edge.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx, true);
+        edge.types.back(), edge.alias, edgeCtx->bindFilter, edgeCtx->qctx, true);
   }
   if (filter == nullptr) {
     if (edge.props != nullptr && !edge.props->items().empty()) {
-      filter =
-          MatchSolver::makeIndexFilter(edge.types.back(), edge.props, matchClauseCtx->qctx, true);
+      filter = MatchSolver::makeIndexFilter(edge.types.back(), edge.props, edgeCtx->qctx, true);
     }
   }
 
@@ -51,7 +49,6 @@ bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
 
 StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
   SubPlan plan;
-  auto* matchClauseCtx = edgeCtx->matchClauseCtx;
   DCHECK_EQ(edgeCtx->scanInfo.schemaIds.size(), 1)
       << "Not supported multiple edge properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
@@ -75,10 +72,10 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
       break;
   }
 
-  auto* qctx = matchClauseCtx->qctx;
+  auto* qctx = edgeCtx->qctx;
   auto scan = IndexScan::make(qctx,
                               nullptr,
-                              matchClauseCtx->space.id,
+                              edgeCtx->spaceId,
                               {iqctx},
                               std::move(columns),
                               true,
@@ -125,18 +122,16 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     return false;
   }
 
-  auto* matchClauseCtx = nodeCtx->matchClauseCtx;
   Expression* filterInWhere = nullptr;
   Expression* filterInPattern = nullptr;
-  if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
+  if (nodeCtx->bindFilter != nullptr) {
     filterInWhere = MatchSolver::makeIndexFilter(
-        node.labels.back(), node.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx);
+        node.labels.back(), node.alias, nodeCtx->bindFilter, nodeCtx->qctx);
   }
   if (!node.labelProps.empty()) {
     auto props = node.labelProps.back();
     if (props != nullptr) {
-      filterInPattern =
-          MatchSolver::makeIndexFilter(node.labels.back(), props, matchClauseCtx->qctx);
+      filterInPattern = MatchSolver::makeIndexFilter(node.labels.back(), props, nodeCtx->qctx);
     }
   }
 
@@ -148,8 +143,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
   } else if (!filterInWhere) {
     filter = filterInPattern;
   } else {
-    filter =
-        LogicalExpression::makeAnd(matchClauseCtx->qctx->objPool(), filterInPattern, filterInWhere);
+    filter = LogicalExpression::makeAnd(nodeCtx->qctx->objPool(), filterInPattern, filterInWhere);
   }
 
   nodeCtx->scanInfo.filter = filter;
@@ -161,14 +155,13 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 
 StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
   SubPlan plan;
-  auto* matchClauseCtx = nodeCtx->matchClauseCtx;
   DCHECK_EQ(nodeCtx->scanInfo.schemaIds.size(), 1) << "Not supported multiple tag properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
   iqctx.filter_ref() = Expression::encode(*nodeCtx->scanInfo.filter);
-  auto scan = IndexScan::make(matchClauseCtx->qctx,
+  auto scan = IndexScan::make(nodeCtx->qctx,
                               nullptr,
-                              matchClauseCtx->space.id,
+                              nodeCtx->spaceId,
                               {iqctx},
                               {kVid},
                               false,
@@ -178,7 +171,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
   plan.root = scan;
 
   // initialize start expression in project node
-  auto* pool = matchClauseCtx->qctx->objPool();
+  auto* pool = nodeCtx->qctx->objPool();
   nodeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
   return plan;
 }

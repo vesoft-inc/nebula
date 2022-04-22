@@ -5,7 +5,9 @@
 
 #include "graph/planner/match/WhereClausePlanner.h"
 
+#include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/visitor/RewriteVisitor.h"
 
@@ -22,6 +24,24 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
     auto* newFilter = MatchSolver::doRewrite(wctx->qctx, wctx->aliasesAvailable, wctx->filter);
     wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
     wherePlan.tail = wherePlan.root;
+
+    SubPlan subPlan;
+    // Build plan for pattern from expression
+    for (auto& path : wctx->paths) {
+      auto pathPlan = std::make_unique<MatchPathPlanner>()->transform(
+          wctx->qctx, wctx->space.id, nullptr, wctx->aliasesAvailable, {}, path);
+      NG_RETURN_IF_ERROR(pathPlan);
+      auto pathplan = std::move(pathPlan).value();
+      subPlan = SegmentsConnector::rollUpApply(wctx->qctx,
+                                               subPlan,
+                                               wctx->inputColNames,
+                                               pathplan,
+                                               path.compareVariables,
+                                               path.collectVariable);
+    }
+    if (subPlan.root != nullptr) {
+      wherePlan = SegmentsConnector::addInput(wherePlan, subPlan);
+    }
 
     return wherePlan;
   }
