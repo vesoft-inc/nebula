@@ -15,7 +15,7 @@ GC& GC::instance() {
 
 GC::GC() {
   workers_.start(FLAGS_gc_worker_size, "GC");
-  workers_.addRepeatTask(50, &GC::periodicTask, this);
+  workers_.addRepeatTaskForAll(50, &GC::periodicTask, this);
 }
 
 void GC::clear(std::vector<Result>&& garbage) {

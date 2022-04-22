@@ -113,6 +113,16 @@ class GenericThreadPool final : public boost::noncopyable, public nebula::cpp::N
    */
   void purgeTimerTask(uint64_t id);
 
+  /**
+   * To add a repeated timer task for all workers which will be executed in each period.
+   * @ms      interval in milliseconds
+   * @task    a callable object
+   * @args    variadic arguments
+   * @return  ID of the added task, unique for this worker
+   */
+  template <typename F, typename... Args>
+  void addRepeatTaskForAll(size_t ms, F &&f, Args &&... args);
+
  private:
   size_t nrThreads_{0};
   std::atomic<size_t> nextThread_{0};
@@ -156,6 +166,12 @@ uint64_t GenericThreadPool::addRepeatTask(size_t ms, F &&f, Args &&... args) {
   return ((idx << GenericWorker::TIMER_ID_BITS) | id);
 }
 
+template <typename F, typename... Args>
+void GenericThreadPool::addRepeatTaskForAll(size_t ms, F &&f, Args &&... args) {
+  for (auto idx = 0UL; idx < nrThreads_; ++idx) {
+    pool_[idx]->addRepeatTask(ms, std::forward<F>(f), std::forward<Args>(args)...);
+  }
+}
 }  // namespace thread
 }  // namespace nebula
 
