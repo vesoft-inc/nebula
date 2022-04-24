@@ -20,17 +20,28 @@ void PrunePropertiesVisitor::visit(PlanNode *node) {
 }
 
 void PrunePropertiesVisitor::visit(Filter *node) {
+  visitCurrent(node);  // Filter will use properties in filter expression
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Filter *node) {
   if (node->condition() != nullptr) {
     status_ = extractPropsFromExpr(node->condition());
     if (!status_.ok()) {
       return;
     }
   }
-
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Project *node) {
+  visitCurrent(node);  // Project won't use properties in column expression
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Project *node) {
+  // TODO won't use properties of not-root Project
+  // bool used = used_;
+  used_ = false;
   if (node->columns()) {
     const auto &columns = node->columns()->columns();
     auto &colNames = node->colNames();
@@ -75,11 +86,14 @@ void PrunePropertiesVisitor::visit(Project *node) {
       }
     }
   }
-
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Aggregate *node) {
+  visitCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
   for (auto *groupKey : node->groupKeys()) {
     status_ = extractPropsFromExpr(groupKey);
     if (!status_.ok()) {
@@ -92,10 +106,16 @@ void PrunePropertiesVisitor::visit(Aggregate *node) {
       return;
     }
   }
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Traverse *node) {
+  visitCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Traverse *node) {
+  bool used = used_;
+  used_ = false;
   auto &colNames = node->colNames();
   DCHECK_GE(colNames.size(), 2);
   auto &nodeAlias = colNames[colNames.size() - 2];
@@ -115,6 +135,38 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
     }
   }
 
+  if (used) {
+    // All properties will be used
+    const auto *vertexProps = node->vertexProps();
+    if (vertexProps != nullptr) {
+      for (const auto &vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        auto &props = vertexProp.props_ref().value();
+        for (const auto &prop : props) {
+          propsUsed_.vertexPropsMap[nodeAlias][tagId].emplace(prop);
+        }
+      }
+    }
+    const auto *edgeProps = node->edgeProps();
+    if (edgeProps != nullptr) {
+      for (const auto &edgeProp : *edgeProps) {
+        auto edgeType = edgeProp.type_ref().value();
+        auto &props = edgeProp.props_ref().value();
+        for (const auto &prop : props) {
+          propsUsed_.edgePropsMap[edgeAlias][edgeType].emplace(prop);
+        }
+      }
+    }
+  } else {
+    pruneCurrent(node);
+  }
+}
+
+void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
+  auto &colNames = node->colNames();
+  DCHECK_GE(colNames.size(), 2);
+  auto &nodeAlias = colNames[colNames.size() - 2];
+  auto &edgeAlias = colNames.back();
   auto *vertexProps = node->vertexProps();
   if (propsUsed_.colsSet.find(nodeAlias) == propsUsed_.colsSet.end() && vertexProps != nullptr) {
     auto it2 = propsUsed_.vertexPropsMap.find(nodeAlias);
@@ -125,7 +177,7 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
       auto &usedVertexProps = it2->second;
       if (usedVertexProps.empty()) {
         node->setVertexProps(nullptr);
-        status_ = depsPruneProperties(node->dependencies());
+        // status_ = depsPruneProperties(node->dependencies());
         return;
       }
       prunedVertexProps->reserve(usedVertexProps.size());
@@ -189,19 +241,24 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
     }
     node->setEdgeProps(std::move(prunedEdgeProps));
   }
-
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 // AppendVertices should be deleted when no properties it pulls are used by the parent node.
 void PrunePropertiesVisitor::visit(AppendVertices *node) {
+  visitCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(AppendVertices *node) {
+  bool used = used_;
+  used_ = false;
   auto &colNames = node->colNames();
   DCHECK(!colNames.empty());
   auto &nodeAlias = colNames.back();
   auto it = propsUsed_.colsSet.find(nodeAlias);
   if (it != propsUsed_.colsSet.end()) {  // All properties are used
     // propsUsed_.colsSet.erase(it);
-    status_ = depsPruneProperties(node->dependencies());
+    // status_ = depsPruneProperties(node->dependencies());
     return;
   }
 
@@ -211,6 +268,27 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
       return;
     }
   }
+  if (used) {
+    // All properties will be used
+    auto *vertexProps = node->props();
+    if (vertexProps != nullptr) {
+      for (const auto &vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        auto &props = vertexProp.props_ref().value();
+        for (const auto &prop : props) {
+          propsUsed_.vertexPropsMap[nodeAlias][tagId].emplace(prop);
+        }
+      }
+    }
+  } else {
+    pruneCurrent(node);
+  }
+}
+
+void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
+  auto &colNames = node->colNames();
+  DCHECK(!colNames.empty());
+  auto &nodeAlias = colNames.back();
   auto *vertexProps = node->props();
   if (vertexProps != nullptr) {
     auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
@@ -219,7 +297,7 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
       auto &usedVertexProps = it2->second;
       if (usedVertexProps.empty()) {
         node->markDeleted();
-        status_ = depsPruneProperties(node->dependencies());
+        // status_ = depsPruneProperties(node->dependencies());
         return;
       }
       prunedVertexProps->reserve(usedVertexProps.size());
@@ -243,16 +321,18 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
       }
     } else {
       node->markDeleted();
-      status_ = depsPruneProperties(node->dependencies());
+      // status_ = depsPruneProperties(node->dependencies());
       return;
     }
     node->setVertexProps(std::move(prunedVertexProps));
   }
-
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(BiJoin *node) {
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(BiJoin *node) {
   for (auto *hashKey : node->hashKeys()) {
     status_ = extractPropsFromExpr(hashKey);
     if (!status_.ok()) {
@@ -265,7 +345,6 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
       return;
     }
   }
-  status_ = depsPruneProperties(node->dependencies());
 }
 
 Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
