@@ -2,7 +2,6 @@
 //
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
-
 #include "graph/planner/plan/Algo.h"
 DECLARE_int32(num_operator_threads);
 namespace nebula {
