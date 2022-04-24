@@ -177,7 +177,6 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
       auto &usedVertexProps = it2->second;
       if (usedVertexProps.empty()) {
         node->setVertexProps(nullptr);
-        // status_ = depsPruneProperties(node->dependencies());
         return;
       }
       prunedVertexProps->reserve(usedVertexProps.size());
@@ -258,7 +257,6 @@ void PrunePropertiesVisitor::visitCurrent(AppendVertices *node) {
   auto it = propsUsed_.colsSet.find(nodeAlias);
   if (it != propsUsed_.colsSet.end()) {  // All properties are used
     // propsUsed_.colsSet.erase(it);
-    // status_ = depsPruneProperties(node->dependencies());
     return;
   }
 
@@ -297,7 +295,6 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       auto &usedVertexProps = it2->second;
       if (usedVertexProps.empty()) {
         node->markDeleted();
-        // status_ = depsPruneProperties(node->dependencies());
         return;
       }
       prunedVertexProps->reserve(usedVertexProps.size());
@@ -321,7 +318,6 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       }
     } else {
       node->markDeleted();
-      // status_ = depsPruneProperties(node->dependencies());
       return;
     }
     node->setVertexProps(std::move(prunedVertexProps));
