@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
 #include "kvstore/LogEncoder.h"
+#include "kvstore/raftex/RaftPart.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
 
@@ -37,8 +38,8 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
       : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::string> addEdges(PartitionID partId,
-                                                         const std::vector<kvstore::KV>& edges);
+  kvstore::MergeableAtomicOpResult addEdgesWithIndex(PartitionID partId,
+                                                     std::vector<kvstore::KV>&& data);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> findOldValue(PartitionID partId,
                                                              const folly::StringPiece& rawKey);

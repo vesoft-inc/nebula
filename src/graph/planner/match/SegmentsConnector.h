@@ -41,6 +41,7 @@ class SegmentsConnector final {
 
   static SubPlan rollUpApply(QueryContext* qctx,
                              const SubPlan& left,
+                             const std::vector<std::string>& inputColNames,
                              const SubPlan& right,
                              const std::vector<std::string>& compareCols,
                              const std::string& collectCol);

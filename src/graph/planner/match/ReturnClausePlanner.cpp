@@ -5,6 +5,7 @@
 
 #include "graph/planner/match/ReturnClausePlanner.h"
 
+#include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/OrderByClausePlanner.h"
 #include "graph/planner/match/PaginationPlanner.h"
 #include "graph/planner/match/SegmentsConnector.h"
@@ -25,6 +26,7 @@ StatusOr<SubPlan> ReturnClausePlanner::transform(CypherClauseContextBase* clause
 }
 
 Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan) {
+  rctx->yield->inputColNames = rctx->inputColNames;
   auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(rctx->yield.get());
   NG_RETURN_IF_ERROR(yieldPlan);
   auto yieldplan = std::move(yieldPlan).value();
