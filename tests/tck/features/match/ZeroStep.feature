@@ -455,10 +455,10 @@ Feature: Variable length Pattern match (0 step)
       | [[:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]] | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
       | []                                                             | ("Trail Blazers" :team{name: "Trail Blazers"})                                                              |
 
-  Scenario: Multiple variable length with edge filter without max hop number
+  Scenario: Multiple variable length
     When executing query:
       """
-      MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..]->(v2)
+      MATCH p=(v:player{name:"Tim Duncan"})-[e:like*1..100]->(v2)
       RETURN v2 AS Friends;
       """
     Then the result should be, in any order:
