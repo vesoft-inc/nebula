@@ -25,7 +25,8 @@ bool GenericThreadPool::start(size_t nrThreads, const std::string &name) {
   auto ok = true;
   for (auto i = 0UL; ok && i < nrThreads_; i++) {
     pool_.emplace_back(std::make_unique<GenericWorker>());
-    ok = ok && pool_.back()->start(name);
+    auto workerName = folly::stringPrintf("%s-%lu", name.c_str(), i);
+    ok = ok && pool_.back()->start(std::move(workerName));
   }
   return ok;
 }
