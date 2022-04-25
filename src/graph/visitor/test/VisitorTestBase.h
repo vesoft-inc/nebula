@@ -150,8 +150,8 @@ class VisitorTestBase : public ::testing::Test {
     return FunctionCallExpression::make(pool, std::move(fn), argsList);
   }
 
-  VariableExpression *varExpr(const std::string &name) {
-    return VariableExpression::make(pool, name);
+  VariableExpression *varExpr(const std::string &name, bool isInner = false) {
+    return VariableExpression::make(pool, name, isInner);
   }
 
   CaseExpression *caseExpr(Expression *cond,
