@@ -150,6 +150,19 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto &nodeInfos = pathInfo.nodeInfos;
   auto &edgeInfos = pathInfo.edgeInfos;
 
+  auto pathType = path->pathType();
+  if (pathType != MatchPath::PathType::kDefault) {
+    if (nodeInfos.size() != 2 || edgeInfos.size() != 1) {
+      return Status::SemanticError(
+          "`shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)");
+    }
+    auto &edge = edgeInfos.front();
+    if (edge.range->min() != 0 || edge.range->min() != 1) {
+      return Status::SemanticError(
+          "`shortestPath(...)' does not support a minimal length different from 0 or 1");
+    }
+  }
+
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
@@ -160,6 +173,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   pathInfo.pathBuild = std::move(pathBuild);
   pathInfo.anonymous = false;
   pathInfo.alias = *pathAlias;
+  pathInfo.pathType = pathType;
   return Status::OK();
 }
 

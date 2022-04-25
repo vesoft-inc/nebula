@@ -10,7 +10,7 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  single_ = pathNode_->single();
+  single_ = pathNode_->singleShortest();
   range_ = {pathNode_->stepRange()->min(), pathNode_->stepRange()->max()};
   auto& colNames = pathNode_->colNames();
   auto rowSize = buildRequestDataSet();
@@ -211,8 +211,6 @@ Status ShortestPathExecutor::doBuildPath(size_t rowNum, GetNeighborsIter* iter, 
   nextStepVids.reserve(iterSize);
 
   QueryExpressionContext ctx(ectx_);
-  auto* vFilter = pathNode_->vFilter();
-  auto* eFilter = pathNode_->eFilter();
   for (iter->reset(); iter->valid(); iter->next()) {
     auto edgeVal = iter->getEdge();
     if (UNLIKELY(!edgeVal.isEdge())) {
@@ -222,18 +220,6 @@ Status ShortestPathExecutor::doBuildPath(size_t rowNum, GetNeighborsIter* iter, 
     auto dst = edge.dst;
     if (visitedVids.find(dst) != visitedVids.end()) {
       continue;
-    }
-    if (vFilter != nullptr) {
-      auto& vFilterVal = vFilter->eval(ctx(iter));
-      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
-        continue;
-      }
-    }
-    if (eFilter != nullptr) {
-      auto& eFilterVal = eFilter->eval(ctx(iter));
-      if (!eFilterVal.isBool() || !eFilterVal.getBool()) {
-        continue;
-      }
     }
     visitedVids.emplace(edge.src);
     if (uniqueDst.emplace(dst).second) {
@@ -392,7 +378,6 @@ folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<V
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-  auto* vFilter = pathNode_->vFilter();
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
                  std::move(vertices),
@@ -402,7 +387,7 @@ folly::Future<Status> ShortestPathExecutor::getMeetVidsProps(const std::vector<V
                  false,
                  {},
                  -1,
-                 vFilter)
+                 nullptr)
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);

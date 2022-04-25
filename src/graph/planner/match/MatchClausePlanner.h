@@ -18,8 +18,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
   StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
  private:
-  Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
-
   Status connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
                          MatchClauseContext* matchClauseCtx,
                          const SubPlan& subplan,

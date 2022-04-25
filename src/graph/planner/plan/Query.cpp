@@ -890,53 +890,5 @@ PlanNode* RollUpApply::clone() const {
   return newRollUpApply;
 }
 
-std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
-  auto desc = SingleInputNode::explain();
-  addDescription("single", util::toJson(single_), desc.get());
-  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
-  addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
-  addDescription(
-      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
-  addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
-  addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
-  addDescription(
-      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
-  return desc;
-}
-
-PlanNode* ShortestPath::clone() const {
-  auto* shortestPath = ShortestPath::make(qctx_, nullptr, space_);
-  shortestPath->cloneMembers(*this);
-  return shortestPath;
-}
-
-void ShortestPath::cloneMembers(const ShortestPath& g) {
-  SingleInputNode::cloneMembers(g);
-  setSingle(g.single_);
-  setStepRange(g.range_);
-  setEdgeDirection(g.edgeDirection_);
-  if (g.vFilter_ != nullptr) {
-    setVertexFilter(g.vFilter_->clone());
-  }
-  if (g.eFilter_ != nullptr) {
-    setEdgeFilter(g.eFilter_->clone());
-  }
-  if (g.vertexProps_) {
-    auto vertexProps = *g.vertexProps_;
-    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
-    setVertexProps(std::move(vertexPropsPtr));
-  }
-  if (g.edgeProps_) {
-    auto edgeProps = *g.edgeProps_;
-    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-    setEdgeProps(std::move(edgePropsPtr));
-  }
-  if (g.reverseEdgeProps_) {
-    auto edgeProps = *g.reverseEdgeProps_;
-    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-    setEdgeProps(std::move(edgePropsPtr));
-  }
-}
-
 }  // namespace graph
 }  // namespace nebula

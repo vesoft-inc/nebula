@@ -49,8 +49,6 @@ class MatchPathPlanner final {
                         SubPlan& subplan,
                         std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
-  PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
-
   Status leftExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
                             const std::vector<EdgeInfo>& edgeInfos,
                             QueryContext* qctx,

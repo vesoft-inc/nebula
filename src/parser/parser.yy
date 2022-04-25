@@ -1765,11 +1765,11 @@ match_path_pattern
     }
     | KW_SHORTESTPATH L_PAREN match_path_pattern R_PAREN {
         $$ = $3;
-        $$->setShortestPath();
+        $$->setPathType(MatchPath::PathType::kSingleShortest);
     }
     | KW_ALLSHORTESTPATHS L_PAREN match_path_pattern R_PAREN {
         $$ = $3;
-        $$->setAllShortestPaths();
+        $$->setPathType(MatchPath::PathType::kAllShortest);
     }
     ;
 

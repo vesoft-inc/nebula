@@ -34,6 +34,46 @@ std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("singleShortest", util::toJson(singleShortest_), desc.get());
+  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
+  addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ShortestPath::clone() const {
+  auto* path = ShortestPath::make(qctx_, nullptr, space_, singleShorest_);
+  path->cloneMembers(*this);
+  return path;
+}
+
+void ShortestPath::cloneMembers(const ShortestPath& path) {
+  SingleInputNode::cloneMembers(path);
+  setSingle(path.singleShortest_);
+  setStepRange(path.range_);
+  setEdgeDirection(path.edgeDirection_);
+  if (path.vertexProps_) {
+    auto vertexProps = *path.vertexProps_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+  if (path.edgeProps_) {
+    auto edgeProps = *path.edgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+  if (path.reverseEdgeProps_) {
+    auto edgeProps = *path.reverseEdgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+}
+
 std::unique_ptr<PlanNodeDescription> CartesianProduct::explain() const {
   auto desc = SingleDependencyNode::explain();
   for (size_t i = 0; i < inputVars_.size(); ++i) {

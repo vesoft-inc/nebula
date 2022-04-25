@@ -82,6 +82,9 @@ struct Path final {
   std::vector<std::string> compareVariables;
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
+
+  enum PathType { kDefault, kAllShortest, kSingleShortest };
+  PathType pathType{PathType::kDefault};
 };
 
 struct CypherClauseContextBase : AstContext {
