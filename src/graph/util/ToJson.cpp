@@ -23,24 +23,24 @@
 namespace nebula {
 namespace util {
 
-std::string toJson(const std::string &str) {
+folly::dynamic toJson(const std::string &str) {
   return str;
 }
 
-std::string toJson(int32_t i) {
-  return folly::to<std::string>(i);
+folly::dynamic toJson(int32_t i) {
+  return i;
 }
 
-std::string toJson(int64_t i) {
-  return folly::to<std::string>(i);
+folly::dynamic toJson(int64_t i) {
+  return i;
 }
 
-std::string toJson(size_t i) {
-  return folly::to<std::string>(i);
+folly::dynamic toJson(size_t i) {
+  return i;
 }
 
-std::string toJson(bool b) {
-  return b ? "true" : "false";
+folly::dynamic toJson(bool b) {
+  return b;
 }
 
 std::string toJson(const HostAddr &addr) {
@@ -51,8 +51,35 @@ std::string toJson(const List &list) {
   return list.toString();
 }
 
-std::string toJson(const Value &value) {
-  return value.toString();
+folly::dynamic toJson(const Value &value) {
+  switch (value.type()) {
+    case Value::Type::__EMPTY__:
+      return "__EMPTY__";
+    case Value::Type::BOOL:
+      return value.getBool();
+    case Value::Type::INT:
+      return value.getInt();
+    case Value::Type::FLOAT:
+      return value.getFloat();
+    case Value::Type::STRING:
+      return value.getStr();
+    case Value::Type::DATE:
+    case Value::Type::TIME:
+    case Value::Type::DATETIME:
+    case Value::Type::DURATION:
+      return value.toString();
+    case Value::Type::NULLVALUE:
+      return "null";
+    case Value::Type::VERTEX:
+    case Value::Type::EDGE:
+    case Value::Type::PATH:
+    case Value::Type::LIST:
+    case Value::Type::MAP:
+    case Value::Type::SET:
+    case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:
+      return value.toString();
+  }
 }
 
 std::string toJson(const EdgeKeyRef *ref) {
@@ -218,7 +245,7 @@ folly::dynamic toJson(const storage::cpp2::VertexProp &prop) {
 folly::dynamic toJson(const storage::cpp2::EdgeProp &prop) {
   folly::dynamic obj = folly::dynamic::object();
   if (prop.type_ref().is_set()) {
-    obj.insert("type", toJson(*prop.type_ref()));
+    obj.insert("type", *prop.type_ref());
   }
   if (prop.props_ref().is_set()) {
     obj.insert("props", toJson(*prop.props_ref()));
@@ -267,11 +294,8 @@ folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints) {
   obj.insert("column", hints.get_column_name());
   auto scanType = apache::thrift::util::enumNameSafe(hints.get_scan_type());
   obj.insert("scanType", scanType);
-  auto rtrim = [](const std::string &str) { return std::string(str.c_str()); };
-  auto begin = toJson(hints.get_begin_value());
-  obj.insert("beginValue", rtrim(begin));
-  auto end = toJson(hints.get_end_value());
-  obj.insert("endValue", rtrim(end));
+  obj.insert("beginValue", toJson(hints.get_begin_value()));
+  obj.insert("endValue", toJson(hints.get_end_value()));
   auto includeBegin = toJson(hints.get_include_begin());
   obj.insert("includeBegin", includeBegin);
   auto includeEnd = toJson(hints.get_include_end());

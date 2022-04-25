@@ -132,7 +132,8 @@ def start_nebula(nb, configs):
     with open(SPACE_TMP_PATH, "w") as f:
         spaces = []
         folder = os.path.join(CURR_PATH, "data")
-        for space in os.listdir(folder):
+        data_dirs = sorted(os.listdir(folder))  # sort to make sure schema id is created by fixed order
+        for space in data_dirs:
             if not os.path.exists(os.path.join(folder, space, "config.yaml")):
                 continue
             data_dir = os.path.join(folder, space)

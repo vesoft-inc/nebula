@@ -2,8 +2,12 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+from codecs import ignore_errors
 import re
 import json
+from collections import OrderedDict
+import deepdiff
+from json import JSONDecodeError
 
 class PlanDiffer:
     ID = "id"
@@ -128,14 +132,46 @@ class PlanDiffer:
         if extracted_expected_dict == expect:
             key_list.append(list(expect.keys())[0])
 
+        def _try_convert_json(j):
+            try:
+                return json.loads(j)
+            except:
+                return j
+
         extracted_resp_dict = {}
         if len(key_list) == 1:
-            extracted_resp_dict = resp
+
+            for k in resp:
+                extracted_resp_dict[k] = _try_convert_json(resp[k])
         else:
             extracted_resp_dict = self._convert_jsonStr_to_dict(resp, key_list)
+        
+        for k in extracted_expected_dict:
+            extracted_expected_dict[k] = _try_convert_json(extracted_expected_dict[k])
+
+        def _ordered_dict(d):
+            '''
+            convert dict to OrderedDict
+            '''
+            for k in d:
+                print("{} is {}?".format(d[k], type(d[k])))
+                if isinstance(d[k], dict):
+                    print("{} is dict".format(d[k]))
+                    d[k] = _ordered_dict(d[k])
+                elif isinstance(d[k], list):
+                    for e in d[k]:
+                        if isinstance(e, dict):
+                            e = _ordered_dict(e)
+            return OrderedDict(d.items())
 
         def _is_subdict(small, big):
-            return dict(big, **small) == big
+            new_big = dict(big, **small)
+            print(big)
+            print(small)
+            print(new_big)
+            diff = deepdiff.DeepDiff(big, new_big)
+            print(diff)
+            return not bool(diff)
 
         return _is_subdict(extracted_expected_dict, extracted_resp_dict)
     
