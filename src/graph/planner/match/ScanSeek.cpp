@@ -30,8 +30,8 @@ bool ScanSeek::matchNode(NodeContext *nodeCtx) {
   // only require the tag
   if (node.tids.empty()) {
     // empty labels means all labels
-    const auto *qctx = nodeCtx->matchClauseCtx->qctx;
-    auto allLabels = qctx->schemaMng()->getAllTags(nodeCtx->matchClauseCtx->space.id);
+    const auto *qctx = nodeCtx->qctx;
+    auto allLabels = qctx->schemaMng()->getAllTags(nodeCtx->spaceId);
     if (!allLabels.ok()) {
       return false;
     }
@@ -53,8 +53,7 @@ bool ScanSeek::matchNode(NodeContext *nodeCtx) {
 
 StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
   SubPlan plan;
-  auto *matchClauseCtx = nodeCtx->matchClauseCtx;
-  auto *qctx = matchClauseCtx->qctx;
+  auto *qctx = nodeCtx->qctx;
   auto *pool = qctx->objPool();
   auto anyLabel = nodeCtx->scanInfo.anyLabel;
 
@@ -69,8 +68,7 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
     colNames.emplace_back(nodeCtx->scanInfo.schemaNames[i] + "." + kTag);
   }
 
-  auto *scanVertices =
-      ScanVertices::make(qctx, nullptr, matchClauseCtx->space.id, std::move(vProps));
+  auto *scanVertices = ScanVertices::make(qctx, nullptr, nodeCtx->spaceId, std::move(vProps));
   scanVertices->setColNames(std::move(colNames));
   plan.root = scanVertices;
   plan.tail = scanVertices;

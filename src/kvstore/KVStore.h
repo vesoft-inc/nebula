@@ -312,7 +312,7 @@ class KVStore {
    */
   virtual void asyncAtomicOp(GraphSpaceID spaceId,
                              PartitionID partId,
-                             raftex::AtomicOp op,
+                             MergeableAtomicOp op,
                              KVCallback cb) = 0;
 
   /**

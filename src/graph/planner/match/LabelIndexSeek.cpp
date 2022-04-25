@@ -65,14 +65,13 @@ bool LabelIndexSeek::matchEdge(EdgeContext* edgeCtx) {
 
 StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   SubPlan plan;
-  auto* matchClauseCtx = nodeCtx->matchClauseCtx;
   DCHECK_EQ(nodeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple tag index seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
   iqctx.index_id_ref() = nodeCtx->scanInfo.indexIds.back();
-  auto scan = IndexScan::make(matchClauseCtx->qctx,
+  auto scan = IndexScan::make(nodeCtx->qctx,
                               nullptr,
-                              matchClauseCtx->space.id,
+                              nodeCtx->spaceId,
                               {iqctx},
                               {kVid},
                               false,
@@ -84,10 +83,9 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   // This if-block is a patch for or-filter-embedding to avoid OOM,
   // and it should be converted to an `optRule` after the match validator is
   // refactored
-  auto& whereCtx = matchClauseCtx->where;
-  auto* pool = matchClauseCtx->qctx->objPool();
-  if (whereCtx && whereCtx->filter) {
-    auto* filter = whereCtx->filter;
+  auto* pool = nodeCtx->qctx->objPool();
+  if (nodeCtx->bindFilter != nullptr) {
+    auto* filter = nodeCtx->bindFilter;
     const auto& nodeAlias = nodeCtx->info->alias;
     const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
 
@@ -133,7 +131,6 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
 
 StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
   SubPlan plan;
-  auto* matchClauseCtx = edgeCtx->matchClauseCtx;
   DCHECK_EQ(edgeCtx->scanInfo.indexIds.size(), 1) << "Not supported multiple edge indices seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
@@ -156,10 +153,10 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
       break;
   }
 
-  auto* qctx = matchClauseCtx->qctx;
+  auto* qctx = edgeCtx->qctx;
   auto scan = IndexScan::make(qctx,
                               nullptr,
-                              matchClauseCtx->space.id,
+                              edgeCtx->spaceId,
                               {iqctx},
                               std::move(columns),
                               true,
@@ -200,8 +197,8 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 
 /*static*/ StatusOr<std::vector<IndexID>> LabelIndexSeek::pickTagIndex(const NodeContext* nodeCtx) {
   std::vector<IndexID> indexIds;
-  const auto* qctx = nodeCtx->matchClauseCtx->qctx;
-  auto tagIndexesResult = qctx->indexMng()->getTagIndexes(nodeCtx->matchClauseCtx->space.id);
+  const auto* qctx = nodeCtx->qctx;
+  auto tagIndexesResult = qctx->indexMng()->getTagIndexes(nodeCtx->spaceId);
   NG_RETURN_IF_ERROR(tagIndexesResult);
   auto tagIndexes = std::move(tagIndexesResult).value();
   indexIds.reserve(nodeCtx->scanInfo.schemaIds.size());
@@ -229,8 +226,8 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 /*static*/ StatusOr<std::vector<IndexID>> LabelIndexSeek::pickEdgeIndex(
     const EdgeContext* edgeCtx) {
   std::vector<IndexID> indexIds;
-  const auto* qctx = edgeCtx->matchClauseCtx->qctx;
-  auto edgeIndexesResult = qctx->indexMng()->getEdgeIndexes(edgeCtx->matchClauseCtx->space.id);
+  const auto* qctx = edgeCtx->qctx;
+  auto edgeIndexesResult = qctx->indexMng()->getEdgeIndexes(edgeCtx->spaceId);
   NG_RETURN_IF_ERROR(edgeIndexesResult);
   auto edgeIndexes = std::move(edgeIndexesResult).value();
   indexIds.reserve(edgeCtx->scanInfo.schemaIds.size());

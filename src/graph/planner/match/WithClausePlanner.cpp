@@ -26,6 +26,7 @@ StatusOr<SubPlan> WithClausePlanner::transform(CypherClauseContextBase* clauseCt
 }
 
 Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
+  wctx->yield->inputColNames = wctx->inputColNames;
   auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(wctx->yield.get());
   NG_RETURN_IF_ERROR(yieldPlan);
   auto yieldplan = std::move(yieldPlan).value();
@@ -50,6 +51,7 @@ Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
 
   if (wctx->where != nullptr) {
     bool needStableFilter = wctx->order != nullptr;
+    wctx->where->inputColNames = subPlan.root->colNames();
     auto wherePlan =
         std::make_unique<WhereClausePlanner>(needStableFilter)->transform(wctx->where.get());
     NG_RETURN_IF_ERROR(wherePlan);
