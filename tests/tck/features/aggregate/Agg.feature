@@ -524,11 +524,11 @@ Feature: Basic Aggregate and GroupBy
       | {name: "Tim Duncan", start: [{name: 34}, {name: 47}, {name: 32}, {name: 33}, {name: 36}, {name: 36}, {name: 32}, {name: 29}, {name: 31}, {name: 41}, {name: 41}, {name: 36}]} |
     When executing query:
       """
-      match (v:player{name:"Tim Duncan"})--(n:team) return [n in collect(v.player.age) where n>40| n]
+      match (v:player{name:"Tim Duncan"})--(n:team) return [n in collect(v.player.age) where n>40| n] as a
       """
     Then the result should be, in order, with relax comparison:
-      | [n IN collect(v.player.age) WHERE (n>40) | n] |
-      | [42]                                          |
+      | a    |
+      | [42] |
 
   Scenario: Empty input
     When executing query:
