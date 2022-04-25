@@ -301,7 +301,7 @@ class MatchPath final {
     return edges_[i].get();
   }
 
-  enum PathType { kDefault, kAllShortest, kSingleShortest };
+  enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
 
   PathType pathType() const {
     return pathType_;

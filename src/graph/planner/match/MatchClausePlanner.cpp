@@ -26,9 +26,10 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   // TODO: Maybe it is better to rebuild the graph and find all connected components.
   auto& pathInfos = matchClauseCtx->paths;
   for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
+    auto& nodeInfos = iter->nodeInfos;
     auto bindFilter = matchClauseCtx->where ? matchClauseCtx->where->filter : nullptr;
     SubPlan pathPlan;
-    if (iter->type != PATH::Type::kDefault) {
+    if (iter->pathType == Path::PathType::kDefault) {
       MatchPathPlanner matchPathPlanner;
       auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
                                                matchClauseCtx->space.id,
@@ -36,7 +37,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
                                                matchClauseCtx->aliasesAvailable,
                                                nodeAliasesSeen,
                                                *iter);
-      NG_RETURN_IF_ERROF(result);
+      NG_RETURN_IF_ERROR(result);
       pathPlan = std::move(result).value();
     } else {
       ShortestPathPlanner shortestPathPlanner;
@@ -49,7 +50,6 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
       NG_RETURN_IF_ERROR(result);
       pathPlan = std::move(result).value();
     }
-    auto& nodeInfos = iter->nodeInfos;
     NG_RETURN_IF_ERROR(
         connectPathPlan(nodeInfos, matchClauseCtx, pathPlan, nodeAliasesSeen, matchClausePlan));
   }

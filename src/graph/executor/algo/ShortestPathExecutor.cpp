@@ -11,7 +11,8 @@ namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   single_ = pathNode_->singleShortest();
-  range_ = {pathNode_->stepRange()->min(), pathNode_->stepRange()->max()};
+  maxStep_ = pathNode_->stepRange()->max();
+
   auto& colNames = pathNode_->colNames();
   auto rowSize = buildRequestDataSet();
   std::vector<folly::Future<Status>> futures;
@@ -51,9 +52,10 @@ size_t ShortestPathExecutor::buildRequestDataSet() {
     auto start = iter->getColumn(0);
     auto end = iter->getColumn(1);
     if (!SchemaUtil::isValidVid(start, vidType) || !SchemaUtil::isValidVid(end, vidType)) {
-      LOG(ERROR) << "Mismatched vid type. start type : " << start.type()
+      LOG(ERROR) << "Mismatched shortestPath vid type. start type : " << start.type()
                  << ", end type: " << end.type()
                  << ", space vid type: " << SchemaUtil::typeToString(vidType);
+      rowSize--;
       continue;
     }
     if (start == end) {
@@ -139,7 +141,9 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(size_t rowNum, size_t
     return Status::OK();
   }
   stepNum++;
-  if (stepNum * 2 >= range_.second) {
+  auto& leftVids = leftVids_[rowNum].rows;
+  auto& rightVids = rightVids_[rowNum].rows;
+  if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
     return Status::OK();
   }
   return shortestPath(rowNum, stepNum);
@@ -158,7 +162,7 @@ bool ShortestPathExecutor::conjunctPath(size_t rowNum, size_t stepNum) {
     buildOddPath(rowNum, meetVids);
     return true;
   }
-  if (stepNum * 2 >= range_.second) {
+  if (stepNum * 2 >= maxStep_) {
     return false;
   }
 

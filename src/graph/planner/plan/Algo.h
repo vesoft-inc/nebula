@@ -145,6 +145,10 @@ class ProduceAllPaths final : public BinaryInputNode {
   std::string rightVidVar_;
 };
 
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using EdgeProp = nebula::storage::cpp2::EdgeProp;
+using Direction = nebula::storage::cpp2::EdgeDirection;
+
 class ShortestPath final : public SingleInputNode {
  public:
   static ShortestPath* make(QueryContext* qctx,
@@ -182,7 +186,7 @@ class ShortestPath final : public SingleInputNode {
     return space_;
   }
 
-  bool singleShorest() const {
+  bool singleShortest() const {
     return singleShortest_;
   }
 
@@ -210,7 +214,7 @@ class ShortestPath final : public SingleInputNode {
   ShortestPath(QueryContext* qctx, PlanNode* node, GraphSpaceID space, bool singleShortest)
       : SingleInputNode(qctx, Kind::kShortestPath, node),
         space_(space),
-        singleShorest_(singleShorest) {}
+        singleShortest_(singleShortest) {}
 
   void cloneMembers(const ShortestPath&);
 

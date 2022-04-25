@@ -4,6 +4,16 @@
 
 #include "graph/planner/match/ShortestPathPlanner.h"
 
+#include "graph/context/ast/CypherAstContext.h"
+#include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/SegmentsConnector.h"
+#include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
+
 namespace nebula {
 namespace graph {
 // Match (start:tagName{propName:xxx}), (end:tagName{propName:yyy})
@@ -74,11 +84,11 @@ static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const 
   return edgeProps;
 }
 
-static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias) const {
+static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias) {
   return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
 }
 
-static YieldColumn* buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) const {
+static YieldColumn* buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) {
   Expression* expr = nullptr;
   if (edge.range == nullptr) {
     expr = SubscriptExpression::make(
@@ -93,7 +103,7 @@ static YieldColumn* buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) const {
   return new YieldColumn(expr, edge.alias);
 }
 
-static YieldColumn* buildPathColumn(Expression* pathBuild, const std::string& alias) const {
+static YieldColumn* buildPathColumn(Expression* pathBuild, const std::string& alias) {
   return new YieldColumn(pathBuild, alias);
 }
 
@@ -103,14 +113,14 @@ static void buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan) {
   auto& nodeInfos = path.nodeInfos;
   auto& edgeInfos = path.edgeInfos;
 
-  auto addNode = [this, columns, &colNames, qctx](auto& nodeInfo) {
+  auto addNode = [columns, &colNames, qctx](auto& nodeInfo) {
     if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
       columns->addColumn(buildVertexColumn(qctx->objPool(), nodeInfo.alias));
       colNames.emplace_back(nodeInfo.alias);
     }
   };
 
-  auto addEdge = [this, columns, &colNames, qctx](auto& edgeInfo) {
+  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo) {
     if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
       columns->addColumn(buildEdgeColumn(qctx->objPool(), edgeInfo));
       colNames.emplace_back(edgeInfo.alias);
@@ -145,26 +155,42 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
     const std::unordered_map<std::string, AliasType>& aliasesAvailable,
     std::unordered_set<std::string> nodeAliasesSeen,
     Path& path) {
-  UNUSED(aliasesAvailable);
-  UNUSED(nodeAliasesSeen);
+  std::unordered_set<std::string> allNodeAliasesAvailable;
+  allNodeAliasesAvailable.merge(nodeAliasesSeen);
+  std::for_each(
+      aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
+        if (kv.second == AliasType::kNode) {
+          allNodeAliasesAvailable.emplace(kv.first);
+        }
+      });
 
   SubPlan subplan;
-  bool singleShortest = path.pathType == MatchPath::PathType::kSingleShortest;
+  bool singleShortest = path.pathType == Path::PathType::kSingleShortest;
   auto& nodeInfos = path.nodeInfos;
-  auto& edge = path.edgeInfos.front();
 
   auto& startVidFinders = StartVidFinder::finders();
   std::vector<SubPlan> plans;
 
-  for (size_t i = 0; i < nodeInfos.size(); ++i) {
+  for (auto& nodeInfo : nodeInfos) {
     bool foundIndex = false;
     for (auto& finder : startVidFinders) {
-      auto nodeCtx = NodeContext(qctx, bindFilter, spaceId, &nodeInfos[i]);
+      auto nodeCtx = NodeContext(qctx, bindFilter, spaceId, &nodeInfo);
+      nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
-        auto plan = nodeFinder->transform(&nodeCtx);
-        NG_RETURN_IF_ERROR(plan);
-        plans.emplace_back(std::move(plan).value());
+        auto status = nodeFinder->transform(&nodeCtx);
+        NG_RETURN_IF_ERROR(status);
+        auto plan = status.value();
+        auto start = StartNode::make(qctx);
+        plan.tail->setDep(0, start);
+        plan.tail = start;
+
+        auto initExpr = nodeCtx.initialExpr->clone();
+        auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
+        columns->addColumn(new YieldColumn(initExpr, nodeInfo.alias));
+        plan.root = Project::make(qctx, plan.root, columns);
+
+        plans.emplace_back(std::move(plan));
         foundIndex = true;
         break;
       }
@@ -173,24 +199,25 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
       return Status::SemanticError("Can't find index from path pattern");
     }
   }
-
   auto& leftPlan = plans.front();
   auto& rightPlan = plans.back();
+
   auto cp = BiCartesianProduct::make(qctx, leftPlan.root, rightPlan.root);
 
+  auto& edge = path.edgeInfos.front();
   auto shortestPath = ShortestPath::make(qctx, cp, spaceId, singleShortest);
   auto vertexProp = genVertexProps(nodeInfos.front(), qctx, spaceId);
   NG_RETURN_IF_ERROR(vertexProp);
   shortestPath->setVertexProps(std::move(vertexProp).value());
   shortestPath->setEdgeProps(genEdgeProps(edge, false, qctx, spaceId));
-  shortestPath->setReverseEdgeProps(getEdgeProps(edge, true, qctx, spaceId));
+  shortestPath->setReverseEdgeProps(genEdgeProps(edge, true, qctx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
   shortestPath->setStepRange(edge.range);
 
   subplan.root = shortestPath;
   subplan.tail = leftPlan.tail;
 
-  bulildProjectColumns(qctx, path, subplan);
+  buildProjectColumns(qctx, path, subplan);
 
   return subplan;
 }

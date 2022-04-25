@@ -31,9 +31,6 @@ class MatchValidator final : public Validator {
 
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx);
 
-  Status validateShortestPath(const MatchPath *path);
-
-
   Status validateReturn(MatchReturn *ret,
                         const std::vector<QueryPart> &queryParts,
                         ReturnClauseContext &retClauseCtx);

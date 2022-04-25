@@ -47,14 +47,13 @@ std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
 }
 
 PlanNode* ShortestPath::clone() const {
-  auto* path = ShortestPath::make(qctx_, nullptr, space_, singleShorest_);
+  auto* path = ShortestPath::make(qctx_, nullptr, space_, singleShortest_);
   path->cloneMembers(*this);
   return path;
 }
 
 void ShortestPath::cloneMembers(const ShortestPath& path) {
   SingleInputNode::cloneMembers(path);
-  setSingle(path.singleShortest_);
   setStepRange(path.range_);
   setEdgeDirection(path.edgeDirection_);
   if (path.vertexProps_) {

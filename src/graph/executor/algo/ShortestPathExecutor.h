@@ -5,7 +5,7 @@
 #define GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
 
 #include "graph/executor/StorageAccessExecutor.h"
-#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Algo.h"
 
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
@@ -52,7 +52,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
  private:
   const ShortestPath* pathNode_{nullptr};
-  std::pair<size_t, size_t> range_;
+  size_t maxStep_;
   bool single_{true};
 
   std::vector<DataSet> resultDs_;

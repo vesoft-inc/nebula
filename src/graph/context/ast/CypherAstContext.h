@@ -83,7 +83,7 @@ struct Path final {
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
 
-  enum PathType { kDefault, kAllShortest, kSingleShortest };
+  enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};
 };
 
@@ -215,8 +215,8 @@ struct NodeContext final : PatternContext {
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  NodeInfo* info{nullptr};
-  std::unordered_set<std::string>* nodeAliasesAvailable;
+  NodeInfo* info;
+  std::unordered_set<std::string>* nodeAliasesAvailable{nullptr};
 
   // Output fields
   ScanInfo scanInfo;
@@ -232,7 +232,7 @@ struct EdgeContext final : PatternContext {
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  EdgeInfo* info{nullptr};
+  EdgeInfo* info;
 
   // Output fields
   ScanInfo scanInfo;
