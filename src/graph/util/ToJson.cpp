@@ -67,9 +67,10 @@ folly::dynamic toJson(const Value &value) {
     case Value::Type::TIME:
     case Value::Type::DATETIME:
     case Value::Type::DURATION:
+      // TODO store to object
       return value.toString();
     case Value::Type::NULLVALUE:
-      return "null";
+      return nullptr;
     case Value::Type::VERTEX:
     case Value::Type::EDGE:
     case Value::Type::PATH:
@@ -78,6 +79,7 @@ folly::dynamic toJson(const Value &value) {
     case Value::Type::SET:
     case Value::Type::DATASET:
     case Value::Type::GEOGRAPHY:
+      // TODO store to object or array
       return value.toString();
   }
   DLOG(FATAL) << "Impossible reach.";
