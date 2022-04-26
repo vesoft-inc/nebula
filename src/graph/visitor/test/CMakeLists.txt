@@ -24,6 +24,7 @@ nebula_add_test(
         RewriteRelExprVisitorTest.cpp
         FilterTransformTest.cpp
         ExtractFilterExprVisitorTest.cpp
+        ExtractGroupSuiteVisitorTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:mock_schema_obj>
         $<TARGET_OBJECTS:util_obj>
