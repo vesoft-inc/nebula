@@ -5,7 +5,6 @@
 from codecs import ignore_errors
 import re
 import json
-from collections import OrderedDict
 import deepdiff
 from json import JSONDecodeError
 
@@ -148,21 +147,6 @@ class PlanDiffer:
         
         for k in extracted_expected_dict:
             extracted_expected_dict[k] = _try_convert_json(extracted_expected_dict[k])
-
-        def _ordered_dict(d):
-            '''
-            convert dict to OrderedDict
-            '''
-            for k in d:
-                print("{} is {}?".format(d[k], type(d[k])))
-                if isinstance(d[k], dict):
-                    print("{} is dict".format(d[k]))
-                    d[k] = _ordered_dict(d[k])
-                elif isinstance(d[k], list):
-                    for e in d[k]:
-                        if isinstance(e, dict):
-                            e = _ordered_dict(e)
-            return OrderedDict(d.items())
 
         def _is_subdict(small, big):
             new_big = dict(big, **small)
