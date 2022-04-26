@@ -51,17 +51,17 @@ Feature: Multi Line Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
 
   Scenario: Multi Line Multi Match
     When executing query:
@@ -110,17 +110,17 @@ Feature: Multi Line Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -130,17 +130,17 @@ Feature: Multi Line Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     When executing query:
       """
       MATCH (v:player{name:"Tony Parker"})
@@ -172,15 +172,6 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
-    When executing query:
-      """
-      MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
-      OPTIONAL MATCH (n)-[]-(l) where n.player.age < m.player.age
-      RETURN count(*) AS count
-      """
-    Then the result should be, in order:
-      | count |
-      | 64    |
     When executing query:
       """
       OPTIONAL match (v:player) WHERE v.player.age > 41
@@ -254,6 +245,7 @@ Feature: Multi Line Multi Query Parts
       | count |
       | 4     |
 
+  @skip
   Scenario: Multi Line Multi Query Parts
     When executing query:
       """
