@@ -108,7 +108,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
                               const std::vector<std::string>& paras,
                               JobID& jobId);
   /**
-   * @brief In the current space, if there is a failed data balance job or zone balance job,
+   * @brief In the current space, if there is a failed data balance job,
    * need to recover the job first, otherwise cannot add this type of job.
    *
    * @param spaceId

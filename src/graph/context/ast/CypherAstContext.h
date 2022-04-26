@@ -115,6 +115,12 @@ struct PaginationContext final : CypherClauseContextBase {
   int64_t limit{std::numeric_limits<int64_t>::max()};
 };
 
+// Used to handle implicit groupBy
+struct GroupSuite {
+  std::vector<Expression*> groupKeys;
+  std::vector<Expression*> groupItems;
+};
+
 struct YieldClauseContext final : CypherClauseContextBase {
   YieldClauseContext() : CypherClauseContextBase(CypherClauseKind::kYield) {}
 
@@ -228,6 +234,7 @@ struct EdgeContext final : PatternContext {
   // initialize start expression in project node
   Expression* initialExpr{nullptr};
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_CYPHERASTCONTEXT_H_
