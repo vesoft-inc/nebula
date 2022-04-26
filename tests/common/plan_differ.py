@@ -2,11 +2,9 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-from codecs import ignore_errors
 import re
 import json
 import deepdiff
-from json import JSONDecodeError
 
 class PlanDiffer:
     ID = "id"
