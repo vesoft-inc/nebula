@@ -80,6 +80,8 @@ folly::dynamic toJson(const Value &value) {
     case Value::Type::GEOGRAPHY:
       return value.toString();
   }
+  DLOG(FATAL) << "Impossible reach.";
+  return folly::dynamic::object();
 }
 
 std::string toJson(const EdgeKeyRef *ref) {
