@@ -18,63 +18,7 @@ class MatchClausePlanner final : public CypherClausePlanner {
   StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
  private:
-  Status findStarts(std::vector<NodeInfo>& nodeInfos,
-                    std::vector<EdgeInfo>& edgeInfos,
-                    MatchClauseContext* matchClauseCtx,
-                    std::unordered_set<std::string> nodeAliases,
-                    bool& startFromEdge,
-                    size_t& startIndex,
-                    SubPlan& matchClausePlan);
-
-  Status expand(const std::vector<NodeInfo>& nodeInfos,
-                const std::vector<EdgeInfo>& edgeInfos,
-                MatchClauseContext* matchClauseCtx,
-                bool startFromEdge,
-                size_t startIndex,
-                SubPlan& subplan,
-                std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  Status expandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                        const std::vector<EdgeInfo>& edgeInfos,
-                        MatchClauseContext* matchClauseCtx,
-                        size_t startIndex,
-                        SubPlan& subplan,
-                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
   PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
-
-  Status leftExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                            const std::vector<EdgeInfo>& edgeInfos,
-                            MatchClauseContext* matchClauseCtx,
-                            size_t startIndex,
-                            std::string inputVar,
-                            SubPlan& subplan,
-                            std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  Status rightExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                             const std::vector<EdgeInfo>& edgeInfos,
-                             MatchClauseContext* matchClauseCtx,
-                             size_t startIndex,
-                             SubPlan& subplan,
-                             std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  Status expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
-                        const std::vector<EdgeInfo>& edgeInfos,
-                        MatchClauseContext* matchClauseCtx,
-                        size_t startIndex,
-                        SubPlan& subplan,
-                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  // Project all named alias.
-  // TODO: Might not neccessary
-  Status projectColumnsBySymbols(MatchClauseContext* matchClauseCtx, SubPlan& plan);
-
-  YieldColumn* buildVertexColumn(MatchClauseContext* matchClauseCtx,
-                                 const std::string& alias) const;
-
-  YieldColumn* buildEdgeColumn(MatchClauseContext* matchClauseCtx, EdgeInfo& edge) const;
-
-  YieldColumn* buildPathColumn(Expression* pathBuild, const std::string& alias) const;
 
   Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
 

@@ -264,7 +264,8 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
         ASSERT_EQ(0, edge.second);
       }
     }
-    ASSERT_EQ(81, *statsItem.space_vertices_ref());
+    // ASSERT_EQ(81, *statsItem.space_vertices_ref());
+    EXPECT_EQ(81, *statsItem.space_vertices_ref());
     ASSERT_EQ(167, *statsItem.space_edges_ref());
   }
 

@@ -5,6 +5,7 @@
 
 #include "graph/planner/match/UnwindClausePlanner.h"
 
+#include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/match/OrderByClausePlanner.h"
 #include "graph/planner/match/PaginationPlanner.h"
@@ -22,6 +23,30 @@ StatusOr<SubPlan> UnwindClausePlanner::transform(CypherClauseContextBase* clause
 
   SubPlan unwindPlan;
   NG_RETURN_IF_ERROR(buildUnwind(unwindClauseCtx, unwindPlan));
+
+  SubPlan subPlan;
+  // Build plan for pattern from expression
+  for (auto& path : unwindClauseCtx->paths) {
+    auto pathPlan =
+        std::make_unique<MatchPathPlanner>()->transform(unwindClauseCtx->qctx,
+                                                        unwindClauseCtx->space.id,
+                                                        nullptr,
+                                                        unwindClauseCtx->aliasesAvailable,
+                                                        {},
+                                                        path);
+    NG_RETURN_IF_ERROR(pathPlan);
+    auto pathplan = std::move(pathPlan).value();
+    subPlan = SegmentsConnector::rollUpApply(unwindClauseCtx->qctx,
+                                             subPlan,
+                                             unwindClauseCtx->inputColNames,
+                                             pathplan,
+                                             path.compareVariables,
+                                             path.collectVariable);
+  }
+
+  if (subPlan.root != nullptr) {
+    unwindPlan = SegmentsConnector::addInput(unwindPlan, subPlan);
+  }
   return unwindPlan;
 }
 

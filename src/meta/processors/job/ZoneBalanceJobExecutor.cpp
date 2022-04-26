@@ -330,7 +330,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
                 });
   rc = plan_->saveInStore();
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return Status::Error("save balance zone plan failed");
+    return Status::Error("save balance plan failed");
   }
   return Status::OK();
 }
