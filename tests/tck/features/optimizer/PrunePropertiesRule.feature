@@ -6,6 +6,8 @@ Feature: Prune Properties rule
   Background:
     Given a graph with space named "nba"
 
+  # The schema id is not fixed in standalone cluster, so we skip it
+  @distonly
   Scenario: Single Match
     When profiling query:
       """
@@ -145,6 +147,8 @@ Feature: Prune Properties rule
       | ("Spurs" :team{name: "Spurs"})     |
       | ("Hornets" :team{name: "Hornets"}) |
 
+  # The schema id is not fixed in standalone cluster, so we skip it
+  @distonly
   Scenario: Multi Path Patterns
     When profiling query:
       """
@@ -224,6 +228,8 @@ Feature: Prune Properties rule
       | 11 | Traverse       | 10           | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":10}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\", \"_src\"], \"type\": 4}]" } |
       | 10 | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
+  # The schema id is not fixed in standalone cluster, so we skip it
+  @distonly
   Scenario: Multi Match
     When profiling query:
       """
@@ -330,6 +336,8 @@ Feature: Prune Properties rule
       | 7  | Traverse       | 6            | {  "vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"start_year\", \"end_year\"]}, {\"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"likeness\"], \"type\": -3}, {\"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"start_year\", \"end_year\"], \"type\": -4}]" } |
       | 6  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
+  # The schema id is not fixed in standalone cluster, so we skip it
+  @distonly
   Scenario: Optional Match
     When profiling query:
       """
