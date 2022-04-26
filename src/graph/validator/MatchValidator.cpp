@@ -7,6 +7,7 @@
 
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/ExtractGroupSuiteVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
@@ -781,23 +782,27 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) {
     auto *colExpr = col->expr();
     NG_RETURN_IF_ERROR(validateMatchPathExpr(colExpr, yieldCtx.aliasesAvailable, yieldCtx.paths));
     auto colOldName = col->name();
-    if (colExpr->kind() != Expression::Kind::kAggregate) {
-      auto collectAggCol = colExpr->clone();
-      auto aggs = ExpressionUtils::collectAll(collectAggCol, {Expression::Kind::kAggregate});
-      for (auto *agg : aggs) {
-        DCHECK_EQ(agg->kind(), Expression::Kind::kAggregate);
-        if (!ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(agg)).ok()) {
-          return Status::SemanticError("Aggregate function nesting is not allowed: `%s'",
-                                       colExpr->toString().c_str());
+    if (colExpr->kind() != Expression::Kind::kAggregate &&
+        ExpressionUtils::hasAny(colExpr, {Expression::Kind::kAggregate})) {
+      ExtractGroupSuiteVisitor visitor(qctx_);
+      colExpr->accept(&visitor);
+      GroupSuite groupSuite = visitor.groupSuite();
+      yieldCtx.groupKeys_.insert(
+          yieldCtx.groupKeys_.end(), groupSuite.groupKeys.begin(), groupSuite.groupKeys.end());
+      for (auto *item : groupSuite.groupItems) {
+        if (item->kind() == Expression::Kind::kAggregate) {
+          NG_RETURN_IF_ERROR(
+              ExpressionUtils::checkAggExpr(static_cast<const AggregateExpression *>(item)));
         }
 
-        yieldCtx.groupItems_.emplace_back(agg->clone());
+        yieldCtx.groupItems_.emplace_back(item);
 
         yieldCtx.needGenProject_ = true;
-        yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
+        yieldCtx.aggOutputColumnNames_.emplace_back(item->toString());
       }
-      if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
+      if (!groupSuite.groupItems.empty()) {
+        auto *rewritedExpr =
+            ExpressionUtils::rewriteSubExprs2VarProp(colExpr->clone(), groupSuite.groupItems);
         yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;

@@ -189,6 +189,24 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+Expression *ExpressionUtils::rewriteSubExprs2VarProp(const Expression *expr,
+                                                     std::vector<Expression *> &subExprs) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [&subExprs](const Expression *e) -> bool {
+    for (auto subExpr : subExprs) {
+      if (e->toString() == subExpr->toString()) {
+        return true;
+      }
+    }
+    return false;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    return VariablePropertyExpression::make(pool, "", e->toString());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 // Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
 // Rewrite the IN expr to an OR expr if the right operand has more than 1 element.
 Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
