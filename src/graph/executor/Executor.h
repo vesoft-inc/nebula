@@ -105,6 +105,17 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
 
   size_t getBatchSize(size_t totalSize) const;
 
+  // ScatterFunc: A callback function that handle partial records of a dataset.
+  // GatherFunc: A callback function that gather all results of ScatterFunc, and do post works.
+  // Iterator: An iterator of a dataset.
+  template <
+      class ScatterFunc,
+      class ScatterResult = typename std::result_of<ScatterFunc(size_t, size_t, Iterator *)>::type,
+      class GatherFunc,
+      class GatherResult = typename std::result_of<GatherFunc(std::vector<ScatterResult>)>::type>
+  auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) ->
+      typename folly::Future<GatherResult>;
+
   int64_t id_;
 
   // Executor name
@@ -128,6 +139,30 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   std::unordered_map<std::string, std::string> otherStats_;
 };
 
+template <class ScatterFunc, class ScatterResult, class GatherFunc, class GatherResult>
+auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) ->
+    typename folly::Future<GatherResult> {
+  size_t totalSize = iter->size();
+  size_t batchSize = getBatchSize(totalSize);
+
+  // Start multiple jobs for handling the results
+  std::vector<folly::Future<ScatterResult>> futures;
+  size_t begin = 0, end = 0, dispathedCnt = 0;
+  while (dispathedCnt < totalSize) {
+    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+    LOG(ERROR) << "begin: " << begin << " end:" << end << " dispathedCnt:" << dispathedCnt;
+    futures.emplace_back(folly::via(
+        runner(),
+        [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {
+          return f(begin, end, tmpIter.get());
+        }));
+    begin = end;
+    dispathedCnt += batchSize;
+  }
+
+  // Gather all results and do post works
+  return folly::collect(futures).via(runner()).thenValue(std::move(gather));
+}
 }  // namespace graph
 }  // namespace nebula
 

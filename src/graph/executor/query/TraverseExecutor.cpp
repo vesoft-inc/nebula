@@ -210,69 +210,54 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   }
   paths_.emplace_back();
 
-  size_t totalSize = iter->size();
-  size_t batchSize = getBatchSize(totalSize);
   // LOG(ERROR) << "buildInterimPath p1:" << dur1.elapsedInUSec();
   // LOG(ERROR) << "totalSize:" << totalSize << " batchSize:" << batchSize;
 
-  // Start multiple jobs for handling the results
-  std::vector<folly::Future<StatusOr<JobResult>>> futures;
-  size_t begin = 0, end = 0, dispathedCnt = 0;
-  while (dispathedCnt < totalSize) {
-    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-    // LOG(ERROR) << "begin: " << begin << " end:" << end << " dispathedCnt:" << dispathedCnt;
-    auto f =
-        folly::makeFuture<Status>(Status::OK())
-            .via(runner())
-            .thenValue([this, begin, end, tmpIter = iter->copy(), prev](auto&& result) mutable {
-              UNUSED(result);
-              return handleJob(begin, end, tmpIter.get(), *prev);
-            });
-    futures.emplace_back(std::move(f));
-    begin = end;
-    dispathedCnt += batchSize;
-  }
+  auto scatter = [this, prev](
+                     size_t begin, size_t end, Iterator* tmpIter) mutable -> StatusOr<JobResult> {
+    return handleJob(begin, end, tmpIter, *prev);
+  };
 
-  // LOG(ERROR) << "buildInterimPath pre:" << dur1.elapsedInUSec();
-  // Gather all results and do post works
-  return folly::collect(futures).via(runner()).thenValue(
-      [this, total = pathCnt, dur1](auto&& results) mutable {
-        // LOG(ERROR) << "buildInterimPath post:" << dur1.elapsedInUSec();
-        time::Duration dur;
-        reqDs_.clear();
-        // LOG(ERROR) << "p1:" << dur.elapsedInUSec();
-        std::unordered_map<Value, Paths>& current = paths_.back();
-        size_t mapCnt = 0;
-        for (auto& r : results) {
-          if (!r.ok()) {
-            return r.status();
-          } else {
-            mapCnt += r.value().newPaths.size();
-          }
-        }
-        // LOG(ERROR) << "p2:" << dur.elapsedInUSec();
-        current.reserve(mapCnt);
-        // LOG(ERROR) << "p3:" << dur.elapsedInUSec();
-        for (auto& r : results) {
-          auto jobResult = std::move(r).value();
-          total += jobResult.pathCnt;
-          if (!jobResult.reqDs.rows.empty()) {
-            reqDs_.rows.insert(reqDs_.rows.end(),
-                               std::make_move_iterator(jobResult.reqDs.rows.begin()),
-                               std::make_move_iterator(jobResult.reqDs.rows.end()));
-          }
-          for (auto& kv : jobResult.newPaths) {
-            auto& paths = current[kv.first];
-            paths.insert(paths.end(),
-                         std::make_move_iterator(kv.second.begin()),
-                         std::make_move_iterator(kv.second.end()));
-          }
-        }
-        // LOG(ERROR) << "p4:" << dur.elapsedInUSec();
-        releasePrevPaths(total);
-        // LOG(ERROR) << "p5:" << dur.elapsedInUSec();
-        return Status::OK();
-      });
+  auto gather =
+      [this, pathCnt = pathCnt, dur1](std::vector<StatusOr<JobResult>> results) mutable -> Status {
+    // LOG(ERROR) << "buildInterimPath post:" << dur1.elapsedInUSec();
+    time::Duration dur;
+    reqDs_.clear();
+    // LOG(ERROR) << "p1:" << dur.elapsedInUSec();
+    std::unordered_map<Value, Paths>& current = paths_.back();
+    size_t mapCnt = 0;
+    for (auto& r : results) {
+      if (!r.ok()) {
+        return r.status();
+      } else {
+        mapCnt += r.value().newPaths.size();
+      }
+    }
+    // LOG(ERROR) << "p2:" << dur.elapsedInUSec();
+    current.reserve(mapCnt);
+    // LOG(ERROR) << "p3:" << dur.elapsedInUSec();
+    for (auto& r : results) {
+      auto jobResult = std::move(r).value();
+      pathCnt += jobResult.pathCnt;
+      if (!jobResult.reqDs.rows.empty()) {
+        reqDs_.rows.insert(reqDs_.rows.end(),
+                           std::make_move_iterator(jobResult.reqDs.rows.begin()),
+                           std::make_move_iterator(jobResult.reqDs.rows.end()));
+      }
+      for (auto& kv : jobResult.newPaths) {
+        auto& paths = current[kv.first];
+        paths.insert(paths.end(),
+                     std::make_move_iterator(kv.second.begin()),
+                     std::make_move_iterator(kv.second.end()));
+      }
+    }
+    // LOG(ERROR) << "p4:" << dur.elapsedInUSec();
+    releasePrevPaths(pathCnt);
+    // LOG(ERROR) << "p5:" << dur.elapsedInUSec();
+    return Status::OK();
+  };
+
+  return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
 }
 
 StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
