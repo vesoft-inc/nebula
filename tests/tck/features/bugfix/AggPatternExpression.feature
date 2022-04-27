@@ -15,4 +15,4 @@ Feature: Test crash when aggregate with pattern expression
       """
     Then the result should be, in any order, with relax comparison:
       | name         | count |
-      | 'Tim Duncan' | NULL  |
+      | 'Tim Duncan' | 3     |

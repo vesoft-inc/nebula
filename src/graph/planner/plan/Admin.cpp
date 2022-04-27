@@ -15,7 +15,7 @@ namespace graph {
 
 std::unique_ptr<PlanNodeDescription> CreateSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
+  addDescription("ifNotExists", folly::toJson(util::toJson(ifNotExists_)), desc.get());
   addDescription("spaceDesc", folly::toJson(util::toJson(spaceDesc_)), desc.get());
   return desc;
 }
@@ -30,14 +30,14 @@ std::unique_ptr<PlanNodeDescription> CreateSpaceAsNode::explain() const {
 std::unique_ptr<PlanNodeDescription> DropSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("spaceName", spaceName_, desc.get());
-  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  addDescription("ifExists", folly::toJson(util::toJson(ifExists_)), desc.get());
   return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ClearSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("spaceName", spaceName_, desc.get());
-  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  addDescription("ifExists", folly::toJson(util::toJson(ifExists_)), desc.get());
   return desc;
 }
 
@@ -61,7 +61,7 @@ std::unique_ptr<PlanNodeDescription> DropSnapshot::explain() const {
 
 std::unique_ptr<PlanNodeDescription> ShowParts::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
+  addDescription("spaceId", folly::toJson(util::toJson(spaceId_)), desc.get());
   addDescription("partIds", folly::toJson(util::toJson(partIds_)), desc.get());
   return desc;
 }
@@ -89,13 +89,13 @@ std::unique_ptr<PlanNodeDescription> GetConfig::explain() const {
 
 std::unique_ptr<PlanNodeDescription> CreateNode::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("ifNotExist", util::toJson(ifNotExist_), desc.get());
+  addDescription("ifNotExist", folly::toJson(util::toJson(ifNotExist_)), desc.get());
   return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> DropNode::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("ifExist", util::toJson(ifExist_), desc.get());
+  addDescription("ifExist", folly::toJson(util::toJson(ifExist_)), desc.get());
   return desc;
 }
 
@@ -169,7 +169,7 @@ std::unique_ptr<PlanNodeDescription> ListUserRoles::explain() const {
 
 std::unique_ptr<PlanNodeDescription> ListRoles::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("space", util::toJson(space_), desc.get());
+  addDescription("space", folly::toJson(util::toJson(space_)), desc.get());
   return desc;
 }
 
@@ -183,7 +183,7 @@ std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
 
 std::unique_ptr<PlanNodeDescription> ShowQueries::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("isAll", util::toJson(isAll()), desc.get());
+  addDescription("isAll", folly::toJson(util::toJson(isAll())), desc.get());
   return desc;
 }
 

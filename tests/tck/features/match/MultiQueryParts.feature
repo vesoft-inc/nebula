@@ -50,17 +50,17 @@ Feature: Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     # Below scenario is not supported for the execution plan has a scan.
     When executing query:
       """
@@ -98,17 +98,17 @@ Feature: Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -118,17 +118,17 @@ Feature: Multi Query Parts
       ORDER BY n1, n2, n3, n4 LIMIT 10
       """
     Then the result should be, in order:
-      | n1           | n2            | n3        | n4                |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"    |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"     |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"       |
-      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquile O'Neal" |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"   |
-      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"      |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"     |
-      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"      |
+      | n1           | n2            | n3        | n4                 |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Kyrie Irving"     |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Rajon Rondo"      |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Ray Allen"        |
+      | "Tim Duncan" | "Aron Baynes" | "Celtics" | "Shaquille O'Neal" |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Blake Griffin"    |
+      | "Tim Duncan" | "Aron Baynes" | "Pistons" | "Grant Hill"       |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
+      | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     When executing query:
       """
       MATCH (v:player{name:"Tony Parker"})

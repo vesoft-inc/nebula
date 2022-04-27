@@ -54,15 +54,15 @@ namespace util {
 template <typename T>
 folly::dynamic toJson(const std::vector<T> &arr);
 
-std::string toJson(const std::string &str);
-std::string toJson(int32_t i);
-std::string toJson(int64_t i);
-std::string toJson(size_t i);
-std::string toJson(bool b);
+folly::dynamic toJson(const std::string &str);
+folly::dynamic toJson(int32_t i);
+folly::dynamic toJson(int64_t i);
+folly::dynamic toJson(size_t i);
+folly::dynamic toJson(bool b);
 
 std::string toJson(const HostAddr &addr);
 std::string toJson(const List &list);
-std::string toJson(const Value &value);
+folly::dynamic toJson(const Value &value);
 std::string toJson(const EdgeKeyRef *ref);
 std::string toJson(const Expression *expr);
 

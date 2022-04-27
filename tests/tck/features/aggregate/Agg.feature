@@ -505,6 +505,30 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in order, with relax comparison:
       | b    |
       | True |
+    When executing query:
+      """
+      match (m:player) where id(m) == 'Tim Duncan'
+      return {name1:m.player.name, name2:collect({name:m.player.name})};
+      """
+    Then the result should be, in order, with relax comparison:
+      | {name1:m.player.name,name2:collect({name:m.player.name})} |
+      | {name1: "Tim Duncan", name2: [{name: "Tim Duncan"}]}      |
+    When executing query:
+      """
+      match (m:player) where id(m) == 'Tim Duncan'
+      match (m)<--(e)
+      return {name:m.player.name, start:collect({name:e.player.age})};
+      """
+    Then the result should be, in order, with relax comparison:
+      | {name:m.player.name,start:collect({name:e.player.age})}                                                                                                                       |
+      | {name: "Tim Duncan", start: [{name: 34}, {name: 47}, {name: 32}, {name: 33}, {name: 36}, {name: 36}, {name: 32}, {name: 29}, {name: 31}, {name: 41}, {name: 41}, {name: 36}]} |
+    When executing query:
+      """
+      match (v:player{name:"Tim Duncan"})--(n:team) return [n in collect(v.player.age) where n>40| n] as a
+      """
+    Then the result should be, in order, with relax comparison:
+      | a    |
+      | [42] |
 
   Scenario: Empty input
     When executing query:
