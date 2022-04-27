@@ -23,35 +23,22 @@ folly::Future<Status> FilterExecutor::execute() {
   ds.colNames = iter->valuePtr()->getDataSet().colNames;
   ds.rows.reserve(iter->size());
 
-  size_t totalSize = iter->size();
-  size_t batchSize = getBatchSize(totalSize);
-  // Start multiple jobs for handling the results
-  std::vector<folly::Future<StatusOr<DataSet>>> futures;
-  size_t begin = 0, end = 0, dispathedCnt = 0;
-  while (dispathedCnt < totalSize) {
-    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-    auto f = folly::makeFuture<Status>(Status::OK())
-                 .via(runner())
-                 .thenValue([this, begin, end, tmpIter = iter->copy()](auto &&r) mutable {
-                   UNUSED(r);
-                   return handleJob(begin, end, tmpIter.get());
-                 });
-    futures.emplace_back(std::move(f));
-    begin = end;
-    dispathedCnt += batchSize;
-  }
+  auto scatter = [this](size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+    return handleJob(begin, end, tmpIter);
+  };
 
-  return folly::collect(futures).via(runner()).thenValue(
-      [this, result = std::move(ds)](auto &&results) mutable {
-        for (auto &r : results) {
-          auto &&rows = std::move(r).value();
-          result.rows.insert(result.rows.end(),
-                             std::make_move_iterator(rows.begin()),
-                             std::make_move_iterator(rows.end()));
-        }
-        finish(ResultBuilder().value(Value(std::move(result))).build());
-        return Status::OK();
-      });
+  auto gather = [this, result = std::move(ds)](auto &&results) mutable -> Status {
+    for (auto &r : results) {
+      auto &&rows = std::move(r).value();
+      result.rows.insert(result.rows.end(),
+                         std::make_move_iterator(rows.begin()),
+                         std::make_move_iterator(rows.end()));
+    }
+    finish(ResultBuilder().value(Value(std::move(result))).build());
+    return Status::OK();
+  };
+
+  return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
 }
 
 DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {

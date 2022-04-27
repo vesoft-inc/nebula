@@ -111,10 +111,8 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   template <
       class ScatterFunc,
       class ScatterResult = typename std::result_of<ScatterFunc(size_t, size_t, Iterator *)>::type,
-      class GatherFunc,
-      class GatherResult = typename std::result_of<GatherFunc(std::vector<ScatterResult>)>::type>
-  auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) ->
-      typename folly::Future<GatherResult>;
+      class GatherFunc>
+  auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter);
 
   int64_t id_;
 
@@ -139,9 +137,8 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   std::unordered_map<std::string, std::string> otherStats_;
 };
 
-template <class ScatterFunc, class ScatterResult, class GatherFunc, class GatherResult>
-auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) ->
-    typename folly::Future<GatherResult> {
+template <class ScatterFunc, class ScatterResult, class GatherFunc>
+auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) {
   size_t totalSize = iter->size();
   size_t batchSize = getBatchSize(totalSize);
 

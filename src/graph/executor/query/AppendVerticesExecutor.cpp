@@ -86,25 +86,12 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
   auto propIter = PropIter(std::make_shared<Value>(std::move(v)));
 
   if (!av->trackPrevPath()) {
-    size_t totalSize = propIter.size();
-    size_t batchSize = getBatchSize(totalSize);
-    // Start multiple jobs for handling the results
-    std::vector<folly::Future<StatusOr<DataSet>>> futures;
-    size_t begin = 0, end = 0, dispathedCnt = 0;
-    while (dispathedCnt < totalSize) {
-      end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-      auto f = folly::makeFuture<Status>(Status::OK())
-                   .via(runner())
-                   .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
-                     UNUSED(r);
-                     return buildVerticesResult(begin, end, tmpIter.get());
-                   });
-      futures.emplace_back(std::move(f));
-      begin = end;
-      dispathedCnt += batchSize;
-    }
+    auto scatter = [this](
+                       size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+      return buildVerticesResult(begin, end, tmpIter);
+    };
 
-    return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
+    auto gather = [this](auto &&results) -> Status {
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result_.rows.insert(result_.rows.end(),
@@ -112,60 +99,38 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
                             std::make_move_iterator(rows.end()));
       }
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
-    });
+    };
+
+    return runMultiJobs(std::move(scatter), std::move(gather), &propIter);
   } else {
-    std::vector<folly::Future<StatusOr<folly::Unit>>> prepareFs;
-    {
-      size_t totalSize = propIter.size();
-      size_t batchSize = getBatchSize(totalSize);
-      // Start multiple jobs for handling the results
-      size_t begin = 0, end = 0, dispathedCnt = 0;
-      while (dispathedCnt < totalSize) {
-        end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-        auto f = folly::makeFuture<Status>(Status::OK())
-                     .via(runner())
-                     .thenValue([this, begin, end, tmpIter = propIter.copy()](auto &&r) mutable {
-                       UNUSED(r);
-                       return buildMap(begin, end, tmpIter.get());
-                     });
-        prepareFs.emplace_back(std::move(f));
-        begin = end;
-        dispathedCnt += batchSize;
-      }
-    }
+    auto scatter = [this](size_t begin, size_t end, Iterator *tmpIter) mutable -> folly::Unit {
+      buildMap(begin, end, tmpIter);
+      return folly::unit;
+    };
 
-    return folly::collect(prepareFs).via(runner()).thenValue(
-        [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) {
-          UNUSED(prepareResult);
-          size_t totalSize = inputIterNew->size();
-          size_t batchSize = getBatchSize(totalSize);
-          // Start multiple jobs for handling the results
-          std::vector<folly::Future<StatusOr<DataSet>>> futures;
-          size_t begin = 0, end = 0, dispathedCnt = 0;
-          while (dispathedCnt < totalSize) {
-            end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-            auto f = folly::makeFuture<Status>(Status::OK())
-                         .via(runner())
-                         .thenValue(
-                             [this, begin, end, tmpIter = inputIterNew->copy()](auto &&r) mutable {
-                               UNUSED(r);
-                               return handleJob(begin, end, tmpIter.get());
-                             });
-            futures.emplace_back(std::move(f));
-            begin = end;
-            dispathedCnt += batchSize;
-          }
+    auto gather =
+        [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) -> folly::Future<Status> {
+      UNUSED(prepareResult);
 
-          return folly::collect(futures).via(runner()).thenValue([this](auto &&results) {
-            for (auto &r : results) {
-              auto &&rows = std::move(r).value();
-              result_.rows.insert(result_.rows.end(),
-                                  std::make_move_iterator(rows.begin()),
-                                  std::make_move_iterator(rows.end()));
-            }
-            return finish(ResultBuilder().value(Value(std::move(result_))).build());
-          });
-        });
+      auto scatterInput =
+          [this](size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+        return handleJob(begin, end, tmpIter);
+      };
+
+      auto gatherFinal = [this](auto &&results) -> Status {
+        for (auto &r : results) {
+          auto &&rows = std::move(r).value();
+          result_.rows.insert(result_.rows.end(),
+                              std::make_move_iterator(rows.begin()),
+                              std::make_move_iterator(rows.end()));
+        }
+        return finish(ResultBuilder().value(Value(std::move(result_))).build());
+      };
+
+      return runMultiJobs(std::move(scatterInput), std::move(gatherFinal), inputIterNew.get());
+    };
+
+    return runMultiJobs(std::move(scatter), std::move(gather), &propIter);
   }
 }
 
