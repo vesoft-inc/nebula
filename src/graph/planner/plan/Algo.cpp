@@ -11,26 +11,26 @@ namespace graph {
 
 std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
-  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
-  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
-  addDescription("steps", util::toJson(steps_), desc.get());
+  addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
+  addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
+  addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
-  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
-  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
-  addDescription("steps", util::toJson(steps_), desc.get());
+  addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
+  addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
+  addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
   auto desc = BinaryInputNode::explain();
-  addDescription("LeftNextVidVar", util::toJson(leftVidVar_), desc.get());
-  addDescription("RightNextVidVar", util::toJson(rightVidVar_), desc.get());
-  addDescription("noloop ", util::toJson(noLoop_), desc.get());
-  addDescription("steps", util::toJson(steps_), desc.get());
+  addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
+  addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
+  addDescription("noloop ", folly::toJson(util::toJson(noLoop_)), desc.get());
+  addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   return desc;
 }
 
