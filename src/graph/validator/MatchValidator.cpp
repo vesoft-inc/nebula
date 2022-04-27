@@ -603,8 +603,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-// Convert map attributes of edge defined in pattern to filter expression and keep origin
-// semantic. e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
+// Convert map attributes of edge defined in pattern to filter expression and keep origin semantic.
+// e.g. convert match ()-[e{a:1, b:2}]->() to  *.a == 1 && *.b == 2
 StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
   auto *pool = qctx_->objPool();
   DCHECK(map != nullptr);
@@ -638,8 +638,8 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
   return root;
 }
 
-// Convert map attributes of vertex defined in pattern to filter expression and keep origin
-// semantic. e.g. convert match (v{a:1, b:2}) to  v.a == 1 && v.b == 2
+// Convert map attributes of vertex defined in pattern to filter expression and keep origin semantic
+// e.g. convert match (v{a:1, b:2}) to  v.a == 1 && v.b == 2
 StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                                          const std::string &label) const {
   auto *pool = qctx_->objPool();

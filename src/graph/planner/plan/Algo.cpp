@@ -36,7 +36,7 @@ std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
 
 std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
   auto desc = SingleInputNode::explain();
-  addDescription("singleShortest", util::toJson(singleShortest_), desc.get());
+  addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
   addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(

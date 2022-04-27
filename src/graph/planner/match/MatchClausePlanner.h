@@ -23,9 +23,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
                          const SubPlan& subplan,
                          std::unordered_set<std::string>& nodeAliasesSeen,
                          SubPlan& matchClausePlan);
-
- private:
-  Expression* initialExpr_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

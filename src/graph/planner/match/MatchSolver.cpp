@@ -315,5 +315,66 @@ Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
   return Status::OK();
 }
 
+static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias) {
+  return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
+}
+
+static YieldColumn* buildEdgeColumn(ObjectPool* pool, const EdgeInfo& edge) {
+  Expression* expr = nullptr;
+  if (edge.range == nullptr) {
+    expr = SubscriptExpression::make(
+        pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
+  } else {
+    auto* args = ArgumentList::make(pool);
+    args->addArgument(VariableExpression::make(pool, "e"));
+    auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
+    expr = ListComprehensionExpression::make(
+        pool, "e", InputPropertyExpression::make(pool, edge.alias), filter);
+  }
+  return new YieldColumn(expr, edge.alias);
+}
+
+// static
+void MatchSolver::buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan) {
+  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
+  std::vector<std::string> colNames;
+  auto& nodeInfos = path.nodeInfos;
+  auto& edgeInfos = path.edgeInfos;
+
+  auto addNode = [columns, &colNames, qctx](auto& nodeInfo) {
+    if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
+      columns->addColumn(buildVertexColumn(qctx->objPool(), nodeInfo.alias));
+      colNames.emplace_back(nodeInfo.alias);
+    }
+  };
+
+  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo) {
+    if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
+      columns->addColumn(buildEdgeColumn(qctx->objPool(), edgeInfo));
+      colNames.emplace_back(edgeInfo.alias);
+    }
+  };
+
+  for (size_t i = 0; i < edgeInfos.size(); i++) {
+    addNode(nodeInfos[i]);
+    addEdge(edgeInfos[i]);
+  }
+
+  // last vertex
+  DCHECK(!nodeInfos.empty());
+  addNode(nodeInfos.back());
+
+  if (!path.anonymous) {
+    DCHECK(!path.alias.empty());
+    columns->addColumn(new YieldColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
+    colNames.emplace_back(path.alias);
+  }
+
+  auto project = Project::make(qctx, plan.root, columns);
+  project->setColNames(std::move(colNames));
+
+  plan.root = project;
+}
+
 }  // namespace graph
 }  // namespace nebula

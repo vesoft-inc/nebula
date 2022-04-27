@@ -2,6 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ShortestPathExecutor.h"
+
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -119,9 +120,8 @@ folly::Future<Status> ShortestPathExecutor::getNeighbors(size_t rowNum, bool rev
                      -1,
                      nullptr)
       .via(runner())
-      .ensure([this, rowNum, getNbrTime]() {
+      .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
-        // otherStats_.emplace("rowNum", rowNum);
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
       })
       .thenValue([this, rowNum, reverse](auto&& resp) {
