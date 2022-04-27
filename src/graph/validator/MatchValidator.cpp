@@ -139,14 +139,6 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
 Status MatchValidator::buildPathExpr(const MatchPath *path,
                                      Path &pathInfo,
                                      std::unordered_map<std::string, AliasType> &aliasesGenerated) {
-  auto *pathAlias = path->alias();
-  if (pathAlias == nullptr) {
-    return Status::OK();
-  }
-  if (!aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
-    return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
-  }
-
   auto &nodeInfos = pathInfo.nodeInfos;
   auto &edgeInfos = pathInfo.edgeInfos;
 
@@ -164,6 +156,13 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
     pathInfo.pathType = static_cast<Path::PathType>(pathType);
   }
 
+  auto *pathAlias = path->alias();
+  if (pathAlias == nullptr) {
+    return Status::OK();
+  }
+  if (!aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
+    return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
+  }
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {

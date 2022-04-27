@@ -10,7 +10,7 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  single_ = pathNode_->singleShortest();
+  singleShortest_ = pathNode_->singleShortest();
   maxStep_ = pathNode_->stepRange()->max();
 
   auto& colNames = pathNode_->colNames();
@@ -18,7 +18,7 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   std::vector<folly::Future<Status>> futures;
   for (size_t rowNum = 0; rowNum < rowSize; ++rowNum) {
     resultDs_[rowNum].colNames = colNames;
-    futures.emplace_back(shortestPath(rowNum, 0));
+    futures.emplace_back(shortestPath(rowNum, 1));
   }
   return folly::collect(futures).via(runner()).thenValue([this, &colNames](auto&& resps) {
     for (auto& resp : resps) {
@@ -60,6 +60,7 @@ size_t ShortestPathExecutor::buildRequestDataSet() {
     }
     if (start == end) {
       // continue or return error
+      rowSize--;
       continue;
     }
     if (uniqueSet.emplace(std::pair<Value, Value>{start, end}).second) {
@@ -81,7 +82,6 @@ size_t ShortestPathExecutor::buildRequestDataSet() {
 }
 
 folly::Future<Status> ShortestPathExecutor::shortestPath(size_t rowNum, size_t stepNum) {
-  VLOG(1) << "current rowNum is : " << rowNum << " step is :" << stepNum;
   std::vector<folly::Future<Status>> futures;
   futures.emplace_back(getNeighbors(rowNum, false));
   futures.emplace_back(getNeighbors(rowNum, true));
@@ -96,11 +96,6 @@ folly::Future<Status> ShortestPathExecutor::shortestPath(size_t rowNum, size_t s
 }
 
 folly::Future<Status> ShortestPathExecutor::getNeighbors(size_t rowNum, bool reverse) {
-  if (reverse) {
-    VLOG(1) << "reverse GetNeightbor input : " << rightVids_[rowNum].toString();
-  } else {
-    VLOG(1) << "GetNeightbor input : " << leftVids_[rowNum].toString();
-  }
   StorageClient* storageClient = qctx_->getStorageClient();
   time::Duration getNbrTime;
   storage::StorageClient::CommonRequestParam param(pathNode_->space(),
@@ -140,22 +135,24 @@ folly::Future<Status> ShortestPathExecutor::handleResponse(size_t rowNum, size_t
   if (conjunctPath(rowNum, stepNum)) {
     return Status::OK();
   }
-  stepNum++;
   auto& leftVids = leftVids_[rowNum].rows;
   auto& rightVids = rightVids_[rowNum].rows;
   if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
     return Status::OK();
   }
-  return shortestPath(rowNum, stepNum);
+  return shortestPath(rowNum, ++stepNum);
 }
 
 bool ShortestPathExecutor::conjunctPath(size_t rowNum, size_t stepNum) {
   const auto& leftStep = allLeftSteps_[rowNum].back();
-  const auto& prevRightStep = allRightSteps_[rowNum][stepNum];
+  const auto& prevRightStep = allRightSteps_[rowNum][stepNum - 1];
   std::vector<Value> meetVids;
   for (const auto& step : leftStep) {
     if (prevRightStep.find(step.first) != prevRightStep.end()) {
       meetVids.push_back(step.first);
+      if (singleShortest_) {
+        break;
+      }
     }
   }
   if (!meetVids.empty()) {
@@ -170,6 +167,9 @@ bool ShortestPathExecutor::conjunctPath(size_t rowNum, size_t stepNum) {
   for (const auto& step : leftStep) {
     if (rightStep.find(step.first) != rightStep.end()) {
       meetVids.push_back(step.first);
+      if (singleShortest_) {
+        break;
+      }
     }
   }
   if (meetVids.empty()) {
@@ -190,11 +190,6 @@ Status ShortestPathExecutor::buildPath(size_t rowNum, RpcResponse&& resps, bool 
       continue;
     }
     list.values.emplace_back(std::move(*dataset));
-  }
-  if (reverse) {
-    VLOG(1) << "reverse GetNeightbor output: " << list.toString().c_str();
-  } else {
-    VLOG(1) << "GetNeightbor output: " << list.toString().c_str();
   }
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
@@ -246,10 +241,8 @@ Status ShortestPathExecutor::doBuildPath(size_t rowNum, GetNeighborsIter* iter, 
                      std::make_move_iterator(uniqueDst.end()));
   if (reverse) {
     rightVids_[rowNum].rows.swap(nextStepVids);
-    VLOG(1) << "reverse next Vid : " << rightVids_[rowNum].toString() << " rowNum" << rowNum;
   } else {
     leftVids_[rowNum].rows.swap(nextStepVids);
-    VLOG(1) << "current next Vid : " << leftVids_[rowNum].toString() << " rowNum " << rowNum;
   }
   return Status::OK();
 }
@@ -262,8 +255,12 @@ void ShortestPathExecutor::buildOddPath(size_t rowNum, const std::vector<Value>&
       for (auto& rightPath : rightPaths) {
         Row path = leftPath;
         auto& steps = path.values.back().mutableList().values;
-        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end());
+        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+        path.emplace_back(rightPath.values.back());
         resultDs_[rowNum].rows.emplace_back(std::move(path));
+        if (singleShortest_) {
+          return;
+        }
       }
     }
   }
@@ -284,8 +281,12 @@ bool ShortestPathExecutor::buildEvenPath(size_t rowNum, const std::vector<Value>
         Row path = leftPath;
         auto& steps = path.values.back().mutableList().values;
         steps.emplace_back(meetVertex);
-        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end());
+        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+        path.emplace_back(rightPath.values.back());
         resultDs_[rowNum].rows.emplace_back(std::move(path));
+        if (singleShortest_) {
+          return true;
+        }
       }
     }
   }

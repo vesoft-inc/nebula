@@ -280,6 +280,7 @@ Status TraverseExecutor::buildResult() {
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
+  VLOG(1) << "jmq result is " << result;
 
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }

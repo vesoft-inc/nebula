@@ -53,7 +53,7 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
  private:
   const ShortestPath* pathNode_{nullptr};
   size_t maxStep_;
-  bool single_{true};
+  bool singleShortest_{true};
 
   std::vector<DataSet> resultDs_;
   std::vector<DataSet> leftVids_;

@@ -103,12 +103,11 @@ static YieldColumn* buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) {
   return new YieldColumn(expr, edge.alias);
 }
 
-static YieldColumn* buildPathColumn(Expression* pathBuild, const std::string& alias) {
-  return new YieldColumn(pathBuild, alias);
-}
 
 static void buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan) {
-  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
+  auto& objPool = qctx->objPool();
+
+  auto columns = objPool->makeAndAdd<YieldColumns>();
   std::vector<std::string> colNames;
   auto& nodeInfos = path.nodeInfos;
   auto& edgeInfos = path.edgeInfos;
@@ -138,7 +137,7 @@ static void buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan) {
 
   if (!path.anonymous) {
     DCHECK(!path.alias.empty());
-    columns->addColumn(buildPathColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
+    columns->addColumn(YieldColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
     colNames.emplace_back(path.alias);
   }
 
@@ -167,6 +166,11 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   SubPlan subplan;
   bool singleShortest = path.pathType == Path::PathType::kSingleShortest;
   auto& nodeInfos = path.nodeInfos;
+  auto& edge = path.edgeInfos.front();
+  std::vector<std::string> colNames;
+  colNames.emplace_back(nodeInfos.front().alias);
+  colNames.emplace_back(edge.alias);
+  colNames.emplace_back(nodeInfos.back().alias);
 
   auto& startVidFinders = StartVidFinder::finders();
   std::vector<SubPlan> plans;
@@ -196,7 +200,7 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
       }
     }
     if (!foundIndex) {
-      return Status::SemanticError("Can't find index from path pattern");
+      return Status::SemanticError("Can't find index from shortestPath pattern");
     }
   }
   auto& leftPlan = plans.front();
@@ -204,7 +208,6 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
 
   auto cp = BiCartesianProduct::make(qctx, leftPlan.root, rightPlan.root);
 
-  auto& edge = path.edgeInfos.front();
   auto shortestPath = ShortestPath::make(qctx, cp, spaceId, singleShortest);
   auto vertexProp = genVertexProps(nodeInfos.front(), qctx, spaceId);
   NG_RETURN_IF_ERROR(vertexProp);
@@ -213,12 +216,12 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   shortestPath->setReverseEdgeProps(genEdgeProps(edge, true, qctx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
   shortestPath->setStepRange(edge.range);
+  shortestPath->setColNames(std::move(colNames));
 
   subplan.root = shortestPath;
   subplan.tail = leftPlan.tail;
 
   buildProjectColumns(qctx, path, subplan);
-
   return subplan;
 }
 

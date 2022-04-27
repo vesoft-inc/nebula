@@ -375,3 +375,18 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | v.player.name |
+
+  @skip
+  Scenario: Maximum length not specified, will OOM
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*]-()
+      RETURN e
+      """
+    Then a SemanticError should be raised at runtime: Cannot set maximum hop for variable length relationships
+    When executing query:
+      """
+      MATCH (v:player{name: "abc"}) -[:serve*1..]-> ()
+      RETURN *
+      """
+    Then a SemanticError should be raised at runtime: Cannot set maximum hop for variable length relationships
