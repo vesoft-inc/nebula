@@ -325,6 +325,7 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
 }
 
 void PrunePropertiesVisitor::visit(BiJoin *node) {
+  visitCurrent(node);
   status_ = depsPruneProperties(node->dependencies());
 }
 
