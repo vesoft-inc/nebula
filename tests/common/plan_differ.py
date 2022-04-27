@@ -4,6 +4,7 @@
 
 import re
 import json
+import deepdiff
 
 class PlanDiffer:
     ID = "id"
@@ -128,14 +129,31 @@ class PlanDiffer:
         if extracted_expected_dict == expect:
             key_list.append(list(expect.keys())[0])
 
+        def _try_convert_json(j):
+            try:
+                return json.loads(j)
+            except:
+                return j
+
         extracted_resp_dict = {}
         if len(key_list) == 1:
-            extracted_resp_dict = resp
+
+            for k in resp:
+                extracted_resp_dict[k] = _try_convert_json(resp[k])
         else:
             extracted_resp_dict = self._convert_jsonStr_to_dict(resp, key_list)
+        
+        for k in extracted_expected_dict:
+            extracted_expected_dict[k] = _try_convert_json(extracted_expected_dict[k])
 
         def _is_subdict(small, big):
-            return dict(big, **small) == big
+            new_big = dict(big, **small)
+            print(big)
+            print(small)
+            print(new_big)
+            diff = deepdiff.DeepDiff(big, new_big)
+            print(diff)
+            return not bool(diff)
 
         return _is_subdict(extracted_expected_dict, extracted_resp_dict)
     
