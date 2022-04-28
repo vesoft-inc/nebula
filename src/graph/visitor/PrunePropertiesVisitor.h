@@ -29,12 +29,43 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   }
 
   void visit(PlanNode *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  // void visitCurrent(PlanNode *node, bool used = false);
+
   void visit(Filter *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(Filter *node);
+
   void visit(Project *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(Project *node);
+
   void visit(Aggregate *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(Aggregate *node);
+
   void visit(Traverse *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(Traverse *node);
+  // prune properties in Traverse according to the used properties collected previous
+  void pruneCurrent(Traverse *node);
+
   void visit(AppendVertices *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(AppendVertices *node);
+  // prune properties in AppendVertices according to the used properties collected previous
+  void pruneCurrent(AppendVertices *node);
+
   void visit(BiJoin *node) override;
+  // \param node, the current node to visit
+  // \param used, whether properties in current node are used
+  void visitCurrent(BiJoin *node);
 
  private:
   Status depsPruneProperties(std::vector<const PlanNode *> &dependencies);
@@ -44,6 +75,8 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   QueryContext *qctx_;
   GraphSpaceID spaceID_;
   Status status_;
+  // force use all properties in current node, e.g. the root node in plan
+  bool used_{true};
 };
 
 }  // namespace graph
