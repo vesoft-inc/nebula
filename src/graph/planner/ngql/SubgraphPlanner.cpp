@@ -71,12 +71,16 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto resultVar = qctx->vctx()->anonVarGen()->getVar();
   auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
   subgraphCtx_->loopSteps = loopSteps;
-  auto* subgraph = Subgraph::make(qctx, gn, resultVar, loopSteps, steps.steps() + 1);
+
+  auto* subgraph = Subgraph::make(qctx, gn, resultVar, loopSteps, steps.steps());
   subgraph->setOutputVar(input);
   subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
   subgraph->setColNames({nebula::kVid});
-
-  auto* condition = loopCondition(steps.steps() + 1, gn->outputVar());
+  uint32_t maxSteps = steps.steps();
+  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp) {
+    ++maxSteps;
+  }
+  auto* condition = loopCondition(maxSteps, gn->outputVar());
   auto* loop = Loop::make(qctx, startVidPlan.root, subgraph, condition);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
