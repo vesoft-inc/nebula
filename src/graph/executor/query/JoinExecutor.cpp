@@ -52,7 +52,7 @@ Status JoinExecutor::checkBiInputDataSets() {
 void JoinExecutor::buildHashTable(
     const std::vector<Expression*>& hashKeys,
     Iterator* iter,
-    std::unordered_map<List, std::vector<const Row*>>& hashTable) const {
+    std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     List list;
@@ -62,7 +62,7 @@ void JoinExecutor::buildHashTable(
       list.values.emplace_back(std::move(val));
     }
 
-    auto& vals = hashTable[list];
+    auto& vals = hashTable[Value(std::move(list))];
     vals.emplace_back(iter->row());
   }
 }

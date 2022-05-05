@@ -147,7 +147,6 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
   size_t begin = 0, end = 0, dispathedCnt = 0;
   while (dispathedCnt < totalSize) {
     end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
-    LOG(ERROR) << "begin: " << begin << " end:" << end << " dispathedCnt:" << dispathedCnt;
     futures.emplace_back(folly::via(
         runner(),
         [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {

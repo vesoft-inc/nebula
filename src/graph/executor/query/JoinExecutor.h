@@ -18,13 +18,11 @@ class JoinExecutor : public Executor {
  protected:
   Status checkInputDataSets();
 
-  void buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter);
-
   Status checkBiInputDataSets();
 
   void buildHashTable(const std::vector<Expression*>& hashKeys,
                       Iterator* iter,
-                      std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+                      std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
 
   void buildSingleKeyHashTable(Expression* hashKey,
                                Iterator* iter,
@@ -33,6 +31,7 @@ class JoinExecutor : public Executor {
   std::unique_ptr<Iterator> lhsIter_;
   std::unique_ptr<Iterator> rhsIter_;
   size_t colSize_{0};
+  std::unordered_map<Value, std::vector<const Row*>> hashTable_;
 };
 }  // namespace graph
 }  // namespace nebula

@@ -24,13 +24,14 @@ class LeftJoinExecutor : public JoinExecutor {
                              const std::vector<Expression*>& probeKeys,
                              const std::vector<std::string>& colNames);
 
-  DataSet probe(const std::vector<Expression*>& probeKeys,
-                Iterator* probeIter,
-                const std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+  folly::Future<Status> probe(const std::vector<Expression*>& probeKeys,
+                              Iterator* probeIter,
+                              const std::unordered_map<Value, std::vector<const Row*>>& hashTable);
 
-  DataSet singleKeyProbe(Expression* probeKey,
-                         Iterator* probeIter,
-                         const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+  folly::Future<Status> singleKeyProbe(
+      Expression* probeKey,
+      Iterator* probeIter,
+      const std::unordered_map<Value, std::vector<const Row*>>& hashTable);
 
   template <class T>
   void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,

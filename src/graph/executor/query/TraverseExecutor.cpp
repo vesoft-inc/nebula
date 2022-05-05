@@ -196,7 +196,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   //            << "pending task: " << threadMgr->pendingTaskCount()
   //            << "pending upstream task: " << threadMgr->pendingUpstreamTaskCount()
   //            << "total task:" << threadMgr->totalTaskCount();
-  time::Duration dur1;
+  time::Duration dur;
   size_t pathCnt = 0;
   const std::unordered_map<Value, Paths>* prev = &paths_.back();
   if (currentStep_ == 1 && zeroStep()) {
@@ -210,8 +210,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   }
   paths_.emplace_back();
 
-  // LOG(ERROR) << "buildInterimPath p1:" << dur1.elapsedInUSec();
-  // LOG(ERROR) << "totalSize:" << totalSize << " batchSize:" << batchSize;
+  // LOG(ERROR) << "buildInterimPath p1:" << dur.elapsedInUSec();
 
   auto scatter = [this, prev](
                      size_t begin, size_t end, Iterator* tmpIter) mutable -> StatusOr<JobResult> {
@@ -219,9 +218,8 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   };
 
   auto gather =
-      [this, pathCnt = pathCnt, dur1](std::vector<StatusOr<JobResult>> results) mutable -> Status {
-    // LOG(ERROR) << "buildInterimPath post:" << dur1.elapsedInUSec();
-    time::Duration dur;
+      [this, pathCnt = pathCnt, dur](std::vector<StatusOr<JobResult>> results) mutable -> Status {
+    // LOG(ERROR) << "buildInterimPath post:" << dur.elapsedInUSec();
     reqDs_.clear();
     // LOG(ERROR) << "p1:" << dur.elapsedInUSec();
     std::unordered_map<Value, Paths>& current = paths_.back();
@@ -237,6 +235,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
     current.reserve(mapCnt);
     // LOG(ERROR) << "p3:" << dur.elapsedInUSec();
     for (auto& r : results) {
+      // LOG(ERROR) << "p6:" << dur.elapsedInUSec();
       auto jobResult = std::move(r).value();
       pathCnt += jobResult.pathCnt;
       if (!jobResult.reqDs.rows.empty()) {
@@ -244,12 +243,14 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
                            std::make_move_iterator(jobResult.reqDs.rows.begin()),
                            std::make_move_iterator(jobResult.reqDs.rows.end()));
       }
+      // LOG(ERROR) << "p7:" << dur.elapsedInUSec();
       for (auto& kv : jobResult.newPaths) {
         auto& paths = current[kv.first];
         paths.insert(paths.end(),
                      std::make_move_iterator(kv.second.begin()),
                      std::make_move_iterator(kv.second.end()));
       }
+      // LOG(ERROR) << "p8:" << dur.elapsedInUSec();
     }
     // LOG(ERROR) << "p4:" << dur.elapsedInUSec();
     releasePrevPaths(pathCnt);
