@@ -60,8 +60,13 @@ class IndexScanNode : public IndexNode {
                 const std::string& name,
                 IndexID indexId,
                 const std::vector<cpp2::IndexColumnHint>& columnHints,
-                ::nebula::kvstore::KVStore* kvstore)
-      : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints), kvstore_(kvstore) {}
+                ::nebula::kvstore::KVStore* kvstore,
+                bool hasNullableCol)
+      : IndexNode(context, name),
+        indexId_(indexId),
+        columnHints_(columnHints),
+        kvstore_(kvstore),
+        indexNullable_(hasNullableCol) {}
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   std::string identify() override;
 
@@ -139,10 +144,6 @@ class IndexScanNode : public IndexNode {
    * @brief index definition
    */
   std::shared_ptr<nebula::meta::cpp2::IndexItem> index_;
-  /**
-   * @brief if index contain nullable field or not
-   */
-  bool indexNullable_ = false;
   const std::vector<cpp2::IndexColumnHint>& columnHints_;
   /**
    * @see Path
@@ -153,6 +154,10 @@ class IndexScanNode : public IndexNode {
    */
   std::unique_ptr<kvstore::KVIterator> iter_;
   nebula::kvstore::KVStore* kvstore_;
+  /**
+   * @brief if index contain nullable field or not
+   */
+  bool indexNullable_ = false;
   /**
    * @brief row format that `doNext` needs to return
    */
