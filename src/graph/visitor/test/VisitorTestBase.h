@@ -150,8 +150,8 @@ class VisitorTestBase : public ::testing::Test {
     return FunctionCallExpression::make(pool, std::move(fn), argsList);
   }
 
-  VariableExpression *varExpr(const std::string &name) {
-    return VariableExpression::make(pool, name);
+  VariableExpression *varExpr(const std::string &name, bool isInner = false) {
+    return VariableExpression::make(pool, name, isInner);
   }
 
   CaseExpression *caseExpr(Expression *cond,
@@ -173,6 +173,42 @@ class VisitorTestBase : public ::testing::Test {
   LabelAttributeExpression *laExpr(const std::string &name, Value value) {
     return LabelAttributeExpression::make(
         pool, LabelExpression::make(pool, name), ConstantExpression::make(pool, std::move(value)));
+  }
+
+  AggregateExpression *aggExpr(const std::string &name, Expression *arg, bool distinct) {
+    return AggregateExpression::make(pool, name, arg, distinct);
+  }
+
+  VertexExpression *vertexExpr(const std::string &name) {
+    return VertexExpression::make(pool, name);
+  }
+
+  PredicateExpression *predExpr(const std::string &name = "",
+                                const std::string &innerVar = "",
+                                Expression *collection = nullptr,
+                                Expression *filter = nullptr) {
+    return PredicateExpression::make(pool, name, innerVar, collection, filter);
+  }
+
+  ListComprehensionExpression *lcExpr(const std::string &innerVar = "",
+                                      Expression *collection = nullptr,
+                                      Expression *filter = nullptr,
+                                      Expression *mapping = nullptr) {
+    return ListComprehensionExpression::make(pool, innerVar, collection, filter, mapping);
+  }
+
+  ReduceExpression *reduceExpr(const std::string &accumulator = "",
+                               Expression *initial = nullptr,
+                               const std::string &innerVar = "",
+                               Expression *collection = nullptr,
+                               Expression *mapping = nullptr) {
+    return ReduceExpression::make(pool, accumulator, initial, innerVar, collection, mapping);
+  }
+
+  SubscriptRangeExpression *srExpr(Expression *list = nullptr,
+                                   Expression *lo = nullptr,
+                                   Expression *hi = nullptr) {
+    return SubscriptRangeExpression::make(pool, list, lo, hi);
   }
 
  protected:

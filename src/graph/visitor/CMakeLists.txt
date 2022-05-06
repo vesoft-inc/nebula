@@ -16,6 +16,7 @@ nebula_add_library(
     FindVisitor.cpp
     VidExtractVisitor.cpp
     EvaluableExprVisitor.cpp
+    ExtractGroupSuiteVisitor.cpp
 )
 
 nebula_add_library(

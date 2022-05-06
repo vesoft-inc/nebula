@@ -24,17 +24,19 @@ CmpType = Enum('CmpType', ('EQUAL', 'CONTAINS', 'NOT_CONTAINS'))
 
 
 class DataSetComparator:
-    def __init__(self,
-                 strict=True,
-                 order=False,
-                 contains=CmpType.EQUAL,
-                 first_n_records=-1,
-                 decode_type='utf-8',
-                 vid_fn=None):
+    def __init__(
+        self,
+        strict=True,
+        order=False,
+        contains=CmpType.EQUAL,
+        first_n_records=-1,
+        decode_type='utf-8',
+        vid_fn=None,
+    ):
         self._strict = strict
         self._order = order
         self._contains = contains
-        self._first_n_records=first_n_records
+        self._first_n_records = first_n_records
         self._decode_type = decode_type
         self._vid_fn = vid_fn
 
@@ -48,9 +50,11 @@ class DataSetComparator:
         return b.decode(self._decode_type)
 
     def _whether_return(self, cmp: bool) -> bool:
-        return ((self._contains == CmpType.EQUAL and not cmp)
-                or (self._contains == CmpType.CONTAINS and not cmp)
-                or (self._contains == CmpType.NOT_CONTAINS and cmp))
+        return (
+            (self._contains == CmpType.EQUAL and not cmp)
+            or (self._contains == CmpType.CONTAINS and not cmp)
+            or (self._contains == CmpType.NOT_CONTAINS and cmp)
+        )
 
     def compare(self, resp: DataSet, expect: DataSet):
         if self._contains == CmpType.NOT_CONTAINS and len(resp.rows) == 0:
@@ -66,19 +70,18 @@ class DataSetComparator:
         for (ln, rn) in zip(resp.column_names, expect.column_names):
             if ln != self.bstr(rn):
                 return False, -2
-        if self._order:
-            if self._contains == CmpType.CONTAINS and self._first_n_records < 0:
-                for i in range(0, len(expect.rows)):
-                    cmp = self.compare_row(resp.rows[i], expect.rows[i])
-                    if self._whether_return(cmp):
-                        return False, i
-                return True, None
-            elif self._contains == CmpType.CONTAINS and self._first_n_records > 0:
-                return self._compare_list(resp.rows[0:self._first_n_records], expect.rows, self.compare_row)
+        if self._order and self._contains == CmpType.EQUAL:
+            if self._first_n_records > 0:
+                # just compare the first n records
+                resp_rows = resp.rows[0 : self._first_n_records]
             else:
-                return len(resp.rows) == len(expect.rows), -1
-        return self._compare_list(resp.rows, expect.rows, self.compare_row,
-                                  self._contains)
+                resp_rows = resp.rows
+
+            return self._compate_order_list(resp_rows, expect.rows, self.compare_row)
+
+        return self._compare_list(
+            resp.rows, expect.rows, self.compare_row, self._contains
+        )
 
     def compare_value(self, lhs: Value, rhs: Union[Value, Pattern]) -> bool:
         """
@@ -104,7 +107,7 @@ class DataSetComparator:
         if lhs.getType() == Value.FVAL:
             if not rhs.getType() == Value.FVAL:
                 return False
-            return math.fabs(lhs.get_fVal() - rhs.get_fVal()) < 1.0E-8
+            return math.fabs(lhs.get_fVal() - rhs.get_fVal()) < 1.0e-8
         if lhs.getType() == Value.SVAL:
             if not rhs.getType() == Value.SVAL:
                 return False
@@ -123,8 +126,7 @@ class DataSetComparator:
                 return lhs.get_tVal() == rhs.get_tVal()
             if rhs.getType() == Value.SVAL:
                 lt = lhs.get_tVal()
-                lts = "%02d:%02d:%02d.%06d" % (lt.hour, lt.minute, lt.sec,
-                                               lt.microsec)
+                lts = "%02d:%02d:%02d.%06d" % (lt.hour, lt.minute, lt.sec, lt.microsec)
                 rv = rhs.get_sVal()
                 return lts == rv if type(rv) == str else self.b(lts) == rv
             return False
@@ -134,8 +136,14 @@ class DataSetComparator:
             if rhs.getType() == Value.SVAL:
                 ldt = lhs.get_dtVal()
                 ldts = "%d-%02d-%02dT%02d:%02d:%02d.%06d" % (
-                    ldt.year, ldt.month, ldt.day, ldt.hour, ldt.minute,
-                    ldt.sec, ldt.microsec)
+                    ldt.year,
+                    ldt.month,
+                    ldt.day,
+                    ldt.hour,
+                    ldt.minute,
+                    ldt.sec,
+                    ldt.microsec,
+                )
                 rv = rhs.get_sVal()
                 return ldts == rv if type(rv) == str else self.b(ldts) == rv
             return False
@@ -227,16 +235,18 @@ class DataSetComparator:
             if not lhs.ranking == rhs.ranking:
                 return False
             rsrc, rdst = self.eid(rhs, lhs.type)
-            if not (self.compare_vid(lhs.src, rsrc)
-                    and self.compare_vid(lhs.dst, rdst)):
+            if not (
+                self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
+            ):
                 return False
             if rhs.props is None or len(lhs.props) != len(rhs.props):
                 return False
         else:
             if rhs.src is not None and rhs.dst is not None:
                 rsrc, rdst = self.eid(rhs, lhs.type)
-                if not (self.compare_vid(lhs.src, rsrc)
-                        and self.compare_vid(lhs.dst, rdst)):
+                if not (
+                    self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
+                ):
                     return False
             if rhs.ranking is not None:
                 if lhs.ranking != rhs.ranking:
@@ -252,9 +262,9 @@ class DataSetComparator:
         return self.b(vid) if type(vid) == str else vid
 
     def _compare_vid(
-            self,
-            lid: Union[int, bytes],
-            rid: Union[int, bytes, str],
+        self,
+        lid: Union[int, bytes],
+        rid: Union[int, bytes, str],
     ) -> bool:
         if type(lid) is bytes:
             return type(rid) in [str, bytes] and lid == self.bstr(rid)
@@ -296,8 +306,9 @@ class DataSetComparator:
                 return False
             rtags = [] if rhs.tags is None else rhs.tags
         for tag in rtags:
-            ltag = [[lt.name, lt.props] for lt in lhs.tags
-                    if self.bstr(tag.name) == lt.name]
+            ltag = [
+                [lt.name, lt.props] for lt in lhs.tags if self.bstr(tag.name) == lt.name
+            ]
             if len(ltag) != 1:
                 return False
             if self._strict:
@@ -311,9 +322,7 @@ class DataSetComparator:
                 return False
         return True
 
-    def _get_map_value_by_key(self,
-                              key: bytes,
-                              kv: Dict[Union[str, bytes], Value]):
+    def _get_map_value_by_key(self, key: bytes, kv: Dict[Union[str, bytes], Value]):
         for k, v in kv.items():
             if key == self.bstr(k):
                 return True, v
@@ -339,8 +348,19 @@ class DataSetComparator:
     def compare_row(self, lhs: Row, rhs: Row):
         if not len(lhs.values) == len(rhs.values):
             return False
-        return all(
-            self.compare_value(l, r) for (l, r) in zip(lhs.values, rhs.values))
+        return all(self.compare_value(l, r) for (l, r) in zip(lhs.values, rhs.values))
+
+    def _compate_order_list(self, lhs, rhs, cmp_fn):
+        """
+        compare the order list,
+        different with _compare_list, the order should be strict
+        """
+        if len(lhs) != len(rhs):
+            return False, -1
+        for i, lr in enumerate(lhs):
+            if not cmp_fn(lr, rhs[i]):
+                return False, i
+        return True, -1
 
     def _compare_list(self, lhs, rhs, cmp_fn, contains=False):
         visited = []
