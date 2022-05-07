@@ -71,6 +71,8 @@ class ShortestPathExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors(size_t rowNum, bool reverse);
 
+  folly::Future<Status> batchShortestPath(size_t rowNum, size_t rowSize);
+
   folly::Future<Status> shortestPath(size_t rowNum, size_t stepNum);
 
   folly::Future<Status> handleResponse(size_t rowNum, size_t stepNum);

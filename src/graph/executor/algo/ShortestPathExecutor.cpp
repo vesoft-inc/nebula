@@ -5,8 +5,11 @@
 
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
+#include "sys/sysinfo.h"
 
 using nebula::storage::StorageClient;
+
+DEFINE_uint32(batch_size_shortest_path, 0, "number of concurrent threads when do shortest path");
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
@@ -14,25 +17,20 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   singleShortest_ = pathNode_->singleShortest();
   maxStep_ = pathNode_->stepRange()->max();
 
-  auto& colNames = pathNode_->colNames();
-  auto rowSize = buildRequestDataSet();
-  std::vector<folly::Future<Status>> futures;
-  for (size_t rowNum = 0; rowNum < rowSize; ++rowNum) {
-    resultDs_[rowNum].colNames = colNames;
-    futures.emplace_back(shortestPath(rowNum, 1));
+  size_t rowSize = buildRequestDataSet();
+  if (FLAGS_batch_size_shortest_path == 0) {
+    FLAGS_batch_size_shortest_path = get_nprocs_conf();
   }
-  return folly::collect(futures).via(runner()).thenValue([this, &colNames](auto&& resps) {
-    for (auto& resp : resps) {
-      NG_RETURN_IF_ERROR(resp);
-    }
-    // append dataset
-    DataSet result;
-    result.colNames = colNames;
-    for (auto& ds : resultDs_) {
-      result.append(std::move(ds));
-    }
-    return finish(ResultBuilder().value(Value(std::move(result))).build());
-  });
+  for (size_t rowNum = 0; rowNum < rowSize; rowNum += FLAGS_batch_size_shortest_path) {
+    auto status = batchShortestPath(rowNum, rowSize).get();
+    NG_RETURN_IF_ERROR(status);
+  }
+  DataSet result;
+  result.colNames = pathNode_->colNames();
+  for (auto& ds : resultDs_) {
+    result.append(std::move(ds));
+  }
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
 size_t ShortestPathExecutor::buildRequestDataSet() {
@@ -80,6 +78,23 @@ size_t ShortestPathExecutor::buildRequestDataSet() {
     }
   }
   return rowSize;
+}
+
+folly::Future<Status> ShortestPathExecutor::batchShortestPath(size_t rowNum, size_t rowSize) {
+  std::vector<folly::Future<Status>> futures;
+  futures.reserve(FLAGS_batch_size_shortest_path);
+  size_t size = rowNum + FLAGS_batch_size_shortest_path;
+  size_t maxRowNum = size > rowSize ? rowSize : size;
+  for (size_t i = rowNum; i < maxRowNum; ++i) {
+    resultDs_[i].colNames = pathNode_->colNames();
+    futures.emplace_back(shortestPath(i, 1));
+  }
+  return folly::collect(futures).via(runner()).thenValue([](auto&& resps) {
+    for (auto& resp : resps) {
+      NG_RETURN_IF_ERROR(resp);
+    }
+    return Status::OK();
+  });
 }
 
 folly::Future<Status> ShortestPathExecutor::shortestPath(size_t rowNum, size_t stepNum) {
