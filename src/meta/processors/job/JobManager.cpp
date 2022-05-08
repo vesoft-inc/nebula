@@ -241,7 +241,13 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
 
   auto optJobDesc = nebula::value(optJobDescRet);
 
-  if (!optJobDesc.setStatus(jobStatus)) {
+  bool force = false;
+  if (optJobDesc.getStatus() == cpp2::JobStatus::FAILED && jobStatus == cpp2::JobStatus::STOPPED &&
+      (optJobDesc.getJobType() == cpp2::JobType::ZONE_BALANCE ||
+       optJobDesc.getJobType() == cpp2::JobType::DATA_BALANCE)) {
+    force = true;
+  }
+  if (!optJobDesc.setStatus(jobStatus, force)) {
     // job already been set as finished, failed or stopped
     return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
   }
