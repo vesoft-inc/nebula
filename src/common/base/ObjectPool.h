@@ -35,9 +35,6 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
 
   template <typename T>
   T *add(T *obj) {
-    if constexpr (std::is_base_of<Expression, T>::value) {
-      VLOG(3) << "New expression added into pool: " << obj->toString();
-    }
     SLGuard g(lock_);
     objects_.emplace_back(obj);
     return obj;

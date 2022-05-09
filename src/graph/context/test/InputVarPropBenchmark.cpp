@@ -41,3 +41,9 @@ int main(int argc, char** argv) {
   folly::runBenchmarks();
   return 0;
 }
+
+// ============================================================================
+// /nebula/src/graph/context/test/InputVarPropBenchmark.cpprelative  time/iter  iters/s
+// ============================================================================
+// inputVarPropEval(test)                                      11.82ns   84.59M
+// ============================================================================
