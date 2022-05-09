@@ -44,7 +44,7 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
                             bool dedup) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
-  auto s = !iter->isGetNeighborsIter() ? iter->size() : 0;
+  auto s = iter->size();
   vertices.rows.reserve(s);
 
   std::unordered_set<VidType> uniqueSet;
