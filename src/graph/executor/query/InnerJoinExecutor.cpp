@@ -36,32 +36,35 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
     hashTable_.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
-      buildSingleKeyHashTable(hashKeys.front(), lhsIter_.get(), hashTable_);
-      return singleKeyProbe(probeKeys.front(), rhsIter_.get(), hashTable_);
+      buildSingleKeyHashTable(hashKeys.front(), lhsIter_.get());
+      return singleKeyProbe(probeKeys.front(), rhsIter_.get());
     } else {
       exchange_ = true;
-      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable_);
-      return singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable_);
+      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get());
+      return singleKeyProbe(hashKeys.front(), lhsIter_.get());
     }
   } else {
-    hashTable_.reserve(bucketSize);
+    listHashTable_.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
-      buildHashTable(hashKeys, lhsIter_.get(), hashTable_);
-      return probe(probeKeys, rhsIter_.get(), hashTable_);
+      buildHashTable(hashKeys, lhsIter_.get());
+      return probe(probeKeys, rhsIter_.get());
     } else {
       exchange_ = true;
-      buildHashTable(probeKeys, rhsIter_.get(), hashTable_);
-      return probe(hashKeys, lhsIter_.get(), hashTable_);
+      buildHashTable(probeKeys, rhsIter_.get());
+      return probe(hashKeys, lhsIter_.get());
     }
   }
 }
 
-folly::Future<Status> InnerJoinExecutor::probe(
-    const std::vector<Expression*>& probeKeys,
-    Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) {
-  auto scatter = [this, tmpProbeKeys = probeKeys, tmpHashTable = &hashTable](
+folly::Future<Status> InnerJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                                               Iterator* probeIter) {
+  std::vector<Expression*> tmpProbeKeys;
+  std::for_each(probeKeys.begin(), probeKeys.end(), [&tmpProbeKeys](auto& e) {
+    tmpProbeKeys.emplace_back(e->clone());
+  });
+  auto scatter = [this, tmpProbeKeys = std::move(tmpProbeKeys)](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    LOG(ERROR) << "begin: " << begin << " end: " << end;
     // Iterates to the begin pos
     size_t tmp = 0;
     for (; tmpIter->valid() && tmp < begin; ++tmp) {
@@ -78,7 +81,7 @@ folly::Future<Status> InnerJoinExecutor::probe(
         Value val = col->eval(ctx(tmpIter));
         list.values.emplace_back(std::move(val));
       }
-      buildNewRow<Value>(*tmpHashTable, Value(list), *tmpIter->row(), ds);
+      buildNewRow<List>(listHashTable_, list, *tmpIter->row(), ds);
     }
     return ds;
   };
@@ -100,12 +103,10 @@ folly::Future<Status> InnerJoinExecutor::probe(
   return runMultiJobs(std::move(scatter), std::move(gather), probeIter);
 }
 
-folly::Future<Status> InnerJoinExecutor::singleKeyProbe(
-    Expression* probeKey,
-    Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) {
-  auto scatter = [this, probeKey, tmpHashTable = &hashTable](
+folly::Future<Status> InnerJoinExecutor::singleKeyProbe(Expression* probeKey, Iterator* probeIter) {
+  auto scatter = [this, probeKey](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    auto tmpProbeKey = probeKey->clone();
     // Iterates to the begin pos
     size_t tmp = 0;
     for (; tmpIter->valid() && tmp < begin; ++tmp) {
@@ -116,8 +117,8 @@ folly::Future<Status> InnerJoinExecutor::singleKeyProbe(
     QueryExpressionContext ctx(ectx_);
     ds.rows.reserve(end - begin);
     for (; tmpIter->valid() && tmp++ < end; tmpIter->next()) {
-      auto& val = probeKey->eval(ctx(tmpIter));
-      buildNewRow<Value>(*tmpHashTable, val, *tmpIter->row(), ds);
+      auto& val = tmpProbeKey->eval(ctx(tmpIter));
+      buildNewRow<Value>(hashTable_, val, *tmpIter->row(), ds);
     }
     return ds;
   };

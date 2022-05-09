@@ -49,10 +49,7 @@ Status JoinExecutor::checkBiInputDataSets() {
   return Status::OK();
 }
 
-void JoinExecutor::buildHashTable(
-    const std::vector<Expression*>& hashKeys,
-    Iterator* iter,
-    std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
+void JoinExecutor::buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter) {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     List list;
@@ -62,20 +59,17 @@ void JoinExecutor::buildHashTable(
       list.values.emplace_back(std::move(val));
     }
 
-    auto& vals = hashTable[Value(std::move(list))];
+    auto& vals = listHashTable_[list];
     vals.emplace_back(iter->row());
   }
 }
 
-void JoinExecutor::buildSingleKeyHashTable(
-    Expression* hashKey,
-    Iterator* iter,
-    std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
+void JoinExecutor::buildSingleKeyHashTable(Expression* hashKey, Iterator* iter) {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     auto& val = hashKey->eval(ctx(iter));
 
-    auto& vals = hashTable[val];
+    auto& vals = hashTable_[val];
     vals.emplace_back(iter->row());
   }
 }

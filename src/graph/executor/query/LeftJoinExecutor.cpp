@@ -4,6 +4,8 @@
 
 #include "graph/executor/query/LeftJoinExecutor.h"
 
+#include <algorithm>
+
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -30,14 +32,14 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
     hashTable_.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
-      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable_);
-      return singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable_);
+      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get());
+      return singleKeyProbe(hashKeys.front(), lhsIter_.get());
     }
   } else {
-    hashTable_.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
+    listHashTable_.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
-      buildHashTable(probeKeys, rhsIter_.get(), hashTable_);
-      return probe(hashKeys, lhsIter_.get(), hashTable_);
+      buildHashTable(probeKeys, rhsIter_.get());
+      return probe(hashKeys, lhsIter_.get());
     }
   }
 
@@ -45,12 +47,15 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
-folly::Future<Status> LeftJoinExecutor::probe(
-    const std::vector<Expression*>& probeKeys,
-    Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) {
-  auto scatter = [this, tmpProbeKeys = probeKeys, tmpHashTable = &hashTable](
+folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                                              Iterator* probeIter) {
+  auto scatter = [this, probeKeys = probeKeys](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    std::vector<Expression*> tmpProbeKeys;
+    std::for_each(probeKeys.begin(), probeKeys.end(), [&tmpProbeKeys](auto& e) {
+      tmpProbeKeys.emplace_back(e->clone());
+    });
+    LOG(ERROR) << "begin: " << begin << " end: " << end;
     // Iterates to the begin pos
     size_t tmp = 0;
     for (; tmpIter->valid() && tmp < begin; ++tmp) {
@@ -68,7 +73,7 @@ folly::Future<Status> LeftJoinExecutor::probe(
         list.values.emplace_back(std::move(val));
       }
 
-      buildNewRow<Value>(*tmpHashTable, list, *tmpIter->row(), ds);
+      buildNewRow<List>(listHashTable_, list, *tmpIter->row(), ds);
     }
     return ds;
   };
@@ -89,12 +94,10 @@ folly::Future<Status> LeftJoinExecutor::probe(
   return runMultiJobs(std::move(scatter), std::move(gather), probeIter);
 }
 
-folly::Future<Status> LeftJoinExecutor::singleKeyProbe(
-    Expression* probeKey,
-    Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) {
-  auto scatter = [this, probeKey, tmpHashTable = &hashTable](
+folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Iterator* probeIter) {
+  auto scatter = [this, probeKey](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    auto tmpProbeKey = probeKey->clone();
     // Iterates to the begin pos
     size_t tmp = 0;
     for (; tmpIter->valid() && tmp < begin; ++tmp) {
@@ -105,8 +108,8 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(
     QueryExpressionContext ctx(ectx_);
     ds.rows.reserve(end - begin);
     for (; tmpIter->valid() && tmp++ < end; tmpIter->next()) {
-      auto& val = probeKey->eval(ctx(tmpIter));
-      buildNewRow<Value>(*tmpHashTable, val, *tmpIter->row(), ds);
+      auto& val = tmpProbeKey->eval(ctx(tmpIter));
+      buildNewRow<Value>(hashTable_, val, *tmpIter->row(), ds);
     }
     return ds;
   };
