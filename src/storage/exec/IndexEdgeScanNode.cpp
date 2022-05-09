@@ -11,8 +11,9 @@ IndexEdgeScanNode::IndexEdgeScanNode(const IndexEdgeScanNode& node)
 IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
                                      IndexID indexId,
                                      const std::vector<cpp2::IndexColumnHint>& columnHint,
-                                     ::nebula::kvstore::KVStore* kvstore)
-    : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint, kvstore) {
+                                     ::nebula::kvstore::KVStore* kvstore,
+                                     bool hasNullableCol)
+    : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint, kvstore, hasNullableCol) {
   getIndex = std::function([this](std::shared_ptr<IndexItem>& index) {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
