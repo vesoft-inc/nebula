@@ -135,13 +135,12 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   std::vector<folly::Future<DataSet>> futures;
   for (auto& vid : meetVids) {
     batchVids.push_back(vid);
-    if (i == totalSize - 1 || batchVids.size() == batchSize) {
+    if (++i == totalSize || batchVids.size() == batchSize) {
       auto future = folly::via(runner(), [this, vids = std::move(batchVids), oddStep]() {
         return doConjunct(vids, oddStep);
       });
       futures.emplace_back(std::move(future));
     }
-    i++;
   }
 
   return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {

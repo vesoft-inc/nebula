@@ -426,7 +426,8 @@ def load_csv_data(
         create_space(space_desc, sess)
 
         schemas = config['schema']
-        for line in schemas.splitlines():
+        sorted_schema_lines = sorted(schemas.splitlines()) # sort to make sure schema is created in fixed order
+        for line in sorted_schema_lines:
             resp_ok(sess, line.strip(), True)
 
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization

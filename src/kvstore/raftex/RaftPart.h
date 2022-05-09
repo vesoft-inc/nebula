@@ -65,10 +65,10 @@ class AppendLogsIterator;
  * should be applied atomically. You could implement CAS, READ-MODIFY-WRITE
  * operations though it.
  * */
-using AtomicOp = folly::Function<std::optional<std::string>(void)>;
-
+using AtomicOp = folly::Function<folly::Optional<std::string>(void)>;
 class RaftPart : public std::enable_shared_from_this<RaftPart> {
   friend class AppendLogsIterator;
+  friend class AppendLogsIteratorFactory;
   friend class Host;
   friend class SnapshotManager;
   FRIEND_TEST(MemberChangeTest, AddRemovePeerTest);
@@ -273,7 +273,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @param op Atomic operation, will output a log if succeed
    * @return folly::Future<nebula::cpp2::ErrorCode>
    */
-  folly::Future<nebula::cpp2::ErrorCode> atomicOpAsync(AtomicOp op);
+  folly::Future<nebula::cpp2::ErrorCode> atomicOpAsync(kvstore::MergeableAtomicOp op);
 
   /**
    * @brief Send a log of COMMAND type
@@ -565,8 +565,13 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
   using HeartbeatResponses = std::vector<std::pair<size_t, cpp2::HeartbeatResponse>>;
 
-  // <source, logType, log>
-  using LogCache = std::vector<std::tuple<ClusterID, LogType, std::string, AtomicOp>>;
+  // <source, logType, log, result(promise), atomic>
+  using LogCacheItem = std::tuple<ClusterID,
+                                  LogType,
+                                  std::string,
+                                  kvstore::MergeableAtomicOp,
+                                  folly::Promise<nebula::cpp2::ErrorCode>>;
+  using LogCache = std::deque<LogCacheItem>;
 
   /****************************************************
    *
@@ -714,7 +719,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   folly::Future<nebula::cpp2::ErrorCode> appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
-                                                        AtomicOp cb = nullptr);
+                                                        kvstore::MergeableAtomicOp cb = nullptr);
 
   /**
    * @brief Append the logs in iterator
@@ -787,116 +792,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   void updateQuorum();
 
  protected:
-  template <class ValueType>
-  class PromiseSet final {
-   public:
-    PromiseSet() = default;
-    PromiseSet(const PromiseSet&) = delete;
-    PromiseSet(PromiseSet&&) = default;
-
-    ~PromiseSet() = default;
-
-    PromiseSet& operator=(const PromiseSet&) = delete;
-    PromiseSet& operator=(PromiseSet&& right) = default;
-
-    /**
-     * @brief Clean all promises
-     */
-    void reset() {
-      sharedPromises_.clear();
-      singlePromises_.clear();
-      rollSharedPromise_ = true;
-    }
-
-    /**
-     * @brief Used for NORMAL raft log
-     *
-     * @return folly::Future<ValueType>
-     */
-    folly::Future<ValueType> getSharedFuture() {
-      if (rollSharedPromise_) {
-        sharedPromises_.emplace_back();
-        rollSharedPromise_ = false;
-      }
-
-      return sharedPromises_.back().getFuture();
-    }
-
-    /**
-     * @brief Used for ATOMIC_OP raft log
-     *
-     * @return folly::Future<ValueType>
-     */
-    folly::Future<ValueType> getSingleFuture() {
-      singlePromises_.emplace_back();
-      rollSharedPromise_ = true;
-
-      return singlePromises_.back().getFuture();
-    }
-
-    /**
-     * @brief Used for COMMAND raft log
-     *
-     * @return folly::Future<ValueType>
-     */
-    folly::Future<ValueType> getAndRollSharedFuture() {
-      if (rollSharedPromise_) {
-        sharedPromises_.emplace_back();
-      }
-      rollSharedPromise_ = true;
-      return sharedPromises_.back().getFuture();
-    }
-
-    /**
-     * @brief Set shared promise
-     *
-     * @tparam VT
-     * @param val
-     */
-    template <class VT>
-    void setOneSharedValue(VT&& val) {
-      CHECK(!sharedPromises_.empty());
-      sharedPromises_.front().setValue(std::forward<VT>(val));
-      sharedPromises_.pop_front();
-    }
-
-    /**
-     * @brief Set single promise
-     *
-     * @tparam VT
-     * @param val
-     */
-    template <class VT>
-    void setOneSingleValue(VT&& val) {
-      CHECK(!singlePromises_.empty());
-      singlePromises_.front().setValue(std::forward<VT>(val));
-      singlePromises_.pop_front();
-    }
-
-    /**
-     * @brief Set all promises to result, usually a failed result
-     *
-     * @param val
-     */
-    void setValue(ValueType val) {
-      for (auto& p : sharedPromises_) {
-        p.setValue(val);
-      }
-      for (auto& p : singlePromises_) {
-        p.setValue(val);
-      }
-    }
-
-   private:
-    // Whether the last future was returned from a shared promise
-    bool rollSharedPromise_{true};
-
-    // Promises shared by continuous non atomic op logs
-    std::list<folly::SharedPromise<ValueType>> sharedPromises_;
-    // A list of promises for atomic op logs
-    std::list<folly::Promise<ValueType>> singlePromises_;
-  };
-
   const std::string idStr_;
 
   const ClusterID clusterId_;
@@ -914,13 +809,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   mutable std::mutex logsLock_;
   std::atomic_bool replicatingLogs_{false};
   std::atomic_bool bufferOverFlow_{false};
-  PromiseSet<nebula::cpp2::ErrorCode> cachingPromise_;
   LogCache logs_;
+  LogCache sendingLogs_;
 
   // Partition level lock to synchronize the access of the partition
   mutable std::mutex raftLock_;
-
-  PromiseSet<nebula::cpp2::ErrorCode> sendingPromise_;
 
   Status status_;
   Role role_;

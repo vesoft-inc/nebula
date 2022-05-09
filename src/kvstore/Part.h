@@ -124,7 +124,7 @@ class Part : public raftex::RaftPart {
    * @param op Atomic operation
    * @param cb Callback when has a result
    */
-  void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
+  void asyncAtomicOp(MergeableAtomicOp op, KVCallback cb);
 
   /**
    * @brief Add a raft learner asynchronously by adding raft log

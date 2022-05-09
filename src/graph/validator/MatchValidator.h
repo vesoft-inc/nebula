@@ -27,14 +27,13 @@ class MatchValidator final : public Validator {
 
   Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
-  Status validateFilter(const Expression *filter,
-                        WhereClauseContext &whereClauseCtx,
-                        std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+  Status validatePath(const MatchPath *path, Path &pathInfo);
+
+  Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx);
 
   Status validateReturn(MatchReturn *ret,
                         const std::vector<QueryPart> &queryParts,
-                        ReturnClauseContext &retClauseCtx,
-                        std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+                        ReturnClauseContext &retClauseCtx);
 
   Status validateAliases(const std::vector<const Expression *> &exprs,
                          const std::unordered_map<std::string, AliasType> &aliases) const;
@@ -43,12 +42,9 @@ class MatchValidator final : public Validator {
 
   Status validateWith(const WithClause *with,
                       const std::vector<QueryPart> &queryParts,
-                      WithClauseContext &withClauseCtx,
-                      std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+                      WithClauseContext &withClauseCtx);
 
-  Status validateUnwind(const UnwindClause *unwind,
-                        UnwindClauseContext &unwindClauseCtx,
-                        std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+  Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx);
 
   Status validatePagination(const Expression *skipExpr,
                             const Expression *limitExpr,
@@ -58,11 +54,9 @@ class MatchValidator final : public Validator {
                          const YieldColumns *yieldColumns,
                          OrderByClauseContext &orderByCtx) const;
 
-  Status validateGroup(YieldClauseContext &yieldCtx,
-                       std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+  Status validateGroup(YieldClauseContext &yieldCtx);
 
-  Status validateYield(YieldClauseContext &yieldCtx,
-                       std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+  Status validateYield(YieldClauseContext &yieldCtx);
 
   Status buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
                                         YieldColumns *columns) const;
@@ -77,7 +71,9 @@ class MatchValidator final : public Validator {
                        std::vector<EdgeInfo> &nodeInfos,
                        std::unordered_map<std::string, AliasType> &aliases);
 
-  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx);
+  Status buildPathExpr(const MatchPath *path,
+                       Path &pathInfo,
+                       std::unordered_map<std::string, AliasType> &aliasesGenerated);
 
   Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
                         const std::unordered_map<std::string, AliasType> &lastAliases) const;
@@ -100,13 +96,13 @@ class MatchValidator final : public Validator {
   // Check undefined variable in match path expression
   Status validateMatchPathExpr(Expression *expr,
                                const std::unordered_map<std::string, AliasType> &availableAliases,
-                               std::vector<std::unique_ptr<MatchClauseContext>> &matchs);
+                               std::vector<Path> &paths);
 
   static Status checkMatchPathExpr(
       const MatchPathPatternExpression *expr,
       const std::unordered_map<std::string, AliasType> &availableAliases);
 
-  static Status buildAggPathInfo(const MatchPath *path, MatchClauseContext &matchClauseCtx);
+  static Status buildRollUpPathInfo(const MatchPath *path, Path &pathInfo);
 
  private:
   std::unique_ptr<CypherContext> cypherCtx_;

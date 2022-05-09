@@ -5,7 +5,9 @@
 
 #include "graph/planner/match/YieldClausePlanner.h"
 
+#include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/MatchSolver.h"
+#include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/visitor/RewriteVisitor.h"
 
@@ -72,6 +74,23 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
 
   if (yctx->distinct) {
     subplan.root = Dedup::make(yctx->qctx, subplan.root);
+  }
+  SubPlan patternPlan;
+  // Build plan for pattern from expression
+  for (auto& path : yctx->paths) {
+    auto pathPlan = std::make_unique<MatchPathPlanner>()->transform(
+        yctx->qctx, yctx->space.id, nullptr, yctx->aliasesAvailable, {}, path);
+    NG_RETURN_IF_ERROR(pathPlan);
+    auto pathplan = std::move(pathPlan).value();
+    patternPlan = SegmentsConnector::rollUpApply(yctx->qctx,
+                                                 patternPlan,
+                                                 yctx->inputColNames,
+                                                 pathplan,
+                                                 path.compareVariables,
+                                                 path.collectVariable);
+  }
+  if (patternPlan.root != nullptr) {
+    subplan = SegmentsConnector::addInput(subplan, patternPlan);
   }
 
   return Status::OK();

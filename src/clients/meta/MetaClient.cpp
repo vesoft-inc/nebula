@@ -170,10 +170,14 @@ void MetaClient::heartBeatThreadFunc() {
     bgThread_->addDelayTask(
         FLAGS_heartbeat_interval_secs * 1000, &MetaClient::heartBeatThreadFunc, this);
   };
-  auto ret = heartbeat().get();
-  if (!ret.ok()) {
-    LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-    return;
+  // UNKNOWN is reserved for tools such as upgrader, in that case the ip/port is not set. We do
+  // not send heartbeat to meta to avoid writing error host info (e.g. Host("", 0))
+  if (options_.role_ != cpp2::HostRole::UNKNOWN) {
+    auto ret = heartbeat().get();
+    if (!ret.ok()) {
+      LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
+      return;
+    }
   }
 
   // if MetaServer has some changes, refresh the localCache_
@@ -236,7 +240,9 @@ bool MetaClient::loadUsersAndRoles() {
 }
 
 bool MetaClient::loadData() {
-  if (localDataLastUpdateTime_ == metadLastUpdateTime_) {
+  // UNKNOWN role will skip heartbeat
+  if (options_.role_ != cpp2::HostRole::UNKNOWN &&
+      localDataLastUpdateTime_ == metadLastUpdateTime_) {
     return true;
   }
 
@@ -925,7 +931,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
       return Status::Error("Job not existed in chosen space!");
     case nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER:
-      return Status::Error("Need to recover failed data balance job or zone balance job firstly!");
+      return Status::Error("Need to recover failed data balance job firstly!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -2958,7 +2964,9 @@ StatusOr<std::vector<RemoteListenerInfo>> MetaClient::getListenerHostTypeBySpace
 }
 
 bool MetaClient::loadCfg() {
-  if (options_.skipConfig_ || localCfgLastUpdateTime_ == metadLastUpdateTime_) {
+  // UNKNOWN role will skip heartbeat
+  if (options_.skipConfig_ || (options_.role_ != cpp2::HostRole::UNKNOWN &&
+                               localCfgLastUpdateTime_ == metadLastUpdateTime_)) {
     return true;
   }
   if (!configReady_ && !registerCfg()) {
