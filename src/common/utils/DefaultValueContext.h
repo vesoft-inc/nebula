@@ -28,6 +28,11 @@ class DefaultValueContext final : public ExpressionContext {
     return Value::kEmpty;
   }
 
+  StatusOr<std::size_t> getVarPropIndex(const std::string&, const std::string&) const override {
+    LOG(FATAL) << "Not allowed to call";
+    return Status::Error("Unimplemented");
+  }
+
   Value getEdgeProp(const std::string&, const std::string&) const override {
     LOG(FATAL) << "Not allowed to call";
     return Value::kEmpty;
@@ -53,7 +58,12 @@ class DefaultValueContext final : public ExpressionContext {
     return Value::kEmpty;
   }
 
-  Value getColumn(int32_t) const override {
+  StatusOr<std::size_t> getInputPropIndex(const std::string&) const override {
+    LOG(FATAL) << "Not allowed to call";
+    return Status::Error("Unimplemented");
+  }
+
+  const Value& getColumn(int32_t) const override {
     LOG(FATAL) << "Not allowed to call";
     return Value::kEmpty;
   }

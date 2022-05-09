@@ -85,3 +85,18 @@ nebula_add_executable(
         wangle
         ${PROXYGEN_LIBRARIES}
 )
+
+nebula_add_executable(
+    NAME
+        input_var_prop_bm
+    SOURCES
+        InputVarPropBenchmark.cpp
+    OBJECTS
+        ${CONTEXT_TEST_LIBS}
+    LIBRARIES
+        follybenchmark
+        boost_regex
+        ${THRIFT_LIBRARIES}
+        wangle
+        ${PROXYGEN_LIBRARIES}
+)
