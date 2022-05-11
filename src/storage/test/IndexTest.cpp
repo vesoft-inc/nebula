@@ -238,6 +238,7 @@ TEST_F(IndexScanTest, Base) {
     (i1,2):a
     (i2,3):b
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (auto& iter : kv) {
@@ -251,8 +252,8 @@ TEST_F(IndexScanTest, Base) {
     };
     IndexID indexId = 2;
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
@@ -289,8 +290,8 @@ TEST_F(IndexScanTest, Base) {
     };
     IndexID indexId = 3;
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[1]);
     helper.setTag(scanNode.get(), schema);
@@ -336,6 +337,7 @@ TEST_F(IndexScanTest, Vertex) {
     TAG(t,1)
     (i1,2):a
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   std::vector<ColumnHint> columnHints{
@@ -348,8 +350,8 @@ TEST_F(IndexScanTest, Vertex) {
     for (auto& item : kv[1]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
@@ -386,8 +388,8 @@ TEST_F(IndexScanTest, Vertex) {
     for (auto& item : kv[0]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
@@ -437,6 +439,7 @@ TEST_F(IndexScanTest, Edge) {
     EDGE(e,1)
     (i1,2):b,c
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeEdge(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   std::vector<ColumnHint> columnHints{
@@ -448,8 +451,8 @@ TEST_F(IndexScanTest, Edge) {
     for (auto& item : kv[1]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode =
-        std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexEdgeScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[0]);
     helper.setEdge(scanNode.get(), schema);
@@ -485,8 +488,8 @@ TEST_F(IndexScanTest, Edge) {
     for (auto& item : kv[0]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode =
-        std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexEdgeScanNode>(
+        context.get(), indexId, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), indices[0]);
     helper.setEdge(scanNode.get(), schema);
@@ -540,6 +543,7 @@ TEST_F(IndexScanTest, Int) {
     (i2,3):b
     (i3,4):c
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (auto& iter : kv) {
@@ -552,8 +556,8 @@ TEST_F(IndexScanTest, Int) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -753,6 +757,7 @@ float     | float                     | float                   | int
     (i2,3):b
     (i3,4):c
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeEdge(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (auto& iter : kv) {
@@ -765,8 +770,8 @@ float     | float                     | float                   | int
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(0, 1);
-    auto scanNode =
-        std::make_unique<IndexEdgeScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexEdgeScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setEdge(scanNode.get(), schema);
@@ -982,6 +987,7 @@ TEST_F(IndexScanTest, Bool) {
     (i1,2):a
     (i2,3):b
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 2, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (auto& iter : kv) {
@@ -994,8 +1000,8 @@ TEST_F(IndexScanTest, Bool) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1069,6 +1075,7 @@ TEST_F(IndexScanTest, String1) {
     (ib,3): b(10)
     (ic,4): c(10)
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (size_t i = 0; i < kv.size(); i++) {
@@ -1082,8 +1089,8 @@ TEST_F(IndexScanTest, String1) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1225,6 +1232,7 @@ TEST_F(IndexScanTest, String2) {
     (i2,3):c2(5)
     (i3,4):c3(5)
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (size_t i = 0; i < kv.size(); i++) {
@@ -1238,8 +1246,8 @@ TEST_F(IndexScanTest, String2) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1355,6 +1363,7 @@ TEST_F(IndexScanTest, String3) {
     (ib,2): b(6)
     (ic,3): c(6)
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (size_t i = 0; i < kv.size(); i++) {
@@ -1368,8 +1377,8 @@ TEST_F(IndexScanTest, String3) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1476,6 +1485,7 @@ TEST_F(IndexScanTest, String4) {
     (ia,1): a(5)
     (ib,2): b(5)
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (size_t i = 0; i < kv.size(); i++) {
@@ -1489,8 +1499,8 @@ TEST_F(IndexScanTest, String4) {
                    const std::vector<Row>& expect,
                    const std::string& case_) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1602,10 +1612,11 @@ TEST_F(IndexScanTest, Nullable) {
   auto check = [&](std::shared_ptr<IndexItem> index,
                    const std::vector<ColumnHint>& columnHints,
                    const std::vector<Row>& expect,
-                   const std::string& case_) {
+                   const std::string& case_,
+                   bool hasNullableCol) {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
@@ -1658,6 +1669,7 @@ TEST_F(IndexScanTest, Nullable) {
       (ib,3):b
       (iba,4):b,a
     )"_index(schema);
+    bool hasNullableCol = schema->hasNullableCol();
     auto kv = encodeTag(rows, 1, schema, indices);
     kvstore = std::make_unique<MockKVStore>();
     for (auto& iter : kv) {
@@ -1665,9 +1677,9 @@ TEST_F(IndexScanTest, Nullable) {
         kvstore->put(item.first, item.second);
       }
     }
-    check(indices[0], hint("a"), {}, "case1.1");
-    check(indices[1], hint("b"), expect(1, 2), "case1.2");
-    check(indices[2], hint("b"), expect(1, 2), "case1.3");
+    check(indices[0], hint("a"), {}, "case1.1", hasNullableCol);
+    check(indices[1], hint("b"), expect(1, 2), "case1.2", hasNullableCol);
+    check(indices[2], hint("b"), expect(1, 2), "case1.3", hasNullableCol);
   }
   /* Case 2: Float */ {
     auto rows = R"(
@@ -1687,6 +1699,7 @@ TEST_F(IndexScanTest, Nullable) {
       (ib,3):b
       (iba,4):b,a
     )"_index(schema);
+    bool hasNullableCol = schema->hasNullableCol();
     auto kv = encodeTag(rows, 1, schema, indices);
     kvstore = std::make_unique<MockKVStore>();
     for (auto& iter : kv) {
@@ -1694,9 +1707,9 @@ TEST_F(IndexScanTest, Nullable) {
         kvstore->put(item.first, item.second);
       }
     }
-    check(indices[0], hint("a"), {}, "case2.1");
-    check(indices[1], hint("b"), expect(0, 2), "case2.2");
-    check(indices[2], hint("b"), expect(0, 2), "case2.3");
+    check(indices[0], hint("a"), {}, "case2.1", hasNullableCol);
+    check(indices[1], hint("b"), expect(0, 2), "case2.2", hasNullableCol);
+    check(indices[2], hint("b"), expect(0, 2), "case2.3", hasNullableCol);
   }
   /* Case 3: String */ {
     auto rows = R"(
@@ -1716,6 +1729,7 @@ TEST_F(IndexScanTest, Nullable) {
       (ib,3):b(3)
       (iba,4):b(3),a(3)
     )"_index(schema);
+    bool hasNullableCol = schema->hasNullableCol();
     auto kv = encodeTag(rows, 1, schema, indices);
     kvstore = std::make_unique<MockKVStore>();
     for (auto& iter : kv) {
@@ -1723,9 +1737,51 @@ TEST_F(IndexScanTest, Nullable) {
         kvstore->put(item.first, item.second);
       }
     }
-    check(indices[0], hint("a"), {}, "case3.1");
-    check(indices[1], hint("b"), expect(0, 3), "case3.2");
-    check(indices[2], hint("b"), expect(0, 3), "case3.3");
+    check(indices[0], hint("a"), {}, "case3.1", hasNullableCol);
+    check(indices[1], hint("b"), expect(0, 3), "case3.2", hasNullableCol);
+    check(indices[2], hint("b"), expect(0, 3), "case3.3", hasNullableCol);
+  }
+  /* Case 4: Bool */ {
+    auto rows = R"(
+      bool  | bool
+      false | <null>
+      true  | <null>
+      true  | true
+      true  | false
+      false | true
+      false | false
+    )"_row;
+    schema = R"(
+      a | bool | | false
+      b | bool | | true
+    )"_schema;
+    auto indices = R"(
+      TAG(t,1)
+      (ia,2):a
+      (ib,3):b
+      (iba,4):b,a
+    )"_index(schema);
+    bool hasNullableCol = schema->hasNullableCol();
+    auto kv = encodeTag(rows, 1, schema, indices);
+    kvstore = std::make_unique<MockKVStore>();
+    for (auto& iter : kv) {
+      for (auto& item : iter) {
+        kvstore->put(item.first, item.second);
+      }
+    }
+    check(indices[0], hint("a"), {}, "case4.1", hasNullableCol);
+    check(indices[1], hint("b"), expect(0, 1), "case4.2", hasNullableCol);
+    check(indices[2], hint("b"), expect(0, 1), "case4.3", hasNullableCol);
+    check(indices[0],
+          std::vector{makeColumnHint("a", Value(true))},
+          expect(1, 2, 3),
+          "case4.4",
+          hasNullableCol);
+    check(indices[1],
+          std::vector{makeColumnHint("b", Value(true))},
+          expect(2, 4),
+          "case4.5",
+          hasNullableCol);
   }
 }
 TEST_F(IndexScanTest, TTL) {
@@ -1772,6 +1828,7 @@ TEST_F(IndexScanTest, Geography) {
     TAG(t,1)
     (i1,2):geo
   )"_index(schema);
+  bool hasNullableCol = schema->hasNullableCol();
   auto kv = encodeTag(rows, 1, schema, indices);
   auto kvstore = std::make_unique<MockKVStore>();
   for (auto& iter : kv) {
@@ -1782,8 +1839,8 @@ TEST_F(IndexScanTest, Geography) {
   auto actual = [&](std::shared_ptr<IndexItem> index,
                     const std::vector<ColumnHint>& columnHints) -> auto {
     auto context = makeContext(1, 0);
-    auto scanNode =
-        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    auto scanNode = std::make_unique<IndexVertexScanNode>(
+        context.get(), 0, columnHints, kvstore.get(), hasNullableCol);
     IndexScanTestHelper helper;
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);

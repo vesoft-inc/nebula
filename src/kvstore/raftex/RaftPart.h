@@ -557,6 +557,17 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    */
   void removePeer(const HostAddr& peer);
 
+  /**
+   * @brief Return whether need to clean snapshot when a node has not received the snapshot for a
+   * period of time
+   */
+  bool needToCleanupSnapshot();
+
+  /**
+   * @brief Convert to follower when snapshot has been outdated
+   */
+  void cleanupSnapshot();
+
  private:
   // A list of <idx, resp>
   // idx  -- the index of the peer
@@ -624,17 +635,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether need to trigger leader election
    */
   bool needToStartElection();
-
-  /**
-   * @brief Return whether need to clean snapshot when a node has not received the snapshot for a
-   * period of time
-   */
-  bool needToCleanupSnapshot();
-
-  /**
-   * @brief Convert to follower when snapshot has been outdated
-   */
-  void cleanupSnapshot();
 
   /**
    * @brief The method sends out AskForVote request. Return true if I have been granted majority
