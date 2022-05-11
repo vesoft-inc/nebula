@@ -1210,30 +1210,25 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
 /*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr) {
   if (DCHECK_NOTNULL(expr)->kind() != Expression::Kind::kRelIn &&
       expr->kind() != Expression::Kind::kRelEQ) {
-    DLOG(ERROR) << "DEBUG POINT:0";
     return false;
   }
   const auto *relExpr = static_cast<const RelationalExpression *>(expr);
   if (relExpr->left()->kind() != Expression::Kind::kFunctionCall) {
-    DLOG(ERROR) << "DEBUG POINT:1";
     return false;
   }
   const auto *fCallExpr = static_cast<const FunctionCallExpression *>(relExpr->left());
   if (fCallExpr->name() != "id" || fCallExpr->args()->numArgs() != 1 ||
       fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
-    DLOG(ERROR) << "DEBUG POINT:2";
     return false;
   }
   if (expr->kind() == Expression::Kind::kRelIn) {
     // id(V) IN [List]
     if (relExpr->right()->kind() != Expression::Kind::kList) {
-      DLOG(ERROR) << "DEBUG POINT:3";
       return false;
     }
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
     // id(V) = Value
     if (relExpr->right()->kind() != Expression::Kind::kConstant) {
-      DLOG(ERROR) << "DEBUG POINT:4";
       return false;
     }
   }
