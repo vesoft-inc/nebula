@@ -358,9 +358,9 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
       partId_(node.partId_),
       indexId_(node.indexId_),
       index_(node.index_),
-      indexNullable_(node.indexNullable_),
       columnHints_(node.columnHints_),
       kvstore_(node.kvstore_),
+      indexNullable_(node.indexNullable_),
       requiredColumns_(node.requiredColumns_),
       requiredAndHintColumns_(node.requiredAndHintColumns_),
       ttlProps_(node.ttlProps_),
@@ -498,11 +498,14 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
   if (colPosMap.empty()) {
     return;
   }
+  // offset is the start posistion of index values
   size_t offset = sizeof(PartitionID) + sizeof(IndexID);
   std::bitset<16> nullableBit;
   int8_t nullableColPosit = 15;
   if (indexNullable_) {
-    auto bitOffset = key.size() - context_->vIdLen() - sizeof(uint16_t);
+    // key has been truncated ouside, it **ONLY** contains partId, indexId, indexValue and
+    // nullableBits. So the last two bytes is the nullableBits
+    auto bitOffset = key.size() - sizeof(uint16_t);
     auto v = *reinterpret_cast<const uint16_t*>(key.data() + bitOffset);
     nullableBit = v;
   }
