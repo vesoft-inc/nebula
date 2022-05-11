@@ -306,7 +306,7 @@ void DeduceTypeVisitor::visit(RelationalExpression *expr) {
     case Expression::Kind::kEndsWith:
     case Expression::Kind::kNotEndsWith: {
       auto right = type_;
-      if (right != Value::Type::NULLVALUE && right != Value::Type::STRING) {
+      if (!isSuperiorType(right) && right != Value::Type::STRING) {
         std::stringstream ss;
         ss << "`" << expr->right()->toString() << "', expected String, but wat " << type_;
         status_ = Status::SemanticError(ss.str());
