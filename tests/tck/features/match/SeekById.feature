@@ -365,3 +365,37 @@ Feature: Match seek by id
       | 'Aron Baynes'   |
       | 'Blake Griffin' |
       | 'Grant Hill'    |
+
+  Scenario: check plan
+    When profiling query:
+      """
+      MATCH (v)
+      WHERE id(v) == 'Paul Gasol'
+      RETURN v.player.name AS Name, v.player.age AS Age
+      """
+    Then the result should be, in any order:
+      | Name         | Age |
+      | 'Paul Gasol' | 38  |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 12 | Project        | 2            |               |
+      | 2  | AppendVertices | 16           |               |
+      | 16 | Dedup          | 7            |               |
+      | 7  | PassThrough    | 0            |               |
+      | 0  | Start          |              |               |
+    When profiling query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['Paul Gasol']
+      RETURN v.player.name AS Name, v.player.age AS Age
+      """
+    Then the result should be, in any order:
+      | Name         | Age |
+      | 'Paul Gasol' | 38  |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 12 | Project        | 2            |               |
+      | 2  | AppendVertices | 16           |               |
+      | 16 | Dedup          | 7            |               |
+      | 7  | PassThrough    | 0            |               |
+      | 0  | Start          |              |               |

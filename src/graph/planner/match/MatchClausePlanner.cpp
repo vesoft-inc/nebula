@@ -36,10 +36,9 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
     auto& nodeInfos = iter->nodeInfos;
     MatchPathPlanner matchPathPlanner;
-    auto bindFilter = matchClauseCtx->where ? matchClauseCtx->where->filter : nullptr;
     auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
                                              matchClauseCtx->space.id,
-                                             bindFilter,
+                                             matchClauseCtx->where.get(),
                                              matchClauseCtx->aliasesAvailable,
                                              nodeAliasesSeen,
                                              *iter);

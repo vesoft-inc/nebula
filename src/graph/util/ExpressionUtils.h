@@ -207,6 +207,10 @@ class ExpressionUtils {
   // Checks if the depth of the expression exceeds the maximum
   // This is used in the parser to prevent OOM due to highly nested expression
   static bool checkExprDepth(const Expression* expr);
+
+  // Whether the whole expression is vertex id predication
+  // e.g. id(v) == 1, id(v) IN [...]
+  static bool isVidPredication(const Expression* expr);
 };
 
 }  // namespace graph
