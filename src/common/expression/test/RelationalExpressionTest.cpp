@@ -945,7 +945,6 @@ TEST_F(RelationalExpressionTest, RelationStartsWith) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
@@ -1054,7 +1053,6 @@ TEST_F(RelationalExpressionTest, RelationNotStartsWith) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
@@ -1180,7 +1178,6 @@ TEST_F(RelationalExpressionTest, RelationEndsWith) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
@@ -1297,7 +1294,6 @@ TEST_F(RelationalExpressionTest, RelationNotEndsWith) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
@@ -1340,7 +1336,6 @@ TEST_F(RelationalExpressionTest, ContainsToString) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
@@ -1383,7 +1378,6 @@ TEST_F(RelationalExpressionTest, NotContainsToString) {
         &pool, ConstantExpression::make(&pool, 1234), ConstantExpression::make(&pool, "1234"));
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::NULLVALUE);
-    EXPECT_EQ(eval.isBadNull(), true);
   }
   {
     auto expr =
