@@ -113,82 +113,70 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
       break;
     }
     case Kind::kContains: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ = lhs.getStr().size() >= rhs.getStr().size() &&
                   lhs.getStr().find(rhs.getStr()) != std::string::npos;
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }
       break;
     }
     case Kind::kNotContains: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
                     lhs.getStr().find(rhs.getStr()) != std::string::npos);
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }
       break;
     }
     case Kind::kStartsWith: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ =
             lhs.getStr().size() >= rhs.getStr().size() && lhs.getStr().find(rhs.getStr()) == 0;
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }
       break;
     }
     case Kind::kNotStartsWith: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ =
             !(lhs.getStr().size() >= rhs.getStr().size() && lhs.getStr().find(rhs.getStr()) == 0);
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }
       break;
     }
     case Kind::kEndsWith: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ =
             lhs.getStr().size() >= rhs.getStr().size() &&
             lhs.getStr().compare(
                 lhs.getStr().size() - rhs.getStr().size(), rhs.getStr().size(), rhs.getStr()) == 0;
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }
       break;
     }
     case Kind::kNotEndsWith: {
-      if (lhs.isBadNull() || rhs.isBadNull()) {
-        result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
-        result_ = Value::kNullBadType;
-      } else if (lhs.isStr() && rhs.isStr()) {
+      if (lhs.isStr() && rhs.isStr()) {
         result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
                     lhs.getStr().compare(lhs.getStr().size() - rhs.getStr().size(),
                                          rhs.getStr().size(),
                                          rhs.getStr()) == 0);
+      } else if (lhs.isBadNull() || rhs.isBadNull()) {
+        result_ = Value::kNullBadType;
       } else {
         result_ = Value::kNullValue;
       }

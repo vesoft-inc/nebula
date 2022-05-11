@@ -286,18 +286,38 @@ void DeduceTypeVisitor::visit(RelationalExpression *expr) {
   if (!ok()) return;
   expr->right()->accept(this);
   if (!ok()) return;
-
-  if (expr->kind() == Expression::Kind::kRelIn || expr->kind() == Expression::Kind::kRelNotIn) {
-    auto right = type_;
-    if (right != Value::Type::LIST && right != Value::Type::SET && right != Value::Type::MAP &&
-        !isSuperiorType(right)) {
-      std::stringstream ss;
-      ss << "`" << expr->right()->toString() << "', expected List/Set/Map, but was " << type_;
-      status_ = Status::SemanticError(ss.str());
-      return;
+  switch (expr->kind()) {
+    case Expression::Kind::kRelIn:
+    case Expression::Kind::kRelNotIn: {
+      auto right = type_;
+      if (right != Value::Type::LIST && right != Value::Type::SET && right != Value::Type::MAP &&
+          !isSuperiorType(right)) {
+        std::stringstream ss;
+        ss << "`" << expr->right()->toString() << "', expected List/Set/Map, but was " << type_;
+        status_ = Status::SemanticError(ss.str());
+        return;
+      }
+      break;
+    }
+    case Expression::Kind::kStartsWith:
+    case Expression::Kind::kNotStartsWith:
+    case Expression::Kind::kContains:
+    case Expression::Kind::kNotContains:
+    case Expression::Kind::kEndsWith:
+    case Expression::Kind::kNotEndsWith: {
+      auto right = type_;
+      if (right != Value::Type::NULLVALUE && right != Value::Type::STRING) {
+        std::stringstream ss;
+        ss << "`" << expr->right()->toString() << "', expected String, but wat " << type_;
+        status_ = Status::SemanticError(ss.str());
+        return;
+      }
+      break;
+    }
+    default: {
+      break;
     }
   }
-
   type_ = Value::Type::BOOL;
 }
 
