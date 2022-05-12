@@ -15,7 +15,7 @@ class MatchPathPlanner final {
 
   StatusOr<SubPlan> transform(QueryContext* qctx,
                               GraphSpaceID spaceId,
-                              Expression* bindFilter,
+                              WhereClauseContext* bindWhereClause,
                               const std::unordered_map<std::string, AliasType>& aliasesAvailable,
                               std::unordered_set<std::string> nodeAliasesSeen,
                               Path& path);
@@ -25,7 +25,7 @@ class MatchPathPlanner final {
                     std::vector<EdgeInfo>& edgeInfos,
                     QueryContext* qctx,
                     GraphSpaceID spaceId,
-                    Expression* bindFilter,
+                    WhereClauseContext* bindWhereClause,
                     const std::unordered_map<std::string, AliasType>& aliasesAvailable,
                     std::unordered_set<std::string> nodeAliases,
                     bool& startFromEdge,

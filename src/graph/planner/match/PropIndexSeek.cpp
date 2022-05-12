@@ -25,9 +25,9 @@ bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
   }
 
   Expression* filter = nullptr;
-  if (edgeCtx->bindFilter != nullptr) {
+  if (edgeCtx->bindWhereClause != nullptr && edgeCtx->bindWhereClause->filter != nullptr) {
     filter = MatchSolver::makeIndexFilter(
-        edge.types.back(), edge.alias, edgeCtx->bindFilter, edgeCtx->qctx, true);
+        edge.types.back(), edge.alias, edgeCtx->bindWhereClause->filter, edgeCtx->qctx, true);
   }
   if (filter == nullptr) {
     if (edge.props != nullptr && !edge.props->items().empty()) {
@@ -124,9 +124,9 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
 
   Expression* filterInWhere = nullptr;
   Expression* filterInPattern = nullptr;
-  if (nodeCtx->bindFilter != nullptr) {
+  if (nodeCtx->bindWhereClause != nullptr && nodeCtx->bindWhereClause->filter != nullptr) {
     filterInWhere = MatchSolver::makeIndexFilter(
-        node.labels.back(), node.alias, nodeCtx->bindFilter, nodeCtx->qctx);
+        node.labels.back(), node.alias, nodeCtx->bindWhereClause->filter, nodeCtx->qctx);
   }
   if (!node.labelProps.empty()) {
     auto props = node.labelProps.back();
