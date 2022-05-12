@@ -117,7 +117,7 @@ static Expression* nodeId(ObjectPool* pool, const NodeInfo& node) {
 StatusOr<SubPlan> MatchPathPlanner::transform(
     QueryContext* qctx,
     GraphSpaceID spaceId,
-    Expression* bindFilter,
+    WhereClauseContext* bindWhere,
     const std::unordered_map<std::string, AliasType>& aliasesAvailable,
     std::unordered_set<std::string> nodeAliasesSeen,
     Path& path) {
@@ -135,7 +135,7 @@ StatusOr<SubPlan> MatchPathPlanner::transform(
                                 edgeInfos,
                                 qctx,
                                 spaceId,
-                                bindFilter,
+                                bindWhere,
                                 aliasesAvailable,
                                 nodeAliasesSeen,
                                 startFromEdge,
@@ -158,7 +158,7 @@ Status MatchPathPlanner::findStarts(
     std::vector<EdgeInfo>& edgeInfos,
     QueryContext* qctx,
     GraphSpaceID spaceId,
-    Expression* bindFilter,
+    WhereClauseContext* bindWhereClause,
     const std::unordered_map<std::string, AliasType>& aliasesAvailable,
     std::unordered_set<std::string> nodeAliasesSeen,
     bool& startFromEdge,
@@ -178,7 +178,7 @@ Status MatchPathPlanner::findStarts(
   // Find the start plan node
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
-      auto nodeCtx = NodeContext(qctx, bindFilter, spaceId, &nodeInfos[i]);
+      auto nodeCtx = NodeContext(qctx, bindWhereClause, spaceId, &nodeInfos[i]);
       nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
@@ -197,7 +197,7 @@ Status MatchPathPlanner::findStarts(
       }
 
       if (i != nodeInfos.size() - 1) {
-        auto edgeCtx = EdgeContext(qctx, bindFilter, spaceId, &edgeInfos[i]);
+        auto edgeCtx = EdgeContext(qctx, bindWhereClause, spaceId, &edgeInfos[i]);
         auto edgeFinder = finder();
         if (edgeFinder->match(&edgeCtx)) {
           auto plan = edgeFinder->transform(&edgeCtx);
