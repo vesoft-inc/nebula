@@ -78,11 +78,10 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
                 }
                 return true;
               } else {
-                VLOG(2) << part->idStr_ << "Sending snapshot failed, we don't retry anymore! "
-                        << "The error code is "
+                VLOG(2) << part->idStr_ << "Sending snapshot failed, the error code is "
                         << apache::thrift::util::enumNameSafe(resp.get_error_code());
-                p.setValue(Status::Error("Send snapshot failed!"));
-                return false;
+                sleep(1);
+                continue;
               }
             } catch (const std::exception& e) {
               VLOG(3) << part->idStr_ << "Send snapshot failed, exception " << e.what()
