@@ -77,6 +77,17 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 ## Licensing
 
 **Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
+## Landscape
+
+<p align="left">
+<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<br />
+
+[Nebula Graph](https://landscape.cncf.io/?selected=nebula-graph) enriches the <a href="https://landscape.cncf.io/card-mode?category=database&grouping=category">
+CNCF Database Landscape.</a>
+</p>
+
+
 
 ## Contact
 
