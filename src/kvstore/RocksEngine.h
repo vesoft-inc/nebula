@@ -552,6 +552,7 @@ class RocksEngine : public KVEngine {
   std::unique_ptr<rocksdb::BackupEngine> backupDb_{nullptr};
   int32_t partsNum_ = -1;
   size_t extractorLen_;
+  bool isPlainTable_{false};
 };
 
 }  // namespace kvstore

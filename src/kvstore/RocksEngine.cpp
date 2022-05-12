@@ -92,7 +92,16 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     CHECK(status.ok()) << status.ToString();
   }
   db_.reset(db);
-  extractorLen_ = sizeof(PartitionID) + vIdLen;
+  if (options.table_factory->Name() == rocksdb::TableFactory::kBlockBasedTableName()) {
+    extractorLen_ = sizeof(PartitionID) + vIdLen;
+  } else if (options.table_factory->Name() == rocksdb::TableFactory::kPlainTableName()) {
+    // PlainTable only support prefix-based seek, which means if the prefix is not inserted into
+    // rocksdb, we can't read them from "prefix" api anymore. For simplarity, we just set the length
+    // of prefix extractor to the minimum length we used in "prefix" api, which is 4 when we seek by
+    // tagPrefix(partId) or edgePrefix(partId).
+    isPlainTable_ = true;
+    extractorLen_ = sizeof(PartitionID);
+  }
   partsNum_ = allParts().size();
   LOG(INFO) << "open rocksdb on " << path;
 
@@ -175,7 +184,11 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  if (!isPlainTable_) {
+    options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  } else {
+    options.prefix_same_as_start = true;
+  }
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
@@ -232,8 +245,11 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
                                                      const std::string& prefix,
                                                      std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  // prefix_same_as_start is false by default
-  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  if (!isPlainTable_) {
+    options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
+  } else {
+    options.prefix_same_as_start = true;
+  }
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
