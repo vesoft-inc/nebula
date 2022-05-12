@@ -74,9 +74,6 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 * Start by some [issues](https://github.com/vesoft-inc/nebula/issues)
 * Submit Pull Requests to us. See [how-to-contribute](https://docs.nebula-graph.io/master/15.contribution/how-to-contribute/).
 
-## Licensing
-
-**Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
 ## Landscape
 
 <p align="left">
@@ -87,7 +84,9 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 CNCF Database Landscape.</a>
 </p>
 
+## Licensing
 
+**Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
 
 ## Contact
 
