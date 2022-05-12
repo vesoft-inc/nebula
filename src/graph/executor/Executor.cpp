@@ -685,7 +685,7 @@ void Executor::dropBody(const PlanNode *body) {
 Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
-    numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
+    numRows_ = result.size();
     result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {
