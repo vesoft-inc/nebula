@@ -1989,7 +1989,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     DCHECK_EQ(wal_->lastLogId(), 0);
     status_ = Status::RUNNING;
     VLOG(1) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
-            << ", committedLogTerm_ " << committedLogTerm_ << ", lastLodId " << lastLogId_
+            << ", committedLogTerm_ " << committedLogTerm_ << ", lastLogId " << lastLogId_
             << ", lastLogTermId " << lastLogTerm_;
   }
   resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
