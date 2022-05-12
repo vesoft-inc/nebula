@@ -93,7 +93,7 @@ TEST(AtomicLogBufferTest, SingleWriterMultiReadersTest) {
           EXPECT_EQ(expected.size(), rec->msg_.size())
               << "wp " << wp << ", start " << start << ", logId " << logId << ", end " << end
               << ", curr node " << node->firstLogId_ << ", pos " << node->pos_ << ", curr index "
-              << iter->currIndex() << ", head lastLodId " << logBuffer->lastLogId();
+              << iter->currIndex() << ", head lastLogId " << logBuffer->lastLogId();
           EXPECT_EQ(expected, rec->msg_)
               << "expected size " << expected.size() << ", actual size " << rec->msg_.size();
           num++;

@@ -204,11 +204,11 @@ struct PatternContext {
 };
 
 struct NodeContext final : PatternContext {
-  NodeContext(QueryContext* q, Expression* b, GraphSpaceID g, NodeInfo* i)
-      : PatternContext(PatternKind::kNode), qctx(q), bindFilter(b), spaceId(g), info(i) {}
+  NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, NodeInfo* i)
+      : PatternContext(PatternKind::kNode), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
-  Expression* bindFilter;
+  WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
   NodeInfo* info{nullptr};
   std::unordered_set<std::string>* nodeAliasesAvailable;
@@ -221,11 +221,11 @@ struct NodeContext final : PatternContext {
 };
 
 struct EdgeContext final : PatternContext {
-  EdgeContext(QueryContext* q, Expression* b, GraphSpaceID g, EdgeInfo* i)
-      : PatternContext(PatternKind::kEdge), qctx(q), bindFilter(b), spaceId(g), info(i) {}
+  EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, EdgeInfo* i)
+      : PatternContext(PatternKind::kEdge), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
-  Expression* bindFilter;
+  WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
   EdgeInfo* info{nullptr};
 

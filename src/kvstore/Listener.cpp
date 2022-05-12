@@ -147,6 +147,9 @@ void Listener::doApply() {
   if (isStopped()) {
     return;
   }
+  if (needToCleanupSnapshot()) {
+    cleanupSnapshot();
+  }
   // todo(doodle): only put is handled, all remove is ignored for now
   folly::via(executor_.get(), [this] {
     SCOPE_EXIT {

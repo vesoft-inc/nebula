@@ -91,6 +91,9 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
 }
 
 SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, bool copyColNames) {
+  if (left.root == nullptr) {
+    return right;
+  }
   SubPlan newPlan = left;
   DCHECK(left.root->isSingleInput());
   if (left.tail->isSingleInput()) {
