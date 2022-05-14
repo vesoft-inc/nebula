@@ -1,0 +1,26 @@
+name: Auto Cherry Pick 
+on:
+  pull_request:
+    types:
+      - closed
+      - labeled
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  auto-cherry-pick:
+    if_merged:
+      if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
+      runs-on: [self-hosted, nebula-fast]
+      container:
+        image: reg.vesoft-inc.com/vesoft/nebula-dev:centos7
+      steps:
+        - name: auto cherry pick
+          uses: xigongdaEricyang/cherry-pick-robot@with-python
+          with:
+              repo_token: ${{ secrets.GH_BOT_PAT }}
+              pr_label: ${{ github.event.inputs.prlabel }}
+              pr_number: ${{ github.event.pull_request.number }}
+              auto_merge: true
