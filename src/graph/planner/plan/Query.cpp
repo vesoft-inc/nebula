@@ -734,6 +734,9 @@ void Traverse::cloneMembers(const Traverse& g) {
     setEdgeFilter(g.eFilter_->clone());
   }
   setTrackPrevPath(g.trackPrevPath_);
+  if (g.firstStepFilter_ != nullptr) {
+    setFirstStepFilter(g.firstStepFilter_->clone());
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -742,6 +745,9 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());
+  addDescription("first step filter",
+                 firstStepFilter_ != nullptr ? firstStepFilter_->toString() : "",
+                 desc.get());
   return desc;
 }
 
