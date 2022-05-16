@@ -5,6 +5,7 @@
 #include "graph/executor/query/FilterExecutor.h"
 
 #include "graph/planner/plan/Query.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -19,26 +20,31 @@ folly::Future<Status> FilterExecutor::execute() {
     return status;
   }
 
-  DataSet ds;
-  ds.colNames = iter->valuePtr()->getDataSet().colNames;
-  ds.rows.reserve(iter->size());
+  if (FLAGS_max_job_size <= 1 || iter->isGetNeighborsIter()) {
+    // TODO :GetNeighborsIterator is not an thread safe implementation, will fix later.
+    return handleSingleJobFilter();
+  } else {
+    DataSet ds;
+    ds.colNames = iter->valuePtr()->getDataSet().colNames;
+    ds.rows.reserve(iter->size());
+    auto scatter = [this](
+                       size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+      return handleJob(begin, end, tmpIter);
+    };
 
-  auto scatter = [this](size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
-    return handleJob(begin, end, tmpIter);
-  };
+    auto gather = [this, result = std::move(ds)](auto &&results) mutable -> Status {
+      for (auto &r : results) {
+        auto &&rows = std::move(r).value();
+        result.rows.insert(result.rows.end(),
+                           std::make_move_iterator(rows.begin()),
+                           std::make_move_iterator(rows.end()));
+      }
+      finish(ResultBuilder().value(Value(std::move(result))).build());
+      return Status::OK();
+    };
 
-  auto gather = [this, result = std::move(ds)](auto &&results) mutable -> Status {
-    for (auto &r : results) {
-      auto &&rows = std::move(r).value();
-      result.rows.insert(result.rows.end(),
-                         std::make_move_iterator(rows.begin()),
-                         std::make_move_iterator(rows.end()));
-    }
-    finish(ResultBuilder().value(Value(std::move(result))).build());
-    return Status::OK();
-  };
-
-  return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
+    return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
+  }
 }
 
 DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
@@ -64,6 +70,36 @@ DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
     }
   }
   return ds;
+}
+
+Status FilterExecutor::handleSingleJobFilter() {
+  auto *filter = asNode<Filter>(node());
+  Result result = ectx_->getResult(filter->inputVar());
+  auto *iter = result.iterRef();
+
+  ResultBuilder builder;
+  builder.value(result.valuePtr());
+  QueryExpressionContext ctx(ectx_);
+  auto condition = filter->condition();
+  while (iter->valid()) {
+    auto val = condition->eval(ctx(iter));
+    if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
+      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
+    }
+    if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
+      if (UNLIKELY(filter->needStableFilter())) {
+        iter->erase();
+      } else {
+        iter->unstableErase();
+      }
+    } else {
+      iter->next();
+    }
+  }
+
+  iter->reset();
+  builder.iter(std::move(result).iter());
+  return finish(builder.build());
 }
 
 }  // namespace graph
