@@ -22,5 +22,5 @@ jobs:
           with:
               repo_token: ${{ secrets.GH_BOT_PAT }}
               pr_label: ${{ github.event.inputs.prlabel }}
-              pr_number: ${{ github.event.pull_request.number }}
+              pr_num: ${{ github.event.pull_request.number }}
               auto_merge: true
