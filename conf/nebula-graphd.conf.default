@@ -3,7 +3,7 @@
 --daemonize=true
 # The file to host the process id
 --pid_file=pids/nebula-graphd.pid
-# Whether to enable optimizer
+# Whether to enable optimizer  dd
 --enable_optimizer=true
 # The default charset when a space is created
 --default_charset=utf8
