@@ -1228,7 +1228,6 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "RETURN type(r) AS Type, v2.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
         PK::kAppendVertices,
         PK::kTraverse,
@@ -1245,7 +1244,6 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "RETURN v1, v2";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
         PK::kAppendVertices,
         PK::kTraverse,
