@@ -202,7 +202,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
     tags.emplace_back(tag.get());
     plan.addNode(std::move(tag));
   }
-  auto output = std::make_unique<GetTagPropNode>(context, tags, result, filter_, limit_);
+  auto output = std::make_unique<GetTagPropNode>(context, tags, result, filter_->clone(), limit_);
   for (auto* tag : tags) {
     output->addDependency(tag);
   }
@@ -219,7 +219,7 @@ StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* conte
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
-  auto output = std::make_unique<GetEdgePropNode>(context, edges, result, filter_, limit_);
+  auto output = std::make_unique<GetEdgePropNode>(context, edges, result, filter_->clone(), limit_);
   for (auto* edge : edges) {
     output->addDependency(edge);
   }
