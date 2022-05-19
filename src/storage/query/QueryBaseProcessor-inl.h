@@ -152,7 +152,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(
     if (filter_ == nullptr) {
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
     }
-    return checkExp(filter_, false, true);
+    return checkExp(filter_, false, true, false, true);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
@@ -260,10 +260,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::getSpaceEdgeSchema() {
 }
 
 template <typename REQ, typename RESP>
-nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression* exp,
-                                                                bool returned,
-                                                                bool filtered,
-                                                                bool updated) {
+nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
+    const Expression* exp, bool returned, bool filtered, bool updated, bool allowNoexistentProp) {
   switch (exp->kind()) {
     case Expression::Kind::kConstant: {
       return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -279,11 +277,11 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kDivision:
     case Expression::Kind::kMod: {
       auto* ariExp = static_cast<const ArithmeticExpression*>(exp);
-      auto ret = checkExp(ariExp->left(), returned, filtered, updated);
+      auto ret = checkExp(ariExp->left(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      return checkExp(ariExp->right(), returned, filtered, updated);
+      return checkExp(ariExp->right(), returned, filtered, updated, allowNoexistentProp);
     }
     case Expression::Kind::kIsNull:
     case Expression::Kind::kIsNotNull:
@@ -295,7 +293,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kUnaryIncr:
     case Expression::Kind::kUnaryDecr: {
       auto* unaExp = static_cast<const UnaryExpression*>(exp);
-      return checkExp(unaExp->operand(), returned, filtered, updated);
+      return checkExp(unaExp->operand(), returned, filtered, updated, allowNoexistentProp);
     }
     case Expression::Kind::kRelEQ:
     case Expression::Kind::kRelNE:
@@ -313,16 +311,16 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kRelNotIn:
     case Expression::Kind::kRelIn: {
       auto* relExp = static_cast<const RelationalExpression*>(exp);
-      auto ret = checkExp(relExp->left(), returned, filtered, updated);
+      auto ret = checkExp(relExp->left(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      return checkExp(relExp->right(), returned, filtered, updated);
+      return checkExp(relExp->right(), returned, filtered, updated, allowNoexistentProp);
     }
     case Expression::Kind::kList: {
       auto* listExp = static_cast<const ListExpression*>(exp);
       for (auto& item : listExp->items()) {
-        auto ret = checkExp(item, returned, filtered, updated);
+        auto ret = checkExp(item, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -332,7 +330,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kSet: {
       auto* setExp = static_cast<const SetExpression*>(exp);
       for (auto& item : setExp->items()) {
-        auto ret = checkExp(item, returned, filtered, updated);
+        auto ret = checkExp(item, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -342,7 +340,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kMap: {
       auto* mapExp = static_cast<const MapExpression*>(exp);
       for (auto& item : mapExp->items()) {
-        auto ret = checkExp(item.second, returned, filtered, updated);
+        auto ret = checkExp(item.second, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -352,23 +350,24 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kCase: {
       auto* caseExp = static_cast<const CaseExpression*>(exp);
       if (caseExp->hasCondition()) {
-        auto ret = checkExp(caseExp->condition(), returned, filtered, updated);
+        auto ret = checkExp(caseExp->condition(), returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
       }
       if (caseExp->hasDefault()) {
-        auto ret = checkExp(caseExp->defaultResult(), returned, filtered, updated);
+        auto ret =
+            checkExp(caseExp->defaultResult(), returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
       }
       for (auto& whenThen : caseExp->cases()) {
-        auto ret = checkExp(whenThen.when, returned, filtered, updated);
+        auto ret = checkExp(whenThen.when, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
-        ret = checkExp(whenThen.then, returned, filtered, updated);
+        ret = checkExp(whenThen.then, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -377,18 +376,18 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     }
     case Expression::Kind::kListComprehension: {
       auto* lcExp = static_cast<const ListComprehensionExpression*>(exp);
-      auto ret = checkExp(lcExp->collection(), returned, filtered, updated);
+      auto ret = checkExp(lcExp->collection(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
       if (lcExp->hasFilter()) {
-        ret = checkExp(lcExp->filter(), returned, filtered, updated);
+        ret = checkExp(lcExp->filter(), returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
       }
       if (lcExp->hasMapping()) {
-        ret = checkExp(lcExp->mapping(), returned, filtered, updated);
+        ret = checkExp(lcExp->mapping(), returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -397,11 +396,11 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     }
     case Expression::Kind::kPredicate: {
       auto* predExp = static_cast<const PredicateExpression*>(exp);
-      auto ret = checkExp(predExp->collection(), returned, filtered, updated);
+      auto ret = checkExp(predExp->collection(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      ret = checkExp(predExp->filter(), returned, filtered, updated);
+      ret = checkExp(predExp->filter(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
@@ -409,11 +408,12 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     }
     case Expression::Kind::kReduce: {
       auto* reduceExp = static_cast<const ReduceExpression*>(exp);
-      auto ret = checkExp(reduceExp->collection(), returned, filtered, updated);
+      auto ret =
+          checkExp(reduceExp->collection(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      ret = checkExp(reduceExp->mapping(), returned, filtered, updated);
+      ret = checkExp(reduceExp->mapping(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
@@ -424,7 +424,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     case Expression::Kind::kLogicalXor: {
       auto* logExp = static_cast<const LogicalExpression*>(exp);
       for (auto& expr : logExp->operands()) {
-        auto ret = checkExp(expr, returned, filtered, updated);
+        auto ret = checkExp(expr, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -433,13 +433,13 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
     }
     case Expression::Kind::kTypeCasting: {
       auto* typExp = static_cast<const TypeCastingExpression*>(exp);
-      return checkExp(typExp->operand(), returned, filtered, updated);
+      return checkExp(typExp->operand(), returned, filtered, updated, allowNoexistentProp);
     }
     case Expression::Kind::kFunctionCall: {
       auto* funExp = static_cast<const FunctionCallExpression*>(exp);
       auto& args = funExp->args()->args();
       for (auto iter = args.begin(); iter < args.end(); ++iter) {
-        auto ret = checkExp(*iter, returned, filtered, updated);
+        auto ret = checkExp(*iter, returned, filtered, updated, allowNoexistentProp);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
           return ret;
         }
@@ -482,7 +482,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
       }
 
       auto field = tagSchema->field(propName);
-      if (field == nullptr) {
+      // Noexistent property will return Empty or Null if enabled
+      if (field == nullptr && !allowNoexistentProp) {
         VLOG(1) << "Can't find related prop " << propName << " on tag " << tagName;
         return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
       }
@@ -542,7 +543,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(const Expression
       const meta::SchemaProviderIf::Field* field = nullptr;
       if (exp->kind() == Expression::Kind::kEdgeProperty) {
         field = edgeSchema->field(propName);
-        if (field == nullptr) {
+        // Noexistent property will return Empty or Null if enabled
+        if (field == nullptr && !allowNoexistentProp) {
           VLOG(1) << "Can't find related prop " << propName << " on edge " << edgeName;
           return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
         }
