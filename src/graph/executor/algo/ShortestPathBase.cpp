@@ -5,331 +5,13 @@
 
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
-#include "sys/sysinfo.h"
+#include "graph/util/Utils.h"
 
+using apache::thrift::optional_field_ref;
 using nebula::storage::StorageClient;
 
-DEFINE_uint32(num_path_thread, 0, "number of concurrent threads when do shortest path");
 namespace nebula {
 namespace graph {
-
-folly::Future<Status> ShortestPathBase::shortestPath(size_t rowNum, size_t stepNum) {
-  std::vector<folly::Future<Status>> futures;
-  futures.emplace_back(getNeighbors(rowNum, false));
-  futures.emplace_back(getNeighbors(rowNum, true));
-  return folly::collect(futures).via(runner()).thenValue([this, rowNum, stepNum](auto&& resps) {
-    for (auto& resp : resps) {
-      if (!resp.ok()) {
-        return folly::makeFuture<Status>(std::move(resp));
-      }
-    }
-    return handleResponse(rowNum, stepNum);
-  });
-}
-
-folly::Future<Status> ShortestPathBase::getNeighbors(size_t rowNum, bool reverse) {
-  StorageClient* storageClient = qctx_->getStorageClient();
-  time::Duration getNbrTime;
-  storage::StorageClient::CommonRequestParam param(pathNode_->space(),
-                                                   qctx()->rctx()->session()->id(),
-                                                   qctx()->plan()->id(),
-                                                   qctx()->plan()->isProfileEnabled());
-  auto& inputRows = reverse ? rightVids_[rowNum].rows : leftVids_[rowNum].rows;
-  return storageClient
-      ->getNeighbors(param,
-                     {nebula::kVid},
-                     std::move(inputRows),
-                     {},
-                     pathNode_->edgeDirection(),
-                     nullptr,
-                     pathNode_->vertexProps(),
-                     reverse ? pathNode_->reverseEdgeProps() : pathNode_->edgeProps(),
-                     nullptr,
-                     false,
-                     false,
-                     {},
-                     -1,
-                     nullptr)
-      .via(runner())
-      .ensure([this, getNbrTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
-      })
-      .thenValue([this, rowNum, reverse](auto&& resp) {
-        SCOPED_TIMER(&execTime_);
-        addStats(resp, otherStats_);
-        return buildPath(rowNum, std::move(resp), reverse);
-      });
-}
-
-folly::Future<Status> ShortestPathBase::handleResponse(size_t rowNum, size_t stepNum) {
-  if (conjunctPath(rowNum, stepNum)) {
-    return Status::OK();
-  }
-  auto& leftVids = leftVids_[rowNum].rows;
-  auto& rightVids = rightVids_[rowNum].rows;
-  if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
-    return Status::OK();
-  }
-  return shortestPath(rowNum, ++stepNum);
-}
-
-bool ShortestPathBase::conjunctPath(size_t rowNum, size_t stepNum) {
-  const auto& leftStep = allLeftPaths_[rowNum].back();
-  const auto& prevRightStep = allRightPaths_[rowNum][stepNum - 1];
-  std::vector<Value> meetVids;
-  for (const auto& step : leftStep) {
-    if (prevRightStep.find(step.first) != prevRightStep.end()) {
-      meetVids.push_back(step.first);
-      if (singleShortest_) {
-        break;
-      }
-    }
-  }
-  if (!meetVids.empty()) {
-    buildOddPath(rowNum, meetVids);
-    return true;
-  }
-  if (stepNum * 2 >= maxStep_) {
-    return false;
-  }
-
-  const auto& rightStep = allRightPaths_[rowNum].back();
-  for (const auto& step : leftStep) {
-    if (rightStep.find(step.first) != rightStep.end()) {
-      meetVids.push_back(step.first);
-      if (singleShortest_) {
-        break;
-      }
-    }
-  }
-  if (meetVids.empty()) {
-    return false;
-  }
-  return buildEvenPath(rowNum, meetVids);
-}
-
-Status ShortestPathBase::buildPath(size_t rowNum, RpcResponse&& resps, bool reverse) {
-  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
-  NG_RETURN_IF_ERROR(result);
-  auto& responses = std::move(resps).responses();
-  List list;
-  for (auto& resp : responses) {
-    auto dataset = resp.get_vertices();
-    if (dataset == nullptr) {
-      LOG(INFO) << "Empty dataset in response";
-      continue;
-    }
-    list.values.emplace_back(std::move(*dataset));
-  }
-  auto listVal = std::make_shared<Value>(std::move(list));
-  auto iter = std::make_unique<GetNeighborsIter>(listVal);
-  if (singlePair_) {
-    return buildSinglePairPath(rowNum, iter.get(), reverse);
-  }
-  return buildMultiPairPath(rowNum, iter.get(), reverse);
-}
-
-Status ShortestPathBase::buildMultiPairPath(size_t rowNum, GetNeighborsIter* iter, bool reverse) {
-  size_t iterSize = iter->size();
-  auto historyVidMap = reverse ? allRightVidMap_[rowNum] : allLeftVidMap_[rowNum];
-  historyVidMap.reserve(historyVidMap.size() + iterSize);
-  auto& halfPath = reverse ? allRightPaths_[rowNum] : allLeftPaths_[rowNum];
-  halfPath.emplace_back();
-  auto& currentStep = halfPath.back();
-
-  DataSet nextStepVids;
-  nextStepVids.colNames = {nebula::kVid};
-
-  if (step_ == 1) {
-    for (; iter->valid(); iter->next()) {
-      auto edgeVal = iter->getEdge();
-      if (UNLIKELY(!edgeVal.isEdge())) {
-        continue;
-      }
-      auto& edge = edgeVal.getEdge();
-      auto& src = edge.src;
-      auto& dst = edge.dst;
-      if (src == dst) {
-        continue;
-      }
-      auto findStartVidsFromDst = historyVidMap.find(dst);
-      if (findStartVidsFromDst == historyVidMap.end()) {
-        std::unordered_set<Value> startVid({src});
-        historyVidMap.emplace(dst, std::move(startVid));
-      } else {
-        findStartVidsFromDst->second.emplace(src);
-      }
-      auto vertex = iter->getVertex();
-      Row step;
-      step.emplace_back(std::move(vertex));
-      step.emplace_back(std::move(edge));
-      auto findDst = currentStep.find(dst);
-      if (findDst == currentStep.end()) {
-        nextStepVids.rows.emplace_back(Row({dst}));
-        std::vector<Row> steps({std::move(step)});
-        currentStep.emplace(std::move(dst), std::move(steps));
-      } else {
-        findDst->second.emplace_back(std::move(step));
-      }
-    }
-  } else {
-    VidMap currentVidMap;
-    currentVidMap.reserve(iterSize);
-    for (; iter->valid(); iter->next()) {
-      auto edgeVal = iter->getEdge();
-      if (UNLIKELY(!edgeVal.isEdge())) {
-        continue;
-      }
-      auto& edge = edgeVal.getEdge();
-      auto& src = edge.src;
-      auto& dst = edge.dst;
-      if (src == dst) {
-        continue;
-      }
-      // get start vids from edge's src
-      auto findHistoryStartVidsFromSrc = historyVidMap.find(src);
-      if (findHistoryStartVidsFromSrc == historyVidMap.end()) {
-        DLOG(ERROR) << "can't access here";
-        continue;
-      }
-      auto startVidsFromSrc = findHistoryStartVidsFromSrc->second;
-      // get start vids from edge's dst
-      auto findHistoryStartVidsFromDst = historyVidMap.find(dst);
-      if (findHistoryStartVidsFromDst != historyVidMap.end()) {
-        // dst in history
-        auto& startVidsFromDst = findHistoryStartVidsFromDst->second;
-        if (startVidsFromDst == startVidsFromSrc) {
-          // loop: a->b->c->a or a->b->c->b
-          continue;
-        }
-      }
-      currentVidMap[dst].insert(startVidsFromSrc.begin(), startVidsFromSrc.end());
-
-      auto vertex = iter->getVertex();
-      Row step;
-      step.emplace_back(std::move(vertex));
-      step.emplace_back(std::move(edge));
-      auto findDst = currentStep.find(dst);
-      if (findDst == currentStep.end()) {
-        nextStepVids.rows.emplace_back(Row({dst}));
-        std::vector<Row> steps({std::move(step)});
-        currentStep.emplace(std::move(dst), std::move(steps));
-      } else {
-        findDst->second.emplace_back(std::move(step));
-      }
-    }
-    // update historyVidMap
-    for (auto& iter : currentVidMap) {
-      historyVidMap[iter.first].insert(std::make_move_iterator(iter.second.begin()),
-                                       std::make_move_iterator(iter.second.end()));
-    }
-  }
-  // set nextVid
-  if (reverse) {
-    rightVids_[rowNum].rows.swap(nextStepVids);
-  } else {
-    leftVids_[rowNum].rows.swap(nextStepVids);
-  }
-  return Status::OK();
-}
-
-Status ShortestPathBase::buildSinglePairPath(size_t rowNum, GetNeighborsIter* iter, bool reverse) {
-  auto iterSize = iter->size();
-  auto& visitedVids = reverse ? rightVisitedVids_[rowNum] : leftVisitedVids_[rowNum];
-  visitedVids.reserve(visitedVids.size() + iterSize);
-  auto& allSteps = reverse ? allRightPaths_[rowNum] : allLeftPaths_[rowNum];
-  allSteps.emplace_back();
-  auto& currentStep = allSteps.back();
-
-  std::unordered_set<Value> uniqueDst;
-  uniqueDst.reserve(iterSize);
-  std::vector<Row> nextStepVids;
-  nextStepVids.reserve(iterSize);
-
-  QueryExpressionContext ctx(ectx_);
-  for (iter->reset(); iter->valid(); iter->next()) {
-    auto edgeVal = iter->getEdge();
-    if (UNLIKELY(!edgeVal.isEdge())) {
-      continue;
-    }
-    auto& edge = edgeVal.getEdge();
-    auto dst = edge.dst;
-    if (visitedVids.find(dst) != visitedVids.end()) {
-      continue;
-    }
-    visitedVids.emplace(edge.src);
-    if (uniqueDst.emplace(dst).second) {
-      nextStepVids.emplace_back(Row({dst}));
-    }
-    auto vertex = iter->getVertex();
-    Row step;
-    step.emplace_back(std::move(vertex));
-    step.emplace_back(std::move(edge));
-    auto findDst = currentStep.find(dst);
-    if (findDst == currentStep.end()) {
-      std::vector<Row> steps({std::move(step)});
-      currentStep.emplace(std::move(dst), std::move(steps));
-    } else {
-      auto& steps = findDst->second;
-      steps.emplace_back(std::move(step));
-    }
-  }
-  visitedVids.insert(std::make_move_iterator(uniqueDst.begin()),
-                     std::make_move_iterator(uniqueDst.end()));
-  if (reverse) {
-    rightVids_[rowNum].rows.swap(nextStepVids);
-  } else {
-    leftVids_[rowNum].rows.swap(nextStepVids);
-  }
-  return Status::OK();
-}
-
-void ShortestPathBase::buildOddPath(size_t rowNum, const std::vector<Value>& meetVids) {
-  for (auto& meetVid : meetVids) {
-    auto leftPaths = createLeftPath(rowNum, meetVid);
-    auto rightPaths = createRightPath(rowNum, meetVid, true);
-    for (auto& leftPath : leftPaths) {
-      for (auto& rightPath : rightPaths) {
-        Row path = leftPath;
-        auto& steps = path.values.back().mutableList().values;
-        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-        path.emplace_back(rightPath.values.back());
-        resultDs_[rowNum].rows.emplace_back(std::move(path));
-        if (singleShortest_) {
-          return;
-        }
-      }
-    }
-  }
-}
-
-bool ShortestPathBase::buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids) {
-  std::vector<Value> meetVertices;
-  auto status = getMeetVidsProps(meetVids, meetVertices).get();
-  if (!status.ok() || meetVertices.empty()) {
-    return false;
-  }
-  for (auto& meetVertex : meetVertices) {
-    auto meetVid = meetVertex.getVertex().vid;
-    auto leftPaths = createLeftPath(rowNum, meetVid);
-    auto rightPaths = createRightPath(rowNum, meetVid, false);
-    for (auto& leftPath : leftPaths) {
-      for (auto& rightPath : rightPaths) {
-        Row path = leftPath;
-        auto& steps = path.values.back().mutableList().values;
-        steps.emplace_back(meetVertex);
-        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-        path.emplace_back(rightPath.values.back());
-        resultDs_[rowNum].rows.emplace_back(std::move(path));
-        if (singleShortest_) {
-          return true;
-        }
-      }
-    }
-  }
-  return true;
-}
 
 std::vector<Row> ShortestPathBase::createLeftPath(size_t rowNum, const Value& meetVid) {
   auto& allSteps = allLeftPaths_[rowNum];
@@ -408,7 +90,6 @@ std::vector<Row> ShortestPathBase::createRightPath(size_t rowNum,
 
 folly::Future<Status> ShortestPathBase::getMeetVidsProps(const std::vector<Value>& meetVids,
                                                          std::vector<Value>& meetVertices) {
-  SCOPED_TIMER(&execTime_);
   nebula::DataSet vertices({kVid});
   vertices.rows.reserve(meetVids.size());
   for (auto& vid : meetVids) {
@@ -416,11 +97,11 @@ folly::Future<Status> ShortestPathBase::getMeetVidsProps(const std::vector<Value
   }
 
   time::Duration getPropsTime;
-  StorageClient* storageClient = qctx()->getStorageClient();
+  StorageClient* storageClient = qctx_->getStorageClient();
   StorageClient::CommonRequestParam param(pathNode_->space(),
-                                          qctx()->rctx()->session()->id(),
-                                          qctx()->plan()->id(),
-                                          qctx()->plan()->isProfileEnabled());
+                                          qctx_->rctx()->session()->id(),
+                                          qctx_->plan()->id(),
+                                          qctx_->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
                  std::move(vertices),
@@ -431,15 +112,13 @@ folly::Future<Status> ShortestPathBase::getMeetVidsProps(const std::vector<Value
                  {},
                  -1,
                  nullptr)
-      .via(runner())
+      .via(qctx_->rctx()->runner())
       .ensure([this, getPropsTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("get_prop_total_rpc",
-                            folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
+        stats_->emplace("get_prop_total_rpc",
+                        folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
       .thenValue([this, &meetVertices](PropRpcResponse&& resp) {
-        SCOPED_TIMER(&execTime_);
-        addStats(resp, otherStats_);
+        addStats(resp, stats_);
         return handlePropResp(std::move(resp), meetVertices);
       });
 }
@@ -466,5 +145,103 @@ Status ShortestPathBase::handlePropResp(PropRpcResponse&& resps, std::vector<Val
   }
   return Status::OK();
 }
+
+std::string ShortestPathBase::getStorageDetail(
+    optional_field_ref<const std::map<std::string, int32_t>&> ref) const {
+  if (ref.has_value()) {
+    auto content = util::join(*ref, [](auto& iter) -> std::string {
+      return folly::sformat("{}:{}(us)", iter.first, iter.second);
+    });
+    return "{" + content + "}";
+  }
+  return "";
+}
+
+Status ShortestPathBase::handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
+  switch (code) {
+    case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
+      return Status::Error("Storage Error: Vertex or edge not found.");
+    case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
+      std::string error =
+          "Storage Error: The data type does not meet the requirements. "
+          "Use the correct type of data.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_INVALID_VID: {
+      std::string error =
+          "Storage Error: The VID must be a 64-bit integer"
+          " or a string fitting space vertex id length limit.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
+      std::string error =
+          "Storage Error: Invalid field value: "
+          "may be the filed is not NULL "
+          "or without default value or wrong schema.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
+      return Status::Error(
+          folly::sformat("Storage Error: Not the leader of {}. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_INVALID_FILTER:
+      return Status::Error("Storage Error: Invalid filter.");
+    case nebula::cpp2::ErrorCode::E_INVALID_UPDATER:
+      return Status::Error("Storage Error: Invalid Update col or yield col.");
+    case nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN:
+      return Status::Error("Storage Error: Invalid space vid len.");
+    case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
+      return Status::Error("Storage Error: Space not found.");
+    case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND:
+      return Status::Error(folly::sformat("Storage Error: Part {} not found.", partId));
+    case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
+      return Status::Error("Storage Error: Tag not found.");
+    case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
+      return Status::Error("Storage Error: Tag prop not found.");
+    case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
+      return Status::Error("Storage Error: Edge not found.");
+    case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
+      return Status::Error("Storage Error: Edge prop not found.");
+    case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
+      return Status::Error("Storage Error: Index not found.");
+    case nebula::cpp2::ErrorCode::E_INVALID_DATA:
+      return Status::Error("Storage Error: Invalid data, may be wrong value type.");
+    case nebula::cpp2::ErrorCode::E_NOT_NULLABLE:
+      return Status::Error("Storage Error: The not null field cannot be null.");
+    case nebula::cpp2::ErrorCode::E_FIELD_UNSET:
+      return Status::Error(
+          "Storage Error: "
+          "The not null field doesn't have a default value.");
+    case nebula::cpp2::ErrorCode::E_OUT_OF_RANGE:
+      return Status::Error("Storage Error: Out of range value.");
+    case nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
+      return Status::Error(
+          "Storage Error: More than one request trying to "
+          "add/update/delete one edge/vertex at the same time.");
+    case nebula::cpp2::ErrorCode::E_FILTER_OUT:
+      return Status::OK();
+    case nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE:
+      return Status::Error(folly::sformat(
+          "Storage Error: Term of part {} is out of date. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL:
+      return Status::Error("Storage Error: Write wal failed. Probably disk is almost full.");
+    case nebula::cpp2::ErrorCode::E_RAFT_WRITE_BLOCKED:
+      return Status::Error(
+          "Storage Error: Write is blocked when creating snapshot. Please retry later.");
+    case nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW:
+      return Status::Error(folly::sformat(
+          "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
+      return Status::Error("Storage Error: Atomic operation failed.");
+    default:
+      auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
+                                  partId,
+                                  apache::thrift::util::enumNameSafe(code).c_str(),
+                                  static_cast<int32_t>(code));
+      LOG(ERROR) << status;
+      return status;
+  }
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula
