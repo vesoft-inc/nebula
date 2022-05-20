@@ -73,6 +73,8 @@ class Iterator {
 
   virtual const Row* row() const = 0;
 
+  virtual Row moveRow() = 0;
+
   // erase range, no include last position, if last > size(), erase to the end
   // position
   virtual void eraseRange(size_t first, size_t last) = 0;
@@ -228,6 +230,11 @@ class DefaultIter final : public Iterator {
     return nullptr;
   }
 
+  Row moveRow() override {
+    DLOG(FATAL) << "This method should not be invoked";
+    return Row{};
+  }
+
  private:
   void doReset(size_t pos) override {
     DCHECK((pos == 0 && size() == 0) || (pos < size()));
@@ -316,6 +323,10 @@ class GetNeighborsIter final : public Iterator {
   // only return currentEdge, not currentRow, for test
   const Row* row() const override {
     return currentEdge_;
+  }
+
+  Row moveRow() override {
+    return std::move(*currentEdge_);
   }
 
  private:
@@ -475,6 +486,10 @@ class SequentialIter : public Iterator {
 
   Value getEdge() const override;
 
+  Row moveRow() override {
+    return std::move(*iter_);
+  }
+
  protected:
   const Row* row() const override {
     return &*iter_;
@@ -484,9 +499,6 @@ class SequentialIter : public Iterator {
   friend class DataCollectExecutor;
   friend class AppendVerticesExecutor;
   friend class TraverseExecutor;
-  Row&& moveRow() {
-    return std::move(*iter_);
-  }
 
   void doReset(size_t pos) override;
 
