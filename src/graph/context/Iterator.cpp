@@ -707,6 +707,11 @@ Value SequentialIter::getEdge() const {
   return getColumn("EDGE");
 }
 
+PropIter::PropIter(const PropIter& iter) : SequentialIter(iter) {
+  dsIndex_ = iter.dsIndex_;
+  kind_ = Kind::kProp;
+}
+
 PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
     : SequentialIter(value, checkMemory) {
   DCHECK(value->isDataSet());

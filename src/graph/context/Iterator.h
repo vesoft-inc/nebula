@@ -515,6 +515,7 @@ class SequentialIter : public Iterator {
 class PropIter final : public SequentialIter {
  public:
   explicit PropIter(std::shared_ptr<Value> value, bool checkMemory = false);
+  explicit PropIter(const PropIter& iter);
 
   std::unique_ptr<Iterator> copy() const override {
     auto copy = std::make_unique<PropIter>(*this);
