@@ -20,6 +20,8 @@ class SingleShortestPath final : public ShortestPathBase {
                                 const std::unordered_set<Value>& endVids,
                                 DataSet* result) override;
 
+  using HalfPath = std::vector<std::unordered_map<DstVid, std::vector<CustomStep>>>;
+
  private:
   void init(const std::unordered_set<Value>& startVids,
             const std::unordered_set<Value>& endVids,
@@ -44,6 +46,8 @@ class SingleShortestPath final : public ShortestPathBase {
  private:
   std::vector<std::unordered_set<Value>> leftVisitedVids_;
   std::vector<std::unordered_set<Value>> rightVisitedVids_;
+  std::vector<HalfPath> allLeftPaths_;
+  std::vector<HalfPath> allRightPaths_;
 };
 
 }  // namespace graph

@@ -1,10 +1,10 @@
 // Copyright (c) 2022 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
-#ifndef GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
-#define GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_ALGO_BATCHSHORTESTPATH_H_
+#define GRAPH_EXECUTOR_ALGO_BATCHSHORTESTPATH_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
+#include "graph/executor/algo/ShortestPathBase.h"
 #include "graph/planner/plan/Algo.h"
 
 // ShortestPath receive result from BiCaresianProduct(Construct by two match node variables)
@@ -51,93 +51,62 @@
 //    VALUE : is Row[vertex(src), edge].
 //
 // `allRightPaths_` : same as allLeftPaths_
-using nebula::storage::StorageRpcResponse;
-using nebula::storage::cpp2::GetNeighborsResponse;
-using RpcResponse = StorageRpcResponse<GetNeighborsResponse>;
-using PropRpcResponse = StorageRpcResponse<nebula::storage::cpp2::GetPropResponse>;
 namespace nebula {
 namespace graph {
-class ShortestPathExecutor final : public StorageAccessExecutor {
+class BatchShortestPath final : public ShortestPathBase {
  public:
-  ShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
-      : StorageAccessExecutor("ShortestPath", node, qctx) {
-    pathNode_ = asNode<ShortestPath>(node);
-  }
+  BatchShortestPath(const ShortestPath* node,
+                    QueryContext* qctx,
+                    std::unordered_map<std::string, std::string>* stats)
+      : ShortestPathBase(node, qctx, stats) {}
 
-  folly::Future<Status> execute() override;
+  folly::Future<Status> execute(const std::unordered_set<Value>& startVids,
+                                const std::unordered_set<Value>& endVids,
+                                DataSet* result) override;
 
-  using DstVid = Value;
-  // start vid of the path
-  using StartVid = Value;
-  // end vid of the path
-  using EndVid = Value;
-  // save the starting vertex and the corresponding edge. eg [vertex(a), edge(a->b)]
-  using CustomStep = Row;
-  using HalfPath = std::vector<std::unordered_map<DstVid, std::vector<CustomStep>>>;
   using VidMap = std::unordered_map<DstVid, std::unordered_set<StartVid>>;
 
+  using HalfPath =
+      std::unordered_map<DstVid, std::unordered_map<StartVid, std::vector<CustomStep>>>;
+
  private:
-  size_t initCartesianProduct();
+  size_t splitTask(const std::unordered_set<Value>& startVids,
+                   const std::unordered_set<Value>& endVids);
 
-  void singleShortestPathInit();
-
-  void batchShortestPathInit();
+  size_t init(const std::unordered_set<Value>& startVids, const std::unordered_set<Value>& endVids);
 
   folly::Future<Status> getNeighbors(size_t rowNum, bool reverse);
-
-  folly::Future<Status> singleShortestPath();
-
-  folly::Future<Status> batchShortestPath();
 
   folly::Future<Status> shortestPath(size_t rowNum, size_t stepNum);
 
   folly::Future<Status> handleResponse(size_t rowNum, size_t stepNum);
 
-  Status handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices);
 
   Status buildPath(size_t rowNum, RpcResponse&& resp, bool reverse);
 
-  folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
-                                         std::vector<Value>& meetVertices);
-
-  Status buildSinglePairPath(size_t rowNum, GetNeighborsIter* iter, bool reverse);
-
-  Status buildMultiPairPath(size_t rowNum, GetNeighborsIter* iter, bool reverse);
+  Status doBuildPath(size_t rowNum, GetNeighborsIter* iter, bool reverse);
 
   bool conjunctPath(size_t rowNum, size_t stepNum);
 
   bool buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids);
 
-  void buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
+  bool buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
 
-  std::vector<Row> createRightPath(size_t rowNum, const Value& meetVid, bool evenStep);
+  bool checkMeetVid(const Value& meetVid, size_t rowNum);
 
-  std::vector<Row> createLeftPath(size_t rowNum, const Value& meetVid);
+  bool updateTermination(size_t rowNum);
 
  private:
-  const ShortestPath* pathNode_{nullptr};
-  size_t maxStep_;
-  bool singleShortest_{true};
-  bool singlePair_{true};
-
-  std::vector<DataSet> resultDs_;
-  std::vector<DataSet> leftVids_;
-  std::vector<DataSet> rightVids_;
-  // only for single pair shortest path
-  std::vector<std::unordered_set<Value>> leftVisitedVids_;
-  std::vector<std::unordered_set<Value>> rightVisitedVids_;
-
-  // only for multi pair shortest path
   std::vector<VidMap> allLeftVidMap_;
   std::vector<VidMap> allRightVidMap_;
-
+  std::vector<std::vector<StartVid>> batchStartVids_;
+  std::vector<std::vector<EndVid>> batchEndVids_;
+  std::vector<std::unordered_multimap<Value, std::pair<Value, bool>>> terminationMaps_;
   std::vector<HalfPath> allLeftPaths_;
   std::vector<HalfPath> allRightPaths_;
-
-  std::unordered_set<std::pair<StartVid, EndVid>> cartesianProduct_;
 };
 
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ALGO_BATCHSHORTESTPATH_H_

@@ -35,7 +35,6 @@ class ShortestPathBase {
   using EndVid = Value;
   // save the starting vertex and the corresponding edge. eg [vertex(a), edge(a->b)]
   using CustomStep = Row;
-  using HalfPath = std::vector<std::unordered_map<DstVid, std::vector<CustomStep>>>;
 
  protected:
   Status handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices);
@@ -100,8 +99,6 @@ class ShortestPathBase {
   std::vector<DataSet> resultDs_;
   std::vector<DataSet> leftVids_;
   std::vector<DataSet> rightVids_;
-  std::vector<HalfPath> allLeftPaths_;
-  std::vector<HalfPath> allRightPaths_;
 };
 
 }  // namespace graph

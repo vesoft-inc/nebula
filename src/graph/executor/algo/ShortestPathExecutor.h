@@ -1,8 +1,8 @@
 // Copyright (c) 2022 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
-#ifndef GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
-#define GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
+#ifndef GRAPH_EXECUTOR_ALGO_SHORTESTPATHEXECUTOR_H_
+#define GRAPH_EXECUTOR_ALOG_SHORTESTPATHEXECUTOR_H_
 
 #include "graph/executor/Executor.h"
 #include "graph/planner/plan/Algo.h"
@@ -26,4 +26,4 @@ class ShortestPathExecutor final : public Executor {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_EXECUTOR_QUERY_SHORTESTPATHEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ALGO_SHORTESTPATHEXECUTOR_H_

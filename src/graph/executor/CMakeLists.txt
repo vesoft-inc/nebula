@@ -48,6 +48,7 @@ nebula_add_library(
     algo/SubgraphExecutor.cpp
     algo/ShortestPathBase.cpp
     algo/SingleShortestPath.cpp
+    algo/BatchShortestPath.cpp
     admin/AddHostsExecutor.cpp
     admin/DropHostsExecutor.cpp
     admin/SwitchSpaceExecutor.cpp

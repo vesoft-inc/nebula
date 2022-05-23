@@ -3,9 +3,8 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ShortestPathExecutor.h"
 
+#include "graph/executor/algo/BatchShortestPath.h"
 #include "graph/executor/algo/SingleShortestPath.h"
-// #include "graph/executor/algo/BatchShortestPath.h"
-
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "sys/sysinfo.h"
@@ -29,8 +28,9 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   std::unique_ptr<ShortestPathBase> pathPtr = nullptr;
   if (rowSize <= FLAGS_num_path_thread) {
     pathPtr = std::make_unique<SingleShortestPath>(pathNode_, qctx_, &otherStats_);
+  } else {
+    pathPtr = std::make_unique<BatchShortestPath>(pathNode_, qctx_, &otherStats_);
   }
-  pathPtr = std::make_unique<SingleShortestPath>(pathNode_, qctx_, &otherStats_);
   auto status = pathPtr->execute(startVids, endVids, &result).get();
   NG_RETURN_IF_ERROR(status);
   return finish(ResultBuilder().value(Value(std::move(result))).build());
@@ -40,8 +40,6 @@ size_t ShortestPathExecutor::checkInput(std::unordered_set<Value>& startVids,
                                         std::unordered_set<Value>& endVids) {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
   const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
-  std::unordered_set<std::pair<Value, Value>> cartesianProduct;
-  cartesianProduct.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
     auto start = iter->getColumn(0);
     auto end = iter->getColumn(1);
@@ -55,12 +53,10 @@ size_t ShortestPathExecutor::checkInput(std::unordered_set<Value>& startVids,
       // continue or return error
       continue;
     }
-    if (cartesianProduct.emplace(std::pair<Value, Value>{start, end}).second) {
-      startVids.emplace(std::move(start));
-      endVids.emplace(std::move(end));
-    }
+    startVids.emplace(std::move(start));
+    endVids.emplace(std::move(end));
   }
-  return cartesianProduct.size();
+  return startVids.size() * endVids.size();
 }
 
 }  // namespace graph
