@@ -21,7 +21,7 @@ folly::Future<Status> FilterExecutor::execute() {
   }
 
   if (FLAGS_max_job_size <= 1 || iter->isGetNeighborsIter()) {
-    // TODO :GetNeighborsIterator is not an thread safe implementation, will fix later.
+    // TODO :GetNeighborsIterator is not an thread safe implementation.
     return handleSingleJobFilter();
   } else {
     DataSet ds;
@@ -32,14 +32,21 @@ folly::Future<Status> FilterExecutor::execute() {
       return handleJob(begin, end, tmpIter);
     };
 
-    auto gather = [this, result = std::move(ds)](auto &&results) mutable -> Status {
+    auto gather =
+        [this, result = std::move(ds), kind = iter->kind()](auto &&results) mutable -> Status {
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result.rows.insert(result.rows.end(),
                            std::make_move_iterator(rows.begin()),
                            std::make_move_iterator(rows.end()));
       }
-      finish(ResultBuilder().value(Value(std::move(result))).build());
+      if (kind == Iterator::Kind::kSequential) {
+        finish(ResultBuilder().value(Value(std::move(result))).build());
+      } else if (kind == Iterator::Kind::kProp) {
+        finish(ResultBuilder().value(Value(std::move(result))).iter(Iterator::Kind::kProp).build());
+      } else {
+        LOG(ERROR) << "Default and Getneigbors Iter not support multi job filter.";
+      }
       return Status::OK();
     };
 
