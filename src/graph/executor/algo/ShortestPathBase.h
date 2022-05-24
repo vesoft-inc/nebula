@@ -42,10 +42,6 @@ class ShortestPathBase {
   folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
                                          std::vector<Value>& meetVertices);
 
-  std::vector<Row> createRightPath(size_t rowNum, const Value& meetVid, bool evenStep);
-
-  std::vector<Row> createLeftPath(size_t rowNum, const Value& meetVid);
-
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const;
 
   template <typename RESP>

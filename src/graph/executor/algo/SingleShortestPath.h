@@ -43,6 +43,10 @@ class SingleShortestPath final : public ShortestPathBase {
 
   void buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
 
+  std::vector<Row> createRightPath(size_t rowNum, const Value& meetVid, bool evenStep);
+
+  std::vector<Row> createLeftPath(size_t rowNum, const Value& meetVid);
+
  private:
   std::vector<std::unordered_set<Value>> leftVisitedVids_;
   std::vector<std::unordered_set<Value>> rightVisitedVids_;

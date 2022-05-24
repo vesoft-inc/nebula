@@ -4,7 +4,6 @@
 #include "graph/executor/algo/BatchShortestPath.h"
 
 #include <climits>
-
 #include "graph/service/GraphFlags.h"
 #include "sys/sysinfo.h"
 
@@ -106,47 +105,45 @@ size_t BatchShortestPath::init(const std::unordered_set<Value>& startVids,
 
   leftVids_.reserve(rowSize);
   rightVids_.reserve(rowSize);
-  allLeftVidMap_.reserve(rowSize);
-  allRightVidMap_.reserve(rowSize);
+  allLeftPathMaps_.reserve(rowSize);
+  allRightPathMaps_.reserve(rowSize);
+  currentLeftPathMaps_.resize(rowSize);
+  currentRightPathMaps_.resize(rowSize);
+  preRightPathMaps_.reserve(rowSize);
 
-  allLeftPaths_.resize(rowSize);
-  allRightPaths_.reserve(rowSize);
   terminationMaps_.reserve(rowSize);
   resultDs_.resize(rowSize);
 
   for (auto& _startVids : batchStartVids_) {
     DataSet startDs;
-    VidMap leftVidMap;
+    PathMap leftPathMap;
     for (auto& startVid : _startVids) {
-      std::unordered_set<Value> dummy({startVid});
-      leftVidMap.emplace(startVid, std::move(dummy));
       startDs.rows.emplace_back(Row({startVid}));
+      std::vector<CustomPath> dummy;
+      leftPathMap[startVid].emplace(startVid, std::move(dummy));
     }
     for (auto& _endVids : batchEndVids_) {
-      VidMap rightVidMap;
       DataSet endDs;
-      std::unordered_map<Value, std::vector<Row>> steps;
+      PathMap preRightPathMap;
+      PathMap rightPathMap;
       for (auto& endVid : _endVids) {
-        std::unordered_set<Value> tmp({endVid});
-        rightVidMap.emplace(endVid, std::move(tmp));
         endDs.rows.emplace_back(Row({endVid}));
-        std::vector<Row> dummy;
-        steps.emplace(endVid, std::move(dummy));
+        std::vector<CustomPath> dummy;
+        rightPathMap[endVid].emplace(endVid, dummy);
+        preRightPathMap[endVid].emplace(endVid, std::move(dummy));
       }
-      // set VidMap
-      allLeftVidMap_.emplace_back(leftVidMap);
-      allRightVidMap_.emplace_back(std::move(rightVidMap));
 
       // set originRightpath
-      HalfPath originRightPath({std::move(steps)});
-      allRightPaths_.emplace_back(std::move(originRightPath));
+      allLeftPathMaps_.emplace_back(leftPathMap);
+      preRightPathMaps_.emplace_back(std::move(preRightPathMap));
+      allRightPathMaps_.emplace_back(std::move(rightPathMap));
 
       // set vid for getNeightbor
       leftVids_.emplace_back(startDs);
       rightVids_.emplace_back(std::move(endDs));
 
       // set terminateMap
-      std::unordered_multimap<Value, std::pair<Value, bool>> terminationMap;
+      std::unordered_multimap<StartVid, std::pair<EndVid, bool>> terminationMap;
       for (auto& _startVid : _startVids) {
         for (auto& _endVid : _endVids) {
           if (_startVid != _endVid) {
@@ -229,18 +226,9 @@ Status BatchShortestPath::buildPath(size_t rowNum, RpcResponse&& resps, bool rev
 }
 
 Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bool reverse) {
-  size_t iterSize = iter->size();
-  auto& historyVidMap = reverse ? allRightVidMap_[rowNum] : allLeftVidMap_[rowNum];
-  historyVidMap.reserve(historyVidMap.size() + iterSize);
-  auto& halfPath = reverse ? allRightPaths_[rowNum] : allLeftPaths_[rowNum];
-  halfPath.emplace_back();
-  auto& currentStep = halfPath.back();
+  auto& historyPathMap = reverse ? allRightPathMaps_[rowNum] : allLeftPathMaps_[rowNum];
+  auto& currentPathMap = reverse ? currentRightPathMaps_[rowNum] : currentLeftPathMaps_[rowNum];
 
-  std::vector<Row> nextStepVids;
-  nextStepVids.reserve(iterSize);
-
-  VidMap currentVidMap;
-  currentVidMap.reserve(iterSize);
   for (; iter->valid(); iter->next()) {
     auto edgeVal = iter->getEdge();
     if (UNLIKELY(!edgeVal.isEdge())) {
@@ -252,61 +240,91 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
     if (src == dst) {
       continue;
     }
-    // get start vids from edge's src
-    auto findHistoryStartVidsFromSrc = historyVidMap.find(src);
-    if (findHistoryStartVidsFromSrc == historyVidMap.end()) {
+    auto vertex = iter->getVertex();
+    CustomPath customPath;
+    customPath.emplace_back(std::move(vertex));
+    customPath.emplace_back(std::move(edge));
+
+    auto findSrcFromHistory = historyPathMap.find(src);
+    if (findSrcFromHistory == historyPathMap.end()) {
       // first step
-      auto findCurrentStartVidsFromDst = currentVidMap.find(dst);
-      if (findCurrentStartVidsFromDst == currentVidMap.end()) {
-        std::unordered_set<Value> startVid({src});
-        currentVidMap.emplace(dst, std::move(startVid));
+      auto findDstFromCurrent = currentPathMap.find(dst);
+      if (findDstFromCurrent == currentPathMap.end()) {
+        std::vector<CustomPath> tmp({std::move(customPath)});
+        currentPathMap[dst].emplace(src, std::move(tmp));
       } else {
-        findCurrentStartVidsFromDst->second.emplace(src);
-      }
-    } else {
-      auto startVidsFromSrc = findHistoryStartVidsFromSrc->second;
-      // get start vids from edge's dst
-      auto findHistoryStartVidsFromDst = historyVidMap.find(dst);
-      if (findHistoryStartVidsFromDst != historyVidMap.end()) {
-        // dst in history
-        auto& startVidsFromDst = findHistoryStartVidsFromDst->second;
-        if (startVidsFromDst == startVidsFromSrc) {
-          // loop: a->b->c->a or a->b->c->b
-          continue;
+        auto findSrc = findDstFromCurrent->second.find(src);
+        if (findSrc == findDstFromCurrent->second.end()) {
+          std::vector<CustomPath> tmp({std::move(customPath)});
+          findDstFromCurrent->second.emplace(src, std::move(tmp));
+        } else {
+          // same <src, dst>, different edge type or rank
+          findSrc->second.emplace_back(std::move(customPath));
         }
       }
-      currentVidMap[dst].insert(startVidsFromSrc.begin(), startVidsFromSrc.end());
-    }
-
-    auto vertex = iter->getVertex();
-    Row step;
-    step.emplace_back(std::move(vertex));
-    step.emplace_back(std::move(edge));
-    auto findDst = currentStep.find(dst);
-    if (findDst == currentStep.end()) {
-      nextStepVids.emplace_back(Row({dst}));
-      std::vector<Row> steps({std::move(step)});
-      currentStep.emplace(std::move(dst), std::move(steps));
     } else {
-      findDst->second.emplace_back(std::move(step));
+      // not first step
+      auto& srcPathMap = findSrcFromHistory->second;
+      auto findDstFromHistory = historyPathMap.find(dst);
+      if (findDstFromHistory == historyPathMap.end()) {
+        // dst not in history
+        auto findDstFromCurrent = currentPathMap.find(dst);
+        if (findDstFromCurrent == currentPathMap.end()) {
+          // dst not in current, new edge
+          for (const auto& srcPath : srcPathMap) {
+            currentPathMap[dst].emplace(srcPath.first, createPaths(srcPath.second, customPath));
+          }
+        } else {
+          // dst in current
+          for (const auto& srcPath : srcPathMap) {
+            auto newPaths = createPaths(srcPath.second, curstomPath);
+            auto findSrc = findDstFromCurrent->second.find(srcPath.first);
+            if (findSrc == findDstFromCurrent->second.end()) {
+              findDstFromCurrent->second.emplace(srcPath.first, std::move(newPaths));
+            } else {
+              findSrc->second.insert(findSrc->second.begin(),
+                                     std::make_move_iterator(newPaths.begin()),
+                                     std::make_move_iterator(newPaths.end()));
+            }
+          }
+        }
+      } else {
+        // dst in history
+        auto& dstPathMap = findDstFromHistory->second;
+        for (const auto& srcPath : srcPathMap) {
+          if (dstPathMap.find(srcPath.frist) != dstPathMap.end()) {
+            // loop : a->b->c->a or a->b->c->b
+            // filter out path that with duplicate vertex or have already been found before
+            continue;
+          }
+          auto findDstFromCurrent = currentPathMap.find(dst);
+          if (findDstFromCurrent == currentPathMap.end()) {
+            currentPathMap[dst].emplace(srcPath.first, createPaths(srcPath.second, customPath));
+          } else {
+            auto newPaths = createPaths(srcPath.second, customPath);
+            auto findSrc = findDstFromCurrent->second.find(srcPath.first);
+            if (findSrc == findDstFromCurrent->second.end()) {
+              findDstFromCurrent->second.emplace(srcPath.first, std::move(customPath));
+            } else {
+              findSrc->second.insert(findSrc->second.begin(),
+                                     std::make_move_iterator(newPaths.begin()),
+                                     std::make_move_iterator(newPaths.end()));
+            }
+          }
+        }
+      }
     }
-  }
-  // update historyVidMap
-  for (auto& vidIter : currentVidMap) {
-    historyVidMap[vidIter.first].insert(std::make_move_iterator(vidIter.second.begin()),
-                                        std::make_move_iterator(vidIter.second.end()));
   }
   // set nextVid
-  if (reverse) {
-    rightVids_[rowNum].rows.swap(nextStepVids);
-  } else {
-    leftVids_[rowNum].rows.swap(nextStepVids);
-  }
+  setNextStepVid(currentPathMap, rowNum, reverse);
   return Status::OK();
 }
 
 folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
-  if (conjunctPath(rowNum, stepNum)) {
+  if (conjunctPath(rowNum, stepNum, true)) {
+    return Status::OK();
+  }
+  if (stepNum * 2 < maxStep_ && conjunctPath(rowNum, stepNum, false)) {
     return Status::OK();
   }
   auto& leftVids = leftVids_[rowNum].rows;
@@ -314,66 +332,102 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
   if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
     return Status::OK();
   }
+  // update allPathMap
+  auto& leftPathMap = currentLeftPathMaps_[rowNum];
+  auto& rightPathMap = currentRightPathMaps_[rowNum];
+  preRightPathMaps_[rowNum] = rightPathMap;
+  for (auto& iter : leftPathMap) {
+    allLeftPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                                std::make_move_iterator(iter.second.end()));
+  }
+  for (auto& iter : rightPathMap) {
+    allRightPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                                 std::make_move_iterator(iter.second.end()));
+  }
+  leftPathMap.clear();
+  rightPathMap.clear();
   return shortestPath(rowNum, ++stepNum);
 }
 
-bool BatchShortestPath::checkMeetVid(const Value& meetVid, size_t rowNum) {
+bool BatchShortestPath::conjunctPath(size_t rowNum, size_t stepNum, bool oddStep) {
+  auto& leftPathMaps = currentLeftPathMaps_[rowNum];
+  auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
   auto& terminationMap = terminationMaps_[rowNum];
-  auto& leftVidMap = allLeftVidMap_[rowNum];
-  auto& rightVidMap = allRightVidMap_[rowNum];
-  auto& startVids = leftVidMap[meetVid];
-  auto& endVids = rightVidMap[meetVid];
-  for (const auto& startVid : startVids) {
-    auto range = terminationMap.equal_range(startVid);
-    if (range.first == range.second) {
-      continue;
-    }
-    for (const auto& endVid : endVids) {
-      for (auto found = range.first; found != range.second; ++found) {
-        if (found->second.first == endVid) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
 
-bool BatchShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
-  const auto& leftStep = allLeftPaths_[rowNum].back();
-  const auto& prevRightStep = allRightPaths_[rowNum][stepNum - 1];
   std::vector<Value> meetVids;
-  for (const auto& step : leftStep) {
-    if (prevRightStep.find(step.first) != prevRightStep.end()) {
-      if (checkMeetVid(step.first, rowNum)) {
-        meetVids.push_back(step.first);
-      }
-    }
-  }
-  if (!meetVids.empty() && buildOddPath(rowNum, meetVids)) {
-    return true;
-  }
-  if (stepNum * 2 >= maxStep_) {
-    return false;
-  }
-  std::vector<Value> dummy;
-  meetVids.swap(dummy);
-  const auto& rightStep = allRightPaths_[rowNum].back();
-  for (const auto& step : leftStep) {
-    if (rightStep.find(step.first) != rightStep.end()) {
-      if (checkMeetVid(step.first, rowNum)) {
-        meetVids.push_back(step.first);
-      }
+  meetVids.reserve(leftPathMaps.size());
+  for (const auto& leftPathMap : leftPathMaps) {
+    auto findCommonVid = rightPathMaps.find(leftPathMap.first);
+    if (findCommonVid != rightPathMaps.end()) {
+      meetVids.emplace_back(findCommonVid->first);
     }
   }
   if (meetVids.empty()) {
     return false;
   }
-  return buildEvenPath(rowNum, meetVids);
-}
+  std::unordered_map<Value, Value> verticesMap;
+  std::vector<Value> meetVertices;
+  meetVertices.reserve(meetVids.size());
+  verticesMap.reserve(meetVids.size());
+  if (oddStep) {
+    for (auto& meetVid : meetVids) {
+      for (auto& dstPaths : currentRightPathMaps_[rowNum]) {
+        bool flag = false;
+        for (auto& srcPaths : dstPaths) {
+          for (auto& path : srcPaths.second) {
+            auto& vertex = path.values[path.size() - 2];
+            auto& vid = vertex.getVertex().vid;
+            if (vid == meetVid) {
+              verticesMap[vid] = vertex;
+              flag = true;
+              break;
+            }
+          }
+          if (flag) {
+            break;
+          }
+        }
+        if (flag) {
+          break;
+        }
+      }
+    }
+  } else {
+    auto status = getMeetVidsProps(meetVids, meetVertices).get();
+    if (!status.ok() || meetVertices.empty()) {
+      return false;
+    }
+    for (auto& vertex : meetVertices) {
+      verticesMap[vertex.getVertex().vid] = std::move(vertex);
+    }
+  }
 
-bool BatchShortestPath::updateTermination(size_t rowNum) {
-  auto& terminationMap = terminationMaps_[rowNum];
+  for (const auto& leftPathMap : leftPathMaps) {
+    auto findCommonVid = rightPathMaps.find(leftPathMap.first);
+    if (findCommonVid == rightPathMaps.end()) {
+      continue;
+    }
+    auto findCommonVertex = verticesMap.find(findCommonVid->first);
+    if (findCommonVertex == verticesMap.end()) {
+      continue;
+    }
+    auto& rightPaths = findCommonVid->second;
+    for (const auto& srcPaths : leftPathMap.second) {
+      auto range = terminationMap.equal_range(srcPaths.first);
+      if (range.first == range.second) {
+        continue;
+      }
+      for (const auto& dstPaths : rightPaths) {
+        for (auto found = range.first; found != range.second; ++found) {
+          if (found->second.first == dstPaths.first) {
+            doConjunctPath(srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
+            found->second.second = false;
+          }
+        }
+      }
+    }
+  }
+  // update terminationMap
   for (auto iter = terminationMap.begin(); iter != terminationMap.end();) {
     if (!iter->second.second) {
       iter = terminationMap.erase(iter);
@@ -387,66 +441,59 @@ bool BatchShortestPath::updateTermination(size_t rowNum) {
   return false;
 }
 
-bool BatchShortestPath::buildOddPath(size_t rowNum, const std::vector<Value>& meetVids) {
-  auto& terminationMap = terminationMaps_[rowNum];
-  for (auto& meetVid : meetVids) {
-    auto leftPaths = createLeftPath(rowNum, meetVid);
-    auto rightPaths = createRightPath(rowNum, meetVid, true);
-    for (auto& leftPath : leftPaths) {
-      auto range = terminationMap.equal_range(leftPath.values.front().getVertex().vid);
-      if (range.first == range.second) {
-        continue;
-      }
-      for (auto& rightPath : rightPaths) {
-        for (auto found = range.first; found != range.second; found++) {
-          if (found->second.first == rightPath.values.back().getVertex().vid) {
-            Row path = leftPath;
-            auto& steps = path.values.back().mutableList().values;
-            steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-            path.emplace_back(rightPath.values.back());
-            resultDs_[rowNum].rows.emplace_back(std::move(path));
-
-            found->second.second = false;
-          }
-        }
-      }
+void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
+                                       const std::vector<CustomPath>& rightPaths,
+                                       const Value& commonVertex,
+                                       size_t rowNum) {
+  auto& resultDs = resultDs_[rowNum];
+  for (const auto& leftPath : leftPaths) {
+    for (const auto& rightPath : rightPaths) {
+      auto forwardPath = leftPath;
+      auto backwardPath = rightPath;
+      auto src = forwardPath.values.front();
+      forwardPath.values.erase(forwardPath.values.begin());
+      forwardPath.values.emplace_back(commonVertex);
+      std::reverse(backwardPath.values.begin(), backwardPath.values.end());
+      forwardPath.values.insert(forwardPath.values.end(),
+                                std::make_move_iterator(backwardPath.begin()),
+                                std::make_move_iterator(backwardPath.end()));
+      auto dst = forwardPath.back();
+      forwardPath.pop_back();
+      Row row;
+      row.emplace_back(std::move(src));
+      row.emplace_back(std::move(forwardPath));
+      row.emplace_back(std::move(dst));
+      resultDs.rows.emplace_back(std::move(row));
     }
   }
-  return updateTermination(rowNum);
 }
 
-bool BatchShortestPath::buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids) {
-  auto& terminationMap = terminationMaps_[rowNum];
-  std::vector<Value> meetVertices;
-  auto status = getMeetVidsProps(meetVids, meetVertices).get();
-  if (!status.ok() || meetVertices.empty()) {
-    return false;
+// [a, a->b, b, b->c ] insert [c, c->d]  result is [a, a->b, b, b->c, c, c->d]
+std::vector<CustomPath> BatchShortestPath::createPaths(const std::vector<CustomPath>& paths,
+                                                       const CustomPath& path) {
+  std::vector<CustomPath> newPaths;
+  newPaths.reserve(paths.size());
+  for (const auto& p : paths) {
+    CustomPath customPath = p;
+    customPath.values.insert(customPath.end(), path.values.begin(), path.values.end());
+    newPaths.emplace_back(std::move(path));
   }
-  for (auto& meetVertex : meetVertices) {
-    auto meetVid = meetVertex.getVertex().vid;
-    auto leftPaths = createLeftPath(rowNum, meetVid);
-    auto rightPaths = createRightPath(rowNum, meetVid, false);
-    for (auto& leftPath : leftPaths) {
-      auto range = terminationMap.equal_range(leftPath.values.front().getVertex().vid);
-      if (range.first == range.second) {
-        continue;
-      }
-      for (auto& rightPath : rightPaths) {
-        for (auto found = range.first; found != range.second; found++) {
-          if (found->second.first == rightPath.values.back().getVertex().vid) {
-            Row path = leftPath;
-            auto& steps = path.values.back().mutableList().values;
-            steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-            path.emplace_back(rightPath.values.back());
-            resultDs_[rowNum].rows.emplace_back(std::move(path));
+  return newPaths;
+}
 
-            found->second.second = false;
-          }
-        }
-      }
-    }
+void BatchShortestPath::setNextStepVid(const PathMap& paths, size_t rowNum, bool reverse) {
+  std::vector<Row> nexStepVids;
+  nextStepVids.reserve(paths.size());
+  for (const auto& path : paths) {
+    Row row;
+    row.values.emplace_back(path.first);
+    nextStepVids.emplace_back(std::move(row));
   }
-  return updateTermination(rowNum);
+  if (reverse) {
+    rightVids_[rowNum].rows.swap(nextStepVids);
+  } else {
+    leftVids_[rowNum].rows.swap(nextStepVids);
+  }
 }
 
 }  // namespace graph

@@ -64,10 +64,8 @@ class BatchShortestPath final : public ShortestPathBase {
                                 const std::unordered_set<Value>& endVids,
                                 DataSet* result) override;
 
-  using VidMap = std::unordered_map<DstVid, std::unordered_set<StartVid>>;
-
-  using HalfPath =
-      std::unordered_map<DstVid, std::unordered_map<StartVid, std::vector<CustomStep>>>;
+  using CustomPath = Row;
+  using PathMap = std::unordered_map<DstVid, std::unordered_map<StartVid, std::vector<CustomPath>>>;
 
  private:
   size_t splitTask(const std::unordered_set<Value>& startVids,
@@ -88,22 +86,25 @@ class BatchShortestPath final : public ShortestPathBase {
 
   bool conjunctPath(size_t rowNum, size_t stepNum);
 
-  bool buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids);
+  void doConjunctPath(const std::vector<CustomPath>& leftPaths,
+                      const std::vector<CustomPath>& rightPaths,
+                      const Value& commonVertex,
+                      size_t rowNum);
 
-  bool buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
+  std::vector<CustomPath> createPaths(const std::vector<CustomPath>& paths, const CustomPath& path);
 
-  bool checkMeetVid(const Value& meetVid, size_t rowNum);
-
-  bool updateTermination(size_t rowNum);
+  void setNextStepVid(const PathMap& paths, size_t rowNum, bool reverse);
 
  private:
-  std::vector<VidMap> allLeftVidMap_;
-  std::vector<VidMap> allRightVidMap_;
   std::vector<std::vector<StartVid>> batchStartVids_;
   std::vector<std::vector<EndVid>> batchEndVids_;
-  std::vector<std::unordered_multimap<Value, std::pair<Value, bool>>> terminationMaps_;
-  std::vector<HalfPath> allLeftPaths_;
-  std::vector<HalfPath> allRightPaths_;
+  std::vector<std::unordered_multimap<StartVid, std::pair<EndVid, bool>>> terminationMaps_;
+  std::vector<PathMap> allLeftPathMaps_;
+  std::vector<PathMap> allRightPathMaps_;
+
+  std::vector<PathMap> currentLeftPathMaps_;
+  std::vector<PathMap> currentRightPathMaps_;
+  std::vector<PathMap> preRightPathMaps_;
 };
 
 }  // namespace graph

@@ -276,5 +276,80 @@ bool SingleShortestPath::buildEvenPath(size_t rowNum, const std::vector<Value>& 
   return true;
 }
 
+std::vector<Row> SingleShortestPath::createLeftPath(size_t rowNum, const Value& meetVid) {
+  auto& allSteps = allLeftPaths_[rowNum];
+  auto& lastSteps = allSteps.back();
+  auto findMeetVid = lastSteps.find(meetVid);
+  std::vector<Row> leftPaths(findMeetVid->second);
+  for (auto stepIter = allSteps.rbegin() + 1; stepIter != allSteps.rend(); ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& leftPath : leftPaths) {
+      Value id = leftPath.values.front().getVertex().vid;
+      auto findId = stepIter->find(id);
+      for (auto& step : findId->second) {
+        auto newPath = leftPath;
+        newPath.values.insert(newPath.values.begin(), step.values.begin(), step.values.end());
+        temp.emplace_back(std::move(newPath));
+      }
+    }
+    leftPaths.swap(temp);
+  }
+  std::vector<Row> result;
+  result.reserve(leftPaths.size());
+  for (auto& path : leftPaths) {
+    Row row;
+    auto src = path.values.front();
+    path.values.erase(path.values.begin());
+    row.emplace_back(std::move(src));
+    row.emplace_back(std::move(path));
+    result.emplace_back(std::move(row));
+  }
+  return result;
+}
+
+std::vector<Row> SingleShortestPath::createRightPath(size_t rowNum,
+                                                     const Value& meetVid,
+                                                     bool oddStep) {
+  auto& allSteps = allRightPaths_[rowNum];
+  std::vector<Row> rightPaths;
+  auto& lastSteps = allSteps.back();
+  if (oddStep) {
+    for (auto& steps : lastSteps) {
+      bool flag = false;
+      for (auto& step : steps.second) {
+        auto& vertex = step.values.front();
+        if (vertex.getVertex().vid == meetVid) {
+          rightPaths.emplace_back(Row({vertex}));
+          flag = true;
+          break;
+        }
+      }
+      if (flag) {
+        break;
+      }
+    }
+  } else {
+    auto findMeetVid = lastSteps.find(meetVid);
+    rightPaths = findMeetVid->second;
+  }
+  for (auto stepIter = allSteps.rbegin() + 1; stepIter != allSteps.rend() - 1; ++stepIter) {
+    std::vector<Row> temp;
+    for (auto& rightPath : rightPaths) {
+      Value id = rightPath.values.front().getVertex().vid;
+      auto findId = stepIter->find(id);
+      for (auto& step : findId->second) {
+        auto newPath = rightPath;
+        newPath.values.insert(newPath.values.begin(), step.values.begin(), step.values.end());
+        temp.emplace_back(std::move(newPath));
+      }
+    }
+    rightPaths.swap(temp);
+  }
+  for (auto& path : rightPaths) {
+    std::reverse(path.values.begin(), path.values.end());
+  }
+  return rightPaths;
+}
+
 }  // namespace graph
 }  // namespace nebula
