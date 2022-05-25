@@ -14,7 +14,8 @@ Feature: Prune Properties rule
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN v2.player.age
       """
-    Then the result should be, in order:
+    # Since in distributed system and scatter gather model, the order is not guarrented.
+    Then the result should be, in any order:
       | v2.player.age |
       | 42            |
       | 33            |
@@ -70,7 +71,7 @@ Feature: Prune Properties rule
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN v2
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | v2                                                                                                          |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
@@ -88,7 +89,7 @@ Feature: Prune Properties rule
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
       RETURN p
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | p                                                                                                                                                                                             |
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})>                                               |
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                   |
