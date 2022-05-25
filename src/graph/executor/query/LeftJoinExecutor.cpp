@@ -55,7 +55,6 @@ folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& pr
     std::for_each(probeKeys.begin(), probeKeys.end(), [&tmpProbeKeys](auto& e) {
       tmpProbeKeys.emplace_back(e->clone());
     });
-    LOG(ERROR) << "begin: " << begin << " end: " << end;
     // Iterates to the begin pos
     size_t tmp = 0;
     for (; tmpIter->valid() && tmp < begin; ++tmp) {
@@ -166,6 +165,7 @@ BiLeftJoinExecutor::BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
     : LeftJoinExecutor(node, qctx) {
   name_ = "BiLeftJoinExecutor";
 }
+
 folly::Future<Status> BiLeftJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* joinNode = asNode<BiJoin>(node());

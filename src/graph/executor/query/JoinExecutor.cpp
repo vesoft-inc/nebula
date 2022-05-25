@@ -10,6 +10,9 @@ namespace nebula {
 namespace graph {
 
 Status JoinExecutor::checkInputDataSets() {
+  // Since the executors might reuse in loops, so manually clear the table here.
+  hashTable_.clear();
+  listHashTable_.clear();
   auto* join = asNode<Join>(node());
   lhsIter_ = ectx_->getVersionedResult(join->leftVar().first, join->leftVar().second).iter();
   DCHECK(!!lhsIter_);
