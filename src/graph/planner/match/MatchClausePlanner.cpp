@@ -27,13 +27,12 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   auto& pathInfos = matchClauseCtx->paths;
   for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
     auto& nodeInfos = iter->nodeInfos;
-    auto bindFilter = matchClauseCtx->where ? matchClauseCtx->where->filter : nullptr;
     SubPlan pathPlan;
     if (iter->pathType == Path::PathType::kDefault) {
       MatchPathPlanner matchPathPlanner;
       auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
                                                matchClauseCtx->space.id,
-                                               bindFilter,
+                                               matchClauseCtx->where.get(),
                                                matchClauseCtx->aliasesAvailable,
                                                nodeAliasesSeen,
                                                *iter);
@@ -43,7 +42,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
       ShortestPathPlanner shortestPathPlanner;
       auto result = shortestPathPlanner.transform(matchClauseCtx->qctx,
                                                   matchClauseCtx->space.id,
-                                                  bindFilter,
+                                                  matchClauseCtx->where.get(),
                                                   matchClauseCtx->aliasesAvailable,
                                                   nodeAliasesSeen,
                                                   *iter);

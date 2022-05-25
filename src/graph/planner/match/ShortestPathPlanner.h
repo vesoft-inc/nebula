@@ -16,7 +16,7 @@ class ShortestPathPlanner final {
 
   StatusOr<SubPlan> transform(QueryContext* qctx,
                               GraphSpaceID spaceId,
-                              Expression* bindFilter,
+                              WhereClauseContext* bindWhereClause,
                               const std::unordered_map<std::string, AliasType>& aliasesAvailable,
                               std::unordered_set<std::string> nodeAliasesSeen,
                               Path& path);

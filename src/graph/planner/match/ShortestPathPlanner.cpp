@@ -44,7 +44,7 @@ namespace graph {
 StatusOr<SubPlan> ShortestPathPlanner::transform(
     QueryContext* qctx,
     GraphSpaceID spaceId,
-    Expression* bindFilter,
+    WhereClauseContext* bindWhereClause,
     const std::unordered_map<std::string, AliasType>& aliasesAvailable,
     std::unordered_set<std::string> nodeAliasesSeen,
     Path& path) {
@@ -72,7 +72,7 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   for (auto& nodeInfo : nodeInfos) {
     bool foundIndex = false;
     for (auto& finder : startVidFinders) {
-      auto nodeCtx = NodeContext(qctx, bindFilter, spaceId, &nodeInfo);
+      auto nodeCtx = NodeContext(qctx, bindWhereClause, spaceId, &nodeInfo);
       nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {

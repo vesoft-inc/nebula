@@ -210,7 +210,7 @@ bool SingleShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
     buildOddPath(rowNum, meetVids);
     return true;
   }
-  if (stepNum * 2 >= maxStep_) {
+  if (stepNum * 2 > maxStep_) {
     return false;
   }
 
