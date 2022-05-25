@@ -2,7 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 #ifndef GRAPH_EXECUTOR_ALGO_SHORTESTPATHEXECUTOR_H_
-#define GRAPH_EXECUTOR_ALOG_SHORTESTPATHEXECUTOR_H_
+#define GRAPH_EXECUTOR_ALGO_SHORTESTPATHEXECUTOR_H_
 
 #include "graph/executor/Executor.h"
 #include "graph/planner/plan/Algo.h"
