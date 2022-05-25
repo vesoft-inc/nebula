@@ -39,19 +39,13 @@ folly::Future<Status> ProjectExecutor::execute() {
 }
 
 DataSet ProjectExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   auto *project = asNode<Project>(node());
   auto columns = project->columns()->clone();
   DataSet ds;
   ds.colNames = project->colNames();
   QueryExpressionContext ctx(qctx()->ectx());
   ds.rows.reserve(end - begin);
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     Row row;
     for (auto &col : columns->columns()) {
       Value val = col->expr()->eval(ctx(iter));

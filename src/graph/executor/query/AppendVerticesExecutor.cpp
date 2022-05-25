@@ -135,19 +135,13 @@ folly::Future<Status> AppendVerticesExecutor::handleResp(
 }
 
 DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, Iterator *iter) {
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   auto *av = asNode<AppendVertices>(node());
   auto vFilter = av->vFilter() ? av->vFilter()->clone() : nullptr;
   DataSet ds;
   ds.colNames = av->colNames();
   ds.rows.reserve(end - begin);
   QueryExpressionContext ctx(qctx()->ectx());
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     if (vFilter != nullptr) {
       auto &vFilterVal = vFilter->eval(ctx(iter));
       if (!vFilterVal.isBool() || !vFilterVal.getBool()) {

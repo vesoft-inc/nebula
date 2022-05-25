@@ -58,17 +58,11 @@ folly::Future<Status> FilterExecutor::execute() {
 }
 
 StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   auto *filter = asNode<Filter>(node());
   QueryExpressionContext ctx(ectx_);
   auto condition = filter->condition()->clone();
   DataSet ds;
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     auto val = condition->eval(ctx(iter));
     if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
       return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");

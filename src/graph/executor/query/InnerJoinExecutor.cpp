@@ -64,17 +64,10 @@ folly::Future<Status> InnerJoinExecutor::probe(const std::vector<Expression*>& p
   });
   auto scatter = [this, tmpProbeKeys = std::move(tmpProbeKeys)](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
-    LOG(ERROR) << "begin: " << begin << " end: " << end;
-    // Iterates to the begin pos
-    size_t tmp = 0;
-    for (; tmpIter->valid() && tmp < begin; ++tmp) {
-      tmpIter->next();
-    }
-
     DataSet ds;
     QueryExpressionContext ctx(ectx_);
     ds.rows.reserve(end - begin);
-    for (; tmpIter->valid() && tmp++ < end; tmpIter->next()) {
+    for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
       List list;
       list.values.reserve(tmpProbeKeys.size());
       for (auto& col : tmpProbeKeys) {
@@ -107,16 +100,10 @@ folly::Future<Status> InnerJoinExecutor::singleKeyProbe(Expression* probeKey, It
   auto scatter = [this, probeKey](
                      size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
     auto tmpProbeKey = probeKey->clone();
-    // Iterates to the begin pos
-    size_t tmp = 0;
-    for (; tmpIter->valid() && tmp < begin; ++tmp) {
-      tmpIter->next();
-    }
-
     DataSet ds;
     QueryExpressionContext ctx(ectx_);
     ds.rows.reserve(end - begin);
-    for (; tmpIter->valid() && tmp++ < end; tmpIter->next()) {
+    for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
       auto& val = tmpProbeKey->eval(ctx(tmpIter));
       buildNewRow<Value>(hashTable_, val, *tmpIter->row(), ds);
     }

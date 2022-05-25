@@ -190,12 +190,6 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
 }
 
 folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeighborsIter> iter) {
-  // auto* threadMgr = reinterpret_cast<apache::thrift::concurrency::ThreadManager*>(runner());
-  // LOG(ERROR) << "Thead Mgr stats:"
-  //            << "idle worker: " << threadMgr->idleWorkerCount()
-  //            << "pending task: " << threadMgr->pendingTaskCount()
-  //            << "pending upstream task: " << threadMgr->pendingUpstreamTaskCount()
-  //            << "total task:" << threadMgr->totalTaskCount();
   time::Duration dur;
   size_t pathCnt = 0;
   const std::unordered_map<Value, Paths>* prev = &paths_.back();
@@ -210,8 +204,6 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
   }
   paths_.emplace_back();
 
-  // LOG(ERROR) << "buildInterimPath p1:" << dur.elapsedInUSec();
-
   auto scatter = [this, prev](
                      size_t begin, size_t end, Iterator* tmpIter) mutable -> StatusOr<JobResult> {
     return handleJob(begin, end, tmpIter, *prev);
@@ -219,9 +211,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
 
   auto gather =
       [this, pathCnt = pathCnt, dur](std::vector<StatusOr<JobResult>> results) mutable -> Status {
-    // LOG(ERROR) << "buildInterimPath post:" << dur.elapsedInUSec();
     reqDs_.clear();
-    // LOG(ERROR) << "p1:" << dur.elapsedInUSec();
     std::unordered_map<Value, Paths>& current = paths_.back();
     size_t mapCnt = 0;
     for (auto& r : results) {
@@ -231,11 +221,8 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
         mapCnt += r.value().newPaths.size();
       }
     }
-    // LOG(ERROR) << "p2:" << dur.elapsedInUSec();
     current.reserve(mapCnt);
-    // LOG(ERROR) << "p3:" << dur.elapsedInUSec();
     for (auto& r : results) {
-      // LOG(ERROR) << "p6:" << dur.elapsedInUSec();
       auto jobResult = std::move(r).value();
       pathCnt += jobResult.pathCnt;
       if (!jobResult.reqDs.rows.empty()) {
@@ -243,18 +230,14 @@ folly::Future<Status> TraverseExecutor::buildInterimPath(std::unique_ptr<GetNeig
                            std::make_move_iterator(jobResult.reqDs.rows.begin()),
                            std::make_move_iterator(jobResult.reqDs.rows.end()));
       }
-      // LOG(ERROR) << "p7:" << dur.elapsedInUSec();
       for (auto& kv : jobResult.newPaths) {
         auto& paths = current[kv.first];
         paths.insert(paths.end(),
                      std::make_move_iterator(kv.second.begin()),
                      std::make_move_iterator(kv.second.end()));
       }
-      // LOG(ERROR) << "p8:" << dur.elapsedInUSec();
     }
-    // LOG(ERROR) << "p4:" << dur.elapsedInUSec();
     releasePrevPaths(pathCnt);
-    // LOG(ERROR) << "p5:" << dur.elapsedInUSec();
     return Status::OK();
   };
 
@@ -265,13 +248,6 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
                                                 size_t end,
                                                 Iterator* iter,
                                                 const std::unordered_map<Value, Paths>& prev) {
-  time::Duration dur;
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   // Handle edges from begin to end, [begin, end)
   JobResult jobResult;
   size_t& pathCnt = jobResult.pathCnt;
@@ -283,7 +259,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
   auto* eFilter = traverse_->eFilter() ? traverse_->eFilter()->clone() : nullptr;
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   std::unordered_map<Value, Paths>& current = jobResult.newPaths;
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     auto& dst = iter->getEdgeProp("*", kDst);
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
