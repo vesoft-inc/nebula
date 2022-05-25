@@ -29,7 +29,7 @@ class SingleShortestPath final : public ShortestPathBase {
 
   folly::Future<Status> shortestPath(size_t rowNum, size_t stepNum);
 
-  folly::Future<Status> getNeighbors(size_t rowNum, bool reverse);
+  folly::Future<Status> getNeighbors(size_t rowNum, size_t stepNum, bool reverse);
 
   Status buildPath(size_t rowNum, RpcResponse&& resps, bool reverse);
 

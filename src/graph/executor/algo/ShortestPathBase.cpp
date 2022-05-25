@@ -38,12 +38,8 @@ folly::Future<Status> ShortestPathBase::getMeetVidsProps(const std::vector<Value
                  -1,
                  nullptr)
       .via(qctx_->rctx()->runner())
-      .ensure([this, getPropsTime]() {
-        stats_->emplace("get_prop_total_rpc",
-                        folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
-      })
-      .thenValue([this, &meetVertices](PropRpcResponse&& resp) {
-        addStats(resp, stats_);
+      .thenValue([this, getPropsTime, &meetVertices](PropRpcResponse&& resp) {
+        addStats(resp, stats_, getPropsTime.elapsedInUSec());
         return handlePropResp(std::move(resp), meetVertices);
       });
 }
@@ -166,6 +162,59 @@ Status ShortestPathBase::handleErrorCode(nebula::cpp2::ErrorCode code, Partition
       return status;
   }
   return Status::OK();
+}
+
+void ShortestPathBase::addStats(RpcResponse& resp,
+                                std::unordered_map<std::string, std::string>* stats,
+                                size_t stepNum,
+                                int64_t timeInUSec,
+                                bool reverse) const {
+  auto& hostLatency = resp.hostLatency();
+  std::stringstream ss;
+  ss << "{\n";
+  for (size_t i = 0; i < hostLatency.size(); ++i) {
+    size_t size = 0u;
+    auto& result = resp.responses()[i];
+    if (result.vertices_ref().has_value()) {
+      size = (*result.vertices_ref()).size();
+    }
+    auto& info = hostLatency[i];
+    ss << "{" << folly::sformat("{} exec/total/vertices: ", std::get<0>(info).toString())
+       << folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size) << "\n"
+       << folly::sformat("total_rpc_time: {}(us)", timeInUSec) << "\n";
+    auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+    if (!detail.empty()) {
+      ss << folly::sformat("storage_detail: {}", detail);
+    }
+    ss << "\n}";
+  }
+  ss << "\n}";
+  if (reverse) {
+    stats->emplace(folly::sformat("reverse step {}", stepNum), ss.str());
+  } else {
+    stats->emplace(folly::sformat("step {}", stepNum), ss.str());
+  }
+}
+
+void ShortestPathBase::addStats(PropRpcResponse& resp,
+                                std::unordered_map<std::string, std::string>* stats,
+                                int64_t timeInUSec) const {
+  auto& hostLatency = resp.hostLatency();
+  std::stringstream ss;
+  ss << "{\n";
+  for (size_t i = 0; i < hostLatency.size(); ++i) {
+    auto& info = hostLatency[i];
+    ss << "{" << folly::sformat("{} exec/total: ", std::get<0>(info).toString())
+       << folly::sformat("{}(us)/{}(us),", std::get<1>(info), std::get<2>(info)) << "\n"
+       << folly::sformat("total_rpc_time: {}(us)", timeInUSec) << "\n";
+    auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
+    if (!detail.empty()) {
+      ss << folly::sformat("storage_detail: {}", detail);
+    }
+    ss << "\n}";
+  }
+  ss << "\n}";
+  stats->emplace(folly::sformat("get_prop "), ss.str());
 }
 
 }  // namespace graph

@@ -11,70 +11,6 @@ using nebula::storage::StorageClient;
 DECLARE_uint32(num_path_thread);
 namespace nebula {
 namespace graph {
-size_t BatchShortestPath::splitTask(const std::unordered_set<Value>& startVids,
-                                    const std::unordered_set<Value>& endVids) {
-  size_t threadNum = FLAGS_num_path_thread;
-  size_t startVidsSize = startVids.size();
-  size_t endVidsSize = endVids.size();
-  size_t maxSlices = startVidsSize < threadNum ? startVidsSize : threadNum;
-  int minValue = INT_MAX;
-  size_t startSlices = 1;
-  size_t endSlices = 1;
-  for (size_t i = maxSlices; i >= 1; --i) {
-    auto j = threadNum / i;
-    auto val = std::abs(static_cast<int>(startVidsSize / i) - static_cast<int>(endVidsSize / j));
-    if (val < minValue) {
-      minValue = val;
-      startSlices = i;
-      endSlices = j;
-    }
-  }
-  VLOG(1) << "jmq : startVidsSize " << startVidsSize << " endVidsSize " << endVidsSize
-          << " threadNum " << threadNum << " startSlices " << startSlices << "  endSlices "
-          << endSlices;
-
-  // split tasks
-  {
-    auto batchSize = startVidsSize / startSlices;
-    size_t i = 0;
-    size_t slices = 1;
-    size_t count = 1;
-    std::vector<StartVid> tmp;
-    tmp.reserve(batchSize);
-    for (auto& startVid : startVids) {
-      tmp.emplace_back(startVid);
-      if ((++i == batchSize && slices != startSlices) || count == startVidsSize) {
-        batchStartVids_.emplace_back(std::move(tmp));
-        tmp.reserve(batchSize);
-        i = 0;
-        ++slices;
-      }
-      ++count;
-    }
-  }
-  {
-    auto batchSize = endVidsSize / endSlices;
-    size_t i = 0;
-    size_t slices = 1;
-    size_t count = 1;
-    std::vector<EndVid> tmp;
-    tmp.reserve(batchSize);
-    for (auto& endVid : endVids) {
-      tmp.emplace_back(endVid);
-      if ((++i == batchSize && slices != endSlices) || count == endVidsSize) {
-        batchEndVids_.emplace_back(std::move(tmp));
-        tmp.reserve(batchSize);
-        i = 0;
-        ++slices;
-      }
-      ++count;
-    }
-  }
-  VLOG(1) << "jmq : rowSize " << batchStartVids_.size() * batchEndVids_.size();
-  VLOG(1) << "jmq : check startSlices * endSlices " << startSlices * endSlices;
-  return startSlices * endSlices;
-}
-
 folly::Future<Status> BatchShortestPath::execute(const std::unordered_set<Value>& startVids,
                                                  const std::unordered_set<Value>& endVids,
                                                  DataSet* result) {
@@ -105,10 +41,10 @@ size_t BatchShortestPath::init(const std::unordered_set<Value>& startVids,
 
   leftVids_.reserve(rowSize);
   rightVids_.reserve(rowSize);
-  allLeftPathMaps_.reserve(rowSize);
-  allRightPathMaps_.reserve(rowSize);
-  currentLeftPathMaps_.resize(rowSize);
-  currentRightPathMaps_.resize(rowSize);
+  allLeftPathMaps_.resize(rowSize);
+  allRightPathMaps_.resize(rowSize);
+  currentLeftPathMaps_.reserve(rowSize);
+  currentRightPathMaps_.reserve(rowSize);
   preRightPathMaps_.reserve(rowSize);
 
   terminationMaps_.reserve(rowSize);
@@ -134,9 +70,9 @@ size_t BatchShortestPath::init(const std::unordered_set<Value>& startVids,
       }
 
       // set originRightpath
-      allLeftPathMaps_.emplace_back(leftPathMap);
+      currentLeftPathMaps_.emplace_back(leftPathMap);
       preRightPathMaps_.emplace_back(std::move(preRightPathMap));
-      allRightPathMaps_.emplace_back(std::move(rightPathMap));
+      currentRightPathMaps_.emplace_back(std::move(rightPathMap));
 
       // set vid for getNeightbor
       leftVids_.emplace_back(startDs);
@@ -159,8 +95,8 @@ size_t BatchShortestPath::init(const std::unordered_set<Value>& startVids,
 
 folly::Future<Status> BatchShortestPath::shortestPath(size_t rowNum, size_t stepNum) {
   std::vector<folly::Future<Status>> futures;
-  futures.emplace_back(getNeighbors(rowNum, false));
-  futures.emplace_back(getNeighbors(rowNum, true));
+  futures.emplace_back(getNeighbors(rowNum, stepNum, false));
+  futures.emplace_back(getNeighbors(rowNum, stepNum, true));
   return folly::collect(futures)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, stepNum](auto&& resps) {
@@ -173,7 +109,7 @@ folly::Future<Status> BatchShortestPath::shortestPath(size_t rowNum, size_t step
       });
 }
 
-folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, bool reverse) {
+folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t stepNum, bool reverse) {
   StorageClient* storageClient = qctx_->getStorageClient();
   time::Duration getNbrTime;
   storage::StorageClient::CommonRequestParam param(pathNode_->space(),
@@ -197,11 +133,8 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, bool revers
                      -1,
                      nullptr)
       .via(qctx_->rctx()->runner())
-      .ensure([this, getNbrTime]() {
-        stats_->emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
-      })
-      .thenValue([this, rowNum, reverse](auto&& resp) {
-        addStats(resp, stats_);
+      .thenValue([this, rowNum, reverse, stepNum, getNbrTime](auto&& resp) {
+        addStats(resp, stats_, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
 }
@@ -219,7 +152,6 @@ Status BatchShortestPath::buildPath(size_t rowNum, RpcResponse&& resps, bool rev
     }
     list.values.emplace_back(std::move(*dataset));
   }
-  VLOG(1) << "jmq GetNeightbor : rowNum " << rowNum << " reverse " << reverse << " result " << list;
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
   return doBuildPath(rowNum, iter.get(), reverse);
@@ -235,8 +167,8 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
       continue;
     }
     auto& edge = edgeVal.getEdge();
-    auto& src = edge.src;
-    auto& dst = edge.dst;
+    auto src = edge.src;
+    auto dst = edge.dst;
     if (src == dst) {
       continue;
     }
@@ -277,7 +209,7 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
         } else {
           // dst in current
           for (const auto& srcPath : srcPathMap) {
-            auto newPaths = createPaths(srcPath.second, curstomPath);
+            auto newPaths = createPaths(srcPath.second, customPath);
             auto findSrc = findDstFromCurrent->second.find(srcPath.first);
             if (findSrc == findDstFromCurrent->second.end()) {
               findDstFromCurrent->second.emplace(srcPath.first, std::move(newPaths));
@@ -292,7 +224,7 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
         // dst in history
         auto& dstPathMap = findDstFromHistory->second;
         for (const auto& srcPath : srcPathMap) {
-          if (dstPathMap.find(srcPath.frist) != dstPathMap.end()) {
+          if (dstPathMap.find(srcPath.first) != dstPathMap.end()) {
             // loop : a->b->c->a or a->b->c->b
             // filter out path that with duplicate vertex or have already been found before
             continue;
@@ -304,7 +236,7 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
             auto newPaths = createPaths(srcPath.second, customPath);
             auto findSrc = findDstFromCurrent->second.find(srcPath.first);
             if (findSrc == findDstFromCurrent->second.end()) {
-              findDstFromCurrent->second.emplace(srcPath.first, std::move(customPath));
+              findDstFromCurrent->second.emplace(srcPath.first, std::move(newPaths));
             } else {
               findSrc->second.insert(findSrc->second.begin(),
                                      std::make_move_iterator(newPaths.begin()),
@@ -321,10 +253,7 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
 }
 
 folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
-  if (conjunctPath(rowNum, stepNum, true)) {
-    return Status::OK();
-  }
-  if (stepNum * 2 < maxStep_ && conjunctPath(rowNum, stepNum, false)) {
+  if (conjunctPath(rowNum, true) || (stepNum * 2 <= maxStep_ && conjunctPath(rowNum, false))) {
     return Status::OK();
   }
   auto& leftVids = leftVids_[rowNum].rows;
@@ -349,7 +278,7 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
   return shortestPath(rowNum, ++stepNum);
 }
 
-bool BatchShortestPath::conjunctPath(size_t rowNum, size_t stepNum, bool oddStep) {
+bool BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep) {
   auto& leftPathMaps = currentLeftPathMaps_[rowNum];
   auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
   auto& terminationMap = terminationMaps_[rowNum];
@@ -373,7 +302,7 @@ bool BatchShortestPath::conjunctPath(size_t rowNum, size_t stepNum, bool oddStep
     for (auto& meetVid : meetVids) {
       for (auto& dstPaths : currentRightPathMaps_[rowNum]) {
         bool flag = false;
-        for (auto& srcPaths : dstPaths) {
+        for (auto& srcPaths : dstPaths.second) {
           for (auto& path : srcPaths.second) {
             auto& vertex = path.values[path.size() - 2];
             auto& vid = vertex.getVertex().vid;
@@ -446,22 +375,35 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
                                        const Value& commonVertex,
                                        size_t rowNum) {
   auto& resultDs = resultDs_[rowNum];
+  if (rightPaths.empty()) {
+    for (const auto& leftPath : leftPaths) {
+      auto forwardPath = leftPath.values;
+      auto src = forwardPath.front();
+      forwardPath.erase(forwardPath.begin());
+      Row row;
+      row.emplace_back(std::move(src));
+      row.emplace_back(List(std::move(forwardPath)));
+      row.emplace_back(commonVertex);
+      resultDs.rows.emplace_back(std::move(row));
+    }
+    return;
+  }
   for (const auto& leftPath : leftPaths) {
     for (const auto& rightPath : rightPaths) {
-      auto forwardPath = leftPath;
-      auto backwardPath = rightPath;
-      auto src = forwardPath.values.front();
-      forwardPath.values.erase(forwardPath.values.begin());
-      forwardPath.values.emplace_back(commonVertex);
-      std::reverse(backwardPath.values.begin(), backwardPath.values.end());
-      forwardPath.values.insert(forwardPath.values.end(),
-                                std::make_move_iterator(backwardPath.begin()),
-                                std::make_move_iterator(backwardPath.end()));
+      auto forwardPath = leftPath.values;
+      auto backwardPath = rightPath.values;
+      auto src = forwardPath.front();
+      forwardPath.erase(forwardPath.begin());
+      forwardPath.emplace_back(commonVertex);
+      std::reverse(backwardPath.begin(), backwardPath.end());
+      forwardPath.insert(forwardPath.end(),
+                         std::make_move_iterator(backwardPath.begin()),
+                         std::make_move_iterator(backwardPath.end()));
       auto dst = forwardPath.back();
       forwardPath.pop_back();
       Row row;
       row.emplace_back(std::move(src));
-      row.emplace_back(std::move(forwardPath));
+      row.emplace_back(List(std::move(forwardPath)));
       row.emplace_back(std::move(dst));
       resultDs.rows.emplace_back(std::move(row));
     }
@@ -469,20 +411,20 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
 }
 
 // [a, a->b, b, b->c ] insert [c, c->d]  result is [a, a->b, b, b->c, c, c->d]
-std::vector<CustomPath> BatchShortestPath::createPaths(const std::vector<CustomPath>& paths,
-                                                       const CustomPath& path) {
+std::vector<Row> BatchShortestPath::createPaths(const std::vector<CustomPath>& paths,
+                                                const CustomPath& path) {
   std::vector<CustomPath> newPaths;
-  newPaths.reserve(paths.size());
+  // newPaths.reserve(paths.size());
   for (const auto& p : paths) {
-    CustomPath customPath = p;
-    customPath.values.insert(customPath.end(), path.values.begin(), path.values.end());
-    newPaths.emplace_back(std::move(path));
+    auto customPath = p;
+    customPath.values.insert(customPath.values.end(), path.values.begin(), path.values.end());
+    newPaths.emplace_back(std::move(customPath));
   }
   return newPaths;
 }
 
 void BatchShortestPath::setNextStepVid(const PathMap& paths, size_t rowNum, bool reverse) {
-  std::vector<Row> nexStepVids;
+  std::vector<Row> nextStepVids;
   nextStepVids.reserve(paths.size());
   for (const auto& path : paths) {
     Row row;
@@ -494,6 +436,70 @@ void BatchShortestPath::setNextStepVid(const PathMap& paths, size_t rowNum, bool
   } else {
     leftVids_[rowNum].rows.swap(nextStepVids);
   }
+}
+
+size_t BatchShortestPath::splitTask(const std::unordered_set<Value>& startVids,
+                                    const std::unordered_set<Value>& endVids) {
+  size_t threadNum = FLAGS_num_path_thread;
+  size_t startVidsSize = startVids.size();
+  size_t endVidsSize = endVids.size();
+  size_t maxSlices = startVidsSize < threadNum ? startVidsSize : threadNum;
+  int minValue = INT_MAX;
+  size_t startSlices = 1;
+  size_t endSlices = 1;
+  for (size_t i = maxSlices; i >= 1; --i) {
+    auto j = threadNum / i;
+    auto val = std::abs(static_cast<int>(startVidsSize / i) - static_cast<int>(endVidsSize / j));
+    if (val < minValue) {
+      minValue = val;
+      startSlices = i;
+      endSlices = j;
+    }
+  }
+  // split tasks
+  {
+    auto batchSize = startVidsSize / startSlices;
+    size_t i = 0;
+    size_t slices = 1;
+    size_t count = 1;
+    std::vector<StartVid> tmp;
+    tmp.reserve(batchSize);
+    for (auto& startVid : startVids) {
+      tmp.emplace_back(startVid);
+      if ((++i == batchSize && slices != startSlices) || count == startVidsSize) {
+        batchStartVids_.emplace_back(std::move(tmp));
+        tmp.reserve(batchSize);
+        i = 0;
+        ++slices;
+      }
+      ++count;
+    }
+  }
+  {
+    auto batchSize = endVidsSize / endSlices;
+    size_t i = 0;
+    size_t slices = 1;
+    size_t count = 1;
+    std::vector<EndVid> tmp;
+    tmp.reserve(batchSize);
+    for (auto& endVid : endVids) {
+      tmp.emplace_back(endVid);
+      if ((++i == batchSize && slices != endSlices) || count == endVidsSize) {
+        batchEndVids_.emplace_back(std::move(tmp));
+        tmp.reserve(batchSize);
+        i = 0;
+        ++slices;
+      }
+      ++count;
+    }
+  }
+  std::stringstream ss;
+  ss << "{\n"
+     << "startVids' size : " << startVidsSize << " endVids's size : " << endVidsSize;
+  ss << " thread num : " << threadNum;
+  ss << " start blocks : " << startSlices << " end blocks : " << endSlices << "\n}";
+  stats_->emplace(folly::sformat("split task "), ss.str());
+  return startSlices * endSlices;
 }
 
 }  // namespace graph

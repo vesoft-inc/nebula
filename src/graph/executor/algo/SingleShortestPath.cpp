@@ -67,8 +67,8 @@ void SingleShortestPath::init(const std::unordered_set<Value>& startVids,
 folly::Future<Status> SingleShortestPath::shortestPath(size_t rowNum, size_t stepNum) {
   std::vector<folly::Future<Status>> futures;
   futures.reserve(2);
-  futures.emplace_back(getNeighbors(rowNum, false));
-  futures.emplace_back(getNeighbors(rowNum, true));
+  futures.emplace_back(getNeighbors(rowNum, stepNum, false));
+  futures.emplace_back(getNeighbors(rowNum, stepNum, true));
   return folly::collect(futures)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, stepNum](auto&& resps) {
@@ -81,7 +81,9 @@ folly::Future<Status> SingleShortestPath::shortestPath(size_t rowNum, size_t ste
       });
 }
 
-folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum, bool reverse) {
+folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
+                                                       size_t stepNum,
+                                                       bool reverse) {
   StorageClient* storageClient = qctx_->getStorageClient();
   time::Duration getNbrTime;
   storage::StorageClient::CommonRequestParam param(pathNode_->space(),
@@ -105,11 +107,8 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum, bool rever
                      -1,
                      nullptr)
       .via(qctx_->rctx()->runner())
-      .ensure([this, getNbrTime]() {
-        stats_->emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
-      })
-      .thenValue([this, rowNum, reverse](auto&& resp) {
-        addStats(resp, stats_);
+      .thenValue([this, rowNum, stepNum, getNbrTime, reverse](auto&& resp) {
+        addStats(resp, stats_, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
 }

@@ -44,19 +44,15 @@ class ShortestPathBase {
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const;
 
-  template <typename RESP>
-  void addStats(RESP& resp, std::unordered_map<std::string, std::string>* stats) const {
-    auto& hostLatency = resp.hostLatency();
-    for (size_t i = 0; i < hostLatency.size(); ++i) {
-      auto& info = hostLatency[i];
-      stats->emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
-                     folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
-      auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
-      if (!detail.empty()) {
-        stats->emplace("storage_detail", detail);
-      }
-    }
-  }
+  void addStats(RpcResponse& resp,
+                std::unordered_map<std::string, std::string>* stats,
+                size_t stepNum,
+                int64_t timeInUSec,
+                bool reverse) const;
+
+  void addStats(PropRpcResponse& resp,
+                std::unordered_map<std::string, std::string>* stats,
+                int64_t timeInUSec) const;
 
   template <typename Resp>
   StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,
