@@ -35,6 +35,9 @@ folly::Future<Status> FilterExecutor::execute() {
     auto gather =
         [this, result = std::move(ds), kind = iter->kind()](auto &&results) mutable -> Status {
       for (auto &r : results) {
+        if (!r.ok()) {
+          return r.status();
+        }
         auto &&rows = std::move(r).value();
         result.rows.insert(result.rows.end(),
                            std::make_move_iterator(rows.begin()),
@@ -54,7 +57,7 @@ folly::Future<Status> FilterExecutor::execute() {
   }
 }
 
-DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
+StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
   // Iterates to the begin pos
   size_t tmp = 0;
   for (; iter->valid() && tmp < begin; ++tmp) {
@@ -68,10 +71,10 @@ DataSet FilterExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
   for (; iter->valid() && tmp++ < end; iter->next()) {
     auto val = condition->eval(ctx(iter));
     if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
-      // TODO:
-      continue;
+      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
     }
     if (!(val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool()))) {
+      // TODO: Maybe we can move.
       auto row = *iter->row();
       ds.rows.emplace_back(std::move(row));
     }
