@@ -350,6 +350,9 @@ bool BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep) {
       for (const auto& dstPaths : rightPaths) {
         for (auto found = range.first; found != range.second; ++found) {
           if (found->second.first == dstPaths.first) {
+            if (singleShortest_ && !found->second.second) {
+              break;
+            }
             doConjunctPath(srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
             found->second.second = false;
           }
@@ -386,6 +389,9 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
       row.emplace_back(List(std::move(forwardPath)));
       row.emplace_back(commonVertex);
       resultDs.rows.emplace_back(std::move(row));
+      if (singleShortest_) {
+        return;
+      }
     }
     return;
   }
@@ -407,6 +413,9 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
       row.emplace_back(List(std::move(forwardPath)));
       row.emplace_back(std::move(dst));
       resultDs.rows.emplace_back(std::move(row));
+      if (singleShortest_) {
+        return;
+      }
     }
   }
 }
@@ -415,7 +424,7 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
 std::vector<Row> BatchShortestPath::createPaths(const std::vector<CustomPath>& paths,
                                                 const CustomPath& path) {
   std::vector<CustomPath> newPaths;
-  // newPaths.reserve(paths.size());
+  newPaths.reserve(paths.size());
   for (const auto& p : paths) {
     auto customPath = p;
     customPath.values.insert(customPath.values.end(), path.values.begin(), path.values.end());
