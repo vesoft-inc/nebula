@@ -6,12 +6,12 @@
 namespace nebula {
 namespace storage {
 IndexSelectionNode::IndexSelectionNode(const IndexSelectionNode& node)
-    : IndexNode(node), expr_(node.expr_), colPos_(node.colPos_) {
+    : IndexNode(node), expr_(node.expr_->clone()), colPos_(node.colPos_) {
   ctx_ = std::make_unique<IndexExprContext>(colPos_);
 }
 
 IndexSelectionNode::IndexSelectionNode(RuntimeContext* context, Expression* expr)
-    : IndexNode(context, "IndexSelectionNode"), expr_(expr) {}
+    : IndexNode(context, "IndexSelectionNode"), expr_(expr->clone()) {}
 nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
   DCHECK_EQ(children_.size(), 1);
   SelectionExprVisitor vis;
