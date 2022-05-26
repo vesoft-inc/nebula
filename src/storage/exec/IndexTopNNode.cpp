@@ -6,7 +6,10 @@
 namespace nebula {
 namespace storage {
 IndexTopNNode::IndexTopNNode(const IndexTopNNode& node)
-    : IndexLimitNode(node), orderBy_(node.orderBy_) {
+    : IndexLimitNode(node),
+      orderBy_(node.orderBy_),
+      requiredColumns_(node.requiredColumns_),
+      colPos_(node.colPos_) {
   name_ = "IndexTopNNode";
 }
 
@@ -14,7 +17,7 @@ IndexTopNNode::IndexTopNNode(RuntimeContext* context,
                              uint64_t offset,
                              uint64_t limit,
                              const std::vector<cpp2::OrderBy>* orderBy)
-    : IndexLimitNode(context, offset, limit), orderBy_(orderBy) {
+    : IndexLimitNode(context, offset, limit), orderBy_(*orderBy) {
   name_ = "IndexTopNNode";
 }
 IndexTopNNode::IndexTopNNode(RuntimeContext* context,
@@ -23,14 +26,14 @@ IndexTopNNode::IndexTopNNode(RuntimeContext* context,
     : IndexTopNNode(context, 0, limit, orderBy) {}
 nebula::cpp2::ErrorCode IndexTopNNode::init(InitContext& ctx) {
   DCHECK_EQ(children_.size(), 1);
-  for (auto iter = orderBy_->begin(); iter != orderBy_->end(); iter++) {
+  for (auto iter = orderBy_.begin(); iter != orderBy_.end(); iter++) {
     ctx.requiredColumns.insert(iter->get_prop());
   }
   auto ret = children_[0]->init(ctx);
   if (UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
     return ret;
   }
-  for (auto iter = orderBy_->begin(); iter != orderBy_->end(); iter++) {
+  for (auto iter = orderBy_.begin(); iter != orderBy_.end(); iter++) {
     auto pos = ctx.retColMap.find(iter->get_prop());
     DCHECK(pos != ctx.retColMap.end());
     colPos_[iter->get_prop()] = pos->second;
@@ -62,7 +65,7 @@ void IndexTopNNode::topN() {
     return;
   }
   auto comparator = [this](Row& lhs, Row& rhs) -> bool {
-    for (auto iter = orderBy_->begin(); iter != orderBy_->end(); iter++) {
+    for (auto iter = orderBy_.begin(); iter != orderBy_.end(); iter++) {
       auto prop = iter->get_prop();
       auto orderType = iter->get_direction();
       auto lValue = lhs[colPos_[prop]];
@@ -110,7 +113,7 @@ std::unique_ptr<IndexNode> IndexTopNNode::copy() {
 
 std::string IndexTopNNode::identify() {
   std::stringstream ss;
-  for (auto iter = orderBy_->begin(); iter != orderBy_->end(); iter++) {
+  for (auto iter = orderBy_.begin(); iter != orderBy_.end(); iter++) {
     auto orderType = iter->get_direction();
     if (orderType == cpp2::OrderDirection::ASCENDING) {
       ss << iter->get_prop() << " asc,";
