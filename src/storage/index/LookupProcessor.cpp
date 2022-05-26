@@ -402,6 +402,7 @@ std::vector<std::unique_ptr<IndexNode>> LookupProcessor::reproducePlan(IndexNode
   return ret;
 }
 void LookupProcessor::profilePlan(IndexNode* root) {
+  std::unique_lock<std::mutex> lck(BaseProcessor<cpp2::LookupIndexResp>::profileMut_);
   std::queue<IndexNode*> q;
   q.push(root);
   while (!q.empty()) {
