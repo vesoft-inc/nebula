@@ -50,7 +50,7 @@ bool EliminateAppendVerticesRule::match(OptContext* octx, const MatchedResult& m
   if (appendVertices->vFilter() != nullptr || appendVertices->filter() != nullptr) {
     return false;
   }
-  if (appendVertices->colNames().back()[0] != '_') {  // Anonymous node
+  if (!graph::AnonVarGenerator::isAnnoVar(appendVertices->colNames().back())) {  // Anonymous node
     return false;
   }
   return true;
