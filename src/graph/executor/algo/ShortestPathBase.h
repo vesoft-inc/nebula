@@ -37,11 +37,6 @@ class ShortestPathBase {
   using CustomStep = Row;
 
  protected:
-  Status handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices);
-
-  folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
-                                         std::vector<Value>& meetVertices);
-  
   folly::Future<std::vector<Value>> getMeetVidsProps(const std::vector<Value>& meetVids);
 
   std::vector<Value> handlePropResp(PropRpcResponse&& resps);

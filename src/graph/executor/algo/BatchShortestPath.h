@@ -42,13 +42,13 @@ class BatchShortestPath final : public ShortestPathBase {
   folly::Future<bool> conjunctPath(size_t rowNum, bool oddStep);
 
   folly::Future<std::vector<Value>> getMeetVids(size_t rowNum,
-                                    bool oddStep,
-                                    std::vector<Value>& meetVids);
+                                                bool oddStep,
+                                                std::vector<Value>& meetVids);
 
-      void doConjunctPath(const std::vector<CustomPath>& leftPaths,
-                          const std::vector<CustomPath>& rightPaths,
-                          const Value& commonVertex,
-                          size_t rowNum);
+  void doConjunctPath(const std::vector<CustomPath>& leftPaths,
+                      const std::vector<CustomPath>& rightPaths,
+                      const Value& commonVertex,
+                      size_t rowNum);
 
   std::vector<Row> createPaths(const std::vector<CustomPath>& paths, const CustomPath& path);
 

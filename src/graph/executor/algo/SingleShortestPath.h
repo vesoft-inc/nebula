@@ -37,9 +37,9 @@ class SingleShortestPath final : public ShortestPathBase {
 
   folly::Future<Status> handleResponse(size_t rowNum, size_t stepNum);
 
-  bool conjunctPath(size_t rowNum, size_t stepNum);
+  folly::Future<bool> conjunctPath(size_t rowNum, size_t stepNum);
 
-  bool buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids);
+  folly::Future<bool> buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids);
 
   void buildOddPath(size_t rowNum, const std::vector<Value>& meetVids);
 

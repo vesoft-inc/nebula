@@ -183,18 +183,26 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
 }
 
 folly::Future<Status> SingleShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
-  if (conjunctPath(rowNum, stepNum)) {
-    return Status::OK();
-  }
-  auto& leftVids = leftVids_[rowNum].rows;
-  auto& rightVids = rightVids_[rowNum].rows;
-  if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
-    return Status::OK();
-  }
-  return shortestPath(rowNum, ++stepNum);
+  return folly::makeFuture<Status>(Status::OK())
+      .via(qctx_->rctx()->runner())
+      .thenValue([this, rowNum, stepNum](auto&& status) {
+        UNUSED(status);
+        return conjunctPath(rowNum, stepNum);
+      })
+      .thenValue([this, rowNum, stepNum](auto&& result) {
+        if (result || stepNum * 2 >= maxStep_) {
+          return folly::makeFuture<Status>(Status::OK());
+        }
+        auto& leftVids = leftVids_[rowNum].rows;
+        auto& rightVids = rightVids_[rowNum].rows;
+        if (leftVids.empty() || rightVids.empty()) {
+          return folly::makeFuture<Status>(Status::OK());
+        }
+        return shortestPath(rowNum, stepNum + 1);
+      });
 }
 
-bool SingleShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
+folly::Future<bool> SingleShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
   const auto& leftStep = allLeftPaths_[rowNum].back();
   const auto& prevRightStep = allRightPaths_[rowNum][stepNum - 1];
   std::vector<Value> meetVids;
@@ -208,10 +216,10 @@ bool SingleShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
   }
   if (!meetVids.empty()) {
     buildOddPath(rowNum, meetVids);
-    return true;
+    return folly::makeFuture<bool>(true);
   }
   if (stepNum * 2 > maxStep_) {
-    return false;
+    return folly::makeFuture<bool>(false);
   }
 
   const auto& rightStep = allRightPaths_[rowNum].back();
@@ -224,7 +232,7 @@ bool SingleShortestPath::conjunctPath(size_t rowNum, size_t stepNum) {
     }
   }
   if (meetVids.empty()) {
-    return false;
+    return folly::makeFuture<bool>(false);
   }
   return buildEvenPath(rowNum, meetVids);
 }
@@ -248,31 +256,33 @@ void SingleShortestPath::buildOddPath(size_t rowNum, const std::vector<Value>& m
   }
 }
 
-bool SingleShortestPath::buildEvenPath(size_t rowNum, const std::vector<Value>& meetVids) {
-  std::vector<Value> meetVertices;
-  auto status = getMeetVidsProps(meetVids, meetVertices).get();
-  if (!status.ok() || meetVertices.empty()) {
-    return false;
-  }
-  for (auto& meetVertex : meetVertices) {
-    auto meetVid = meetVertex.getVertex().vid;
-    auto leftPaths = createLeftPath(rowNum, meetVid);
-    auto rightPaths = createRightPath(rowNum, meetVid, false);
-    for (auto& leftPath : leftPaths) {
-      for (auto& rightPath : rightPaths) {
-        Row path = leftPath;
-        auto& steps = path.values.back().mutableList().values;
-        steps.emplace_back(meetVertex);
-        steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-        path.emplace_back(rightPath.values.back());
-        resultDs_[rowNum].rows.emplace_back(std::move(path));
-        if (singleShortest_) {
-          return true;
+folly::Future<bool> SingleShortestPath::buildEvenPath(size_t rowNum,
+                                                      const std::vector<Value>& meetVids) {
+  auto future = getMeetVidsProps(meetVids);
+  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum](auto&& vertices) {
+    if (vertices.empty()) {
+      return false;
+    }
+    for (auto& meetVertex : vertices) {
+      auto meetVid = meetVertex.getVertex().vid;
+      auto leftPaths = createLeftPath(rowNum, meetVid);
+      auto rightPaths = createRightPath(rowNum, meetVid, false);
+      for (auto& leftPath : leftPaths) {
+        for (auto& rightPath : rightPaths) {
+          Row path = leftPath;
+          auto& steps = path.values.back().mutableList().values;
+          steps.emplace_back(meetVertex);
+          steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+          path.emplace_back(rightPath.values.back());
+          resultDs_[rowNum].rows.emplace_back(std::move(path));
+          if (singleShortest_) {
+            return true;
+          }
         }
       }
     }
-  }
-  return true;
+    return true;
+  });
 }
 
 std::vector<Row> SingleShortestPath::createLeftPath(size_t rowNum, const Value& meetVid) {

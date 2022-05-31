@@ -271,7 +271,7 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
       .thenValue([this, rowNum, stepNum](auto&& result) {
         if (result || stepNum * 2 >= maxStep_) {
           return folly::makeFuture<Status>(Status::OK());
-        } 
+        }
         auto& leftVids = leftVids_[rowNum].rows;
         auto& rightVids = rightVids_[rowNum].rows;
         if (leftVids.empty() || rightVids.empty()) {

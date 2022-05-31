@@ -12,62 +12,8 @@ using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
-
-folly::Future<Status> ShortestPathBase::getMeetVidsProps(const std::vector<Value>& meetVids,
-                                                         std::vector<Value>& meetVertices) {
-  nebula::DataSet vertices({kVid});
-  vertices.rows.reserve(meetVids.size());
-  for (auto& vid : meetVids) {
-    vertices.emplace_back(Row({vid}));
-  }
-
-  time::Duration getPropsTime;
-  StorageClient* storageClient = qctx_->getStorageClient();
-  StorageClient::CommonRequestParam param(pathNode_->space(),
-                                          qctx_->rctx()->session()->id(),
-                                          qctx_->plan()->id(),
-                                          qctx_->plan()->isProfileEnabled());
-  return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vertices),
-                 pathNode_->vertexProps(),
-                 nullptr,
-                 nullptr,
-                 false,
-                 {},
-                 -1,
-                 nullptr)
-      .via(qctx_->rctx()->runner())
-      .thenValue([this, getPropsTime, &meetVertices](PropRpcResponse&& resp) {
-        addStats(resp, stats_, getPropsTime.elapsedInUSec());
-        return handlePropResp(std::move(resp), meetVertices);
-      });
-}
-
-Status ShortestPathBase::handlePropResp(PropRpcResponse&& resps, std::vector<Value>& vertices) {
-  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
-  NG_RETURN_IF_ERROR(result);
-  nebula::DataSet v;
-  for (auto& resp : resps.responses()) {
-    if (resp.props_ref().has_value()) {
-      if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
-        // it's impossible according to the interface
-        LOG(WARNING) << "Heterogeneous props dataset";
-      }
-    } else {
-      LOG(WARNING) << "GetProp partial success";
-    }
-  }
-  auto val = std::make_shared<Value>(std::move(v));
-  auto iter = std::make_unique<PropIter>(val);
-  vertices.reserve(iter->size());
-  for (; iter->valid(); iter->next()) {
-    vertices.emplace_back(iter->getVertex());
-  }
-  return Status::OK();
-}
-
-folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(const std::vector<Value>& meetVids) {
+folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
+    const std::vector<Value>& meetVids) {
   nebula::DataSet vertices({kVid});
   vertices.rows.reserve(meetVids.size());
   for (auto& vid : meetVids) {
@@ -123,7 +69,6 @@ std::vector<Value> ShortestPathBase::handlePropResp(PropRpcResponse&& resps) {
   }
   return vertices;
 }
-
 
 std::string ShortestPathBase::getStorageDetail(
     optional_field_ref<const std::map<std::string, int32_t>&> ref) const {
