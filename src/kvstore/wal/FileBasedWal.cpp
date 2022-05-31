@@ -631,6 +631,7 @@ bool FileBasedWal::reset() {
     unlink(absFn.c_str());
   }
   lastLogId_ = firstLogId_ = 0;
+  lastLogTerm_ = 0;
   return true;
 }
 
