@@ -13,7 +13,6 @@
 #include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::Expression;
-using nebula::graph::AppendVertices;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
 using nebula::graph::Project;
@@ -37,9 +36,8 @@ const Pattern &GetEdgesTransformLimitRule::pattern() const {
       PlanNode::Kind::kProject,
       {Pattern::create(
           PlanNode::Kind::kLimit,
-          {Pattern::create(PlanNode::Kind::kAppendVertices,
-                           {Pattern::create(PlanNode::Kind::kTraverse,
-                                            {Pattern::create(PlanNode::Kind::kScanVertices)})})})});
+          {Pattern::create(PlanNode::Kind::kTraverse,
+                    {Pattern::create(PlanNode::Kind::kScanVertices)})})});
   return pattern;
 }
 
@@ -87,28 +85,13 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformLimitRule::transform(
 
   newProjectGroupNode->dependsOn(newLimitGroup);
 
-  auto appendVerticesGroupNode = matched.dependencies.front().dependencies.front().node;
-  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
-  auto traverseGroupNode =
-      matched.dependencies.front().dependencies.front().dependencies.front().node;
+  auto traverseGroupNode = matched.dependencies.front().dependencies.front().node;
   auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
   auto scanVerticesGroupNode = matched.dependencies.front()
                                    .dependencies.front()
                                    .dependencies.front()
-                                   .dependencies.front()
                                    .node;
   auto qctx = ctx->qctx();
-
-  auto newAppendVertices = appendVertices->clone();
-  auto newAppendVerticesGroup = OptGroup::create(ctx);
-  auto colSize = appendVertices->colNames().size();
-  newAppendVertices->setOutputVar(appendVertices->outputVar());
-  newLimit->setInputVar(newAppendVertices->outputVar());
-  newAppendVertices->setColNames(
-      {appendVertices->colNames()[colSize - 2], appendVertices->colNames()[colSize - 1]});
-  auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
-
-  newLimitGroupNode->dependsOn(newAppendVerticesGroup);
 
   auto *newScanEdges = traverseToScanEdges(traverse, limit->count(qctx));
   if (newScanEdges == nullptr) {
@@ -119,12 +102,14 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformLimitRule::transform(
 
   auto *newProj = projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
-  newProj->setOutputVar(newAppendVertices->inputVar());
+  newProj->setOutputVar(traverse->outputVar());
   newProj->setColNames({traverse->colNames().back()});
   auto newProjGroup = OptGroup::create(ctx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
-  newAppendVerticesGroupNode->dependsOn(newProjGroup);
+  newLimit->setInputVar(newProj->outputVar());
+  newLimitGroupNode->dependsOn(newProjGroup);
+
   newProjGroupNode->dependsOn(newScanEdgesGroup);
   newScanEdgesGroupNode->setDeps(scanVerticesGroupNode->dependencies());
 
