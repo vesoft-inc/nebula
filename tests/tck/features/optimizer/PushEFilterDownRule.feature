@@ -21,8 +21,7 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                        |
-      | 5  | Project        | 6            |                                                      |
-      | 6  | AppendVertices | 8            |                                                      |
+      | 5  | Project        | 8            |                                                      |
       | 8  | Traverse       | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
       | 7  | IndexScan      | 0            |                                                      |
       | 0  | Start          |              |                                                      |
@@ -38,8 +37,7 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                        |
-      | 5  | Project        | 6            |                                                      |
-      | 6  | AppendVertices | 8            |                                                      |
+      | 5  | Project        | 8            |                                                      |
       | 8  | Traverse       | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
       | 7  | IndexScan      | 0            |                                                      |
       | 0  | Start          |              |                                                      |
@@ -56,8 +54,7 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                     |
-      | 5  | Project        | 6            |                                                   |
-      | 6  | AppendVertices | 8            |                                                   |
+      | 5  | Project        | 8            |                                                   |
       | 8  | Traverse       | 7            | {"edge filter": "(*.likeness==95)", "filter": ""} |
       | 7  | IndexScan      | 0            |                                                   |
       | 0  | Start          |              |                                                   |
