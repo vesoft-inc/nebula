@@ -254,66 +254,65 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
 }
 
 folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
-  if (conjunctPath(rowNum, true) || (stepNum * 2 <= maxStep_ && conjunctPath(rowNum, false))) {
-    return Status::OK();
-  }
-  auto& leftVids = leftVids_[rowNum].rows;
-  auto& rightVids = rightVids_[rowNum].rows;
-  if (stepNum * 2 >= maxStep_ || leftVids.empty() || rightVids.empty()) {
-    return Status::OK();
-  }
-  // update allPathMap
-  auto& leftPathMap = currentLeftPathMaps_[rowNum];
-  auto& rightPathMap = currentRightPathMaps_[rowNum];
-  preRightPathMaps_[rowNum] = rightPathMap;
-  for (auto& iter : leftPathMap) {
-    allLeftPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
-                                                std::make_move_iterator(iter.second.end()));
-  }
-  for (auto& iter : rightPathMap) {
-    allRightPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
-                                                 std::make_move_iterator(iter.second.end()));
-  }
-  leftPathMap.clear();
-  rightPathMap.clear();
-  return shortestPath(rowNum, ++stepNum);
+  return folly::makeFuture(Status::OK())
+      .via(qctx_->rctx()->runner())
+      .thenValue([this, rowNum](auto&& status) {
+        // odd step
+        UNUSED(status);
+        return conjunctPath(rowNum, true);
+      })
+      .thenValue([this, rowNum, stepNum](auto&& terminate) {
+        // even Step
+        if (terminate || stepNum * 2 > maxStep_) {
+          return folly::makeFuture<bool>(true);
+        }
+        return conjunctPath(rowNum, false);
+      })
+      .thenValue([this, rowNum, stepNum](auto&& result) {
+        if (result || stepNum * 2 >= maxStep_) {
+          return folly::makeFuture<Status>(Status::OK());
+        } 
+        auto& leftVids = leftVids_[rowNum].rows;
+        auto& rightVids = rightVids_[rowNum].rows;
+        if (leftVids.empty() || rightVids.empty()) {
+          return folly::makeFuture<Status>(Status::OK());
+        }
+        // update allPathMap
+        auto& leftPathMap = currentLeftPathMaps_[rowNum];
+        auto& rightPathMap = currentRightPathMaps_[rowNum];
+        preRightPathMaps_[rowNum] = rightPathMap;
+        for (auto& iter : leftPathMap) {
+          allLeftPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                                      std::make_move_iterator(iter.second.end()));
+        }
+        for (auto& iter : rightPathMap) {
+          allRightPathMaps_[rowNum][iter.first].insert(std::make_move_iterator(iter.second.begin()),
+                                                       std::make_move_iterator(iter.second.end()));
+        }
+        leftPathMap.clear();
+        rightPathMap.clear();
+        return shortestPath(rowNum, stepNum + 1);
+      });
 }
 
-bool BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep) {
-  auto& leftPathMaps = currentLeftPathMaps_[rowNum];
-  auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
-  auto& terminationMap = terminationMaps_[rowNum];
-
-  std::vector<Value> meetVids;
-  meetVids.reserve(leftPathMaps.size());
-  for (const auto& leftPathMap : leftPathMaps) {
-    auto findCommonVid = rightPathMaps.find(leftPathMap.first);
-    if (findCommonVid != rightPathMaps.end()) {
-      meetVids.emplace_back(findCommonVid->first);
-    }
+folly::Future<std::vector<Value>> BatchShortestPath::getMeetVids(size_t rowNum,
+                                                                 bool oddStep,
+                                                                 std::vector<Value>& meetVids) {
+  if (!oddStep) {
+    return getMeetVidsProps(meetVids);
   }
-  if (meetVids.empty()) {
-    return false;
-  }
-  std::unordered_map<Value, Value> verticesMap;
-  std::vector<Value> meetVertices;
-  meetVertices.reserve(meetVids.size());
-  verticesMap.reserve(meetVids.size());
-  if (oddStep) {
-    for (auto& meetVid : meetVids) {
-      for (auto& dstPaths : currentRightPathMaps_[rowNum]) {
-        bool flag = false;
-        for (auto& srcPaths : dstPaths.second) {
-          for (auto& path : srcPaths.second) {
-            auto& vertex = path.values[path.size() - 2];
-            auto& vid = vertex.getVertex().vid;
-            if (vid == meetVid) {
-              verticesMap[vid] = vertex;
-              flag = true;
-              break;
-            }
-          }
-          if (flag) {
+  std::vector<Value> vertices;
+  vertices.reserve(meetVids.size());
+  for (auto& meetVid : meetVids) {
+    for (auto& dstPaths : currentRightPathMaps_[rowNum]) {
+      bool flag = false;
+      for (auto& srcPaths : dstPaths.second) {
+        for (auto& path : srcPaths.second) {
+          auto& vertex = path.values[path.size() - 2];
+          auto& vid = vertex.getVertex().vid;
+          if (vid == meetVid) {
+            vertices.emplace_back(vertex);
+            flag = true;
             break;
           }
         }
@@ -321,57 +320,83 @@ bool BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep) {
           break;
         }
       }
-    }
-  } else {
-    auto status = getMeetVidsProps(meetVids, meetVertices).get();
-    if (!status.ok() || meetVertices.empty()) {
-      return false;
-    }
-    for (auto& vertex : meetVertices) {
-      verticesMap[vertex.getVertex().vid] = std::move(vertex);
+      if (flag) {
+        break;
+      }
     }
   }
+  return folly::makeFuture<std::vector<Value>>(std::move(vertices));
+}
 
-  for (const auto& leftPathMap : leftPathMaps) {
-    auto findCommonVid = rightPathMaps.find(leftPathMap.first);
-    if (findCommonVid == rightPathMaps.end()) {
-      continue;
+folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep) {
+  auto& _leftPathMaps = currentLeftPathMaps_[rowNum];
+  auto& _rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
+
+  std::vector<Value> meetVids;
+  meetVids.reserve(_leftPathMaps.size());
+  for (const auto& leftPathMap : _leftPathMaps) {
+    auto findCommonVid = _rightPathMaps.find(leftPathMap.first);
+    if (findCommonVid != _rightPathMaps.end()) {
+      meetVids.emplace_back(findCommonVid->first);
     }
-    auto findCommonVertex = verticesMap.find(findCommonVid->first);
-    if (findCommonVertex == verticesMap.end()) {
-      continue;
+  }
+  if (meetVids.empty()) {
+    return folly::makeFuture<bool>(false);
+  }
+
+  auto future = getMeetVids(rowNum, oddStep, meetVids);
+  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum, oddStep](auto&& vertices) {
+    if (vertices.empty()) {
+      return false;
     }
-    auto& rightPaths = findCommonVid->second;
-    for (const auto& srcPaths : leftPathMap.second) {
-      auto range = terminationMap.equal_range(srcPaths.first);
-      if (range.first == range.second) {
+    std::unordered_map<Value, Value> verticesMap;
+    for (auto& vertex : vertices) {
+      verticesMap[vertex.getVertex().vid] = std::move(vertex);
+    }
+    auto& terminationMap = terminationMaps_[rowNum];
+    auto& leftPathMaps = currentLeftPathMaps_[rowNum];
+    auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
+    for (const auto& leftPathMap : leftPathMaps) {
+      auto findCommonVid = rightPathMaps.find(leftPathMap.first);
+      if (findCommonVid == rightPathMaps.end()) {
         continue;
       }
-      for (const auto& dstPaths : rightPaths) {
-        for (auto found = range.first; found != range.second; ++found) {
-          if (found->second.first == dstPaths.first) {
-            if (singleShortest_ && !found->second.second) {
-              break;
+      auto findCommonVertex = verticesMap.find(findCommonVid->first);
+      if (findCommonVertex == verticesMap.end()) {
+        continue;
+      }
+      auto& rightPaths = findCommonVid->second;
+      for (const auto& srcPaths : leftPathMap.second) {
+        auto range = terminationMap.equal_range(srcPaths.first);
+        if (range.first == range.second) {
+          continue;
+        }
+        for (const auto& dstPaths : rightPaths) {
+          for (auto found = range.first; found != range.second; ++found) {
+            if (found->second.first == dstPaths.first) {
+              if (singleShortest_ && !found->second.second) {
+                break;
+              }
+              doConjunctPath(srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
+              found->second.second = false;
             }
-            doConjunctPath(srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
-            found->second.second = false;
           }
         }
       }
     }
-  }
-  // update terminationMap
-  for (auto iter = terminationMap.begin(); iter != terminationMap.end();) {
-    if (!iter->second.second) {
-      iter = terminationMap.erase(iter);
-    } else {
-      ++iter;
+    // update terminationMap
+    for (auto iter = terminationMap.begin(); iter != terminationMap.end();) {
+      if (!iter->second.second) {
+        iter = terminationMap.erase(iter);
+      } else {
+        ++iter;
+      }
     }
-  }
-  if (terminationMap.empty()) {
-    return true;
-  }
-  return false;
+    if (terminationMap.empty()) {
+      return true;
+    }
+    return false;
+  });
 }
 
 void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,

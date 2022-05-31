@@ -41,6 +41,10 @@ class ShortestPathBase {
 
   folly::Future<Status> getMeetVidsProps(const std::vector<Value>& meetVids,
                                          std::vector<Value>& meetVertices);
+  
+  folly::Future<std::vector<Value>> getMeetVidsProps(const std::vector<Value>& meetVids);
+
+  std::vector<Value> handlePropResp(PropRpcResponse&& resps);
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const;
 

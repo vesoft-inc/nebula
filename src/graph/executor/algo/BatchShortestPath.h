@@ -39,12 +39,16 @@ class BatchShortestPath final : public ShortestPathBase {
 
   Status doBuildPath(size_t rowNum, GetNeighborsIter* iter, bool reverse);
 
-  bool conjunctPath(size_t rowNum, bool oddStep);
+  folly::Future<bool> conjunctPath(size_t rowNum, bool oddStep);
 
-  void doConjunctPath(const std::vector<CustomPath>& leftPaths,
-                      const std::vector<CustomPath>& rightPaths,
-                      const Value& commonVertex,
-                      size_t rowNum);
+  folly::Future<std::vector<Value>> getMeetVids(size_t rowNum,
+                                    bool oddStep,
+                                    std::vector<Value>& meetVids);
+
+      void doConjunctPath(const std::vector<CustomPath>& leftPaths,
+                          const std::vector<CustomPath>& rightPaths,
+                          const Value& commonVertex,
+                          size_t rowNum);
 
   std::vector<Row> createPaths(const std::vector<CustomPath>& paths, const CustomPath& path);
 
