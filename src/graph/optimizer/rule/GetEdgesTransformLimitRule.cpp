@@ -34,10 +34,9 @@ GetEdgesTransformLimitRule::GetEdgesTransformLimitRule() {
 const Pattern &GetEdgesTransformLimitRule::pattern() const {
   static Pattern pattern = Pattern::create(
       PlanNode::Kind::kProject,
-      {Pattern::create(
-          PlanNode::Kind::kLimit,
-          {Pattern::create(PlanNode::Kind::kTraverse,
-                    {Pattern::create(PlanNode::Kind::kScanVertices)})})});
+      {Pattern::create(PlanNode::Kind::kLimit,
+                       {Pattern::create(PlanNode::Kind::kTraverse,
+                                        {Pattern::create(PlanNode::Kind::kScanVertices)})})});
   return pattern;
 }
 
@@ -87,10 +86,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformLimitRule::transform(
 
   auto traverseGroupNode = matched.dependencies.front().dependencies.front().node;
   auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
-  auto scanVerticesGroupNode = matched.dependencies.front()
-                                   .dependencies.front()
-                                   .dependencies.front()
-                                   .node;
+  auto scanVerticesGroupNode =
+      matched.dependencies.front().dependencies.front().dependencies.front().node;
   auto qctx = ctx->qctx();
 
   auto *newScanEdges = traverseToScanEdges(traverse, limit->count(qctx));
