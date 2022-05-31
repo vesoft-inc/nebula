@@ -20,11 +20,11 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                        |
-      | 5  | Project        | 8            |                                                      |
-      | 8  | Traverse       | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
-      | 7  | IndexScan      | 0            |                                                      |
-      | 0  | Start          |              |                                                      |
+      | id | name      | dependencies | operator info                                        |
+      | 5  | Project   | 8            |                                                      |
+      | 8  | Traverse  | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
+      | 7  | IndexScan | 0            |                                                      |
+      | 0  | Start     |              |                                                      |
     When profiling query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*1..2{likeness: 95}]->() return v.player.name AS name
@@ -36,11 +36,11 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                        |
-      | 5  | Project        | 8            |                                                      |
-      | 8  | Traverse       | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
-      | 7  | IndexScan      | 0            |                                                      |
-      | 0  | Start          |              |                                                      |
+      | id | name      | dependencies | operator info                                        |
+      | 5  | Project   | 8            |                                                      |
+      | 8  | Traverse  | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
+      | 7  | IndexScan | 0            |                                                      |
+      | 0  | Start     |              |                                                      |
 
   Scenario Outline: can't push eFilter down when zero step enabled
     When profiling query:
@@ -53,8 +53,8 @@ Feature: Push EFilter down rule
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                     |
-      | 5  | Project        | 8            |                                                   |
-      | 8  | Traverse       | 7            | {"edge filter": "(*.likeness==95)", "filter": ""} |
-      | 7  | IndexScan      | 0            |                                                   |
-      | 0  | Start          |              |                                                   |
+      | id | name      | dependencies | operator info                                     |
+      | 5  | Project   | 8            |                                                   |
+      | 8  | Traverse  | 7            | {"edge filter": "(*.likeness==95)", "filter": ""} |
+      | 7  | IndexScan | 0            |                                                   |
+      | 0  | Start     |              |                                                   |
