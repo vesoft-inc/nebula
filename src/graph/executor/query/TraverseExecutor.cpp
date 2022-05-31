@@ -48,6 +48,7 @@ Status TraverseExecutor::buildRequestDataSet() {
   auto* src = traverse_->src();
   QueryExpressionContext ctx(ectx_);
 
+  bool mv = movable(traverse_->inputVars().front());
   for (; iter->valid(); iter->next()) {
     auto vid = src->eval(ctx(iter));
     if (!SchemaUtil::isValidVid(vid, vidType)) {
@@ -56,7 +57,7 @@ Status TraverseExecutor::buildRequestDataSet() {
       continue;
     }
     // Need copy here, Argument executor may depends on this variable.
-    auto prePath = *iter->row();
+    auto prePath = mv ? iter->moveRow() : *iter->row();
     buildPath(prev, vid, std::move(prePath));
     if (!uniqueSet.emplace(vid).second) {
       continue;

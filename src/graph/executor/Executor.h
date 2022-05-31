@@ -94,6 +94,10 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   void drop(const PlanNode *node);
   void dropBody(const PlanNode *body);
 
+  // Check whether the variable is movable, it's movable when reach end of lifetime
+  // This method shouldn't call after `finish` method!
+  bool movable(const Variable *var);
+
   // Store the result of this executor to execution context
   Status finish(Result &&result);
   // Store the default result which not used for later executor

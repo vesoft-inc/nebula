@@ -101,12 +101,13 @@ Status AppendVerticesExecutor::handleResp(
   }
 
   auto *src = av->src();
+  bool mv = movable(av->inputVars().front());
   for (; inputIter->valid(); inputIter->next()) {
     auto dstFound = map.find(src->eval(ctx(inputIter.get())));
     if (dstFound == map.end()) {
       continue;
     }
-    Row row = *inputIter->row();
+    Row row = mv ? inputIter->moveRow() : *inputIter->row();
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));
   }
