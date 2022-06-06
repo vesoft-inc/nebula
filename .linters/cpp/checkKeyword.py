@@ -119,8 +119,6 @@ reserved_key_words = [
     'KW_GEOGRAPHY',
     'KW_DURATION',
     'KW_ACROSS',
-    "KW_SHORTESTPATH",
-    "KW_ALLSHORTESTPATHS",
 ]
 
 

@@ -189,7 +189,7 @@ using namespace nebula;
 %token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
-%token KW_SHORTEST KW_PATH KW_NOLOOP
+%token KW_SHORTEST KW_PATH KW_NOLOOP KW_SHORTESTPATH KW_ALLSHORTESTPATHS
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
 %token KW_JOBS KW_JOB KW_RECOVER KW_FLUSH KW_COMPACT KW_REBUILD KW_SUBMIT KW_STATS KW_STATUS
@@ -215,7 +215,6 @@ using namespace nebula;
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
-%token KW_SHORTESTPATH KW_ALLSHORTESTPATHS
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -518,6 +517,8 @@ unreserved_keyword
     | KW_NONE               { $$ = new std::string("none"); }
     | KW_REDUCE             { $$ = new std::string("reduce"); }
     | KW_SHORTEST           { $$ = new std::string("shortest"); }
+    | KW_SHORTESTPATH       { $$ = new std::string("shortestpath"); }
+    | KW_ALLSHORTESTPATHS   { $$ = new std::string("allshortestpaths"); }
     | KW_NOLOOP             { $$ = new std::string("noloop"); }
     | KW_CONTAINS           { $$ = new std::string("contains"); }
     | KW_STARTS             { $$ = new std::string("starts"); }
