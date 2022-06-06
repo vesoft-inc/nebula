@@ -68,7 +68,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   }
 
   bool zeroStep() const {
-    return range_ != nullptr && range_->min() == 0;
+    return node_->asNode<Traverse>()->zeroStep();
   }
 
   bool hasSameEdge(const Row& prevPath, const Edge& currentEdge);
@@ -84,7 +84,10 @@ class TraverseExecutor final : public StorageAccessExecutor {
                         std::unordered_map<Value, Paths>& zeroSteps,
                         size_t& count);
 
+  Expression* selectFilter();
+
  private:
+  ObjectPool objPool_;
   DataSet reqDs_;
   const Traverse* traverse_{nullptr};
   MatchStepRange* range_{nullptr};
