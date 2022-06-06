@@ -68,7 +68,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   }
 
   bool zeroStep() const {
-    return range_ != nullptr && range_->min() == 0;
+    return node_->asNode<Traverse>()->zeroStep();
   }
 
   bool hasSameEdge(const Row& prevPath, const Edge& currentEdge);
