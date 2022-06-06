@@ -45,7 +45,7 @@ class RewriteVisitor final : public ExprVisitorImpl {
         needVisitedTypes_(std::move(needVisitedTypes)) {}
 
   bool ok() const override {
-    return true;
+    return ok_;
   }
 
  private:
@@ -93,6 +93,7 @@ class RewriteVisitor final : public ExprVisitorImpl {
   bool care(Expression::Kind kind);
 
  private:
+  bool ok_{true};
   Matcher matcher_;
   Rewriter rewriter_;
 

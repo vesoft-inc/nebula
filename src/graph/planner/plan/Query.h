@@ -1454,6 +1454,11 @@ class Traverse final : public GetNeighbors {
     return range_;
   }
 
+  // Contains zero step
+  bool zeroStep() const {
+    return range_ != nullptr && range_->min() == 0;
+  }
+
   Expression* vFilter() const {
     return vFilter_;
   }

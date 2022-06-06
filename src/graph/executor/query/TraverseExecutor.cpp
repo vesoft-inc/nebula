@@ -48,6 +48,7 @@ Status TraverseExecutor::buildRequestDataSet() {
   auto* src = traverse_->src();
   QueryExpressionContext ctx(ectx_);
 
+  bool mv = movable(traverse_->inputVars().front());
   for (; iter->valid(); iter->next()) {
     auto vid = src->eval(ctx(iter));
     if (!SchemaUtil::isValidVid(vid, vidType)) {
@@ -56,7 +57,7 @@ Status TraverseExecutor::buildRequestDataSet() {
       continue;
     }
     // Need copy here, Argument executor may depends on this variable.
-    auto prePath = *iter->row();
+    auto prePath = mv ? iter->moveRow() : *iter->row();
     buildPath(prev, vid, std::move(prePath));
     if (!uniqueSet.emplace(vid).second) {
       continue;
@@ -98,7 +99,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->random() : false,
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
-                     finalStep ? traverse_->filter() : nullptr)
+                     (currentStep_ == 1 && zeroStep()) ? nullptr : traverse_->filter())
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         SCOPED_TIMER(&execTime_);
