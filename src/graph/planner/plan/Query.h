@@ -1487,6 +1487,14 @@ class Traverse final : public GetNeighbors {
     trackPrevPath_ = track;
   }
 
+  Expression* firstStepFilter() const {
+    return firstStepFilter_;
+  }
+
+  void setFirstStepFilter(Expression* filter) {
+    firstStepFilter_ = filter;
+  }
+
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : GetNeighbors(qctx, Kind::kTraverse, input, space) {
@@ -1500,6 +1508,8 @@ class Traverse final : public GetNeighbors {
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
   bool trackPrevPath_{true};
+  // Push down filter in first step
+  Expression* firstStepFilter_{nullptr};
 };
 
 // Append vertices to a path.

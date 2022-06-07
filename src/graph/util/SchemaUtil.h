@@ -17,6 +17,7 @@ namespace nebula {
 namespace graph {
 class QueryContext;
 struct SpaceInfo;
+struct EdgeInfo;
 class SchemaUtil final {
  public:
   using VertexProp = nebula::storage::cpp2::VertexProp;
@@ -81,6 +82,12 @@ class SchemaUtil final {
       const SpaceInfo& space,
       const std::vector<EdgeType>& edgeTypes,
       bool withProp);
+
+  // Retrieves prop from EdgeInfo.
+  static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> getEdgeProps(const EdgeInfo& edge,
+                                                                            bool reversely,
+                                                                            QueryContext* qctx,
+                                                                            GraphSpaceID spaceId);
 };
 
 }  // namespace graph
