@@ -156,28 +156,19 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
     auto partId = part.first;
     const auto& edges = part.second;
     // cache edgeKey
-    std::unordered_set<std::string> visited;
-    visited.reserve(edges.size());
     std::vector<kvstore::KV> kvs;
     kvs.reserve(edges.size());
-    auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
-    deleteDupEdge(const_cast<std::vector<cpp2::NewEdge>&>(edges));
+    auto code = deleteDupEdge(const_cast<std::vector<cpp2::NewEdge>&>(edges));
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      handleAsync(spaceId_, partId, code);
+      continue;
+    }
     for (const auto& edge : edges) {
       auto edgeKey = *edge.key_ref();
       VLOG(3) << "PartitionID: " << partId << ", VertexID: " << *edgeKey.src_ref()
               << ", EdgeType: " << *edgeKey.edge_type_ref()
               << ", EdgeRanking: " << *edgeKey.ranking_ref()
               << ", VertexID: " << *edgeKey.dst_ref();
-
-      if (!NebulaKeyUtils::isValidVidLen(
-              spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
-        LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
-                   << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
-                   << ", dstVid: " << *edgeKey.dst_ref() << ", ifNotExists_: " << std::boolalpha
-                   << ifNotExists_;
-        code = nebula::cpp2::ErrorCode::E_INVALID_VID;
-        break;
-      }
 
       auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
       if (!schema) {
@@ -192,11 +183,6 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
                                          (*edgeKey.dst_ref()).getStr());
-      if (ifNotExists_ && !visited.emplace(key).second) {
-        LOG(INFO) << "skip " << edgeKey.src_ref()->getStr();
-        continue;
-      }
-
       // collect values
       WriteResult writeResult;
       const auto& props = edge.get_props();
@@ -386,13 +372,24 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
  * ifNotExist_ is true. Only keep the first one when edgeKey is same
  * ifNotExist_ is false. Only keep the last one when edgeKey is same
  */
-void AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
+nebula::cpp2::ErrorCode AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
+  auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   std::unordered_set<std::string> visited;
   visited.reserve(edges.size());
   if (ifNotExists_) {
     auto iter = edges.begin();
     while (iter != edges.end()) {
       auto edgeKeyRef = iter->key_ref();
+      if (!NebulaKeyUtils::isValidVidLen(
+              spaceVidLen_, edgeKeyRef->src_ref()->getStr(), edgeKeyRef->dst_ref()->getStr())) {
+        LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                   << "space vid len: " << spaceVidLen_
+                   << ", edge srcVid: " << *edgeKeyRef->src_ref()
+                   << ", dstVid: " << *edgeKeyRef->dst_ref() << ", ifNotExists_: " << std::boolalpha
+                   << ifNotExists_;
+        code = nebula::cpp2::ErrorCode::E_INVALID_VID;
+        break;
+      }
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          0,  // it's ok, just distinguish between different edgekey
                                          edgeKeyRef->src_ref()->getStr(),
@@ -409,6 +406,16 @@ void AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
     auto iter = edges.rbegin();
     while (iter != edges.rend()) {
       auto edgeKeyRef = iter->key_ref();
+      if (!NebulaKeyUtils::isValidVidLen(
+              spaceVidLen_, edgeKeyRef->src_ref()->getStr(), edgeKeyRef->dst_ref()->getStr())) {
+        LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                   << "space vid len: " << spaceVidLen_
+                   << ", edge srcVid: " << *edgeKeyRef->src_ref()
+                   << ", dstVid: " << *edgeKeyRef->dst_ref() << ", ifNotExists_: " << std::boolalpha
+                   << ifNotExists_;
+        code = nebula::cpp2::ErrorCode::E_INVALID_VID;
+        break;
+      }
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          0,  // it's ok, just distinguish between different edgekey
                                          edgeKeyRef->src_ref()->getStr(),
@@ -422,6 +429,7 @@ void AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
       }
     }
   }
+  return code;
 }
 
 }  // namespace storage

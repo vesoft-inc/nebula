@@ -50,7 +50,7 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
                                      const meta::SchemaProviderIf* latestSchema);
 
-  void deleteDupEdge(std::vector<cpp2::NewEdge>& edges);
+  nebula::cpp2::ErrorCode deleteDupEdge(std::vector<cpp2::NewEdge>& edges);
 
  private:
   GraphSpaceID spaceId_;
