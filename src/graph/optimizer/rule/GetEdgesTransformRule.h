@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMLIMITRULE_H
-#define GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMLIMITRULE_H
+#ifndef GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
+#define GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
@@ -24,8 +24,8 @@ namespace opt {
 //   1. Match the pattern
 //  Benefits:
 //   1. Avoid doing Traverse to optimize performance
-//  Query example:
-//   1. match ()-[e]->() return e limit 1
+//  Quey example:
+//   1. match ()-[e]->() return e limit 3
 //
 //  Tranformation:
 //  Before:
@@ -62,7 +62,7 @@ namespace opt {
 // |      ScanEdges    |
 // +---------+---------+
 
-class GetEdgesTransformLimitRule final : public OptRule {
+class GetEdgesTransformRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -72,7 +72,7 @@ class GetEdgesTransformLimitRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  GetEdgesTransformLimitRule();
+  GetEdgesTransformRule();
 
   static graph::ScanEdges *traverseToScanEdges(const graph::Traverse *traverse,
                                                const int64_t limit_count);
