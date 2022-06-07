@@ -21,7 +21,7 @@ class VertexExpression final : public Expression {
   // default name : VERTEX, $^ : startNode of EDGE, $$ : endNode of EDGE
   // $$ & $^ only used in go sentence
   static VertexExpression *make(ObjectPool *pool, const std::string &name = "VERTEX") {
-    return pool->add(new VertexExpression(pool, name));
+    return pool->makeAndAdd<VertexExpression>(pool, name);
   }
 
   const Value &eval(ExpressionContext &ctx) override;
@@ -43,6 +43,7 @@ class VertexExpression final : public Expression {
   bool operator==(const Expression &expr) const override;
 
  private:
+  friend ObjectPool;
   VertexExpression(ObjectPool *pool, const std::string &name)
       : Expression(pool, Kind::kVertex), name_(name) {}
 

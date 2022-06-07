@@ -15,12 +15,13 @@ namespace graph {
 class StartNode final : public PlanNode {
  public:
   static StartNode* make(QueryContext* qctx) {
-    return qctx->objPool()->add(new StartNode(qctx));
+    return qctx->objPool()->makeAndAdd<StartNode>(qctx);
   }
 
   PlanNode* clone() const override;
 
  private:
+  friend ObjectPool;
   explicit StartNode(QueryContext* qctx) : PlanNode(qctx, Kind::kStart) {}
 
   void cloneMembers(const StartNode&);
@@ -56,7 +57,7 @@ class Select final : public BinarySelect {
                       PlanNode* ifBranch = nullptr,
                       PlanNode* elseBranch = nullptr,
                       Expression* condition = nullptr) {
-    return qctx->objPool()->add(new Select(qctx, input, ifBranch, elseBranch, condition));
+    return qctx->objPool()->makeAndAdd<Select>(qctx, input, ifBranch, elseBranch, condition);
   }
 
   void setIf(PlanNode* ifBranch) {
@@ -80,6 +81,7 @@ class Select final : public BinarySelect {
   PlanNode* clone() const override;
 
  private:
+  friend ObjectPool;
   Select(QueryContext* qctx,
          PlanNode* input,
          PlanNode* ifBranch,
@@ -101,7 +103,7 @@ class Loop final : public BinarySelect {
                     PlanNode* input,
                     PlanNode* body = nullptr,
                     Expression* condition = nullptr) {
-    return qctx->objPool()->add(new Loop(qctx, input, body, condition));
+    return qctx->objPool()->makeAndAdd<Loop>(qctx, input, body, condition);
   }
 
   void setBody(PlanNode* body) {
@@ -117,6 +119,7 @@ class Loop final : public BinarySelect {
   PlanNode* clone() const override;
 
  private:
+  friend ObjectPool;
   Loop(QueryContext* qctx, PlanNode* input, PlanNode* body, Expression* condition)
       : BinarySelect(qctx, Kind::kLoop, input, condition), body_(body) {}
 
@@ -130,12 +133,13 @@ class Loop final : public BinarySelect {
 class PassThroughNode final : public SingleInputNode {
  public:
   static PassThroughNode* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new PassThroughNode(qctx, input));
+    return qctx->objPool()->makeAndAdd<PassThroughNode>(qctx, input);
   }
 
   PlanNode* clone() const override;
 
  private:
+  friend ObjectPool;
   PassThroughNode(QueryContext* qctx, PlanNode* input)
       : SingleInputNode(qctx, Kind::kPassThrough, input) {}
 
@@ -146,7 +150,7 @@ class PassThroughNode final : public SingleInputNode {
 class Argument final : public SingleInputNode {
  public:
   static Argument* make(QueryContext* qctx, std::string alias, const PlanNode* dep = nullptr) {
-    return qctx->objPool()->add(new Argument(qctx, alias, dep));
+    return qctx->objPool()->makeAndAdd<Argument>(qctx, alias, dep);
   }
 
   PlanNode* clone() const override;
@@ -158,6 +162,7 @@ class Argument final : public SingleInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
+  friend ObjectPool;
   Argument(QueryContext* qctx, std::string alias, const PlanNode* dep = nullptr);
 
   void cloneMembers(const Argument&);

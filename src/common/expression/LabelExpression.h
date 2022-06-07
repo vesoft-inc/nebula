@@ -18,7 +18,7 @@ class LabelExpression : public Expression {
   LabelExpression& operator=(LabelExpression&&) = delete;
 
   static LabelExpression* make(ObjectPool* pool, const std::string& name = "") {
-    return pool->add(new LabelExpression(pool, name));
+    return pool->makeAndAdd<LabelExpression>(pool, name);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -38,6 +38,7 @@ class LabelExpression : public Expression {
   }
 
  protected:
+  friend ObjectPool;
   explicit LabelExpression(ObjectPool* pool, const std::string& name = "")
       : Expression(pool, Kind::kLabel), name_(name) {}
 

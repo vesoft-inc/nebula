@@ -86,8 +86,8 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
 
 // Create GroupByValidator according to implicit group by in yield sentence.
 Status YieldValidator::makeImplicitGroupByValidator() {
-  auto *groupSentence = qctx()->objPool()->add(new GroupBySentence(
-      static_cast<YieldSentence *>(sentence_)->yield()->clone().release(), nullptr, nullptr));
+  auto *groupSentence = qctx()->objPool()->makeAndAdd<GroupBySentence>(
+      static_cast<YieldSentence *>(sentence_)->yield()->clone().release(), nullptr, nullptr);
   groupByValidator_ = std::make_unique<GroupByValidator>(groupSentence, qctx());
   groupByValidator_->setInputCols(inputs_);
 
@@ -113,7 +113,7 @@ Status YieldValidator::validateImplicitGroupBy() {
 Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   auto columns = clause->columns();
   auto *pool = qctx_->objPool();
-  columns_ = pool->add(new YieldColumns);
+  columns_ = pool->makeAndAdd<YieldColumns>();
   for (auto column : columns) {
     auto expr = DCHECK_NOTNULL(column->expr());
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(expr));

@@ -62,7 +62,7 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   outputs_.reserve(size);
 
   auto pool = qctx_->objPool();
-  auto *newCols = pool->add(new YieldColumns());
+  auto *newCols = pool->makeAndAdd<YieldColumns>();
 
   auto &exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {

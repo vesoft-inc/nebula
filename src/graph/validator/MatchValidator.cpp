@@ -400,7 +400,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
 Status MatchValidator::validateReturn(MatchReturn *ret,
                                       const std::vector<QueryPart> &queryParts,
                                       ReturnClauseContext &retClauseCtx) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = retClauseCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (ret->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -494,7 +494,7 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 Status MatchValidator::validateWith(const WithClause *with,
                                     const std::vector<QueryPart> &queryParts,
                                     WithClauseContext &withClauseCtx) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = withClauseCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (with->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -847,7 +847,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) {
     return Status::OK();
   }
 
-  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
+  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (!yieldCtx.hasAgg_) {
     for (auto &col : yieldCtx.yieldColumns->columns()) {
       NG_RETURN_IF_ERROR(

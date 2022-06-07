@@ -17,7 +17,7 @@ class SubscriptExpression final : public BinaryExpression {
   static SubscriptExpression* make(ObjectPool* pool,
                                    Expression* lhs = nullptr,
                                    Expression* rhs = nullptr) {
-    return pool->add(new SubscriptExpression(pool, lhs, rhs));
+    return pool->makeAndAdd<SubscriptExpression>(pool, lhs, rhs);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -31,6 +31,7 @@ class SubscriptExpression final : public BinaryExpression {
   }
 
  private:
+  friend ObjectPool;
   explicit SubscriptExpression(ObjectPool* pool,
                                Expression* lhs = nullptr,
                                Expression* rhs = nullptr)
@@ -46,8 +47,8 @@ class SubscriptRangeExpression final : public Expression {
                                         Expression* list = nullptr,
                                         Expression* lo = nullptr,
                                         Expression* hi = nullptr) {
-    return !list && !lo && !hi ? pool->add(new SubscriptRangeExpression(pool))
-                               : pool->add(new SubscriptRangeExpression(pool, list, lo, hi));
+    return !list && !lo && !hi ? pool->makeAndAdd<SubscriptRangeExpression>(pool)
+                               : pool->makeAndAdd<SubscriptRangeExpression>(pool, list, lo, hi);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -102,6 +103,7 @@ class SubscriptRangeExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   // for decode ctor
   explicit SubscriptRangeExpression(ObjectPool* pool)
       : Expression(pool, Kind::kSubscriptRange), list_(nullptr), lo_(nullptr), hi_(nullptr) {}

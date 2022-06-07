@@ -15,39 +15,43 @@ class UnaryExpression final : public Expression {
 
  public:
   static UnaryExpression* makePlus(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kUnaryPlus, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kUnaryPlus, operand);
   }
 
   static UnaryExpression* makeNegate(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kUnaryNegate, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kUnaryNegate, operand);
   }
 
   static UnaryExpression* makeNot(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kUnaryNot, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kUnaryNot, operand);
   }
 
   static UnaryExpression* makeIncr(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kUnaryIncr, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kUnaryIncr, operand);
   }
 
   static UnaryExpression* makeDecr(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kUnaryDecr, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kUnaryDecr, operand);
   }
 
   static UnaryExpression* makeIsNull(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kIsNull, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kIsNull, operand);
   }
 
   static UnaryExpression* makeIsNotNull(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kIsNotNull, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kIsNotNull, operand);
   }
 
   static UnaryExpression* makeIsEmpty(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kIsEmpty, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kIsEmpty, operand);
   }
 
   static UnaryExpression* makeIsNotEmpty(ObjectPool* pool, Expression* operand = nullptr) {
-    return pool->add(new UnaryExpression(pool, Kind::kIsNotEmpty, operand));
+    return pool->makeAndAdd<UnaryExpression>(pool, Kind::kIsNotEmpty, operand);
+  }
+
+  static UnaryExpression* make(ObjectPool* pool, Kind kind, Expression* operand = nullptr) {
+    return pool->makeAndAdd<UnaryExpression>(pool, kind, operand);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -59,7 +63,7 @@ class UnaryExpression final : public Expression {
   void accept(ExprVisitor* visitor) override;
 
   Expression* clone() const override {
-    return pool_->add(new UnaryExpression(pool_, kind(), operand_->clone()));
+    return UnaryExpression::make(pool_, kind(), operand_->clone());
   }
 
   const Expression* operand() const {
@@ -75,6 +79,7 @@ class UnaryExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   UnaryExpression(ObjectPool* pool, Kind kind, Expression* operand = nullptr)
       : Expression(pool, kind), operand_(operand) {}
 
