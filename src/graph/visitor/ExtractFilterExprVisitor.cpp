@@ -30,7 +30,11 @@ void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) {
   canBePushed_ = false;
 }
 
-void ExtractFilterExprVisitor::visit(TagPropertyExpression *) {
+void ExtractFilterExprVisitor::visit(TagPropertyExpression *expr) {
+  if (expr->sym() == "*") {  // Storage don't support '*' for tag
+    canBePushed_ = false;
+    return;
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
       canBePushed_ = false;
