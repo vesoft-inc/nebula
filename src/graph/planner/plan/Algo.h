@@ -145,6 +145,89 @@ class ProduceAllPaths final : public BinaryInputNode {
   std::string rightVidVar_;
 };
 
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using EdgeProp = nebula::storage::cpp2::EdgeProp;
+using Direction = nebula::storage::cpp2::EdgeDirection;
+
+class ShortestPath final : public SingleInputNode {
+ public:
+  static ShortestPath* make(QueryContext* qctx,
+                            PlanNode* node,
+                            GraphSpaceID space,
+                            bool singleShortest) {
+    return qctx->objPool()->add(new ShortestPath(qctx, node, space, singleShortest));
+  }
+
+  PlanNode* clone() const override;
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  MatchStepRange* stepRange() const {
+    return range_;
+  }
+
+  storage::cpp2::EdgeDirection edgeDirection() const {
+    return edgeDirection_;
+  }
+
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  const std::vector<EdgeProp>* reverseEdgeProps() const {
+    return reverseEdgeProps_.get();
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
+  GraphSpaceID space() const {
+    return space_;
+  }
+
+  bool singleShortest() const {
+    return singleShortest_;
+  }
+
+  void setStepRange(MatchStepRange* range) {
+    range_ = range;
+  }
+
+  void setEdgeDirection(Direction direction) {
+    edgeDirection_ = direction;
+  }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  void setReverseEdgeProps(std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps) {
+    reverseEdgeProps_ = std::move(reverseEdgeProps);
+  }
+
+ private:
+  ShortestPath(QueryContext* qctx, PlanNode* node, GraphSpaceID space, bool singleShortest)
+      : SingleInputNode(qctx, Kind::kShortestPath, node),
+        space_(space),
+        singleShortest_(singleShortest) {}
+
+  void cloneMembers(const ShortestPath&);
+
+ private:
+  GraphSpaceID space_;
+  bool singleShortest_{false};
+  MatchStepRange* range_{nullptr};
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_;
+  storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
+};
+
 class CartesianProduct final : public SingleDependencyNode {
  public:
   static CartesianProduct* make(QueryContext* qctx, PlanNode* input) {

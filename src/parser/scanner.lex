@@ -244,6 +244,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }
+"SHORTESTPATH"              { return TokenType::KW_SHORTESTPATH; }
+"AllSHORTESTPATHS"          { return TokenType::KW_ALLSHORTESTPATHS; }
 "OUT"                       { return TokenType::KW_OUT; }
 "BOTH"                      { return TokenType::KW_BOTH; }
 "SUBGRAPH"                  { return TokenType::KW_SUBGRAPH; }
