@@ -157,16 +157,10 @@ DataSet AppendVerticesExecutor::buildVerticesResult(size_t begin, size_t end, It
 }
 
 void AppendVerticesExecutor::buildMap(size_t begin, size_t end, Iterator *iter) {
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   auto *av = asNode<AppendVertices>(node());
   auto vFilter = av->vFilter() ? av->vFilter()->clone() : nullptr;
   QueryExpressionContext ctx(qctx()->ectx());
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     if (vFilter != nullptr) {
       auto &vFilterVal = vFilter->eval(ctx(iter));
       if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
@@ -178,19 +172,13 @@ void AppendVerticesExecutor::buildMap(size_t begin, size_t end, Iterator *iter) 
 }
 
 DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *iter) {
-  // Iterates to the begin pos
-  size_t tmp = 0;
-  for (; iter->valid() && tmp < begin; ++tmp) {
-    iter->next();
-  }
-
   auto *av = asNode<AppendVertices>(node());
   DataSet ds;
   ds.colNames = av->colNames();
   ds.rows.reserve(end - begin);
   auto src = av->src()->clone();
   QueryExpressionContext ctx(qctx()->ectx());
-  for (; iter->valid() && tmp++ < end; iter->next()) {
+  for (; iter->valid() && begin++ < end; iter->next()) {
     auto dstFound = dsts_.find(src->eval(ctx(iter)));
     if (dstFound == dsts_.end()) {
       continue;
