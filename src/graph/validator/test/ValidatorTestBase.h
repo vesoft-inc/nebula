@@ -53,15 +53,15 @@ class ValidatorTestBase : public ::testing::Test {
     }
     NG_RETURN_IF_ERROR(AstUtils::reprAstCheck(*result.value(), qctx));
 
-    auto sentences = pool_->add(std::move(result).value().release());
-    NG_RETURN_IF_ERROR(Validator::validate(sentences, qctx));
+    sentences_.emplace_back(std::move(result).value());
+    NG_RETURN_IF_ERROR(Validator::validate(sentences_.back().get(), qctx));
     return qctx;
   }
 
   QueryContext* buildContext() {
     auto rctx = std::make_unique<RequestContext<ExecutionResponse>>();
     rctx->setSession(session_);
-    auto qctx = pool_->add(new QueryContext());
+    auto qctx = pool_->makeAndAdd<QueryContext>();
     qctx->setRCtx(std::move(rctx));
     qctx->setSchemaManager(schemaMng_.get());
     qctx->setIndexManager(indexMng_.get());
@@ -125,7 +125,7 @@ class ValidatorTestBase : public ::testing::Test {
   std::shared_ptr<ClientSession> session_;
   std::unique_ptr<MockSchemaManager> schemaMng_;
   std::unique_ptr<MockIndexManager> indexMng_{nullptr};
-  std::unique_ptr<Sentence> sentences_;
+  std::vector<std::unique_ptr<Sentence>> sentences_;
   std::unique_ptr<ObjectPool> pool_;
 };
 

@@ -18,34 +18,34 @@ class ArithmeticExpression final : public BinaryExpression {
   static ArithmeticExpression* makeAdd(ObjectPool* pool,
                                        Expression* lhs = nullptr,
                                        Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, Expression::Kind::kAdd, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, Expression::Kind::kAdd, lhs, rhs);
   }
   static ArithmeticExpression* makeMinus(ObjectPool* pool,
                                          Expression* lhs = nullptr,
                                          Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, Expression::Kind::kMinus, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, Expression::Kind::kMinus, lhs, rhs);
   }
   static ArithmeticExpression* makeMultiply(ObjectPool* pool,
                                             Expression* lhs = nullptr,
                                             Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, Expression::Kind::kMultiply, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, Expression::Kind::kMultiply, lhs, rhs);
   }
   static ArithmeticExpression* makeDivision(ObjectPool* pool,
                                             Expression* lhs = nullptr,
                                             Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, Expression::Kind::kDivision, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, Expression::Kind::kDivision, lhs, rhs);
   }
   static ArithmeticExpression* makeMod(ObjectPool* pool,
                                        Expression* lhs = nullptr,
                                        Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, Expression::Kind::kMod, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, Expression::Kind::kMod, lhs, rhs);
   }
   // Construct arithmetic expression with given kind
   static ArithmeticExpression* makeKind(ObjectPool* pool,
                                         Kind kind,
                                         Expression* lhs = nullptr,
                                         Expression* rhs = nullptr) {
-    return pool->add(new ArithmeticExpression(pool, kind, lhs, rhs));
+    return pool->makeAndAdd<ArithmeticExpression>(pool, kind, lhs, rhs);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -55,7 +55,8 @@ class ArithmeticExpression final : public BinaryExpression {
   std::string toString() const override;
 
   Expression* clone() const override {
-    return pool_->add(new ArithmeticExpression(pool_, kind(), left()->clone(), right()->clone()));
+    return pool_->makeAndAdd<ArithmeticExpression>(
+        pool_, kind(), left()->clone(), right()->clone());
   }
 
   bool isArithmeticExpr() const override {
@@ -63,6 +64,7 @@ class ArithmeticExpression final : public BinaryExpression {
   }
 
  private:
+  friend ObjectPool;
   ArithmeticExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
       : BinaryExpression(pool, kind, lhs, rhs) {}
 

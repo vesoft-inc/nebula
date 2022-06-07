@@ -235,15 +235,15 @@ Status GoValidator::buildColumns() {
 
   auto pool = qctx_->objPool();
   if (!exprProps.isAllPropsEmpty() || from.fromType != FromType::kInstantExpr) {
-    goCtx_->srcEdgePropsExpr = pool->add(new YieldColumns());
+    goCtx_->srcEdgePropsExpr = pool->makeAndAdd<YieldColumns>();
   }
 
   if (!dstTagProps.empty()) {
-    goCtx_->dstPropsExpr = pool->add(new YieldColumns());
+    goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
   }
 
   if (!inputProps.empty() || !varProps.empty()) {
-    inputPropCols_ = pool->add(new YieldColumns());
+    inputPropCols_ = pool->makeAndAdd<YieldColumns>();
   }
 
   std::unordered_set<std::string> uniqueEdgeVertexExpr;
@@ -253,7 +253,7 @@ Status GoValidator::buildColumns() {
     goCtx_->filter = rewrite2VarProp(filter);
   }
 
-  auto* newYieldExpr = pool->add(new YieldColumns());
+  auto* newYieldExpr = pool->makeAndAdd<YieldColumns>();
   for (auto* col : goCtx_->yieldExpr->columns()) {
     extractPropExprs(col->expr(), uniqueEdgeVertexExpr);
     newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));

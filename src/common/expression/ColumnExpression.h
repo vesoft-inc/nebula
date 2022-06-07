@@ -20,7 +20,7 @@ class ColumnExpression final : public Expression {
   ColumnExpression& operator=(ColumnExpression&&) = delete;
 
   static ColumnExpression* make(ObjectPool* pool, int32_t index = 0) {
-    return pool->add(new ColumnExpression(pool, index));
+    return pool->makeAndAdd<ColumnExpression>(pool, index);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -36,6 +36,7 @@ class ColumnExpression final : public Expression {
   bool operator==(const Expression& expr) const override;
 
  private:
+  friend ObjectPool;
   explicit ColumnExpression(ObjectPool* pool, int32_t index = 0)
       : Expression(pool, Kind::kColumn), index_(index) {}
 

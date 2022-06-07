@@ -17,30 +17,30 @@ class LogicalExpression final : public Expression {
   static LogicalExpression* makeAnd(ObjectPool* pool,
                                     Expression* lhs = nullptr,
                                     Expression* rhs = nullptr) {
-    return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalAnd, lhs, rhs))
-                        : pool->add(new LogicalExpression(pool, Kind::kLogicalAnd));
+    return (lhs && rhs) ? pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalAnd, lhs, rhs)
+                        : pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalAnd);
   }
 
   static LogicalExpression* makeOr(ObjectPool* pool,
                                    Expression* lhs = nullptr,
                                    Expression* rhs = nullptr) {
-    return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalOr, lhs, rhs))
-                        : pool->add(new LogicalExpression(pool, Kind::kLogicalOr));
+    return (lhs && rhs) ? pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalOr, lhs, rhs)
+                        : pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalOr);
   }
 
   static LogicalExpression* makeXor(ObjectPool* pool,
                                     Expression* lhs = nullptr,
                                     Expression* rhs = nullptr) {
-    return (lhs && rhs) ? pool->add(new LogicalExpression(pool, Kind::kLogicalXor, lhs, rhs))
-                        : pool->add(new LogicalExpression(pool, Kind::kLogicalXor));
+    return (lhs && rhs) ? pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalXor, lhs, rhs)
+                        : pool->makeAndAdd<LogicalExpression>(pool, Kind::kLogicalXor);
   }
 
   static LogicalExpression* makeKind(ObjectPool* pool,
                                      Kind kind,
                                      Expression* lhs = nullptr,
                                      Expression* rhs = nullptr) {
-    return (lhs && rhs) ? pool->add(new LogicalExpression(pool, kind, lhs, rhs))
-                        : pool->add(new LogicalExpression(pool, kind));
+    return (lhs && rhs) ? pool->makeAndAdd<LogicalExpression>(pool, kind, lhs, rhs)
+                        : pool->makeAndAdd<LogicalExpression>(pool, kind);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -50,12 +50,12 @@ class LogicalExpression final : public Expression {
   void accept(ExprVisitor* visitor) override;
 
   Expression* clone() const override {
-    auto copy = new LogicalExpression(pool_, kind());
+    auto copy = LogicalExpression::makeKind(pool_, kind());
     copy->operands_.resize(operands_.size());
     for (auto i = 0u; i < operands_.size(); i++) {
       copy->operands_[i] = operands_[i]->clone();
     }
-    return pool_->add(copy);
+    return copy;
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -104,6 +104,7 @@ class LogicalExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
 
   LogicalExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)

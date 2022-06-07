@@ -24,7 +24,7 @@ namespace nebula {
 namespace opt {
 
 OptGroup *OptGroup::create(OptContext *ctx) {
-  return ctx->objPool()->add(new OptGroup(ctx));
+  return ctx->objPool()->makeAndAdd<OptGroup>(ctx);
 }
 
 void OptGroup::setUnexplored(const OptRule *rule) {
@@ -161,7 +161,7 @@ const PlanNode *OptGroup::getPlan() const {
 }
 
 OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
-  auto optGNode = ctx->objPool()->add(new OptGroupNode(node, group));
+  auto optGNode = ctx->objPool()->makeAndAdd<OptGroupNode>(node, group);
   ctx->addPlanNodeAndOptGroupNode(node->id(), optGNode);
   return optGNode;
 }

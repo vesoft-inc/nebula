@@ -56,15 +56,17 @@ bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult
   if (propExpr->prop() != kVid) {
     return false;
   }
-  if (appendVertices->vFilter() == nullptr) {
+  if (appendVertices->vFilter() == nullptr && appendVertices->filter() == nullptr) {
     return false;
   }
-  auto tagPropExprs = graph::ExpressionUtils::collectAll(appendVertices->vFilter(),
-                                                         {Expression::Kind::kTagProperty});
-  for (const auto &tagPropExpr : tagPropExprs) {
-    auto tagProp = static_cast<const PropertyExpression *>(tagPropExpr);
-    if (tagProp->sym() == "*") {
-      return false;
+  if (appendVertices->vFilter() != nullptr) {
+    auto tagPropExprs = graph::ExpressionUtils::collectAll(appendVertices->vFilter(),
+                                                           {Expression::Kind::kTagProperty});
+    for (const auto &tagPropExpr : tagPropExprs) {
+      auto tagProp = static_cast<const PropertyExpression *>(tagPropExpr);
+      if (tagProp->sym() == "*") {
+        return false;
+      }
     }
   }
   return true;
@@ -78,26 +80,40 @@ StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
   auto sv = static_cast<const ScanVertices *>(svGroupNode->node());
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
-  auto condition = appendVertices->vFilter()->clone();
-
-  auto visitor = graph::ExtractFilterExprVisitor::makePushGetVertices(pool);
-  condition->accept(&visitor);
-  if (!visitor.ok()) {
-    return TransformResult::noTransform();
-  }
-
-  auto remainedExpr = std::move(visitor).remainedExpr();
-  OptGroupNode *newAppendVerticesGroupNode = nullptr;
   auto newAppendVertices = appendVertices->clone();
-  newAppendVertices->setVertexFilter(remainedExpr);
+  Expression *condition = nullptr;
+  if (appendVertices->vFilter() != nullptr) {
+    condition = appendVertices->vFilter()->clone();
+
+    auto visitor = graph::ExtractFilterExprVisitor::makePushGetVertices(pool);
+    condition->accept(&visitor);
+    if (!visitor.ok()) {
+      return TransformResult::noTransform();
+    }
+
+    auto remainedExpr = std::move(visitor).remainedExpr();
+    newAppendVertices->setVertexFilter(remainedExpr);
+  }
+  OptGroupNode *newAppendVerticesGroupNode = nullptr;
   newAppendVertices->setOutputVar(appendVertices->outputVar());
   newAppendVerticesGroupNode =
       OptGroupNode::create(ctx, newAppendVertices, appendVerticesGroupNode->group());
 
   auto newSVFilter = condition;
+  if (newAppendVertices->filter() != nullptr) {
+    if (newSVFilter == nullptr) {
+      newSVFilter = newAppendVertices->filter();
+    } else {
+      newSVFilter = LogicalExpression::makeAnd(pool, newAppendVertices->filter(), newSVFilter);
+    }
+    newAppendVertices->setFilter(nullptr);
+  }
   if (sv->filter() != nullptr) {
-    auto logicExpr = LogicalExpression::makeAnd(pool, condition, sv->filter()->clone());
-    newSVFilter = logicExpr;
+    if (newSVFilter == nullptr) {
+      newSVFilter = sv->filter()->clone();
+    } else {
+      newSVFilter = LogicalExpression::makeAnd(pool, newSVFilter, sv->filter()->clone());
+    }
   }
 
   auto newSV = static_cast<ScanVertices *>(sv->clone());

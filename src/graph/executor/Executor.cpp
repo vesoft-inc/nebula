@@ -48,6 +48,7 @@
 #include "graph/executor/algo/CartesianProductExecutor.h"
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
+#include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
@@ -153,7 +154,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
   auto &spaceName = qctx->rctx() ? qctx->rctx()->session()->spaceName() : "";
   switch (node->kind()) {
     case PlanNode::Kind::kPassThrough: {
-      return pool->add(new PassThroughExecutor(node, qctx));
+      return pool->makeAndAdd<PassThroughExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAggregate: {
       stats::StatsManager::addValue(kNumAggregateExecutors);
@@ -161,7 +162,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         stats::StatsManager::addValue(
             stats::StatsManager::counterWithLabels(kNumAggregateExecutors, {{"space", spaceName}}));
       }
-      return pool->add(new AggregateExecutor(node, qctx));
+      return pool->makeAndAdd<AggregateExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSort: {
       stats::StatsManager::addValue(kNumSortExecutors);
@@ -169,40 +170,40 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         stats::StatsManager::addValue(
             stats::StatsManager::counterWithLabels(kNumSortExecutors, {{"space", spaceName}}));
       }
-      return pool->add(new SortExecutor(node, qctx));
+      return pool->makeAndAdd<SortExecutor>(node, qctx);
     }
     case PlanNode::Kind::kTopN: {
-      return pool->add(new TopNExecutor(node, qctx));
+      return pool->makeAndAdd<TopNExecutor>(node, qctx);
     }
     case PlanNode::Kind::kFilter: {
-      return pool->add(new FilterExecutor(node, qctx));
+      return pool->makeAndAdd<FilterExecutor>(node, qctx);
     }
     case PlanNode::Kind::kGetEdges: {
-      return pool->add(new GetEdgesExecutor(node, qctx));
+      return pool->makeAndAdd<GetEdgesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kGetVertices: {
-      return pool->add(new GetVerticesExecutor(node, qctx));
+      return pool->makeAndAdd<GetVerticesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kScanEdges: {
-      return pool->add(new ScanEdgesExecutor(node, qctx));
+      return pool->makeAndAdd<ScanEdgesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kScanVertices: {
-      return pool->add(new ScanVerticesExecutor(node, qctx));
+      return pool->makeAndAdd<ScanVerticesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kGetNeighbors: {
-      return pool->add(new GetNeighborsExecutor(node, qctx));
+      return pool->makeAndAdd<GetNeighborsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLimit: {
-      return pool->add(new LimitExecutor(node, qctx));
+      return pool->makeAndAdd<LimitExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSample: {
-      return pool->add(new SampleExecutor(node, qctx));
+      return pool->makeAndAdd<SampleExecutor>(node, qctx);
     }
     case PlanNode::Kind::kProject: {
-      return pool->add(new ProjectExecutor(node, qctx));
+      return pool->makeAndAdd<ProjectExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnwind: {
-      return pool->add(new UnwindExecutor(node, qctx));
+      return pool->makeAndAdd<UnwindExecutor>(node, qctx);
     }
     case PlanNode::Kind::kIndexScan:
     case PlanNode::Kind::kEdgeIndexFullScan:
@@ -216,334 +217,337 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
         stats::StatsManager::addValue(
             stats::StatsManager::counterWithLabels(kNumIndexScanExecutors, {{"space", spaceName}}));
       }
-      return pool->add(new IndexScanExecutor(node, qctx));
+      return pool->makeAndAdd<IndexScanExecutor>(node, qctx);
     }
     case PlanNode::Kind::kStart: {
-      return pool->add(new StartExecutor(node, qctx));
+      return pool->makeAndAdd<StartExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnion: {
-      return pool->add(new UnionExecutor(node, qctx));
+      return pool->makeAndAdd<UnionExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnionAllVersionVar: {
-      return pool->add(new UnionAllVersionVarExecutor(node, qctx));
+      return pool->makeAndAdd<UnionAllVersionVarExecutor>(node, qctx);
     }
     case PlanNode::Kind::kIntersect: {
-      return pool->add(new IntersectExecutor(node, qctx));
+      return pool->makeAndAdd<IntersectExecutor>(node, qctx);
     }
     case PlanNode::Kind::kMinus: {
-      return pool->add(new MinusExecutor(node, qctx));
+      return pool->makeAndAdd<MinusExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLoop: {
-      return pool->add(new LoopExecutor(node, qctx));
+      return pool->makeAndAdd<LoopExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSelect: {
-      return pool->add(new SelectExecutor(node, qctx));
+      return pool->makeAndAdd<SelectExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDedup: {
-      return pool->add(new DedupExecutor(node, qctx));
+      return pool->makeAndAdd<DedupExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAssign: {
-      return pool->add(new AssignExecutor(node, qctx));
+      return pool->makeAndAdd<AssignExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSwitchSpace: {
-      return pool->add(new SwitchSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<SwitchSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateSpace: {
-      return pool->add(new CreateSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<CreateSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateSpaceAs: {
-      return pool->add(new CreateSpaceAsExecutor(node, qctx));
+      return pool->makeAndAdd<CreateSpaceAsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescSpace: {
-      return pool->add(new DescSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<DescSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowSpaces: {
-      return pool->add(new ShowSpacesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowSpacesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropSpace: {
-      return pool->add(new DropSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<DropSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kClearSpace: {
-      return pool->add(new ClearSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<ClearSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateSpace: {
-      return pool->add(new ShowCreateSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCreateSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateTag: {
-      return pool->add(new CreateTagExecutor(node, qctx));
+      return pool->makeAndAdd<CreateTagExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescTag: {
-      return pool->add(new DescTagExecutor(node, qctx));
+      return pool->makeAndAdd<DescTagExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAlterTag: {
-      return pool->add(new AlterTagExecutor(node, qctx));
+      return pool->makeAndAdd<AlterTagExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateEdge: {
-      return pool->add(new CreateEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<CreateEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescEdge: {
-      return pool->add(new DescEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<DescEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAlterEdge: {
-      return pool->add(new AlterEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<AlterEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowTags: {
-      return pool->add(new ShowTagsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowTagsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowEdges: {
-      return pool->add(new ShowEdgesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowEdgesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropTag: {
-      return pool->add(new DropTagExecutor(node, qctx));
+      return pool->makeAndAdd<DropTagExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropEdge: {
-      return pool->add(new DropEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<DropEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateTag: {
-      return pool->add(new ShowCreateTagExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCreateTagExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateEdge: {
-      return pool->add(new ShowCreateEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCreateEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateTagIndex: {
-      return pool->add(new CreateTagIndexExecutor(node, qctx));
+      return pool->makeAndAdd<CreateTagIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateEdgeIndex: {
-      return pool->add(new CreateEdgeIndexExecutor(node, qctx));
+      return pool->makeAndAdd<CreateEdgeIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateFTIndex: {
-      return pool->add(new CreateFTIndexExecutor(node, qctx));
+      return pool->makeAndAdd<CreateFTIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropTagIndex: {
-      return pool->add(new DropTagIndexExecutor(node, qctx));
+      return pool->makeAndAdd<DropTagIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropEdgeIndex: {
-      return pool->add(new DropEdgeIndexExecutor(node, qctx));
+      return pool->makeAndAdd<DropEdgeIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropFTIndex: {
-      return pool->add(new DropFTIndexExecutor(node, qctx));
+      return pool->makeAndAdd<DropFTIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescTagIndex: {
-      return pool->add(new DescTagIndexExecutor(node, qctx));
+      return pool->makeAndAdd<DescTagIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescEdgeIndex: {
-      return pool->add(new DescEdgeIndexExecutor(node, qctx));
+      return pool->makeAndAdd<DescEdgeIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateTagIndex: {
-      return pool->add(new ShowCreateTagIndexExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCreateTagIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCreateEdgeIndex: {
-      return pool->add(new ShowCreateEdgeIndexExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCreateEdgeIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowTagIndexes: {
-      return pool->add(new ShowTagIndexesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowTagIndexesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowEdgeIndexes: {
-      return pool->add(new ShowEdgeIndexesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowEdgeIndexesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowTagIndexStatus: {
-      return pool->add(new ShowTagIndexStatusExecutor(node, qctx));
+      return pool->makeAndAdd<ShowTagIndexStatusExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowEdgeIndexStatus: {
-      return pool->add(new ShowEdgeIndexStatusExecutor(node, qctx));
+      return pool->makeAndAdd<ShowEdgeIndexStatusExecutor>(node, qctx);
     }
     case PlanNode::Kind::kInsertVertices: {
-      return pool->add(new InsertVerticesExecutor(node, qctx));
+      return pool->makeAndAdd<InsertVerticesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kInsertEdges: {
-      return pool->add(new InsertEdgesExecutor(node, qctx));
+      return pool->makeAndAdd<InsertEdgesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDataCollect: {
-      return pool->add(new DataCollectExecutor(node, qctx));
+      return pool->makeAndAdd<DataCollectExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateSnapshot: {
-      return pool->add(new CreateSnapshotExecutor(node, qctx));
+      return pool->makeAndAdd<CreateSnapshotExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropSnapshot: {
-      return pool->add(new DropSnapshotExecutor(node, qctx));
+      return pool->makeAndAdd<DropSnapshotExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowSnapshots: {
-      return pool->add(new ShowSnapshotsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowSnapshotsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLeftJoin: {
-      return pool->add(new LeftJoinExecutor(node, qctx));
+      return pool->makeAndAdd<LeftJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kInnerJoin: {
-      return pool->add(new InnerJoinExecutor(node, qctx));
+      return pool->makeAndAdd<InnerJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDeleteVertices: {
-      return pool->add(new DeleteVerticesExecutor(node, qctx));
+      return pool->makeAndAdd<DeleteVerticesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDeleteTags: {
-      return pool->add(new DeleteTagsExecutor(node, qctx));
+      return pool->makeAndAdd<DeleteTagsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDeleteEdges: {
-      return pool->add(new DeleteEdgesExecutor(node, qctx));
+      return pool->makeAndAdd<DeleteEdgesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUpdateVertex: {
-      return pool->add(new UpdateVertexExecutor(node, qctx));
+      return pool->makeAndAdd<UpdateVertexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUpdateEdge: {
-      return pool->add(new UpdateEdgeExecutor(node, qctx));
+      return pool->makeAndAdd<UpdateEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateUser: {
-      return pool->add(new CreateUserExecutor(node, qctx));
+      return pool->makeAndAdd<CreateUserExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropUser: {
-      return pool->add(new DropUserExecutor(node, qctx));
+      return pool->makeAndAdd<DropUserExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUpdateUser: {
-      return pool->add(new UpdateUserExecutor(node, qctx));
+      return pool->makeAndAdd<UpdateUserExecutor>(node, qctx);
     }
     case PlanNode::Kind::kGrantRole: {
-      return pool->add(new GrantRoleExecutor(node, qctx));
+      return pool->makeAndAdd<GrantRoleExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRevokeRole: {
-      return pool->add(new RevokeRoleExecutor(node, qctx));
+      return pool->makeAndAdd<RevokeRoleExecutor>(node, qctx);
     }
     case PlanNode::Kind::kChangePassword: {
-      return pool->add(new ChangePasswordExecutor(node, qctx));
+      return pool->makeAndAdd<ChangePasswordExecutor>(node, qctx);
     }
     case PlanNode::Kind::kListUserRoles: {
-      return pool->add(new ListUserRolesExecutor(node, qctx));
+      return pool->makeAndAdd<ListUserRolesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kListUsers: {
-      return pool->add(new ListUsersExecutor(node, qctx));
+      return pool->makeAndAdd<ListUsersExecutor>(node, qctx);
     }
     case PlanNode::Kind::kListRoles: {
-      return pool->add(new ListRolesExecutor(node, qctx));
+      return pool->makeAndAdd<ListRolesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescribeUser: {
-      return pool->add(new DescribeUserExecutor(node, qctx));
+      return pool->makeAndAdd<DescribeUserExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowConfigs: {
-      return pool->add(new ShowConfigsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowConfigsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSetConfig: {
-      return pool->add(new SetConfigExecutor(node, qctx));
+      return pool->makeAndAdd<SetConfigExecutor>(node, qctx);
     }
     case PlanNode::Kind::kGetConfig: {
-      return pool->add(new GetConfigExecutor(node, qctx));
+      return pool->makeAndAdd<GetConfigExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSubmitJob: {
-      return pool->add(new SubmitJobExecutor(node, qctx));
+      return pool->makeAndAdd<SubmitJobExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowHosts: {
-      return pool->add(new ShowHostsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowHostsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowMetaLeader: {
-      return pool->add(new ShowMetaLeaderExecutor(node, qctx));
+      return pool->makeAndAdd<ShowMetaLeaderExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowParts: {
-      return pool->add(new ShowPartsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowPartsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCharset: {
-      return pool->add(new ShowCharsetExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCharsetExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowCollation: {
-      return pool->add(new ShowCollationExecutor(node, qctx));
+      return pool->makeAndAdd<ShowCollationExecutor>(node, qctx);
     }
     case PlanNode::Kind::kBFSShortest: {
-      return pool->add(new BFSShortestPathExecutor(node, qctx));
+      return pool->makeAndAdd<BFSShortestPathExecutor>(node, qctx);
     }
     case PlanNode::Kind::kMultiShortestPath: {
-      return pool->add(new MultiShortestPathExecutor(node, qctx));
+      return pool->makeAndAdd<MultiShortestPathExecutor>(node, qctx);
     }
     case PlanNode::Kind::kProduceAllPaths: {
-      return pool->add(new ProduceAllPathsExecutor(node, qctx));
+      return pool->makeAndAdd<ProduceAllPathsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCartesianProduct: {
-      return pool->add(new CartesianProductExecutor(node, qctx));
+      return pool->makeAndAdd<CartesianProductExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSubgraph: {
-      return pool->add(new SubgraphExecutor(node, qctx));
+      return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAddHosts: {
-      return pool->add(new AddHostsExecutor(node, qctx));
+      return pool->makeAndAdd<AddHostsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropHosts: {
-      return pool->add(new DropHostsExecutor(node, qctx));
+      return pool->makeAndAdd<DropHostsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kMergeZone: {
-      return pool->add(new MergeZoneExecutor(node, qctx));
+      return pool->makeAndAdd<MergeZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRenameZone: {
-      return pool->add(new RenameZoneExecutor(node, qctx));
+      return pool->makeAndAdd<RenameZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDropZone: {
-      return pool->add(new DropZoneExecutor(node, qctx));
+      return pool->makeAndAdd<DropZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDivideZone: {
-      return pool->add(new DivideZoneExecutor(node, qctx));
+      return pool->makeAndAdd<DivideZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kDescribeZone: {
-      return pool->add(new DescribeZoneExecutor(node, qctx));
+      return pool->makeAndAdd<DescribeZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAddHostsIntoZone: {
-      return pool->add(new AddHostsIntoZoneExecutor(node, qctx));
+      return pool->makeAndAdd<AddHostsIntoZoneExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowZones: {
-      return pool->add(new ListZonesExecutor(node, qctx));
+      return pool->makeAndAdd<ListZonesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAddListener: {
-      return pool->add(new AddListenerExecutor(node, qctx));
+      return pool->makeAndAdd<AddListenerExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRemoveListener: {
-      return pool->add(new RemoveListenerExecutor(node, qctx));
+      return pool->makeAndAdd<RemoveListenerExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowListener: {
-      return pool->add(new ShowListenerExecutor(node, qctx));
+      return pool->makeAndAdd<ShowListenerExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowStats: {
-      return pool->add(new ShowStatsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowStatsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowServiceClients: {
-      return pool->add(new ShowServiceClientsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowServiceClientsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowFTIndexes: {
-      return pool->add(new ShowFTIndexesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowFTIndexesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSignInService: {
-      return pool->add(new SignInServiceExecutor(node, qctx));
+      return pool->makeAndAdd<SignInServiceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSignOutService: {
-      return pool->add(new SignOutServiceExecutor(node, qctx));
+      return pool->makeAndAdd<SignOutServiceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowSessions: {
-      return pool->add(new ShowSessionsExecutor(node, qctx));
+      return pool->makeAndAdd<ShowSessionsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUpdateSession: {
-      return pool->add(new UpdateSessionExecutor(node, qctx));
+      return pool->makeAndAdd<UpdateSessionExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShowQueries: {
-      return pool->add(new ShowQueriesExecutor(node, qctx));
+      return pool->makeAndAdd<ShowQueriesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kKillQuery: {
-      return pool->add(new KillQueryExecutor(node, qctx));
+      return pool->makeAndAdd<KillQueryExecutor>(node, qctx);
     }
     case PlanNode::Kind::kTraverse: {
-      return pool->add(new TraverseExecutor(node, qctx));
+      return pool->makeAndAdd<TraverseExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAppendVertices: {
-      return pool->add(new AppendVerticesExecutor(node, qctx));
+      return pool->makeAndAdd<AppendVerticesExecutor>(node, qctx);
     }
     case PlanNode::Kind::kBiLeftJoin: {
-      return pool->add(new BiLeftJoinExecutor(node, qctx));
+      return pool->makeAndAdd<BiLeftJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kBiInnerJoin: {
-      return pool->add(new BiInnerJoinExecutor(node, qctx));
+      return pool->makeAndAdd<BiInnerJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kBiCartesianProduct: {
-      return pool->add(new BiCartesianProductExecutor(node, qctx));
+      return pool->makeAndAdd<BiCartesianProductExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRollUpApply: {
-      return pool->add(new RollUpApplyExecutor(node, qctx));
+      return pool->makeAndAdd<RollUpApplyExecutor>(node, qctx);
     }
     case PlanNode::Kind::kArgument: {
-      return pool->add(new ArgumentExecutor(node, qctx));
+      return pool->makeAndAdd<ArgumentExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAlterSpace: {
-      return pool->add(new AlterSpaceExecutor(node, qctx));
+      return pool->makeAndAdd<AlterSpaceExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kShortestPath: {
+      return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
@@ -680,6 +684,27 @@ void Executor::dropBody(const PlanNode *body) {
   for (const auto &dep : body->dependencies()) {
     dropBody(dep);
   }
+}
+
+bool Executor::movable(const Variable *var) {
+  // Only support input variables of current executor
+  DCHECK(std::find(node_->inputVars().begin(), node_->inputVars().end(), DCHECK_NOTNULL(var)) !=
+         node_->inputVars().end());
+  // TODO support executor in loop
+  if (node()->kind() == PlanNode::Kind::kLoop) {
+    return false;
+  }
+  if (node()->loopLayers() != 0) {
+    // The lifetime of loop body is managed by Loop node
+    return false;
+  }
+
+  if (node()->kind() == PlanNode::Kind::kSelect) {
+    return false;
+  }
+  // Normal node
+  // Make sure drop happened-after count decrement
+  return var->userCount.load(std::memory_order_acquire) == 1;
 }
 
 Status Executor::finish(Result &&result) {

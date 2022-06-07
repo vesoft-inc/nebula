@@ -33,7 +33,7 @@ GetEdgesTransformRule::GetEdgesTransformRule() {
 
 const Pattern &GetEdgesTransformRule::pattern() const {
   static Pattern pattern =
-      Pattern::create(PlanNode::Kind::kAppendVertices,
+      Pattern::create({PlanNode::Kind::kAppendVertices, PlanNode::Kind::kLimit},
                       {Pattern::create(PlanNode::Kind::kTraverse,
                                        {Pattern::create(PlanNode::Kind::kScanVertices)})});
   return pattern;
@@ -59,20 +59,22 @@ bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched)
 
 StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
     OptContext *ctx, const MatchedResult &matched) const {
-  auto appendVerticesGroupNode = matched.node;
-  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
+  auto appendVerticesOrLimitGroupNode = matched.node;
+  auto appendVerticesOrLimit = appendVerticesOrLimitGroupNode->node();
   auto traverseGroupNode = matched.dependencies.front().node;
   auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
   auto scanVerticesGroupNode = matched.dependencies.front().dependencies.front().node;
   auto qctx = ctx->qctx();
 
-  auto newAppendVertices = appendVertices->clone();
-  auto colSize = appendVertices->colNames().size();
-  newAppendVertices->setOutputVar(appendVertices->outputVar());
-  newAppendVertices->setColNames(
-      {appendVertices->colNames()[colSize - 2], appendVertices->colNames()[colSize - 1]});
-  auto newAppendVerticesGroupNode =
-      OptGroupNode::create(ctx, newAppendVertices, appendVerticesGroupNode->group());
+  auto newAppendVerticesOrLimit = appendVerticesOrLimit->clone();
+  newAppendVerticesOrLimit->setOutputVar(appendVerticesOrLimit->outputVar());
+  if (newAppendVerticesOrLimit->kind() == PlanNode::Kind::kAppendVertices) {
+    auto colSize = appendVerticesOrLimit->colNames().size();
+    newAppendVerticesOrLimit->setColNames({appendVerticesOrLimit->colNames()[colSize - 2],
+                                           appendVerticesOrLimit->colNames()[colSize - 1]});
+  }
+  auto newAppendVerticesOrLimitGroupNode =
+      OptGroupNode::create(ctx, newAppendVerticesOrLimit, appendVerticesOrLimitGroupNode->group());
 
   auto *newScanEdges = traverseToScanEdges(traverse);
   if (newScanEdges == nullptr) {
@@ -88,15 +90,13 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   auto newProjGroup = OptGroup::create(ctx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
-  newAppendVerticesGroupNode->dependsOn(newProjGroup);
+  newAppendVerticesOrLimitGroupNode->dependsOn(newProjGroup);
   newProjGroupNode->dependsOn(newScanEdgesGroup);
-  for (auto dep : scanVerticesGroupNode->dependencies()) {
-    newScanEdgesGroupNode->dependsOn(dep);
-  }
+  newScanEdgesGroupNode->setDeps(scanVerticesGroupNode->dependencies());
 
   TransformResult result;
-  result.eraseCurr = true;
-  result.newGroupNodes.emplace_back(newAppendVerticesGroupNode);
+  result.eraseAll = true;
+  result.newGroupNodes.emplace_back(newAppendVerticesOrLimitGroupNode);
   return result;
 }
 
