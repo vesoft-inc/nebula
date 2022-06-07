@@ -850,3 +850,15 @@ Feature: Insert string vid of vertex and edge
       DROP SPACE issue2009;
       """
     Then the execution should be successful
+
+  Scenario: Don't allow DOT in schema name
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG `tag.prop`()
+      """
+    Then a SyntaxError should be raised at runtime: Don't allow DOT in label: near `.prop`()'
