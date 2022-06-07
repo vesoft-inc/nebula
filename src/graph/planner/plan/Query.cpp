@@ -605,8 +605,12 @@ void DataCollect::cloneMembers(const DataCollect& l) {
 std::unique_ptr<PlanNodeDescription> Join::explain() const {
   auto desc = SingleDependencyNode::explain();
   folly::dynamic inputVar = folly::dynamic::object();
-  inputVar.insert("leftVar", folly::toJson(util::toJson(leftVar_)));
-  inputVar.insert("rightVar", folly::toJson(util::toJson(rightVar_)));
+  folly::dynamic leftVar = folly::dynamic::object();
+  leftVar.insert(leftVar_.first, leftVar_.second);
+  inputVar.insert("leftVar", std::move(leftVar));
+  folly::dynamic rightVar = folly::dynamic::object();
+  rightVar.insert(rightVar_.first, rightVar_.second);
+  inputVar.insert("rightVar", std::move(rightVar));
   addDescription("inputVar", folly::toJson(inputVar), desc.get());
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
@@ -683,9 +687,9 @@ void InnerJoin::cloneMembers(const InnerJoin& l) {
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();
-  for (size_t i = 0; i < items_.size(); ++i) {
-    addDescription("varName", items_[i].first, desc.get());
-    addDescription("value", items_[i].second->toString(), desc.get());
+  for (const auto& item : items_) {
+    addDescription("varName", item.first, desc.get());
+    addDescription("value", item.second->toString(), desc.get());
   }
   return desc;
 }
@@ -734,6 +738,9 @@ void Traverse::cloneMembers(const Traverse& g) {
     setEdgeFilter(g.eFilter_->clone());
   }
   setTrackPrevPath(g.trackPrevPath_);
+  if (g.firstStepFilter_ != nullptr) {
+    setFirstStepFilter(g.firstStepFilter_->clone());
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -742,6 +749,9 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());
+  addDescription("first step filter",
+                 firstStepFilter_ != nullptr ? firstStepFilter_->toString() : "",
+                 desc.get());
   return desc;
 }
 

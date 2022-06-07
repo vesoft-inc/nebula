@@ -48,6 +48,7 @@
 #include "graph/executor/algo/CartesianProductExecutor.h"
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
+#include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
@@ -545,6 +546,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kAlterSpace: {
       return pool->makeAndAdd<AlterSpaceExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kShortestPath: {
+      return pool->add(new ShortestPathExecutor(node, qctx));
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
@@ -682,10 +686,31 @@ void Executor::dropBody(const PlanNode *body) {
   }
 }
 
+bool Executor::movable(const Variable *var) {
+  // Only support input variables of current executor
+  DCHECK(std::find(node_->inputVars().begin(), node_->inputVars().end(), DCHECK_NOTNULL(var)) !=
+         node_->inputVars().end());
+  // TODO support executor in loop
+  if (node()->kind() == PlanNode::Kind::kLoop) {
+    return false;
+  }
+  if (node()->loopLayers() != 0) {
+    // The lifetime of loop body is managed by Loop node
+    return false;
+  }
+
+  if (node()->kind() == PlanNode::Kind::kSelect) {
+    return false;
+  }
+  // Normal node
+  // Make sure drop happened-after count decrement
+  return var->userCount.load(std::memory_order_acquire) == 1;
+}
+
 Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
-    numRows_ = !result.iterRef()->isGetNeighborsIter() ? result.size() : 0;
+    numRows_ = result.size();
     result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {

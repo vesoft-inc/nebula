@@ -12,7 +12,6 @@
 
 namespace nebula {
 namespace graph {
-
 // static
 void PlannerUtil::buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
   vidsVar = qctx->vctx()->anonVarGen()->getVar();

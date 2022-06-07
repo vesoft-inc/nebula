@@ -239,6 +239,10 @@ class MetaClient : public BaseMetaClient {
 
   ~MetaClient() override;
 
+#ifdef BUILD_STANDALONE
+  StatusOr<bool> checkLocalMachineRegistered();
+#endif
+
   bool isMetadReady();
 
   bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);

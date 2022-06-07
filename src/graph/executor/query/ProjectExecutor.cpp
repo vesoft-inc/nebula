@@ -19,7 +19,7 @@ folly::Future<Status> ProjectExecutor::execute() {
 
   DataSet ds;
   ds.colNames = project->colNames();
-  ds.rows.reserve(!iter->isGetNeighborsIter() ? iter->size() : 0);
+  ds.rows.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
     Row row;
     for (auto& col : columns) {
