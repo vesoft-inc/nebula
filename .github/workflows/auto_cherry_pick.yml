@@ -1,9 +1,10 @@
 name: Auto Cherry Pick 
 on:
-  pull_request:
-    types:
-      - closed
-      - labeled
+  workflow_dispatch:
+    inputs:
+      pr_label:
+        description: "Cherry pick label such as 'cherry-pick-v3.2'"
+        required: true
 
 defaults:
   run:
@@ -11,7 +12,7 @@ defaults:
 
 jobs:
   auto-cherry-pick:
-      if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
+      #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
       runs-on: ubuntu-latest
       container:
         image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
@@ -24,5 +25,5 @@ jobs:
           with:
               repo_token: ${{ secrets.GH_BOT_PAT }}
               pr_label: ${{ github.event.inputs.prlabel }}
-              pr_num: ${{ github.event.pull_request.number }}
+              #pr_num: ${{ github.event.pull_request.number }}
               auto_merge: true
