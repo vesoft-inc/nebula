@@ -547,7 +547,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<AlterSpaceExecutor>(node, qctx);
     }
     case PlanNode::Kind::kShortestPath: {
-      return pool->add(new ShortestPathExecutor(node, qctx));
+      return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

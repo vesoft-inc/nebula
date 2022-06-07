@@ -158,7 +158,7 @@ class ShortestPath final : public SingleInputNode {
                             PlanNode* node,
                             GraphSpaceID space,
                             bool singleShortest) {
-    return qctx->objPool()->add(new ShortestPath(qctx, node, space, singleShortest));
+    return qctx->objPool()->makeAndAdd<ShortestPath>(qctx, node, space, singleShortest);
   }
 
   PlanNode* clone() const override;
@@ -214,6 +214,7 @@ class ShortestPath final : public SingleInputNode {
   }
 
  private:
+  friend ObjectPool;
   ShortestPath(QueryContext* qctx, PlanNode* node, GraphSpaceID space, bool singleShortest)
       : SingleInputNode(qctx, Kind::kShortestPath, node),
         space_(space),
