@@ -15,7 +15,7 @@ namespace graph {
 std::unique_ptr<PlanNodeDescription> CreateSchemaNode::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("name", name_, desc.get());
-  addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
+  addDescription("ifNotExists", folly::toJson(util::toJson(ifNotExists_)), desc.get());
   addDescription("schema", folly::toJson(util::toJson(schema_)), desc.get());
   return desc;
 }
@@ -38,7 +38,7 @@ std::unique_ptr<PlanNodeDescription> DescSchemaNode::explain() const {
 std::unique_ptr<PlanNodeDescription> DropSchemaNode::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("name", name_, desc.get());
-  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  addDescription("ifExists", folly::toJson(util::toJson(ifExists_)), desc.get());
   return desc;
 }
 
@@ -67,7 +67,7 @@ std::unique_ptr<PlanNodeDescription> DescIndexNode::explain() const {
 std::unique_ptr<PlanNodeDescription> DropIndexNode::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("indexName", indexName_, desc.get());
-  addDescription("ifExists", util::toJson(ifExists_), desc.get());
+  addDescription("ifExists", folly::toJson(util::toJson(ifExists_)), desc.get());
   return desc;
 }
 

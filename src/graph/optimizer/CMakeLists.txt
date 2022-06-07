@@ -23,6 +23,7 @@ nebula_add_library(
     rule/PushStepSampleDownGetNeighborsRule.cpp
     rule/PushStepLimitDownGetNeighborsRule.cpp
     rule/TopNRule.cpp
+    rule/PushEFilterDownRule.cpp
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
     rule/PushFilterDownLeftJoinRule.cpp
@@ -46,6 +47,8 @@ nebula_add_library(
     rule/GetEdgesTransformRule.cpp
     rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
     rule/PushTopNDownIndexScanRule.cpp
+    rule/EliminateAppendVerticesRule.cpp
+    rule/PushLimitDownScanEdgesRule.cpp
 )
 
 nebula_add_subdirectory(test)

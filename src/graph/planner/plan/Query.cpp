@@ -29,7 +29,7 @@ int64_t Explore::limit(QueryContext* qctx) const {
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
-  addDescription("dedup", util::toJson(dedup_), desc.get());
+  addDescription("dedup", folly::toJson(util::toJson(dedup_)), desc.get());
   addDescription(
       "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
   std::string filter = filter_ == nullptr ? "" : filter_->toString();
@@ -60,7 +60,7 @@ std::unique_ptr<PlanNodeDescription> GetNeighbors::explain() const {
   addDescription(
       "statProps", statProps_ ? folly::toJson(util::toJson(*statProps_)) : "", desc.get());
   addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
-  addDescription("random", util::toJson(random_), desc.get());
+  addDescription("random", folly::toJson(util::toJson(random_)), desc.get());
   return desc;
 }
 
@@ -137,7 +137,7 @@ void GetVertices::cloneMembers(const GetVertices& gv) {
 std::unique_ptr<PlanNodeDescription> GetEdges::explain() const {
   auto desc = Explore::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
-  addDescription("type", util::toJson(type_), desc.get());
+  addDescription("type", folly::toJson(util::toJson(type_)), desc.get());
   addDescription("ranking", ranking_ ? ranking_->toString() : "", desc.get());
   addDescription("dst", dst_ ? dst_->toString() : "", desc.get());
   addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
@@ -174,8 +174,8 @@ void GetEdges::cloneMembers(const GetEdges& ge) {
 
 std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
   auto desc = Explore::explain();
-  addDescription("schemaId", util::toJson(schemaId_), desc.get());
-  addDescription("isEdge", util::toJson(isEdge_), desc.get());
+  addDescription("schemaId", folly::toJson(util::toJson(schemaId_)), desc.get());
+  addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
   addDescription("returnCols", folly::toJson(util::toJson(returnCols_)), desc.get());
   addDescription("indexCtx", folly::toJson(util::toJson(contexts_)), desc.get());
   return desc;
@@ -605,8 +605,12 @@ void DataCollect::cloneMembers(const DataCollect& l) {
 std::unique_ptr<PlanNodeDescription> Join::explain() const {
   auto desc = SingleDependencyNode::explain();
   folly::dynamic inputVar = folly::dynamic::object();
-  inputVar.insert("leftVar", util::toJson(leftVar_));
-  inputVar.insert("rightVar", util::toJson(rightVar_));
+  folly::dynamic leftVar = folly::dynamic::object();
+  leftVar.insert(leftVar_.first, leftVar_.second);
+  inputVar.insert("leftVar", std::move(leftVar));
+  folly::dynamic rightVar = folly::dynamic::object();
+  rightVar.insert(rightVar_.first, rightVar_.second);
+  inputVar.insert("rightVar", std::move(rightVar));
   addDescription("inputVar", folly::toJson(inputVar), desc.get());
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
@@ -741,7 +745,7 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
-  addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
+  addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());
   return desc;
 }
 
@@ -769,7 +773,7 @@ void AppendVertices::cloneMembers(const AppendVertices& a) {
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
   addDescription("vertex_filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
-  addDescription("if_track_previous_path", util::toJson(trackPrevPath_), desc.get());
+  addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());
   return desc;
 }
 

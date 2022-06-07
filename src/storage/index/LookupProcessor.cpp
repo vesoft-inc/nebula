@@ -116,8 +116,11 @@ ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> LookupProcessor::bu
     const cpp2::LookupIndexRequest& req) {
   std::vector<std::unique_ptr<IndexNode>> nodes;
   for (auto& ctx : req.get_indices().get_contexts()) {
-    auto node = buildOneContext(ctx);
-    nodes.emplace_back(std::move(node));
+    auto scan = buildOneContext(ctx);
+    if (!ok(scan)) {
+      return error(scan);
+    }
+    nodes.emplace_back(std::move(value(scan)));
   }
   for (size_t i = 0; i < nodes.size(); i++) {
     auto projection =
@@ -164,17 +167,42 @@ ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> LookupProcessor::bu
   return std::move(nodes[0]);
 }
 
-std::unique_ptr<IndexNode> LookupProcessor::buildOneContext(const cpp2::IndexQueryContext& ctx) {
+ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> LookupProcessor::buildOneContext(
+    const cpp2::IndexQueryContext& ctx) {
   std::unique_ptr<IndexNode> node;
   DLOG(INFO) << ctx.get_column_hints().size();
   DLOG(INFO) << &ctx.get_column_hints();
   DLOG(INFO) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(ctx);
   if (context_->isEdge()) {
-    node = std::make_unique<IndexEdgeScanNode>(
-        context_.get(), ctx.get_index_id(), ctx.get_column_hints(), context_->env()->kvstore_);
+    auto idx = env_->indexMan_->getEdgeIndex(context_->spaceId(), ctx.get_index_id());
+    if (!idx.ok()) {
+      return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    auto cols = idx.value()->get_fields();
+    bool hasNullableCol =
+        std::any_of(cols.begin(), cols.end(), [](const meta::cpp2::ColumnDef& col) {
+          return col.nullable_ref().value_or(false);
+        });
+    node = std::make_unique<IndexEdgeScanNode>(context_.get(),
+                                               ctx.get_index_id(),
+                                               ctx.get_column_hints(),
+                                               context_->env()->kvstore_,
+                                               hasNullableCol);
   } else {
-    node = std::make_unique<IndexVertexScanNode>(
-        context_.get(), ctx.get_index_id(), ctx.get_column_hints(), context_->env()->kvstore_);
+    auto idx = env_->indexMan_->getTagIndex(context_->spaceId(), ctx.get_index_id());
+    if (!idx.ok()) {
+      return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    auto cols = idx.value()->get_fields();
+    bool hasNullableCol =
+        std::any_of(cols.begin(), cols.end(), [](const meta::cpp2::ColumnDef& col) {
+          return col.nullable_ref().value_or(false);
+        });
+    node = std::make_unique<IndexVertexScanNode>(context_.get(),
+                                                 ctx.get_index_id(),
+                                                 ctx.get_column_hints(),
+                                                 context_->env()->kvstore_,
+                                                 hasNullableCol);
   }
   if (ctx.filter_ref().is_set() && !ctx.get_filter().empty()) {
     auto expr = Expression::decode(context_->objPool(), *ctx.filter_ref());
@@ -402,6 +430,7 @@ std::vector<std::unique_ptr<IndexNode>> LookupProcessor::reproducePlan(IndexNode
   return ret;
 }
 void LookupProcessor::profilePlan(IndexNode* root) {
+  std::unique_lock<std::mutex> lck(BaseProcessor<cpp2::LookupIndexResp>::profileMut_);
   std::queue<IndexNode*> q;
   q.push(root);
   while (!q.empty()) {

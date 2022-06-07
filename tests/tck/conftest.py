@@ -122,9 +122,7 @@ def exec_ctx(session):
 
 
 @given(parse('parameters: {parameters}'))
-def preload_parameters(
-    parameters
-):
+def preload_parameters(parameters):
     try:
         paramMap = json.loads(parameters)
         for (k, v) in paramMap.items():
@@ -137,26 +135,26 @@ def preload_parameters(
 def clear_parameters():
     params = {}
 
+
 # construct python-type to nebula.Value
 
 
 def value(any):
     v = Value()
-    if (isinstance(any, bool)):
+    if isinstance(any, bool):
         v.set_bVal(any)
-    elif (isinstance(any, int)):
+    elif isinstance(any, int):
         v.set_iVal(any)
-    elif (isinstance(any, str)):
+    elif isinstance(any, str):
         v.set_sVal(any)
-    elif (isinstance(any, float)):
+    elif isinstance(any, float):
         v.set_fVal(any)
-    elif (isinstance(any, list)):
+    elif isinstance(any, list):
         v.set_lVal(list2Nlist(any))
-    elif (isinstance(any, dict)):
+    elif isinstance(any, dict):
         v.set_mVal(map2NMap(any))
     else:
-        raise TypeError("Do not support convert " +
-                        str(type(any))+" to nebula.Value")
+        raise TypeError("Do not support convert " + str(type(any)) + " to nebula.Value")
     return v
 
 
@@ -256,8 +254,7 @@ def new_space(request, exec_ctx):
 
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, exec_ctx, pytestconfig):
-    data_dir = os.path.join(
-        DATA_DIR, normalize_outline_scenario(request, data))
+    data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
     space_desc = load_csv_data(
         exec_ctx.get('current_session'),
         data_dir,
@@ -380,6 +377,7 @@ def when_login_graphd(graph, user, password, class_fixture_variables, pytestconf
     class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["pool"] = pool
 
+
 # This is a workaround to test login retry because nebula-python treats
 # authentication failure as exception instead of error.
 
@@ -409,7 +407,9 @@ def executing_query(query, exec_ctx, request):
 
 
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
-def executing_query(username, password, conn_pool_to_first_graph_service, query, exec_ctx, request):
+def executing_query(
+    username, password, conn_pool_to_first_graph_service, query, exec_ctx, request
+):
     sess = conn_pool_to_first_graph_service.get_session(username, password)
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx, sess)
@@ -678,8 +678,12 @@ def result_should_contain(request, result, exec_ctx):
     )
 
 
-@then(parse("the result should contain, replace the holders with cluster info:\n{result}"))
-def then_result_should_contain_replace(request, result, exec_ctx, class_fixture_variables):
+@then(
+    parse("the result should contain, replace the holders with cluster info:\n{result}")
+)
+def then_result_should_contain_replace(
+    request, result, exec_ctx, class_fixture_variables
+):
     result = replace_result_with_cluster_info(result, class_fixture_variables)
     cmp_dataset(
         request,
@@ -732,7 +736,11 @@ def execution_should_be_succ(exec_ctx):
     check_resp(rs, stmt)
 
 
-@then(rparse(r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
+@then(
+    rparse(
+        r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"
+    )
+)
 def raised_type_error(unit, err_type, time, sym, msg, exec_ctx):
     res = exec_ctx["result_set"]
     ngql = exec_ctx['ngql']
@@ -746,7 +754,9 @@ def raised_type_error(unit, err_type, time, sym, msg, exec_ctx):
     else:
         expect_msg = "{}: {}".format(err_type, msg)
     m = res_msg.startswith(expect_msg)
-    assert m, f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
+    assert (
+        m
+    ), f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
 
 
 @then("drop the used space")
@@ -769,8 +779,7 @@ def check_plan(plan, exec_ctx):
     idx = column_names.index('dependencies')
     rows = expect.get("rows", [])
     for i, row in enumerate(rows):
-        row[idx] = [int(cell.strip())
-                    for cell in row[idx].split(",") if len(cell) > 0]
+        row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
@@ -808,7 +817,7 @@ def result_should_be_in_order_and_register_key(
         result,
         order=True,
         strict=True,
-        contains=CmpType.CONTAINS,
+        contains=CmpType.EQUAL,
         first_n_records=n,
     )
     register_result_key(request.node.name, result_ds, column_name, key)

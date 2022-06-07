@@ -189,6 +189,24 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+Expression *ExpressionUtils::rewriteSubExprs2VarProp(const Expression *expr,
+                                                     std::vector<Expression *> &subExprs) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [&subExprs](const Expression *e) -> bool {
+    for (auto subExpr : subExprs) {
+      if (e->toString() == subExpr->toString()) {
+        return true;
+      }
+    }
+    return false;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    return VariablePropertyExpression::make(pool, "", e->toString());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 // Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
 // Rewrite the IN expr to an OR expr if the right operand has more than 1 element.
 Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
@@ -1187,7 +1205,35 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
     }
   }
   return true;
-}  // namespace graph
+}
+
+/*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr) {
+  if (DCHECK_NOTNULL(expr)->kind() != Expression::Kind::kRelIn &&
+      expr->kind() != Expression::Kind::kRelEQ) {
+    return false;
+  }
+  const auto *relExpr = static_cast<const RelationalExpression *>(expr);
+  if (relExpr->left()->kind() != Expression::Kind::kFunctionCall) {
+    return false;
+  }
+  const auto *fCallExpr = static_cast<const FunctionCallExpression *>(relExpr->left());
+  if (fCallExpr->name() != "id" || fCallExpr->args()->numArgs() != 1 ||
+      fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
+    return false;
+  }
+  if (expr->kind() == Expression::Kind::kRelIn) {
+    // id(V) IN [List]
+    if (relExpr->right()->kind() != Expression::Kind::kList) {
+      return false;
+    }
+  } else if (expr->kind() == Expression::Kind::kRelEQ) {
+    // id(V) = Value
+    if (relExpr->right()->kind() != Expression::Kind::kConstant) {
+      return false;
+    }
+  }
+  return true;
+}
 
 }  // namespace graph
 }  // namespace nebula
