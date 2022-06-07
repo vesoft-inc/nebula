@@ -84,8 +84,8 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   // and it should be converted to an `optRule` after the match validator is
   // refactored
   auto* pool = nodeCtx->qctx->objPool();
-  if (nodeCtx->bindFilter != nullptr) {
-    auto* filter = nodeCtx->bindFilter;
+  if (nodeCtx->bindWhereClause != nullptr && nodeCtx->bindWhereClause->filter != nullptr) {
+    auto* filter = nodeCtx->bindWhereClause->filter;
     const auto& nodeAlias = nodeCtx->info->alias;
     const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
 

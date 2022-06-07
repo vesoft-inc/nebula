@@ -22,7 +22,8 @@ class ListComprehensionExpression final : public Expression {
                                            Expression* collection = nullptr,
                                            Expression* filter = nullptr,
                                            Expression* mapping = nullptr) {
-    return pool->add(new ListComprehensionExpression(pool, innerVar, collection, filter, mapping));
+    return pool->makeAndAdd<ListComprehensionExpression>(
+        pool, innerVar, collection, filter, mapping);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -100,6 +101,7 @@ class ListComprehensionExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit ListComprehensionExpression(ObjectPool* pool,
                                        const std::string& innerVar = "",
                                        Expression* collection = nullptr,

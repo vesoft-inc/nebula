@@ -118,7 +118,7 @@ PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string&
 PlanNode* GoPlanner::extractSrcDstFromGN(PlanNode* dep, const std::string& input) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
 
   goCtx_->srcVidColName = qctx->vctx()->anonColGen()->getCol();
   auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), goCtx_->srcVidColName);
@@ -141,7 +141,7 @@ PlanNode* GoPlanner::extractVidFromRuntimeInput(PlanNode* dep) {
   auto qctx = goCtx_->qctx;
   const auto& from = goCtx_->from;
 
-  auto* columns = qctx->objPool()->add(new YieldColumns());
+  auto* columns = qctx->objPool()->makeAndAdd<YieldColumns>();
   auto* vidExpr = new YieldColumn(from.originalSrc->clone(), from.runtimeVidName);
   columns->addColumn(vidExpr);
 
@@ -181,7 +181,7 @@ PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
   join->setColNames(std::move(colNames));
 
   // extract runtimeVid  & dst from join result
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   auto& vidName = goCtx_->from.runtimeVidName;
   auto* vidExpr = new YieldColumn(InputPropertyExpression::make(pool, vidName), vidName);
   columns->addColumn(vidExpr);

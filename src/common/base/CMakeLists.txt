@@ -13,6 +13,7 @@ nebula_add_library(
     Status.cpp
     SanitizerOptions.cpp
     SignalHandler.cpp
+    Arena.cpp
     ${gdb_debug_script}
 )
 

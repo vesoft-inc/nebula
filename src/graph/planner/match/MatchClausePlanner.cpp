@@ -5,19 +5,11 @@
 
 #include "graph/planner/match/MatchClausePlanner.h"
 
-#include "MatchPathPlanner.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/match/MatchPathPlanner.h"
-#include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/match/SegmentsConnector.h"
-#include "graph/planner/match/StartVidFinder.h"
-#include "graph/planner/match/WhereClausePlanner.h"
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
+#include "graph/planner/match/ShortestPathPlanner.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -35,33 +27,32 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   auto& pathInfos = matchClauseCtx->paths;
   for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
     auto& nodeInfos = iter->nodeInfos;
-    MatchPathPlanner matchPathPlanner;
-    auto bindFilter = matchClauseCtx->where ? matchClauseCtx->where->filter : nullptr;
-    auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
-                                             matchClauseCtx->space.id,
-                                             bindFilter,
-                                             matchClauseCtx->aliasesAvailable,
-                                             nodeAliasesSeen,
-                                             *iter);
-    NG_RETURN_IF_ERROR(result);
-    NG_RETURN_IF_ERROR(connectPathPlan(
-        nodeInfos, matchClauseCtx, std::move(result).value(), nodeAliasesSeen, matchClausePlan));
+    SubPlan pathPlan;
+    if (iter->pathType == Path::PathType::kDefault) {
+      MatchPathPlanner matchPathPlanner;
+      auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
+                                               matchClauseCtx->space.id,
+                                               matchClauseCtx->where.get(),
+                                               matchClauseCtx->aliasesAvailable,
+                                               nodeAliasesSeen,
+                                               *iter);
+      NG_RETURN_IF_ERROR(result);
+      pathPlan = std::move(result).value();
+    } else {
+      ShortestPathPlanner shortestPathPlanner;
+      auto result = shortestPathPlanner.transform(matchClauseCtx->qctx,
+                                                  matchClauseCtx->space.id,
+                                                  matchClauseCtx->where.get(),
+                                                  matchClauseCtx->aliasesAvailable,
+                                                  nodeAliasesSeen,
+                                                  *iter);
+      NG_RETURN_IF_ERROR(result);
+      pathPlan = std::move(result).value();
+    }
+    NG_RETURN_IF_ERROR(
+        connectPathPlan(nodeInfos, matchClauseCtx, pathPlan, nodeAliasesSeen, matchClausePlan));
   }
   return matchClausePlan;
-}
-
-Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan) {
-  if (matchClauseCtx->where == nullptr) {
-    return Status::OK();
-  }
-
-  matchClauseCtx->where->inputColNames = subplan.root->colNames();
-  auto wherePlan = std::make_unique<WhereClausePlanner>()->transform(matchClauseCtx->where.get());
-  NG_RETURN_IF_ERROR(wherePlan);
-  auto plan = std::move(wherePlan).value();
-  subplan = SegmentsConnector::addInput(plan, subplan, true);
-  VLOG(1) << subplan;
-  return Status::OK();
 }
 
 Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfos,

@@ -20,8 +20,8 @@ class ReduceExpression final : public Expression {
                                 const std::string& innerVar = "",
                                 Expression* collection = nullptr,
                                 Expression* mapping = nullptr) {
-    return pool->add(
-        new ReduceExpression(pool, accumulator, initial, innerVar, collection, mapping));
+    return pool->makeAndAdd<ReduceExpression>(
+        pool, accumulator, initial, innerVar, collection, mapping);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -99,6 +99,7 @@ class ReduceExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit ReduceExpression(ObjectPool* pool,
                             const std::string& accumulator = "",
                             Expression* initial = nullptr,

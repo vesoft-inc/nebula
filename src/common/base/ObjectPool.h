@@ -13,6 +13,7 @@
 #include <list>
 #include <type_traits>
 
+#include "common/base/Arena.h"
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
 
@@ -26,23 +27,19 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
  public:
   ObjectPool() {}
 
-  ~ObjectPool() = default;
+  ~ObjectPool() {
+    clear();
+  }
 
   void clear() {
     SLGuard g(lock_);
     objects_.clear();
   }
 
-  template <typename T>
-  T *add(T *obj) {
-    SLGuard g(lock_);
-    objects_.emplace_back(obj);
-    return obj;
-  }
-
   template <typename T, typename... Args>
   T *makeAndAdd(Args &&... args) {
-    return add(new T(std::forward<Args>(args)...));
+    void *ptr = arena_.allocateAligned(sizeof(T));
+    return add(new (ptr) T(std::forward<Args>(args)...));
   }
 
   bool empty() const {
@@ -55,7 +52,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
    public:
     template <typename T>
     explicit OwnershipHolder(T *obj)
-        : obj_(obj), deleteFn_([](void *p) { delete reinterpret_cast<T *>(p); }) {}
+        : obj_(obj), deleteFn_([](void *p) { reinterpret_cast<T *>(p)->~T(); }) {}
 
     ~OwnershipHolder() {
       deleteFn_(obj_);
@@ -66,7 +63,15 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
     std::function<void(void *)> deleteFn_;
   };
 
+  template <typename T>
+  T *add(T *obj) {
+    SLGuard g(lock_);
+    objects_.emplace_back(obj);
+    return obj;
+  }
+
   std::list<OwnershipHolder> objects_;
+  Arena arena_;
 
   folly::SpinLock lock_;
 };
