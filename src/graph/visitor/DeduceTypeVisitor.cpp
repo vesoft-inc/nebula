@@ -105,8 +105,19 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
       auto detectValue = prevOp->second OP currentOp->second;                                  \
       if (detectValue.isBadNull()) {                                                           \
         std::stringstream ss;                                                                  \
-        ss << "`" << expr->toString() << "' is not a valid expression, "                       \
-           << "can not apply `" << #OP << "' to `" << prev << "' and `" << current << "'.";    \
+        if (strcmp(#OP, "&&") == 0 || strcmp(#OP, "AND") == 0) {                               \
+          ss << "`" << expr->toString() << "' is not a valid expression, "                     \
+             << "can not apply `&&' or `AND' operator to `" << prev << "' and `" << current    \
+             << "'.";                                                                          \
+        } else if (strcmp(#OP, "||") == 0 || strcmp(#OP, "OR") == 0) {                         \
+          ss << "`" << expr->toString() << "' is not a valid expression, "                     \
+             << "can not apply `||' or `OR' operator to `" << prev << "' and `" << current     \
+             << "'.";                                                                          \
+        } else {                                                                               \
+          ss << "`" << expr->toString() << "' is not a valid expression, "                     \
+             << "can not apply `" << #OP << "' operator to `" << prev << "' and `" << current  \
+             << "'.";                                                                          \
+        }                                                                                      \
         status_ = Status::SemanticError(ss.str());                                             \
         return;                                                                                \
       }                                                                                        \
