@@ -687,9 +687,9 @@ void InnerJoin::cloneMembers(const InnerJoin& l) {
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();
-  for (size_t i = 0; i < items_.size(); ++i) {
-    addDescription("varName", items_[i].first, desc.get());
-    addDescription("value", items_[i].second->toString(), desc.get());
+  for (const auto& item : items_) {
+    addDescription("varName", item.first, desc.get());
+    addDescription("value", item.second->toString(), desc.get());
   }
   return desc;
 }

@@ -52,8 +52,8 @@ Status TraverseExecutor::buildRequestDataSet() {
   for (; iter->valid(); iter->next()) {
     auto vid = src->eval(ctx(iter));
     if (!SchemaUtil::isValidVid(vid, vidType)) {
-      LOG(WARNING) << "Mismatched vid type: " << vid.type()
-                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
+      LOG(ERROR) << "Mismatched vid type: " << vid.type()
+                 << ", space vid type: " << SchemaUtil::typeToString(vidType);
       continue;
     }
     // Need copy here, Argument executor may depends on this variable.
