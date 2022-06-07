@@ -373,7 +373,6 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
  * ifNotExist_ is false. Only keep the last one when edgeKey is same
  */
 nebula::cpp2::ErrorCode AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEdge>& edges) {
-  auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   std::unordered_set<std::string> visited;
   visited.reserve(edges.size());
   if (ifNotExists_) {
@@ -387,8 +386,7 @@ nebula::cpp2::ErrorCode AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEd
                    << ", edge srcVid: " << *edgeKeyRef->src_ref()
                    << ", dstVid: " << *edgeKeyRef->dst_ref() << ", ifNotExists_: " << std::boolalpha
                    << ifNotExists_;
-        code = nebula::cpp2::ErrorCode::E_INVALID_VID;
-        break;
+        return nebula::cpp2::ErrorCode::E_INVALID_VID;
       }
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          0,  // it's ok, just distinguish between different edgekey
@@ -413,8 +411,7 @@ nebula::cpp2::ErrorCode AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEd
                    << ", edge srcVid: " << *edgeKeyRef->src_ref()
                    << ", dstVid: " << *edgeKeyRef->dst_ref() << ", ifNotExists_: " << std::boolalpha
                    << ifNotExists_;
-        code = nebula::cpp2::ErrorCode::E_INVALID_VID;
-        break;
+        return nebula::cpp2::ErrorCode::E_INVALID_VID;
       }
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          0,  // it's ok, just distinguish between different edgekey
@@ -429,7 +426,7 @@ nebula::cpp2::ErrorCode AddEdgesProcessor::deleteDupEdge(std::vector<cpp2::NewEd
       }
     }
   }
-  return code;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace storage
