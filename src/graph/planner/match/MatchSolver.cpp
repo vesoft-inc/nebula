@@ -92,14 +92,20 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     return TagPropertyExpression::make(qctx->objPool(), label, prop);
   };
 
-  auto root = LogicalExpression::makeAnd(qctx->objPool());
   std::vector<Expression*> operands;
   operands.reserve(map->size());
   for (const auto& item : map->items()) {
     operands.emplace_back(RelationalExpression::makeEQ(
         qctx->objPool(), makePropExpr(item.first), item.second->clone()));
   }
-  root->setOperands(std::move(operands));
+  Expression* root = nullptr;
+  DCHECK(!operands.empty());
+  if (operands.size() == 1) {
+    root = operands.front();
+  } else {
+    root = LogicalExpression::makeAnd(qctx->objPool());
+    static_cast<LogicalExpression*>(root)->setOperands(std::move(operands));
+  }
   return root;
 }
 
