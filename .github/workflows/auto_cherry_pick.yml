@@ -11,12 +11,14 @@ defaults:
 
 jobs:
   auto-cherry-pick:
-    if_merged:
       if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
-      runs-on: [self-hosted, nebula-fast]
+      runs-on: ubuntu-latest
       container:
-        image: reg.vesoft-inc.com/vesoft/nebula-dev:centos7
+        image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
       steps:
+        - name: keep workspace empty  
+          run: |
+            rm -rf *
         - name: auto cherry pick
           uses: xigongdaEricyang/cherry-pick-robot@with-python
           with:
