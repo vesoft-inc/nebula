@@ -24,7 +24,7 @@ class AggregateExpression final : public Expression {
                                    const std::string& name = "",
                                    Expression* arg = nullptr,
                                    bool distinct = false) {
-    return pool->add(new AggregateExpression(pool, name, arg, distinct));
+    return pool->makeAndAdd<AggregateExpression>(pool, name, arg, distinct);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -79,6 +79,7 @@ class AggregateExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   AggregateExpression(ObjectPool* pool,
                       const std::string& name = "",
                       Expression* arg = nullptr,

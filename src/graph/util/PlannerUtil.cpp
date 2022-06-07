@@ -31,7 +31,7 @@ void PlannerUtil::buildConstantInput(QueryContext* qctx, Starts& starts, std::st
 // static
 SubPlan PlannerUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
   auto pool = qctx->objPool();
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   auto* column = new YieldColumn(starts.originalSrc->clone(), kVid);
   columns->addColumn(column);
 
@@ -65,7 +65,7 @@ PlanNode* PlannerUtil::extractDstFromGN(QueryContext* qctx,
                                         PlanNode* gn,
                                         const std::string& output) {
   auto pool = qctx->objPool();
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   auto* column = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), kVid);
   columns->addColumn(column);
 

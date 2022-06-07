@@ -182,7 +182,7 @@ SubPlan PathPlanner::loopDepPlan() {
   auto* pool = qctx->objPool();
   SubPlan subPlan = buildRuntimeVidPlan();
   {
-    auto* columns = pool->add(new YieldColumns());
+    auto* columns = pool->makeAndAdd<YieldColumns>();
     auto* column = new YieldColumn(ColumnExpression::make(pool, 0), kVid);
     columns->addColumn(column);
     auto* project = Project::make(qctx, subPlan.root, columns);
@@ -193,7 +193,7 @@ SubPlan PathPlanner::loopDepPlan() {
   }
   subPlan.tail = subPlan.tail == nullptr ? subPlan.root : subPlan.tail;
   {
-    auto* columns = pool->add(new YieldColumns());
+    auto* columns = pool->makeAndAdd<YieldColumns>();
     auto* column = new YieldColumn(ColumnExpression::make(pool, 0), kVid);
     columns->addColumn(column);
     auto* project = Project::make(qctx, subPlan.root, columns);
@@ -312,7 +312,7 @@ PlanNode* PathPlanner::buildVertexPlan(PlanNode* dep, const std::string& input) 
   auto funNodes = FunctionCallExpression::make(pool, "nodes", args);
 
   auto* column = new YieldColumn(funNodes, "nodes");
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(column);
 
   auto* project = Project::make(qctx, dep, columns);
@@ -345,7 +345,7 @@ PlanNode* PathPlanner::buildEdgePlan(PlanNode* dep, const std::string& input) {
   auto funEdges = FunctionCallExpression::make(pool, "relationships", args);
 
   auto* column = new YieldColumn(funEdges, "edges");
-  auto* columns = pool->add(new YieldColumns());
+  auto* columns = pool->makeAndAdd<YieldColumns>();
   columns->addColumn(column);
 
   auto* project = Project::make(qctx, dep, columns);

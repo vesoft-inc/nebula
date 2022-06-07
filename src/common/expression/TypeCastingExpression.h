@@ -17,7 +17,7 @@ class TypeCastingExpression final : public Expression {
   static TypeCastingExpression* make(ObjectPool* pool,
                                      Value::Type vType = Value::Type::__EMPTY__,
                                      Expression* operand = nullptr) {
-    return pool->add(new TypeCastingExpression(pool, vType, operand));
+    return pool->makeAndAdd<TypeCastingExpression>(pool, vType, operand);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -51,6 +51,7 @@ class TypeCastingExpression final : public Expression {
   static bool validateTypeCast(Value::Type operandType, Value::Type type);
 
  private:
+  friend ObjectPool;
   explicit TypeCastingExpression(ObjectPool* pool,
                                  Value::Type vType = Value::Type::__EMPTY__,
                                  Expression* operand = nullptr)

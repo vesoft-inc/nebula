@@ -20,7 +20,7 @@ class MatchPathPatternExpression final : public Expression {
 
   static MatchPathPatternExpression* make(ObjectPool* pool,
                                           std::unique_ptr<MatchPath>&& matchPath) {
-    return pool->add(new MatchPathPatternExpression(pool, std::move(matchPath)));
+    return pool->makeAndAdd<MatchPathPatternExpression>(pool, std::move(matchPath));
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -55,6 +55,7 @@ class MatchPathPatternExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit MatchPathPatternExpression(ObjectPool* pool, std::unique_ptr<MatchPath>&& matchPath)
       : Expression(pool, Kind::kMatchPathPattern), matchPath_(std::move(matchPath)) {}
 

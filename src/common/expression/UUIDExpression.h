@@ -15,7 +15,7 @@ class UUIDExpression final : public Expression {
 
  public:
   static UUIDExpression* make(ObjectPool* pool) {
-    return pool->add(new UUIDExpression(pool));
+    return pool->makeAndAdd<UUIDExpression>(pool);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -31,6 +31,7 @@ class UUIDExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit UUIDExpression(ObjectPool* pool) : Expression(pool, Kind::kUUID) {}
 
   void writeTo(Encoder& encoder) const override;

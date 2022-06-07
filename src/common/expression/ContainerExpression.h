@@ -13,7 +13,7 @@ namespace nebula {
 class ExpressionList final {
  public:
   static ExpressionList *make(ObjectPool *pool, size_t sz = 0) {
-    return pool->add(new ExpressionList(sz));
+    return pool->makeAndAdd<ExpressionList>(sz);
   }
 
   ExpressionList &add(Expression *expr) {
@@ -26,6 +26,7 @@ class ExpressionList final {
   }
 
  private:
+  friend ObjectPool;
   ExpressionList() = default;
   explicit ExpressionList(size_t sz) {
     items_.reserve(sz);
@@ -38,7 +39,7 @@ class ExpressionList final {
 class MapItemList final {
  public:
   static MapItemList *make(ObjectPool *pool, size_t sz = 0) {
-    return pool->add(new MapItemList(sz));
+    return pool->makeAndAdd<MapItemList>(sz);
   }
 
   MapItemList &add(const std::string &key, Expression *value) {
@@ -51,6 +52,7 @@ class MapItemList final {
   }
 
  private:
+  friend ObjectPool;
   MapItemList() = default;
   explicit MapItemList(size_t sz) {
     items_.reserve(sz);
@@ -67,8 +69,8 @@ class ListExpression final : public Expression {
   ListExpression &operator=(ListExpression &&) = delete;
 
   static ListExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
-    return items == nullptr ? pool->add(new ListExpression(pool))
-                            : pool->add(new ListExpression(pool, items));
+    return items == nullptr ? pool->makeAndAdd<ListExpression>(pool)
+                            : pool->makeAndAdd<ListExpression>(pool, items);
   }
 
   const Value &eval(ExpressionContext &ctx) override;
@@ -113,6 +115,7 @@ class ListExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
 
   ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
@@ -134,8 +137,8 @@ class SetExpression final : public Expression {
   SetExpression &operator=(SetExpression &&) = delete;
 
   static SetExpression *make(ObjectPool *pool, ExpressionList *items = nullptr) {
-    return items == nullptr ? pool->add(new SetExpression(pool))
-                            : pool->add(new SetExpression(pool, items));
+    return items == nullptr ? pool->makeAndAdd<SetExpression>(pool)
+                            : pool->makeAndAdd<SetExpression>(pool, items);
   }
 
   const Value &eval(ExpressionContext &ctx) override;
@@ -180,6 +183,7 @@ class SetExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
 
   SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
@@ -201,8 +205,8 @@ class MapExpression final : public Expression {
   MapExpression &operator=(MapExpression &&) = delete;
 
   static MapExpression *make(ObjectPool *pool, MapItemList *items = nullptr) {
-    return items == nullptr ? pool->add(new MapExpression(pool))
-                            : pool->add(new MapExpression(pool, items));
+    return items == nullptr ? pool->makeAndAdd<MapExpression>(pool)
+                            : pool->makeAndAdd<MapExpression>(pool, items);
   }
 
   using Item = std::pair<std::string, Expression *>;
@@ -249,6 +253,7 @@ class MapExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
 
   MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {

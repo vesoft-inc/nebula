@@ -69,18 +69,18 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                    std::vector<storage::cpp2::OrderBy> orderBy = {},
                                    int64_t limit = std::numeric_limits<int64_t>::max(),
                                    Expression* filter = nullptr) {
-    return qctx->objPool()->add(new EdgeIndexPrefixScan(qctx,
-                                                        input,
-                                                        edgeType,
-                                                        space,
-                                                        std::move(contexts),
-                                                        std::move(returnCols),
-                                                        schemaId,
-                                                        isEmptyResultSet,
-                                                        dedup,
-                                                        std::move(orderBy),
-                                                        limit,
-                                                        filter));
+    return qctx->objPool()->makeAndAdd<EdgeIndexPrefixScan>(qctx,
+                                                            input,
+                                                            edgeType,
+                                                            space,
+                                                            std::move(contexts),
+                                                            std::move(returnCols),
+                                                            schemaId,
+                                                            isEmptyResultSet,
+                                                            dedup,
+                                                            std::move(orderBy),
+                                                            limit,
+                                                            filter);
   }
 
   PlanNode* clone() const override {
@@ -90,6 +90,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
   }
 
  private:
+  friend ObjectPool;
   EdgeIndexPrefixScan(QueryContext* qctx,
                       PlanNode* input,
                       const std::string& edgeType,
@@ -131,18 +132,18 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
                                   Expression* filter = nullptr) {
-    return qctx->objPool()->add(new EdgeIndexRangeScan(qctx,
-                                                       input,
-                                                       edgeType,
-                                                       space,
-                                                       std::move(contexts),
-                                                       std::move(returnCols),
-                                                       schemaId,
-                                                       isEmptyResultSet,
-                                                       dedup,
-                                                       std::move(orderBy),
-                                                       limit,
-                                                       filter));
+    return qctx->objPool()->makeAndAdd<EdgeIndexRangeScan>(qctx,
+                                                           input,
+                                                           edgeType,
+                                                           space,
+                                                           std::move(contexts),
+                                                           std::move(returnCols),
+                                                           schemaId,
+                                                           isEmptyResultSet,
+                                                           dedup,
+                                                           std::move(orderBy),
+                                                           limit,
+                                                           filter);
   }
 
   PlanNode* clone() const override {
@@ -152,6 +153,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
   }
 
  private:
+  friend ObjectPool;
   EdgeIndexRangeScan(QueryContext* qctx,
                      PlanNode* input,
                      const std::string& edgeType,
@@ -193,18 +195,18 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
                                  Expression* filter = nullptr) {
-    return qctx->objPool()->add(new EdgeIndexFullScan(qctx,
-                                                      input,
-                                                      edgeType,
-                                                      space,
-                                                      std::move(contexts),
-                                                      std::move(returnCols),
-                                                      schemaId,
-                                                      isEmptyResultSet,
-                                                      dedup,
-                                                      std::move(orderBy),
-                                                      limit,
-                                                      filter));
+    return qctx->objPool()->makeAndAdd<EdgeIndexFullScan>(qctx,
+                                                          input,
+                                                          edgeType,
+                                                          space,
+                                                          std::move(contexts),
+                                                          std::move(returnCols),
+                                                          schemaId,
+                                                          isEmptyResultSet,
+                                                          dedup,
+                                                          std::move(orderBy),
+                                                          limit,
+                                                          filter);
   }
 
   PlanNode* clone() const override {
@@ -214,6 +216,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
   }
 
  private:
+  friend ObjectPool;
   EdgeIndexFullScan(QueryContext* qctx,
                     PlanNode* input,
                     const std::string& edgeType,
@@ -300,18 +303,18 @@ class TagIndexPrefixScan : public TagIndexScan {
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
                                   Expression* filter = nullptr) {
-    return qctx->objPool()->add(new TagIndexPrefixScan(qctx,
-                                                       input,
-                                                       tagName,
-                                                       space,
-                                                       std::move(contexts),
-                                                       std::move(returnCols),
-                                                       schemaId,
-                                                       isEmptyResultSet,
-                                                       dedup,
-                                                       std::move(orderBy),
-                                                       limit,
-                                                       filter));
+    return qctx->objPool()->makeAndAdd<TagIndexPrefixScan>(qctx,
+                                                           input,
+                                                           tagName,
+                                                           space,
+                                                           std::move(contexts),
+                                                           std::move(returnCols),
+                                                           schemaId,
+                                                           isEmptyResultSet,
+                                                           dedup,
+                                                           std::move(orderBy),
+                                                           limit,
+                                                           filter);
   }
 
   PlanNode* clone() const {
@@ -321,6 +324,7 @@ class TagIndexPrefixScan : public TagIndexScan {
   }
 
  private:
+  friend ObjectPool;
   TagIndexPrefixScan(QueryContext* qctx,
                      PlanNode* input,
                      const std::string& tagName,
@@ -362,18 +366,18 @@ class TagIndexRangeScan : public TagIndexScan {
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
                                  Expression* filter = nullptr) {
-    return qctx->objPool()->add(new TagIndexRangeScan(qctx,
-                                                      input,
-                                                      tagName,
-                                                      space,
-                                                      std::move(contexts),
-                                                      std::move(returnCols),
-                                                      schemaId,
-                                                      isEmptyResultSet,
-                                                      dedup,
-                                                      std::move(orderBy),
-                                                      limit,
-                                                      filter));
+    return qctx->objPool()->makeAndAdd<TagIndexRangeScan>(qctx,
+                                                          input,
+                                                          tagName,
+                                                          space,
+                                                          std::move(contexts),
+                                                          std::move(returnCols),
+                                                          schemaId,
+                                                          isEmptyResultSet,
+                                                          dedup,
+                                                          std::move(orderBy),
+                                                          limit,
+                                                          filter);
   }
 
   PlanNode* clone() const {
@@ -383,6 +387,7 @@ class TagIndexRangeScan : public TagIndexScan {
   }
 
  private:
+  friend ObjectPool;
   TagIndexRangeScan(QueryContext* qctx,
                     PlanNode* input,
                     const std::string& tagName,
@@ -424,18 +429,18 @@ class TagIndexFullScan final : public TagIndexScan {
                                 std::vector<storage::cpp2::OrderBy> orderBy = {},
                                 int64_t limit = std::numeric_limits<int64_t>::max(),
                                 Expression* filter = nullptr) {
-    return qctx->objPool()->add(new TagIndexFullScan(qctx,
-                                                     input,
-                                                     tagName,
-                                                     space,
-                                                     std::move(contexts),
-                                                     std::move(returnCols),
-                                                     schemaId,
-                                                     isEmptyResultSet,
-                                                     dedup,
-                                                     std::move(orderBy),
-                                                     limit,
-                                                     filter));
+    return qctx->objPool()->makeAndAdd<TagIndexFullScan>(qctx,
+                                                         input,
+                                                         tagName,
+                                                         space,
+                                                         std::move(contexts),
+                                                         std::move(returnCols),
+                                                         schemaId,
+                                                         isEmptyResultSet,
+                                                         dedup,
+                                                         std::move(orderBy),
+                                                         limit,
+                                                         filter);
   }
 
   PlanNode* clone() const {
@@ -445,6 +450,7 @@ class TagIndexFullScan final : public TagIndexScan {
   }
 
  private:
+  friend ObjectPool;
   TagIndexFullScan(QueryContext* qctx,
                    PlanNode* input,
                    const std::string& tagName,

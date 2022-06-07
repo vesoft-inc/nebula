@@ -354,7 +354,7 @@ PlanNode* Project::clone() const {
 void Project::cloneMembers(const Project& p) {
   SingleInputNode::cloneMembers(p);
 
-  cols_ = qctx_->objPool()->add(new YieldColumns());
+  cols_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
   for (const auto& col : p.columns()->columns()) {
     cols_->addColumn(col->clone().release());
   }

@@ -30,7 +30,7 @@ class PredicateExpression final : public Expression {
                                    const std::string& innerVar = "",
                                    Expression* collection = nullptr,
                                    Expression* filter = nullptr) {
-    return pool->add(new PredicateExpression(pool, name, innerVar, collection, filter));
+    return pool->makeAndAdd<PredicateExpression>(pool, name, innerVar, collection, filter);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -100,6 +100,7 @@ class PredicateExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit PredicateExpression(ObjectPool* pool,
                                const std::string& name = "",
                                const std::string& innerVar = "",
