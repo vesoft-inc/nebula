@@ -157,7 +157,7 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   outputs_.reserve(size);
 
   auto pool = qctx_->objPool();
-  auto *newCols = pool->add(new YieldColumns());
+  auto *newCols = pool->makeAndAdd<YieldColumns>();
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());

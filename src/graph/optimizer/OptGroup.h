@@ -6,6 +6,7 @@
 #ifndef GRAPH_OPTIMIZER_OPTGROUP_H_
 #define GRAPH_OPTIMIZER_OPTGROUP_H_
 
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 
 namespace nebula {
@@ -48,6 +49,7 @@ class OptGroup final {
   }
 
  private:
+  friend ObjectPool;
   explicit OptGroup(OptContext *ctx) noexcept;
 
   static constexpr int16_t kMaxExplorationRound = 128;
@@ -108,6 +110,7 @@ class OptGroupNode final {
   const graph::PlanNode *getPlan() const;
 
  private:
+  friend ObjectPool;
   OptGroupNode(graph::PlanNode *node, const OptGroup *group) noexcept;
 
   graph::PlanNode *node_{nullptr};

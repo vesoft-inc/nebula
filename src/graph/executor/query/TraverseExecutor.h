@@ -84,7 +84,10 @@ class TraverseExecutor final : public StorageAccessExecutor {
                         std::unordered_map<Value, Paths>& zeroSteps,
                         size_t& count);
 
+  Expression* selectFilter();
+
  private:
+  ObjectPool objPool_;
   DataSet reqDs_;
   const Traverse* traverse_{nullptr};
   MatchStepRange* range_{nullptr};

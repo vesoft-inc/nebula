@@ -19,7 +19,7 @@ class ConstantExpression : public Expression {
   ConstantExpression& operator=(ConstantExpression&&) = delete;
 
   static ConstantExpression* make(ObjectPool* pool, Value v = Value(NullType::__NULL__)) {
-    return pool->add(new ConstantExpression(pool, v));
+    return pool->makeAndAdd<ConstantExpression>(pool, v);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -46,6 +46,7 @@ class ConstantExpression : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit ConstantExpression(ObjectPool* pool, Value v = Value(NullType::__NULL__))
       : Expression(pool, Kind::kConstant), val_(std::move(v)) {}
 

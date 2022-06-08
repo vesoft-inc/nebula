@@ -76,6 +76,9 @@ class MatchSolver final {
                                       Expression** initialExpr,
                                       std::string inputVar,
                                       SubPlan& plan);
+
+  // Build yield columns for match & shortestPath statement
+  static void buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan);
 };
 
 }  // namespace graph

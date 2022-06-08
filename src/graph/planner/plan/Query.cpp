@@ -354,7 +354,7 @@ PlanNode* Project::clone() const {
 void Project::cloneMembers(const Project& p) {
   SingleInputNode::cloneMembers(p);
 
-  cols_ = qctx_->objPool()->add(new YieldColumns());
+  cols_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
   for (const auto& col : p.columns()->columns()) {
     cols_->addColumn(col->clone().release());
   }
@@ -687,9 +687,9 @@ void InnerJoin::cloneMembers(const InnerJoin& l) {
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();
-  for (size_t i = 0; i < items_.size(); ++i) {
-    addDescription("varName", items_[i].first, desc.get());
-    addDescription("value", items_[i].second->toString(), desc.get());
+  for (const auto& item : items_) {
+    addDescription("varName", item.first, desc.get());
+    addDescription("value", item.second->toString(), desc.get());
   }
   return desc;
 }
@@ -738,6 +738,9 @@ void Traverse::cloneMembers(const Traverse& g) {
     setEdgeFilter(g.eFilter_->clone());
   }
   setTrackPrevPath(g.trackPrevPath_);
+  if (g.firstStepFilter_ != nullptr) {
+    setFirstStepFilter(g.firstStepFilter_->clone());
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -746,6 +749,9 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());
+  addDescription("first step filter",
+                 firstStepFilter_ != nullptr ? firstStepFilter_->toString() : "",
+                 desc.get());
   return desc;
 }
 

@@ -17,7 +17,7 @@ class TextSearchArgument final {
                                   const std::string& from,
                                   const std::string& prop,
                                   const std::string& val) {
-    return pool->add(new TextSearchArgument(from, prop, val));
+    return pool->makeAndAdd<TextSearchArgument>(from, prop, val);
   }
 
   ~TextSearchArgument() = default;
@@ -75,6 +75,7 @@ class TextSearchArgument final {
   std::string toString() const;
 
  private:
+  friend ObjectPool;
   TextSearchArgument(const std::string& from, const std::string& prop, const std::string& val)
       : from_(from), prop_(prop), val_(val) {}
 
@@ -91,19 +92,23 @@ class TextSearchArgument final {
 class TextSearchExpression : public Expression {
  public:
   static TextSearchExpression* makePrefix(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->add(new TextSearchExpression(pool, Kind::kTSPrefix, arg));
+    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSPrefix, arg);
   }
 
   static TextSearchExpression* makeWildcard(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->add(new TextSearchExpression(pool, Kind::kTSWildcard, arg));
+    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSWildcard, arg);
   }
 
   static TextSearchExpression* makeRegexp(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->add(new TextSearchExpression(pool, Kind::kTSRegexp, arg));
+    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSRegexp, arg);
   }
 
   static TextSearchExpression* makeFuzzy(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->add(new TextSearchExpression(pool, Kind::kTSFuzzy, arg));
+    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSFuzzy, arg);
+  }
+
+  static TextSearchExpression* make(ObjectPool* pool, Kind kind, TextSearchArgument* arg) {
+    return pool->makeAndAdd<TextSearchExpression>(pool, kind, arg);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -121,7 +126,7 @@ class TextSearchExpression : public Expression {
 
   Expression* clone() const override {
     auto arg = TextSearchArgument::make(pool_, arg_->from(), arg_->prop(), arg_->val());
-    return pool_->add(new TextSearchExpression(pool_, kind_, arg));
+    return TextSearchExpression::make(pool_, kind_, arg);
   }
 
   const TextSearchArgument* arg() const {
@@ -137,6 +142,7 @@ class TextSearchExpression : public Expression {
   }
 
  private:
+  friend ObjectPool;
   TextSearchExpression(ObjectPool* pool, Kind kind, TextSearchArgument* arg)
       : Expression(pool, kind) {
     arg_ = arg;
