@@ -99,6 +99,12 @@ def init_parser():
         default=0,
         help='how long in seconds to lock the account after too many consecutive login attempts provide an incorrect password',
     )
+    opt_parser.add_option(
+        '--concurrently_mode',
+        dest='concurrently_mode',
+        default=0,
+        help='Whether run the graph/storage in concurrently mode.'
+    )
     return opt_parser
 
 
@@ -241,7 +247,8 @@ if __name__ == "__main__":
             enable_graph_ssl=configs.enable_graph_ssl,
             enable_meta_ssl=configs.enable_meta_ssl,
             containerized=configs.containerized,
-            use_standalone=is_standalone
+            use_standalone=is_standalone,
+            concurrently_mode=configs.concurrently_mode
         )
 
         if opt_is(configs.cmd, "start"):
