@@ -88,7 +88,7 @@ class IndexTopNNode : public IndexLimitNode {
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
   Result doNext() override;
   void topN();
-  const std::vector<cpp2::OrderBy>* orderBy_;
+  const std::vector<cpp2::OrderBy> orderBy_;
   std::deque<Result> results_;
   bool finished_{false};
   std::vector<std::string> requiredColumns_;

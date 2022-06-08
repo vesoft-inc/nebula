@@ -160,7 +160,7 @@ Status LookupValidator::validateYield() {
     return Status::SemanticError("Missing yield clause.");
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
-  lookupCtx_->yieldExpr = qctx_->objPool()->add(new YieldColumns());
+  lookupCtx_->yieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
 
   if (lookupCtx_->isEdge) {
     idxReturnCols_.emplace_back(nebula::kSrc);

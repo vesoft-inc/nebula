@@ -97,5 +97,35 @@ target_compile_options(range_vs_transform_bm PRIVATE -O3)
 nebula_add_test(
     NAME object_pool_test
     SOURCES ObjectPoolTest.cpp
+    OBJECTS $<TARGET_OBJECTS:base_obj>
     LIBRARIES gtest gtest_main
+)
+
+nebula_add_executable(
+    NAME arena_bm
+    SOURCES ArenaBenchmark.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+    LIBRARIES
+        follybenchmark
+        ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME arena_test
+    SOURCES ArenaTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+        gtest_main
 )

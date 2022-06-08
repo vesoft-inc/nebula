@@ -10,6 +10,7 @@
 #include "common/base/Status.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
+#include "graph/context/ast/CypherAstContext.h"
 
 namespace nebula {
 namespace graph {
@@ -378,5 +379,49 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>> SchemaUtil::getE
   }
   return edgeProps;
 }
+
+std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> SchemaUtil::getEdgeProps(
+    const EdgeInfo &edge, bool reversely, QueryContext *qctx, GraphSpaceID spaceId) {
+  auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
+  for (auto edgeType : edge.edgeTypes) {
+    auto edgeSchema = qctx->schemaMng()->getEdgeSchema(spaceId, edgeType);
+
+    switch (edge.direction) {
+      case Direction::OUT_EDGE: {
+        if (reversely) {
+          edgeType = -edgeType;
+        }
+        break;
+      }
+      case Direction::IN_EDGE: {
+        if (!reversely) {
+          edgeType = -edgeType;
+        }
+        break;
+      }
+      case Direction::BOTH: {
+        EdgeProp edgeProp;
+        edgeProp.type_ref() = -edgeType;
+        std::vector<std::string> props{kSrc, kType, kRank, kDst};
+        for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+          props.emplace_back(edgeSchema->getFieldName(i));
+        }
+        edgeProp.props_ref() = std::move(props);
+        edgeProps->emplace_back(std::move(edgeProp));
+        break;
+      }
+    }
+    EdgeProp edgeProp;
+    edgeProp.type_ref() = edgeType;
+    std::vector<std::string> props{kSrc, kType, kRank, kDst};
+    for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+      props.emplace_back(edgeSchema->getFieldName(i));
+    }
+    edgeProp.props_ref() = std::move(props);
+    edgeProps->emplace_back(std::move(edgeProp));
+  }
+  return edgeProps;
+}
+
 }  // namespace graph
 }  // namespace nebula
