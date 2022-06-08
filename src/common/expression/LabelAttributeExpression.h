@@ -22,7 +22,7 @@ class LabelAttributeExpression final : public Expression {
   static LabelAttributeExpression* make(ObjectPool* pool,
                                         LabelExpression* lhs = nullptr,
                                         ConstantExpression* rhs = nullptr) {
-    return pool->add(new LabelAttributeExpression(pool, lhs, rhs));
+    return pool->makeAndAdd<LabelAttributeExpression>(pool, lhs, rhs);
   }
 
   bool operator==(const Expression& rhs) const override {
@@ -65,6 +65,7 @@ class LabelAttributeExpression final : public Expression {
   std::string toString() const override;
 
  private:
+  friend ObjectPool;
   explicit LabelAttributeExpression(ObjectPool* pool,
                                     LabelExpression* lhs = nullptr,
                                     ConstantExpression* rhs = nullptr)

@@ -19,7 +19,7 @@ class AttributeExpression final : public BinaryExpression {
   static AttributeExpression *make(ObjectPool *pool,
                                    Expression *lhs = nullptr,
                                    Expression *rhs = nullptr) {
-    return pool->add(new AttributeExpression(pool, lhs, rhs));
+    return pool->makeAndAdd<AttributeExpression>(pool, lhs, rhs);
   }
 
   const Value &eval(ExpressionContext &ctx) override;
@@ -33,6 +33,7 @@ class AttributeExpression final : public BinaryExpression {
   }
 
  private:
+  friend ObjectPool;
   explicit AttributeExpression(ObjectPool *pool,
                                Expression *lhs = nullptr,
                                Expression *rhs = nullptr)

@@ -18,18 +18,11 @@ class MatchClausePlanner final : public CypherClausePlanner {
   StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
  private:
-  PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
-
-  Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
-
   Status connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
                          MatchClauseContext* matchClauseCtx,
                          const SubPlan& subplan,
                          std::unordered_set<std::string>& nodeAliasesSeen,
                          SubPlan& matchClausePlan);
-
- private:
-  Expression* initialExpr_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

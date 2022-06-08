@@ -29,6 +29,7 @@ class PlanNode {
     kGetEdges,
     kTraverse,
     kAppendVertices,
+    kShortestPath,
 
     // ------------------
     // TODO(yee): refactor in logical plan
@@ -426,6 +427,7 @@ class BinaryInputNode : public PlanNode {
 
  protected:
   BinaryInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
+  BinaryInputNode(QueryContext* qctx, Kind kind);
 
   void cloneMembers(const BinaryInputNode& node) {
     PlanNode::cloneMembers(node);

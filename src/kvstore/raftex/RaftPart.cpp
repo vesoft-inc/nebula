@@ -401,6 +401,15 @@ const char* RaftPart::roleStr(Role role) const {
 void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
   std::lock_guard<std::mutex> g(raftLock_);
 
+  // There are some rare cases that the part start as learner, but wal is not empty. For example,
+  // the node is dead, and one partition is removed from raft group (majority still alive). However,
+  // the part is added back to raft group again as learner. So the wal may be not empty, what is
+  // worse, there could be case that commitLogId is 0, but wal's lastLogId is not 0, which is
+  // obviously not expected
+  if (asLearner) {
+    wal_->reset();
+  }
+
   lastLogId_ = wal_->lastLogId();
   lastLogTerm_ = wal_->lastLogTerm();
   term_ = lastLogTerm_;
@@ -1989,7 +1998,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     DCHECK_EQ(wal_->lastLogId(), 0);
     status_ = Status::RUNNING;
     VLOG(1) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
-            << ", committedLogTerm_ " << committedLogTerm_ << ", lastLodId " << lastLogId_
+            << ", committedLogTerm_ " << committedLogTerm_ << ", lastLogId " << lastLogId_
             << ", lastLogTermId " << lastLogTerm_;
   }
   resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;

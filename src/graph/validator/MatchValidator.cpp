@@ -139,6 +139,23 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
 Status MatchValidator::buildPathExpr(const MatchPath *path,
                                      Path &pathInfo,
                                      std::unordered_map<std::string, AliasType> &aliasesGenerated) {
+  auto &nodeInfos = pathInfo.nodeInfos;
+  auto &edgeInfos = pathInfo.edgeInfos;
+
+  auto pathType = path->pathType();
+  if (pathType != MatchPath::PathType::kDefault) {
+    if (nodeInfos.size() != 2 || edgeInfos.size() != 1) {
+      return Status::SemanticError(
+          "`shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)");
+    }
+    auto min = edgeInfos.front().range->min();
+    if (min != 0 && min != 1) {
+      return Status::SemanticError(
+          "`shortestPath(...)' does not support a minimal length different from 0 or 1");
+    }
+    pathInfo.pathType = static_cast<Path::PathType>(pathType);
+  }
+
   auto *pathAlias = path->alias();
   if (pathAlias == nullptr) {
     return Status::OK();
@@ -146,10 +163,6 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   if (!aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
   }
-
-  auto &nodeInfos = pathInfo.nodeInfos;
-  auto &edgeInfos = pathInfo.edgeInfos;
-
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
@@ -387,7 +400,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
 Status MatchValidator::validateReturn(MatchReturn *ret,
                                       const std::vector<QueryPart> &queryParts,
                                       ReturnClauseContext &retClauseCtx) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = retClauseCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (ret->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -481,7 +494,7 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 Status MatchValidator::validateWith(const WithClause *with,
                                     const std::vector<QueryPart> &queryParts,
                                     WithClauseContext &withClauseCtx) {
-  YieldColumns *columns = saveObject(new YieldColumns());
+  YieldColumns *columns = withClauseCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (with->returnItems()->allNamedAliases() && !queryParts.empty()) {
     auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
@@ -557,8 +570,8 @@ Status MatchValidator::validateWith(const WithClause *with,
 }
 
 // Check validity of unwind clause.
-// Check column must has alias, check can't contains aggregate expression, check alias in expression
-// must be available, check defined alias don't defined before.
+// Check column must has alias, check can't contains aggregate expression, check alias in
+// expression must be available, check defined alias don't defined before.
 Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
                                       UnwindClauseContext &unwindCtx) {
   if (unwindClause->alias().empty()) {
@@ -625,8 +638,8 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
   return root;
 }
 
-// Convert map attributes of vertex defined in pattern to filter expression and keep origin
-// semantic. e.g. convert match (v{a:1, b:2}) to  v.a == 1 && v.b == 2
+// Convert map attributes of vertex defined in pattern to filter expression and keep origin semantic
+// e.g. convert match (v{a:1, b:2}) to  v.a == 1 && v.b == 2
 StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                                          const std::string &label) const {
   auto *pool = qctx_->objPool();
@@ -834,7 +847,7 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) {
     return Status::OK();
   }
 
-  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->add(new YieldColumns());
+  yieldCtx.projCols_ = yieldCtx.qctx->objPool()->makeAndAdd<YieldColumns>();
   if (!yieldCtx.hasAgg_) {
     for (auto &col : yieldCtx.yieldColumns->columns()) {
       NG_RETURN_IF_ERROR(

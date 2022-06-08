@@ -89,6 +89,20 @@ MetaClient::~MetaClient() {
   VLOG(3) << "~MetaClient";
 }
 
+#ifdef BUILD_STANDALONE
+StatusOr<bool> MetaClient::checkLocalMachineRegistered() {
+  auto ret = heartbeat().get();
+  if (!ret.ok()) {
+    if (ret.status().toString() == "Machine not existed!") {
+      return false;
+    }
+    LOG(ERROR) << "Check register failed: " << ret.status();
+    return Status::Error("Check register failed!");
+  }
+  return true;
+}
+#endif
+
 bool MetaClient::isMetadReady() {
   // UNKNOWN is reserved for tools such as upgrader, in that case the ip/port is not set. We do
   // not send heartbeat to meta to avoid writing error host info (e.g. Host("", 0))

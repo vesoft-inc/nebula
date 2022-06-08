@@ -1137,3 +1137,53 @@ Feature: IndexTest_Vid_String
       | "Alen" | "Bob"           | "abc"         |
       | "Bob"  | "Candy"         | "abc"         |
     Then drop the used space
+
+  Scenario: IndexTest NullableIndex
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG tag_1(col1 bool NULL);
+      CREATE EDGE edge_1(col1 bool NULL);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX v_index_1 ON tag_1(col1);
+      CREATE EDGE INDEX e_index_1 ON edge_1(col1);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX tag_1(col1) VALUES "1":(true);
+      INSERT VERTEX tag_1() VALUES "2":();
+      """
+    Then the execution should be successful
+    When try to execute query:
+      """
+      INSERT EDGE edge_1(col1) VALUES "1" -> "2":(true);
+      INSERT EDGE edge_1() VALUES "2" -> "1":();
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON tag_1 YIELD id(vertex) as vid;
+      """
+    Then the result should be, in any order:
+      | vid |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON edge_1 YIELD src(edge) as src, dst(edge) as dst;
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "2" |
+      | "2" | "1" |
+    Then drop the used space

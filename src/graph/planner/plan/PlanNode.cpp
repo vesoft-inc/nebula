@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "PlanNode.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -293,6 +294,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "BiInnerJoin";
     case Kind::kBiCartesianProduct:
       return "BiCartesianProduct";
+    case Kind::kShortestPath:
+      return "ShortestPath";
     case Kind::kArgument:
       return "Argument";
     case Kind::kRollUpApply:
@@ -419,6 +422,15 @@ BinaryInputNode::BinaryInputNode(QueryContext* qctx,
 
   addDep(right);
   readVariable(right->outputVarPtr());
+}
+
+// It's used for clone
+BinaryInputNode::BinaryInputNode(QueryContext* qctx, Kind kind) : PlanNode(qctx, kind) {
+  addDep(nullptr);
+  inputVars_.emplace_back(nullptr);
+
+  addDep(nullptr);
+  inputVars_.emplace_back(nullptr);
 }
 
 std::unique_ptr<PlanNodeDescription> BinaryInputNode::explain() const {

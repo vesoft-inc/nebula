@@ -63,11 +63,6 @@ class MatchValidator final : public Validator {
 
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
-  template <typename T>
-  T *saveObject(T *obj) const {
-    return qctx_->objPool()->add(obj);
-  }
-
   Status buildNodeInfo(const MatchPath *path,
                        std::vector<NodeInfo> &edgeInfos,
                        std::unordered_map<std::string, AliasType> &aliases);

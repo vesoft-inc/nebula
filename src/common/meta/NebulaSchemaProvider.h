@@ -124,6 +124,10 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 
   StatusOr<std::pair<std::string, int64_t>> getTTLInfo() const;
 
+  bool hasNullableCol() const {
+    return numNullableFields_ != 0;
+  }
+
  protected:
   NebulaSchemaProvider() = default;
 

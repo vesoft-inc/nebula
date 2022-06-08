@@ -16,7 +16,7 @@ namespace nebula {
 class ArgumentList final {
  public:
   static ArgumentList* make(ObjectPool* pool, size_t sz = 0) {
-    return pool->add(new ArgumentList(sz));
+    return pool->makeAndAdd<ArgumentList>(sz);
   }
 
   void addArgument(Expression* arg) {
@@ -48,6 +48,7 @@ class ArgumentList final {
   bool operator==(const ArgumentList& rhs) const;
 
  private:
+  friend ObjectPool;
   ArgumentList() = default;
   explicit ArgumentList(size_t sz) {
     args_.reserve(sz);
@@ -68,8 +69,8 @@ class FunctionCallExpression final : public Expression {
                                       const std::string& name = "",
                                       ArgumentList* args = nullptr) {
     return args == nullptr
-               ? pool->add(new FunctionCallExpression(pool, name, ArgumentList::make(pool)))
-               : pool->add(new FunctionCallExpression(pool, name, args));
+               ? pool->makeAndAdd<FunctionCallExpression>(pool, name, ArgumentList::make(pool))
+               : pool->makeAndAdd<FunctionCallExpression>(pool, name, args);
   }
 
   static FunctionCallExpression* make(ObjectPool* pool,
@@ -79,7 +80,7 @@ class FunctionCallExpression final : public Expression {
     for (auto* arg : args) {
       argList->addArgument(arg);
     }
-    return pool->add(new FunctionCallExpression(pool, name, argList));
+    return FunctionCallExpression::make(pool, name, argList);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -115,6 +116,7 @@ class FunctionCallExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
       : Expression(pool, Kind::kFunctionCall), name_(name), args_(args) {
     if (!name_.empty()) {

@@ -173,20 +173,29 @@ bool StorageServer::start() {
 
 #ifdef BUILD_STANDALONE
   if (FLAGS_add_local_host) {
-    std::vector<HostAddr> hosts = {{FLAGS_local_ip, FLAGS_storage_port}};
-    folly::Baton<> baton;
-    bool isAdded = false;
-    metaClient_->addHosts(hosts).thenValue([&isAdded, &baton](StatusOr<bool> resp) {
-      if (!resp.ok() || !resp.value()) {
-        LOG(ERROR) << "Add hosts for standalone failed.";
-      } else {
-        LOG(INFO) << "Add hosts for standalone succeed.";
-        isAdded = true;
+    // meta allready ready when standalone.
+    auto ret = metaClient_->checkLocalMachineRegistered();
+    if (ret.ok()) {
+      if (!ret.value()) {
+        std::vector<HostAddr> hosts = {{FLAGS_local_ip, FLAGS_storage_port}};
+        folly::Baton<> baton;
+        bool isAdded = false;
+        metaClient_->addHosts(hosts).thenValue([&isAdded, &baton](StatusOr<bool> resp) {
+          if (!resp.ok() || !resp.value()) {
+            LOG(ERROR) << "Add hosts for standalone failed.";
+          } else {
+            LOG(INFO) << "Add hosts for standalone succeed.";
+            isAdded = true;
+          }
+          baton.post();
+        });
+
+        baton.wait();
+        if (!isAdded) {
+          return false;
+        }
       }
-      baton.post();
-    });
-    baton.wait();
-    if (!isAdded) {
+    } else {
       return false;
     }
   }
