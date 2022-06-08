@@ -13,7 +13,7 @@ void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
   auto spaceIdList = req.get_space_ids();
   auto& name = req.get_name();
   for (auto spaceId : spaceIdList) {
-    auto code = env_->kvstore_->dropCheckpoint(spaceId, std::move(name));
+    auto code = env_->kvstore_->dropCheckpoint(spaceId, name);
 
     if (code == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
       continue;
