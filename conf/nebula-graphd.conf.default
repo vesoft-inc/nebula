@@ -69,8 +69,14 @@
 --ws_http_port=19669
 # storage client timeout
 --storage_client_timeout_ms=60000
+# slow query threshold in us
+--slow_query_threshold_us=200000
 # Port to listen on Meta with HTTP protocol, it corresponds to ws_http_port in metad's configuration file
 --ws_meta_http_port=19559
+# Network IO threads number, 0 means physical cpu core num
+--num_netio_threads=0
+# Worker threads number to handle request, 0 means physical cpu core num
+--num_worker_threads=0
 
 ########## authentication ##########
 # Enable authorization

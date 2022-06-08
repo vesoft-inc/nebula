@@ -115,7 +115,19 @@
 --rocksdb_enable_blob_garbage_collection=true
 
 ############### misc ####################
+# Whether remove outdated space data
+--auto_remove_invalid_space=true
+# Network IO threads number
+--num_io_threads=16
+# Worker threads number to handle request
+--num_worker_threads=32
+# Maximum subtasks to run concurrently
+--max_concurrent_subtasks=10
+# The rate limit in bytes when leader synchronizes snapshot data
 --snapshot_part_rate_limit=10485760
+# The amount of data sent in each batch when leader synchronizes snapshot data
 --snapshot_batch_size=1048576
+# The rate limit in bytes when leader synchronizes rebuilding index
 --rebuild_index_part_rate_limit=4194304
+# The amount of data sent in each batch when leader synchronizes rebuilding index
 --rebuild_index_batch_size=1048576
