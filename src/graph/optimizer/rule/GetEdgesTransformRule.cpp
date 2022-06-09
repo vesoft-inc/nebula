@@ -8,6 +8,7 @@
 #include "common/expression/Expression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/rule/GetEdgesTransformUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/visitor/ExtractFilterExprVisitor.h"
@@ -90,14 +91,15 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
 
   newProjectGroupNode->dependsOn(newLimitGroup);
 
-  auto *newScanEdges = traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }
   auto newScanEdgesGroup = OptGroup::create(ctx);
   auto newScanEdgesGroupNode = newScanEdgesGroup->makeGroupNode(newScanEdges);
 
-  auto *newProj = projectEdges(qctx, newScanEdges, traverse->colNames().back());
+  auto *newProj =
+      GetEdgesTransformUtils::projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
   newProj->setOutputVar(traverse->outputVar());
   newProj->setColNames({traverse->colNames().back()});
