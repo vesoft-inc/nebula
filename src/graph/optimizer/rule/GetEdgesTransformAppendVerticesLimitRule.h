@@ -81,9 +81,6 @@ class GetEdgesTransformAppendVerticesLimitRule final : public OptRule {
  private:
   GetEdgesTransformAppendVerticesLimitRule();
 
-  static graph::ScanEdges *traverseToScanEdges(const graph::Traverse *traverse,
-                                               const int64_t limit_count);
-
   static graph::Project *projectEdges(graph::QueryContext *qctx,
                                       graph::PlanNode *input,
                                       const std::string &colName);

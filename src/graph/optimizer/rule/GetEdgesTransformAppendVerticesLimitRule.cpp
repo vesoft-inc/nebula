@@ -8,6 +8,7 @@
 #include "common/expression/Expression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
+#include "graph/optimizer/rule/GetEdgesTransformRule.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/visitor/ExtractFilterExprVisitor.h"
@@ -112,14 +113,15 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
 
   newLimitGroupNode->dependsOn(newAppendVerticesGroup);
 
-  auto *newScanEdges = traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges = GetEdgesTransformRule::traverseToScanEdges(traverse, limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }
   auto newScanEdgesGroup = OptGroup::create(ctx);
   auto newScanEdgesGroupNode = newScanEdgesGroup->makeGroupNode(newScanEdges);
 
-  auto *newProj = projectEdges(qctx, newScanEdges, traverse->colNames().back());
+  auto *newProj =
+      GetEdgesTransformRule::projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
   newProj->setOutputVar(newAppendVertices->inputVar());
   newProj->setColNames({traverse->colNames().back()});
@@ -140,47 +142,6 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
 
 std::string GetEdgesTransformAppendVerticesLimitRule::toString() const {
   return "GetEdgesTransformAppendVerticesLimitRule";
-}
-
-/*static*/ graph::ScanEdges *GetEdgesTransformAppendVerticesLimitRule::traverseToScanEdges(
-    const graph::Traverse *traverse, const int64_t limit_count = -1) {
-  const auto *edgeProps = traverse->edgeProps();
-  if (edgeProps == nullptr) {
-    return nullptr;
-  }
-  for (std::size_t i = 0; i < edgeProps->size(); i++) {
-    auto type = (*edgeProps)[i].get_type();
-    for (std::size_t j = i + 1; j < edgeProps->size(); j++) {
-      if (type == -((*edgeProps)[j].get_type())) {
-        // Don't support to retrieve edges of the inbound/outbound together
-        return nullptr;
-      }
-    }
-  }
-  auto scanEdges = ScanEdges::make(
-      traverse->qctx(),
-      nullptr,
-      traverse->space(),
-      edgeProps == nullptr ? nullptr
-                           : std::make_unique<std::vector<storage::cpp2::EdgeProp>>(*edgeProps),
-      nullptr,
-      traverse->dedup(),
-      limit_count,
-      {},
-      traverse->filter() == nullptr ? nullptr : traverse->filter()->clone());
-  return scanEdges;
-}
-
-/*static*/ graph::Project *GetEdgesTransformAppendVerticesLimitRule::projectEdges(
-    graph::QueryContext *qctx, PlanNode *input, const std::string &colName) {
-  auto *yieldColumns = qctx->objPool()->makeAndAdd<YieldColumns>();
-  auto *edgeExpr = EdgeExpression::make(qctx->objPool());
-  auto *listEdgeExpr = ListExpression::make(qctx->objPool());
-  listEdgeExpr->setItems({edgeExpr});
-  yieldColumns->addColumn(new YieldColumn(listEdgeExpr, colName));
-  auto project = Project::make(qctx, input, yieldColumns);
-  project->setColNames({colName});
-  return project;
 }
 
 }  // namespace opt
