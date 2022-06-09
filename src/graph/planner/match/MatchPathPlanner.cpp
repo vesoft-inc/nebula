@@ -56,59 +56,6 @@ static Expression* genEdgeFilter(const EdgeInfo& edge) {
   return edge.filter;
 }
 
-static StatusOr<std::unique_ptr<std::vector<VertexProp>>> genVertexProps(const NodeInfo& node,
-                                                                         QueryContext* qctx,
-                                                                         GraphSpaceID spaceId) {
-  // TODO
-  UNUSED(node);
-  return SchemaUtil::getAllVertexProp(qctx, spaceId, true);
-}
-
-static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo& edge,
-                                                                          bool reversely,
-                                                                          QueryContext* qctx,
-                                                                          GraphSpaceID spaceId) {
-  auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
-  for (auto edgeType : edge.edgeTypes) {
-    auto edgeSchema = qctx->schemaMng()->getEdgeSchema(spaceId, edgeType);
-
-    switch (edge.direction) {
-      case Direction::OUT_EDGE: {
-        if (reversely) {
-          edgeType = -edgeType;
-        }
-        break;
-      }
-      case Direction::IN_EDGE: {
-        if (!reversely) {
-          edgeType = -edgeType;
-        }
-        break;
-      }
-      case Direction::BOTH: {
-        EdgeProp edgeProp;
-        edgeProp.type_ref() = -edgeType;
-        std::vector<std::string> props{kSrc, kType, kRank, kDst};
-        for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-          props.emplace_back(edgeSchema->getFieldName(i));
-        }
-        edgeProp.props_ref() = std::move(props);
-        edgeProps->emplace_back(std::move(edgeProp));
-        break;
-      }
-    }
-    EdgeProp edgeProp;
-    edgeProp.type_ref() = edgeType;
-    std::vector<std::string> props{kSrc, kType, kRank, kDst};
-    for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-      props.emplace_back(edgeSchema->getFieldName(i));
-    }
-    edgeProp.props_ref() = std::move(props);
-    edgeProps->emplace_back(std::move(edgeProp));
-  }
-  return edgeProps;
-}
-
 static Expression* nodeId(ObjectPool* pool, const NodeInfo& node) {
   return AttributeExpression::make(
       pool, InputPropertyExpression::make(pool, node.alias), ConstantExpression::make(pool, kVid));
@@ -149,7 +96,8 @@ StatusOr<SubPlan> MatchPathPlanner::transform(
                             startIndex,
                             subplan,
                             nodeAliasesSeenInPattern));
-  NG_RETURN_IF_ERROR(projectColumnsBySymbols(qctx, path, subplan));
+
+  MatchSolver::buildProjectColumns(qctx, path, subplan);
   return subplan;
 }
 
@@ -314,10 +262,10 @@ Status MatchPathPlanner::leftExpandFromNode(
     auto& edge = edgeInfos[i - 1];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
-    auto vertexProps = genVertexProps(node, qctx, spaceId);
+    auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
     NG_RETURN_IF_ERROR(vertexProps);
     traverse->setVertexProps(std::move(vertexProps).value());
-    traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
+    traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
@@ -345,7 +293,6 @@ Status MatchPathPlanner::leftExpandFromNode(
     }
   }
 
-  VLOG(1) << subplan;
   auto& node = nodeInfos.front();
   if (!node.anonymous) {
     nodeAliasesSeenInPattern.emplace(node.alias);
@@ -361,7 +308,6 @@ Status MatchPathPlanner::leftExpandFromNode(
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
 
-  VLOG(1) << subplan;
   return Status::OK();
 }
 
@@ -386,10 +332,10 @@ Status MatchPathPlanner::rightExpandFromNode(
     auto& edge = edgeInfos[i];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
-    auto vertexProps = genVertexProps(node, qctx, spaceId);
+    auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
     NG_RETURN_IF_ERROR(vertexProps);
     traverse->setVertexProps(std::move(vertexProps).value());
-    traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
+    traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
@@ -410,7 +356,6 @@ Status MatchPathPlanner::rightExpandFromNode(
     }
   }
 
-  VLOG(1) << subplan;
   auto& node = nodeInfos.back();
   if (!node.anonymous) {
     nodeAliasesSeenInPattern.emplace(node.alias);
@@ -426,7 +371,6 @@ Status MatchPathPlanner::rightExpandFromNode(
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
 
-  VLOG(1) << subplan;
   return Status::OK();
 }
 
@@ -439,73 +383,6 @@ Status MatchPathPlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
                                         std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
   return expandFromNode(
       nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern);
-}
-
-Status MatchPathPlanner::projectColumnsBySymbols(QueryContext* qctx, Path& path, SubPlan& plan) {
-  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
-  std::vector<std::string> colNames;
-  auto& nodeInfos = path.nodeInfos;
-  auto& edgeInfos = path.edgeInfos;
-
-  auto addNode = [this, columns, &colNames, qctx](auto& nodeInfo) {
-    if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
-      columns->addColumn(buildVertexColumn(qctx->objPool(), nodeInfo.alias));
-      colNames.emplace_back(nodeInfo.alias);
-    }
-  };
-
-  auto addEdge = [this, columns, &colNames, qctx](auto& edgeInfo) {
-    if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      columns->addColumn(buildEdgeColumn(qctx->objPool(), edgeInfo));
-      colNames.emplace_back(edgeInfo.alias);
-    }
-  };
-
-  for (size_t i = 0; i < edgeInfos.size(); i++) {
-    addNode(nodeInfos[i]);
-    addEdge(edgeInfos[i]);
-  }
-
-  // last vertex
-  DCHECK(!nodeInfos.empty());
-  addNode(nodeInfos.back());
-
-  if (!path.anonymous) {
-    DCHECK(!path.alias.empty());
-    columns->addColumn(buildPathColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
-    colNames.emplace_back(path.alias);
-  }
-
-  auto project = Project::make(qctx, plan.root, columns);
-  project->setColNames(std::move(colNames));
-
-  plan.root = project;
-  VLOG(1) << plan;
-  return Status::OK();
-}
-
-YieldColumn* MatchPathPlanner::buildVertexColumn(ObjectPool* pool, const std::string& alias) const {
-  return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
-}
-
-YieldColumn* MatchPathPlanner::buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) const {
-  Expression* expr = nullptr;
-  if (edge.range == nullptr) {
-    expr = SubscriptExpression::make(
-        pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
-  } else {
-    auto* args = ArgumentList::make(pool);
-    args->addArgument(VariableExpression::make(pool, "e"));
-    auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
-    expr = ListComprehensionExpression::make(
-        pool, "e", InputPropertyExpression::make(pool, edge.alias), filter);
-  }
-  return new YieldColumn(expr, edge.alias);
-}
-
-YieldColumn* MatchPathPlanner::buildPathColumn(Expression* pathBuild,
-                                               const std::string& alias) const {
-  return new YieldColumn(pathBuild, alias);
 }
 
 }  // namespace graph

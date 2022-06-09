@@ -25,8 +25,8 @@ TEST(ObjectPoolTest, TestPooling) {
   ASSERT_EQ(instances, 0);
 
   ObjectPool pool;
-  ASSERT_NE(pool.add(new MyClass), nullptr);
-  ASSERT_NE(pool.add(new MyClass), nullptr);
+  ASSERT_NE(pool.makeAndAdd<MyClass>(), nullptr);
+  ASSERT_NE(pool.makeAndAdd<MyClass>(), nullptr);
   ASSERT_EQ(instances, 2);
 
   pool.clear();

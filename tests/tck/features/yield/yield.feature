@@ -554,3 +554,10 @@ Feature: Yield Sentence
     Then the result should be, in any order, with relax comparison:
       | counT(*) | aVg(3) | bit_Or(1) |
       | 1        | 3.0    | 1         |
+
+  Scenario: Error message for and/or
+    When executing query:
+      """
+      YIELD -1 AND TRUE;
+      """
+    Then a SemanticError should be raised at runtime: `(-(1) AND true)' is not a valid expression, can not apply `&&' or `AND' operator to `INT' and `BOOL'.
