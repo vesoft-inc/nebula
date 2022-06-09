@@ -106,13 +106,18 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInMachine(
   }
   auto iter = nebula::value(iterRet).get();
 
+  std::vector<std::string> newMachineKeys;
   while (iter->valid()) {
     auto machine = MetaKeyUtils::parseMachineKey(iter->key());
     if (hostMap.find(machine) != hostMap.end()) {
       batch->remove(MetaKeyUtils::machineKey(machine.host, machine.port));
-      batch->put(MetaKeyUtils::machineKey(hostMap[machine].host, hostMap[machine].port), "");
+      auto newMachineKey = MetaKeyUtils::machineKey(hostMap[machine].host, hostMap[machine].port);
+      newMachineKeys.emplace_back(std::move(newMachineKey));
     }
     iter->next();
+  }
+  for (auto& newKey : newMachineKeys) {
+    batch->put(newKey, "");
   }
 
   return retCode;
