@@ -3,8 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
-#define GRAPH_OPTIMIZER_RULE_GETEDGESTRANSFORMRULE_H
+#pragma once
 
 #include "graph/optimizer/OptRule.h"
 
@@ -24,8 +23,8 @@ namespace opt {
 //   1. Match the pattern
 //  Benefits:
 //   1. Avoid doing Traverse to optimize performance
-//  Quey example:
-//   1. match ()-[e]->() return e limit 3
+//  Query example:
+//   1. match ()-[e]->() return e limit 1
 //
 //  Tranformation:
 //  Before:
@@ -35,6 +34,10 @@ namespace opt {
 //           |
 // +---------+---------+
 // |       Limit       |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |   AppendVertices  |
 // +---------+---------+
 //           |
 // +---------+---------+
@@ -55,6 +58,10 @@ namespace opt {
 // +---------+---------+
 //           |
 // +---------+---------+
+// |   AppendVertices  |
+// +---------+---------+
+//           |
+// +---------+---------+
 // |      Project      |
 // +---------+---------+
 //           |
@@ -62,7 +69,7 @@ namespace opt {
 // |      ScanEdges    |
 // +---------+---------+
 
-class GetEdgesTransformRule final : public OptRule {
+class GetEdgesTransformAppendVerticesLimitRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -72,11 +79,14 @@ class GetEdgesTransformRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  GetEdgesTransformRule();
+  GetEdgesTransformAppendVerticesLimitRule();
+
+  static graph::Project *projectEdges(graph::QueryContext *qctx,
+                                      graph::PlanNode *input,
+                                      const std::string &colName);
 
   static std::unique_ptr<OptRule> kInstance;
 };
 
 }  // namespace opt
 }  // namespace nebula
-#endif
