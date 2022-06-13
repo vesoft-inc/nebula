@@ -59,10 +59,11 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
 
     // Automatic generation zone
     auto zoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
-    auto zoneIdRet = getZoneId(zoneName);
-    if (nebula::ok(zoneIdRet)) {
-      LOG(ERROR) << "Zone " << zoneName << " have existed";
-      code = nebula::error(zoneIdRet);
+    auto zoneRet = zoneExist(zoneName);
+    if (zoneRet != nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND) {
+      if (zoneRet == nebula::cpp2::ErrorCode::SUCCEEDED)
+        LOG(ERROR) << "Zone " << zoneName << " have existed";
+      code = nebula::cpp2::ErrorCode::E_KEY_HAS_EXISTS;
       break;
     }
 
@@ -78,9 +79,6 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
       properties.zone_names_ref() = std::move(newZones);
     }
   }
-  for (auto& [spaceId, properties] : spaceMap) {
-    data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
-  }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(code);
@@ -88,6 +86,9 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     return;
   }
 
+  for (auto& [spaceId, properties] : spaceMap) {
+    data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
+  }
   auto ret = doSyncPut(std::move(data));
   handleErrorCode(ret);
   onFinished();
