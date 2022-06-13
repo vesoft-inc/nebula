@@ -22,7 +22,7 @@ class EdgeExpression final : public Expression {
   EdgeExpression& operator=(EdgeExpression&&) = delete;
 
   static EdgeExpression* make(ObjectPool* pool) {
-    return pool->add(new EdgeExpression(pool));
+    return pool->makeAndAdd<EdgeExpression>(pool);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -42,6 +42,7 @@ class EdgeExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit EdgeExpression(ObjectPool* pool) : Expression(pool, Kind::kEdge) {}
 
   void writeTo(Encoder& encoder) const override {

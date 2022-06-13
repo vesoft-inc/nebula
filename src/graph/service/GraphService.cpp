@@ -221,7 +221,12 @@ Status GraphService::auth(const std::string& username, const std::string& passwo
     // There is no way to identify which one is in the graph layer，
     // let's check the native user's password first, then cloud user.
     auto pwdAuth = std::make_unique<PasswordAuthenticator>(metaClient);
-    return pwdAuth->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
+    auto pwdAuthRes = pwdAuth->auth(username, proxygen::md5Encode(folly::StringPiece(password)));
+    if (pwdAuthRes.ok()) {
+      return Status::OK();
+    }
+
+    // Password auth failed, try cloud token
     auto cloudAuth = std::make_unique<CloudAuthenticator>(metaClient);
     return cloudAuth->auth(username, password);
   }

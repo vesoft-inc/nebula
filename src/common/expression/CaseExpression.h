@@ -13,7 +13,7 @@ namespace nebula {
 class CaseList final {
  public:
   static CaseList* make(ObjectPool* pool, size_t sz = 0) {
-    return pool->add(new CaseList(sz));
+    return pool->makeAndAdd<CaseList>(sz);
   }
 
   void add(Expression* when, Expression* then) {
@@ -31,6 +31,7 @@ class CaseList final {
   };
 
  private:
+  friend ObjectPool;
   CaseList() = default;
   explicit CaseList(size_t sz) {
     items_.reserve(sz);
@@ -48,8 +49,8 @@ class CaseExpression final : public Expression {
   CaseExpression& operator=(CaseExpression&&) = delete;
 
   static CaseExpression* make(ObjectPool* pool, CaseList* cases = nullptr, bool isGeneric = true) {
-    return !cases ? pool->add(new CaseExpression(pool))
-                  : pool->add(new CaseExpression(pool, cases, isGeneric));
+    return !cases ? pool->makeAndAdd<CaseExpression>(pool)
+                  : pool->makeAndAdd<CaseExpression>(pool, cases, isGeneric);
   }
 
   bool operator==(const Expression& rhs) const override;
@@ -128,6 +129,7 @@ class CaseExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit CaseExpression(ObjectPool* pool) : Expression(pool, Kind::kCase), isGeneric_(true) {}
 
   CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)

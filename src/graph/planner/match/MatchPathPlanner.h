@@ -49,8 +49,6 @@ class MatchPathPlanner final {
                         SubPlan& subplan,
                         std::unordered_set<std::string>& nodeAliasesSeenInPattern);
 
-  PlanNode* joinLeftAndRightExpandPart(QueryContext* qctx, PlanNode* left, PlanNode* right);
-
   Status leftExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
                             const std::vector<EdgeInfo>& edgeInfos,
                             QueryContext* qctx,
@@ -75,16 +73,6 @@ class MatchPathPlanner final {
                         size_t startIndex,
                         SubPlan& subplan,
                         std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  // Project all named alias.
-  // TODO: Might not neccessary
-  Status projectColumnsBySymbols(QueryContext* qctx, Path& path, SubPlan& plan);
-
-  YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias) const;
-
-  YieldColumn* buildEdgeColumn(ObjectPool* pool, EdgeInfo& edge) const;
-
-  YieldColumn* buildPathColumn(Expression* pathBuild, const std::string& alias) const;
 
  private:
   Expression* initialExpr_{nullptr};

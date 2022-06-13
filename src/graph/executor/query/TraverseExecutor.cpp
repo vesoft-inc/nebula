@@ -52,8 +52,8 @@ Status TraverseExecutor::buildRequestDataSet() {
   for (; iter->valid(); iter->next()) {
     auto vid = src->eval(ctx(iter));
     if (!SchemaUtil::isValidVid(vid, vidType)) {
-      LOG(WARNING) << "Mismatched vid type: " << vid.type()
-                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
+      LOG(ERROR) << "Mismatched vid type: " << vid.type()
+                 << ", space vid type: " << SchemaUtil::typeToString(vidType);
       continue;
     }
     // Need copy here, Argument executor may depends on this variable.
@@ -99,13 +99,28 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->random() : false,
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
-                     finalStep ? traverse_->filter() : nullptr)
+                     selectFilter())
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
         return handleResponse(std::move(resp));
       });
+}
+
+Expression* TraverseExecutor::selectFilter() {
+  Expression* filter = nullptr;
+  if (!(currentStep_ == 1 && zeroStep())) {
+    filter = const_cast<Expression*>(traverse_->filter());
+  }
+  if (currentStep_ == 1) {
+    if (filter == nullptr) {
+      filter = traverse_->firstStepFilter();
+    } else if (traverse_->firstStepFilter() != nullptr) {
+      filter = LogicalExpression::makeAnd(&objPool_, filter, traverse_->firstStepFilter());
+    }
+  }
+  return filter;
 }
 
 void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {

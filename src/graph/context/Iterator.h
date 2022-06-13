@@ -499,6 +499,7 @@ class SequentialIter : public Iterator {
   friend class DataCollectExecutor;
   friend class AppendVerticesExecutor;
   friend class TraverseExecutor;
+  friend class ShortestPathExecutor;
 
   void doReset(size_t pos) override;
 

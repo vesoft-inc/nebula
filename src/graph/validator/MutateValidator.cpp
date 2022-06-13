@@ -379,11 +379,11 @@ Status DeleteVerticesValidator::toPlan() {
     DCHECK(edgeTypes_.size() == edgeNames_.size());
     auto *pool = qctx_->objPool();
     for (auto &name : edgeNames_) {
-      auto *edgeKeyRef = new EdgeKeyRef(EdgeSrcIdExpression::make(pool, name),
-                                        EdgeDstIdExpression::make(pool, name),
-                                        EdgeRankExpression::make(pool, name));
+      auto *edgeKeyRef =
+          qctx_->objPool()->makeAndAdd<EdgeKeyRef>(EdgeSrcIdExpression::make(pool, name),
+                                                   EdgeDstIdExpression::make(pool, name),
+                                                   EdgeRankExpression::make(pool, name));
       edgeKeyRef->setType(EdgeTypeExpression::make(pool, name));
-      qctx_->objPool()->add(edgeKeyRef);
       edgeKeyRefs_.emplace_back(edgeKeyRef);
 
       storage::cpp2::EdgeProp edgeProp;
@@ -566,9 +566,8 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeK
   auto *typeExpr = InputPropertyExpression::make(pool, kType);
   auto *rankExpr = InputPropertyExpression::make(pool, kRank);
   auto *dstIdExpr = InputPropertyExpression::make(pool, kDst);
-  auto *edgeKeyRef = new EdgeKeyRef(srcIdExpr, dstIdExpr, rankExpr);
+  auto *edgeKeyRef = qctx_->objPool()->makeAndAdd<EdgeKeyRef>(srcIdExpr, dstIdExpr, rankExpr);
   edgeKeyRef->setType(typeExpr);
-  qctx_->objPool()->add(edgeKeyRef);
 
   edgeKeyRefs_.emplace_back(edgeKeyRef);
   return Status::OK();

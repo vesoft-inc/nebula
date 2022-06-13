@@ -301,6 +301,16 @@ class MatchPath final {
     return edges_[i].get();
   }
 
+  enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
+
+  PathType pathType() const {
+    return pathType_;
+  }
+
+  void setPathType(PathType type) {
+    pathType_ = type;
+  }
+
   std::string toString() const;
 
   MatchPath clone() const {
@@ -318,6 +328,7 @@ class MatchPath final {
   std::unique_ptr<std::string> alias_;
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
+  PathType pathType_{PathType::kDefault};
 };
 
 }  // namespace nebula

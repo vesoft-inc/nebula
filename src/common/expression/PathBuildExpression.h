@@ -18,7 +18,7 @@ class PathBuildExpression final : public Expression {
   PathBuildExpression& operator=(PathBuildExpression&&) = delete;
 
   static PathBuildExpression* make(ObjectPool* pool) {
-    return pool->add(new PathBuildExpression(pool));
+    return pool->makeAndAdd<PathBuildExpression>(pool);
   }
 
   const Value& eval(ExpressionContext& ctx) override;
@@ -54,6 +54,7 @@ class PathBuildExpression final : public Expression {
   }
 
  private:
+  friend ObjectPool;
   explicit PathBuildExpression(ObjectPool* pool) : Expression(pool, Kind::kPathBuild) {}
 
   void writeTo(Encoder& encoder) const override;

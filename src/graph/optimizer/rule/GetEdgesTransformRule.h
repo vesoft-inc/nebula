@@ -29,9 +29,12 @@ namespace opt {
 //
 //  Tranformation:
 //  Before:
-//
 // +---------+---------+
-// |   AppendVertices  |
+// |      Project      |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |       Limit       |
 // +---------+---------+
 //           |
 // +---------+---------+
@@ -43,9 +46,12 @@ namespace opt {
 // +---------+---------+
 //
 //  After:
-//
 // +---------+---------+
-// |   AppendVertices  |
+// |      Project      |
+// +---------+---------+
+//           |
+// +---------+---------+
+// |       Limit       |
 // +---------+---------+
 //           |
 // +---------+---------+
@@ -67,12 +73,6 @@ class GetEdgesTransformRule final : public OptRule {
 
  private:
   GetEdgesTransformRule();
-
-  static graph::ScanEdges *traverseToScanEdges(const graph::Traverse *traverse);
-
-  static graph::Project *projectEdges(graph::QueryContext *qctx,
-                                      graph::PlanNode *input,
-                                      const std::string &colName);
 
   static std::unique_ptr<OptRule> kInstance;
 };
