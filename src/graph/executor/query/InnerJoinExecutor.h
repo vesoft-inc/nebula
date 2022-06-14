@@ -34,11 +34,20 @@ class InnerJoinExecutor : public JoinExecutor {
   template <class T>
   void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
                    const T& val,
-                   const Row& rRow,
+                   Row rRow,
                    DataSet& ds) const;
+
+  // concat rows
+  Row newRow(Row left, Row right) const;
+
+  const std::string& leftVar() const;
+
+  const std::string& rightVar() const;
 
  private:
   bool exchange_{false};
+  // Does the probe result movable?
+  bool mv_{false};
 };
 
 // No diffrence with inner join in processing data, but the dependencies would be executed in

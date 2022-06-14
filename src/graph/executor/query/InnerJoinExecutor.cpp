@@ -38,10 +38,12 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
     hashTable.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
       buildSingleKeyHashTable(hashKeys.front(), lhsIter_.get(), hashTable);
+      mv_ = movable(rightVar());
       result = singleKeyProbe(probeKeys.front(), rhsIter_.get(), hashTable);
     } else {
       exchange_ = true;
       buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable);
+      mv_ = movable(leftVar());
       result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
@@ -49,10 +51,12 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
     hashTable.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
       buildHashTable(hashKeys, lhsIter_.get(), hashTable);
+      mv_ = movable(rightVar());
       result = probe(probeKeys, rhsIter_.get(), hashTable);
     } else {
       exchange_ = true;
       buildHashTable(probeKeys, rhsIter_.get(), hashTable);
+      mv_ = movable(leftVar());
       result = probe(hashKeys, lhsIter_.get(), hashTable);
     }
   }
@@ -74,7 +78,13 @@ DataSet InnerJoinExecutor::probe(
       Value val = col->eval(ctx(probeIter));
       list.values.emplace_back(std::move(val));
     }
-    buildNewRow<List>(hashTable, list, *probeIter->row(), ds);
+    if (mv_) {
+      // Probe row only match key in HashTable once, so we could move it directly,
+      // key/value in HashTable will be matched multiple times, so we can't move it.
+      buildNewRow<List>(hashTable, list, probeIter->moveRow(), ds);
+    } else {
+      buildNewRow<List>(hashTable, list, *probeIter->row(), ds);
+    }
   }
   return ds;
 }
@@ -87,7 +97,13 @@ DataSet InnerJoinExecutor::singleKeyProbe(
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
     auto& val = probeKey->eval(ctx(probeIter));
-    buildNewRow<Value>(hashTable, val, *probeIter->row(), ds);
+    if (mv_) {
+      // Probe row only match key in HashTable once, so we could move it directly,
+      // key/value in HashTable will be matched multiple times, so we can't move it.
+      buildNewRow<Value>(hashTable, val, probeIter->moveRow(), ds);
+    } else {
+      buildNewRow<Value>(hashTable, val, *probeIter->row(), ds);
+    }
   }
   return ds;
 }
@@ -95,29 +111,52 @@ DataSet InnerJoinExecutor::singleKeyProbe(
 template <class T>
 void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
                                     const T& val,
-                                    const Row& rRow,
+                                    Row rRow,
                                     DataSet& ds) const {
   const auto& range = hashTable.find(val);
   if (range == hashTable.end()) {
     return;
   }
-  for (auto* row : range->second) {
-    auto& lRow = *row;
-    Row newRow;
-    newRow.reserve(lRow.size() + rRow.size());
-    auto& values = newRow.values;
+  for (std::size_t i = 0; i < (range->second.size() - 1); ++i) {
     if (exchange_) {
-      values.insert(values.end(),
-                    std::make_move_iterator(rRow.values.begin()),
-                    std::make_move_iterator(rRow.values.end()));
-      values.insert(values.end(), lRow.values.begin(), lRow.values.end());
+      ds.rows.emplace_back(newRow(rRow, *range->second[i]));
     } else {
-      values.insert(values.end(), lRow.values.begin(), lRow.values.end());
-      values.insert(values.end(),
-                    std::make_move_iterator(rRow.values.begin()),
-                    std::make_move_iterator(rRow.values.end()));
+      ds.rows.emplace_back(newRow(*range->second[i], rRow));
     }
-    ds.rows.emplace_back(std::move(newRow));
+  }
+  // Move probe row in last new row creating
+  if (exchange_) {
+    ds.rows.emplace_back(newRow(std::move(rRow), *range->second.back()));
+  } else {
+    ds.rows.emplace_back(newRow(*range->second.back(), std::move(rRow)));
+  }
+}
+
+Row InnerJoinExecutor::newRow(Row left, Row right) const {
+  Row r;
+  r.reserve(left.size() + right.size());
+  r.values.insert(r.values.end(),
+                  std::make_move_iterator(left.values.begin()),
+                  std::make_move_iterator(left.values.end()));
+  r.values.insert(r.values.end(),
+                  std::make_move_iterator(right.values.begin()),
+                  std::make_move_iterator(right.values.end()));
+  return r;
+}
+
+const std::string& InnerJoinExecutor::leftVar() const {
+  if (node_->kind() == PlanNode::Kind::kBiInnerJoin) {
+    return node_->asNode<BiJoin>()->leftInputVar();
+  } else {
+    return node_->asNode<Join>()->leftVar().first;
+  }
+}
+
+const std::string& InnerJoinExecutor::rightVar() const {
+  if (node_->kind() == PlanNode::Kind::kBiInnerJoin) {
+    return node_->asNode<BiJoin>()->rightInputVar();
+  } else {
+    return node_->asNode<Join>()->rightVar().first;
   }
 }
 
@@ -132,5 +171,6 @@ folly::Future<Status> BiInnerJoinExecutor::execute() {
   NG_RETURN_IF_ERROR(checkBiInputDataSets());
   return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
 }
+
 }  // namespace graph
 }  // namespace nebula

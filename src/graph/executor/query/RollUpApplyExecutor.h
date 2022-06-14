@@ -51,6 +51,8 @@ class RollUpApplyExecutor : public Executor {
   std::unique_ptr<Iterator> lhsIter_;
   std::unique_ptr<Iterator> rhsIter_;
   size_t colSize_{0};
+  // Does the probe result movable?
+  bool mv_{false};
 };
 
 }  // namespace graph
