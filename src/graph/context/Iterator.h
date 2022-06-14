@@ -123,6 +123,9 @@ class Iterator {
 
   virtual const Value& getColumn(int32_t index) const = 0;
 
+  // Get index of the column in tuple
+  virtual StatusOr<std::size_t> getColumnIndex(const std::string& col) const = 0;
+
   template <typename Iter>
   const Value& getColumnByIndex(int32_t index, Iter iter) const {
     int32_t size = static_cast<int32_t>(iter->size());
@@ -225,6 +228,11 @@ class DefaultIter final : public Iterator {
     return Value::kEmpty;
   }
 
+  StatusOr<std::size_t> getColumnIndex(const std::string&) const override {
+    DLOG(FATAL) << "This method should not be invoked";
+    return Status::Error("Unimplemented method");
+  }
+
   const Row* row() const override {
     DLOG(FATAL) << "This method should not be invoked";
     return nullptr;
@@ -304,6 +312,8 @@ class GetNeighborsIter final : public Iterator {
   const Value& getColumn(const std::string& col) const override;
 
   const Value& getColumn(int32_t index) const override;
+
+  StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
 
   const Value& getTagProp(const std::string& tag, const std::string& prop) const override;
 
@@ -482,6 +492,8 @@ class SequentialIter : public Iterator {
 
   const Value& getColumn(int32_t index) const override;
 
+  StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
+
   Value getVertex(const std::string& name = "") const override;
 
   Value getEdge() const override;
@@ -529,6 +541,8 @@ class PropIter final : public SequentialIter {
   const Value& getColumn(const std::string& col) const override;
 
   const Value& getColumn(int32_t index) const override;
+
+  StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
 
   Value getVertex(const std::string& name = "") const override;
 

@@ -6,6 +6,8 @@
 #ifndef GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
 #define GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
 
+#include <cstddef>
+
 #include "common/context/ExpressionContext.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/Iterator.h"
@@ -28,6 +30,10 @@ class QueryExpressionContext final : public ExpressionContext {
   // Get the specified property from a variable, such as $a.prop_name
   const Value& getVarProp(const std::string& var, const std::string& prop) const override;
 
+  // Get index of property index in variable tuple
+  StatusOr<std::size_t> getVarPropIndex(const std::string& var,
+                                        const std::string& prop) const override;
+
   // Get the specified property from the tag, such as tag.prop_name
   Value getTagProp(const std::string& tag, const std::string& prop) const override;
 
@@ -44,8 +50,11 @@ class QueryExpressionContext final : public ExpressionContext {
   // Get the specified property from the input, such as $-.prop_name
   const Value& getInputProp(const std::string& prop) const override;
 
+  // Get index of property index in input tuple
+  StatusOr<std::size_t> getInputPropIndex(const std::string& prop) const override;
+
   // Get the value by column index
-  Value getColumn(int32_t index) const override;
+  const Value& getColumn(int32_t index) const override;
 
   // Get Vertex
   Value getVertex(const std::string& name = "") const override;

@@ -68,7 +68,14 @@ void TagPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& InputPropertyExpression::eval(ExpressionContext& ctx) {
-  return ctx.getInputProp(prop_);
+  if (!propIndex_.has_value()) {
+    auto indexResult = ctx.getInputPropIndex(prop_);
+    if (!indexResult.ok()) {
+      return Value::kEmpty;
+    }
+    propIndex_ = indexResult.value();
+  }
+  return ctx.getColumn(propIndex_.value());
 }
 
 void InputPropertyExpression::accept(ExprVisitor* visitor) {
@@ -76,7 +83,14 @@ void InputPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 const Value& VariablePropertyExpression::eval(ExpressionContext& ctx) {
-  return ctx.getVarProp(sym_, prop_);
+  if (!propIndex_.has_value()) {
+    auto indexResult = ctx.getVarPropIndex(sym_, prop_);
+    if (!indexResult.ok()) {
+      return Value::kEmpty;
+    }
+    propIndex_ = indexResult.value();
+  }
+  return ctx.getColumn(propIndex_.value());
 }
 
 void VariablePropertyExpression::accept(ExprVisitor* visitor) {
