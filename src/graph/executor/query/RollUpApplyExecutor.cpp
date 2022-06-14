@@ -84,7 +84,7 @@ DataSet RollUpApplyExecutor::probeZeroKey(Iterator* probeIter, const List& hashT
   ds.rows.reserve(probeIter->size());
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
-    Row row = *probeIter->row();
+    Row row = mv_ ? probeIter->moveRow() : *probeIter->row();
     row.emplace_back(std::move(hashTable));
     ds.rows.emplace_back(std::move(row));
   }
@@ -104,7 +104,7 @@ DataSet RollUpApplyExecutor::probeSingleKey(Expression* probeKey,
     if (found != hashTable.end()) {
       vals = found->second;
     }
-    Row row = *probeIter->row();
+    Row row = mv_ ? probeIter->moveRow() : *probeIter->row();
     row.emplace_back(std::move(vals));
     ds.rows.emplace_back(std::move(row));
   }
@@ -130,7 +130,7 @@ DataSet RollUpApplyExecutor::probe(std::vector<Expression*> probeKeys,
     if (found != hashTable.end()) {
       vals = found->second;
     }
-    Row row = *probeIter->row();
+    Row row = mv_ ? probeIter->moveRow() : *probeIter->row();
     row.emplace_back(std::move(vals));
     ds.rows.emplace_back(std::move(row));
   }
@@ -141,6 +141,7 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
   auto* rollUpApplyNode = asNode<RollUpApply>(node());
   NG_RETURN_IF_ERROR(checkBiInputDataSets());
   DataSet result;
+  mv_ = movable(node()->inputVars()[0]);
   if (rollUpApplyNode->compareCols().size() == 0) {
     List hashTable;
     buildZeroKeyHashTable(rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
