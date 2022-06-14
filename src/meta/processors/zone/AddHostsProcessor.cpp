@@ -43,6 +43,7 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     onFinished();
     return;
   }
+
   while (spaceIter->valid()) {
     spaceMap.emplace(MetaKeyUtils::spaceId(spaceIter->key()),
                      MetaKeyUtils::parseSpace(spaceIter->val()));
@@ -61,9 +62,11 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     auto zoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
     auto zoneRet = zoneExist(zoneName);
     if (zoneRet != nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND) {
-      if (zoneRet == nebula::cpp2::ErrorCode::SUCCEEDED)
+      if (zoneRet == nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Zone " << zoneName << " have existed";
-      code = nebula::cpp2::ErrorCode::E_KEY_HAS_EXISTS;
+        zoneRet = nebula::cpp2::ErrorCode::E_KEY_HAS_EXISTS;
+      }
+      code = zoneRet;
       break;
     }
 
