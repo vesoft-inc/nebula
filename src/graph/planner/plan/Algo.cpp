@@ -5,6 +5,7 @@
 
 #include "graph/planner/plan/Algo.h"
 
+#include "PlanNode.h"
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
@@ -106,6 +107,16 @@ std::unique_ptr<PlanNodeDescription> BiCartesianProduct::explain() const {
   return BinaryInputNode::explain();
 }
 
+PlanNode* BiCartesianProduct::clone() const {
+  auto* node = make(qctx_);
+  node->cloneMembers(*this);
+  return node;
+}
+
+void BiCartesianProduct::cloneMembers(const BiCartesianProduct& r) {
+  BinaryInputNode::cloneMembers(r);
+}
+
 BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right)
     : BinaryInputNode(qctx, Kind::kBiCartesianProduct, left, right) {
   auto lColNames = left->colNames();
@@ -113,5 +124,9 @@ BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanN
   lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
   setColNames(lColNames);
 }
+
+BiCartesianProduct::BiCartesianProduct(QueryContext* qctx)
+    : BinaryInputNode(qctx, Kind::kBiCartesianProduct) {}
+
 }  // namespace graph
 }  // namespace nebula

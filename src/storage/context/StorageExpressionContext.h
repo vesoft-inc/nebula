@@ -6,6 +6,8 @@
 #ifndef STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
 #define STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
 
+#include <cstddef>
+
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -77,6 +79,12 @@ class StorageExpressionContext final : public ExpressionContext {
     return Value::kNullValue;
   }
 
+  // Get index of property in variable tuple
+  StatusOr<std::size_t> getVarPropIndex(const std::string&, const std::string&) const override {
+    DLOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
+
   /**
    * @brief Get the specified property of tagName from the destination vertex, such as
    * $$.tagName.prop_name
@@ -96,12 +104,18 @@ class StorageExpressionContext final : public ExpressionContext {
     return Value::kNullValue;
   }
 
+  // Get index of property in input tuple
+  StatusOr<std::size_t> getInputPropIndex(const std::string&) const override {
+    DLOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
+
   /**
    * @brief Get the value by column index
    *
    * @return Value
    */
-  Value getColumn(int32_t) const override {
+  const Value& getColumn(int32_t) const override {
     return Value::kNullValue;
   }
 

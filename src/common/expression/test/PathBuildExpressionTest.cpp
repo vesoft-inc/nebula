@@ -15,7 +15,7 @@ TEST_F(PathBuildExpressionTest, PathBuild) {
         .add(VariablePropertyExpression::make(&pool, "var1", "path_edge1"))
         .add(VariablePropertyExpression::make(&pool, "var1", "path_v1"));
     auto eval = Expression::eval(expr, gExpCtxt);
-    EXPECT_EQ(eval.type(), Value::Type::PATH);
+    ASSERT_EQ(eval.type(), Value::Type::PATH);
     Path expected;
     expected.src = Vertex("1", {});
     expected.steps.emplace_back(Step(Vertex("2", {}), 1, "edge", 0, {}));

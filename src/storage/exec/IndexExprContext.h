@@ -5,6 +5,8 @@
 #ifndef STORAGE_EXEC_INDEXEXPRCONTEXT_H
 #define STORAGE_EXEC_INDEXEXPRCONTEXT_H
 
+#include <cstddef>
+
 #include "common/expression/Expression.h"
 #include "storage/exec/IndexNode.h"
 
@@ -49,6 +51,12 @@ class IndexExprContext : public ExpressionContext {
     UNUSED(var), UNUSED(prop);
     return fatal(__FILE__, __LINE__);
   }
+  StatusOr<std::size_t> getVarPropIndex(const std::string &var,
+                                        const std::string &prop) const override {
+    UNUSED(var), UNUSED(prop);
+    DLOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
   Value getSrcProp(const std::string &tag, const std::string &prop) const override {
     UNUSED(tag), UNUSED(prop);
     return fatal(__FILE__, __LINE__);
@@ -61,13 +69,18 @@ class IndexExprContext : public ExpressionContext {
     UNUSED(prop);
     return fatal(__FILE__, __LINE__);
   }
+  StatusOr<std::size_t> getInputPropIndex(const std::string &prop) const override {
+    UNUSED(prop);
+    DLOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
   Value getVertex(const std::string &) const override {
     return fatal(__FILE__, __LINE__);
   }
   Value getEdge() const override {
     return fatal(__FILE__, __LINE__);
   }
-  Value getColumn(int32_t index) const override {
+  const Value &getColumn(int32_t index) const override {
     UNUSED(index);
     return fatal(__FILE__, __LINE__);
   }

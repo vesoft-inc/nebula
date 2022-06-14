@@ -419,7 +419,7 @@ class BinaryInputNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    LOG(FATAL) << "Shouldn't call the unimplemented method for " << kind_;
     return nullptr;
   }
 
@@ -427,6 +427,7 @@ class BinaryInputNode : public PlanNode {
 
  protected:
   BinaryInputNode(QueryContext* qctx, Kind kind, const PlanNode* left, const PlanNode* right);
+  BinaryInputNode(QueryContext* qctx, Kind kind);
 
   void cloneMembers(const BinaryInputNode& node) {
     PlanNode::cloneMembers(node);

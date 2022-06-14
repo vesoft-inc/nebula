@@ -30,6 +30,9 @@ class JoinExecutor : public Executor {
                                Iterator* iter,
                                std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
 
+  // concat rows
+  Row newRow(Row left, Row right) const;
+
   std::unique_ptr<Iterator> lhsIter_;
   std::unique_ptr<Iterator> rhsIter_;
   size_t colSize_{0};
