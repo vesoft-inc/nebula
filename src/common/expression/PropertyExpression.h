@@ -6,6 +6,8 @@
 #ifndef COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
 #define COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
 
+#include <cstddef>
+
 #include "common/expression/Expression.h"
 
 namespace nebula {
@@ -198,6 +200,9 @@ class InputPropertyExpression final : public PropertyExpression {
   friend ObjectPool;
   explicit InputPropertyExpression(ObjectPool* pool, const std::string& prop = "")
       : PropertyExpression(pool, Kind::kInputProperty, kInputRef, "", prop) {}
+
+  // runtime info
+  std::optional<std::size_t> propIndex_;
 };
 
 // $VarName.any_prop_name
@@ -228,6 +233,9 @@ class VariablePropertyExpression final : public PropertyExpression {
                                       const std::string& var = "",
                                       const std::string& prop = "")
       : PropertyExpression(pool, Kind::kVarProperty, kVarRef, var, prop) {}
+
+  // runtime info
+  std::optional<std::size_t> propIndex_;
 };
 
 // $^.TagName.any_prop_name
