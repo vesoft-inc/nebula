@@ -614,4 +614,19 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | src   | dst   |
       | "300" | "400" |
+    When try to execute query:
+      """
+      INSERT EDGE like(grade) VALUES "3000000000000000000000000000000000000000000000000000000000" -> "400":(888)
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit integer or a string fitting space vertex id length limit.
+    When try to execute query:
+      """
+      INSERT EDGE like(grade) VALUES "300" -> "4000000000000000000000000000000000000000000000000000000000":(888)
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit integer or a string fitting space vertex id length limit.
+    When try to execute query:
+      """
+      INSERT EDGE like(grade) VALUES "300000000000000000000000000000000000000000000000000" -> "4000000000000000000000000000000000000000000000000000000000":(888)
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit integer or a string fitting space vertex id length limit.
     Then drop the used space

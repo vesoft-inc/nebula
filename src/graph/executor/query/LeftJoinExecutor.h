@@ -35,9 +35,11 @@ class LeftJoinExecutor : public JoinExecutor {
   template <class T>
   void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
                    const T& val,
-                   const Row& lRow,
+                   Row lRow,
                    DataSet& ds) const;
 
+  // Does the probe result movable?
+  bool mv_{false};
   size_t rightColSize_{0};
 };
 

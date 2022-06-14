@@ -32,6 +32,7 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
     hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable);
+      mv_ = movable(node()->inputVars()[0]);
       result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
@@ -39,6 +40,7 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
     hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildHashTable(probeKeys, rhsIter_.get(), hashTable);
+      mv_ = movable(node()->inputVars()[0]);
       result = probe(hashKeys, lhsIter_.get(), hashTable);
     }
   }
@@ -62,7 +64,13 @@ DataSet LeftJoinExecutor::probe(
       list.values.emplace_back(std::move(val));
     }
 
-    buildNewRow<List>(hashTable, list, *probeIter->row(), ds);
+    if (mv_) {
+      // Probe row only match key in HashTable once, so we could move it directly,
+      // key/value in HashTable will be matched multiple times, so we can't move it.
+      buildNewRow<List>(hashTable, list, probeIter->moveRow(), ds);
+    } else {
+      buildNewRow<List>(hashTable, list, *probeIter->row(), ds);
+    }
   }
   return ds;
 }
@@ -76,7 +84,13 @@ DataSet LeftJoinExecutor::singleKeyProbe(
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
     auto& val = probeKey->eval(ctx(probeIter));
-    buildNewRow<Value>(hashTable, val, *probeIter->row(), ds);
+    if (mv_) {
+      // Probe row only match key in HashTable once, so we could move it directly,
+      // key/value in HashTable will be matched multiple times, so we can't move it.
+      buildNewRow<Value>(hashTable, val, probeIter->moveRow(), ds);
+    } else {
+      buildNewRow<Value>(hashTable, val, *probeIter->row(), ds);
+    }
   }
   return ds;
 }
@@ -84,7 +98,7 @@ DataSet LeftJoinExecutor::singleKeyProbe(
 template <class T>
 void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
                                    const T& val,
-                                   const Row& lRow,
+                                   Row lRow,
                                    DataSet& ds) const {
   auto range = hashTable.find(val);
   if (range == hashTable.end()) {
@@ -98,17 +112,11 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
     values.insert(values.end(), colSize_ - lRowSize, Value::kNullValue);
     ds.rows.emplace_back(std::move(newRow));
   } else {
-    for (auto* row : range->second) {
-      auto& rRow = *row;
-      Row newRow;
-      auto& values = newRow.values;
-      values.reserve(lRow.size() + rRow.size());
-      values.insert(values.end(),
-                    std::make_move_iterator(lRow.values.begin()),
-                    std::make_move_iterator(lRow.values.end()));
-      values.insert(values.end(), rRow.values.begin(), rRow.values.end());
-      ds.rows.emplace_back(std::move(newRow));
+    for (std::size_t i = 0; i < (range->second.size() - 1); ++i) {
+      ds.rows.emplace_back(newRow(lRow, *range->second[i]));
     }
+    // Move probe row in last new row creating
+    ds.rows.emplace_back(newRow(std::move(lRow), *range->second.back()));
   }
 }
 

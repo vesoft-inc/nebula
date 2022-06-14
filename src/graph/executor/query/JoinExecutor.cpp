@@ -80,5 +80,17 @@ void JoinExecutor::buildSingleKeyHashTable(
   }
 }
 
+Row JoinExecutor::newRow(Row left, Row right) const {
+  Row r;
+  r.reserve(left.size() + right.size());
+  r.values.insert(r.values.end(),
+                  std::make_move_iterator(left.values.begin()),
+                  std::make_move_iterator(left.values.end()));
+  r.values.insert(r.values.end(),
+                  std::make_move_iterator(right.values.begin()),
+                  std::make_move_iterator(right.values.end()));
+  return r;
+}
+
 }  // namespace graph
 }  // namespace nebula

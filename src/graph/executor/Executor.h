@@ -97,6 +97,9 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   // Check whether the variable is movable, it's movable when reach end of lifetime
   // This method shouldn't call after `finish` method!
   bool movable(const Variable *var);
+  bool movable(const std::string &var) {
+    return movable(qctx_->symTable()->getVar(var));
+  }
 
   // Store the result of this executor to execution context
   Status finish(Result &&result);

@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/optimizer/rule/GetEdgesTransformRule.h"
+#include "graph/optimizer/rule/GetEdgesTransformAppendVerticesLimitRule.h"
 
 #include "common/expression/Expression.h"
 #include "graph/optimizer/OptContext.h"
@@ -14,6 +14,7 @@
 #include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::Expression;
+using nebula::graph::AppendVertices;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
 using nebula::graph::Project;
@@ -25,32 +26,35 @@ using nebula::graph::Traverse;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> GetEdgesTransformRule::kInstance =
-    std::unique_ptr<GetEdgesTransformRule>(new GetEdgesTransformRule());
+std::unique_ptr<OptRule> GetEdgesTransformAppendVerticesLimitRule::kInstance =
+    std::unique_ptr<GetEdgesTransformAppendVerticesLimitRule>(
+        new GetEdgesTransformAppendVerticesLimitRule());
 
-GetEdgesTransformRule::GetEdgesTransformRule() {
+GetEdgesTransformAppendVerticesLimitRule::GetEdgesTransformAppendVerticesLimitRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &GetEdgesTransformRule::pattern() const {
+const Pattern &GetEdgesTransformAppendVerticesLimitRule::pattern() const {
   static Pattern pattern = Pattern::create(
       PlanNode::Kind::kProject,
-      {Pattern::create({PlanNode::Kind::kLimit},
-                       {Pattern::create(PlanNode::Kind::kTraverse,
-                                        {Pattern::create(PlanNode::Kind::kScanVertices)})})});
+      {Pattern::create(
+          PlanNode::Kind::kLimit,
+          {Pattern::create(PlanNode::Kind::kAppendVertices,
+                           {Pattern::create(PlanNode::Kind::kTraverse,
+                                            {Pattern::create(PlanNode::Kind::kScanVertices)})})})});
   return pattern;
 }
 
-bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched) const {
+bool GetEdgesTransformAppendVerticesLimitRule::match(OptContext *ctx,
+                                                     const MatchedResult &matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  auto traverse = static_cast<const Traverse *>(matched.planNode({0, 0, 0}));
+  auto traverse = static_cast<const Traverse *>(matched.planNode({0, 0, 0, 0}));
   auto project = static_cast<const Project *>(matched.planNode({0}));
   const auto &colNames = traverse->colNames();
   auto colSize = colNames.size();
   DCHECK_GE(colSize, 2);
-  // TODO: Poor readability for optimizer, is there any other way to do the same thing?
   if (colNames[colSize - 2][0] != '_') {  // src
     return false;
   }
@@ -66,7 +70,7 @@ bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched)
   return true;
 }
 
-StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
+StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::transform(
     OptContext *ctx, const MatchedResult &matched) const {
   auto projectGroupNode = matched.node;
   auto project = static_cast<const Project *>(projectGroupNode->node());
@@ -77,19 +81,37 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
 
   auto limitGroupNode = matched.dependencies.front().node;
   auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  auto traverseGroupNode = matched.dependencies.front().dependencies.front().node;
-  auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
-  auto scanVerticesGroupNode =
-      matched.dependencies.front().dependencies.front().dependencies.front().node;
-  auto qctx = ctx->qctx();
 
   auto newLimit = limit->clone();
   auto newLimitGroup = OptGroup::create(ctx);
-  newLimit->setOutputVar(limit->outputVar());
-
   auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
+  newLimit->setOutputVar(limit->outputVar());
+  newProject->setInputVar(newLimit->outputVar());
 
   newProjectGroupNode->dependsOn(newLimitGroup);
+
+  auto appendVerticesGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
+  auto traverseGroupNode =
+      matched.dependencies.front().dependencies.front().dependencies.front().node;
+  auto traverse = static_cast<const Traverse *>(traverseGroupNode->node());
+  auto scanVerticesGroupNode = matched.dependencies.front()
+                                   .dependencies.front()
+                                   .dependencies.front()
+                                   .dependencies.front()
+                                   .node;
+  auto qctx = ctx->qctx();
+
+  auto newAppendVertices = appendVertices->clone();
+  auto newAppendVerticesGroup = OptGroup::create(ctx);
+  auto colSize = appendVertices->colNames().size();
+  newAppendVertices->setOutputVar(appendVertices->outputVar());
+  newLimit->setInputVar(newAppendVertices->outputVar());
+  newAppendVertices->setColNames(
+      {appendVertices->colNames()[colSize - 2], appendVertices->colNames()[colSize - 1]});
+  auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
+
+  newLimitGroupNode->dependsOn(newAppendVerticesGroup);
 
   auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
   if (newScanEdges == nullptr) {
@@ -101,23 +123,25 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   auto *newProj =
       GetEdgesTransformUtils::projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
-  newProj->setOutputVar(traverse->outputVar());
+  newProj->setOutputVar(newAppendVertices->inputVar());
   newProj->setColNames({traverse->colNames().back()});
   auto newProjGroup = OptGroup::create(ctx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
+  newAppendVerticesGroupNode->dependsOn(newProjGroup);
   newProjGroupNode->dependsOn(newScanEdgesGroup);
-  newScanEdgesGroupNode->setDeps(scanVerticesGroupNode->dependencies());
+  for (auto dep : scanVerticesGroupNode->dependencies()) {
+    newScanEdgesGroupNode->dependsOn(dep);
+  }
 
   TransformResult result;
-  result.eraseAll = true;
+  result.eraseCurr = true;
   result.newGroupNodes.emplace_back(newProjectGroupNode);
   return result;
 }
 
-std::string GetEdgesTransformRule::toString() const {
-  return "GetEdgesTransformRule";
+std::string GetEdgesTransformAppendVerticesLimitRule::toString() const {
+  return "GetEdgesTransformAppendVerticesLimitRule";
 }
 
 }  // namespace opt
