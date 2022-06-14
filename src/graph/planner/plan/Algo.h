@@ -311,9 +311,21 @@ class BiCartesianProduct final : public BinaryInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  PlanNode* clone() const override;
+
  private:
   friend ObjectPool;
+
+  // used for clone only
+  static BiCartesianProduct* make(QueryContext* qctx) {
+    return qctx->objPool()->makeAndAdd<BiCartesianProduct>(qctx);
+  }
+
+  void cloneMembers(const BiCartesianProduct& r);
+
   BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
+  // use for clone
+  explicit BiCartesianProduct(QueryContext* qctx);
 };
 }  // namespace graph
 }  // namespace nebula

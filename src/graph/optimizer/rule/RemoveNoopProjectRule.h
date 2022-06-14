@@ -6,6 +6,8 @@
 #ifndef GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_
 #define GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_
 
+#include <initializer_list>
+
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
@@ -40,6 +42,8 @@ class RemoveNoopProjectRule final : public OptRule {
 
  private:
   RemoveNoopProjectRule();
+
+  static const std::initializer_list<graph::PlanNode::Kind> kQueries;
 
   static std::unique_ptr<OptRule> kInstance;
 };
