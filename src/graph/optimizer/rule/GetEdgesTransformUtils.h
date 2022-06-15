@@ -51,6 +51,7 @@ class GetEdgesTransformUtils final {
     return scanEdges;
   }
 
+  // [EDGE] AS <e>
   static graph::Project *projectEdges(graph::QueryContext *qctx,
                                       PlanNode *input,
                                       const std::string &colName) {
