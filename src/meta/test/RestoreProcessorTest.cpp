@@ -74,13 +74,11 @@ TEST(RestoreProcessorTest, RestoreTest) {
   // mock an root user
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
-  // mock an zone with {host1, host2, host3}
-  std::string zoneName = "test_zone";
-  std::vector<std::string> zoneNames = {zoneName};
-  auto zoneId = 1;
-  data.emplace_back(MetaKeyUtils::indexZoneKey(zoneName),
-                    std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
-  data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal(hosts));
+  // mock three zones, each zone each host
+  for (auto host : hosts) {
+    std::string zoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
+    data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal({host}));
+  }
 
   int32_t autoId = 666;
   data.emplace_back(MetaKeyUtils::idKey(),
@@ -168,15 +166,20 @@ TEST(RestoreProcessorTest, RestoreTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
     std::vector<cpp2::Zone> zones;
     std::vector<HostAddr> restoredHosts = {host4, host5, host6};
+
+    std::unordered_map<std::string, HostAddr> restoreZoneNames;
+    // mock three zones, each zone each host
+    for (auto host : restoredHosts) {
+      std::string zoneName =
+          folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
+      restoreZoneNames.emplace(zoneName, host);
+    }
     while (iter->valid()) {
       auto zn = MetaKeyUtils::parseZoneName(iter->key());
       auto zoneHosts = MetaKeyUtils::parseZoneHosts(iter->val());
-      cpp2::Zone zone;
-      ASSERT_EQ(zoneName, zn);
-      ASSERT_EQ(zoneHosts.size(), restoredHosts.size());
-      for (std::vector<nebula::HostAddr>::size_type i = 0; i < zoneHosts.size(); ++i) {
-        ASSERT_EQ(zoneHosts[i], restoredHosts[i]);
-      }
+      ASSERT_TRUE(restoreZoneNames.find(zn) != restoreZoneNames.end());
+      ASSERT_EQ(1, zoneHosts.size());
+      ASSERT_EQ(restoreZoneNames[zn], zoneHosts[0]);
       iter->next();
     }
 
@@ -273,14 +276,15 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(partHosts));
   }
 
-  // mock an zone with {host1, host2, host3}
-  std::string zoneName = "test_zone";
-  std::vector<std::string> zoneNames = {zoneName};
+  // mock three zones, each zone each host
+  for (auto host : hosts) {
+    std::string zoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
+    data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal({host}));
+  }
+
+  // mock an root user
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
-  auto zoneId = 1;
-  data.emplace_back(MetaKeyUtils::indexZoneKey(zoneName),
-                    std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
-  data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal(hosts));
+
   TestUtils::doPut(kv.get(), data);
 
   // check part data
@@ -373,15 +377,21 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
     std::vector<cpp2::Zone> zones;
     std::vector<HostAddr> restoredHosts = {host4, host5, host6};
+
+    std::unordered_map<std::string, HostAddr> restoreZoneNames;
+    // mock three zones, each zone each host
+    for (auto host : restoredHosts) {
+      std::string zoneName =
+          folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
+      restoreZoneNames.emplace(zoneName, host);
+    }
+
     while (iter->valid()) {
       auto zn = MetaKeyUtils::parseZoneName(iter->key());
       auto zoneHosts = MetaKeyUtils::parseZoneHosts(iter->val());
-      cpp2::Zone zone;
-      ASSERT_EQ(zoneName, zn);
-      ASSERT_EQ(zoneHosts.size(), restoredHosts.size());
-      for (std::vector<nebula::HostAddr>::size_type i = 0; i < zoneHosts.size(); ++i) {
-        ASSERT_EQ(zoneHosts[i], restoredHosts[i]);
-      }
+      ASSERT_TRUE(restoreZoneNames.find(zn) != restoreZoneNames.end());
+      ASSERT_EQ(1, zoneHosts.size());
+      ASSERT_EQ(restoreZoneNames[zn], zoneHosts[0]);
       iter->next();
     }
 
