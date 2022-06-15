@@ -68,6 +68,7 @@ jobs:
           target-path: rc/${{ steps.tag.outputs.tagnum }}/symbols
 
   docker_build:
+    needs: package
     name: docker-build
     runs-on: [self-hosted, nebula]
     strategy:
@@ -103,22 +104,61 @@ jobs:
           registry: ${{ secrets.HARBOR_REGISTRY }}
           username: ${{ secrets.HARBOR_USERNAME }}
           password: ${{ secrets.HARBOR_PASSWORD }}
-      - uses: docker/build-push-action@v2
+      - name: docker-graph
+        uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
+          file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
-            ${{ steps.docker.outputs.tag }}
+            vesoft/nebula-graphd:nightly
+          target: graphd
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
-
+      - name: docker-storage
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-storaged:nightly
+          target: storaged
+          push: true
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
+      - name: docker-meta
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-metad:nightly
+          target: metad
+          push: true
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
+      - name: docker-tool
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-tools:nightly
+          target: tools
+          push: true
+          build-args: |
+            BRANCH=${{ steps.tagname.outputs.tag }}
+            VERSION=${{ steps.tagname.outputs.tagnum }}
   test:
     name: test
+    needs: package
     runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
@@ -128,21 +168,34 @@ jobs:
           - ubuntu2004
           - centos7
           - centos8
-        compiler:
-          - gcc-9.3
+    env:
+      OSS_DIR: nebula-graph/rc
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      env:
-        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-        CCACHE_MAXSIZE: 8G
-      volumes:
-        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      options: --cap-add=SYS_PTRACE
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
+      - id: tag
+        run: echo ::set-output name=tagnum::${{ github.event.inputs.version }}
+
+      - id: oss_package
+        run: |
+          case ${{ matrix.os }} in
+          ubuntu1804)
+            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu1804.amd64.tar.gz"
+            ;;
+          ubuntu2004)
+            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu2004.amd64.tar.gz"
+            ;;
+          centos7)
+            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.el7.x86_64.tar.gz"
+            ;;
+          centos8)
+            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.el8.x86_64.tar.gz"
+            ;;
+          esac
       - name: Prepare environment
         id: prepare
         run: |
@@ -151,22 +204,18 @@ jobs:
       - name: CMake
         id: cmake
         run: |
-          cmake \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DENABLE_TESTING=on \
-              -B build
           echo "::set-output name=j::8"
-      - name: Make
+      - name: download from oss
         run: |
-          ccache -z
-          cmake --build build/ -j $(nproc)
-          ccache -s
-      - name: CTest
-        env:
-          ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
-        working-directory: build/
-        timeout-minutes: 20
+          ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
+                    -i ${{ secrets.OSS_ID }} \
+                    -k  ${{ secrets.OSS_SECRET }} \
+                    -f cp oss://${{ env.OSS_DIR  }}/${{ steps.tag.outputs.tagnum }}/${{ steps.oss_package.outputs.p }} \
+                    build/.
+          tar zxvf build/${{ steps.oss_package.outputs.p }} -C build
+          d=`echo ${{ steps.oss_package.outputs.p }} | sed 's/.tar.gz//'`
+          mv build/${d}/* build/.
+     
       - name: Setup cluster
         run: |
           make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
