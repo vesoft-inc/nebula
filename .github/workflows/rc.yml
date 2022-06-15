@@ -71,14 +71,7 @@ jobs:
     needs: package
     name: docker-build
     runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - graphd
-          - metad
-          - storaged
-          - tools
+
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -91,12 +84,21 @@ jobs:
           echo ::set-output name=majorver::"v$(echo ${{ github.event.inputs.version }} | cut -f1 -d'.')"
       - id: docker
         run: |
+          graphdTag=""
+          storagedTag=""
+          metadTag=""
+          toolsTag=""
           majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d".")
-          tag=""
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
-            tag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:latest"
+            graphdTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:latest"
+            storagedTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:latest"
+            metadTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:latest"
+            toolsTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:latest"
           fi
-          echo "::set-output name=tag::$tag"
+          echo "::set-output name=graphdTag::$graphdTag"
+          echo "::set-output name=storagedTag::$storagedTag"
+          echo "::set-output name=metadTag::$metadTag"
+          echo "::set-output name=toolsTag::$toolsTag"
       - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v1
       - uses: docker/login-action@v1
@@ -111,7 +113,9 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-graphd:nightly
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.graphdTag }}
           target: graphd
           push: true
           build-args: |
@@ -124,7 +128,9 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-storaged:nightly
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.storagedTag }}
           target: storaged
           push: true
           build-args: |
@@ -137,7 +143,9 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-metad:nightly
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.metadTag }}
           target: metad
           push: true
           build-args: |
@@ -150,7 +158,9 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            vesoft/nebula-tools:nightly
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.majorver }}
+            ${{ steps.docker.outputs.toolsTag }}
           target: tools
           push: true
           build-args: |

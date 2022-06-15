@@ -7,6 +7,7 @@ COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
   && ./package.sh -v "${VERSION}"
+  
 FROM centos:7 as graphd
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
