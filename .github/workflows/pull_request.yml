@@ -95,7 +95,6 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
-                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -107,7 +106,6 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_COVERAGE=on \
-                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -121,7 +119,6 @@ jobs:
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
-                -GNinja \
                 -B build
             echo "::set-output name=j::6"
             ;;
@@ -129,7 +126,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          ninja -j $(nproc)
+          make -j $(nproc)
           ccache -s
         working-directory: build/
       - name: CTest
@@ -244,7 +241,6 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -DENABLE_STANDALONE_VERSION=on \
-                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -254,7 +250,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          ninja -j $(nproc)
+          make -j $(nproc)
           ccache -s
         working-directory: build/
       - name: CTest
