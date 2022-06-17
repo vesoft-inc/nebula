@@ -499,12 +499,11 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, ZoneID> BaseProcessor<RESP>::getZoneId(
-    const std::string& zoneName) {
-  auto indexKey = MetaKeyUtils::indexZoneKey(zoneName);
-  auto ret = doGet(std::move(indexKey));
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::zoneExist(const std::string& zoneName) {
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
+  auto ret = doGet(std::move(zoneKey));
   if (nebula::ok(ret)) {
-    return *reinterpret_cast<const ZoneID*>(nebula::value(ret).c_str());
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   auto retCode = nebula::error(ret);
   if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {

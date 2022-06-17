@@ -389,13 +389,13 @@ class BaseProcessor {
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
 
   /**
-   * @brief Get zone id by zone name
+   * @brief Check if given zone exist.
    *
    * @tparam RESP
    * @param zoneName
-   * @return ErrorOr<nebula::cpp2::ErrorCode, ZoneID>
+   * @return SUCCEEDED means exist, E_ZONE_NOT_FOUND means not, others means error.
    */
-  ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
+  nebula::cpp2::ErrorCode zoneExist(const std::string& zoneName);
 
   /**
    * @brief Check if given space exist given type's listener.
