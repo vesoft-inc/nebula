@@ -38,8 +38,11 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
 
   template <typename T, typename... Args>
   T *makeAndAdd(Args &&... args) {
+    SLGuard g(lock_);
     void *ptr = arena_.allocateAligned(sizeof(T));
-    return add(new (ptr) T(std::forward<Args>(args)...));
+    auto obj = new (ptr) T(std::forward<Args>(args)...);
+    objects_.emplace_back(obj);
+    return obj;
   }
 
   bool empty() const {
@@ -62,13 +65,6 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
     void *obj_;
     std::function<void(void *)> deleteFn_;
   };
-
-  template <typename T>
-  T *add(T *obj) {
-    SLGuard g(lock_);
-    objects_.emplace_back(obj);
-    return obj;
-  }
 
   std::list<OwnershipHolder> objects_;
   Arena arena_;
