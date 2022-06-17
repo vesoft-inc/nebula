@@ -82,6 +82,7 @@ jobs:
           tags: |
             vesoft/nebula-graphd:nightly
           target: graphd
+          cache-to: type=local,dest=/tmp/buildx-cache,mode=max
           push: true
       - uses: docker/build-push-action@v2
         with:
@@ -91,6 +92,7 @@ jobs:
           tags: |
             vesoft/nebula-storaged:nightly
           target: storaged
+          cache-from: type=local,src=/tmp/buildx-cache
           push: true
       - uses: docker/build-push-action@v2
         with:
@@ -100,6 +102,7 @@ jobs:
           tags: |
             vesoft/nebula-metad:nightly
           target: metad
+          cache-from: type=local,src=/tmp/buildx-cache
           push: true
       - uses: docker/build-push-action@v2
         with:
@@ -109,7 +112,11 @@ jobs:
           tags: |
             vesoft/nebula-tools:nightly
           target: tools
+          cache-from: type=local,src=/tmp/buildx-cache
           push: true
+      - name: delete the cache
+        run: |
+          rm -rf /tmp/buildx-cache
 
   coverage:
     name: coverage

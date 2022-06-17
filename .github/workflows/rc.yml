@@ -117,6 +117,7 @@ jobs:
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.graphdTag }}
           target: graphd
+          cache-to: type=local,dest=/tmp/buildx-cache,mode=max
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
@@ -133,6 +134,7 @@ jobs:
             ${{ steps.docker.outputs.storagedTag }}
           target: storaged
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
@@ -148,6 +150,7 @@ jobs:
             ${{ steps.docker.outputs.metadTag }}
           target: metad
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
@@ -163,9 +166,13 @@ jobs:
             ${{ steps.docker.outputs.toolsTag }}
           target: tools
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
+      - name: delete the cache
+        run: |
+          rm -rf /tmp/buildx-cache
   test:
     name: test
     needs: package
