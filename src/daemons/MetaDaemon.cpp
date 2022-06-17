@@ -176,11 +176,16 @@ int main(int argc, char* argv[]) {
     }
     if (nebula::value(ret) == localhost) {
       LOG(INFO) << "Check and init root user";
-      if (!nebula::meta::RootUserMan::isUserExists(gKVStore.get())) {
-        if (!nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
-          LOG(ERROR) << "Init root user failed";
-          return EXIT_FAILURE;
-        }
+      auto checkRet = nebula::meta::RootUserMan::isGodExists(gKVStore.get());
+      if (!nebula::ok(checkRet)) {
+        auto retCode = nebula::error(checkRet);
+        LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
+        return EXIT_FAILURE;
+      }
+      auto existGod = nebula::value(checkRet);
+      if (!existGod && !nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
+        LOG(ERROR) << "Init root user failed";
+        return EXIT_FAILURE;
       }
     }
   }
