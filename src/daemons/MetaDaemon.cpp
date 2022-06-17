@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     }
     if (nebula::value(ret) == localhost) {
       LOG(INFO) << "Check and init root user";
-      if (!nebula::meta::RootUserMan::isUserExists(gKVStore.get())) {
+      if (!nebula::meta::RootUserMan::isGodExists(gKVStore.get())) {
         if (!nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
           LOG(ERROR) << "Init root user failed";
           return EXIT_FAILURE;

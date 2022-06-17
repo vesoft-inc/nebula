@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
       }
       if (nebula::value(ret) == metaLocalhost) {
         LOG(INFO) << "Check and init root user";
-        if (!nebula::meta::RootUserMan::isUserExists(gMetaKVStore.get())) {
+        if (!nebula::meta::RootUserMan::isGodExists(gMetaKVStore.get())) {
           if (!nebula::meta::RootUserMan::initRootUser(gMetaKVStore.get())) {
             LOG(ERROR) << "Init root user failed";
             return;

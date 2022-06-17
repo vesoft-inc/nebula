@@ -20,6 +20,27 @@ namespace meta {
  * */
 class RootUserMan {
  public:
+  static bool isGodExists(kvstore::KVStore* kv) {
+    auto rolePrefix = MetaKeyUtils::roleSpacePrefix(kDefaultSpaceId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &iter, false);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Prefix God Role Failed";
+      return false;
+    }
+    while (iter->valid()) {
+      auto val = iter->val();
+      auto type = *reinterpret_cast<const meta::cpp2::RoleType*>(val.begin());
+      if (type == meta::cpp2::RoleType::GOD) {
+        LOG(INFO) << "God user exists";
+        return true;
+      }
+      iter->next();
+    }
+    LOG(INFO) << "God user is not exists";
+    return false;
+  }
+
   static bool isUserExists(kvstore::KVStore* kv) {
     auto userKey = MetaKeyUtils::userKey("root");
     std::string val;
