@@ -38,7 +38,9 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
 
   template <typename T, typename... Args>
   T *makeAndAdd(Args &&... args) {
+    lock_.lock();
     void *ptr = arena_.allocateAligned(sizeof(T));
+    lock_.unlock();
     return add(new (ptr) T(std::forward<Args>(args)...));
   }
 
