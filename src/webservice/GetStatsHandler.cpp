@@ -24,7 +24,7 @@ using proxygen::ResponseBuilder;
 using proxygen::UpgradeProtocol;
 
 void GetStatsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
-  if (headers->getMethod().value() != HTTPMethod::GET) {
+  if (!headers->getMethod() || headers->getMethod().value() != HTTPMethod::GET) {
     // Unsupported method
     err_ = HttpCode::E_UNSUPPORTED_METHOD;
     return;
