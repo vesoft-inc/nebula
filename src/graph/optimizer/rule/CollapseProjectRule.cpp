@@ -75,6 +75,7 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
   // 2. find link according to propRefNames and colNames in ProjBelow
   std::unordered_map<std::string, Expression*> rewriteMap;
   auto colNames = projBelow->colNames();
+  DCHECK_EQ(colNames.size(), colsBelow.size());
   for (size_t i = 0; i < colNames.size(); ++i) {
     if (uniquePropRefNames.count(colNames[i])) {
       auto colExpr = colsBelow[i]->expr();

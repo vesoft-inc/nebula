@@ -85,7 +85,6 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
   auto newLimit = limit->clone();
   auto newLimitGroup = OptGroup::create(ctx);
   auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
-  newLimit->setOutputVar(limit->outputVar());
   newProject->setInputVar(newLimit->outputVar());
 
   newProjectGroupNode->dependsOn(newLimitGroup);
@@ -105,8 +104,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
   auto newAppendVertices = appendVertices->clone();
   auto newAppendVerticesGroup = OptGroup::create(ctx);
   auto colSize = appendVertices->colNames().size();
-  newAppendVertices->setOutputVar(appendVertices->outputVar());
   newLimit->setInputVar(newAppendVertices->outputVar());
+  newLimit->setColNames(newAppendVertices->colNames());  // Limit keep column names same with input
   newAppendVertices->setColNames(
       {appendVertices->colNames()[colSize - 2], appendVertices->colNames()[colSize - 1]});
   auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
@@ -123,19 +122,19 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
   auto *newProj =
       GetEdgesTransformUtils::projectEdges(qctx, newScanEdges, traverse->colNames().back());
   newProj->setInputVar(newScanEdges->outputVar());
-  newProj->setOutputVar(newAppendVertices->inputVar());
   newProj->setColNames({traverse->colNames().back()});
   auto newProjGroup = OptGroup::create(ctx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
   newAppendVerticesGroupNode->dependsOn(newProjGroup);
+  newAppendVertices->setInputVar(newProj->outputVar());
   newProjGroupNode->dependsOn(newScanEdgesGroup);
   for (auto dep : scanVerticesGroupNode->dependencies()) {
     newScanEdgesGroupNode->dependsOn(dep);
   }
 
   TransformResult result;
-  result.eraseCurr = true;
+  result.eraseAll = true;
   result.newGroupNodes.emplace_back(newProjectGroupNode);
   return result;
 }
