@@ -21,7 +21,7 @@ using proxygen::ResponseBuilder;
 using proxygen::UpgradeProtocol;
 
 void SetFlagsHandler::onRequest(std::unique_ptr<HTTPMessage> headers) noexcept {
-  if (headers->getMethod().value() != HTTPMethod::PUT) {
+  if (!headers->getMethod() || headers->getMethod().value() != HTTPMethod::PUT) {
     // Unsupported method
     err_ = HttpCode::E_UNSUPPORTED_METHOD;
     return;
