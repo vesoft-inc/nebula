@@ -13,9 +13,9 @@ defaults:
 jobs:
   auto-cherry-pick:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
-      runs-on: [self-hosted, nebula-fast]
+      runs-on: ubuntu-latest
       container:
-        image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
+        image: dashboard-dev:centos7
       steps:
         - name: keep workspace empty  
           run: |
