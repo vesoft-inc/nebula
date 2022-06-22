@@ -20,10 +20,16 @@ jobs:
         - name: keep workspace empty  
           run: |
             rm -rf *
+        - name: git config set
+          env:
+            CLOUD_GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+            export GOPRIVATE="github.com/vesoft-inc"
         - name: auto cherry pick
           uses: xigongdaEricyang/cherry-pick-robot@with-python
           with:
               repo_token: ${{ secrets.GITHUB_TOKEN }}
-              pr_label: ${{ github.event.inputs.prlabel }}
+              pr_label: ${{ github.event.inputs.pr_label }}
               #pr_num: ${{ github.event.pull_request.number }}
               auto_merge: true
