@@ -128,7 +128,7 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.storagedTag }}
           target: storaged
@@ -143,7 +143,7 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.metadTag }}
           target: metad
@@ -158,7 +158,7 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.toolsTag }}
           target: tools
