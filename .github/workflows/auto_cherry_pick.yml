@@ -24,6 +24,6 @@ jobs:
           uses: xigongdaEricyang/cherry-pick-robot@with-python
           with:
               repo_token: ${{ secrets.GITHUB_TOKEN }}
-              pr_label: ${{ github.event.inputs.prlabel }}
+              pr_label: ${{ github.event.inputs.pr_label }}
               #pr_num: ${{ github.event.pull_request.number }}
               auto_merge: true
