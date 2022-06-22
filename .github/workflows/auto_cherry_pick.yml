@@ -15,7 +15,7 @@ jobs:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
       runs-on: ubuntu-latest
       container:
-        image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
+        image: nebula-dev:centos7
       steps:
         - name: keep workspace empty  
           run: |
