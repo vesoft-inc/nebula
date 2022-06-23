@@ -130,7 +130,12 @@ void JobManager::scheduleThread() {
     auto jobOp = std::get<0>(opJobId);
     auto jodId = std::get<1>(opJobId);
     auto spaceId = std::get<2>(opJobId);
-    std::lock_guard<std::recursive_mutex> lk(muJobFinished_[spaceId]);
+    auto iter = muJobFinished_.find(spaceId);
+    if (iter == muJobFinished_.end()) {
+      iter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
+    }
+    std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+
     auto jobDescRet = JobDescription::loadJobDescription(spaceId, jodId, kvStore_);
     if (!nebula::ok(jobDescRet)) {
       LOG(INFO) << "Load an invalid job from space " << spaceId << " jodId " << jodId;
@@ -189,7 +194,11 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
     jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
       if (status == meta::cpp2::JobStatus::STOPPED) {
         auto space = jobDesc.getSpace();
-        std::lock_guard<std::recursive_mutex> lkg(muJobFinished_[space]);
+        auto iter = muJobFinished_.find(space);
+        if (iter == muJobFinished_.end()) {
+          iter = muJobFinished_.emplace(space, std::make_unique<std::recursive_mutex>()).first;
+        }
+        std::lock_guard<std::recursive_mutex> lk(*(iter->second));
         cleanJob(jobDesc.getJobId());
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       } else {
@@ -226,7 +235,12 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
                               jobId,
                               apache::thrift::util::enumNameSafe(jobStatus));
   // normal job finish may race to job stop
-  std::lock_guard<std::recursive_mutex> lk(muJobFinished_[spaceId]);
+  auto mutexIter = muJobFinished_.find(spaceId);
+  if (mutexIter == muJobFinished_.end()) {
+    mutexIter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
+  }
+  std::lock_guard<std::recursive_mutex> lk(*(mutexIter->second));
+
   auto optJobDescRet = JobDescription::loadJobDescription(spaceId, jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     LOG(INFO) << folly::sformat("Load job failed, spaceId={} jobId={}", spaceId, jobId);
@@ -289,7 +303,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
     cleanJob(jobId);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  std::unique_ptr<JobExecutor>& jobExec = it->second;
+  auto jobExec = it->second.get();
   if (jobStatus == cpp2::JobStatus::STOPPED) {
     jobExec->stop();
     if (!jobExec->isMetaJob()) {
@@ -358,7 +372,12 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
   }
   // because the last task will update the job's status
   // tasks should report once a time
-  std::lock_guard<std::mutex> lk(muReportFinish_[spaceId]);
+  auto iter = muReportFinish_.find(spaceId);
+  if (iter == muReportFinish_.end()) {
+    iter = muReportFinish_.emplace(spaceId, std::make_unique<std::mutex>()).first;
+  }
+  std::lock_guard<std::mutex> lk(*(iter->second));
+
   auto tasksRet = getAllTasks(spaceId, jobId);
   if (!nebula::ok(tasksRet)) {
     return nebula::error(tasksRet);
