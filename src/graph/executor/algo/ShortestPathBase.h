@@ -43,15 +43,9 @@ class ShortestPathBase {
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const;
 
-  void addStats(RpcResponse& resp,
-                std::unordered_map<std::string, std::string>* stats,
-                size_t stepNum,
-                int64_t timeInUSec,
-                bool reverse) const;
+  void addStats(RpcResponse& resp, size_t stepNum, int64_t timeInUSec, bool reverse) const;
 
-  void addStats(PropRpcResponse& resp,
-                std::unordered_map<std::string, std::string>* stats,
-                int64_t timeInUSec) const;
+  void addStats(PropRpcResponse& resp, int64_t timeInUSec) const;
 
   template <typename Resp>
   StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,
@@ -86,6 +80,7 @@ class ShortestPathBase {
   std::unordered_map<std::string, std::string>* stats_{nullptr};
   size_t maxStep_;
   bool singleShortest_{true};
+  folly::SpinLock statsLock_;
 
   std::vector<DataSet> resultDs_;
   std::vector<DataSet> leftVids_;
