@@ -80,6 +80,31 @@ class JobManagerTest : public ::testing::Test {
   std::unique_ptr<AdminClient> adminClient_{nullptr};
 };
 
+TEST(JobManagerTest, ConcurrentHashMapTest) {
+  folly::ConcurrentHashMap<int, std::unique_ptr<std::recursive_mutex>> m;
+
+  auto t1 = std::thread([&m] {
+    for (int i = 0; i < 100000; i++) {
+      auto itr = m.find(i * 2);
+      if (itr == m.end()) {
+        m.emplace(i * 2, std::make_unique<std::recursive_mutex>());
+      }
+    }
+  });
+
+  auto t2 = std::thread([&m] {
+    for (int i = 0; i < 100000; i++) {
+      auto itr = m.find(i * 2 + 1);
+      if (itr == m.end()) {
+        m.emplace(i * 2 + 1, std::make_unique<std::recursive_mutex>());
+      }
+    }
+  });
+
+  t1.join();
+  t2.join();
+}
+
 TEST_F(JobManagerTest, AddJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   // For preventing job schedule in JobManager
