@@ -288,18 +288,18 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   // Identify whether the current space is running a job
   folly::ConcurrentHashMap<GraphSpaceID, std::atomic<bool>> spaceRunningJobs_;
 
-  std::map<JobID, std::unique_ptr<JobExecutor>> runningJobs_;
+  folly::ConcurrentHashMap<JobID, std::unique_ptr<JobExecutor>> runningJobs_;
   // The job in running or queue
   folly::ConcurrentHashMap<JobID, JobDescription> inFlightJobs_;
   std::thread bgThread_;
   nebula::kvstore::KVStore* kvStore_{nullptr};
   AdminClient* adminClient_{nullptr};
 
-  std::map<GraphSpaceID, std::mutex> muReportFinish_;
+  folly::ConcurrentHashMap<GraphSpaceID, std::unique_ptr<std::mutex>> muReportFinish_;
   // Start & stop & finish a job need mutual exclusion
   // The reason of using recursive_mutex is that, it's possible for a meta job try to get this lock
   // in finish-callback in the same thread with runJobInternal
-  std::map<GraphSpaceID, std::recursive_mutex> muJobFinished_;
+  folly::ConcurrentHashMap<GraphSpaceID, std::unique_ptr<std::recursive_mutex>> muJobFinished_;
   std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
 };
 
