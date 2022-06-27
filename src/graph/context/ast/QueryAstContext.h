@@ -127,10 +127,12 @@ struct SubgraphContext final : public AstContext {
   Starts from;
   StepClause steps;
   std::string loopSteps;
+  Expression* filter{nullptr};
   std::vector<std::string> colNames;
   std::unordered_set<EdgeType> edgeTypes;
   std::unordered_set<EdgeType> biDirectEdgeTypes;
   std::vector<Value::Type> colType;
+  ExpressionProps exprProps;
   bool withProp{false};
   bool getVertexProp{false};
   bool getEdgeProp{false};

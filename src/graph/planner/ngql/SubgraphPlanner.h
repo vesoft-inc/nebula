@@ -17,6 +17,7 @@ namespace graph {
 class SubgraphPlanner final : public Planner {
  public:
   using EdgeProp = nebula::storage::cpp2::EdgeProp;
+  using Vertexprop = nebula::storage::cpp2::VertexProp;
 
   static std::unique_ptr<SubgraphPlanner> make() {
     return std::unique_ptr<SubgraphPlanner>(new SubgraphPlanner());
@@ -33,6 +34,8 @@ class SubgraphPlanner final : public Planner {
   StatusOr<SubPlan> nSteps(SubPlan& startVidPlan, const std::string& input);
 
   StatusOr<std::unique_ptr<std::vector<EdgeProp>>> buildEdgeProps();
+
+  StatusOr<std::unique_ptr<std::vector<VertexProp>>> buildVertexProp();
 
   Expression* loopCondition(uint32_t steps, const std::string& var);
 
