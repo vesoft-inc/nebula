@@ -19,8 +19,7 @@ ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 CONTAINERIZED ?= false
-FAILED_LOGIN_ATTEMPTS ?= 0
-PASSWORD_LOCK_TIME_IN_SECS ?= 0
+QUERY_CONCURRENTLY ?= false
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
@@ -74,7 +73,8 @@ up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--query_concurrently=$(QUERY_CONCURRENTLY)
 
 standalone-up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
