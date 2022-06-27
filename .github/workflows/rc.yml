@@ -117,6 +117,7 @@ jobs:
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.graphdTag }}
           target: graphd
+          cache-to: type=local,dest=/tmp/buildx-cache,mode=max
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
@@ -128,11 +129,12 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.storagedTag }}
           target: storaged
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
@@ -143,11 +145,12 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.metadTag }}
           target: metad
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
@@ -158,14 +161,18 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.tag }}
             ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.toolsTag }}
           target: tools
           push: true
+          cache-from: type=local,src=/tmp/buildx-cache
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
+      - name: delete the cache
+        run: |
+          rm -rf /tmp/buildx-cache
   test:
     name: test
     needs: package

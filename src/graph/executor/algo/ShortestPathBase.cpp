@@ -38,7 +38,7 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
                  nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, getPropsTime](PropRpcResponse&& resp) {
-        addStats(resp, stats_, getPropsTime.elapsedInUSec());
+        addStats(resp, getPropsTime.elapsedInUSec());
         return handlePropResp(std::move(resp));
       });
 }
@@ -168,7 +168,6 @@ Status ShortestPathBase::handleErrorCode(nebula::cpp2::ErrorCode code, Partition
 }
 
 void ShortestPathBase::addStats(RpcResponse& resp,
-                                std::unordered_map<std::string, std::string>* stats,
                                 size_t stepNum,
                                 int64_t timeInUSec,
                                 bool reverse) const {
@@ -193,15 +192,17 @@ void ShortestPathBase::addStats(RpcResponse& resp,
   }
   ss << "\n}";
   if (reverse) {
-    stats->emplace(folly::sformat("reverse step {}", stepNum), ss.str());
+    statsLock_.lock();
+    stats_->emplace(folly::sformat("reverse step {}", stepNum), ss.str());
+    statsLock_.unlock();
   } else {
-    stats->emplace(folly::sformat("step {}", stepNum), ss.str());
+    statsLock_.lock();
+    stats_->emplace(folly::sformat("step {}", stepNum), ss.str());
+    statsLock_.unlock();
   }
 }
 
-void ShortestPathBase::addStats(PropRpcResponse& resp,
-                                std::unordered_map<std::string, std::string>* stats,
-                                int64_t timeInUSec) const {
+void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const {
   auto& hostLatency = resp.hostLatency();
   std::stringstream ss;
   ss << "{\n";
@@ -217,7 +218,7 @@ void ShortestPathBase::addStats(PropRpcResponse& resp,
     ss << "\n}";
   }
   ss << "\n}";
-  stats->emplace(folly::sformat("get_prop "), ss.str());
+  stats_->emplace(folly::sformat("get_prop "), ss.str());
 }
 
 }  // namespace graph

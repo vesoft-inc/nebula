@@ -67,7 +67,12 @@ struct JobCallBack {
     item.space_vertices_ref() = 2 * n_;
     item.space_edges_ref() = 2 * n_;
     req.stats_ref() = item;
-    jobMgr_->muJobFinished_[spaceId_].unlock();
+    auto mutexIter = jobMgr_->muJobFinished_.find(spaceId_);
+    if (mutexIter == jobMgr_->muJobFinished_.end()) {
+      mutexIter =
+          jobMgr_->muJobFinished_.emplace(spaceId_, std::make_unique<std::recursive_mutex>()).first;
+    }
+    mutexIter->second->unlock();
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }

@@ -72,8 +72,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   auto project = static_cast<const Project *>(projectGroupNode->node());
 
   auto newProject = project->clone();
-  auto newProjectGroupNode = OptGroupNode::create(ctx, newProject, projectGroupNode->group());
   newProject->setOutputVar(project->outputVar());
+  auto newProjectGroupNode = OptGroupNode::create(ctx, newProject, projectGroupNode->group());
 
   auto limitGroupNode = matched.dependencies.front().node;
   auto limit = static_cast<const Limit *>(limitGroupNode->node());
@@ -85,11 +85,11 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
 
   auto newLimit = limit->clone();
   auto newLimitGroup = OptGroup::create(ctx);
-  newLimit->setOutputVar(limit->outputVar());
 
   auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
 
   newProjectGroupNode->dependsOn(newLimitGroup);
+  newProject->setInputVar(newLimit->outputVar());
 
   auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
   if (newScanEdges == nullptr) {
@@ -100,14 +100,15 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
 
   auto *newProj =
       GetEdgesTransformUtils::projectEdges(qctx, newScanEdges, traverse->colNames().back());
-  newProj->setInputVar(newScanEdges->outputVar());
-  newProj->setOutputVar(traverse->outputVar());
   newProj->setColNames({traverse->colNames().back()});
   auto newProjGroup = OptGroup::create(ctx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
   newLimitGroupNode->dependsOn(newProjGroup);
+  newLimit->setInputVar(newProj->outputVar());
+  newLimit->setColNames(newProj->colNames());  // Limit keep column names same with input
   newProjGroupNode->dependsOn(newScanEdgesGroup);
+  newProj->setInputVar(newScanEdges->outputVar());
   newScanEdgesGroupNode->setDeps(scanVerticesGroupNode->dependencies());
 
   TransformResult result;

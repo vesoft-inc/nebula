@@ -108,7 +108,7 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
                      nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, stepNum, getNbrTime, reverse](auto&& resp) {
-        addStats(resp, stats_, stepNum, getNbrTime.elapsedInUSec(), reverse);
+        addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
 }
@@ -264,6 +264,9 @@ folly::Future<bool> SingleShortestPath::buildEvenPath(size_t rowNum,
       return false;
     }
     for (auto& meetVertex : vertices) {
+      if (!meetVertex.isVertex()) {
+        continue;
+      }
       auto meetVid = meetVertex.getVertex().vid;
       auto leftPaths = createLeftPath(rowNum, meetVid);
       auto rightPaths = createRightPath(rowNum, meetVid, false);

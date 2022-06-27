@@ -135,7 +135,7 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t step
                      nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, reverse, stepNum, getNbrTime](auto&& resp) {
-        addStats(resp, stats_, stepNum, getNbrTime.elapsedInUSec(), reverse);
+        addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
 }
