@@ -285,6 +285,11 @@ class NebulaService(object):
         self.graphd_param['max_expression_depth'] = '128'
 
         self.storaged_param = copy.copy(_params)
+        # query_concurrently only work for storaged.
+        query_concurrently = kwargs.pop("query_concurrently", None)
+        if query_concurrently:
+            self.storaged_param["query_concurrently"] = "true"
+
         self.storaged_param['local_config'] = 'false'
         self.storaged_param['raft_heartbeat_interval_secs'] = '30'
         self.storaged_param['skip_wait_in_rate_limiter'] = 'true'
