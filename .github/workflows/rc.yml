@@ -185,6 +185,9 @@ jobs:
           - ubuntu2004
           - centos7
           - centos8
+        extra_config:
+          - "ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=false"
+          - "ENABLE_SSL=false CA_SIGNED=false QUERY_CONCURRENTLY=true"
     env:
       OSS_DIR: nebula-graph/rc
     container:
@@ -235,7 +238,7 @@ jobs:
      
       - name: Setup cluster
         run: |
-          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+          make CONTAINERIZED=true ${{ matrix.extra_config }} up
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
@@ -258,4 +261,4 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs/
+          path:  ./build/server_*/logs*/

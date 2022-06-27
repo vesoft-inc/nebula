@@ -99,6 +99,12 @@ def init_parser():
         default=0,
         help='how long in seconds to lock the account after too many consecutive login attempts provide an incorrect password',
     )
+    opt_parser.add_option(
+        '--query_concurrently',
+        dest='query_concurrently',
+        default="false",
+        help='Whether enable storage query_concurrently.',
+    )
     return opt_parser
 
 
@@ -241,7 +247,8 @@ if __name__ == "__main__":
             enable_graph_ssl=configs.enable_graph_ssl,
             enable_meta_ssl=configs.enable_meta_ssl,
             containerized=configs.containerized,
-            use_standalone=is_standalone
+            use_standalone=is_standalone,
+            query_concurrently = configs.query_concurrently,
         )
 
         if opt_is(configs.cmd, "start"):

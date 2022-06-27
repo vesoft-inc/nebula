@@ -2,7 +2,7 @@ name: nightly
 
 on:
   schedule:
-    - cron: '0 18 * * *'
+    - cron: "0 18 * * *"
 
 concurrency:
   group: nightly
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.16.7'
+          go-version: "^1.16.7"
       - name: package
         run: ./package/package.sh -t Release -r ON -p OFF -s FALSE -k OFF
       - name: output some vars
@@ -199,4 +199,99 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs/
+          path: ./build/server_*/logs/
+
+  test:
+    name: Tck test
+    needs: package
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu1804
+          - ubuntu2004
+          - centos7
+          - centos8
+        extra_config:
+          - "ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=false"
+          - "ENABLE_SSL=false CA_SIGNED=false QUERY_CONCURRENTLY=true"
+    env:
+      OSS_DIR: nebula-graph/package/nightly
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v2
+      - name: output some vars
+        id: vars
+        env:
+          SHA_EXT: sha256sum.txt
+        run: |
+          subdir=$(date -u +%Y.%m.%d -d "1 days ago")
+          echo "::set-output name=subdir::$subdir"
+
+      - id: oss_package
+        run: |
+          case ${{ matrix.os }} in
+          ubuntu1804)
+            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu1804.amd64.tar.gz"
+            ;;
+          ubuntu2004)
+            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu2004.amd64.tar.gz"
+            ;;
+          centos7)
+            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el7.x86_64.tar.gz"
+            ;;
+          centos8)
+            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el8.x86_64.tar.gz"
+            ;;
+          esac
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          echo "::set-output name=j::8"
+      - name: download from oss
+        run: |
+          ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
+                    -i ${{ secrets.OSS_ID }} \
+                    -k  ${{ secrets.OSS_SECRET }} \
+                    -f cp oss://${{ env.OSS_DIR  }}/${{ steps.vars.outputs.subdir }}/${{ steps.oss_package.outputs.p }} \
+                    build/.
+          tar zxvf build/${{ steps.oss_package.outputs.p }} -C build
+          d=`echo ${{ steps.oss_package.outputs.p }} | sed 's/.tar.gz//'`
+          mv build/${d}/* build/.
+
+      - name: Setup cluster
+        run: |
+          make CONTAINERIZED=true ${{ matrix.extra_config }} up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path: ./build/server_*/logs*/
