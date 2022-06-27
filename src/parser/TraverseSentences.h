@@ -606,6 +606,7 @@ class GetSubgraphSentence final : public Sentence {
                       InBoundClause* in,
                       OutBoundClause* out,
                       BothInOutClause* both,
+                      WhereClause* where,
                       YieldClause* yield) {
     kind_ = Kind::kGetSubgraph;
     withProp_ = withProp;
@@ -614,6 +615,7 @@ class GetSubgraphSentence final : public Sentence {
     in_.reset(in);
     out_.reset(out);
     both_.reset(both);
+    where_.reset(where);
     yield_.reset(yield);
   }
 
@@ -641,6 +643,10 @@ class GetSubgraphSentence final : public Sentence {
     return both_.get();
   }
 
+  WhereClause* where() const {
+    return where_.get();
+  }
+
   YieldClause* yield() const {
     return yield_.get();
   }
@@ -654,6 +660,7 @@ class GetSubgraphSentence final : public Sentence {
   std::unique_ptr<InBoundClause> in_;
   std::unique_ptr<OutBoundClause> out_;
   std::unique_ptr<BothInOutClause> both_;
+  std::unique_ptr<WhereClause> where_;
   std::unique_ptr<YieldClause> yield_;
 };
 }  // namespace nebula
