@@ -195,16 +195,16 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       kvs.emplace_back(std::move(key), std::move(encode.value()));
     }
 
-    auto atomicOp =
-        [partId, data = std::move(kvs), this]() mutable -> kvstore::MergeableAtomicOpResult {
-      return addEdgesWithIndex(partId, std::move(data));
-    };
-
-    auto cb = [partId, this](nebula::cpp2::ErrorCode ec) { handleAsync(spaceId_, partId, ec); };
-
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
+      stats::StatsManager::addValue(kNumEdgesInserted, kvs.size());
+      auto atomicOp =
+          [partId, data = std::move(kvs), this]() mutable -> kvstore::MergeableAtomicOpResult {
+        return addEdgesWithIndex(partId, std::move(data));
+      };
+      auto cb = [partId, this](nebula::cpp2::ErrorCode ec) { handleAsync(spaceId_, partId, ec); };
+
       env_->kvstore_->asyncAtomicOp(spaceId_, partId, std::move(atomicOp), std::move(cb));
     }
   }

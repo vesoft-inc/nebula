@@ -195,6 +195,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
+      stats::StatsManager::addValue(kNumVerticesInserted, verticeData.size());
       auto atomicOp = [=, tags = std::move(tags), vertices = std::move(verticeData)]() mutable {
         return addVerticesWithIndex(partId, tags, vertices);
       };
