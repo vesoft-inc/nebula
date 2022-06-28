@@ -12,6 +12,9 @@
 namespace nebula {
 namespace graph {
 
+// Clean the unused memory on background threads, this is helpful
+// for big queries since the memory release of interim results may
+// cost too much time.
 class GC {
  public:
   static GC& instance();
