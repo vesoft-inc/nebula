@@ -196,7 +196,7 @@ jobs:
           fail_ci_if_error: false
       - name: Setup concurrently mode cluster
         run: |
-          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true CONCURRENTLY_MODE=true up
+          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=true up
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest on concurrently mode server
