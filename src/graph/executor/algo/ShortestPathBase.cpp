@@ -218,7 +218,9 @@ void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const
     ss << "\n}";
   }
   ss << "\n}";
+  statsLock_.lock();
   stats_->emplace(folly::sformat("get_prop "), ss.str());
+  statsLock_.unlock();
 }
 
 }  // namespace graph
