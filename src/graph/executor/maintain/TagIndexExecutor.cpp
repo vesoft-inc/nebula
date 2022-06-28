@@ -112,9 +112,10 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *iNode = asNode<ShowTagIndexes>(node());
   const auto &bySchema = iNode->name();
+  const int byId = iNode->id();
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()->getMetaClient()->listTagIndexes(spaceId).via(runner()).thenValue(
-      [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+      [this, spaceId, bySchema, byId](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show tag indexes failed" << resp.status();
           return resp.status();
@@ -132,6 +133,12 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
         std::map<std::string, std::pair<std::string, std::vector<std::string>>> ids;
         for (auto &tagIndex : tagIndexItems) {
           const auto &sch = tagIndex.get_schema_name();
+          if (!bySchema.empty() && bySchema != sch) {
+            continue;
+          }
+          if (byId > 0 && byId != tagIndex.get_index_id()) {
+            continue;
+          }
           const auto &cols = tagIndex.get_fields();
           std::vector<std::string> colsName;
           for (const auto &col : cols) {
@@ -140,9 +147,6 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
           ids[tagIndex.get_index_name()] = {sch, std::move(colsName)};
         }
         for (const auto &i : ids) {
-          if (!bySchema.empty() && bySchema != i.second.first) {
-            continue;
-          }
           Row row;
           row.values.emplace_back(i.first);
           if (bySchema.empty()) {

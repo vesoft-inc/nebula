@@ -375,6 +375,10 @@ std::string ShowTagIndexesSentence::toString() const {
     buf += " BY ";
     buf += *name_;
   }
+  if (id() > 0) {
+    buf += " BY ";
+    buf += std::to_string(id());
+  }
   return buf;
 }
 
@@ -385,6 +389,10 @@ std::string ShowEdgeIndexesSentence::toString() const {
   if (!name()->empty()) {
     buf += " BY ";
     buf += *name_;
+  }
+  if (id() > 0) {
+    buf += " BY ";
+    buf += std::to_string(id());
   }
   return buf;
 }

@@ -860,9 +860,10 @@ class ShowCreateEdgeSentence : public Sentence {
 
 class ShowTagIndexesSentence : public Sentence {
  public:
-  explicit ShowTagIndexesSentence(std::string *name) {
+  explicit ShowTagIndexesSentence(std::string *name, int indexID = -1) {
     name_.reset(name);
     kind_ = Kind::kShowTagIndexes;
+    id_ = indexID;
   }
 
   std::string toString() const override;
@@ -871,15 +872,21 @@ class ShowTagIndexesSentence : public Sentence {
     return name_.get();
   }
 
+  int id() const {
+    return id_;
+  }
+
  private:
   std::unique_ptr<std::string> name_;
+  int id_;
 };
 
 class ShowEdgeIndexesSentence : public Sentence {
  public:
-  explicit ShowEdgeIndexesSentence(std::string *name) {
+  explicit ShowEdgeIndexesSentence(std::string *name, int indexID = -1) {
     name_.reset(name);
     kind_ = Kind::kShowEdgeIndexes;
+    id_ = indexID;
   }
 
   std::string toString() const override;
@@ -888,8 +895,13 @@ class ShowEdgeIndexesSentence : public Sentence {
     return name_.get();
   }
 
+  int id() const {
+    return id_;
+  }
+
  private:
   std::unique_ptr<std::string> name_;
+  int id_;
 };
 
 class ShowTagIndexStatusSentence : public Sentence {

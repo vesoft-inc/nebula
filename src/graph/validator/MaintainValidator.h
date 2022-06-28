@@ -284,6 +284,7 @@ class ShowTagIndexesValidator final : public Validator {
 
  private:
   std::string name_;
+  int id_;
 };
 
 class ShowEdgeIndexesValidator final : public Validator {
@@ -298,6 +299,7 @@ class ShowEdgeIndexesValidator final : public Validator {
 
  private:
   std::string name_;
+  int id_;
 };
 
 class ShowTagIndexStatusValidator final : public Validator {

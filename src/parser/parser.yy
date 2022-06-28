@@ -3386,19 +3386,31 @@ show_sentence
         $$ = new ShowTagsSentence();
     }
     | KW_SHOW KW_EDGES {
-         $$ = new ShowEdgesSentence();
+        $$ = new ShowEdgesSentence();
     }
     | KW_SHOW KW_TAG KW_INDEXES {
-         $$ = new ShowTagIndexesSentence(new std::string(""));
+        $$ = new ShowTagIndexesSentence(new std::string(""));
     }
     | KW_SHOW KW_TAG KW_INDEXES KW_BY name_label {
-         $$ = new ShowTagIndexesSentence($5);
+        $$ = new ShowTagIndexesSentence($5);
     }
+    | KW_SHOW KW_TAG KW_INDEXES KW_BY INTEGER {
+        if ($5 <= 0) {
+            throw nebula::GraphParser::syntax_error(@5, "Must be greater than 0");
+        }
+        $$ = new ShowTagIndexesSentence(new std::string(""), $5);
+    } 
     | KW_SHOW KW_EDGE KW_INDEXES {
-         $$ = new ShowEdgeIndexesSentence(new std::string(""));
+        $$ = new ShowEdgeIndexesSentence(new std::string(""));
     }
     | KW_SHOW KW_EDGE KW_INDEXES KW_BY name_label {
-         $$ = new ShowEdgeIndexesSentence($5);
+        $$ = new ShowEdgeIndexesSentence($5);
+    }
+    | KW_SHOW KW_EDGE KW_INDEXES KW_BY INTEGER {
+        if ($5 <= 0) {
+            throw nebula::GraphParser::syntax_error(@5, "Must be greater than 0");
+        }
+        $$ = new ShowEdgeIndexesSentence(new std::string(""), $5);
     }
     | KW_SHOW KW_USERS {
         $$ = new ShowUsersSentence();
