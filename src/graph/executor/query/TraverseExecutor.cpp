@@ -293,7 +293,6 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
 
 folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
     std::unique_ptr<GetNeighborsIter> iter) {
-  time::Duration dur;
   size_t pathCnt = 0;
   const std::unordered_map<Value, Paths>* prev = &paths_.back();
   if (currentStep_ == 1 && zeroStep()) {
@@ -312,8 +311,8 @@ folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
     return handleJob(begin, end, tmpIter, *prev);
   };
 
-  auto gather =
-      [this, pathCnt = pathCnt, dur](std::vector<StatusOr<JobResult>> results) mutable -> Status {
+  auto gather = [this,
+                 pathCnt = pathCnt](std::vector<StatusOr<JobResult>> results) mutable -> Status {
     reqDs_.clear();
     std::unordered_map<Value, Paths>& current = paths_.back();
     size_t mapCnt = 0;
