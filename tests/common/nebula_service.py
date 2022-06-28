@@ -164,7 +164,6 @@ class NebulaService(object):
         self.ports_per_process = 4
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
-        self.concurrently_mode = concurrently_mode
 
         if use_standalone == False:
             self._make_params(**kwargs)
