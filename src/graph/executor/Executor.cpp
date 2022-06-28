@@ -735,6 +735,7 @@ folly::Executor *Executor::runner() const {
 }
 
 size_t Executor::getBatchSize(size_t totalSize) const {
+  // batch size should be the greater one of FLAGS_min_batch_size and (totalSize/FLAGS_max_job_size)
   size_t jobSize = FLAGS_max_job_size;
   size_t minBatchSize = FLAGS_min_batch_size;
   size_t batchSizeTmp = std::ceil(static_cast<float>(totalSize) / jobSize);

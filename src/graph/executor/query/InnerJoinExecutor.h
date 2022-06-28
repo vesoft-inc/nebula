@@ -19,7 +19,7 @@ class InnerJoinExecutor : public JoinExecutor {
   Status close() override;
 
  protected:
-  // join/probe/singleKeyProbe implemented for single job
+  // join/probe/singleKeyProbe implemented for single job.
   folly::Future<Status> join(const std::vector<Expression*>& hashKeys,
                              const std::vector<Expression*>& probeKeys,
                              const std::vector<std::string>& colNames);
@@ -32,7 +32,8 @@ class InnerJoinExecutor : public JoinExecutor {
                          Iterator* probeIter,
                          const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
 
-  // joinMultiJobs/probe/singleKeyProbe implemented for multi jobs
+  // joinMultiJobs/probe/singleKeyProbe implemented for multi jobs.
+  // For now, the InnerJoin implementation only implement the parallel processing on probe side.
   folly::Future<Status> joinMultiJobs(const std::vector<Expression*>& hashKeys,
                                       const std::vector<Expression*>& probeKeys,
                                       const std::vector<std::string>& colNames);
