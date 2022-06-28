@@ -4,7 +4,7 @@
 
 #include "graph/gc/GC.h"
 
-DEFINE_uint32(gc_worker_size, 8, "Background garbage clean workers.");
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -14,7 +14,11 @@ GC& GC::instance() {
 }
 
 GC::GC() {
-  workers_.start(FLAGS_gc_worker_size, "GC");
+  if (FLAGS_gc_worker_size == 0) {
+    workers_.start(std::thread::hardware_concurrency(), "GC");
+  } else {
+    workers_.start(FLAGS_gc_worker_size, "GC");
+  }
   workers_.addRepeatTaskForAll(50, &GC::periodicTask, this);
 }
 

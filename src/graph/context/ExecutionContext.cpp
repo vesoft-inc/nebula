@@ -6,6 +6,7 @@
 #include "graph/context/ExecutionContext.h"
 
 #include "graph/gc/GC.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -26,7 +27,11 @@ void ExecutionContext::setResult(const std::string& name, Result&& result) {
 
 void ExecutionContext::dropResult(const std::string& name) {
   auto& val = valueMap_[name];
-  GC::instance().clear(std::move(val));
+  if (FLAGS_enable_async_gc) {
+    GC::instance().clear(std::move(val));
+  } else {
+    val.clear();
+  }
 }
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
