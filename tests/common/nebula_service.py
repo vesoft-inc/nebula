@@ -334,7 +334,8 @@ class NebulaService(object):
         self.graphd_param['raft_heartbeat_interval_secs'] = '30'
         self.graphd_param['skip_wait_in_rate_limiter'] = 'true'
         self.graphd_param['add_local_host'] = 'false'
-        if self.concurrently_mode:
+        query_concurrently = kwargs.pop("query_concurrently", None)
+        if query_concurrently:
             self.graphd_param['max_job_size'] = '4'
 
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:

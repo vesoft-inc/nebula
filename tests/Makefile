@@ -90,7 +90,7 @@ standalone-up: clean
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
 		--containerized=$(CONTAINERIZED) \
-		--concurrently_mode=$(CONCURRENTLY_MODE)
+		--query_concurrently=$(QUERY_CONCURRENTLY)
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)
