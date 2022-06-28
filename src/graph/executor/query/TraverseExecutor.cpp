@@ -17,7 +17,6 @@ namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
   range_ = traverse_->stepRange();
-  // LOG(ERROR) << traverse_->outputVar();
   auto status = buildRequestDataSet();
   if (!status.ok()) {
     return error(std::move(status));
@@ -67,7 +66,6 @@ Status TraverseExecutor::buildRequestDataSet() {
     reqDs_.emplace_back(Row({std::move(vid)}));
   }
   paths_.emplace_back(std::move(prev));
-  // LOG(ERROR) << "buildRequestDataSet:" << dur.elapsedInUSec();
   return Status::OK();
 }
 
@@ -417,7 +415,6 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
       }
     }  // `prevPath'
   }    // `iter'
-  // LOG(ERROR) << "handleJob:" << dur.elapsedInUSec();
   return jobResult;
 }
 

@@ -625,7 +625,6 @@ folly::Future<Status> Executor::error(Status status) const {
 }
 
 void Executor::drop() {
-  time::Duration dur;
   if (node()->kind() == PlanNode::Kind::kLoop) {
     // Release body when loop exit
     const auto *loopExecutor = static_cast<const LoopExecutor *>(this);
@@ -717,11 +716,9 @@ Status Executor::finish(Result &&result) {
   } else {
     VLOG(1) << "Drop variable " << node()->outputVar();
   }
-  // time::Duration dur;
   if (FLAGS_enable_lifetime_optimize) {
     drop();
   }
-  // LOG(ERROR) << "drop: " << dur.elapsedInUSec();
   return Status::OK();
 }
 

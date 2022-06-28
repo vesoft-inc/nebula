@@ -90,5 +90,8 @@ static bool ValidateSessIdleTimeout(const char* flagname, int32_t value) {
 DEFINE_validator(session_idle_timeout_secs, &ValidateSessIdleTimeout);
 DEFINE_validator(client_idle_timeout_secs, &ValidateSessIdleTimeout);
 
-DEFINE_int32(min_batch_size, 8192, "The min batch size for handling dataset in multi job mode.");
-DEFINE_int32(max_job_size, 20, "The max job size in multi job mode.");
+DEFINE_int32(min_batch_size,
+             8192,
+             "The min batch size for handling dataset in multi job mode, only enabled when "
+             "max_job_size is greater than 1.");
+DEFINE_int32(max_job_size, 1, "The max job size in multi job mode.");
