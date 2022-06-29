@@ -47,6 +47,7 @@ nebula_add_library(
     algo/ShortestPathExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
+    algo/SubgraphExecutor1.cpp
     algo/ShortestPathBase.cpp
     algo/SingleShortestPath.cpp
     algo/BatchShortestPath.cpp
