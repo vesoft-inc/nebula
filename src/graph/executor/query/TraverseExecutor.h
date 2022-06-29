@@ -110,6 +110,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   size_t currentStep_{0};
   std::list<std::unordered_map<Dst, Paths>> paths_;
   size_t totalPathCnt_{0};
+  folly::ConcurrentHashMap<Dst, uint8_t> uniqueDsts_;
 };
 
 }  // namespace graph

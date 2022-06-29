@@ -27,6 +27,7 @@ folly::Future<Status> TraverseExecutor::execute() {
 Status TraverseExecutor::close() {
   // clear the members
   reqDs_.rows.clear();
+  uniqueDsts_.clear();
   return Executor::close();
 }
 
@@ -311,9 +312,9 @@ folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
     return handleJob(begin, end, tmpIter, *prev);
   };
 
-  auto gather = [this,
-                 pathCnt = pathCnt](std::vector<StatusOr<JobResult>> results) mutable -> Status {
+  auto gather = [this, pathCnt](std::vector<StatusOr<JobResult>> results) mutable -> Status {
     reqDs_.clear();
+    uniqueDsts_.clear();
     std::unordered_map<Value, Paths>& current = paths_.back();
     size_t mapCnt = 0;
     for (auto& r : results) {
@@ -356,7 +357,6 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
   DataSet& reqDs = jobResult.reqDs;
   reqDs.colNames = reqDs_.colNames;
   QueryExpressionContext ctx(ectx_);
-  std::unordered_set<Value> uniqueDst;
   auto* vFilter = traverse_->vFilter() ? traverse_->vFilter()->clone() : nullptr;
   auto* eFilter = traverse_->eFilter() ? traverse_->eFilter()->clone() : nullptr;
   const auto& spaceInfo = qctx()->rctx()->session()->space();
@@ -390,7 +390,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
       if (hasSameEdge(prevPath, e.getEdge())) {
         continue;
       }
-      if (uniqueDst.emplace(dst).second) {
+      if (uniqueDsts_.emplace(dst, 0).second) {
         reqDs.rows.emplace_back(Row({std::move(dst)}));
       }
       if (currentStep_ == 1) {

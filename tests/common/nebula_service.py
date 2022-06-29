@@ -129,6 +129,7 @@ class NebulaService(object):
         ca_signed=False,
         debug_log=True,
         use_standalone=False,
+        query_concurrently=False,
         **kwargs,
     ):
         assert graphd_num > 0 and metad_num > 0 and storaged_num > 0
@@ -165,12 +166,15 @@ class NebulaService(object):
         self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
 
+        self.query_concurrently = query_concurrently
+
         if use_standalone == False:
             self._make_params(**kwargs)
             self.init_process()
         else:
             self._make_sa_params(**kwargs)
             self.init_standalone()
+
 
     def init_standalone(self):
         process_count = self.metad_num + self.storaged_num + self.graphd_num
@@ -273,7 +277,6 @@ class NebulaService(object):
         if self.debug_log:
             _params['v'] = '4'
 
-        query_concurrently = kwargs.pop("query_concurrently", None)
         # params for graph only
         self.graphd_param = copy.copy(_params)
         self.graphd_param['local_config'] = 'false'
@@ -286,12 +289,12 @@ class NebulaService(object):
         self.graphd_param['password_lock_time_in_secs'] = '10'
         # expression depth limit
         self.graphd_param['max_expression_depth'] = '128'
-        if query_concurrently:
+        if self.query_concurrently:
             self.graphd_param['max_job_size'] = '4'
 
         # params for storage only
         self.storaged_param = copy.copy(_params)
-        if query_concurrently:
+        if self.query_concurrently:
             self.storaged_param["query_concurrently"] = "true"
 
         self.storaged_param['local_config'] = 'false'
@@ -333,8 +336,7 @@ class NebulaService(object):
         self.graphd_param['raft_heartbeat_interval_secs'] = '30'
         self.graphd_param['skip_wait_in_rate_limiter'] = 'true'
         self.graphd_param['add_local_host'] = 'false'
-        query_concurrently = kwargs.pop("query_concurrently", None)
-        if query_concurrently:
+        if self.query_concurrently:
             self.graphd_param['max_job_size'] = '4'
 
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
