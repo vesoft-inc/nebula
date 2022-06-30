@@ -102,8 +102,8 @@ def init_parser():
     opt_parser.add_option(
         '--query_concurrently',
         dest='query_concurrently',
-        default="false",
-        help='Whether enable storage query_concurrently.',
+        default='false',
+        help='Whether enable graph/storage query_concurrently.',
     )
     return opt_parser
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
             enable_meta_ssl=configs.enable_meta_ssl,
             containerized=configs.containerized,
             use_standalone=is_standalone,
-            query_concurrently = configs.query_concurrently,
+            query_concurrently = opt_is(configs.query_concurrently, "true"),
         )
 
         if opt_is(configs.cmd, "start"):
