@@ -1718,7 +1718,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         }
       }
       if (diffIndex == numLogs) {
-        // all logs are the same, ask leader to send logs after lastId
+        // There are two cases here:
+        // 1. numLogs != 0, all logs are the same in request and local wal, ask leader to send logs
+        //    after lastId
+        // 2. numLogs == 0, we won't append any logs below, ask leader to send logs after lastId
         lastMatchedLogId = lastId;
         resp.last_matched_log_id_ref() = lastId;
         resp.last_matched_log_term_ref() = lastTerm;
@@ -1737,22 +1740,25 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
     RaftLogIterator logIter(firstId, std::move(logEntries));
-    bool result = false;
-    {
-      SCOPED_TIMER(&execTime_);
-      result = wal_->appendLogs(logIter);
-    }
-    stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
-    if (result) {
-      CHECK_EQ(lastId, wal_->lastLogId());
-      lastLogId_ = wal_->lastLogId();
-      lastLogTerm_ = wal_->lastLogTerm();
-      lastMatchedLogId = lastLogId_;
-      resp.last_matched_log_id_ref() = lastLogId_;
-      resp.last_matched_log_term_ref() = lastLogTerm_;
-    } else {
-      resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
-      return;
+    bool hasLogsToAppend = logIter.valid();
+    if (hasLogsToAppend) {
+      bool result = false;
+      {
+        SCOPED_TIMER(&execTime_);
+        result = wal_->appendLogs(logIter);
+      }
+      stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
+      if (result) {
+        CHECK_EQ(lastId, wal_->lastLogId());
+        lastLogId_ = wal_->lastLogId();
+        lastLogTerm_ = wal_->lastLogTerm();
+        lastMatchedLogId = lastLogId_;
+        resp.last_matched_log_id_ref() = lastLogId_;
+        resp.last_matched_log_term_ref() = lastLogTerm_;
+      } else {
+        resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
+        return;
+      }
     }
   } while (false);
 
