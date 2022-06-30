@@ -146,6 +146,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:gc_obj>
         ${common_deps}
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
@@ -245,6 +246,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
+        $<TARGET_OBJECTS:gc_obj>
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES
