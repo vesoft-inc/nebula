@@ -106,6 +106,17 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   // Store the default result which not used for later executor
   Status finish(Value &&value);
 
+  size_t getBatchSize(size_t totalSize) const;
+
+  // ScatterFunc: A callback function that handle partial records of a dataset.
+  // GatherFunc: A callback function that gather all results of ScatterFunc, and do post works.
+  // Iterator: An iterator of a dataset.
+  template <
+      class ScatterFunc,
+      class ScatterResult = typename std::result_of<ScatterFunc(size_t, size_t, Iterator *)>::type,
+      class GatherFunc>
+  auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter);
+
   int64_t id_;
 
   // Executor name
@@ -129,6 +140,34 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   std::unordered_map<std::string, std::string> otherStats_;
 };
 
+template <class ScatterFunc, class ScatterResult, class GatherFunc>
+auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter) {
+  size_t totalSize = iter->size();
+  size_t batchSize = getBatchSize(totalSize);
+
+  // Start multiple jobs for handling the results
+  std::vector<folly::Future<ScatterResult>> futures;
+  size_t begin = 0, end = 0, dispathedCnt = 0;
+  while (dispathedCnt < totalSize) {
+    end = begin + batchSize > totalSize ? totalSize : begin + batchSize;
+    futures.emplace_back(folly::via(
+        runner(),
+        [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {
+          // Since not all iterators are linear, so iterates to the begin pos
+          size_t tmp = 0;
+          for (; tmpIter->valid() && tmp < begin; ++tmp) {
+            tmpIter->next();
+          }
+
+          return f(begin, end, tmpIter.get());
+        }));
+    begin = end;
+    dispathedCnt += batchSize;
+  }
+
+  // Gather all results and do post works
+  return folly::collect(futures).via(runner()).thenValue(std::move(gather));
+}
 }  // namespace graph
 }  // namespace nebula
 
