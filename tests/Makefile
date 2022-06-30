@@ -21,6 +21,8 @@ CA_SIGNED ?= false
 CONTAINERIZED ?= false
 FAILED_LOGIN_ATTEMPTS ?= 0
 PASSWORD_LOCK_TIME_IN_SECS ?= 0
+# start up the graph/storage with multi-job mode
+QUERY_CONCURRENTLY ?= false
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
@@ -74,7 +76,8 @@ up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--query_concurrently=$(QUERY_CONCURRENTLY)
 
 standalone-up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
@@ -86,7 +89,8 @@ standalone-up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--query_concurrently=$(QUERY_CONCURRENTLY)
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)

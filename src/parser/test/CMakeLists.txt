@@ -47,6 +47,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:plan_obj>
+    $<TARGET_OBJECTS:gc_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)

@@ -16,6 +16,8 @@ class ProjectExecutor final : public Executor {
       : Executor("ProjectExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
+
+  DataSet handleJob(size_t begin, size_t end, Iterator *iter);
 };
 
 }  // namespace graph
