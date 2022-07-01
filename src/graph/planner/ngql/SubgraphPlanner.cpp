@@ -13,28 +13,11 @@
 
 namespace nebula {
 namespace graph {
-
-StatusOr<std::unique_ptr<std::vector<VertexProp>>> GetSubgraphValidator::buildVertexProp() {
+StatusOr<std::unique_ptr<std::vector<VertexProp>>> SubgraphPlanner::buildVertexProps() {
   auto* qctx = subgraphCtx_->qctx;
-  bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
   const auto& space = subgraphCtx_->space;
-  const auto& dstTagProps = subgrapCtx_->exprProps.dstTagProps();
-  const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
-  NG_RETURN_IF_ERROR(allTagsResult);
-  const auto allTags = std::move(allTagsResult).value();
-
-  auto vertexProps = std::make_unique<std::vector<VertexProp>>();
-  vertexProps->reserve(allTags.size());
-
-  for (const auto& tag : allTags) {
-    VertexProp vp;
-    vp.set_tag(tag.first);
-    const auto& found = dstTagProps.find(tag.first);
-    if (found != dstTagProps.end()) {
-      vp.set_props(std::vector<std::string>(found->second.begin(), found->second.end()));
-      vertexProps->emplace_back(std::move(vp));
-    }
-  }
+  bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space.id, getVertexProp);
   return vertexProps;
 }
 
@@ -84,65 +67,42 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
   return edgeProps;
 }
 
-// ++loopSteps{0} < steps  && (var is Empty OR size(var) != 0)
-Expression* SubgraphPlanner::loopCondition(uint32_t steps, const std::string& var) {
-  auto* qctx = subgraphCtx_->qctx;
-  auto* pool = qctx->objPool();
-  auto& loopSteps = subgraphCtx_->loopSteps;
-  qctx->ectx()->setValue(loopSteps, 0);
-  auto step = ExpressionUtils::stepCondition(pool, loopSteps, steps);
-  auto empty = ExpressionUtils::equalCondition(pool, var, Value::kEmpty);
-  auto neZero = ExpressionUtils::neZeroCondition(pool, var);
-  auto* earlyEnd = LogicalExpression::makeOr(pool, empty, neZero);
-  return LogicalExpression::makeAnd(pool, step, earlyEnd);
-}
-
 StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::string& input) {
   auto* qctx = subgraphCtx_->qctx;
   const auto& space = subgraphCtx_->space;
+  const auto& dstTagProps = subgraphCtx_->exprProps.dstTagProps();
   const auto& steps = subgraphCtx_->steps;
 
-  auto* startNode = StartNode::make(qctx);
-  bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
-  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space.id, getVertexProp);
+  auto vertexProps = buildVertexProps();
   NG_RETURN_IF_ERROR(vertexProps);
   auto edgeProps = buildEdgeProps();
   NG_RETURN_IF_ERROR(edgeProps);
-  auto* gn = GetNeighbors::make(qctx, startNode, space.id);
-  gn->setSrc(subgraphCtx_->from.src);
-  gn->setVertexProps(std::move(vertexProps).value());
-  gn->setEdgeProps(std::move(edgeProps).value());
-  gn->setInputVar(input);
 
-  PlanNode* dep = gn;
-  if (subgraphCtx_->filter != nullptr) {
-    dep = Filter::make(qctx, gn, subgraphCtx_->filter);
-  }
-
-  auto resultVar = qctx->vctx()->anonVarGen()->getVar();
-  auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
-  subgraphCtx_->loopSteps = loopSteps;
-  auto* subgraph = Subgraph::make(qctx, dep, resultVar, loopSteps, steps.steps() + 1);
-  subgraph->setOutputVar(input);
-  subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
-  subgraph->setColNames({nebula::kVid});
   uint32_t maxSteps = steps.steps();
-  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp ||
-      !subgraphCtx_->exprProps.dstTagProp().empty()) {
+  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp || !dstTagProps.empty()) {
     ++maxSteps;
   }
-  auto* condition = loopCondition(maxSteps, gn->outputVar());
-  auto* loop = Loop::make(qctx, startVidPlan.root, subgraph, condition);
+
+  auto* subgraph = Subgraph::make(qctx,
+                                  startVidPlan.root,
+                                  space.id,
+                                  subgraphCtx_->from.src,
+                                  subgraphCtx_->edgeFilter,
+                                  subgraphCtx_->filter,
+                                  maxSteps);
+  subgraph->setVertexProps(std::move(vertexProps).value());
+  subgraph->setEdgeProps(std::move(edgeProps).value());
+  subgraph->setInputVar(input);
+  subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
-  dc->addDep(loop);
-  dc->setInputVars({resultVar});
+  dc->addDep(subgraph);
   dc->setColType(std::move(subgraphCtx_->colType));
   dc->setColNames(subgraphCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
-  subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : loop;
+  subPlan.tail = startVidPlan.tail == nullptr ? subgraph : startVidPlan.tail;
   return subPlan;
 }
 

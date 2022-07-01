@@ -8,6 +8,7 @@
 #include <robin_hood.h>
 
 #include "graph/executor/Executor.h"
+#include "graph/planner/plan/Algo.h"
 
 // Subgraph receive result from GetNeighbors
 // There are two Main functions
@@ -39,15 +40,31 @@
 
 namespace nebula {
 namespace graph {
-class SubgraphExecutor : public Executor {
+using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
+
+class SubgraphExecutor : public StorageAccessExecutor {
  public:
   SubgraphExecutor(const PlanNode* node, QueryContext* qctx)
-      : Executor("SubgraphExecutor", node, qctx) {}
+      : StorageAccessExecutor("SubgraphExecutor", node, qctx) {
+    subgraph_ = asNode<Subgraph>(node);
+  }
 
   folly::Future<Status> execute() override;
 
+  DataSet buildRequestDataSet();
+
+  folly::Future<Status> getNeighbors();
+
+  bool process(GetNeighborsIter* iter);
+
+  folly::Future<Status> handleResponse(RpcResponse&& resps);
+
  private:
   robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> historyVids_;
+  const Subgraph* subgraph_{nullptr};
+  size_t currentStep_{1};
+  size_t totalSteps_{1};
+  DataSet startVids_;
 };
 
 }  // namespace graph

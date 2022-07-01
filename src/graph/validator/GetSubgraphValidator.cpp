@@ -9,6 +9,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
+#include "graph/visitor/ExtractFilterExprVisitor.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
@@ -115,9 +116,6 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
                                 Expression::Kind::kInputProperty})) {
     return Status::SemanticError("Not support `%s' in where sentence.", expr->toString().c_str());
   }
-  if (ExpressionUtils::findAny(expr, {Expression::Kind::kDstProperty})) {
-    auto dstFilter = true;
-  }
 
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto filter = where->filter();
@@ -133,8 +131,19 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
   }
 
   NG_RETURN_IF_ERROR(deduceProps(filter, subgraphCtx_->exprProps));
-  // rewrite dstPropExpr to srcPropExpr
-  subgraphCtx_->filter = filter;
+
+  if (ExpressionUtils::findAny(expr, {Expression::Kind::kDstProperty})) {
+    auto visitor = ExtractFilterExprVisitor::makePushGetNeighbors(qctx_->objPool());
+    filter->accept(&visitor);
+    if (!visitor.ok()) {
+      return Status::SemanticError("filter error");
+    }
+    auto remainedExpr = std::move(visitor).remainedExpr();
+    subgraphCtx_->filter = filter;
+    subgraphCtx_->edgeFilter = remainedExpr;
+  } else {
+    subgraphCtx_->filter = subgraphCtx_->edgeFilter = filter;
+  }
   return Status::OK();
 }
 

@@ -268,21 +268,32 @@ class Subgraph final : public SingleInputNode {
  public:
   static Subgraph* make(QueryContext* qctx,
                         PlanNode* input,
-                        const std::string& resultVar,
-                        const std::string& currentStepVar,
+                        GraphSpaceID space,
+                        const Expression* src,
+                        const Expression* edgeFilter,
+                        const Expression* filter,
                         uint32_t steps) {
-    return qctx->objPool()->makeAndAdd<Subgraph>(qctx, input, resultVar, currentStepVar, steps);
+    return qctx->objPool()->makeAndAdd<Subgraph>(
+        qctx, input, space, src, edgeFilter, filter, steps);
   }
 
-  const std::string& resultVar() const {
-    return resultVar_;
+  GraphSpaceID space() const {
+    return space_;
   }
 
-  const std::string& currentStepVar() const {
-    return currentStepVar_;
+  const Expression* src() const {
+    return src_;
   }
 
-  uint32_t steps() const {
+  const Expression* edgeFilter() const {
+    return edgeFilter_;
+  }
+
+  const Expression* filter() const {
+    return filter_;
+  }
+
+  const uint32_t steps() const {
     return steps_;
   }
 
@@ -290,26 +301,53 @@ class Subgraph final : public SingleInputNode {
     return biDirectEdgeTypes_;
   }
 
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
   void setBiDirectEdgeTypes(std::unordered_set<EdgeType> edgeTypes) {
     biDirectEdgeTypes_ = std::move(edgeTypes);
   }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
   friend ObjectPool;
   Subgraph(QueryContext* qctx,
            PlanNode* input,
-           const std::string& resultVar,
-           const std::string& currentStepVar,
+           GraphSpaceID space,
+           const Expression* src,
+           const Expression* edgeFilter,
+           const Expression* filter,
            uint32_t steps)
       : SingleInputNode(qctx, Kind::kSubgraph, input),
-        resultVar_(resultVar),
-        currentStepVar_(currentStepVar),
+        space_(space),
+        src_(src),
+        edgeFilter_(edgeFilter),
+        filter_(filter),
         steps_(steps) {}
 
-  std::string resultVar_;
-  std::string currentStepVar_;
-  uint32_t steps_;
+  GraphSpaceID space_;
+  // vertices may be parsing from runtime.
+  const Expression* src_{nullptr};
+  const Expression* edgeFilter_{nullptr};
+  const Expression* filter_{nullptr};
+  uint32_t steps_{1};
   std::unordered_set<EdgeType> biDirectEdgeTypes_;
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_;
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
 };
 
 class BiCartesianProduct final : public BinaryInputNode {

@@ -33,11 +33,9 @@ class SubgraphPlanner final : public Planner {
 
   StatusOr<SubPlan> nSteps(SubPlan& startVidPlan, const std::string& input);
 
+  StatusOr<std::unique_ptr<std::vector<VertexProp>>> buildVertexProps();
+
   StatusOr<std::unique_ptr<std::vector<EdgeProp>>> buildEdgeProps();
-
-  StatusOr<std::unique_ptr<std::vector<VertexProp>>> buildVertexProp();
-
-  Expression* loopCondition(uint32_t steps, const std::string& var);
 
  private:
   SubgraphPlanner() = default;
