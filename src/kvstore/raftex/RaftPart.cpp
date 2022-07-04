@@ -1765,7 +1765,11 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // If follower found a point where log matches leader's log (lastMatchedLogId), if leader's
   // committed_log_id is greater than lastMatchedLogId, we can commit logs before lastMatchedLogId
   LogID lastLogIdCanCommit = std::min(lastMatchedLogId, req.get_committed_log_id());
-  CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
+  // When a node has received snapshot recently, it has no wal and its committedLogId_ may be same
+  // as leader's. In this case, we skip the check of lastLogIdCanCommit
+  if (wal_->lastLogId() != 0) {
+    CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
+  }
   if (lastLogIdCanCommit > committedLogId_) {
     auto walIt = wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit);
     // follower do not wait all logs applied to state machine, so second parameter is false. And the
