@@ -13,7 +13,15 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "master", 'release-[0-9].[0-9]', 'v1-head', 'v1.0.0', 'v1.0.0-rc3', 'v1.0.0-rc4', 'v3.*', 'v[1-2].[0-9].[0-9]' ]
+    branches:
+      - 'master'
+      - 'release-[0-9].[0-9]'
+      - 'v1-head'
+      - 'v1.0.0'
+      - 'v1.0.0-rc3'
+      - 'v1.0.0-rc4'
+      - 'v3.*'
+      - 'v[1-2].[0-9].[0-9]' 
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "master" ]
@@ -32,7 +40,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'cpp', 'python' ]
+        language: 
+          - 'cpp'
+          - 'python'
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
