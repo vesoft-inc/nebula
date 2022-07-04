@@ -2002,7 +2002,6 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     committedLogTerm_ = req.get_committed_log_term();
     lastLogId_ = committedLogId_;
     lastLogTerm_ = committedLogTerm_;
-    term_ = lastLogTerm_;
     // there should be no wal after state converts to WAITING_SNAPSHOT, the RaftPart has been reset
     DCHECK_EQ(wal_->firstLogId(), 0);
     DCHECK_EQ(wal_->lastLogId(), 0);
