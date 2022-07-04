@@ -269,19 +269,19 @@ class Subgraph final : public SingleInputNode {
   static Subgraph* make(QueryContext* qctx,
                         PlanNode* input,
                         GraphSpaceID space,
-                        const Expression* src,
+                        Expression* src,
                         const Expression* edgeFilter,
                         const Expression* filter,
-                        uint32_t steps) {
+                        size_t steps) {
     return qctx->objPool()->makeAndAdd<Subgraph>(
-        qctx, input, space, src, edgeFilter, filter, steps);
+        qctx, input, space, DCHECK_NOTNULL(src), edgeFilter, filter, steps);
   }
 
   GraphSpaceID space() const {
     return space_;
   }
 
-  const Expression* src() const {
+  Expression* src() const {
     return src_;
   }
 
@@ -293,8 +293,12 @@ class Subgraph final : public SingleInputNode {
     return filter_;
   }
 
-  const uint32_t steps() const {
+  size_t steps() const {
     return steps_;
+  }
+
+  bool oneMoreStep() const {
+    return oneMoreStep_;
   }
 
   const std::unordered_set<EdgeType> biDirectEdgeTypes() const {
@@ -307,6 +311,10 @@ class Subgraph final : public SingleInputNode {
 
   const std::vector<VertexProp>* vertexProps() const {
     return vertexProps_.get();
+  }
+
+  void setOneMoreStep() {
+    oneMoreStep_ = true;
   }
 
   void setBiDirectEdgeTypes(std::unordered_set<EdgeType> edgeTypes) {
@@ -328,10 +336,10 @@ class Subgraph final : public SingleInputNode {
   Subgraph(QueryContext* qctx,
            PlanNode* input,
            GraphSpaceID space,
-           const Expression* src,
+           Expression* src,
            const Expression* edgeFilter,
            const Expression* filter,
-           uint32_t steps)
+           size_t steps)
       : SingleInputNode(qctx, Kind::kSubgraph, input),
         space_(space),
         src_(src),
@@ -341,10 +349,11 @@ class Subgraph final : public SingleInputNode {
 
   GraphSpaceID space_;
   // vertices may be parsing from runtime.
-  const Expression* src_{nullptr};
+  Expression* src_{nullptr};
   const Expression* edgeFilter_{nullptr};
   const Expression* filter_{nullptr};
-  uint32_t steps_{1};
+  size_t steps_{1};
+  bool oneMoreStep_{false};
   std::unordered_set<EdgeType> biDirectEdgeTypes_;
   std::unique_ptr<std::vector<VertexProp>> vertexProps_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;

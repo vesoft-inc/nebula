@@ -142,7 +142,8 @@ std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
-  addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription(
+      "steps", folly::toJson(util::toJson(oneMoreStep_ ? steps_ : steps_ - 1)), desc.get());
   return desc;
 }
 

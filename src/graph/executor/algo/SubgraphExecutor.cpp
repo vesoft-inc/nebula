@@ -6,11 +6,13 @@
 
 #include "graph/service/GraphFlags.h"
 
+using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> SubgraphExecutor::execute() {
   SCOPED_TIMER(&execTime_);
+  totalSteps_ = subgraph_->steps();
   startVids_ = buildRequestDataSet();
   if (startVids_.rows.empty()) {
     DataSet emptyResult;
@@ -21,8 +23,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
 
 DataSet SubgraphExecutor::buildRequestDataSet() {
   auto inputVar = subgraph_->inputVar();
-  auto inputIter = ectx_->getResult(inputVar).iter();
-  auto iter = static_cast<SequentialIter*>(inputIter.get());
+  auto iter = ectx_->getResult(inputVar).iter();
   return buildRequestDataSetByVidType(iter.get(), subgraph_->src(), true);
 }
 
@@ -51,7 +52,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      -1,
                      currentStep_ == 1 ? subgraph_->edgeFilter() : subgraph_->filter())
       .via(runner())
-      .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+      .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
         // addStats(resp, getNbrTime.elapsedInUSec());
         return handleResponse(std::move(resp));
       });
@@ -75,14 +76,20 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
 
-  if (!process(iter.get()) || ++currentStep_ > totalSteps_) {
+  auto steps = totalSteps_;
+  if (!subgraph_->oneMoreStep()) {
+    --steps;
+  }
+  startVids_.rows.clear();
+
+  if (!process(std::move(iter)) || ++currentStep_ > steps) {
     return folly::makeFuture<Status>(Status::OK());
   } else {
     return getNeighbors();
   }
 }
 
-bool SubgraphExecutor::process(GetNeighborsIter* iter) {
+bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   auto& rows = startVids_.rows;
   auto gnSize = iter->size();
   if (gnSize == 0) {
@@ -140,16 +147,15 @@ bool SubgraphExecutor::process(GetNeighborsIter* iter) {
       iter->next();
     }
   }
-  if (rows.empty()) {
-    return false;
-  }
-
   iter->reset();
   builder.iter(std::move(iter));
   finish(builder.build());
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
+  if (rows.empty()) {
+    return false;
+  }
   return true;
 }
 

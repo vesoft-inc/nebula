@@ -23,7 +23,6 @@ StatusOr<std::unique_ptr<std::vector<VertexProp>>> SubgraphPlanner::buildVertexP
 
 StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps() {
   auto* qctx = subgraphCtx_->qctx;
-  bool getEdgeProp = subgraphCtx_->withProp && subgraphCtx_->getEdgeProp;
   const auto& space = subgraphCtx_->space;
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   auto& exprProps = subgraphCtx_->exprProps;
@@ -46,25 +45,25 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
     edgePropsPtr->reserve(edgeTypes.size());
     for (const auto& edgeType : edgeTypes) {
       EdgeProp ep;
-      ep.set_type(edgeType);
+      ep.type_ref() = edgeType;
       const auto& found = edgeProps.find(std::abs(edgeType));
       if (found != edgeProps.end()) {
         std::set<std::string> props(found->second.begin(), found->second.end());
         props.emplace(kType);
         props.emplace(kRank);
         props.emplace(kDst);
-        ep.set_props(std::vector<std::string>(props.begin(), props.end()));
+        ep.props_ref() = std::vector<std::string>(props.begin(), props.end());
       } else {
-        ep.set_props({kType, kRank, kDst});
+        ep.props_ref() = std::vector<std::string>({kType, kRank, kDst});
       }
       edgePropsPtr->emplace_back(std::move(ep));
     }
     return edgePropsPtr;
+  } else {
+    bool getEdgeProp = subgraphCtx_->withProp && subgraphCtx_->getEdgeProp;
+    std::vector<EdgeType> vEdgeTypes(edgeTypes.begin(), edgeTypes.end());
+    return SchemaUtil::getEdgeProps(qctx, space, std::move(vEdgeTypes), getEdgeProp);
   }
-  std::vector<EdgeType> vEdgeTypes(edgeTypes.begin(), edgeTypes.end());
-  auto edgeProps = SchemaUtil::getEdgeProps(qctx, space, std::move(vEdgeTypes), getEdgeProp);
-  NG_RETURN_IF_ERROR(edgeProps);
-  return edgeProps;
 }
 
 StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::string& input) {
@@ -78,25 +77,24 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto edgeProps = buildEdgeProps();
   NG_RETURN_IF_ERROR(edgeProps);
 
-  uint32_t maxSteps = steps.steps();
-  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp || !dstTagProps.empty()) {
-    ++maxSteps;
-  }
-
   auto* subgraph = Subgraph::make(qctx,
                                   startVidPlan.root,
                                   space.id,
                                   subgraphCtx_->from.src,
                                   subgraphCtx_->edgeFilter,
                                   subgraphCtx_->filter,
-                                  maxSteps);
+                                  steps.steps() + 1);
   subgraph->setVertexProps(std::move(vertexProps).value());
   subgraph->setEdgeProps(std::move(edgeProps).value());
   subgraph->setInputVar(input);
   subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
+  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp || !dstTagProps.empty()) {
+    subgraph->setOneMoreStep();
+  }
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(subgraph);
+  dc->setInputVars({subgraph->outputVar()});
   dc->setColType(std::move(subgraphCtx_->colType));
   dc->setColNames(subgraphCtx_->colNames);
 

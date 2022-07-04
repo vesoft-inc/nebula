@@ -7,7 +7,7 @@
 
 #include <robin_hood.h>
 
-#include "graph/executor/Executor.h"
+#include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Algo.h"
 
 // Subgraph receive result from GetNeighbors
@@ -55,7 +55,7 @@ class SubgraphExecutor : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors();
 
-  bool process(GetNeighborsIter* iter);
+  bool process(std::unique_ptr<GetNeighborsIter> iter);
 
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
@@ -65,6 +65,10 @@ class SubgraphExecutor : public StorageAccessExecutor {
   size_t currentStep_{1};
   size_t totalSteps_{1};
   DataSet startVids_;
+<<<<<<< HEAD
+=======
+  std::unordered_map<Value, size_t> historyVids_;
+>>>>>>> fix error
 };
 
 }  // namespace graph
