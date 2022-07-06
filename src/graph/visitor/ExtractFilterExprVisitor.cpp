@@ -75,7 +75,15 @@ void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
 }
 
 void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {
-  canBePushed_ = false;
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = true;
+      break;
+  }
 }
 
 void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {

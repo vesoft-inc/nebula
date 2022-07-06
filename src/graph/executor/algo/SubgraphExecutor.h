@@ -44,14 +44,14 @@ using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsRespo
 
 class SubgraphExecutor : public StorageAccessExecutor {
  public:
+  using HashMap = robin_hood::unordered_flat_map<Value, size_t, std::hash<Value>>;
+
   SubgraphExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("SubgraphExecutor", node, qctx) {
     subgraph_ = asNode<Subgraph>(node);
   }
 
   folly::Future<Status> execute() override;
-
-  DataSet buildRequestDataSet();
 
   folly::Future<Status> getNeighbors();
 
@@ -60,15 +60,11 @@ class SubgraphExecutor : public StorageAccessExecutor {
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
  private:
-  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> historyVids_;
+  HashMap historyVids_;
   const Subgraph* subgraph_{nullptr};
   size_t currentStep_{1};
   size_t totalSteps_{1};
-  DataSet startVids_;
-<<<<<<< HEAD
-=======
-  std::unordered_map<Value, size_t> historyVids_;
->>>>>>> fix error
+  std::vector<Value> vids_;
 };
 
 }  // namespace graph

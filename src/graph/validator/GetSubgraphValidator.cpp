@@ -102,6 +102,19 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   return Status::OK();
 }
 
+static Expression* rewriteDstProp2SrcProp(const Expression* expr) {
+  ObjectPool* pool = expr->getObjPool();
+  auto matcher = [](const Expression* e) -> bool {
+    return e->kind() == Expression::Kind::kDstProperty;
+  };
+  auto rewriter = [pool](const Expression* e) -> Expression* {
+    auto dstExpr = static_cast<const DestPropertyExpression*>(e);
+    return SourcePropertyExpression::make(pool, dstExpr->sym(), dstExpr->prop());
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 // Check validity of filter expression, rewrites expression to fit its sementic,
 // disable some invalid expression types, collect properties used in filter.
 Status GetSubgraphValidator::validateWhere(WhereClause* where) {
@@ -132,18 +145,18 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
 
   NG_RETURN_IF_ERROR(deduceProps(filter, subgraphCtx_->exprProps));
 
+  auto condition = filter->clone();
   if (ExpressionUtils::findAny(expr, {Expression::Kind::kDstProperty})) {
-    auto visitor = ExtractFilterExprVisitor::makePushGetNeighbors(qctx_->objPool());
+    auto visitor = ExtractFilterExprVisitor::makePushGetVertices(qctx_->objPool());
     filter->accept(&visitor);
     if (!visitor.ok()) {
       return Status::SemanticError("filter error");
     }
-    auto remainedExpr = std::move(visitor).remainedExpr();
-    subgraphCtx_->filter = filter;
-    subgraphCtx_->edgeFilter = remainedExpr;
+    subgraphCtx_->edgeFilter = std::move(visitor).remainedExpr();
   } else {
-    subgraphCtx_->filter = subgraphCtx_->edgeFilter = filter;
+    subgraphCtx_->edgeFilter = condition;
   }
+  subgraphCtx_->filter = rewriteDstProp2SrcProp(condition);
   return Status::OK();
 }
 

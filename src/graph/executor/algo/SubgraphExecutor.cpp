@@ -13,18 +13,15 @@ namespace graph {
 folly::Future<Status> SubgraphExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   totalSteps_ = subgraph_->steps();
-  startVids_ = buildRequestDataSet();
-  if (startVids_.rows.empty()) {
+  auto iter = ectx_->getResult(subgraph_->inputVar()).iter();
+  auto res = buildRequestListByVidType(iter.get(), subgraph_->src(), true);
+  NG_RETURN_IF_ERROR(res);
+  vids_ = res.value();
+  if (vids_.empty()) {
     DataSet emptyResult;
     return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
   return getNeighbors();
-}
-
-DataSet SubgraphExecutor::buildRequestDataSet() {
-  auto inputVar = subgraph_->inputVar();
-  auto iter = ectx_->getResult(inputVar).iter();
-  return buildRequestDataSetByVidType(iter.get(), subgraph_->src(), true);
 }
 
 folly::Future<Status> SubgraphExecutor::getNeighbors() {
@@ -39,7 +36,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
-                     std::move(startVids_.rows),
+                     std::move(vids_),
                      {},
                      edgeDirection,
                      nullptr,
@@ -54,6 +51,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
         // addStats(resp, getNbrTime.elapsedInUSec());
+        vids_.clear();
         return handleResponse(std::move(resp));
       });
 }
@@ -80,7 +78,6 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
   if (!subgraph_->oneMoreStep()) {
     --steps;
   }
-  startVids_.rows.clear();
 
   if (!process(std::move(iter)) || ++currentStep_ > steps) {
     return folly::makeFuture<Status>(Status::OK());
@@ -90,7 +87,6 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
 }
 
 bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
-  auto& rows = startVids_.rows;
   auto gnSize = iter->size();
   if (gnSize == 0) {
     return false;
@@ -99,7 +95,7 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   ResultBuilder builder;
   builder.value(iter->valuePtr());
 
-  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> currentVids;
+  HashMap currentVids;
   currentVids.reserve(gnSize);
   historyVids_.reserve(historyVids_.size() + gnSize);
   if (currentStep_ == 1) {
@@ -140,9 +136,7 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
       }
       if (currentVids.emplace(dst, currentStep_).second) {
         // next vids for getNeighbor
-        Row row;
-        row.values.emplace_back(std::move(dst));
-        rows.emplace_back(std::move(row));
+        vids_.emplace_back(std::move(dst));
       }
       iter->next();
     }
@@ -153,7 +147,7 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
-  if (rows.empty()) {
+  if (vids_.empty()) {
     return false;
   }
   return true;
