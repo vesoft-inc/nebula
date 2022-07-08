@@ -422,10 +422,10 @@ class GetNeighborsIter final : public Iterator {
 class SequentialIter : public Iterator {
  public:
   explicit SequentialIter(std::shared_ptr<Value> value, bool checkMemory = false);
+  explicit SequentialIter(const SequentialIter& iter);
 
   // Union multiple sequential iterators
   explicit SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList);
-
   // Union two sequential iterators.
   SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<Iterator> right);
 
@@ -527,6 +527,7 @@ class SequentialIter : public Iterator {
 class PropIter final : public SequentialIter {
  public:
   explicit PropIter(std::shared_ptr<Value> value, bool checkMemory = false);
+  explicit PropIter(const PropIter& iter);
 
   std::unique_ptr<Iterator> copy() const override {
     auto copy = std::make_unique<PropIter>(*this);

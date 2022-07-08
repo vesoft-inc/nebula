@@ -59,4 +59,9 @@ DECLARE_string(client_white_list);
 
 DECLARE_int32(num_rows_to_check_memory);
 
+DECLARE_int32(min_batch_size);
+DECLARE_int32(max_job_size);
+
+DECLARE_bool(enable_async_gc);
+DECLARE_uint32(gc_worker_size);
 #endif  // GRAPH_GRAPHFLAGS_H_

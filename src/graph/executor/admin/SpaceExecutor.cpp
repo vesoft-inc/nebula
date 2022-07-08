@@ -140,7 +140,7 @@ folly::Future<Status> DropSpaceExecutor::execute() {
             return Status::OK();
           }
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), ftindex);
+            auto ftRet = FTIndexUtils::dropTSIndex(tsRet.value(), ftindex);
             if (!ftRet.ok()) {
               LOG(WARNING) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet.status();
             }
@@ -195,7 +195,7 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
             return Status::OK();
           }
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::clearTSIndex(std::move(tsRet).value(), ftindex);
+            auto ftRet = FTIndexUtils::clearTSIndex(tsRet.value(), ftindex);
             if (!ftRet.ok()) {
               LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet.status();
             }

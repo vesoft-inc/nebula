@@ -5,6 +5,7 @@
 #include "graph/executor/query/InnerJoinExecutor.h"
 
 #include "graph/planner/plan/Query.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -12,7 +13,11 @@ folly::Future<Status> InnerJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* joinNode = asNode<Join>(node());
   NG_RETURN_IF_ERROR(checkInputDataSets());
-  return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
+  if (FLAGS_max_job_size <= 1) {
+    return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
+  } else {
+    return joinMultiJobs(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
+  }
 }
 
 Status InnerJoinExecutor::close() {
@@ -106,6 +111,113 @@ DataSet InnerJoinExecutor::singleKeyProbe(
     }
   }
   return ds;
+}
+
+folly::Future<Status> InnerJoinExecutor::joinMultiJobs(const std::vector<Expression*>& hashKeys,
+                                                       const std::vector<Expression*>& probeKeys,
+                                                       const std::vector<std::string>& colNames) {
+  auto bucketSize = lhsIter_->size() > rhsIter_->size() ? rhsIter_->size() : lhsIter_->size();
+
+  DCHECK_EQ(hashKeys.size(), probeKeys.size());
+
+  if (lhsIter_->empty() || rhsIter_->empty()) {
+    DataSet result;
+    result.colNames = colNames;
+    return finish(ResultBuilder().value(Value(std::move(result))).build());
+  }
+
+  if (hashKeys.size() == 1 && probeKeys.size() == 1) {
+    hashTable_.reserve(bucketSize);
+    if (lhsIter_->size() < rhsIter_->size()) {
+      buildSingleKeyHashTable(hashKeys.front(), lhsIter_.get(), hashTable_);
+      return singleKeyProbe(probeKeys.front(), rhsIter_.get());
+    } else {
+      exchange_ = true;
+      buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable_);
+      return singleKeyProbe(hashKeys.front(), lhsIter_.get());
+    }
+  } else {
+    listHashTable_.reserve(bucketSize);
+    if (lhsIter_->size() < rhsIter_->size()) {
+      buildHashTable(hashKeys, lhsIter_.get(), listHashTable_);
+      return probe(probeKeys, rhsIter_.get());
+    } else {
+      exchange_ = true;
+      buildHashTable(probeKeys, rhsIter_.get(), listHashTable_);
+      return probe(hashKeys, lhsIter_.get());
+    }
+  }
+}
+
+folly::Future<Status> InnerJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                                               Iterator* probeIter) {
+  std::vector<Expression*> tmpProbeKeys;
+  std::for_each(probeKeys.begin(), probeKeys.end(), [&tmpProbeKeys](auto& e) {
+    tmpProbeKeys.emplace_back(e->clone());
+  });
+  auto scatter = [this, tmpProbeKeys = std::move(tmpProbeKeys)](
+                     size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    DataSet ds;
+    QueryExpressionContext ctx(ectx_);
+    ds.rows.reserve(end - begin);
+    for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
+      List list;
+      list.values.reserve(tmpProbeKeys.size());
+      for (auto& col : tmpProbeKeys) {
+        Value val = col->eval(ctx(tmpIter));
+        list.values.emplace_back(std::move(val));
+      }
+      buildNewRow<List>(listHashTable_, list, *tmpIter->row(), ds);
+    }
+    return ds;
+  };
+
+  auto gather = [this](auto&& results) mutable -> Status {
+    DataSet result;
+    auto* joinNode = asNode<Join>(node());
+    result.colNames = joinNode->colNames();
+    for (auto& r : results) {
+      auto&& rows = std::move(r).value();
+      result.rows.insert(result.rows.end(),
+                         std::make_move_iterator(rows.begin()),
+                         std::make_move_iterator(rows.end()));
+    }
+    finish(ResultBuilder().value(Value(std::move(result))).build());
+    return Status::OK();
+  };
+
+  return runMultiJobs(std::move(scatter), std::move(gather), probeIter);
+}
+
+folly::Future<Status> InnerJoinExecutor::singleKeyProbe(Expression* probeKey, Iterator* probeIter) {
+  auto scatter = [this, probeKey](
+                     size_t begin, size_t end, Iterator* tmpIter) -> StatusOr<DataSet> {
+    auto tmpProbeKey = probeKey->clone();
+    DataSet ds;
+    QueryExpressionContext ctx(ectx_);
+    ds.rows.reserve(end - begin);
+    for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
+      auto& val = tmpProbeKey->eval(ctx(tmpIter));
+      buildNewRow<Value>(hashTable_, val, *tmpIter->row(), ds);
+    }
+    return ds;
+  };
+
+  auto gather = [this](auto&& results) mutable -> Status {
+    DataSet result;
+    auto* joinNode = asNode<Join>(node());
+    result.colNames = joinNode->colNames();
+    for (auto& r : results) {
+      auto&& rows = std::move(r).value();
+      result.rows.insert(result.rows.end(),
+                         std::make_move_iterator(rows.begin()),
+                         std::make_move_iterator(rows.end()));
+    }
+    finish(ResultBuilder().value(Value(std::move(result))).build());
+    return Status::OK();
+  };
+
+  return runMultiJobs(std::move(scatter), std::move(gather), probeIter);
 }
 
 template <class T>
