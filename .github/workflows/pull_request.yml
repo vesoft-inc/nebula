@@ -28,7 +28,7 @@ jobs:
         with:
           clean: false
       - name: Check License Header
-        uses: apache/skywalking-eyes@main
+        uses: apache/skywalking-eyes/header@501a28d2fb4a9b962661987e50cf0219631b32ff
       - name: Ensure clang-format-10 is available
         run: |
           command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
