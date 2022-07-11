@@ -5,6 +5,10 @@
 
 #include "kvstore/wal/AtomicLogBuffer.h"
 
+DEFINE_int32(max_log_buffer_size,
+             16 * 1024 * 1024,
+             "Max atomic log buffer size, if the size exceeds it, will trigger gc");
+
 namespace nebula {
 namespace wal {
 
@@ -165,7 +169,8 @@ void AtomicLogBuffer::releaseRef() {
   // so we could ensure the tail used in GC is older than new coming readers.
   auto* tail = tail_.load(std::memory_order_acquire);
   auto readers = refs_.fetch_sub(1, std::memory_order_relaxed);
-  VLOG(5) << "Release ref, readers = " << readers;
+  VLOG(5) << "Release ref, readers = " << readers << ", size = " << size_
+          << ", dirty node = " << dirtyNodes_;
   // todo(doodle): https://github.com/vesoft-inc/nebula-storage/issues/390
   if (readers > 1) {
     return;
@@ -179,7 +184,7 @@ void AtomicLogBuffer::releaseRef() {
   auto dirtyNodes = dirtyNodes_.load(std::memory_order_relaxed);
   bool gcRunning = false;
 
-  if (dirtyNodes > dirtyNodesLimit_) {
+  if (dirtyNodes > dirtyNodesLimit_ || size_ > FLAGS_max_log_buffer_size) {
     if (gcOnGoing_.compare_exchange_strong(gcRunning, true, std::memory_order_acquire)) {
       VLOG(4) << "GC begins!";
       // It means no readers on the deleted nodes.
