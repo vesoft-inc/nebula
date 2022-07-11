@@ -16,6 +16,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
+#include "common/time/TimezoneInfo.h"
 #include "common/utils/Utils.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/RocksEngine.h"
@@ -203,6 +204,15 @@ bool StorageServer::start() {
 
   if (!metaClient_->waitForMetadReady()) {
     LOG(ERROR) << "waitForMetadReady error!";
+    return false;
+  }
+
+  // Wait meta to sync the timezone configuration
+  // Initialize the global timezone, it's only used for datetime type compute
+  // won't affect the process timezone.
+  auto status = nebula::time::Timezone::initializeGlobalTimezone();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return false;
   }
 

@@ -6,6 +6,8 @@
 #ifndef COMMON_META_GFLAGSMANAGER_H_
 #define COMMON_META_GFLAGSMANAGER_H_
 
+#include <unordered_set>
+
 #include "common/base/Base.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
@@ -26,9 +28,14 @@ class GflagsManager final {
 
   static std::string ValueToGflagString(const Value& values);
 
+  static void onModified(const std::string& conf);
+
  private:
   static std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> parseConfigJson(
       const std::string& json);
+
+  // conf name => callback when modification
+  static std::unordered_map<std::string, std::function<void()>> callbackMap_;
 };
 }  // namespace meta
 }  // namespace nebula
