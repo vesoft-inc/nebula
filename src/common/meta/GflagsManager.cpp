@@ -7,6 +7,7 @@
 
 #include "common/conf/Configuration.h"
 #include "common/fs/FileUtils.h"
+#include "common/time/TimezoneInfo.h"
 
 DEFINE_string(gflags_mode_json, "share/resources/gflags.json", "gflags mode json for service");
 
@@ -90,7 +91,25 @@ std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> GflagsManager
     }
   }
 
+  // Register callbacks
+  callbackMap_.emplace("timezone_name", []() {
+    auto status = nebula::time::Timezone::initializeGlobalTimezone();
+    if (!status.ok()) {
+      // Timezone will keep unchanged if initialize failed
+      LOG(ERROR) << status;
+    }
+  });
+
   return configModeMap;
+}
+
+/*static*/ std::unordered_map<std::string, std::function<void()>> GflagsManager::callbackMap_;
+
+/*static*/ void GflagsManager::onModified(const std::string& conf) {
+  auto it = callbackMap_.find(conf);
+  if (it != callbackMap_.end()) {
+    it->second();
+  }
 }
 
 std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigModule& module) {

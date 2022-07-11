@@ -76,6 +76,7 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
             ['GRAPH', 'disable_octal_escape_char', 'bool', 'MUTABLE', False],
             ['GRAPH', 'max_sessions_per_ip_per_user', 'int', 'MUTABLE', 300],
+            ['GRAPH', 'timezone_name', 'string', 'MUTABLE', "UTC+00:00:00"],
         ]
         self.check_out_of_order_result(resp, expected_result)
 
@@ -94,6 +95,7 @@ class TestConfigs(NebulaTestSuite):
             ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size": "8192"}],
             ["STORAGE", "max_edge_returned_per_vertex", "int", "MUTABLE", 2147483647],
             ['STORAGE', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.8],
+            ['STORAGE', 'timezone_name', 'string', 'MUTABLE', "UTC+00:00:00"],
         ]
         print(resp)
         self.check_out_of_order_result(resp, expected_result)
