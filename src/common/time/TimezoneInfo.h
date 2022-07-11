@@ -34,10 +34,11 @@ class Timezone {
   }
 
   NG_MUST_USE_RESULT Status loadFromDb(const std::string &region) {
-    zoneInfo_ = tzdb.time_zone_from_region(region);
-    if (zoneInfo_ == nullptr) {
+    auto zoneInfo = tzdb.time_zone_from_region(region);
+    if (zoneInfo == nullptr) {
       return Status::Error("Not supported timezone `%s'.", region.c_str());
     }
+    zoneInfo_ = zoneInfo;
     return Status::OK();
   }
 

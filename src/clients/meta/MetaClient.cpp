@@ -3034,6 +3034,7 @@ void MetaClient::updateGflagsValue(const cpp2::ConfigItem& item) {
         valueStr = "{}";
       }
       gflags::SetCommandLineOption(item.get_name().c_str(), valueStr.c_str());
+      GflagsManager::onModified(item.get_name());
       // TODO: we simply judge the rocksdb by nested type for now
       if (listener_ != nullptr && value.isMap()) {
         updateNestedGflags(value.getMap().kvs);
