@@ -39,10 +39,15 @@ void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf> body) noexcept {
 void SetFlagsHandler::onEOM() noexcept {
   folly::dynamic flags;
   try {
-    std::string body = body_->moveToFbString().toStdString();
-    flags = folly::parseJson(body);
-    if (flags.empty()) {
+    if (!body_) {
+      LOG(ERROR) << "Got an empty body";
       err_ = HttpCode::E_UNPROCESSABLE;
+    } else {
+      std::string body = body_->moveToFbString().toStdString();
+      flags = folly::parseJson(body);
+      if (flags.empty()) {
+        err_ = HttpCode::E_UNPROCESSABLE;
+      }
     }
   } catch (const std::exception &e) {
     LOG(ERROR) << "Fail to update flags: " << e.what();
