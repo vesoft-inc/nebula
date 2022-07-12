@@ -1,0 +1,180 @@
+version: v3
+description: nba_example
+removeTempFiles: false
+logPath: ./err/test.log
+clientSettings:
+  retry: 3
+  concurrency: 1
+  channelBufferSize: 128
+  space: nba
+  connection:
+    user: root
+    password: nebula
+    address: 127.0.0.1:9669
+files:
+  - path: ./null.csv
+    failDataPath: ./err/nullerr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+      delimiter: ","
+    schema:
+      type: vertex
+      vertex:
+        vid:
+          index: 0
+          type: string
+        tags:
+          - name: player
+            props:
+              - name: name
+                type: string
+                index: 1
+              - name: age
+                type: int
+                index: 2
+  - path: ./player.csv
+    failDataPath: ./err/playererr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+      delimiter: ","
+    schema:
+      type: vertex
+      vertex:
+        vid:
+          index: 0
+          type: string
+        tags:
+          - name: player
+            props:
+              - name: name
+                type: string
+                index: 1
+              - name: age
+                type: int
+                index: 2
+  - path: ./bachelor.csv
+    failDataPath: ./err/bachelorerr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+      delimiter: ","
+    schema:
+      type: vertex
+      vertex:
+        vid:
+          index: 0
+          type: string
+        tags:
+          - name: bachelor
+            props:
+              - name: name
+                type: string
+                index: 1
+              - name: speciality
+                type: string
+                index: 2
+  - path: ./team.csv
+    failDataPath: ./err/teamerr.csv
+    batchSize: 128
+    inOder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+    schema:
+          type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: team
+          props:
+            - name: name
+              type: string
+              index: 1
+  - path: ./like.csv
+    failDataPath: ./err/likeerr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+    schema:
+      type: edge
+      edge:
+        name: like
+        srcVID:
+          type: string
+          index: 0
+        dstVID:
+          type: string
+          index: 1
+        props:
+          - name: likeness
+            type: int
+            index: 2
+  - path: ./serve.csv
+    failDataPath: ./err/serveerr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+    schema:
+      type: edge
+      edge:
+        name: serve
+        srcVID:
+          type: string
+          index: 0
+        dstVID:
+          type: string
+          index: 1
+        rank:
+          index: 2
+        props:
+          - name: start_year
+            type: int
+            index: 3
+          - name: end_year
+            type: int
+            index: 4
+  - path: ./teammate.csv
+    failDataPath: ./err/teammateerr.csv
+    batchSize: 128
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: true
+      withLabel: false
+    schema:
+      type: edge
+      edge:
+        name: teammate
+        srcVID:
+          type: string
+          index: 0
+        dstVID:
+          type: string
+          index: 1
+        props:
+          - name: start_year
+            type: int
+            index: 2
+          - name: end_year
+            type: int
+            index: 3
