@@ -103,6 +103,14 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
 
       nebula::cpp2::ErrorCode err = nebula::cpp2::ErrorCode::SUCCEEDED;
       for (const auto& edgeKey : part.second) {
+        if (!NebulaKeyUtils::isValidVidLen(
+                spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
+          LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
+                     << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
+                     << " dstVid: " << *edgeKey.dst_ref();
+          err = nebula::cpp2::ErrorCode::E_INVALID_VID;
+          break;
+        }
         auto l = std::make_tuple(spaceId_,
                                  partId,
                                  edgeKey.src_ref()->getStr(),
