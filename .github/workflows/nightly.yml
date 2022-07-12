@@ -230,7 +230,7 @@ jobs:
         env:
           SHA_EXT: sha256sum.txt
         run: |
-          subdir=$(date -u +%Y.%m.%d -d "1 days ago")
+          subdir=$(date -u +%Y.%m.%d)
           echo "::set-output name=subdir::$subdir"
 
       - id: oss_package
