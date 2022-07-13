@@ -114,6 +114,12 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
   target.reserve(vertices.size());
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& vertex : vertices) {
+    if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vertex.getStr())) {
+      LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
+                 << " space vid len: " << spaceVidLen_ << ",  vid is " << vertex;
+      auto code = nebula::cpp2::ErrorCode::E_INVALID_VID;
+      return code;
+    }
     batchHolder->remove(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vertex.getStr()));
     auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vertex.getStr());
     std::unique_ptr<kvstore::KVIterator> iter;
