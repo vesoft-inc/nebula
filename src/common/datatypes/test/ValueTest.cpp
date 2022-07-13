@@ -16,6 +16,7 @@
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Value.h"
+#include "common/datatypes/ValueOps-inl.h"
 #include "common/datatypes/Vertex.h"
 
 namespace nebula {
