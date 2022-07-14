@@ -538,7 +538,7 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
       }
     }
     rocksdb::BackupEngine* backupDb;
-    rocksdb::BackupableDBOptions backupOptions(backupPath_);
+    rocksdb::BackupEngineOptions backupOptions(backupPath_);
     backupOptions.backup_log_files = false;
     auto status = rocksdb::BackupEngine::Open(rocksdb::Env::Default(), backupOptions, &backupDb);
     CHECK(status.ok()) << status.ToString();
