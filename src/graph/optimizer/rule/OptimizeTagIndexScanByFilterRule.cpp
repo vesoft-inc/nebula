@@ -116,6 +116,10 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
   if (conditionType == ExprKind::kRelIn) {
     transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
     DCHECK(transformedExpr->kind() == ExprKind::kRelEQ);
+  } else if (conditionType == ExprKind::kStartsWith) {
+    // StartsWith expr is converted to a RelAnd expr with a constant value
+    transformedExpr = graph::ExpressionUtils::rewriteStartsWithExpr(condition);
+    DCHECK(transformedExpr->kind() == ExprKind::kLogicalAnd);
   }
 
   // case2: logical AND expr

@@ -233,6 +233,32 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   return orExpr;
 }
 
+// Rewrite starts with expr to an AND expr to trigger a range scan
+// I.g. v.name starts with "abc" => (v.name >= "abc") and (v.name < "abd")
+Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kStartsWith);
+  auto pool = expr->getObjPool();
+  auto startsWithExpr = static_cast<RelationalExpression *>(expr->clone());
+
+  // rhs is a string value
+  QueryExpressionContext ctx(nullptr);
+  auto leftBoundary = startsWithExpr->right()->eval(ctx).getStr();
+  auto rightBoundary = leftBoundary;
+  auto lastChar = *(rightBoundary.end() - 1);
+
+  // Do not increment the last char of the string if it could cause overflow
+  if (*rightBoundary.end() < 127) {
+    rightBoundary[rightBoundary.size() - 1] = ++lastChar;
+  }
+
+  auto resultLeft =
+      RelationalExpression::makeGE(pool, startsWithExpr->left(), startsWithExpr->right());
+  auto resultRight = RelationalExpression::makeLT(
+      pool, startsWithExpr->left(), ConstantExpression::make(pool, rightBoundary));
+
+  return LogicalExpression::makeAnd(pool, resultLeft, resultRight);
+}
+
 Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
 
