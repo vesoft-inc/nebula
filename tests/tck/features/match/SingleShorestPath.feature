@@ -229,7 +229,7 @@ Feature: single shortestPath
       | ("Bucks" :team{name: "Bucks"})                 | 3         |
       | ("Jazz" :team{name: "Jazz"})                   | 3         |
       | ("Magic" :team{name: "Magic"})                 | 3         |
-      When executing query:
+    When executing query:
       """
       MATCH (b:team), (a:player{age:30})
       MATCH p = shortestPath( (a)-[e*..5]->(b) )
