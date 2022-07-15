@@ -91,7 +91,7 @@ class ExpressionUtils {
   // Rewrites IN expression into OR expression or relEQ expression
   static Expression* rewriteInExpr(const Expression* expr);
 
-  // To support range scan for starts with
+  // Rewrites STARTS WITH to logical AND expression to support range scan
   static Expression* rewriteStartsWithExpr(const Expression* expr);
 
   // Rewrite Logical AND expr that contains Logical OR expr to Logical OR expr using distributive

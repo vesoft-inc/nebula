@@ -242,13 +242,12 @@ Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
 
   // rhs is a string value
   QueryExpressionContext ctx(nullptr);
-  auto leftBoundary = startsWithExpr->right()->eval(ctx).getStr();
-  auto rightBoundary = leftBoundary;
-  auto lastChar = *(rightBoundary.end() - 1);
+  auto rightBoundary = startsWithExpr->right()->eval(ctx).getStr();
 
+  // Increment the last char of the right boundary to get the range scan boundary
   // Do not increment the last char of the string if it could cause overflow
   if (*rightBoundary.end() < 127) {
-    rightBoundary[rightBoundary.size() - 1] = ++lastChar;
+    rightBoundary[rightBoundary.size() - 1] = ++rightBoundary[rightBoundary.size() - 1];
   }
 
   auto resultLeft =
