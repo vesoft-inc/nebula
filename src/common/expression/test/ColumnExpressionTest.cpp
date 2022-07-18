@@ -53,6 +53,25 @@ TEST_F(ExpressionTest, ColumnExpression) {
     auto eval = Expression::eval(expr, gExpCtxt);
     EXPECT_EQ(eval, 1);
   }
+  // test encode and decode
+  {
+    auto originExpr = ColumnExpression::make(&pool, 0);
+    auto str = Expression::encode(*originExpr);
+    auto decodeExpr = Expression::decode(&pool, str);
+    EXPECT_EQ(*decodeExpr, *originExpr);
+  }
+  {
+    auto originExpr = ColumnExpression::make(&pool, -1);
+    auto str = Expression::encode(*originExpr);
+    auto decodeExpr = Expression::decode(&pool, str);
+    EXPECT_EQ(*decodeExpr, *originExpr);
+  }
+  {
+    auto originExpr = ColumnExpression::make(&pool, 1);
+    auto str = Expression::encode(*originExpr);
+    auto decodeExpr = Expression::decode(&pool, str);
+    EXPECT_EQ(*decodeExpr, *originExpr);
+  }
 }
 
 }  // namespace nebula
