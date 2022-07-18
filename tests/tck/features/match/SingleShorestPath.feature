@@ -205,30 +205,30 @@ Feature: single shortestPath
       """
       MATCH (a:player{name:"Tim Duncan"}), (b:team)
       MATCH p = shortestPath( (a)-[e:serve*..3]-(b) )
-        RETURN p
+      RETURN b, length(p)
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                                                                                                                                                                                                                                                                                                                                                          |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2016}]-("Paul Gasol" :player{age: 38, name: "Paul Gasol"})-[:serve@0 {end_year: 2008, start_year: 2001}]->("Grizzlies" :team{name: "Grizzlies"})>                       |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2016}]-("Paul Gasol" :player{age: 38, name: "Paul Gasol"})-[:serve@0 {end_year: 2014, start_year: 2008}]->("Lakers" :team{name: "Lakers"})>                             |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2016}]-("Paul Gasol" :player{age: 38, name: "Paul Gasol"})-[:serve@0 {end_year: 2016, start_year: 2014}]->("Bulls" :team{name: "Bulls"})>                               |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 1999}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2019, start_year: 2018}]->("Hornets" :team{name: "Hornets"})>                         |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2017}]-("Rudy Gay" :player{age: 32, name: "Rudy Gay"})-[:serve@0 {end_year: 2017, start_year: 2013}]->("Kings" :team{name: "Kings"})>                                   |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2016, start_year: 2012}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})-[:serve@0 {end_year: 2017, start_year: 2016}]->("Jazz" :team{name: "Jazz"})>                                 |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2016, start_year: 2012}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})-[:serve@0 {end_year: 2008, start_year: 2005}]->("Suns" :team{name: "Suns"})>                                 |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2015, start_year: 2010}]-("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})-[:serve@0 {end_year: 2017, start_year: 2015}]->("Hawks" :team{name: "Hawks"})>                       |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2016, start_year: 2015}]-("David West" :player{age: 38, name: "David West"})-[:serve@0 {end_year: 2018, start_year: 2016}]->("Warriors" :team{name: "Warriors"})>                         |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2016}]-("Paul Gasol" :player{age: 38, name: "Paul Gasol"})-[:serve@0 {end_year: 2020, start_year: 2019}]->("Bucks" :team{name: "Bucks"})>                               |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2015, start_year: 2010}]-("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})-[:serve@0 {end_year: 2017, start_year: 2017}]->("76ers" :team{name: "76ers"})>                       |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2015, start_year: 2013}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})-[:serve@0 {end_year: 2019, start_year: 2017}]->("Celtics" :team{name: "Celtics"})>                         |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2019, start_year: 2015}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:serve@0 {end_year: 2015, start_year: 2006}]->("Trail Blazers" :team{name: "Trail Blazers"})> |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2013, start_year: 2013}]-("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2010, start_year: 2004}]->("Rockets" :team{name: "Rockets"})>                     |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>                                                                                                                                                                                                                |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2017, start_year: 2015}]-("Jonathon Simmons" :player{age: 29, name: "Jonathon Simmons"})-[:serve@0 {end_year: 2019, start_year: 2017}]->("Magic" :team{name: "Magic"})>                   |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2016, start_year: 2015}]-("David West" :player{age: 38, name: "David West"})-[:serve@0 {end_year: 2015, start_year: 2011}]->("Pacers" :team{name: "Pacers"})>                             |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2015, start_year: 2013}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})-[:serve@0 {end_year: 2017, start_year: 2015}]->("Pistons" :team{name: "Pistons"})>                         |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 2010}]-("Danny Green" :player{age: 31, name: "Danny Green"})-[:serve@0 {end_year: 2010, start_year: 2009}]->("Cavaliers" :team{name: "Cavaliers"})>                     |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 2010}]-("Danny Green" :player{age: 31, name: "Danny Green"})-[:serve@0 {end_year: 2019, start_year: 2018}]->("Raptors" :team{name: "Raptors"})>                         |
+      | b                                              | length(p) |
+      | ("76ers" :team{name: "76ers"})                 | 3         |
+      | ("Grizzlies" :team{name: "Grizzlies"})         | 3         |
+      | ("Spurs" :team{name: "Spurs"})                 | 1         |
+      | ("Bulls" :team{name: "Bulls"})                 | 3         |
+      | ("Cavaliers" :team{name: "Cavaliers"})         | 3         |
+      | ("Celtics" :team{name: "Celtics"})             | 3         |
+      | ("Pacers" :team{name: "Pacers"})               | 3         |
+      | ("Hawks" :team{name: "Hawks"})                 | 3         |
+      | ("Lakers" :team{name: "Lakers"})               | 3         |
+      | ("Raptors" :team{name: "Raptors"})             | 3         |
+      | ("Warriors" :team{name: "Warriors"})           | 3         |
+      | ("Hornets" :team{name: "Hornets"})             | 3         |
+      | ("Kings" :team{name: "Kings"})                 | 3         |
+      | ("Pistons" :team{name: "Pistons"})             | 3         |
+      | ("Rockets" :team{name: "Rockets"})             | 3         |
+      | ("Suns" :team{name: "Suns"})                   | 3         |
+      | ("Trail Blazers" :team{name: "Trail Blazers"}) | 3         |
+      | ("Bucks" :team{name: "Bucks"})                 | 3         |
+      | ("Jazz" :team{name: "Jazz"})                   | 3         |
+      | ("Magic" :team{name: "Magic"})                 | 3         |
     When executing query:
       """
       MATCH (b:team), (a:player{age:30})
