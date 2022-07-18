@@ -25,6 +25,18 @@ TEST(DataSetTest, Basic) {
     data2.emplace_back(it);
   }
   EXPECT_EQ(data, data2);
+
+  nebula::DataSet data3({"col4", "col5"});
+  data3.emplace_back(nebula::Row({10, 20}));
+  data3.emplace_back(nebula::Row({40, 50}));
+  data3.emplace_back(nebula::Row({70, 80}));
+  data.merge(std::move(data3));
+
+  nebula::DataSet data4({"col1", "col2", "col3", "col4", "col5"});
+  data4.emplace_back(nebula::Row({1, 2, 3, 10, 20}));
+  data4.emplace_back(nebula::Row({4, 5, 6, 40, 50}));
+  data4.emplace_back(nebula::Row({7, 8, 9, 70, 80}));
+  EXPECT_EQ(data, data4);
 }
 
 int main(int argc, char** argv) {
