@@ -248,6 +248,8 @@ Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
   // Do not increment the last char of the string if it could cause overflow
   if (*rightBoundary.end() < 127) {
     rightBoundary[rightBoundary.size() - 1] = ++rightBoundary[rightBoundary.size() - 1];
+  } else {  // If the last char is already 127, append a char of minimum value to the string
+    rightBoundary += static_cast<char>(0);
   }
 
   auto resultLeft =
