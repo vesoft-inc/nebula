@@ -38,7 +38,7 @@ void ColumnExpression::writeTo(Encoder &encoder) const {
 }
 
 void ColumnExpression::resetFrom(Decoder &decoder) {
-  index_ = decoder.readValue().getInt();
+  index_ = decoder.readSize();
 }
 
 }  // namespace nebula
