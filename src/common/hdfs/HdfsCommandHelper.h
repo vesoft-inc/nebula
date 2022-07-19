@@ -13,14 +13,12 @@ namespace hdfs {
 
 class HdfsCommandHelper : public HdfsHelper {
  public:
-  StatusOr<std::string> ls(const std::string& hdfsHost,
-                           int32_t hdfsPort,
-                           const std::string& hdfsPath) override;
+  Status ls(const std::string& hdfsHost, int32_t hdfsPort, const std::string& hdfsPath) override;
 
-  StatusOr<std::string> copyToLocal(const std::string& hdfsHost,
-                                    int32_t hdfsPort,
-                                    const std::string& hdfsPath,
-                                    const std::string& localPath) override;
+  Status copyToLocal(const std::string& hdfsHost,
+                     int32_t hdfsPort,
+                     const std::string& hdfsPath,
+                     const std::string& localPath) override;
 
   bool checkHadoopPath() override;
 };
