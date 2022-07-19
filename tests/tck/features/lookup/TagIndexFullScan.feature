@@ -385,11 +385,10 @@ Feature: Lookup tag index full scan
       | "Timberwolves"  |
       | "Thunders"      |
     And the execution plan should be:
-      | id | name             | dependencies | operator info                                  |
-      | 3  | Project          | 2            |                                                |
-      | 2  | Filter           | 4            | {"condition": "(team.name STARTS WITH \"T\")"} |
-      | 4  | TagIndexFullScan | 0            |                                                |
-      | 0  | Start            |              |                                                |
+      | id | name              | dependencies | operator info |
+      | 3  | Project           | 4            |               |
+      | 4  | TagIndexRangeScan | 0            |               |
+      | 0  | Start             |              |               |
     When executing query:
       """
       LOOKUP ON team WHERE team.name STARTS WITH "ABC" YIELD id(vertex) as id
