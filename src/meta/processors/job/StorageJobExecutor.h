@@ -38,8 +38,8 @@ class StorageJobExecutor : public JobExecutor {
    *
    * @return
    */
-  bool check() override {
-    return true;
+  nebula::cpp2::ErrorCode check() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   /**

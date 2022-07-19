@@ -12,8 +12,9 @@
 namespace nebula {
 namespace meta {
 
-bool StatsJobExecutor::check() {
-  return paras_.empty();
+nebula::cpp2::ErrorCode StatsJobExecutor::check() {
+  return paras_.empty() ? nebula::cpp2::ErrorCode::SUCCEEDED
+                        : nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
 
 nebula::cpp2::ErrorCode StatsJobExecutor::save(const std::string& key, const std::string& val) {

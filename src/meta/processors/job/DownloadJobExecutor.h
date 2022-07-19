@@ -26,7 +26,7 @@ class DownloadJobExecutor : public SimpleConcurrentJobExecutor {
                       AdminClient* adminClient,
                       const std::vector<std::string>& params);
 
-  bool check() override;
+  nebula::cpp2::ErrorCode check() override;
 
   nebula::cpp2::ErrorCode prepare() override;
 
