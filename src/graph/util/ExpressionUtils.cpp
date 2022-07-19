@@ -233,6 +233,33 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   return orExpr;
 }
 
+// Rewrite starts with expr to an AND expr to trigger a range scan
+// I.g. v.name starts with "abc" => (v.name >= "abc") and (v.name < "abd")
+Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kStartsWith);
+  auto pool = expr->getObjPool();
+  auto startsWithExpr = static_cast<RelationalExpression *>(expr->clone());
+
+  // rhs is a string value
+  QueryExpressionContext ctx(nullptr);
+  auto rightBoundary = startsWithExpr->right()->eval(ctx).getStr();
+
+  // Increment the last char of the right boundary to get the range scan boundary
+  // Do not increment the last char of the string if it could cause overflow
+  if (*rightBoundary.end() < 127) {
+    rightBoundary[rightBoundary.size() - 1] = ++rightBoundary[rightBoundary.size() - 1];
+  } else {  // If the last char is already 127, append a char of minimum value to the string
+    rightBoundary += static_cast<char>(0);
+  }
+
+  auto resultLeft =
+      RelationalExpression::makeGE(pool, startsWithExpr->left(), startsWithExpr->right());
+  auto resultRight = RelationalExpression::makeLT(
+      pool, startsWithExpr->left(), ConstantExpression::make(pool, rightBoundary));
+
+  return LogicalExpression::makeAnd(pool, resultLeft, resultRight);
+}
+
 Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
 
