@@ -243,6 +243,15 @@ function dump_syms {
     done
 }
 
+function add_commit {
+    hash git &> /dev/null 
+    if [ $? -eq 0 ];then
+        if [ -d ".git" ];then
+            git rev-parse --short HEAD > ${build_dir}/cpack_output/commit.txt
+        fi
+    fi 
+}
+
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type "OFF" "/usr/local/nebula"
 package $strip_enable
@@ -254,3 +263,6 @@ fi
 # tar package
 build $version $enablesanitizer $static_sanitizer $build_type "ON" "/"
 package $strip_enable
+
+# add commit information
+add_commit
