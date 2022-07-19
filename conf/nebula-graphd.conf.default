@@ -29,7 +29,7 @@
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
 --stderrthreshold=2
 # wether logging files' name contain time stamp.
---timestamp_in_logfile_name=true
+--timestamp_in_logfile_name=false
 ########## query ##########
 # Whether to treat partial success as an error.
 # This flag is only used for Read-only access, and Modify access always treats partial success as an error.
