@@ -13,9 +13,7 @@ namespace storage {
 
 class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
  public:
-  StatusOr<std::string> ls(const std::string& hdfsHost,
-                           int32_t hdfsPort,
-                           const std::string& hdfsPath) override {
+  Status ls(const std::string& hdfsHost, int32_t hdfsPort, const std::string& hdfsPath) override {
     UNUSED(hdfsHost);
     UNUSED(hdfsPort);
     UNUSED(hdfsPath);
@@ -23,16 +21,16 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
     return Status::OK();
   }
 
-  StatusOr<std::string> copyToLocal(const std::string& hdfsHost,
-                                    int32_t hdfsPort,
-                                    const std::string& hdfsPath,
-                                    const std::string& localPath) override {
+  Status copyToLocal(const std::string& hdfsHost,
+                     int32_t hdfsPort,
+                     const std::string& hdfsPath,
+                     const std::string& localPath) override {
     UNUSED(hdfsHost);
     UNUSED(hdfsPort);
     UNUSED(hdfsPath);
     UNUSED(localPath);
     sleep(1);
-    return "";
+    return Status::OK();
   }
 
   bool checkHadoopPath() override {

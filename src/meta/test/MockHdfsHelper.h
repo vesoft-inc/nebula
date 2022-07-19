@@ -13,17 +13,14 @@ namespace meta {
 
 class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
  public:
-  StatusOr<std::string> ls(const std::string&, int32_t, const std::string&) override {
+  Status ls(const std::string&, int32_t, const std::string&) override {
     sleep(1);
-    return "total 2\n0000.sst\n000.sst";
+    return Status::OK();
   }
 
-  StatusOr<std::string> copyToLocal(const std::string&,
-                                    int32_t,
-                                    const std::string&,
-                                    const std::string&) override {
+  Status copyToLocal(const std::string&, int32_t, const std::string&, const std::string&) override {
     sleep(1);
-    return "";
+    return Status::OK();
   }
 
   bool checkHadoopPath() override {
@@ -33,15 +30,15 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
 
 class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
  public:
-  StatusOr<std::string> ls(const std::string&, int32_t, const std::string& hdfsPath) override {
+  Status ls(const std::string&, int32_t, const std::string& hdfsPath) override {
     sleep(1);
     return Status::Error(folly::stringPrintf("HDFS Path %s Not Exist", hdfsPath.c_str()));
   }
 
-  StatusOr<std::string> copyToLocal(const std::string&,
-                                    int32_t,
-                                    const std::string& hdfsPath,
-                                    const std::string&) override {
+  Status copyToLocal(const std::string&,
+                     int32_t,
+                     const std::string& hdfsPath,
+                     const std::string&) override {
     sleep(1);
     return Status::Error(folly::stringPrintf("HDFS Path %s Not Exist", hdfsPath.c_str()));
   }
