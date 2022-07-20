@@ -259,7 +259,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
 
   if (!optJobDesc.setStatus(jobStatus)) {
     // job already been set as finished, failed or stopped
-    return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
+    return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
   }
 
   // If the job is marked as FAILED, one of the following will be triggered
