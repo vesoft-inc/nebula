@@ -109,6 +109,10 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     const nebula::meta::cpp2::JobDesc &jd, const std::vector<nebula::meta::cpp2::TaskDesc> &td) {
   if (jd.get_type() == meta::cpp2::JobType::DATA_BALANCE ||
       jd.get_type() == meta::cpp2::JobType::ZONE_BALANCE) {
+    // The job which executed on meta, aka balance data, is a litte different from others. In order
+    // to be consistent with other jobs, the task result is set in paras in JobDesc serialized by
+    // thrift. The reason that we can't use the list of TaskDesc is that the state of balance task
+    // is saved in BalanceTask, which is different from TaskDesc.
     nebula::DataSet v({"Job Id(spaceId:partId)",
                        "Command(src->dst)",
                        "Status",
@@ -167,8 +171,24 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
         convertJobTimestampToDateTime(jd.get_stop_time()),
         apache::thrift::util::enumNameSafe(jd.get_code()),
     }));
+    // As for normal type of job, there will only be one of the three state: running, succeeded or
+    // failed.
+    uint32_t total = td.size(), succeeded = 0, failed = 0, inProgress = 0;
     // tasks desc
     for (const auto &taskDesc : td) {
+      switch (taskDesc.get_status()) {
+        case meta::cpp2::JobStatus::RUNNING:
+          ++inProgress;
+          break;
+        case meta::cpp2::JobStatus::FAILED:
+          ++failed;
+          break;
+        case meta::cpp2::JobStatus::FINISHED:
+          ++succeeded;
+          break;
+        default:
+          break;
+      }
       v.emplace_back(nebula::Row({
           taskDesc.get_task_id(),
           taskDesc.get_host().host,
@@ -178,6 +198,12 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
           apache::thrift::util::enumNameSafe(taskDesc.get_code()),
       }));
     }
+    v.emplace_back(Row({folly::sformat("Total:{}", total),
+                        folly::sformat("Succeeded:{}", succeeded),
+                        folly::sformat("Failed:{}", failed),
+                        folly::sformat("In Progress:{}", inProgress),
+                        (""),
+                        ("")}));
     return v;
   }
 }
