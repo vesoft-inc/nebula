@@ -9,7 +9,7 @@
 #include "parser/EdgeKey.h"
 #include "parser/MutateSentences.h"
 #include "parser/Sentence.h"
-#include "parser/IsomorSentence.h"
+
 
 namespace nebula {
 class GoSentence final : public Sentence {
