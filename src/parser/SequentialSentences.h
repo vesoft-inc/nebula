@@ -12,7 +12,6 @@
 #include "parser/MutateSentences.h"
 #include "parser/ProcessControlSentences.h"
 #include "parser/Sentence.h"
-#include "parser/IsomorSentence.h"
 #include "parser/TraverseSentences.h"
 #include "parser/UserSentences.h"
 

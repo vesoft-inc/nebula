@@ -9,9 +9,23 @@
 #include "parser/EdgeKey.h"
 #include "parser/MutateSentences.h"
 #include "parser/Sentence.h"
-
-
 namespace nebula {
+
+class IsomorSentence final : public Sentence {
+  public:
+    explicit IsomorSentence(NameLabelList* tags) {
+      tags_.reset(tags);
+    }
+    const NameLabelList* tags() const {
+      return tags_->empty() ? nullptr : tags_.get();
+    }
+    std::string toString() const override;
+    ~IsomorSentence();
+
+  private:
+    std::unique_ptr<NameLabelList> tags_;
+};
+
 class GoSentence final : public Sentence {
  public:
   GoSentence(StepClause* step,
