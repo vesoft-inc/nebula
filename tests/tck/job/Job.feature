@@ -113,11 +113,12 @@ Feature: Submit job space requirements
       | Job Id(TaskId) | Command(Dest) | Status     | Start Time | Stop Time | Error Code  |
       | /\d+/          | "STATS"       | "FINISHED" | /\w+/      | /\w+/     | "SUCCEEDED" |
       | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     | "SUCCEEDED" |
+      | /\w+/          | /\w+/         | /\w+/      | /\w+/      | ""        | ""          |
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       STOP JOB {};
       """
-    Then an ExecutionError should be raised at runtime: Save job failure!
+    Then an ExecutionError should be raised at runtime: Finished job or failed job can not be stopped, please start another job instead
 
   Scenario: Submit and show jobs in other space
     Given create a space with following options:
