@@ -151,7 +151,7 @@ class PlanDiffer:
             print(big)
             print(small)
             print(new_big)
-            diff = deepdiff.DeepDiff(big, new_big)
+            diff = deepdiff.DeepDiff(big, new_big, ignore_order = True)
             print(diff)
             return not bool(diff)
 
