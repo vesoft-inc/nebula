@@ -7,7 +7,28 @@
 
 #include "common/base/Base.h"
 
+#include <stdio.h>
+
 namespace nebula {
+
+
+IsomorSentence::~IsomorSentence() {
+  printf("Deconstuct. \n");
+}
+
+std::string IsomorSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "ISOMOR";
+  buf += " ";
+  if (tags_->empty()) {
+    buf += "*";
+  } else {
+    buf += tags_->toString();
+  }
+  printf("Here is the string: %s \n", buf.c_str());
+  return buf;
+}
 
 std::string GoSentence::toString() const {
   std::string buf;
