@@ -35,7 +35,7 @@ class MetaJobExecutor : public JobExecutor {
    *
    * @return
    */
-  bool check() override;
+  nebula::cpp2::ErrorCode check() override;
 
   /**
    * @brief Prepare the Job info from the arguments.

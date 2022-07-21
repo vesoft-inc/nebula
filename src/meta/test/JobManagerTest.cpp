@@ -120,7 +120,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
-  ASSERT_TRUE(result);
+  ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
@@ -135,7 +135,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
-  ASSERT_TRUE(result);
+  ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
 TEST_F(JobManagerTest, DownloadJob) {
@@ -157,7 +157,7 @@ TEST_F(JobManagerTest, DownloadJob) {
       space, job.getJobId(), kv.get(), &adminClient, job.getParas());
   executor->helper_ = std::make_unique<meta::MockHdfsOKHelper>();
 
-  ASSERT_TRUE(executor->check());
+  ASSERT_EQ(executor->check(), nebula::cpp2::ErrorCode::SUCCEEDED);
   auto code = executor->prepare();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   code = executor->execute();
@@ -181,7 +181,7 @@ TEST_F(JobManagerTest, IngestJob) {
   auto executor = std::make_unique<IngestJobExecutor>(
       space, job.getJobId(), kv.get(), &adminClient, job.getParas());
 
-  ASSERT_TRUE(executor->check());
+  ASSERT_EQ(executor->check(), nebula::cpp2::ErrorCode::SUCCEEDED);
   auto code = executor->prepare();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   code = executor->execute();
@@ -199,7 +199,7 @@ TEST_F(JobManagerTest, StatsJob) {
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
-  ASSERT_TRUE(result);
+  ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
   // Function runJobInternal does not set the finished status of the job
   jobDesc.setStatus(cpp2::JobStatus::FINISHED);
   auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());

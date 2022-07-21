@@ -156,13 +156,14 @@ void JobManager::scheduleThread() {
                                        jobDesc.getErrorCode());
     save(jobKey, jobVal);
     spaceRunningJobs_.insert_or_assign(spaceId, true);
-    if (!runJobInternal(jobDesc, jobOp)) {
-      jobFinished(spaceId, jodId, cpp2::JobStatus::FAILED);
+    auto code = runJobInternal(jobDesc, jobOp);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      jobFinished(spaceId, jodId, cpp2::JobStatus::FAILED, code);
     }
   }
 }
 
-bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
+nebula::cpp2::ErrorCode JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   auto je = JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
   JobExecutor* jobExec = je.get();
 
@@ -170,25 +171,26 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   if (jobExec == nullptr) {
     LOG(INFO) << "unreconized job type "
               << apache::thrift::util::enumNameSafe(jobDesc.getJobType());
-    return false;
+    return nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
   }
 
-  if (jobDesc.getStatus() == cpp2::JobStatus::STOPPED) {
-    jobExec->stop();
-    return true;
-  }
-
-  if (!jobExec->check()) {
+  auto code = jobExec->check();
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Job Executor check failed";
-    return false;
+    return code;
   }
 
-  if (jobExec->prepare() != nebula::cpp2::ErrorCode::SUCCEEDED) {
+  code = jobExec->prepare();
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Job Executor prepare failed";
-    return false;
+    return code;
   }
   if (op == JbOp::RECOVER) {
-    jobExec->recovery();
+    code = jobExec->recovery();
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Recover job failed";
+      return code;
+    }
   }
   if (jobExec->isMetaJob()) {
     jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
@@ -206,11 +208,7 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
       }
     });
   }
-  if (jobExec->execute() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Job dispatch failed";
-    return false;
-  }
-  return true;
+  return jobExec->execute();
 }
 
 void JobManager::cleanJob(JobID jobId) {
@@ -226,14 +224,18 @@ void JobManager::cleanJob(JobID jobId) {
   }
 }
 
-nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
-                                                JobID jobId,
-                                                cpp2::JobStatus jobStatus) {
+nebula::cpp2::ErrorCode JobManager::jobFinished(
+    GraphSpaceID spaceId,
+    JobID jobId,
+    cpp2::JobStatus jobStatus,
+    std::optional<nebula::cpp2::ErrorCode> jobErrorCode) {
   LOG(INFO) << folly::sformat("{}, spaceId={}, jobId={}, result={}",
                               __func__,
                               spaceId,
                               jobId,
                               apache::thrift::util::enumNameSafe(jobStatus));
+  DCHECK(jobStatus == cpp2::JobStatus::FINISHED || jobStatus == cpp2::JobStatus::FAILED ||
+         jobStatus == cpp2::JobStatus::STOPPED);
   // normal job finish may race to job stop
   auto mutexIter = muJobFinished_.find(spaceId);
   if (mutexIter == muJobFinished_.end()) {
@@ -260,28 +262,36 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(GraphSpaceID spaceId,
     return nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE;
   }
 
-  // Set the errorcode of the job
-  nebula::cpp2::ErrorCode jobErrCode = nebula::cpp2::ErrorCode::SUCCEEDED;
+  // If the job is marked as FAILED, one of the following will be triggered
+  // 1. If any of the task failed, set the errorcode of the job to the failed task code.
+  // 2. The job failed before running any task (e.g. in check or prepare), the error code of the job
+  // will be set as it
   if (jobStatus == cpp2::JobStatus::FAILED) {
-    // Traverse the tasks and find the first task errorcode unsuccessful
-    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      return rc;
-    }
-    for (; iter->valid(); iter->next()) {
-      if (MetaKeyUtils::isJobKey(iter->key())) {
-        continue;
+    if (!jobErrorCode.has_value()) {
+      // Traverse the tasks and find the first task errorcode unsuccessful
+      auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+      std::unique_ptr<kvstore::KVIterator> iter;
+      auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
+      if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return rc;
       }
-      auto tupTaskVal = MetaKeyUtils::parseTaskVal(iter->val());
-      jobErrCode = std::get<4>(tupTaskVal);
-      if (jobErrCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        break;
+      for (; iter->valid(); iter->next()) {
+        if (MetaKeyUtils::isJobKey(iter->key())) {
+          continue;
+        }
+        auto tupTaskVal = MetaKeyUtils::parseTaskVal(iter->val());
+        auto taskErrorCode = std::get<4>(tupTaskVal);
+        if (taskErrorCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          optJobDesc.setErrorCode(taskErrorCode);
+          break;
+        }
       }
+    } else {
+      optJobDesc.setErrorCode(jobErrorCode.value());
     }
+  } else if (jobStatus == cpp2::JobStatus::FINISHED) {
+    optJobDesc.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   }
-  optJobDesc.setErrorCode(jobErrCode);
 
   spaceRunningJobs_.insert_or_assign(spaceId, false);
   auto jobKey = MetaKeyUtils::jobKey(optJobDesc.getSpace(), optJobDesc.getJobId());
@@ -359,6 +369,9 @@ void JobManager::compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired) 
   status_.compare_exchange_strong(ex, desired, std::memory_order_acq_rel);
 }
 
+// Only the job which execute on storaged will trigger this function. Storage will report to meta
+// when the task has been executed. In other words, when storage report the task state, it should be
+// one of FINISHED, FAILED or STOPPED.
 nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& req) {
   auto spaceId = req.get_space_id();
   auto jobId = req.get_job_id();
@@ -395,6 +408,7 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  // the status of task will be set as eithor FINISHED or FAILED in saveTaskStatus
   auto rc = saveTaskStatus(*task, req);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;

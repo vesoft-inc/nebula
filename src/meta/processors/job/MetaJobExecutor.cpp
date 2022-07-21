@@ -12,8 +12,8 @@ DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
-bool MetaJobExecutor::check() {
-  return true;
+nebula::cpp2::ErrorCode MetaJobExecutor::check() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 // Prepare the Job info from the arguments.

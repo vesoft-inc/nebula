@@ -19,8 +19,8 @@ BalanceJobExecutor::BalanceJobExecutor(GraphSpaceID space,
                                        const std::vector<std::string>& paras)
     : MetaJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
-bool BalanceJobExecutor::check() {
-  return true;
+nebula::cpp2::ErrorCode BalanceJobExecutor::check() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
@@ -67,8 +67,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
     plan_.reset(nullptr);
     return recRet;
   }
-  plan_->saveInStore();
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  return plan_->saveInStore();
 }
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::finish(bool) {

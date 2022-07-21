@@ -27,7 +27,7 @@ class JobExecutor {
    *
    * @return
    */
-  virtual bool check() = 0;
+  virtual nebula::cpp2::ErrorCode check() = 0;
 
   /**
    * @brief Prepare the Job info from the arguments.
