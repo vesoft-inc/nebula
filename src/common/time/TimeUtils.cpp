@@ -154,7 +154,8 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     if (!status.ok()) {
       return status.status();
     }
-    auto dateTime = std::move(status).value();
+    auto result = std::move(status).value();
+    auto dateTime = result.withTimeZone ? result.dt : dateTimeToUTC(result.dt);
     if (dateTime.microsec != 0) {
       return Status::Error("The timestamp  only supports seconds unit.");
     }
@@ -204,7 +205,7 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return d;
 }
 
-/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
+/*static*/ StatusOr<Result> TimeUtils::parseDateTime(const std::string &str) {
   auto p = DatetimeReader();
   auto result = p.readDatetime(str);
   NG_RETURN_IF_ERROR(result);
@@ -218,7 +219,7 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return result.value();
 }
 
-/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
+/*static*/ StatusOr<TimeResult> TimeUtils::parseTime(const std::string &str) {
   auto p = DatetimeReader();
   return p.readTime(str);
 }
