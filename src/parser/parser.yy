@@ -12,7 +12,7 @@
 %parse-param { std::string &errmsg }
 %parse-param { nebula::Sentence** sentences }
 %parse-param { nebula::graph::QueryContext* qctx }
-
+  
 %code requires {
 #include <iostream>
 #include <sstream>
@@ -173,7 +173,8 @@ using namespace nebula;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME KW_DURATION
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_IGNORE_EXISTED_INDEX
+%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_IGNORE_EXISTED_INDEX 
+%token KW_ISOMOR
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -391,6 +392,7 @@ using namespace nebula;
 %type <sentence> download_sentence ingest_sentence
 
 %type <sentence> traverse_sentence
+%type <sentence> isomor_clause
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
@@ -1390,11 +1392,20 @@ truncate_clause
 
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
-        auto go = new GoSentence($2, $3, $4, $5, $7);
-        go->setYieldClause($6);
-        $$ = go;
+        auto go = new GoSentence($2, $3, $4, $5, $7);  
+        go->setYieldClause($6);  
+        $$ = go;  
     }
     ;
+ 
+ 
+ isomor_clause 
+    : KW_ISOMOR name_label_list { 
+        auto isomor = new IsomorSentence($2);    
+        $$ = isomor;   
+    } 
+    ;  
+
 
 step_clause
     : %empty { $$ = new StepClause(); }
@@ -1406,19 +1417,19 @@ step_clause
     }
     ;
 
-from_clause
-    : KW_FROM vid_list {
-        $$ = new FromClause($2);
-    }
-    | KW_FROM vid_ref_expression {
-        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) {
-            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in from clause");
-        }
-        $$ = new FromClause($2);
-    }
-    ;
+from_clause  
+    : KW_FROM vid_list {  
+        $$ = new FromClause($2);  
+    }    
+    | KW_FROM vid_ref_expression { 
+        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) { 
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in from clause"); 
+        } 
+        $$ = new FromClause($2); 
+    } 
+    ; 
 
-vid_list
+vid_list 
     : vid {
         $$ = new VertexIDList();
         $$->add($1);
@@ -1455,9 +1466,9 @@ vid
             throw nebula::GraphParser::syntax_error(@1, "Variable is not supported in vid");
         }
     }
-    ;
-
-unary_integer
+    ;    
+              
+unary_integer 
     : PLUS legal_integer {
         $$ = $2;
     }
@@ -1468,7 +1479,7 @@ unary_integer
         $$ = $1;
     }
     ;
-
+ 
 vid_ref_expression
     : input_prop_expression {
         $$ = $1;
@@ -1480,7 +1491,7 @@ vid_ref_expression
         $$ = $1;
     }
     ;
-
+ 
 over_edge
     : name_label {
         $$ = new OverEdge($1);
@@ -1691,6 +1702,9 @@ match_clause
     }
     ;
 
+
+
+
 reading_clause
     : unwind_clause {
         $$ = $1;
@@ -1782,13 +1796,13 @@ match_path
         $$ = $3;
         $$->setAlias($1);
     }
-    ;
+    ; 
 
 match_path_list
     : match_path {
       $$ = new MatchPathList($1);
     }
-    | match_path_list COMMA match_path {
+    | match_path_list COMMA match_path { 
       $$ = $1;
       $$->add($3);
     }
@@ -3932,6 +3946,7 @@ sentence
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     | match_sentences { $$ = $1; }
+    | isomor_clause {$$ = $1; }
     ;
 
 seq_sentences

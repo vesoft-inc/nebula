@@ -13,6 +13,7 @@ SCANNER_FILE_PATH = 'src/parser/scanner.lex'
 
 reserved_key_words = [
     'KW_GO',
+    'KW_ISOMOR',
     'KW_AS',
     'KW_TO',
     'KW_OR',
