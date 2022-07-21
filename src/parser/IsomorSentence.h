@@ -10,10 +10,9 @@
 #include "common/expression/SubscriptExpression.h"
 #include "parser/MatchPath.h"
 #include "parser/Sentence.h"
-
+#include "parser/Clauses.h"
 
 namespace nebula {
-
 class IsomorSentence final : public Sentence {
   public:
     explicit IsomorSentence(NameLabelList* tags) {
