@@ -66,6 +66,19 @@ nebula_add_test(
 )
 
 nebula_add_test(
+    NAME parser_iso
+    SOURCES ParserIso.cpp
+    OBJECTS
+        ${PARSER_TEST_LIBS}
+    LIBRARIES
+        gtest gtest_main
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        ${Ldap_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+)
+
+nebula_add_test(
     NAME scanner_test
     SOURCES ScannerTest.cpp
     OBJECTS

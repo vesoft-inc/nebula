@@ -392,7 +392,7 @@ using namespace nebula;
 %type <sentence> download_sentence ingest_sentence
 
 %type <sentence> traverse_sentence
-%type <sentence> isomor_clause
+%type <sentence> isomor_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
@@ -1399,7 +1399,7 @@ go_sentence
     ;
  
  
- isomor_clause 
+ isomor_sentence
     : KW_ISOMOR name_label_list { 
         auto isomor = new IsomorSentence($2);    
         $$ = isomor;   
@@ -2936,6 +2936,7 @@ desc_zone_sentence
 traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
+    | isomor_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
@@ -3946,7 +3947,6 @@ sentence
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
     | match_sentences { $$ = $1; }
-    | isomor_clause {$$ = $1; }
     ;
 
 seq_sentences
