@@ -66,12 +66,7 @@ int main(int argc, char* argv[]) {
   // the 2nd will make the 1st failed to output log anymore
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  // Setup logging
-  auto status = setupLogging(argv[0]);
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return EXIT_FAILURE;
-  }
+  Status status;
 
 #if defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
@@ -104,6 +99,13 @@ int main(int argc, char* argv[]) {
     google::SetStderrLogging(google::FATAL);
   } else {
     google::SetStderrLogging(google::INFO);
+  }
+
+  // Setup logging
+  status = setupLogging(argv[0]);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
   }
 
   if (FLAGS_daemonize) {

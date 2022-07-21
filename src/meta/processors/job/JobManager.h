@@ -162,10 +162,16 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    *
    * @param spaceId
    * @param jobId
-   * @param jobStatus
+   * @param jobStatus Will be one of the FINISHED, FAILED or STOPPED.
+   * @param jobErrorCode Will be specified when the job failed before any tasks executed, e.g. when
+   * check or prepare.
    * @return cpp2::ErrorCode if error when write to kv store
    */
-  nebula::cpp2::ErrorCode jobFinished(GraphSpaceID spaceId, JobID jobId, cpp2::JobStatus jobStatus);
+  nebula::cpp2::ErrorCode jobFinished(GraphSpaceID spaceId,
+                                      JobID jobId,
+                                      cpp2::JobStatus jobStatus,
+                                      std::optional<nebula::cpp2::ErrorCode> jobErrorCode =
+                                          std::optional<nebula::cpp2::ErrorCode>());
 
   /**
    * @brief Report task finished.
@@ -228,9 +234,9 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    *
    * @param jobDesc
    * @param op
-   * @return true if all task dispatched, else false.
+   * @return error code
    */
-  bool runJobInternal(const JobDescription& jobDesc, JbOp op);
+  nebula::cpp2::ErrorCode runJobInternal(const JobDescription& jobDesc, JbOp op);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
