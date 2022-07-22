@@ -36,7 +36,8 @@ TEST_F(JobTest, JobFinishTime) {
     auto status = submitJobExe->buildResult(meta::cpp2::JobOp::SHOW, std::move(resp));
     EXPECT_TRUE(status.ok());
     auto result = std::move(status).value();
-    EXPECT_EQ(result.rows.size(), 2);
+    // One line for job, one line for the task, one line for the count
+    EXPECT_EQ(result.rows.size(), 3);
     EXPECT_EQ(result.rows[0][3], Value(time::TimeConversion::unixSecondsToDateTime(123)));
     EXPECT_EQ(result.rows[0][4], Value::kEmpty);
     EXPECT_EQ(result.rows[1][3], Value(time::TimeConversion::unixSecondsToDateTime(456)));

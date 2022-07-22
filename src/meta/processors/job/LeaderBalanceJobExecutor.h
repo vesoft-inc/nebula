@@ -42,7 +42,7 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
    *
    * @return
    */
-  folly::Future<Status> executeInternal() override;
+  folly::Future<nebula::cpp2::ErrorCode> executeInternal() override;
 
   /**
    * @brief Build a plan to balance leader

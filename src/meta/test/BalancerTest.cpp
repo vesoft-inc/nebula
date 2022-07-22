@@ -779,7 +779,7 @@ TEST(BalanceTest, NormalZoneTest) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   });
   auto ret = balancer.executeInternal();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   balancer.finish();
   balancer.lostZones_ = {"5", "6", "7", "8"};
   baton.reset();
@@ -789,7 +789,7 @@ TEST(BalanceTest, NormalZoneTest) {
   });
   ret = balancer.executeInternal();
   baton.wait();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 12);
 }
@@ -811,7 +811,7 @@ TEST(BalanceTest, NormalDataTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(space, kv);
   auto ret = balancer.executeInternal();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   balancer.finish();
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
   folly::Baton<true, std::atomic> baton;
@@ -821,7 +821,7 @@ TEST(BalanceTest, NormalDataTest) {
   });
   ret = balancer.executeInternal();
   baton.wait();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
@@ -856,7 +856,7 @@ TEST(BalanceTest, RecoveryTest) {
   });
   auto ret = balancer.executeInternal();
   baton.wait();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   std::unordered_map<HostAddr, int32_t> partCount;
   verifyBalanceTask(kv,
                     balancer.jobId_,
@@ -923,7 +923,7 @@ TEST(BalanceTest, StopPlanTest) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   });
   auto ret = balancer.executeInternal();
-  EXPECT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
   auto stopRet = balancer.stop();
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, stopRet);
   baton.wait();
@@ -1241,7 +1241,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
   LeaderBalanceJobExecutor balancer(
       space, testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   auto ret = balancer.executeInternal();
-  ASSERT_EQ(Status::OK(), ret.value());
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret.value());
 }
 
 TEST(BalanceTest, LeaderBalanceWithZoneTest) {
