@@ -39,6 +39,10 @@ std::string GoSentence::toString() const {
   return buf;
 }
 
+std::string UnwindSentence::toString() const {
+  return "";
+}
+
 LookupSentence::LookupSentence(std::string *from, WhereClause *where, YieldClause *yield)
     : Sentence(Kind::kLookup),
       from_(DCHECK_NOTNULL(from)),

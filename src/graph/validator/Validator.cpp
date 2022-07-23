@@ -33,6 +33,7 @@
 #include "graph/validator/ReportError.h"
 #include "graph/validator/SequentialValidator.h"
 #include "graph/validator/SetValidator.h"
+#include "graph/validator/UnwindValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
@@ -252,6 +253,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<AlterSpaceValidator>(sentence, context);
     case Sentence::Kind::kClearSpace:
       return std::make_unique<ClearSpaceValidator>(sentence, context);
+    case Sentence::Kind::kUnwind:
+      return std::make_unique<UnwindValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing

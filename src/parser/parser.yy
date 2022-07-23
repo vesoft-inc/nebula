@@ -390,7 +390,7 @@ using namespace nebula;
 %type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 
-%type <sentence> traverse_sentence
+%type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
@@ -1673,6 +1673,13 @@ unwind_clause
     }
     ;
 
+unwind_sentence
+    : KW_UNWIND expression KW_AS name_label {
+      $$ = new UnwindSentence($2, *$4);
+      delete $4;
+    }
+    ;
+
 with_clause
     : KW_WITH match_return_items match_order_by match_skip match_limit where_clause {
         $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
@@ -2939,6 +2946,7 @@ traverse_sentence
 
 piped_sentence
     : traverse_sentence { $$ = $1; }
+    | unwind_sentence { $$ = $1; }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
     | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
     ;
