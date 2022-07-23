@@ -2946,7 +2946,7 @@ traverse_sentence
 
 piped_sentence
     : traverse_sentence { $$ = $1; }
-    | unwind_sentence { $$ = $1; }
+    | piped_sentence PIPE unwind_sentence { $$ = new PipedSentence($1, $3); }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
     | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
     ;
