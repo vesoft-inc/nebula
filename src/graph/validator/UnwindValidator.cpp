@@ -20,8 +20,15 @@ Status UnwindValidator::validateImpl() {
   }
   alias_ = unwindSentence->alias();
   unwindExpr_ = unwindSentence->expr()->clone();
-  if (ExpressionUtils::hasAny(unwindExpr_, {Expression::Kind::kAggregate})) {
-    return Status::SemanticError("Can't use aggregating expressions in unwind clause, `%s'",
+
+  if (ExpressionUtils::findAny(unwindExpr_,
+                               {Expression::Kind::kSrcProperty,
+                                Expression::Kind::kDstProperty,
+                                Expression::Kind::kVarProperty,
+                                Expression::Kind::kLabel,
+                                Expression::Kind::kAggregate,
+                                Expression::Kind::kEdgeProperty})) {
+    return Status::SemanticError("Not support `%s' in UNWIND sentence.",
                                  unwindExpr_->toString().c_str());
   }
 

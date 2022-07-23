@@ -116,46 +116,6 @@ Feature: Unwind clause
       | min   | max  |
       | false | true |
 
-  Scenario: unwind pipe ngql
-    When executing query:
-      """
-      YIELD ['Tim Duncan', 'Tony Parker'] AS a
-      | UNWIND $-.a AS b
-      | GO FROM $-.b OVER like YIELD edge AS e
-      """
-    Then the result should be, in any order:
-      | e                                                            |
-      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
-      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
-      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
-      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
-    When executing query:
-      """
-      YIELD {a:1, b:['Tim Duncan', 'Tony Parker'], c:'Tim Duncan'} AS a
-      | YIELD $-.a.b AS b
-      | UNWIND $-.b AS c
-      | GO FROM $-.c OVER like YIELD edge AS e
-      """
-    Then the result should be, in any order:
-      | e                                                            |
-      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
-      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
-      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
-      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
-    When executing query:
-      """
-      YIELD {a:1, b:['Tim Duncan', 'Tony Parker'], c:'Tim Duncan'} AS a
-      | YIELD $-.a.c AS b
-      | UNWIND $-.b AS c
-      | GO FROM $-.c OVER like YIELD edge AS e
-      """
-    Then the result should be, in any order:
-      | e                                                       |
-      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
-
   Scenario: unwind match with
     When executing query:
       """
