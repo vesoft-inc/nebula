@@ -841,6 +841,14 @@ class Unwind final : public SingleInputNode {
     return alias_;
   }
 
+  bool fromPipe() const {
+    return fromPipe_;
+  }
+
+  void setFromPipe() {
+    fromPipe_ = true;
+  }
+
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -854,6 +862,7 @@ class Unwind final : public SingleInputNode {
  private:
   Expression* unwindExpr_{nullptr};
   std::string alias_;
+  bool fromPipe_{false};
 };
 
 // Sort the given record set.

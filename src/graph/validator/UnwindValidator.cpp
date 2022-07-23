@@ -34,6 +34,7 @@ Status UnwindValidator::validateImpl() {
 Status UnwindValidator::toPlan() {
   auto *unwind = Unwind::make(qctx_, nullptr, unwindExpr_, alias_);
   unwind->setColNames({alias_});
+  unwind->setFromPipe();
   root_ = tail_ = unwind;
   return Status::OK();
 }
