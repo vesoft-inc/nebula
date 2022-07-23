@@ -21,7 +21,7 @@ DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
     return nebula::DataSet({kVid});
   }
   auto valueIter = ectx_->getResult(av->inputVar()).iter();
-  return buildRequestDataSetByVidType(valueIter.get(), av->src(), av->dedup());
+  return buildRequestDataSetByVidType(valueIter.get(), av->src(), av->dedup(), true);
 }
 
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {

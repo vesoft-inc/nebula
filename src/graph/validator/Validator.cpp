@@ -452,15 +452,16 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
           src->toString().c_str());
     }
     starts.fromType = src->kind() == Expression::Kind::kInputProperty ? kPipe : kVariable;
-    auto type = deduceExprType(src);
-    if (!type.ok()) {
-      return type.status();
+    auto res = deduceExprType(src);
+    if (!res.ok()) {
+      return res.status();
     }
     auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
-    if (type.value() != SchemaUtil::propTypeToValueType(vidType)) {
+    auto& type = res.value();
+    if (type != Value::Type::__EMPTY__ && type != SchemaUtil::propTypeToValueType(vidType)) {
       std::stringstream ss;
       ss << "`" << src->toString() << "', the srcs should be type of "
-         << apache::thrift::util::enumNameSafe(vidType) << ", but was`" << type.value() << "'";
+         << apache::thrift::util::enumNameSafe(vidType) << ", but was`" << type << "'";
       return Status::SemanticError(ss.str());
     }
     starts.originalSrc = src;

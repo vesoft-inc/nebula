@@ -41,7 +41,8 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
                             QueryExpressionContext &exprCtx,
                             Iterator *iter,
                             Expression *expr,
-                            bool dedup) {
+                            bool dedup,
+                            bool isCypher) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
   auto s = iter->size();
@@ -54,7 +55,13 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
 
   for (; iter->valid(); iter->next()) {
     auto vid = expr->eval(exprCtx(iter));
+    if (vid.empty()) {
+      continue;
+    }
     if (!SchemaUtil::isValidVid(vid, vidType)) {
+      if (isCypher) {
+        continue;
+      }
       LOG(WARNING) << "Mismatched vid type: " << vid.type()
                    << ", space vid type: " << SchemaUtil::typeToString(vidType);
       continue;
@@ -75,14 +82,15 @@ bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
 
 DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
                                                             Expression *expr,
-                                                            bool dedup) {
+                                                            bool dedup,
+                                                            bool isCypher) {
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   if (isIntVidType(space)) {
-    return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup);
+    return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup, isCypher);
   }
-  return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup);
+  return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
 std::string StorageAccessExecutor::getStorageDetail(

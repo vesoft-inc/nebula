@@ -5,6 +5,7 @@
 #include "graph/executor/query/GetEdgesExecutor.h"
 
 #include "graph/planner/plan/Query.h"
+#include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -25,6 +26,7 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   edges.rows.reserve(valueIter->size());
   std::unordered_set<std::tuple<Value, Value, Value, Value>> uniqueEdges;
   uniqueEdges.reserve(valueIter->size());
+  const auto &space = qctx()->rctx()->session()->space();
   for (; valueIter->valid(); valueIter->next()) {
     auto type = ge->type()->eval(exprCtx(valueIter.get()));
     auto src = ge->src()->eval(exprCtx(valueIter.get()));
@@ -53,6 +55,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
   }
 
   auto edges = buildRequestDataSet(ge);
+  NG_RETURN_IF_ERROR(res);
 
   if (edges.rows.empty()) {
     // TODO: add test for empty input.
