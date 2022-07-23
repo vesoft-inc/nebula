@@ -40,7 +40,15 @@ std::string GoSentence::toString() const {
 }
 
 std::string UnwindSentence::toString() const {
-  return "";
+  std::string buf;
+  buf.reserve(256);
+
+  buf += "UNWIND ";
+  buf += expr_->toString();
+  buf += " AS ";
+  buf += alias_;
+
+  return buf;
 }
 
 LookupSentence::LookupSentence(std::string *from, WhereClause *where, YieldClause *yield)

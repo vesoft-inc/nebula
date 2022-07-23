@@ -21,7 +21,9 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   auto *gv = asNode<GetVertices>(node());
   StorageClient *storageClient = qctx()->getStorageClient();
 
-  DataSet vertices = buildRequestDataSet(gv);
+  auto res = buildRequestDataSet(gv);
+  NG_RETURN_IF_ERROR(res);
+  auto vertices = std::move(res).value();
   if (vertices.rows.empty()) {
     // TODO: add test for empty input.
     return finish(
@@ -55,7 +57,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
       });
 }
 
-DataSet GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
+StatusOr<DataSet> GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
   if (gv == nullptr) {
     return nebula::DataSet({kVid});
   }

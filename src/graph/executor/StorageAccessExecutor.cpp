@@ -37,12 +37,12 @@ struct Vid<std::string> {
 };
 
 template <typename VidType>
-DataSet buildRequestDataSet(const SpaceInfo &space,
-                            QueryExpressionContext &exprCtx,
-                            Iterator *iter,
-                            Expression *expr,
-                            bool dedup,
-                            bool isCypher) {
+StatusOr<DataSet> buildRequestDataSet(const SpaceInfo &space,
+                                      QueryExpressionContext &exprCtx,
+                                      Iterator *iter,
+                                      Expression *expr,
+                                      bool dedup,
+                                      bool isCypher) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
   auto s = iter->size();
@@ -62,9 +62,11 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
       if (isCypher) {
         continue;
       }
-      LOG(WARNING) << "Mismatched vid type: " << vid.type()
-                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
-      continue;
+      std::stringstream ss;
+      ss << "`" << vid.toString() << "', the srcs should be type of "
+         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << vid.type()
+         << "'";
+      return Status::Error(ss.str());
     }
     if (dedup && !uniqueSet.emplace(Vid<VidType>::value(vid)).second) {
       continue;
@@ -80,10 +82,10 @@ bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
   return (*space.spaceDesc.vid_type_ref()).type == nebula::cpp2::PropertyType::INT64;
 }
 
-DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
-                                                            Expression *expr,
-                                                            bool dedup,
-                                                            bool isCypher) {
+StatusOr<DataSet> StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
+                                                                      Expression *expr,
+                                                                      bool dedup,
+                                                                      bool isCypher) {
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
 

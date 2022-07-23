@@ -50,12 +50,6 @@ StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *exp
   }
   auto exprType = deduceExprType(expr);
   NG_RETURN_IF_ERROR(exprType);
-  if (exprType.value() != type) {
-    std::stringstream ss;
-    ss << "`" << expr->toString() << "' should be type of " << type << ", but was "
-       << exprType.value();
-    return Status::SemanticError(ss.str());
-  }
   if (kind == Expression::Kind::kInputProperty) {
     return inputVarName_;
   }
