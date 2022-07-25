@@ -69,7 +69,8 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
   gn->setInputVar("input_gn");
 
   auto gnExe = std::make_unique<GetNeighborsExecutor>(gn, qctx_.get());
-  auto reqDs = gnExe->buildRequestDataSet();
+  auto res = gnExe->buildRequestDataSet();
+  auto reqDs = std::move(res).value();
 
   DataSet expected;
   expected.colNames = {kVid};

@@ -42,8 +42,7 @@ Status FetchEdgesValidator::validateEdgeName() {
 
 // Check validity of edge key(src, type, rank, dst)
 // from Input/Variable expression specified in sentence
-StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *expr,
-                                                           Value::Type type) {
+StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *expr) {
   const auto &kind = expr->kind();
   if (kind != Expression::Kind::kInputProperty && kind != EdgeExpression::Kind::kVarProperty) {
     return Status::SemanticError("`%s', only input and variable expression is acceptable",
@@ -51,12 +50,6 @@ StatusOr<std::string> FetchEdgesValidator::validateEdgeRef(const Expression *exp
   }
   auto exprType = deduceExprType(expr);
   NG_RETURN_IF_ERROR(exprType);
-  if (exprType.value() != type) {
-    std::stringstream ss;
-    ss << "`" << expr->toString() << "' should be type of " << type << ", but was "
-       << exprType.value();
-    return Status::SemanticError(ss.str());
-  }
   if (kind == Expression::Kind::kInputProperty) {
     return inputVarName_;
   }
@@ -72,13 +65,22 @@ Status FetchEdgesValidator::validateEdgeKey() {
   std::string inputVarName;
   if (sentence->isRef()) {  // edge keys from Input/Variable
     auto *srcExpr = sentence->ref()->srcid();
-    auto result = validateEdgeRef(srcExpr, vidType_);
+    auto result = validateEdgeRef(srcExpr);
     NG_RETURN_IF_ERROR(result);
     inputVarName = std::move(result).value();
 
     auto *rankExpr = sentence->ref()->rank();
     if (rankExpr->kind() != Expression::Kind::kConstant) {
-      result = validateEdgeRef(rankExpr, Value::Type::INT);
+      auto rankType = deduceExprType(rankExpr);
+      NG_RETURN_IF_ERROR(rankType);
+      if (rankType.value() != Value::Type::INT) {
+        std::stringstream ss;
+        ss << "`" << rankExpr->toString() << "' should be type of INT, but was "
+           << rankType.value();
+        return Status::SemanticError(ss.str());
+      }
+
+      result = validateEdgeRef(rankExpr);
       NG_RETURN_IF_ERROR(result);
       if (inputVarName != result.value()) {
         return Status::SemanticError(
@@ -88,7 +90,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
     }
 
     auto *dstExpr = sentence->ref()->dstid();
-    result = validateEdgeRef(dstExpr, vidType_);
+    result = validateEdgeRef(dstExpr);
     NG_RETURN_IF_ERROR(result);
     if (inputVarName != result.value()) {
       return Status::SemanticError(

@@ -22,7 +22,7 @@ class AppendVerticesExecutor final : public GetPropExecutor {
   folly::Future<Status> execute() override;
 
  private:
-  DataSet buildRequestDataSet(const AppendVertices *gv);
+  StatusOr<DataSet> buildRequestDataSet(const AppendVertices *gv);
 
   folly::Future<Status> appendVertices();
 

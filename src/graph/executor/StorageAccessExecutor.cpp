@@ -37,11 +37,12 @@ struct Vid<std::string> {
 };
 
 template <typename VidType>
-DataSet buildRequestDataSet(const SpaceInfo &space,
-                            QueryExpressionContext &exprCtx,
-                            Iterator *iter,
-                            Expression *expr,
-                            bool dedup) {
+StatusOr<DataSet> buildRequestDataSet(const SpaceInfo &space,
+                                      QueryExpressionContext &exprCtx,
+                                      Iterator *iter,
+                                      Expression *expr,
+                                      bool dedup,
+                                      bool isCypher) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   nebula::DataSet vertices({kVid});
   auto s = iter->size();
@@ -54,10 +55,18 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
 
   for (; iter->valid(); iter->next()) {
     auto vid = expr->eval(exprCtx(iter));
-    if (!SchemaUtil::isValidVid(vid, vidType)) {
-      LOG(WARNING) << "Mismatched vid type: " << vid.type()
-                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
+    if (vid.empty()) {
       continue;
+    }
+    if (!SchemaUtil::isValidVid(vid, vidType)) {
+      if (isCypher) {
+        continue;
+      }
+      std::stringstream ss;
+      ss << "`" << vid.toString() << "', the srcs should be type of "
+         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << vid.type()
+         << "'";
+      return Status::Error(ss.str());
     }
     if (dedup && !uniqueSet.emplace(Vid<VidType>::value(vid)).second) {
       continue;
@@ -73,16 +82,17 @@ bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
   return (*space.spaceDesc.vid_type_ref()).type == nebula::cpp2::PropertyType::INT64;
 }
 
-DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
-                                                            Expression *expr,
-                                                            bool dedup) {
+StatusOr<DataSet> StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
+                                                                      Expression *expr,
+                                                                      bool dedup,
+                                                                      bool isCypher) {
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   if (isIntVidType(space)) {
-    return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup);
+    return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup, isCypher);
   }
-  return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup);
+  return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
 std::string StorageAccessExecutor::getStorageDetail(

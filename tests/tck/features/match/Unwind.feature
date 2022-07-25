@@ -146,7 +146,7 @@ Feature: Unwind clause
       WITH DISTINCT vid
       RETURN collect(vid) as vids
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `UNWIND'
+    Then a SyntaxError should be raised at runtime: syntax error near `WITH'
     When executing query:
       """
       MATCH (a:player {name:"Tim Duncan"}) - [e:like] -> (b)
