@@ -27,11 +27,6 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::stop() {
-  stopped_ = true;
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
 nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   if (kvstore_ == nullptr) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
