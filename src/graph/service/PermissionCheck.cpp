@@ -131,6 +131,7 @@ namespace graph {
     case Sentence::Kind::kGetSubgraph:
     case Sentence::Kind::kLimit:
     case Sentence::Kind::kGroupBy:
+    case Sentence::Kind::kUnwind:
     case Sentence::Kind::kReturn: {
       return PermissionManager::canReadSchemaOrData(session, vctx);
     }

@@ -22,7 +22,7 @@ class FetchEdgesValidator final : public Validator {
 
   Status validateEdgeName();
 
-  StatusOr<std::string> validateEdgeRef(const Expression* expr, Value::Type type);
+  StatusOr<std::string> validateEdgeRef(const Expression* expr);
 
   Status validateEdgeKey();
 
