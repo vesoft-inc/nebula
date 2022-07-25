@@ -41,6 +41,7 @@ namespace opt {
     // PlanNode::Kind::kIntersect, intersect has no value in result
     // PlanNode::Kind::kMinus, minus has no value in result
     PlanNode::Kind::kProject,
+    PlanNode::Kind::kUnwind,
     PlanNode::Kind::kSort,
     PlanNode::Kind::kTopN,
     // PlanNode::Kind::kLimit, limit has no value in result

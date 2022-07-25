@@ -369,6 +369,7 @@ std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
 
 PlanNode* Unwind::clone() const {
   auto* newUnwind = Unwind::make(qctx_, nullptr);
+  newUnwind->setFromPipe(fromPipe_);
   newUnwind->cloneMembers(*this);
   return newUnwind;
 }

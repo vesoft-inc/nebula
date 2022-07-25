@@ -845,8 +845,8 @@ class Unwind final : public SingleInputNode {
     return fromPipe_;
   }
 
-  void setFromPipe() {
-    fromPipe_ = true;
+  void setFromPipe(bool fromPipe) {
+    fromPipe_ = fromPipe;
   }
 
   PlanNode* clone() const override;
