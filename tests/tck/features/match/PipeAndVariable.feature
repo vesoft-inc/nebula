@@ -122,10 +122,10 @@ Feature: Pipe or use variable to store the lookup results
       LOOKUP ON player
       WHERE player.name == 'Tim Duncan'
       YIELD player.age as age, id(vertex) as vid
-      | UNWIND $-.vid as a | YIELD $-.a AS id
+      | UNWIND $-.vid as a | YIELD $-.a AS a
       """
     Then the result should be, in any order, with relax comparison:
-      | id           |
+      | a            |
       | "Tim Duncan" |
     When executing query:
       """
