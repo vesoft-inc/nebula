@@ -5,6 +5,8 @@
 
 #include "meta/processors/job/JobManager.h"
 
+#include <folly/executors/CPUThreadPoolExecutor.h>
+#include <folly/futures/Future.h>
 #include <folly/synchronization/Baton.h>
 #include <gtest/gtest.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
@@ -27,11 +29,13 @@
 
 DEFINE_int32(job_check_intervals, 5000, "job intervals in us");
 DEFINE_double(job_expired_secs, 7 * 24 * 60 * 60, "job expired intervals in sec");
+DEFINE_int32(job_threads, 10, "Threads number for exec job");
 
 using nebula::kvstore::KVIterator;
 
 namespace nebula {
 namespace meta {
+
 stats::CounterId kNumRunningJobs;
 
 JobManager* JobManager::getInstance() {
@@ -54,6 +58,7 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
   }
   bgThread_ = std::thread(&JobManager::scheduleThread, this);
   LOG(INFO) << "JobManager initialized";
+  executor_.reset(new folly::CPUThreadPoolExecutor(FLAGS_job_threads));
   return true;
 }
 
@@ -142,46 +147,46 @@ void JobManager::scheduleThread() {
     auto jobOp = std::get<0>(opJobId);
     auto jodId = std::get<1>(opJobId);
     auto spaceId = std::get<2>(opJobId);
-    auto iter = muJobFinished_.find(spaceId);
-    if (iter == muJobFinished_.end()) {
-      iter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
-    }
-    std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+    JobDescription jobDesc;
+    {
+      auto iter = muJobFinished_.find(spaceId);
+      if (iter == muJobFinished_.end()) {
+        iter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
+      }
 
-    auto jobDescRet = JobDescription::loadJobDescription(spaceId, jodId, kvStore_);
-    if (!nebula::ok(jobDescRet)) {
-      LOG(INFO) << "Load an invalid job from space " << spaceId << " jodId " << jodId;
-      continue;  // leader change or archive happened
-    }
-    auto jobDesc = nebula::value(jobDescRet);
-    if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING, jobOp == JbOp::RECOVER)) {
-      LOG(INFO) << "Skip job space " << spaceId << " jodId " << jodId;
-      continue;
+      std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+
+      auto jobDescRet = JobDescription::loadJobDescription(spaceId, jodId, kvStore_);
+      if (!nebula::ok(jobDescRet)) {
+        LOG(INFO) << "Load an invalid job from space " << spaceId << " jodId " << jodId;
+        continue;  // leader change or archive happened
+      }
+      jobDesc = nebula::value(jobDescRet);
+      if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING, jobOp == JbOp::RECOVER)) {
+        LOG(INFO) << "Skip job space " << spaceId << " jodId " << jodId;
+        continue;
+      }
+
+      auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+      auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                         jobDesc.getParas(),
+                                         jobDesc.getStatus(),
+                                         jobDesc.getStartTime(),
+                                         jobDesc.getStopTime(),
+                                         jobDesc.getErrorCode());
+      save(jobKey, jobVal);
+      spaceRunningJobs_.insert_or_assign(spaceId, true);
     }
 
-    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
-    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
-                                       jobDesc.getParas(),
-                                       jobDesc.getStatus(),
-                                       jobDesc.getStartTime(),
-                                       jobDesc.getStopTime(),
-                                       jobDesc.getErrorCode());
-    save(jobKey, jobVal);
-    spaceRunningJobs_.insert_or_assign(spaceId, true);
-    auto code = runJobInternal(jobDesc, jobOp);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      jobFinished(spaceId, jodId, cpp2::JobStatus::FAILED, code);
-    }
+    runJobInternal(jobDesc, jobOp).via(executor_.get()).thenValue([](auto&&) {});
   }
 }
 
-nebula::cpp2::ErrorCode JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
-  auto je = JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
-  JobExecutor* jobExec = je.get();
-
-  runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
+nebula::cpp2::ErrorCode JobManager::prepareRunJob(JobExecutor* jobExec,
+                                                  const JobDescription& jobDesc,
+                                                  JbOp op) {
   if (jobExec == nullptr) {
-    LOG(INFO) << "unreconized job type "
+    LOG(INFO) << "Unreconized job type "
               << apache::thrift::util::enumNameSafe(jobDesc.getJobType());
     return nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
   }
@@ -204,23 +209,71 @@ nebula::cpp2::ErrorCode JobManager::runJobInternal(const JobDescription& jobDesc
       return code;
     }
   }
-  if (jobExec->isMetaJob()) {
-    jobExec->setFinishCallBack([this, jobDesc](meta::cpp2::JobStatus status) {
-      if (status == meta::cpp2::JobStatus::STOPPED) {
-        auto space = jobDesc.getSpace();
-        auto iter = muJobFinished_.find(space);
-        if (iter == muJobFinished_.end()) {
-          iter = muJobFinished_.emplace(space, std::make_unique<std::recursive_mutex>()).first;
-        }
-        std::lock_guard<std::recursive_mutex> lk(*(iter->second));
-        cleanJob(jobDesc.getJobId());
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
-      } else {
-        return jobFinished(jobDesc.getSpace(), jobDesc.getJobId(), status);
-      }
-    });
+  return code;
+}
+
+folly::Future<nebula::cpp2::ErrorCode> JobManager::runJobInternal(const JobDescription& jobDesc,
+                                                                  JbOp op) {
+  folly::Promise<nebula::cpp2::ErrorCode> promise;
+  auto retFuture = promise.getFuture();
+  JobExecutor* jobExec;
+  auto spaceId = jobDesc.getSpace();
+
+  {
+    auto iter = this->muJobFinished_.find(spaceId);
+    if (iter == this->muJobFinished_.end()) {
+      iter = this->muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
+    }
+    std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+    auto je = JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
+    jobExec = je.get();
+
+    runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
+    auto retCode = prepareRunJob(jobExec, jobDesc, op);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      jobFinished(spaceId, jobDesc.getJobId(), cpp2::JobStatus::FAILED, retCode);
+      resetSpaceRunning(spaceId);
+      promise.setValue(retCode);
+      return retFuture;
+    }
   }
-  return jobExec->execute();
+
+  jobExec->execute().thenValue([jobExec, pro = std::move(promise), this](
+                                   nebula::cpp2::ErrorCode&& code) mutable {
+    auto isMetaJob = jobExec->isMetaJob();
+    auto jDesc = jobExec->getJobDescription();
+    auto jStatus = jDesc.getStatus();
+    auto jSpace = jDesc.getSpace();
+    auto jJob = jDesc.getJobId();
+
+    auto iter = this->muJobFinished_.find(jSpace);
+    if (iter == this->muJobFinished_.end()) {
+      iter = this->muJobFinished_.emplace(jSpace, std::make_unique<std::recursive_mutex>()).first;
+    }
+    std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+    jobExec->resetRunningStatus();
+
+    if (isMetaJob) {
+      if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        if (jStatus == meta::cpp2::JobStatus::STOPPED) {
+          cleanJob(jJob);
+        } else {
+          jobFinished(jSpace, jJob, jStatus);
+        }
+      } else {
+        jobFinished(jSpace, jJob, cpp2::JobStatus::FAILED, code);
+      }
+      resetSpaceRunning(jSpace);
+    } else {
+      // storage job
+      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        jobFinished(jSpace, jJob, cpp2::JobStatus::FAILED, code);
+        resetSpaceRunning(jSpace);
+      }
+    }
+    pro.setValue(std::move(code));
+  });
+  return retFuture;
 }
 
 void JobManager::cleanJob(JobID jobId) {
@@ -253,6 +306,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
   if (mutexIter == muJobFinished_.end()) {
     mutexIter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
   }
+
   std::lock_guard<std::recursive_mutex> lk(*(mutexIter->second));
 
   auto optJobDescRet = JobDescription::loadJobDescription(spaceId, jobId, kvStore_);
@@ -276,8 +330,8 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
 
   // If the job is marked as FAILED, one of the following will be triggered
   // 1. If any of the task failed, set the errorcode of the job to the failed task code.
-  // 2. The job failed before running any task (e.g. in check or prepare), the error code of the job
-  // will be set as it
+  // 2. The job failed before running any task (e.g. in check or prepare), the error code of the
+  // job will be set as it
   if (jobStatus == cpp2::JobStatus::FAILED) {
     if (!jobErrorCode.has_value()) {
       // Traverse the tasks and find the first task errorcode unsuccessful
@@ -305,7 +359,6 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
     optJobDesc.setErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
-  spaceRunningJobs_.insert_or_assign(spaceId, false);
   auto jobKey = MetaKeyUtils::jobKey(optJobDesc.getSpace(), optJobDesc.getJobId());
   auto jobVal = MetaKeyUtils::jobVal(optJobDesc.getJobType(),
                                      optJobDesc.getParas(),
@@ -325,15 +378,18 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
     cleanJob(jobId);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
+
   // Job has been started
   auto jobExec = it->second.get();
   if (jobStatus == cpp2::JobStatus::STOPPED) {
+    auto isRunning = jobExec->isRunning();
     auto code = jobExec->stop();
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      // meta job is trigger by metad, which runs in async. So we can't clean the job executor here.
-      // The cleanJob will be called in the callback of job executor set by setFinishCallBack.
-      if (!jobExec->isMetaJob()) {
+      // meta job is trigger by metad, which runs in async. So we can't clean the job executor
+      // here. The cleanJob will be called in runJobInternal.
+      if (!jobExec->isMetaJob() && !isRunning) {
         cleanJob(jobId);
+        resetSpaceRunning(optJobDesc.getSpace());
       }
     }
     return code;
@@ -388,8 +444,8 @@ void JobManager::compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired) 
 }
 
 // Only the job which execute on storaged will trigger this function. Storage will report to meta
-// when the task has been executed. In other words, when storage report the task state, it should be
-// one of FINISHED, FAILED or STOPPED.
+// when the task has been executed. In other words, when storage report the task state, it should
+// be one of FINISHED, FAILED or STOPPED.
 nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& req) {
   auto spaceId = req.get_space_id();
   auto jobId = req.get_job_id();
@@ -442,7 +498,9 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
                                  [](auto& tsk) { return tsk.status_ == cpp2::JobStatus::FINISHED; })
                          ? cpp2::JobStatus::FINISHED
                          : cpp2::JobStatus::FAILED;
-    return jobFinished(spaceId, jobId, jobStatus);
+    auto code = jobFinished(spaceId, jobId, jobStatus);
+    resetSpaceRunning(spaceId);
+    return code;
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
@@ -719,8 +777,21 @@ JobManager::showJob(GraphSpaceID spaceId, JobID jobId) {
   return ret;
 }
 
+void JobManager::resetSpaceRunning(GraphSpaceID spaceId) {
+  auto iter = muJobFinished_.find(spaceId);
+  if (iter == muJobFinished_.end()) {
+    iter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
+  }
+  std::lock_guard<std::recursive_mutex> lk(*(iter->second));
+  spaceRunningJobs_.insert_or_assign(spaceId, false);
+}
+
 nebula::cpp2::ErrorCode JobManager::stopJob(GraphSpaceID spaceId, JobID jobId) {
   LOG(INFO) << folly::sformat("Try to stop job {} in space {}", jobId, spaceId);
+  // For meta job
+  // 1) spaceRunningJobs_ should not be set when stop, it should be set when
+  // runJobInternal is executed
+  // 2) JobExecutor cannot be released during execution
   return jobFinished(spaceId, jobId, cpp2::JobStatus::STOPPED);
 }
 

@@ -82,6 +82,10 @@ class JobManagerTest : public ::testing::Test {
   std::unique_ptr<MockAdminClient> adminClient_{nullptr};
 };
 
+HostAddr toHost(std::string strIp) {
+  return HostAddr(strIp, 0);
+}
+
 TEST_F(JobManagerTest, AddJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   // For preventing job schedule in JobManager
@@ -121,7 +125,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_TAG_INDEX, paras);
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
+  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
@@ -136,7 +140,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_EDGE_INDEX, paras);
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
+  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
@@ -161,7 +165,7 @@ TEST_F(JobManagerTest, DownloadJob) {
   ASSERT_EQ(executor->check(), nebula::cpp2::ErrorCode::SUCCEEDED);
   auto code = executor->prepare();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
-  code = executor->execute();
+  code = executor->execute().get();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
@@ -185,7 +189,7 @@ TEST_F(JobManagerTest, IngestJob) {
   ASSERT_EQ(executor->check(), nebula::cpp2::ErrorCode::SUCCEEDED);
   auto code = executor->prepare();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
-  code = executor->execute();
+  code = executor->execute().get();
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
@@ -199,7 +203,7 @@ TEST_F(JobManagerTest, StatsJob) {
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::STATS);
   auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD);
+  auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
   // Function runJobInternal does not set the finished status of the job
   jobDesc.setStatus(cpp2::JobStatus::FINISHED);
@@ -431,10 +435,6 @@ TEST_F(JobManagerTest, ShowJobsFromMultiSpace) {
   ASSERT_EQ(jobs[0].get_start_time(), jd2.getStartTime());
   ASSERT_EQ(jobs[0].get_stop_time(), jd2.getStopTime());
   ASSERT_EQ(jobs[0].get_paras(), jd2.getParas());
-}
-
-HostAddr toHost(std::string strIp) {
-  return HostAddr(strIp, 0);
 }
 
 TEST_F(JobManagerTest, ShowJob) {
@@ -766,10 +766,28 @@ TEST_F(JobManagerTest, NotStoppableJob) {
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun
+    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+    std::string value;
+    cpp2::JobStatus status = cpp2::JobStatus::QUEUE;
+
+    while (status == cpp2::JobStatus::QUEUE) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      code = kv_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
+      ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+      auto tup = MetaKeyUtils::parseJobVal(value);
+      status = std::get<2>(tup);
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     code = jobMgr->stopJob(spaceId, jobId);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE);
     jobId++;
+
+    // If the jobExecutor is still executing, resetSpaceRunning is not set in stoppJob
+    // When the jobExecutor completes, set the resetSpaceRunning of the meta job
+    // The resetSpaceRunning of the storage job is done in reportTaskFinish
+    if (type != cpp2::JobType::LEADER_BALANCE) {
+      jobMgr->resetSpaceRunning(spaceId);
+    }
   }
 }
 
@@ -819,11 +837,26 @@ TEST_F(JobManagerTest, StoppableJob) {
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun
+    auto jobKey = MetaKeyUtils::jobKey(spaceId, jobId);
+    std::string value;
+    cpp2::JobStatus status = cpp2::JobStatus::QUEUE;
+
+    while (status == cpp2::JobStatus::QUEUE) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      code = kv_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
+      ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+      auto tup = MetaKeyUtils::parseJobVal(value);
+      status = std::get<2>(tup);
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     code = jobMgr->stopJob(spaceId, jobId);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     jobId++;
+    // If the jobExecutor is still executing, resetSpaceRunning is not set in stoppJob
+    // When the jobExecutor completes, set the resetSpaceRunning of the meta job
+    // The resetSpaceRunning of the storage job is done in reportTaskFinish
+    jobMgr->resetSpaceRunning(spaceId);
   }
 }
 

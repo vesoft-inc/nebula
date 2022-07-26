@@ -32,7 +32,9 @@ void BalancePlan::dispatchTasks() {
   }
 }
 
-void BalancePlan::invoke() {
+folly::Future<meta::cpp2::JobStatus> BalancePlan::invoke() {
+  auto retFuture = promise_.getFuture();
+
   // Sort the tasks by its id to ensure the order after recovery.
   setStatus(meta::cpp2::JobStatus::RUNNING);
   std::sort(
@@ -60,9 +62,11 @@ void BalancePlan::invoke() {
         if (finished) {
           CHECK_EQ(j, buckets_[i].size() - 1);
           saveInStore();
-          onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED
-                              : (failed_ ? meta::cpp2::JobStatus::FAILED
-                                         : meta::cpp2::JobStatus::FINISHED));
+          VLOG(4) << "BalancePlan::invoke finish";
+          auto result =
+              stopped ? meta::cpp2::JobStatus::STOPPED
+                      : failed_ ? meta::cpp2::JobStatus::FAILED : meta::cpp2::JobStatus::FINISHED;
+          promise_.setValue(result);
         } else if (j + 1 < buckets_[i].size()) {
           auto& task = tasks_[buckets_[i][j + 1]];
           if (stopped) {
@@ -83,6 +87,7 @@ void BalancePlan::invoke() {
           }
         }
       };  // onFinished
+
       tasks_[taskIndex].onError_ = [this, i, j]() {
         bool finished = false;
         bool stopped = false;
@@ -100,7 +105,9 @@ void BalancePlan::invoke() {
         }
         if (finished) {
           CHECK_EQ(j, buckets_[i].size() - 1);
-          onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED : meta::cpp2::JobStatus::FAILED);
+          VLOG(4) << "BalancePlan::invoke finish";
+          auto result = stopped ? meta::cpp2::JobStatus::STOPPED : meta::cpp2::JobStatus::FAILED;
+          promise_.setValue(result);
         } else if (j + 1 < buckets_[i].size()) {
           auto& task = tasks_[buckets_[i][j + 1]];
           LOG(INFO) << "Skip the task for the same partId " << task.partId_;
@@ -136,6 +143,7 @@ void BalancePlan::invoke() {
       tasks_[buckets_[i][0]].invoke();
     }
   }
+  return retFuture;
 }
 
 nebula::cpp2::ErrorCode BalancePlan::saveInStore() {
@@ -195,10 +203,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> BalancePlan::sh
     thriftTasks.emplace_back(std::move(t));
   }
   return thriftTasks;
-}
-
-void BalancePlan::setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func) {
-  onFinished_ = func;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalanceTasks(

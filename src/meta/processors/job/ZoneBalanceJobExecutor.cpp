@@ -41,7 +41,9 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
 }
 
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::stop() {
-  plan_->stop();
+  if (plan_) {
+    plan_->stop();
+  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -50,15 +52,22 @@ folly::Future<nebula::cpp2::ErrorCode> ZoneBalanceJobExecutor::executeInternal()
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
       if (status == Status::Balanced()) {
-        executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+        jobDescription_.setStatus(meta::cpp2::JobStatus::FINISHED, true);
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }
-  plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) { executorOnFinished_(status); });
-  plan_->invoke();
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+
+  return plan_->invoke().thenValue([this](meta::cpp2::JobStatus status) mutable {
+    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+    auto ret = updateLastTime();
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
+    }
+    jobDescription_.setStatus(status, true);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  });
 }
 
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
