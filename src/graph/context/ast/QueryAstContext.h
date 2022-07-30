@@ -133,6 +133,13 @@ struct SubgraphContext final : public AstContext {
   bool getEdgeProp{false};
 };
 
+struct IsomorContext final : public AstContext {
+  Starts from;
+  bool distinct{false};
+  ExpressionProps exprProps;
+  std::string inputVarName;
+};
+
 struct FetchVerticesContext final : public AstContext {
   Starts from;
   bool distinct{false};

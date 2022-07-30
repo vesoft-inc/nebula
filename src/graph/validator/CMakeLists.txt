@@ -27,6 +27,7 @@ nebula_add_library(
     FindPathValidator.cpp
     LookupValidator.cpp
     MatchValidator.cpp
+    IsomorValidator.cpp
 )
 
 nebula_add_subdirectory(test)

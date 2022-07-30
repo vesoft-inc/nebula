@@ -33,6 +33,7 @@ nebula_add_library(
     ngql/FetchVerticesPlanner.cpp
     ngql/FetchEdgesPlanner.cpp
     ngql/MaintainPlanner.cpp
+    ngql/IsomorPlanner.cpp
 )
 
 nebula_add_library(
