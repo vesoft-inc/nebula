@@ -30,8 +30,6 @@ class DownloadJobExecutor : public SimpleConcurrentJobExecutor {
 
   nebula::cpp2::ErrorCode prepare() override;
 
-  nebula::cpp2::ErrorCode stop() override;
-
  protected:
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;

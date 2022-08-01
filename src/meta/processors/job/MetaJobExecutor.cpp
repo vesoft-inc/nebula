@@ -35,7 +35,8 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
 
 // Stop the job when the user cancel it.
 nebula::cpp2::ErrorCode MetaJobExecutor::stop() {
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  // By default we return not stoppable
+  return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
 }
 
 nebula::cpp2::ErrorCode MetaJobExecutor::finish(bool) {

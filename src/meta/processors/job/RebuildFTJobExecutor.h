@@ -22,6 +22,11 @@ class RebuildFTJobExecutor : public RebuildJobExecutor {
     toHost_ = TargetHosts::LISTENER;
   }
 
+  nebula::cpp2::ErrorCode stop() override {
+    // Unlike rebuild tag/edge idnex, rebuild full text job is not stoppable
+    return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
+  }
+
  protected:
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
