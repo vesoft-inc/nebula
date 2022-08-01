@@ -23,8 +23,6 @@ class SimpleConcurrentJobExecutor : public StorageJobExecutor {
   nebula::cpp2::ErrorCode check() override;
 
   nebula::cpp2::ErrorCode prepare() override;
-
-  nebula::cpp2::ErrorCode stop() override;
 };
 
 }  // namespace meta

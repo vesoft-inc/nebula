@@ -13,7 +13,7 @@ using nebula::storage::cpp2::GetNeighborsResponse;
 namespace nebula {
 namespace graph {
 
-DataSet GetNeighborsExecutor::buildRequestDataSet() {
+StatusOr<DataSet> GetNeighborsExecutor::buildRequestDataSet() {
   SCOPED_TIMER(&execTime_);
   auto inputVar = gn_->inputVar();
   auto iter = ectx_->getResult(inputVar).iter();
@@ -21,7 +21,9 @@ DataSet GetNeighborsExecutor::buildRequestDataSet() {
 }
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
-  DataSet reqDs = buildRequestDataSet();
+  auto res = buildRequestDataSet();
+  NG_RETURN_IF_ERROR(res);
+  auto reqDs = std::move(res).value();
   if (reqDs.rows.empty()) {
     List emptyResult;
     return finish(ResultBuilder()

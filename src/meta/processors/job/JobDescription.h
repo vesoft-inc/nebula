@@ -19,6 +19,7 @@ namespace meta {
 
 class JobDescription {
   using Status = cpp2::JobStatus;
+  FRIEND_TEST(JobManagerTest, StopJob);
 
  public:
   JobDescription() = default;

@@ -67,7 +67,8 @@ class StorageJobExecutor : public JobExecutor {
    * @return
    */
   nebula::cpp2::ErrorCode stop() override {
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    // By default we return not stoppable
+    return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
   }
 
   nebula::cpp2::ErrorCode finish(bool) override {

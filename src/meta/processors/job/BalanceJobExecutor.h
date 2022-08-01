@@ -108,13 +108,6 @@ class BalanceJobExecutor : public MetaJobExecutor {
   nebula::cpp2::ErrorCode prepare() override;
 
   /**
-   * @brief Stop this job
-   *
-   * @return
-   */
-  nebula::cpp2::ErrorCode stop() override;
-
-  /**
    * @brief Finish this job
    *
    * @param ret True means succeed, false means failed

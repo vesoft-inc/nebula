@@ -5,6 +5,7 @@
 #include "graph/executor/query/GetEdgesExecutor.h"
 
 #include "graph/planner/plan/Query.h"
+#include "graph/util/SchemaUtil.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -17,7 +18,7 @@ folly::Future<Status> GetEdgesExecutor::execute() {
   return getEdges();
 }
 
-DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
+StatusOr<DataSet> GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
@@ -25,11 +26,28 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   edges.rows.reserve(valueIter->size());
   std::unordered_set<std::tuple<Value, Value, Value, Value>> uniqueEdges;
   uniqueEdges.reserve(valueIter->size());
+
+  const auto &space = qctx()->rctx()->session()->space();
+  const auto &vidType = *(space.spaceDesc.vid_type_ref());
   for (; valueIter->valid(); valueIter->next()) {
     auto type = ge->type()->eval(exprCtx(valueIter.get()));
     auto src = ge->src()->eval(exprCtx(valueIter.get()));
     auto dst = ge->dst()->eval(exprCtx(valueIter.get()));
     auto rank = ge->ranking()->eval(exprCtx(valueIter.get()));
+    if (!SchemaUtil::isValidVid(src, vidType)) {
+      std::stringstream ss;
+      ss << "`" << src.toString() << "', the src should be type of "
+         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << src.type()
+         << "'";
+      return Status::Error(ss.str());
+    }
+    if (!SchemaUtil::isValidVid(dst, vidType)) {
+      std::stringstream ss;
+      ss << "`" << dst.toString() << "', the dst should be type of "
+         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << dst.type()
+         << "'";
+      return Status::Error(ss.str());
+    }
     type = type < 0 ? -type : type;
     auto edgeKey = std::make_tuple(src, type, rank, dst);
     if (ge->dedup() && !uniqueEdges.emplace(std::move(edgeKey)).second) {
@@ -52,7 +70,9 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
     return Status::Error("ptr is nullptr");
   }
 
-  auto edges = buildRequestDataSet(ge);
+  auto res = buildRequestDataSet(ge);
+  NG_RETURN_IF_ERROR(res);
+  auto edges = std::move(res).value();
 
   if (edges.rows.empty()) {
     // TODO: add test for empty input.

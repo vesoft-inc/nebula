@@ -8,6 +8,9 @@
 
 #include <vector>
 
+#include "common/datatypes/CommonCpp2Ops.h"
+#include "common/graph/AuthResponseOps-inl.h"
+#include "common/graph/ExecutionResponseOps-inl.h"
 #include "common/graph/GraphCpp2Ops.h"
 #include "common/graph/Response.h"
 

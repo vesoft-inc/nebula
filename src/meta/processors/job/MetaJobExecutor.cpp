@@ -24,19 +24,19 @@ nebula::cpp2::ErrorCode MetaJobExecutor::prepare() {
 // The skeleton to run the job.
 // You should rewrite the executeInternal to trigger the calling.
 nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
-  folly::SemiFuture<Status> future = executeInternal();
-  auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+  folly::SemiFuture<nebula::cpp2::ErrorCode> future = executeInternal();
   future.wait();
-  if (!future.value().ok()) {
-    LOG(INFO) << future.value().toString();
-    rc = nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
+  if (!future.hasValue()) {
+    LOG(INFO) << "Exception occur when execute job";
+    return nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED;
   }
-  return rc;
+  return future.value();
 }
 
 // Stop the job when the user cancel it.
 nebula::cpp2::ErrorCode MetaJobExecutor::stop() {
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  // By default we return not stoppable
+  return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
 }
 
 nebula::cpp2::ErrorCode MetaJobExecutor::finish(bool) {
@@ -60,8 +60,8 @@ nebula::cpp2::ErrorCode MetaJobExecutor::saveSpecialTaskStatus(const cpp2::Repor
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-folly::Future<Status> MetaJobExecutor::executeInternal() {
-  return Status::OK();
+folly::Future<nebula::cpp2::ErrorCode> MetaJobExecutor::executeInternal() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

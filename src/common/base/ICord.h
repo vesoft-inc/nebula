@@ -107,7 +107,8 @@ class ICord {
     }
 
     std::size_t lengthModSize = lengthMod();
-    size_t bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize - lengthModSize));
+    std::size_t bytesToWrite =
+        std::min(len, static_cast<size_t>(kBlockContentSize - lengthModSize));
     if (len_ != 0 && lengthModSize == 0) {  // is full filled.
       allocateBlock();
       bytesToWrite = std::min(len, static_cast<size_t>(kBlockContentSize));
@@ -176,7 +177,8 @@ class ICord {
   }
 
   ICord<kBlockContentSize>& operator<<(const char* value) {
-    return write(value, strlen(value));
+    std::string _tmp = std::string(value);
+    return write(_tmp.data(), _tmp.size());
   }
 
   ICord<kBlockContentSize>& operator<<(const ICord& rhs) {
