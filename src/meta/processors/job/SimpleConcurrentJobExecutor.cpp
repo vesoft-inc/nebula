@@ -39,9 +39,5 @@ nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::prepare() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::stop() {
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
 }  // namespace meta
 }  // namespace nebula
