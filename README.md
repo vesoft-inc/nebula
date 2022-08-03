@@ -19,11 +19,11 @@
   <br>
 </p>
 
-# What is NebulaGraph?
+# What is Nebula Graph?
 
-**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
+**Nebula Graph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
 
-Compared with other graph database solutions, **NebulaGraph** has the following advantages:
+Compared with other graph database solutions, **Nebula Graph** has the following advantages:
 
 * Symmetrically distributed
 * Storage and computing separation
@@ -34,17 +34,17 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 
 ## Notice of Release
 
-This repository hosts the source code of NebulaGraph versions before 2.0.0-alpha and after v2.5.x. If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph).
+This repository hosts the source code of Nebula Graph versions before 2.0.0-alpha and after v2.5.x. If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph).
 
-NebulaGraph 1.x is not actively maintained. Please move to NebulaGraph 2.x. The data format, rpc protocols, clients, etc. are not compatible between NebulaGraph v1.x and v2.x, but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
+Nebula Graph 1.x is not actively maintained. Please move to Nebula Graph 2.x. The data format, rpc protocols, clients, etc. are not compatible between Nebula Graph v1.x and v2.x, but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
 
 <!--
-To use the stable release, see [NebulaGraph 1.0](https://github.com/vesoft-inc/nebula).
+To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
 
 
 ## Roadmap
 
-See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020) for what's coming soon in **NebulaGraph**.
+See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020) for what's coming soon in **Nebula Graph**.
 -->
 
 ## Quick start
@@ -52,11 +52,11 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 Read the [Getting started](https://docs.nebula-graph.io/2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
 
 <!--
-Please note that you need to install **NebulaGraph**, either by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/) or by [docker compose](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/2.build-by-docker/), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/videos).
+Please note that you need to install **Nebula Graph**, either by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/) or by [docker compose](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/2.build-by-docker/), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/videos).
 -->
 
 ## Getting help
-In case you encounter any problems playing around **NebulaGraph**, please reach out for help:
+In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 * [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
 * [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 
@@ -65,7 +65,7 @@ In case you encounter any problems playing around **NebulaGraph**, please reach 
 * [English](https://docs.nebula-graph.io/)
 
 ## Architecture
-![NebulaGraph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+![Nebula Graph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
 
 ## Contributing
 
@@ -80,13 +80,13 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
 <br />
 
-[NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the <a href="https://landscape.cncf.io/card-mode?category=database&grouping=category">
+[Nebula Graph](https://landscape.cncf.io/?selected=nebula-graph) enriches the <a href="https://landscape.cncf.io/card-mode?category=database&grouping=category">
 CNCF Database Landscape.</a>
 </p>
 
 ## Licensing
 
-**NebulaGraph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **NebulaGraph** as a back-end service to support your SaaS deployment.
+**Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
 
 ## Contact
 
