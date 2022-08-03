@@ -1007,6 +1007,7 @@ Status MatchValidator::validateMatchPathExpr(
     Expression *expr,
     const std::unordered_map<std::string, AliasType> &availableAliases,
     std::vector<Path> &paths) {
+  auto *pool = qctx_->objPool();
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
   for (auto &matchPathExpr : matchPathExprs) {
     // auto matchClauseCtx = getContext<MatchClauseContext>();
@@ -1021,7 +1022,8 @@ Status MatchValidator::validateMatchPathExpr(
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
     matchPath.setAlias(new std::string(pathAlias));
-    matchPathExprImpl->setInputProp(pathAlias);
+    Expression *genList = InputPropertyExpression::make(pool, pathAlias);
+    matchPathExprImpl->setGenList(genList);
     paths.emplace_back();
     NG_RETURN_IF_ERROR(validatePath(&matchPath, paths.back()));
     NG_RETURN_IF_ERROR(buildRollUpPathInfo(&matchPath, paths.back()));
