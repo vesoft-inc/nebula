@@ -77,7 +77,8 @@ Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。
 
 ## Nebula Graph 产品架构图
 
-![Nebula Graph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+![image](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+
 
 ## 如何贡献
 
