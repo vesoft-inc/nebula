@@ -56,7 +56,7 @@ StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
                                         fetchCtx_->distinct);
   getVertices->setInputVar(vidsVar);
 
-  subPlan.root = Project::make(qctx, getVertices, fetchCtx_->yieldExpr);
+  subPlan.root = Project::make(qctx, getVertices);
   if (fetchCtx_->distinct) {
     subPlan.root = Dedup::make(qctx, subPlan.root);
   }
