@@ -14,8 +14,8 @@ namespace graph {
 void ParserUtil::rewriteLC(QueryContext *qctx,
                            ListComprehensionExpression *lc,
                            const std::string &oldVarName) {
-  const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
+  qctx->vctx()->anonVarGen()->createVar(oldVarName);
+  qctx->ectx()->setValue(oldVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -23,12 +23,12 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
            expr->kind() == Expression::Kind::kLabelAttribute;
   };
 
-  auto rewriter = [&, pool, newVarName](const Expression *expr) {
+  auto rewriter = [&, pool, oldVarName](const Expression *expr) {
     Expression *ret = nullptr;
     if (expr->kind() == Expression::Kind::kLabel) {
       auto *label = static_cast<const LabelExpression *>(expr);
       if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, newVarName, true);
+        ret = VariableExpression::make(pool, oldVarName, true);
       } else {
         ret = label->clone();
       }
@@ -38,7 +38,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
       if (la->left()->name() == oldVarName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newVarName, true),
+                                        VariableExpression::make(pool, oldVarName, true),
                                         ConstantExpression::make(pool, value));
       } else {
         ret = la->clone();
@@ -48,7 +48,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
   };
 
   lc->setOriginString(lc->toString());
-  lc->setInnerVar(newVarName);
+  lc->setInnerVar(oldVarName);
   if (lc->hasFilter()) {
     Expression *filter = lc->filter();
     auto *newFilter = RewriteVisitor::transform(filter, matcher, rewriter);

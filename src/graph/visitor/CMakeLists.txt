@@ -17,6 +17,7 @@ nebula_add_library(
     VidExtractVisitor.cpp
     EvaluableExprVisitor.cpp
     ExtractGroupSuiteVisitor.cpp
+    ValidatePatternExpressionVisitor.cpp
 )
 
 nebula_add_library(

@@ -9,6 +9,7 @@
 #include "graph/util/ExpressionUtils.h"
 #include "graph/visitor/ExtractGroupSuiteVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
+#include "graph/visitor/ValidatePatternExpressionVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -1008,6 +1009,8 @@ Status MatchValidator::validateMatchPathExpr(
     const std::unordered_map<std::string, AliasType> &availableAliases,
     std::vector<Path> &paths) {
   auto *pool = qctx_->objPool();
+  ValidatePatternExpressionVisitor visitor(pool, vctx_);
+  expr->accept(&visitor);
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
   for (auto &matchPathExpr : matchPathExprs) {
     // auto matchClauseCtx = getContext<MatchClauseContext>();
@@ -1022,8 +1025,11 @@ Status MatchValidator::validateMatchPathExpr(
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
     matchPath.setAlias(new std::string(pathAlias));
-    Expression *genList = InputPropertyExpression::make(pool, pathAlias);
-    matchPathExprImpl->setGenList(genList);
+    if (matchPathExprImpl->genList() == nullptr) {
+      // Don't done in expression visitor
+      Expression *genList = InputPropertyExpression::make(pool, pathAlias);
+      matchPathExprImpl->setGenList(genList);
+    }
     paths.emplace_back();
     NG_RETURN_IF_ERROR(validatePath(&matchPath, paths.back()));
     NG_RETURN_IF_ERROR(buildRollUpPathInfo(&matchPath, paths.back()));
@@ -1047,6 +1053,10 @@ Status MatchValidator::validateMatchPathExpr(
     }
   }
   for (const auto &node : matchPath.nodes()) {
+    if (node->variableDefinedSource() == MatchNode::VariableDefinedSource::kExpression) {
+      // Checked in visitor
+      continue;
+    }
     if (!node->alias().empty()) {
       const auto find = availableAliases.find(node->alias());
       if (find == availableAliases.end()) {
