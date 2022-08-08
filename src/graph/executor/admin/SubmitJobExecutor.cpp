@@ -151,7 +151,9 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                           apache::thrift::util::enumNameSafe(tsk.get_result()),
                           convertJobTimestampToDateTime(std::move(tsk).get_start_time()),
                           convertJobTimestampToDateTime(std::move(tsk).get_stop_time()),
-                          apache::thrift::util::enumNameSafe(jd.get_code())}));
+                          jd.get_code() == nebula::cpp2::ErrorCode::E_UNKNOWN
+                              ? ""
+                              : apache::thrift::util::enumNameSafe(jd.get_code())}));
     }
     v.emplace_back(Row({folly::sformat("Total:{}", total),
                         folly::sformat("Succeeded:{}", succeeded),
@@ -195,7 +197,9 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
           apache::thrift::util::enumNameSafe(taskDesc.get_status()),
           convertJobTimestampToDateTime(taskDesc.get_start_time()),
           convertJobTimestampToDateTime(taskDesc.get_stop_time()),
-          apache::thrift::util::enumNameSafe(taskDesc.get_code()),
+          jd.get_code() == nebula::cpp2::ErrorCode::E_UNKNOWN
+              ? ""
+              : apache::thrift::util::enumNameSafe(jd.get_code()),
       }));
     }
     v.emplace_back(Row({folly::sformat("Total:{}", total),
