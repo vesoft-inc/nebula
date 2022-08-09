@@ -484,6 +484,12 @@ void RaftPart::stop() {
   VLOG(1) << idStr_ << "Partition has been stopped";
 }
 
+std::pair<TermID, RaftPart::Role> RaftPart::getTermAndRole() const {
+  std::lock_guard<std::mutex> g(raftLock_);
+  std::pair<TermID, RaftPart::Role> res = {term_, role_};
+  return res;
+}
+
 void RaftPart::cleanWal() {
   std::lock_guard<std::mutex> g(raftLock_);
   wal()->cleanWAL(committedLogId_);
@@ -1462,12 +1468,6 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     return;
   }
 
-  if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    VLOG(3) << idStr_ << "The partition is still waiting snapshot";
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
-    return;
-  }
-
   VLOG(1) << idStr_ << "The partition currently is a " << roleStr(role_) << ", lastLogId "
           << lastLogId_ << ", lastLogTerm " << lastLogTerm_ << ", committedLogId "
           << committedLogId_ << ", term " << term_;
@@ -1952,18 +1952,19 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_NOT_READY;
     return;
   }
-  // Check leadership
-  nebula::cpp2::ErrorCode err = verifyLeader<cpp2::SendSnapshotRequest>(req);
-  // Set term_ again because it may be modified in verifyLeader
-  resp.current_term_ref() = term_;
-  if (err != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    // Wrong leadership
-    VLOG(3) << idStr_ << "Will not follow the leader";
-    resp.error_code_ref() = err;
-    return;
-  }
+  resp.current_term_ref() = req.get_current_term();
   if (status_ != Status::WAITING_SNAPSHOT) {
     VLOG(2) << idStr_ << "Begin to receive the snapshot";
+    // Check leadership
+    nebula::cpp2::ErrorCode err = verifyLeader<cpp2::SendSnapshotRequest>(req);
+    // Set term_ again because it may be modified in verifyLeader
+    resp.current_term_ref() = term_;
+    if (err != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      // Wrong leadership
+      VLOG(3) << idStr_ << "Will not follow the leader";
+      resp.error_code_ref() = err;
+      return;
+    }
     reset();
     status_ = Status::WAITING_SNAPSHOT;
     lastSnapshotCommitId_ = req.get_committed_log_id();
@@ -1977,6 +1978,11 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     // snapshot again
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
     return;
+  }
+  if (term_ > req.get_current_term()) {
+    VLOG(2) << idStr_ << "leader changed, new term " << term_
+            << " but continue to receive snapshot from old leader " << req.get_leader_addr()
+            << " of term " << req.get_current_term();
   }
   lastSnapshotRecvDur_.reset();
   // TODO(heng): Maybe we should save them into one sst firstly?
@@ -2034,6 +2040,10 @@ void RaftPart::sendHeartbeat() {
   decltype(hosts_) hosts;
   {
     std::lock_guard<std::mutex> g(raftLock_);
+    nebula::cpp2::ErrorCode rc = canAppendLogs();
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return;
+    }
     currTerm = term_;
     commitLogId = committedLogId_;
     prevLogTerm = lastLogTerm_;
