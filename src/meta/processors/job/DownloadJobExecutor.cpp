@@ -111,9 +111,5 @@ folly::Future<Status> DownloadJobExecutor::executeInternal(HostAddr&& address,
   return f;
 }
 
-nebula::cpp2::ErrorCode DownloadJobExecutor::stop() {
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
 }  // namespace meta
 }  // namespace nebula
