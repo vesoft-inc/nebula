@@ -188,16 +188,16 @@ void GoValidator::extractPropExprs(const Expression* expr,
 Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
   auto pool = qctx_->objPool();
   const auto& name = expr->toString();
-  if (name == "id($^)" || name == "src(edge)") {
+  if (name == "id($^)" || name == "src(EDGE)") {
     return EdgeSrcIdExpression::make(pool, "*");
   }
-  if (name == "id($$)" || name == "dst(edge)") {
+  if (name == "id($$)" || name == "dst(EDGE)") {
     return EdgeDstIdExpression::make(pool, "*");
   }
-  if (name == "rank(edge)") {
+  if (name == "rank(EDGE)") {
     return EdgeRankExpression::make(pool, "*");
   }
-  if (name == "type(edge)") {
+  if (name == "type(EDGE)") {
     return EdgeTypeExpression::make(pool, "*");
   }
   return const_cast<Expression*>(expr);
