@@ -51,6 +51,7 @@
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
+#include "graph/executor/algo/IsomorExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/PassThroughExecutor.h"
@@ -461,8 +462,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
     }
     case PlanNode::Kind::kIsomor: {
-      return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
-      // return pool->makeAndAdd<IsomorExecutor>(node, qctx);
+      // return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
+      return pool->makeAndAdd<IsomorExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAddHosts: {
       return pool->makeAndAdd<AddHostsExecutor>(node, qctx);
