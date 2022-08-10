@@ -240,6 +240,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "CartesianProduct";
     case Kind::kSubgraph:
       return "Subgraph";
+    case Kind::kIsomor:
+      return "Isomor";
     case Kind::kAddHosts:
       return "AddHosts";
     case Kind::kDropHosts:

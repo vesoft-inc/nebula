@@ -460,6 +460,10 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kSubgraph: {
       return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kIsomor: {
+      return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
+      // return pool->makeAndAdd<IsomorExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kAddHosts: {
       return pool->makeAndAdd<AddHostsExecutor>(node, qctx);
     }

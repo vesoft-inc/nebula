@@ -562,6 +562,10 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
       addDescription("kind", "SUBGRAPH", desc.get());
       break;
     }
+    case DCKind::kIsomor: {
+      addDescription("kind", "ISOMOR", desc.get());
+      break;
+    }
     case DCKind::kRowBasedMove: {
       addDescription("kind", "ROW", desc.get());
       break;
