@@ -402,7 +402,7 @@ Feature: Match seek by id
 
   # issue: https://github.com/vesoft-inc/nebula/issues/4417
   Scenario: vid within split function
-    When executing query:
+    When profiling query:
       """
       MATCH (v:player)--(v2)
       WHERE id(v2) IN split("Tim Duncan,player102", ",") and v2.player.age>34
@@ -428,3 +428,11 @@ Feature: Match seek by id
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 11 | Project        | 8            |               |
+      | 8  | Filter         | 4            |               |
+      | 4  | AppendVertices | 10           |               |
+      | 10 | Traverse       | 1            |               |
+      | 1  | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
