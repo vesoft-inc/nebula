@@ -136,7 +136,7 @@ void PrunePropertiesVisitor::visitCurrent(Traverse *node) {
   }
 
   if (used) {
-    // All properties will be used
+    // All properties will be used // why this
     const auto *vertexProps = node->vertexProps();
     if (vertexProps != nullptr) {
       for (const auto &vertexProp : *vertexProps) {
@@ -203,7 +203,7 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
   }
 
   static const std::unordered_set<std::string> reservedEdgeProps = {
-      nebula::kSrc, nebula::kType, nebula::kRank, nebula::kDst};
+      nebula::kType, nebula::kRank, nebula::kDst};
   auto *edgeProps = node->edgeProps();
   if (propsUsed_.colsSet.find(edgeAlias) == propsUsed_.colsSet.end() && edgeProps != nullptr) {
     auto prunedEdgeProps = std::make_unique<std::vector<EdgeProp>>();
@@ -259,7 +259,13 @@ void PrunePropertiesVisitor::visitCurrent(AppendVertices *node) {
     // propsUsed_.colsSet.erase(it);
     return;
   }
-
+  if (node->filter() != nullptr) {
+    status_ = extractPropsFromExpr(node->filter(), nodeAlias);
+    if (!status_.ok()) {
+      return;
+    }
+  }
+  // TODO(JMQ extracePropsFromFilterExpr)
   if (node->vFilter() != nullptr) {
     status_ = extractPropsFromExpr(node->vFilter(), nodeAlias);
     if (!status_.ok()) {
@@ -267,7 +273,7 @@ void PrunePropertiesVisitor::visitCurrent(AppendVertices *node) {
     }
   }
   if (used) {
-    // All properties will be used
+    // All properties will be used // why this
     auto *vertexProps = node->props();
     if (vertexProps != nullptr) {
       for (const auto &vertexProp : *vertexProps) {

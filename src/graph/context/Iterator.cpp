@@ -535,7 +535,7 @@ Value GetNeighborsIter::getEdge() const {
   DCHECK_EQ(edgeNamePropList.size(), propList.size());
   for (size_t i = 0; i < propList.size(); ++i) {
     auto propName = edgeNamePropList[i];
-    if (propName == kSrc || propName == kDst || propName == kRank || propName == kType) {
+    if (propName == kDst || propName == kRank || propName == kType || propName == kSrc) {
       continue;
     }
     edge.props.emplace(edgeNamePropList[i], propList[i]);
