@@ -47,7 +47,7 @@ StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
   }
   // TODO: Add some to do while combining the executor and the planner.
   //  (1) create a plan node for Isomorphism.cpp
-  //  (2) Input and output of the GetVertices 's function.
+  //  (2) Define the Input and output of the plan node function.
   //  (3) Add the Register.
   SubPlan subPlan;
   auto* getVertices = GetVertices::make(qctx,
