@@ -45,8 +45,10 @@ StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
       vidsVar = fetchCtx_->inputVarName;
     }
   }
-  //  Add some to do while combining the executor and the planner.
-  //  For example, according to the CreateSpce class
+  // TODO: Add some to do while combining the executor and the planner.
+  //  (1) create a plan node for Isomorphism.cpp
+  //  (2) Input and output of the GetVertices 's function.
+  //  (3) Add the Register.
   SubPlan subPlan;
   auto* getVertices = GetVertices::make(qctx,
                                         nullptr,
