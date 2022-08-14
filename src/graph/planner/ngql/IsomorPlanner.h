@@ -31,10 +31,13 @@ class IsomorPlanner final : public Planner {
  private:
   std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
 
+  PlanNode* createScanVerticesPlan(QueryContext* qctx, GraphSpaceID spaceId, PlanNode* input);
+  PlanNode* createScanEdgesPlan(QueryContext* qctx, GraphSpaceID spaceId, PlanNode* input);
+
  private:
   IsomorPlanner() = default;
 
-  IsomorContext* fetchCtx_{nullptr};
+  IsomorContext* isoCtx_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula
