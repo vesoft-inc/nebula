@@ -26,10 +26,12 @@ StatusOr<DataSet> AppendVerticesExecutor::buildRequestDataSet(const AppendVertic
 
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
-
   auto *av = asNode<AppendVertices>(node());
-  StorageClient *storageClient = qctx()->getStorageClient();
+  if (av != nullptr && av->props() == nullptr) {
+    return handleNullProp(av);
+  }
 
+  StorageClient *storageClient = qctx()->getStorageClient();
   auto res = buildRequestDataSet(av);
   NG_RETURN_IF_ERROR(res);
   auto vertices = std::move(res).value();
@@ -67,6 +69,44 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
           return handleRespMultiJobs(std::move(rpcResp));
         }
       });
+}
+
+Status AppendVerticesExecutor::handleNullProp(const AppendVertices *av) {
+  auto iter = ectx_->getResult(av->inputVar()).iter();
+  auto *src = av->src();
+
+  auto size = iter->size();
+  DataSet ds;
+  ds.colNames = av->colNames();
+  ds.rows.reserve(size);
+
+  std::unordered_set<Value> uniqueSet;
+  uniqueSet.reserve(size);
+  QueryExpressionContext ctx(ectx_);
+  bool canBeMoved = movable(av->inputVars().front());
+
+  for (; iter->valid(); iter->next()) {
+    auto vid = src->eval(ctx(iter.get()));
+    if (vid.empty()) {
+      continue;
+    }
+    if (!uniqueSet.emplace(vid).second) {
+      continue;
+    }
+    Vertex vertex;
+    vertex.vid = vid;
+    if (!av->trackPrevPath()) {
+      Row row;
+      row.values.emplace_back(std::move(vertex));
+      ds.rows.emplace_back(std::move(row));
+    } else {
+      Row row;
+      row = canBeMoved ? iter->moveRow() : *iter->row();
+      row.values.emplace_back(std::move(vertex));
+      ds.rows.emplace_back(std::move(row));
+    }
+  }
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 Status AppendVerticesExecutor::handleResp(

@@ -63,9 +63,6 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   void pruneCurrent(AppendVertices *node);
 
   void visit(BiJoin *node) override;
-  // \param node, the current node to visit
-  // \param used, whether properties in current node are used
-  void visitCurrent(BiJoin *node);
 
  private:
   Status depsPruneProperties(std::vector<const PlanNode *> &dependencies);
@@ -77,6 +74,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   Status status_;
   // force use all properties in current node, e.g. the root node in plan
   bool used_{true};
+  bool rootNode_{true};
 };
 
 }  // namespace graph
