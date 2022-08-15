@@ -80,17 +80,12 @@ Status AppendVerticesExecutor::handleNullProp(const AppendVertices *av) {
   ds.colNames = av->colNames();
   ds.rows.reserve(size);
 
-  std::unordered_set<Value> uniqueSet;
-  uniqueSet.reserve(size);
   QueryExpressionContext ctx(ectx_);
   bool canBeMoved = movable(av->inputVars().front());
 
   for (; iter->valid(); iter->next()) {
     auto vid = src->eval(ctx(iter.get()));
     if (vid.empty()) {
-      continue;
-    }
-    if (!uniqueSet.emplace(vid).second) {
       continue;
     }
     Vertex vertex;

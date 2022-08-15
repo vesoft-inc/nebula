@@ -76,16 +76,10 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
         break;
       }
       // $-.e[0] as e
-      case Expression::Kind::kSubscript: {
-        if (propsUsed_.hasAlias(alias)) {
-          status_ = extractPropsFromExpr(expr);
-          if (!status_.ok()) {
-            return;
-          }
-        }
-        break;
-      }
       // [e IN $-.e WHERE is_edge($e)] AS e
+      // PathBuild[$-.v,$-.e,$-.v2] AS p
+      case Expression::Kind::kSubscript:
+      case Expression::Kind::kPathBuild:
       case Expression::Kind::kListComprehension: {
         if (propsUsed_.hasAlias(alias)) {
           status_ = extractPropsFromExpr(expr);
