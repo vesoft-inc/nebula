@@ -35,13 +35,13 @@ std::unique_ptr<IsomorPlanner::VertexProps> IsomorPlanner::buildVertexProps(
 StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
   isoCtx_ = static_cast<IsomorContext*>(astCtx);
   auto qctx = isoCtx_->qctx;
-  auto dSpace = isoCtx_->space;
+  auto dSpace = isoCtx_->dataSpace;
   auto qSpaceId = isoCtx_->querySpace;
 
-  auto dScanVertics = createScanVerticesPlan(qctx, dSpace.id, nullptr);
+  auto dScanVertics = createScanVerticesPlan(qctx, dSpace, nullptr);
   auto qScanVertics = createScanVerticesPlan(qctx, qSpaceId, nullptr);
 
-  auto dScanEdges = createScanEdgesPlan(qctx, dSpace.id, nullptr);
+  auto dScanEdges = createScanEdgesPlan(qctx, dSpace, nullptr);
   auto qScanEdges = createScanEdgesPlan(qctx, qSpaceId, nullptr);
 
   SubPlan subPlan;

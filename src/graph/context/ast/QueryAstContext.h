@@ -135,6 +135,7 @@ struct SubgraphContext final : public AstContext {
 
 struct IsomorContext final : public AstContext {
   GraphSpaceID querySpace;
+  GraphSpaceID dataSpace;
   bool distinct{false};
   ExpressionProps exprProps;
   std::string inputVarName;
