@@ -12,18 +12,18 @@
 namespace nebula {
 
 class IsomorSentence final : public Sentence {
- public:
-  explicit IsomorSentence(NameLabelList* graphs) {
-    graphs_.reset(tags);
-  }
-  const NameLabelList* graphs() const {
-    return graphs_->empty() ? nullptr : graphs_.get();
-  }
-  std::string toString() const override;
-  ~IsomorSentence();
+  public:
+    explicit IsomorSentence(NameLabelList* tags) {
+      tags_.reset(tags);
+    }
+    const NameLabelList* tags() const {
+      return tags_->empty() ? nullptr : tags_.get();
+    }
+    std::string toString() const override;
+    ~IsomorSentence();
 
- private:
-  std::unique_ptr<NameLabelList> graphs_;
+  private:
+    std::unique_ptr<NameLabelList> tags_;
 };
 
 class GoSentence final : public Sentence {

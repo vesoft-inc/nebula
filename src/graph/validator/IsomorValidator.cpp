@@ -3,7 +3,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/IsomorValidator.h"
-
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
@@ -13,17 +12,15 @@ namespace graph {
 Status IsomorValidator::validateImpl() {
   auto *fSentence = static_cast<IsomorSentence *>(sentence_);
   fetchCtx_ = getContext<IsomorContext>();
-  NG_RETURN_IF_ERROR(validateGraph(fSentence->graphs_()), fetchCtx_);
+  NG_RETURN_IF_ERROR(validateTag(fSentence->tags()));
   return Status::OK();
 }
 // Check validity of tags specified in sentence
-Status IsomorValidator::validateGraph(const NameLabelList *nameLabels,
-                                      std::unique_ptr<IsomorContext> &fetchCtx) {
-  auto graphs = nameLabels->labels();
-
-  // the first graph is data graph, and the second graph is query graph
-  fetchCtx->querySpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[0]);
-  fetchCtx->dataSpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[1]);
+Status IsomorValidator::validateTag(const NameLabelList *nameLabels) {
+  if (nameLabels == nullptr) {
+// Wthether Found Tag in the storage?  --> need the coorperation of the storage section.
+  } else {
+  }
   return Status::OK();
 }
 }  // namespace graph
