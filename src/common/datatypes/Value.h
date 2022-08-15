@@ -539,7 +539,21 @@ struct hash<nebula::Value*> {
 };
 
 template <>
+struct hash<const nebula::Value*> {
+  std::size_t operator()(const nebula::Value* h) const noexcept {
+    return h == nullptr ? 0 : hash<nebula::Value>()(*h);
+  }
+};
+
+template <>
 struct equal_to<nebula::Value*> {
+  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct equal_to<const nebula::Value*> {
   bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
     return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
   }
