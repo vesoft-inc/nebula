@@ -89,6 +89,16 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
         }
         break;
       }
+      // [e IN $-.e WHERE is_edge($e)] AS e
+      case Expression::Kind::kListComprehension: {
+        if (propsUsed_.hasAlias(alias)) {
+          status_ = extractPropsFromExpr(expr);
+          if (!status_.ok()) {
+            return;
+          }
+        }
+        break;
+      }
       default: {
         status_ = extractPropsFromExpr(expr);
         if (!status_.ok()) {
