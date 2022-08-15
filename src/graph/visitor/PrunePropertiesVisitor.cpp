@@ -16,6 +16,7 @@ PrunePropertiesVisitor::PrunePropertiesVisitor(PropertyTracker &propsUsed,
 }
 
 void PrunePropertiesVisitor::visit(PlanNode *node) {
+  rootNode_ = false;
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -246,6 +247,7 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
 
 // AppendVertices should be deleted when no properties it pulls are used by the parent node.
 void PrunePropertiesVisitor::visit(AppendVertices *node) {
+  rootNode_ = false;
   visitCurrent(node);
   status_ = depsPruneProperties(node->dependencies());
 }
