@@ -175,7 +175,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     }
     tagsVertices[tagId] += 1;
     tagIter->next();
-    sleepIfScannedSomeRecord(countToSleep++);
+    sleepIfScannedSomeRecord(++countToSleep);
   }
 
   // Only stats valid edge data, no multi version
@@ -225,12 +225,12 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       negativeRelevancy[sourceVid % partitionNum + 1]++;
     }
     edgeIter->next();
-    sleepIfScannedSomeRecord(countToSleep++);
+    sleepIfScannedSomeRecord(++countToSleep);
   }
   while (vertexIter && vertexIter->valid()) {
     spaceVertices++;
     vertexIter->next();
-    sleepIfScannedSomeRecord(countToSleep++);
+    sleepIfScannedSomeRecord(++countToSleep);
   }
   nebula::meta::cpp2::StatsItem statsItem;
 
