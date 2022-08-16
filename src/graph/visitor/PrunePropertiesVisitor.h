@@ -79,8 +79,6 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   QueryContext *qctx_;
   GraphSpaceID spaceID_;
   Status status_;
-  // force use all properties in current node, e.g. the root node in plan
-  bool used_{true};
   bool rootNode_{true};
 };
 

@@ -9,7 +9,7 @@
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
-DEFINE_bool(optimize_appendvertices, false, "if true, return directly without go through RPC");
+DECLARE_bool(optimize_appendvertices);
 namespace nebula {
 namespace graph {
 folly::Future<Status> AppendVerticesExecutor::execute() {
