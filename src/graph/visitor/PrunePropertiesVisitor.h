@@ -65,12 +65,14 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   void visit(BiJoin *node) override;
 
   void visit(Union *node) override;
+  void visit(BiCartesianProduct *node) override;
 
   void visit(Unwind *node) override;
   void visitCurrent(Unwind *node);
 
  private:
   Status depsPruneProperties(std::vector<const PlanNode *> &dependencies);
+  Status pruneMultiBranch(std::vector<const PlanNode *> &dependencies);
   Status extractPropsFromExpr(const Expression *expr, const std::string &entityAlias = "");
 
   PropertyTracker &propsUsed_;

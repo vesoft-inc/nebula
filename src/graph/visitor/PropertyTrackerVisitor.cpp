@@ -193,6 +193,10 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       }
       break;
     }
+    // properties(t3).name
+    case Expression::Kind::kFunctionCall: {
+      break;
+    }
     default:
       break;
   }

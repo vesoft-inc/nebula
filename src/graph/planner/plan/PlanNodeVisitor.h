@@ -8,6 +8,7 @@
 
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {
@@ -25,6 +26,7 @@ class PlanNodeVisitor {
   virtual void visit(BiJoin *node) = 0;
   virtual void visit(Union *node) = 0;
   virtual void visit(Unwind *node) = 0;
+  virtual void visit(BiCartesianProduct *node) = 0;
 };
 
 }  // namespace graph
