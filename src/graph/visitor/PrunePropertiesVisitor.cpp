@@ -411,18 +411,7 @@ Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *>
 }
 
 void PrunePropertiesVisitor::visit(Union *node) {
-  auto &dependencies = node->dependencies();
-  DCHECK_EQ(dependencies.size(), 2);
-  auto rightPropsUsed = propsUsed_;
-  auto *leftDep = dependencies.front();
-  const_cast<PlanNode *>(leftDep)->accept(this);
-  if (!status_.ok()) {
-    return;
-  }
-  rootNode_ = true;
-  propsUsed_ = std::move(rightPropsUsed);
-  auto *rightDep = dependencies.back();
-  const_cast<PlanNode *>(rightDep)->accept(this);
+  status_ = pruneMultiBranch(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Unwind *node) {
@@ -438,6 +427,24 @@ void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
       return;
     }
   }
+}
+
+Status PrunePropertiesVisitor::pruneMultiBranch(std::vector<const PlanNode *> &dependencies) {
+  DCHECK_EQ(dependencies.size(), 2);
+  auto rightPropsUsed = propsUsed_;
+  auto *leftDep = dependencies.front();
+  const_cast<PlanNode *>(leftDep)->accept(this);
+  if (!status_.ok()) {
+    return status_;
+  }
+  rootNode_ = true;
+  propsUsed_ = std::move(rightPropsUsed);
+  auto *rightDep = dependencies.back();
+  const_cast<PlanNode *>(rightDep)->accept(this);
+  if (!status_.ok()) {
+    return status_;
+  }
+  return Status::OK();
 }
 
 Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {

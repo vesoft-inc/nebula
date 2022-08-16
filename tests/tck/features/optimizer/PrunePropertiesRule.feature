@@ -119,7 +119,6 @@ Feature: Prune Properties rule
       | 2  | Start          |              |                                                                                                  |
     When executing query:
       """
-      // FIX
       MATCH (v:player{name: "Tony Parker"})-[:like]-(v2)--(v3)
       WITH v3, v3.player.age AS age
       RETURN v3, age ORDER BY age LIMIT 3
