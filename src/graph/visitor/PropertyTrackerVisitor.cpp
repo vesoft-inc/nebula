@@ -212,18 +212,6 @@ void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
     return;
   }
 
-  if (funName == "rank") {
-    DCHECK_EQ(expr->args()->numArgs(), 1);
-    auto argExpr = expr->args()->args()[0];
-    auto edgeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
-    if (edgeAlias.empty()) {
-      return;
-    }
-    static const int kUnknownEdgeType = 0;
-    propsUsed_.insertEdgeProp(edgeAlias, kUnknownEdgeType, nebula::kRank);
-    return;
-  }
-
   for (auto *arg : expr->args()->args()) {
     arg->accept(this);
     if (!ok()) {
