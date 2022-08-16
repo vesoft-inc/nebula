@@ -48,19 +48,16 @@ class GetDstBySrcProcessor
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       RuntimeContext* context,
-      nebula::List* result,
+      nebula::DataSet* result,
       PartitionID partId,
       const std::vector<Value>& srcIds);
 
-  StoragePlan<VertexID> buildPlan(RuntimeContext* context, nebula::List* result);
+  StoragePlan<VertexID> buildPlan(RuntimeContext* context, nebula::DataSet* result);
 
  private:
   std::vector<RuntimeContext> contexts_;
-  // The response of GetDstBySrcProcessor is different from other processor derive from
-  // QeuryBaseProcessor, so we need to use define here
-  nebula::List result_;
-  // The process result of each part if run concurrently, then merge into result_ at last
-  std::vector<nebula::List> partResults_;
+  // The process result of each part if run concurrently, then merge into resultDataSet_ at last
+  std::vector<nebula::DataSet> partResults_;
 };
 
 }  // namespace storage

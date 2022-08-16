@@ -56,10 +56,16 @@ class GetDstBySrcTest : public ::testing::Test {
     return req;
   }
 
-  void checkResponse(std::vector<Value>& actual, std::vector<VertexID>& expect) {
-    std::vector<Value> expected(expect.begin(), expect.end());
-    std::sort(actual.begin(), actual.end());
-    std::sort(expected.begin(), expected.end());
+  void checkResponse(nebula::DataSet& actual, std::vector<VertexID>& dsts) {
+    // sort to make sure the return order are same
+    std::sort(actual.rows.begin(), actual.rows.end());
+    nebula::DataSet expected({"_dst"});
+    for (const auto& dst : dsts) {
+      List list;
+      list.emplace_back(dst);
+      expected.emplace_back(std::move(list));
+    }
+    std::sort(expected.rows.begin(), expected.rows.end());
     EXPECT_EQ(actual, expected);
   }
 

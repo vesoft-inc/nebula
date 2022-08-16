@@ -246,7 +246,8 @@ struct GetDstBySrcRequest {
 
 struct GetDstBySrcResponse {
     1: required ResponseCommon                  result,
-    2: optional list<common.Value>              dsts,
+    // Only one dst column, each row is a dst
+    2: optional common.DataSet                  dsts,
 }
 
 

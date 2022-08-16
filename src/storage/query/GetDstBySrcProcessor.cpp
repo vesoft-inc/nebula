@@ -53,7 +53,7 @@ void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
 
 void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req) {
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
-  auto plan = buildPlan(&contexts_.front(), &result_);
+  auto plan = buildPlan(&contexts_.front(), &resultDataSet_);
   std::unordered_set<PartitionID> failedParts;
   for (const auto& partEntry : req.get_parts()) {
     auto partId = partEntry.first;
@@ -84,7 +84,8 @@ void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req
 
 void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& req) {
   for (size_t i = 0; i < req.get_parts().size(); i++) {
-    partResults_.emplace_back(nebula::List());
+    nebula::DataSet result = resultDataSet_;
+    partResults_.emplace_back(std::move(result));
     contexts_.emplace_back(RuntimeContext(planContext_.get()));
   }
   size_t i = 0;
@@ -103,7 +104,7 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
       } else {
-        result_.append(std::move(partResults_[j]));
+        resultDataSet_.append(std::move(partResults_[j]));
       }
     }
     this->onProcessFinished();
@@ -113,7 +114,7 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProcessor::runInExecutor(
     RuntimeContext* context,
-    nebula::List* result,
+    nebula::DataSet* result,
     PartitionID partId,
     const std::vector<Value>& srcIds) {
   return folly::via(executor_, [this, context, result, partId, input = std::move(srcIds)]() {
@@ -138,7 +139,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
 }
 
 StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
-                                                      nebula::List* result) {
+                                                      nebula::DataSet* result) {
   /*
     The StoragePlan looks like this:
         +------------------+
@@ -167,6 +168,7 @@ StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
 
 nebula::cpp2::ErrorCode GetDstBySrcProcessor::checkAndBuildContexts(
     const cpp2::GetDstBySrcRequest& req) {
+  resultDataSet_.colNames.emplace_back("_dst");
   auto code = getSpaceEdgeSchema();
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
@@ -208,15 +210,17 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
 }
 
 void GetDstBySrcProcessor::onProcessFinished() {
-  std::unordered_set<const Value*> unique;
-  for (const auto& val : result_.values) {
+  // dedup the dsts before we return
+  std::unordered_set<const Row*> unique;
+  for (const auto& val : resultDataSet_.rows) {
     unique.emplace(&val);
   }
-  std::vector<Value> deduped;
-  for (const auto& val : unique) {
-    deduped.emplace_back(*val);
+  std::vector<Row> deduped;
+  for (const auto& row : unique) {
+    deduped.emplace_back(*row);
   }
-  resp_.dsts_ref() = std::move(deduped);
+  resultDataSet_.rows = std::move(deduped);
+  resp_.dsts_ref() = std::move(resultDataSet_);
 }
 
 }  // namespace storage
