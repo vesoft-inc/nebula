@@ -341,16 +341,18 @@ Feature: LDBC Interactive Workload - Complex Reads
       """
     Then a SyntaxError should be raised at runtime:
 
-  @skip
   Scenario: 14. Trusted connection paths
     # TODO: allShortestPaths
+    # Modification: ldbc_snb_interactive_impls 0.3.4 modify `length` function to `size` function,
+    # for the `length` don't accept LIST arguments again
     When executing query:
       """
-      MATCH path = allShortestPaths((person1:Person {id:$person1Id})-[:KNOWS*..15]-(person2:Person {id:$person2Id}))
-      WITH nodes(path) AS pathNodes
+      MATCH `path` = allShortestPaths((person1:Person {id:"123"})-[:KNOWS*..15]-(person2:Person {id:"321"}))
+      WITH nodes(`path`) AS pathNodes
       RETURN
-        extract(n IN pathNodes | n.id) AS personIdsInPath,
-        reduce(weight=0.0, idx IN range(1,size(pathNodes)-1) | extract(prev IN [pathNodes[idx-1]] | extract(curr IN [pathNodes[idx]] | weight + length((curr)<-[:HAS_CREATOR]-(:Comment)-[:REPLY_OF]->(:Post)-[:HAS_CREATOR]->(prev))*1.0 + length((prev)<-[:HAS_CREATOR]-(:Comment)-[:REPLY_OF]->(:Post)-[:HAS_CREATOR]->(curr))*1.0 + length((prev)-[:HAS_CREATOR]-(:Comment)-[:REPLY_OF]-(:Comment)-[:HAS_CREATOR]-(curr))*0.5) )[0][0]) AS pathWight
+        [n IN pathNodes | n.id] AS personIdsInPath,
+        reduce(weight=0.0, idx IN range(1,size(pathNodes)-1) | [prev IN [pathNodes[idx-1]] | [curr IN [pathNodes[idx]] | weight + size((curr)<-[:HAS_CREATOR]-(:`Comment`)-[:REPLY_OF]->(:Post)-[:HAS_CREATOR]->(prev))*1.0 + size((prev)<-[:HAS_CREATOR]-(:`Comment`)-[:REPLY_OF]->(:Post)-[:HAS_CREATOR]->(curr))*1.0 + size((prev)-[:HAS_CREATOR]-(:`Comment`)-[:REPLY_OF]-(:`Comment`)-[:HAS_CREATOR]-(curr))*0.5] ][0][0]) AS pathWight
       ORDER BY pathWight DESC
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in any order:
+      | personIdsInPath | pathWight |

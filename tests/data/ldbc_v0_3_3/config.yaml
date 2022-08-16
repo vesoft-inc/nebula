@@ -37,5 +37,6 @@ schema: |
   CREATE EDGE IF NOT EXISTS `HAS_TYPE`();
   CREATE TAG INDEX message_create_date ON `Message`(`creationDate`(20));
   CREATE TAG INDEX person_first_name ON `Person`(`firstName`(20));
+  CREATE TAG INDEX index_comment_tag ON `Comment`();
 files:
 

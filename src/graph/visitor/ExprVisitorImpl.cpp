@@ -202,8 +202,8 @@ void ExprVisitorImpl::visit(SubscriptRangeExpression *expr) {
 
 void ExprVisitorImpl::visit(MatchPathPatternExpression *expr) {
   DCHECK(ok()) << expr->toString();
-  if (expr->inputProp() != nullptr) {
-    expr->inputProp()->accept(this);
+  if (expr->genList() != nullptr) {
+    expr->genList()->accept(this);
     if (!ok()) {
       return;
     }
