@@ -29,10 +29,6 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
     return finish(
         ResultBuilder().value(Value(DataSet(gv->colNames()))).iter(Iterator::Kind::kProp).build());
   }
-  if (gv->props() == nullptr) {
-    // return vid directly when no attribute is taken
-    return finish(ResultBuilder().value(Value(vertices)).iter(Iterator::Kind::kProp).build());
-  }
 
   time::Duration getPropsTime;
   StorageClient::CommonRequestParam param(gv->space(),

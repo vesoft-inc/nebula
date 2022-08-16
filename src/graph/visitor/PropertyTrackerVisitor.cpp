@@ -193,8 +193,8 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       }
       break;
     }
-    // properties(t3).name
-    case Expression::Kind::kFunctionCall: {
+    case Expression::Kind::kFunctionCall: {  // properties(t3).name
+      // TODO(jmq) determine whether it is a vertex or edge
       break;
     }
     default:
@@ -204,23 +204,11 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
   static const std::unordered_set<std::string> ignoreFuncs = {
-      "src", "dst", "type", "typeid", "id", "length"};
+      "src", "dst", "type", "typeid", "id", "rank", "length"};
 
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (ignoreFuncs.find(funName) != ignoreFuncs.end()) {
-    return;
-  }
-
-  if (funName == "rank") {
-    DCHECK_EQ(expr->args()->numArgs(), 1);
-    auto argExpr = expr->args()->args()[0];
-    auto edgeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
-    if (edgeAlias.empty()) {
-      return;
-    }
-    static const int kUnknownEdgeType = 0;
-    propsUsed_.insertEdgeProp(edgeAlias, kUnknownEdgeType, nebula::kRank);
     return;
   }
 

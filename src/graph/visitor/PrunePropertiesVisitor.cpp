@@ -4,7 +4,7 @@
  */
 
 #include "graph/visitor/PrunePropertiesVisitor.h"
-
+DECLARE_bool(optimize_appendvertices);
 namespace nebula {
 namespace graph {
 
@@ -208,9 +208,9 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
     newEdgeProp.type_ref() = edgeType;
     if (edgeAliasIter == edgePropsMap.end()) {
       // only type, dst are used
-      newEdgeProp.props_ref() = {nebula::kDst, nebula::kType};
+      newEdgeProp.props_ref() = {nebula::kDst, nebula::kType, nebula::kRank};
     } else {
-      std::unordered_set<std::string> uniqueProps{nebula::kDst, nebula::kType};
+      std::unordered_set<std::string> uniqueProps{nebula::kDst, nebula::kType, nebula::kRank};
       std::vector<std::string> newProps;
       auto &usedEdgeProps = edgeAliasIter->second;
       auto edgeTypeIter = usedEdgeProps.find(std::abs(edgeType));
@@ -276,18 +276,39 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
   if (vertexProps == nullptr) {
     return;
   }
+  auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
   auto &vertexPropsMap = propsUsed_.vertexPropsMap;
   auto aliasIter = vertexPropsMap.find(nodeAlias);
   if (aliasIter == vertexPropsMap.end()) {
-    node->setVertexProps(nullptr);
+    if (FLAGS_optimize_appendvertices) {
+      node->setVertexProps(nullptr);
+    } else {
+      // only get _tag when props is nullptr
+      auto tagId = vertexProps->front().tag_ref().value();
+      VertexProp newVProp;
+      newVProp.tag_ref() = tagId;
+      newVProp.props_ref() = {nebula::kTag};
+      prunedVertexProps->emplace_back(std::move(newVProp));
+      node->setVertexProps(std::move(prunedVertexProps));
+    }
     return;
   }
   auto &usedVertexProps = aliasIter->second;
   if (usedVertexProps.empty()) {
-    node->setVertexProps(nullptr);
+    if (FLAGS_optimize_appendvertices) {
+      node->setVertexProps(nullptr);
+    } else {
+      // only get _tag when props is nullptr
+      auto tagId = vertexProps->front().tag_ref().value();
+      VertexProp newVProp;
+      newVProp.tag_ref() = tagId;
+      newVProp.props_ref() = {nebula::kTag};
+      prunedVertexProps->emplace_back(std::move(newVProp));
+      node->setVertexProps(std::move(prunedVertexProps));
+    }
     return;
   }
-  auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
+
   prunedVertexProps->reserve(usedVertexProps.size());
   for (auto &vertexProp : *vertexProps) {
     auto tagId = vertexProp.tag_ref().value();
