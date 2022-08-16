@@ -208,10 +208,15 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
 }
 
 void GetDstBySrcProcessor::onProcessFinished() {
-  std::sort(result_.values.begin(), result_.values.end());
-  result_.values.erase(std::unique(result_.values.begin(), result_.values.end()),
-                       result_.values.end());
-  resp_.dsts_ref() = std::move(result_.values);
+  std::unordered_set<const Value*> unique;
+  for (const auto& val : result_.values) {
+    unique.emplace(&val);
+  }
+  std::vector<Value> deduped;
+  for (const auto& val : unique) {
+    deduped.emplace_back(*val);
+  }
+  resp_.dsts_ref() = std::move(deduped);
 }
 
 }  // namespace storage
