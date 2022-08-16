@@ -84,7 +84,7 @@ Status AppendVerticesExecutor::handleNullProp(const AppendVertices *av) {
   bool canBeMoved = movable(av->inputVars().front());
 
   for (; iter->valid(); iter->next()) {
-    auto vid = src->eval(ctx(iter.get()));
+    const auto &vid = src->eval(ctx(iter.get()));
     if (vid.empty()) {
       continue;
     }
