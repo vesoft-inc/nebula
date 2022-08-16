@@ -16,7 +16,6 @@ PrunePropertiesVisitor::PrunePropertiesVisitor(PropertyTracker &propsUsed,
 }
 
 void PrunePropertiesVisitor::visit(PlanNode *node) {
-  rootNode_ = false;
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -260,7 +259,6 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
 
 // AppendVertices should be deleted when no properties it pulls are used by the parent node.
 void PrunePropertiesVisitor::visit(AppendVertices *node) {
-  rootNode_ = false;
   visitCurrent(node);
   status_ = depsPruneProperties(node->dependencies());
 }
@@ -410,6 +408,21 @@ Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *>
     }
   }
   return Status::OK();
+}
+
+void PrunePropertiesVisitor::visit(Union *node) {
+  auto &dependencies = node->dependencies();
+  DCHECK_EQ(dependencies.size(), 2);
+  auto rightPropsUsed = propsUsed_;
+  auto *leftDep = dependencies.front();
+  const_cast<PlanNode *>(leftDep)->accept(this);
+  if (!status_.ok()) {
+    return;
+  }
+  rootNode_ = true;
+  propsUsed_ = std::move(rightPropsUsed);
+  auto *rightDep = dependencies.back();
+  const_cast<PlanNode *>(rightDep)->accept(this);
 }
 
 Status PrunePropertiesVisitor::extractPropsFromExpr(const Expression *expr,
