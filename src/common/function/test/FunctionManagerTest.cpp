@@ -623,6 +623,10 @@ TEST_F(FunctionManagerTest, time) {
                   Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
   }
   {
+    TEST_FUNCTION(
+        datetime, {0}, Value(time::TimeUtils::dateTimeToUTC(DateTime(1970, 1, 1, 0, 0, 0, 0))));
+  }
+  {
     TEST_FUNCTION(datetime,
                   {Map({{"year", 2020},
                         {"month", 9},
@@ -835,6 +839,12 @@ TEST_F(FunctionManagerTest, time) {
     TEST_FUNCTION(pi, args_["empty"], M_PI);
     TEST_FUNCTION(radians, args_["radians"], M_PI);
     TEST_FUNCTION(radians, args_["nullvalue"], Value::kNullBadType);
+  }
+  {
+    auto result = FunctionManager::get("datetime", kLiteralTimeParaNumber);
+    ASSERT_TRUE(result.ok());
+    auto datetime = std::move(result).value()(genArgsRef({"2020-10-10T10:00:00"}));
+    TEST_FUNCTION(timestamp, {datetime}, 1602324000);
   }
 }
 
