@@ -10,7 +10,7 @@
 namespace nebula {
 
 const Value& MatchPathPatternExpression::eval(ExpressionContext& ctx) {
-  result_ = DCHECK_NOTNULL(prop_)->eval(ctx);
+  result_ = DCHECK_NOTNULL(genList_)->eval(ctx);
   return result_;
 }
 
@@ -23,7 +23,7 @@ bool MatchPathPatternExpression::operator==(const Expression& rhs) const {
     return false;
   }
 
-  // The prop_ field is used for evaluation internally, so it don't identify the expression.
+  // The genList_ field is used for evaluation internally, so it don't identify the expression.
   // We don't compare it here.
   // Ditto for result_ field.
 
@@ -41,8 +41,8 @@ void MatchPathPatternExpression::accept(ExprVisitor* visitor) {
 Expression* MatchPathPatternExpression::clone() const {
   auto expr =
       MatchPathPatternExpression::make(pool_, std::make_unique<MatchPath>(matchPath_->clone()));
-  if (prop_ != nullptr) {
-    expr->setInputProp(static_cast<InputPropertyExpression*>(prop_->clone()));
+  if (genList_ != nullptr) {
+    expr->setGenList(genList_->clone());
   }
   return expr;
 }

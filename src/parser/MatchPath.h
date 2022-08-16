@@ -255,10 +255,26 @@ class MatchNode final {
     return me;
   }
 
+  enum class VariableDefinedSource {
+    kUnknown,
+    kExpression,   // from upper expression
+    kMatchClause,  // from previous match clause
+  };
+
+  VariableDefinedSource variableDefinedSource() const {
+    return variableDefinedSource_;
+  }
+
+  void setVariableDefinedSource(VariableDefinedSource source) {
+    variableDefinedSource_ = source;
+  }
+
  private:
   std::string alias_;
   std::unique_ptr<MatchNodeLabelList> labels_;
   MapExpression* props_{nullptr};
+  // Only used for pattern expression
+  VariableDefinedSource variableDefinedSource_{VariableDefinedSource::kUnknown};
 };
 
 class MatchPath final {

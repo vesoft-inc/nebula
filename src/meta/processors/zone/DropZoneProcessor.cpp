@@ -86,7 +86,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkSpaceReplicaZone() {
     size_t replicaFactor = properties.get_replica_factor();
     if (replicaFactor == spaceZones.size()) {
       LOG(INFO) << "Space " << spaceId << " replica factor and zone size are the same";
-      code = nebula::cpp2::ErrorCode::E_CONFLICT;
+      code = nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH;
       break;
     }
     iter->next();
@@ -121,7 +121,7 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkHostPartition(const HostAddr& ad
       for (auto& host : hosts) {
         if (host == address) {
           LOG(INFO) << "Host " << address << " have partition on it";
-          code = nebula::cpp2::ErrorCode::E_CONFLICT;
+          code = nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS;
           break;
         }
       }
