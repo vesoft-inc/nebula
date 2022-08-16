@@ -24,6 +24,7 @@ class PlanNodeVisitor {
   virtual void visit(AppendVertices *node) = 0;
   virtual void visit(BiJoin *node) = 0;
   virtual void visit(Union *node) = 0;
+  virtual void visit(Unwind *node) = 0;
 };
 
 }  // namespace graph

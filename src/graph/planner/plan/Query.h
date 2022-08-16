@@ -839,7 +839,7 @@ class Unwind final : public SingleInputNode {
     return unwindExpr_;
   }
 
-  const std::string alias() const {
+  const std::string& alias() const {
     return alias_;
   }
 
@@ -853,6 +853,8 @@ class Unwind final : public SingleInputNode {
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   friend ObjectPool;

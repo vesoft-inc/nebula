@@ -385,6 +385,10 @@ void Unwind::cloneMembers(const Unwind& p) {
   alias_ = p.alias();
 }
 
+void Unwind::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());

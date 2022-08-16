@@ -315,16 +315,6 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
-Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
-  for (const auto *dep : dependencies) {
-    const_cast<PlanNode *>(dep)->accept(this);
-    if (!status_.ok()) {
-      return status_;
-    }
-  }
-  return Status::OK();
-}
-
 void PrunePropertiesVisitor::visit(Union *node) {
   auto &dependencies = node->dependencies();
   DCHECK_EQ(dependencies.size(), 2);
@@ -338,6 +328,31 @@ void PrunePropertiesVisitor::visit(Union *node) {
   propsUsed_ = std::move(rightPropsUsed);
   auto *rightDep = dependencies.back();
   const_cast<PlanNode *>(rightDep)->accept(this);
+}
+
+void PrunePropertiesVisitor::visit(Unwind *node) {
+  visitCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
+  const auto &alias = node->alias();
+  if (propsUsed_.hasAlias(alias)) {
+    status_ = extractPropsFromExpr(node->unwindExpr());
+    if (!status_.ok()) {
+      return;
+    }
+  }
+}
+
+Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
+  for (const auto *dep : dependencies) {
+    const_cast<PlanNode *>(dep)->accept(this);
+    if (!status_.ok()) {
+      return status_;
+    }
+  }
+  return Status::OK();
 }
 
 Status PrunePropertiesVisitor::extractPropsFromExpr(const Expression *expr,
