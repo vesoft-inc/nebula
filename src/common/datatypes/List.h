@@ -104,5 +104,34 @@ struct hash<nebula::List> {
     return seed;
   }
 };
+
+template <>
+struct equal_to<nebula::List*> {
+  bool operator()(const nebula::List* lhs, const nebula::List* rhs) const {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct equal_to<const nebula::List*> {
+  bool operator()(const nebula::List* lhs, const nebula::List* rhs) const {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct hash<nebula::List*> {
+  size_t operator()(const nebula::List* row) const {
+    return !row ? 0 : hash<nebula::List>()(*row);
+  }
+};
+
+template <>
+struct hash<const nebula::List*> {
+  size_t operator()(const nebula::List* row) const {
+    return !row ? 0 : hash<nebula::List>()(*row);
+  }
+};
+
 }  // namespace std
 #endif  // COMMON_DATATYPES_LIST_H_

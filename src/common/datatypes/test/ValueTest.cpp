@@ -1652,6 +1652,62 @@ TEST(Value, ToString) {
   }
 }
 
+TEST(Value, DedupByValuePointer) {
+  std::vector<Value> values;
+  for (size_t i = 0; i < 10; i++) {
+    values.emplace_back(Value("nebula"));
+  }
+
+  std::unordered_set<Value*> unique;
+  for (auto& value : values) {
+    unique.emplace(&value);
+  }
+  ASSERT_EQ(unique.size(), 1);
+}
+
+TEST(Value, DedupByConstValuePointer) {
+  std::vector<Value> values;
+  for (size_t i = 0; i < 10; i++) {
+    values.emplace_back(Value("nebula"));
+  }
+
+  std::unordered_set<const Value*> unique;
+  for (const auto& value : values) {
+    unique.emplace(&value);
+  }
+  ASSERT_EQ(unique.size(), 1);
+}
+
+TEST(Value, DedupByRowPointer) {
+  std::vector<Row> rows;
+  for (size_t i = 0; i < 10; i++) {
+    Row row;
+    row.emplace_back(Value("nebula"));
+    rows.emplace_back(std::move(row));
+  }
+
+  std::unordered_set<Row*> unique;
+  for (auto& row : rows) {
+    unique.emplace(&row);
+  }
+  ASSERT_EQ(unique.size(), 1);
+}
+
+TEST(Value, DedupByConstRowPointer) {
+  std::vector<Row> rows;
+  for (size_t i = 0; i < 10; i++) {
+    Row row;
+    row.emplace_back(Value("nebula"));
+    rows.emplace_back(std::move(row));
+  }
+
+  std::unordered_set<const Row*> unique;
+  for (const auto& row : rows) {
+    unique.emplace(&row);
+  }
+  ASSERT_EQ(unique.size(), 1);
+}
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {
