@@ -753,6 +753,8 @@ class Union final : public SetOp {
     return qctx->objPool()->makeAndAdd<Union>(qctx, left, right);
   }
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   PlanNode* clone() const override;
 
  private:

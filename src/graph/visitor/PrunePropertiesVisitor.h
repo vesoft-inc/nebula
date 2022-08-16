@@ -64,6 +64,10 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
 
   void visit(BiJoin *node) override;
 
+  void visit(Union *node) override;
+  // void visit(Intersect* node) override;
+  // void visit(Minus* node) override;
+
  private:
   Status depsPruneProperties(std::vector<const PlanNode *> &dependencies);
   Status extractPropsFromExpr(const Expression *expr, const std::string &entityAlias = "");

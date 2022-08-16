@@ -200,11 +200,23 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
   static const std::unordered_set<std::string> ignoreFuncs = {
-      "src", "dst", "type", "typeid", "rank", "id", "length"};
+      "src", "dst", "type", "typeid", "id", "length"};
 
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (ignoreFuncs.find(funName) != ignoreFuncs.end()) {
+    return;
+  }
+
+  if (funName == "rank") {
+    DCHECK_EQ(expr->args()->numArgs(), 1);
+    auto argExpr = expr->args()->args()[0];
+    auto edgeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
+    if (edgeAlias.empty()) {
+      return;
+    }
+    static const int kUnknownEdgeType = 0;
+    propsUsed_.insertEdgeProp(edgeAlias, kUnknownEdgeType, nebula::kRank);
     return;
   }
 
