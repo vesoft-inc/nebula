@@ -9,7 +9,6 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/planner/plan/Algo.h"
 
 namespace nebula {
 namespace graph {
