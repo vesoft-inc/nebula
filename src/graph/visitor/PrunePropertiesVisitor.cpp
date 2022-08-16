@@ -425,6 +425,31 @@ void PrunePropertiesVisitor::visit(Union *node) {
   const_cast<PlanNode *>(rightDep)->accept(this);
 }
 
+void PrunePropertiesVisitor::visit(Unwind *node) {
+  visitCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
+  const auto &alias = node->alias();
+  if (propsUsed_.hasAlias(alias)) {
+    status_ = extractPropsFromExpr(node->unwindExpr());
+    if (!status_.ok()) {
+      return;
+    }
+  }
+}
+
+Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
+  for (const auto *dep : dependencies) {
+    const_cast<PlanNode *>(dep)->accept(this);
+    if (!status_.ok()) {
+      return status_;
+    }
+  }
+  return Status::OK();
+}
+
 Status PrunePropertiesVisitor::extractPropsFromExpr(const Expression *expr,
                                                     const std::string &entityAlias) {
   PropertyTrackerVisitor visitor(qctx_, spaceID_, propsUsed_, entityAlias);
