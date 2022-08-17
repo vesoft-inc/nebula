@@ -292,7 +292,7 @@ class Subgraph final : public SingleInputNode {
            const std::string& resultVar,
            const std::string& currentStepVar,
            uint32_t steps)
-      : SingleInputNode(qctx, Kind::kIsomor, input),
+      : SingleInputNode(qctx, Kind::kSubgraph, input),
         resultVar_(resultVar),
         currentStepVar_(currentStepVar),
         steps_(steps) {}
