@@ -106,12 +106,22 @@ void PrunePropertiesVisitor::visit(Aggregate *node) {
 
 void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
   for (auto *groupKey : node->groupKeys()) {
+    if (groupKey->kind() == Expression::Kind::kVarProperty ||
+        groupKey->kind() == Expression::Kind::kInputProperty ||
+        groupKey->kind() == Expression::Kind::kConstant) {
+      continue;
+    }
     status_ = extractPropsFromExpr(groupKey);
     if (!status_.ok()) {
       return;
     }
   }
   for (auto *groupItem : node->groupItems()) {
+    if (groupItem->kind() == Expression::Kind::kVarProperty ||
+        groupItem->kind() == Expression::Kind::kInputProperty ||
+        groupItem->kind() == Expression::Kind::kConstant) {
+      continue;
+    }
     status_ = extractPropsFromExpr(groupItem);
     if (!status_.ok()) {
       return;
