@@ -17,6 +17,7 @@
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
 #include "graph/planner/ngql/GoPlanner.h"
+#include "graph/planner/ngql/IsomorPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
 #include "graph/planner/ngql/MaintainPlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
@@ -78,6 +79,10 @@ void PlannersRegister::registerSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchEdges];
     planners.emplace_back(&FetchEdgesPlanner::match, &FetchEdgesPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kIsomor];
+    planners.emplace_back(&IsomorPlanner::match, &IsomorPlanner::make);
   }
 }
 

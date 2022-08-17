@@ -11,26 +11,9 @@
 namespace nebula {
 namespace graph {
 
-static TagID kDefaultTag = 1;          // what's the id of first tag?
-static EdgeType kDefaultEdgeType = 1;  // what's the id of first edge type?
-static char[] kDefaultProp = "default";
-
-std::unique_ptr<IsomorPlanner::VertexProps> IsomorPlanner::buildVertexProps(
-    const ExpressionProps::TagIDPropsMap& propsMap) {
-  if (propsMap.empty()) {
-    return std::make_unique<IsomorPlanner::VertexProps>();
-  }
-  auto vertexProps = std::make_unique<VertexProps>(propsMap.size());
-  auto fun = [](auto& tag) {
-    VertexProp vp;
-    vp.tag_ref() = tag.first;
-    std::vector<std::string> props(tag.second.begin(), tag.second.end());
-    vp.props_ref() = std::move(props);
-    return vp;
-  };
-  std::transform(propsMap.begin(), propsMap.end(), vertexProps->begin(), fun);
-  return vertexProps;
-}
+static const TagID kDefaultTag = 0;            // what's the id of first tag?
+static const EdgeType kDefaultEdgeType = 0;    // what's the id of first edge type?
+static const char kDefaultProp[] = "default";  //
 
 StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
   isoCtx_ = static_cast<IsomorContext*>(astCtx);
@@ -39,19 +22,22 @@ StatusOr<SubPlan> IsomorPlanner::transform(AstContext* astCtx) {
   auto qSpaceId = isoCtx_->querySpace;
 
   auto dScanVertics = createScanVerticesPlan(qctx, dSpace, nullptr);
-  auto qScanVertics = createScanVerticesPlan(qctx, qSpaceId, nullptr);
+  auto qScanVertics = createScanVerticesPlan(qctx, qSpaceId, dScanVertics);
 
-  auto dScanEdges = createScanEdgesPlan(qctx, dSpace, nullptr);
-  auto qScanEdges = createScanEdgesPlan(qctx, qSpaceId, nullptr);
+  auto dScanEdges = createScanEdgesPlan(qctx, dSpace, qScanVertics);
+  auto qScanEdges = createScanEdgesPlan(qctx, qSpaceId, dScanEdges);
+
+  auto isomor = Isomor::make(qctx,
+                             qScanEdges,
+                             dScanVertics->outputVar(),
+                             qScanVertics->outputVar(),
+                             dScanEdges->outputVar(),
+                             dScanEdges->outputVar());
 
   SubPlan subPlan;
-  subPlan.root = dScanVertics;
-  subPlan.tail = qScanVertics;
+  subPlan.root = isomor;
+  subPlan.tail = dScanVertics;
   return subPlan;
-  // TODO: Add some to do while combining the executor and the planner.
-  //  (1) create a plan node for Isomorphism.cpp
-  //  (2) Define the Input and output of the plan node function.
-  //  (3) Add the Register.
 }
 
 PlanNode* IsomorPlanner::createScanVerticesPlan(QueryContext* qctx,
@@ -67,7 +53,7 @@ PlanNode* IsomorPlanner::createScanVerticesPlan(QueryContext* qctx,
   vProp.tag_ref() = kDefaultTag;
   vProp.props_ref() = std::move(props);
   vProps->emplace_back(std::move(vProp));
-  colNames.emplace_back(tagName + "." + kDefaultProp);
+  colNames.emplace_back(tagName + "." + std::string(kDefaultProp));
 
   auto* scanVertices = ScanVertices::make(qctx, input, spaceId, std::move(vProps));
   scanVertices->setColNames(std::move(colNames));

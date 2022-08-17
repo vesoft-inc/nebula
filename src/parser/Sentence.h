@@ -132,6 +132,7 @@ class Sentence {
     kShowMetaLeader,
     kAlterSpace,
     kClearSpace,
+    kIsomor,
   };
 
   Kind kind() const {

@@ -62,6 +62,7 @@ class PlanNode {
     kProduceAllPaths,
     kCartesianProduct,
     kSubgraph,
+    kIsomor,
     kDataCollect,
     kLeftJoin,
     kInnerJoin,
