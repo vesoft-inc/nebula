@@ -224,8 +224,14 @@ void PropertyTrackerVisitor::visit(AggregateExpression *expr) {
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (funName == "count") {
-    return;
+    auto *argExpr = expr->arg();
+    if (argExpr->kind() == Expression::Kind::kConstant ||
+        argExpr->kind() == Expression::Kind::kInputProperty ||
+        argExpr->kind() == Expression::Kind::kVarProperty) {
+      return;
+    }
   }
+  // count(v.player.age)
   expr->arg()->accept(this);
 }
 

@@ -395,6 +395,24 @@ Feature: Prune Properties rule
       """
       MATCH (v1)-[e:like*1..5]->(v2)
       WHERE id(v1) == "Tim Duncan"
+      RETURN count(v2.player.age)
+      """
+    Then the result should be, in order:
+      | count(v2.player.age) |
+      | 24                   |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                                                      |
+      | 7  | Aggregate      | 6            |                                                                                                    |
+      | 6  | Project        | 5            |                                                                                                    |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"],\"tagId\":9}]" }                                                |
+      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                    |
+      | 1  | PassThrough    | 3            |                                                                                                    |
+      | 3  | Start          |              |                                                                                                    |
+    When profiling query:
+      """
+      MATCH (v1)-[e:like*1..5]->(v2)
+      WHERE id(v1) == "Tim Duncan"
       RETURN count(v2)
       """
     Then the result should be, in order:
