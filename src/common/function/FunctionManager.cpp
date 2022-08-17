@@ -220,11 +220,13 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"datetime",
      {TypeSignature({}, Value::Type::DATETIME),
       TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
-      TypeSignature({Value::Type::MAP}, Value::Type::DATETIME)}},
+      TypeSignature({Value::Type::MAP}, Value::Type::DATETIME),
+      TypeSignature({Value::Type::INT}, Value::Type::DATETIME)}},
     {"timestamp",
      {TypeSignature({}, Value::Type::INT),
       TypeSignature({Value::Type::STRING}, Value::Type::INT),
-      TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+      TypeSignature({Value::Type::INT}, Value::Type::INT),
+      TypeSignature({Value::Type::DATETIME}, Value::Type::INT)}},
     {"tags",
      {
          TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
@@ -1754,6 +1756,8 @@ FunctionManager::FunctionManager() {
               return Value::kNullBadData;
             }
             return time::TimeUtils::dateTimeToUTC(result.value());
+          } else if (args[0].get().isInt()) {
+            return time::TimeConversion::unixSecondsToDateTime(args[0].get().getInt());
           } else {
             return Value::kNullBadData;
           }
