@@ -118,8 +118,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.person.age)+1 AS age,"
         "labels(n) AS lb "
         "ORDER BY id;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kSort,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kSort,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kProject,
@@ -140,8 +139,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(n) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
@@ -220,8 +218,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
@@ -242,8 +239,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "min(n.person.age) AS min,"
         "avg(distinct n.person.age) AS age,"
         "labels(m) AS lb;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kDedup,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDedup,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
@@ -265,8 +261,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.person.age)+1 AS age,"
         "labels(m) AS lb "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
@@ -290,8 +285,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kDedup,
                                             PlanNode::Kind::kProject,
@@ -317,8 +311,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kDedup,
                                             PlanNode::Kind::kAggregate,
@@ -343,8 +336,7 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
-                                            PlanNode::Kind::kLimit,
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kDedup,
                                             PlanNode::Kind::kProject,
