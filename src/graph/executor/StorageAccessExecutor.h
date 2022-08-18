@@ -162,6 +162,8 @@ class StorageAccessExecutor : public Executor {
                                                  Expression *expr,
                                                  bool dedup,
                                                  bool isCypher = false);
+
+  StatusOr<List> buildRequestListByVidType(Iterator *iter, Expression *expr, bool dedup);
 };
 
 }  // namespace graph
