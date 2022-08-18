@@ -16,6 +16,7 @@
 #include "storage/mutate/DeleteVerticesProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
+#include "storage/query/GetDstBySrcProcessor.h"
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/query/GetPropProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
@@ -57,6 +58,7 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
   kUpdateVertexCounters.init("update_vertex");
   kUpdateEdgeCounters.init("update_edge");
   kGetNeighborsCounters.init("get_neighbors");
+  kGetDstBySrcCounters.init("get_dst_by_src");
   kGetPropCounters.init("get_prop");
   kLookupCounters.init("lookup");
   kScanVertexCounters.init("scan_vertex");
@@ -121,6 +123,12 @@ folly::Future<cpp2::GetNeighborsResponse> GraphStorageServiceHandler::future_get
     const cpp2::GetNeighborsRequest& req) {
   auto* processor =
       GetNeighborsProcessor::instance(env_, &kGetNeighborsCounters, readerPool_.get());
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetDstBySrcResponse> GraphStorageServiceHandler::future_getDstBySrc(
+    const cpp2::GetDstBySrcRequest& req) {
+  auto* processor = GetDstBySrcProcessor::instance(env_, &kGetDstBySrcCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 
