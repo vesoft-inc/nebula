@@ -20,7 +20,6 @@ Feature: TopN rule
       | 55       |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 0  | DataCollect  | 1            |               |
       | 1  | TopN         | 2            |               |
       | 2  | Project      | 3            |               |
       | 3  | GetNeighbors | 4            |               |
@@ -39,7 +38,6 @@ Feature: TopN rule
       | 83       |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 0  | DataCollect  | 1            |               |
       | 1  | TopN         | 2            |               |
       | 2  | Project      | 3            |               |
       | 3  | GetNeighbors | 4            |               |
@@ -58,7 +56,6 @@ Feature: TopN rule
       | 60       |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 0  | DataCollect  | 1            |               |
       | 1  | Limit        | 2            |               |
       | 2  | Sort         | 3            |               |
       | 3  | Project      | 4            |               |
@@ -79,7 +76,6 @@ Feature: TopN rule
       | 60       |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 0  | DataCollect  | 1            |               |
       | 1  | Sort         | 2            |               |
       | 2  | Project      | 3            |               |
       | 3  | GetNeighbors | 4            |               |
