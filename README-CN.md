@@ -57,7 +57,7 @@ NebulaGraph 1.x 后续不再进行功能的更新，请升级到2.0版本中。N
 
 ## 快速使用
 
-请查看[快速使用手册](https://docs.nebula-graph.io/2.0/2.quick-start/1.quick-start-workflow/)，开始使用 **NebulaGraph**。
+请查看[快速使用手册](https://docs.nebula-graph.com.cn/3.2.0/2.quick-start/1.quick-start-workflow/)，开始使用 **NebulaGraph**。
 
 <!--
 在开始使用 **NebulaGraph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)或者 [docker compose](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/2.build-by-docker/) 方式安装 **NebulaGraph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **NebulaGraph**。

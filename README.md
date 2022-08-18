@@ -49,7 +49,7 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 
 ## Quick start
 
-Read the [Getting started](https://docs.nebula-graph.io/2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
+Read the [Getting started](https://docs.nebula-graph.io/3.2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
 
 <!--
 Please note that you need to install **NebulaGraph**, either by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/) or by [docker compose](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/2.build-by-docker/), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/videos).
