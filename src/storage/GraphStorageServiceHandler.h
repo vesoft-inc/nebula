@@ -45,6 +45,9 @@ class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
   folly::Future<cpp2::GetNeighborsResponse> future_getNeighbors(
       const cpp2::GetNeighborsRequest& req) override;
 
+  folly::Future<cpp2::GetDstBySrcResponse> future_getDstBySrc(
+      const cpp2::GetDstBySrcRequest& req) override;
+
   folly::Future<cpp2::GetPropResponse> future_getProps(const cpp2::GetPropRequest& req) override;
 
   folly::Future<cpp2::LookupIndexResp> future_lookupIndex(

@@ -118,7 +118,7 @@ StatusOr<TransformResult> OptimizeEdgeIndexScanByFilterRule::transform(
         if (static_cast<ListExpression*>(inExpr->right())->size() > 1) {
           return TransformResult::noTransform();
         } else {
-          transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+          transformedExpr = graph::ExpressionUtils::rewriteInExpr(inExpr);
         }
         if (OptimizerUtils::relExprHasIndex(inExpr, indexItems)) {
           return TransformResult::noTransform();

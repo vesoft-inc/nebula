@@ -48,9 +48,6 @@ class MultiTagNode : public IterateNode<VertexID> {
 
     // add result of each tag node to tagResult
     for (auto* tagNode : tagNodes_) {
-      if (context_->isPlanKilled()) {
-        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
-      }
       ret = tagNode->collectTagPropsIfValid(
           [&result](const std::vector<PropContext>*) -> nebula::cpp2::ErrorCode {
             result.values.emplace_back(Value());
