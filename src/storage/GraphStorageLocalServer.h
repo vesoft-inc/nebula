@@ -29,6 +29,8 @@ class GraphStorageLocalServer final : public boost::noncopyable, public nebula::
  public:
   folly::Future<cpp2::GetNeighborsResponse> future_getNeighbors(
       const cpp2::GetNeighborsRequest& request);
+  folly::Future<cpp2::GetDstBySrcResponse> future_getDstBySrc(
+      const cpp2::GetDstBySrcRequest& request);
   folly::Future<cpp2::ExecResponse> future_addVertices(const cpp2::AddVerticesRequest& request);
   folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::AddEdgesRequest& request);
   folly::Future<cpp2::ExecResponse> future_addEdges(const cpp2::AddEdgesRequest& request);
