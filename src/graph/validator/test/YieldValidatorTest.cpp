@@ -523,7 +523,6 @@ TEST_F(YieldValidatorTest, AggCall) {
         "like.likeness AS like"
         "| YIELD DISTINCT AVG($-.age + 1), SUM($-.like), COUNT(*)";
     expected_ = {
-        PlanNode::Kind::kDataCollect,
         PlanNode::Kind::kDedup,
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,

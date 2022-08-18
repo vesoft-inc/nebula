@@ -61,7 +61,6 @@ Feature: Push Filter down Project rule
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})       | 30   |
     And the execution plan should be:
       | id | name         | dependencies | operator info |
-      | 25 | DataCollect  | 24           |               |
       | 24 | Dedup        | 41           |               |
       | 41 | Project      | 40           |               |
       | 40 | Filter       | 20           |               |
