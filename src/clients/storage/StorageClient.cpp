@@ -9,6 +9,7 @@
 
 using nebula::cpp2::PropertyType;
 using nebula::storage::cpp2::ExecResponse;
+using nebula::storage::cpp2::GetDstBySrcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 using nebula::storage::cpp2::GetPropResponse;
 
@@ -104,6 +105,39 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
                          std::move(requests),
                          [](ThriftClientType* client, const cpp2::GetNeighborsRequest& r) {
                            return client->future_getNeighbors(r);
+                         });
+}
+
+StorageRpcRespFuture<cpp2::GetDstBySrcResponse> StorageClient::getDstBySrc(
+    const CommonRequestParam& param, const List& vertices, const std::vector<EdgeType>& edgeTypes) {
+  auto cbStatus = getIdFromValue(param.space);
+  if (!cbStatus.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
+        std::runtime_error(cbStatus.status().toString()));
+  }
+
+  auto status = clusterIdsToHosts(param.space, vertices.values, std::move(cbStatus).value());
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
+        std::runtime_error(status.status().toString()));
+  }
+
+  auto& clusters = status.value();
+  auto common = param.toReqCommon();
+  std::unordered_map<HostAddr, cpp2::GetDstBySrcRequest> requests;
+  for (auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.edge_types_ref() = edgeTypes;
+    req.common_ref() = common;
+  }
+
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](ThriftClientType* client, const cpp2::GetDstBySrcRequest& r) {
+                           return client->future_getDstBySrc(r);
                          });
 }
 
