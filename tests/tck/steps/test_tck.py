@@ -5,4 +5,4 @@
 from pytest_bdd import scenarios
 
 
-scenarios('features', 'openCypher/features')
+scenarios('explorer', 'features', 'openCypher/features')
