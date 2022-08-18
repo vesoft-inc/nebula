@@ -300,6 +300,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Argument";
     case Kind::kRollUpApply:
       return "RollUpApply";
+    case Kind::kGetDstBySrc:
+      return "GetDstBySrc";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

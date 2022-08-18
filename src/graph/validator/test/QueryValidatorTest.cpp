@@ -107,7 +107,6 @@ TEST_F(QueryValidatorTest, GoNSteps) {
         "GO 3 steps FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.age > 20"
         "YIELD distinct $^.person.name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kProject,
         PK::kFilter,
@@ -125,8 +124,7 @@ TEST_F(QueryValidatorTest, GoNSteps) {
     std::string query =
         "GO 2 STEPS FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.age > 20"
         "YIELD distinct $^.person.name ";
-    std::vector<PlanNode::Kind> expected = {PK::kDataCollect,
-                                            PK::kDedup,
+    std::vector<PlanNode::Kind> expected = {PK::kDedup,
                                             PK::kProject,
                                             PK::kFilter,
                                             PK::kGetNeighbors,
@@ -239,8 +237,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
         "id | GO 1 STEPS FROM $-.id OVER like "
         "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
-    std::vector<PlanNode::Kind> expected = {PK::kDataCollect,
-                                            PK::kDedup,
+    std::vector<PlanNode::Kind> expected = {PK::kDedup,
                                             PK::kProject,
                                             PK::kFilter,
                                             PK::kInnerJoin,
@@ -286,11 +283,11 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         "id | GO 2 STEPS FROM $-.id OVER like "
         "WHERE $-.id == \"2\" YIELD DISTINCT $-.id, like._dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kDedup,   PK::kProject,      PK::kFilter,       PK::kInnerJoin,
-        PK::kInnerJoin,   PK::kProject, PK::kGetNeighbors, PK::kLoop,         PK::kDedup,
-        PK::kDedup,       PK::kProject, PK::kProject,      PK::kDedup,        PK::kInnerJoin,
-        PK::kProject,     PK::kDedup,   PK::kProject,      PK::kProject,      PK::kGetNeighbors,
-        PK::kDedup,       PK::kStart,   PK::kProject,      PK::kGetNeighbors, PK::kStart,
+        PK::kDedup,   PK::kProject,      PK::kFilter,       PK::kInnerJoin,    PK::kInnerJoin,
+        PK::kProject, PK::kGetNeighbors, PK::kLoop,         PK::kDedup,        PK::kDedup,
+        PK::kProject, PK::kProject,      PK::kDedup,        PK::kInnerJoin,    PK::kProject,
+        PK::kDedup,   PK::kProject,      PK::kProject,      PK::kGetNeighbors, PK::kDedup,
+        PK::kStart,   PK::kProject,      PK::kGetNeighbors, PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -327,7 +324,6 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         "YIELD DISTINCT $-.name, like.likeness + 1, $-.id, like._dst, "
         "$$.person.name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kProject,
         PK::kInnerJoin,
@@ -393,13 +389,12 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
         "YIELD DISTINCT $-.name, like.likeness + 1, $-.id, like._dst, "
         "$$.person.name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kDedup,        PK::kProject,     PK::kInnerJoin, PK::kInnerJoin,
-        PK::kLeftJoin,    PK::kProject,      PK::kGetVertices, PK::kProject,   PK::kGetNeighbors,
-        PK::kLoop,        PK::kDedup,        PK::kDedup,       PK::kProject,   PK::kProject,
-        PK::kDedup,       PK::kInnerJoin,    PK::kProject,     PK::kDedup,     PK::kProject,
-        PK::kProject,     PK::kLeftJoin,     PK::kDedup,       PK::kProject,   PK::kProject,
-        PK::kGetVertices, PK::kGetNeighbors, PK::kProject,     PK::kStart,     PK::kGetNeighbors,
-        PK::kStart,
+        PK::kDedup,        PK::kProject,     PK::kInnerJoin, PK::kInnerJoin,    PK::kLeftJoin,
+        PK::kProject,      PK::kGetVertices, PK::kProject,   PK::kGetNeighbors, PK::kLoop,
+        PK::kDedup,        PK::kDedup,       PK::kProject,   PK::kProject,      PK::kDedup,
+        PK::kInnerJoin,    PK::kProject,     PK::kDedup,     PK::kProject,      PK::kProject,
+        PK::kLeftJoin,     PK::kDedup,       PK::kProject,   PK::kProject,      PK::kGetVertices,
+        PK::kGetNeighbors, PK::kProject,     PK::kStart,     PK::kGetNeighbors, PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -603,7 +598,6 @@ TEST_F(QueryValidatorTest, GoOneStep) {
         "YIELD DISTINCT $^.person.name, like._dst, "
         "$$.person.name, $$.person.age + 1";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kProject,
         PK::kFilter,
@@ -641,7 +635,6 @@ TEST_F(QueryValidatorTest, GoOneStep) {
         "GO FROM \"1\",\"2\",\"3\" OVER like WHERE $^.person.age > 20"
         "YIELD distinct $^.person.name ";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kProject,
         PK::kFilter,
@@ -758,10 +751,7 @@ TEST_F(QueryValidatorTest, GoMToN) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -773,10 +763,7 @@ TEST_F(QueryValidatorTest, GoMToN) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -809,10 +796,7 @@ TEST_F(QueryValidatorTest, GoMToN) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -824,10 +808,7 @@ TEST_F(QueryValidatorTest, GoMToN) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -1011,7 +992,7 @@ TEST_F(QueryValidatorTest, Limit) {
   {
     std::string query = "GO FROM \"Ann\" OVER like YIELD like._dst AS like | LIMIT 1, 3";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kLimit, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kLimit, PK::kProject, PK::kGetNeighbors, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
 }
@@ -1021,8 +1002,7 @@ TEST_F(QueryValidatorTest, OrderBy) {
     std::string query =
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
         " | ORDER BY $-.age";
-    std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart};
+    std::vector<PlanNode::Kind> expected = {PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   // not exist factor
@@ -1040,7 +1020,7 @@ TEST_F(QueryValidatorTest, OrderByAndLimit) {
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
         " | ORDER BY $-.age | LIMIT 1";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kLimit, PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kLimit, PK::kSort, PK::kProject, PK::kGetNeighbors, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
 }
@@ -1053,7 +1033,6 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
         "\"2\" "
         "OVER like YIELD like.start AS start";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kUnion,
         PK::kProject,
         PK::kProject,
@@ -1072,7 +1051,6 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
         "YIELD "
         "like.start AS start";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kUnion,
         PK::kDedup,
@@ -1096,7 +1074,6 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
         "FROM \"2\" "
         "OVER like YIELD like.start AS start";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kUnion,
         PK::kProject,
@@ -1121,7 +1098,6 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
         "GO FROM \"1\" OVER like YIELD like.start AS start INTERSECT GO FROM "
         "\"2\" OVER like YIELD like.start AS start";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kIntersect,
         PK::kProject,
         PK::kProject,
@@ -1138,7 +1114,6 @@ TEST_F(QueryValidatorTest, TestSetValidator) {
         "GO FROM \"1\" OVER like YIELD like.start AS start MINUS GO FROM "
         "\"2\" OVER like YIELD like.start AS start";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kMinus,
         PK::kProject,
         PK::kProject,
@@ -1209,7 +1184,6 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "MATCH (:person{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3) "
         "RETURN DISTINCT v3.person.name AS Name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
         PK::kDedup,
         PK::kProject,
         PK::kProject,
