@@ -38,6 +38,13 @@ struct List {
     values.emplace_back(std::forward<T>(v));
   }
 
+  void append(List&& other) {
+    values.reserve(size() + other.size());
+    values.insert(values.end(),
+                  std::make_move_iterator(other.values.begin()),
+                  std::make_move_iterator(other.values.end()));
+  }
+
   void clear() {
     values.clear();
   }

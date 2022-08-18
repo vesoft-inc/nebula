@@ -309,7 +309,6 @@ nebula_add_test(
         gtest
 )
 
-
 nebula_add_executable(
     NAME
         get_neighbors_bm
@@ -332,6 +331,21 @@ nebula_add_executable(
         scan_edge_prop_bm
     SOURCES
         ScanEdgePropBenchmark.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        get_dst_by_src_test
+    SOURCES
+        GetDstBySrcTest.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES

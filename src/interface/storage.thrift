@@ -235,6 +235,21 @@ struct GetNeighborsResponse {
  * End of GetNeighbors section
  */
 
+struct GetDstBySrcRequest {
+    1: common.GraphSpaceID                      space_id,
+    // list of srcId in each part
+    2: map<common.PartitionID, list<common.Value>>
+        (cpp.template = "std::unordered_map")   parts,
+    3: list<common.EdgeType>                    edge_types,
+    4: optional RequestCommon                   common,
+}
+
+struct GetDstBySrcResponse {
+    1: required ResponseCommon                  result,
+    // Only one dst column, each row is a dst
+    2: optional common.DataSet                  dsts,
+}
+
 
 //
 // Response for data modification requests
@@ -661,7 +676,8 @@ struct KVRemoveRequest {
 }
 
 service GraphStorageService {
-    GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req)
+    GetNeighborsResponse getNeighbors(1: GetNeighborsRequest req);
+    GetDstBySrcResponse getDstBySrc(1: GetDstBySrcRequest req);
 
     // Get vertex or edge properties
     GetPropResponse getProps(1: GetPropRequest req);
