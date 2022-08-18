@@ -57,9 +57,6 @@ class HashJoinNode : public IterateNode<VertexID> {
 
     // add result of each tag node to tagResult
     for (auto* tagNode : tagNodes_) {
-      if (context_->isPlanKilled()) {
-        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
-      }
       ret = tagNode->collectTagPropsIfValid(
           [&result](const std::vector<PropContext>*) -> nebula::cpp2::ErrorCode {
             result.values.emplace_back(Value());
@@ -93,9 +90,6 @@ class HashJoinNode : public IterateNode<VertexID> {
 
     std::vector<SingleEdgeIterator*> iters;
     for (auto* edgeNode : edgeNodes_) {
-      if (context_->isPlanKilled()) {
-        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
-      }
       iters.emplace_back(edgeNode->iter());
     }
     iter_.reset(new MultiEdgeIterator(std::move(iters)));

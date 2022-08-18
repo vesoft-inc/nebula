@@ -148,6 +148,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
                          int64_t limit)
       : GetNeighborsNode(context, hashJoinNode, upstream, edgeContext, resultDataSet, limit) {
     sampler_ = std::make_unique<nebula::algorithm::ReservoirSampling<Sample>>(limit);
+    name_ = "GetNeighborsSampleNode";
   }
 
  private:
