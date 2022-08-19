@@ -3,13 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H_
-#define GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H_
+#ifndef GRAPH_PLANNER_NGQL_ISOMOR_PLANNER_H_
+#define GRAPH_PLANNER_NGQL_ISOMOR_PLANNER_H_
 
 #include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/Planner.h"
+#include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/PlanNode.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -23,20 +25,21 @@ class IsomorPlanner final : public Planner {
   }
 
   static bool match(AstContext* astCtx) {
-    return astCtx->sentence->kind() == Sentence::Kind::kFetchVertices;
+    return astCtx->sentence->kind() == Sentence::Kind::kIsomor;
   }
 
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
-  std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
+  PlanNode* createScanVerticesPlan(QueryContext* qctx, GraphSpaceID spaceId, PlanNode* input);
+  PlanNode* createScanEdgesPlan(QueryContext* qctx, GraphSpaceID spaceId, PlanNode* input);
 
  private:
   IsomorPlanner() = default;
 
-  IsomorContext* fetchCtx_{nullptr};
+  IsomorContext* isoCtx_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H
+#endif  // GRAPH_PLANNER_NGQL_ISOMOR_PLANNER_H_

@@ -327,6 +327,41 @@ class BiCartesianProduct final : public BinaryInputNode {
   // use for clone
   explicit BiCartesianProduct(QueryContext* qctx);
 };
+
+class Isomor final : public SingleInputNode {
+ public:
+  static Isomor* make(QueryContext* qctx,
+                      PlanNode* input,
+                      const std::string& dScanVOut,
+                      const std::string& qScanVOut,
+                      const std::string& dScanEOut,
+                      const std::string& qScanEOut) {
+    return qctx->objPool()->makeAndAdd<Isomor>(
+        qctx, input, dScanVOut, qScanVOut, dScanEOut, qScanEOut);
+  }
+
+ private:
+  friend ObjectPool;
+  Isomor(QueryContext* qctx,
+         PlanNode* input,
+         const std::string& dScanVOut,
+         const std::string& qScanVOut,
+         const std::string& dScanEOut,
+         const std::string& qScanEOut)
+      : SingleInputNode(qctx, Kind::kIsomor, input),
+        dScanVOut_(dScanVOut),
+        qScanVOut_(qScanVOut),
+        dScanEOut_(dScanEOut),
+        qScanEOut_(qScanEOut) {}
+
+  // Please get the result from each dependent planNode via qctx_->ectx()->getResult(xxxx) in
+  // executor
+  std::string dScanVOut_;
+  std::string qScanVOut_;
+  std::string dScanEOut_;
+  std::string qScanEOut_;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_ALGO_H_
