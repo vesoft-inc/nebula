@@ -66,3 +66,39 @@ Feature: Simple case
     Then the result should be, in any order, with relax comparison:
       | count(*) |
       | 28       |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info     |
+      | 14 | Aggregate   | 12           |                   |
+      | 12 | Minus       | 10,11        |                   |
+      | 10 | Project     | 13           |                   |
+      | 13 | PassThrough | 9            |                   |
+      | 9  | Dedup       | 8            |                   |
+      | 8  | GetDstBySrc | 7            |                   |
+      | 7  | Dedup       | 6            |                   |
+      | 6  | Project     | 5            |                   |
+      | 5  | DataCollect | 4            |                   |
+      | 4  | Loop        | 0            | {"loopBody": "3"} |
+      | 3  | Dedup       | 2            |                   |
+      | 2  | GetDstBySrc | 1            |                   |
+      | 1  | Start       |              |                   |
+      | 0  | Start       |              |                   |
+      | 11 | Project     | 13           |                   |
+
+  Scenario: other simple case
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER serve BIDIRECT YIELD DISTINCT id($$) as dst | GO FROM $-.dst OVER serve YIELD DISTINCT id($$) as dst | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 0        |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info |
+      | 7  | Aggregate   | 6            |               |
+      | 6  | Dedup       | 5            |               |
+      | 5  | GetDstBySrc | 4            |               |
+      | 4  | Dedup       | 3            |               |
+      | 3  | Project     | 2            |               |
+      | 2  | Dedup       | 1            |               |
+      | 1  | GetDstBySrc | 0            |               |
+      | 0  | Start       |              |               |
