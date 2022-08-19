@@ -47,6 +47,34 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | a |
       | 1 |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 2        |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like YIELD like._dst AS dst | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 5        |
+    When executing query:
+      """
+      GO 1 to 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD DISTINCT id($$) AS dst | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 41       |
+    When executing query:
+      """
+      MATCH (v:player) RETURN COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 56       |
 
   Scenario: [1] Basic GroupBy
     When executing query:

@@ -180,6 +180,8 @@ class PlanNode {
 
     kShowQueries,
     kKillQuery,
+
+    kGetDstBySrc,
   };
 
   bool isQueryNode() const {

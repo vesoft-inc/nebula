@@ -309,14 +309,25 @@ PlanNode* GoPlanner::buildLastStepJoinPlan(PlanNode* gn, PlanNode* join) {
 
 PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
   auto qctx = goCtx_->qctx;
-  auto* gn = GetNeighbors::make(qctx, dep, goCtx_->space.id);
-  gn->setSrc(goCtx_->from.src);
-  gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
-  gn->setEdgeProps(buildEdgeProps(false));
-  gn->setInputVar(goCtx_->vidsVar);
+  PlanNode* scan = nullptr;
+  if (goCtx_->isSimple) {
+    auto* gd = GetDstBySrc::make(qctx, dep, goCtx_->space.id);
+    gd->setSrc(goCtx_->from.src);
+    gd->setEdgeTypes(buildEdgeTypes());
+    gd->setInputVar(goCtx_->vidsVar);
+    gd->setColNames({kDst});
+    scan = gd;
+  } else {
+    auto* gn = GetNeighbors::make(qctx, dep, goCtx_->space.id);
+    gn->setSrc(goCtx_->from.src);
+    gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
+    gn->setEdgeProps(buildEdgeProps(false));
+    gn->setInputVar(goCtx_->vidsVar);
+    scan = gn;
+  }
 
   const auto& steps = goCtx_->steps;
-  auto* sampleLimit = buildSampleLimit(gn, steps.isMToN() ? steps.nSteps() : steps.steps());
+  auto* sampleLimit = buildSampleLimit(scan, steps.isMToN() ? steps.nSteps() : steps.steps());
 
   auto* root = buildLastStepJoinPlan(sampleLimit, join);
 
@@ -324,7 +335,9 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
     root = Filter::make(qctx, root, goCtx_->filter);
   }
 
-  root = Project::make(qctx, root, goCtx_->yieldExpr);
+  if (!goCtx_->isSimple) {
+    root = Project::make(qctx, root, goCtx_->yieldExpr);
+  }
   root->setColNames(std::move(goCtx_->colNames));
 
   if (goCtx_->distinct) {
@@ -384,24 +397,38 @@ Expression* GoPlanner::stepSampleLimit() {
 
 SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   auto qctx = goCtx_->qctx;
+  auto isSimple = goCtx_->isSimple;
 
-  auto* gn = GetNeighbors::make(qctx, startVidPlan.root, goCtx_->space.id);
-  gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
-  gn->setEdgeProps(buildEdgeProps(false));
-  gn->setSrc(goCtx_->from.src);
-  gn->setInputVar(goCtx_->vidsVar);
+  PlanNode* scan = nullptr;
+  if (isSimple) {
+    auto* gd = GetDstBySrc::make(qctx, startVidPlan.root, goCtx_->space.id);
+    gd->setSrc(goCtx_->from.src);
+    gd->setEdgeTypes(buildEdgeTypes());
+    gd->setInputVar(goCtx_->vidsVar);
+    gd->setColNames({kDst});
+    scan = gd;
+  } else {
+    auto* gn = GetNeighbors::make(qctx, startVidPlan.root, goCtx_->space.id);
+    gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
+    gn->setEdgeProps(buildEdgeProps(false));
+    gn->setSrc(goCtx_->from.src);
+    gn->setInputVar(goCtx_->vidsVar);
+    scan = gn;
+  }
 
-  auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
+  auto* sampleLimit = buildSampleLimit(scan, 1 /* one step */);
 
   SubPlan subPlan;
-  subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : gn;
+  subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : scan;
   subPlan.root = buildOneStepJoinPlan(sampleLimit);
 
   if (goCtx_->filter != nullptr) {
     subPlan.root = Filter::make(qctx, subPlan.root, goCtx_->filter);
   }
 
-  subPlan.root = Project::make(qctx, subPlan.root, goCtx_->yieldExpr);
+  if (!isSimple) {
+    subPlan.root = Project::make(qctx, subPlan.root, goCtx_->yieldExpr);
+  }
   subPlan.root->setColNames(std::move(goCtx_->colNames));
   if (goCtx_->distinct) {
     subPlan.root = Dedup::make(qctx, subPlan.root);
@@ -412,17 +439,36 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
 
 SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   auto qctx = goCtx_->qctx;
+  auto isSimple = goCtx_->isSimple;
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
 
   auto* start = StartNode::make(qctx);
-  auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
-  gn->setSrc(goCtx_->from.src);
-  gn->setEdgeProps(buildEdgeProps(true));
-  gn->setInputVar(goCtx_->vidsVar);
+  PlanNode* scan = nullptr;
+  if (isSimple) {
+    auto* gd = GetDstBySrc::make(qctx, start, goCtx_->space.id);
+    gd->setSrc(goCtx_->from.src);
+    gd->setEdgeTypes(buildEdgeTypes());
+    gd->setInputVar(goCtx_->vidsVar);
+    gd->setColNames({kDst});
+    scan = gd;
+  } else {
+    auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
+    gn->setSrc(goCtx_->from.src);
+    gn->setEdgeProps(buildEdgeProps(true));
+    gn->setInputVar(goCtx_->vidsVar);
+    scan = gn;
+  }
+  auto* sampleLimit = buildSampleLimit(scan);
 
-  auto* sampleLimit = buildSampleLimit(gn);
-
-  auto* getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
+  PlanNode* getDst = nullptr;
+  if (isSimple) {
+    auto* dedup = Dedup::make(qctx, sampleLimit);
+    dedup->setOutputVar(goCtx_->vidsVar);
+    dedup->setColNames(goCtx_->colNames);
+    getDst = dedup;
+  } else {
+    getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
+  }
 
   PlanNode* loopBody = getDst;
   PlanNode* loopDep = nullptr;
@@ -448,19 +494,41 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
   auto qctx = goCtx_->qctx;
   auto joinInput = goCtx_->joinInput;
   auto joinDst = goCtx_->joinDst;
+  auto isSimple = goCtx_->isSimple;
 
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
 
   auto* start = StartNode::make(qctx);
-  auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
-  gn->setSrc(goCtx_->from.src);
-  gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
-  gn->setEdgeProps(buildEdgeProps(false));
-  gn->setInputVar(goCtx_->vidsVar);
 
-  auto* sampleLimit = buildSampleLimit(gn);
+  PlanNode* scan = nullptr;
+  if (isSimple) {
+    auto* gd = GetDstBySrc::make(qctx, start, goCtx_->space.id);
+    gd->setSrc(goCtx_->from.src);
+    gd->setEdgeTypes(buildEdgeTypes());
+    gd->setInputVar(goCtx_->vidsVar);
+    gd->setColNames({kDst});
+    scan = gd;
+  } else {
+    auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
+    gn->setSrc(goCtx_->from.src);
+    gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
+    gn->setEdgeProps(buildEdgeProps(false));
+    gn->setInputVar(goCtx_->vidsVar);
+    scan = gn;
+  }
 
-  auto* getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
+  auto* sampleLimit = buildSampleLimit(scan);
+
+  PlanNode* getDst = nullptr;
+
+  if (isSimple) {
+    auto* dedup = Dedup::make(qctx, sampleLimit);
+    dedup->setOutputVar(goCtx_->vidsVar);
+    dedup->setColNames(sampleLimit->colNames());
+    getDst = dedup;
+  } else {
+    getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
+  }
 
   auto* loopBody = getDst;
   auto* loopDep = startVidPlan.root;
@@ -487,24 +555,33 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     loopBody->setInputVar(filterInput);
   }
 
-  const auto& projectInput =
-      (loopBody != getDst) ? loopBody->outputVar() : sampleLimit->outputVar();
-  loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
-  loopBody->setInputVar(projectInput);
-  loopBody->setColNames(std::move(goCtx_->colNames));
+  if (!isSimple) {
+    const auto& projectInput =
+        (loopBody != getDst) ? loopBody->outputVar() : sampleLimit->outputVar();
+    loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
+    loopBody->setInputVar(projectInput);
 
-  if (goCtx_->distinct) {
-    loopBody = Dedup::make(qctx, loopBody);
+    if (goCtx_->distinct) {
+      loopBody = Dedup::make(qctx, loopBody);
+    }
   }
+  loopBody->setColNames(std::move(goCtx_->colNames));
 
   auto* condition = loopCondition(goCtx_->steps.nSteps(), sampleLimit->outputVar());
   auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMToN);
   dc->addDep(loop);
-  dc->setMToN(goCtx_->steps);
+  if (isSimple) {
+    StepClause newStep(goCtx_->steps.mSteps() + 1, goCtx_->steps.nSteps() + 1);
+    dc->setMToN(newStep);
+    dc->setInputVars({loopBody->outputVar()});
+  } else {
+    dc->setMToN(goCtx_->steps);
+    dc->setInputVars({loopBody->outputVar()});
+  }
+
   dc->setDistinct(goCtx_->distinct);
-  dc->setInputVars({loopBody->outputVar()});
   dc->setColNames(loopBody->colNames());
 
   SubPlan subPlan;
@@ -519,6 +596,10 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   auto qctx = goCtx_->qctx;
   goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
+  goCtx_->isSimple = isSimpleCase();
+  if (goCtx_->isSimple) {
+    goCtx_->yieldExpr->columns()[0]->setExpr(InputPropertyExpression::make(qctx->objPool(), kDst));
+  }
 
   SubPlan startPlan = PlannerUtil::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
 
@@ -539,6 +620,46 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     return oneStepPlan(startPlan);
   }
   return nStepsPlan(startPlan);
+}
+
+bool GoPlanner::isSimpleCase() {
+  if (goCtx_->joinInput || goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct) {
+    return false;
+  }
+  if (goCtx_->yieldExpr->columns().size() != 1 ||
+      goCtx_->yieldExpr->columns()[0]->expr()->kind() != Expression::Kind::kEdgeDst) {
+    return false;
+  }
+
+  auto expr = static_cast<const EdgeDstIdExpression*>(goCtx_->yieldExpr->columns()[0]->expr());
+  if (expr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
+    return false;
+  }
+  return true;
+}
+
+std::vector<EdgeType> GoPlanner::buildEdgeTypes() {
+  switch (goCtx_->over.direction) {
+    case storage::cpp2::EdgeDirection::IN_EDGE: {
+      std::vector<EdgeType> edgeTypes;
+      for (auto edgeType : goCtx_->over.edgeTypes) {
+        edgeTypes.emplace_back(-edgeType);
+      }
+      return edgeTypes;
+    }
+    case storage::cpp2::EdgeDirection::OUT_EDGE: {
+      return goCtx_->over.edgeTypes;
+    }
+    case storage::cpp2::EdgeDirection::BOTH: {
+      std::vector<EdgeType> edgeTypes;
+      for (auto edgeType : goCtx_->over.edgeTypes) {
+        edgeTypes.emplace_back(edgeType);
+        edgeTypes.emplace_back(-edgeType);
+      }
+      return edgeTypes;
+    }
+  }
+  return {};
 }
 
 }  // namespace graph

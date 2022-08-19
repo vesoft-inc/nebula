@@ -89,6 +89,9 @@ class GoPlanner final : public Planner {
   // Get step sample/limit number
   Expression* stepSampleLimit();
 
+  bool isSimpleCase();
+  std::vector<EdgeType> buildEdgeTypes();
+
  private:
   GoPlanner() = default;
 
