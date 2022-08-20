@@ -72,10 +72,8 @@ Feature: Simple case
       | 12 | Minus       | 10,11        |                   |
       | 10 | Project     | 13           |                   |
       | 13 | PassThrough | 9            |                   |
-      | 9  | Dedup       | 8            |                   |
-      | 8  | GetDstBySrc | 7            |                   |
-      | 7  | Dedup       | 6            |                   |
-      | 6  | Project     | 5            |                   |
+      | 9  | Dedup       | 15           |                   |
+      | 15 | GetDstBySrc | 5            |                   |
       | 5  | DataCollect | 4            |                   |
       | 4  | Loop        | 0            | {"loopBody": "3"} |
       | 3  | Dedup       | 2            |                   |

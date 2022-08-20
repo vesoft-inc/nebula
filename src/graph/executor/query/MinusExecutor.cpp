@@ -18,6 +18,7 @@ folly::Future<Status> MinusExecutor::execute() {
   auto right = getRightInputData();
 
   std::unordered_set<const Row*> hashSet;
+  hashSet.reserve(right.iterRef()->size());
   for (; right.iterRef()->valid(); right.iterRef()->next()) {
     hashSet.insert(right.iterRef()->row());
     // TODO: should test duplicate rows
