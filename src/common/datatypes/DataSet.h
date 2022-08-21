@@ -112,6 +112,7 @@ struct DataSet {
     rows.reserve(rowSize() + o.rowSize());
     rows.insert(
         rows.end(), std::make_move_iterator(o.rows.begin()), std::make_move_iterator(o.rows.end()));
+    std::vector<Row>().swap(o.rows);
     return true;
   }
 

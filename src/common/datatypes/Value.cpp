@@ -21,72 +21,6 @@
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 
-namespace std {
-
-std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexcept {
-  switch (v.type()) {
-    case nebula::Value::Type::__EMPTY__: {
-      return 0;
-    }
-    case nebula::Value::Type::NULLVALUE: {
-      return ~0UL;
-    }
-    case nebula::Value::Type::BOOL: {
-      return hash<bool>()(v.getBool());
-    }
-    case nebula::Value::Type::INT: {
-      return hash<int64_t>()(v.getInt());
-    }
-    case nebula::Value::Type::FLOAT: {
-      return hash<double>()(v.getFloat());
-    }
-    case nebula::Value::Type::STRING: {
-      return hash<string>()(v.getStr());
-    }
-    case nebula::Value::Type::DATE: {
-      return hash<nebula::Date>()(v.getDate());
-    }
-    case nebula::Value::Type::TIME: {
-      return hash<nebula::Time>()(v.getTime());
-    }
-    case nebula::Value::Type::DATETIME: {
-      return hash<nebula::DateTime>()(v.getDateTime());
-    }
-    case nebula::Value::Type::VERTEX: {
-      return hash<nebula::Vertex>()(v.getVertex());
-    }
-    case nebula::Value::Type::EDGE: {
-      return hash<nebula::Edge>()(v.getEdge());
-    }
-    case nebula::Value::Type::PATH: {
-      return hash<nebula::Path>()(v.getPath());
-    }
-    case nebula::Value::Type::LIST: {
-      return hash<nebula::List>()(v.getList());
-    }
-    case nebula::Value::Type::GEOGRAPHY: {
-      return hash<nebula::Geography>()(v.getGeography());
-    }
-    case nebula::Value::Type::MAP: {
-      return hash<nebula::Map>()(v.getMap());
-    }
-    case nebula::Value::Type::SET: {
-      return hash<nebula::Set>()(v.getSet());
-    }
-    case nebula::Value::Type::DURATION: {
-      return hash<nebula::Duration>()(v.getDuration());
-    }
-    case nebula::Value::Type::DATASET: {
-      LOG(FATAL) << "Hash for DATASET has not been implemented";
-    }
-    default: {
-      LOG(FATAL) << "Unknown type";
-    }
-  }
-}
-
-}  // namespace std
-
 namespace nebula {
 
 const Value Value::kEmpty;
@@ -103,87 +37,8 @@ const uint64_t Value::kEmptyNullType = Value::Type::__EMPTY__ | Value::Type::NUL
 const uint64_t Value::kNumericType = Value::Type::INT | Value::Type::FLOAT;
 
 Value::Value(Value&& rhs) noexcept : type_(Value::Type::__EMPTY__) {
-  if (this == &rhs) {
-    return;
-  }
-  if (rhs.type_ == Type::__EMPTY__) {
-    return;
-  }
-  switch (rhs.type_) {
-    case Type::NULLVALUE: {
-      setN(std::move(rhs.value_.nVal));
-      break;
-    }
-    case Type::BOOL: {
-      setB(std::move(rhs.value_.bVal));
-      break;
-    }
-    case Type::INT: {
-      setI(std::move(rhs.value_.iVal));
-      break;
-    }
-    case Type::FLOAT: {
-      setF(std::move(rhs.value_.fVal));
-      break;
-    }
-    case Type::STRING: {
-      setS(std::move(rhs.value_.sVal));
-      break;
-    }
-    case Type::DATE: {
-      setD(std::move(rhs.value_.dVal));
-      break;
-    }
-    case Type::TIME: {
-      setT(std::move(rhs.value_.tVal));
-      break;
-    }
-    case Type::DATETIME: {
-      setDT(std::move(rhs.value_.dtVal));
-      break;
-    }
-    case Type::VERTEX: {
-      setV(std::move(rhs.value_.vVal));
-      break;
-    }
-    case Type::EDGE: {
-      setE(std::move(rhs.value_.eVal));
-      break;
-    }
-    case Type::PATH: {
-      setP(std::move(rhs.value_.pVal));
-      break;
-    }
-    case Type::LIST: {
-      setL(std::move(rhs.value_.lVal));
-      break;
-    }
-    case Type::MAP: {
-      setM(std::move(rhs.value_.mVal));
-      break;
-    }
-    case Type::SET: {
-      setU(std::move(rhs.value_.uVal));
-      break;
-    }
-    case Type::DATASET: {
-      setG(std::move(rhs.value_.gVal));
-      break;
-    }
-    case Type::GEOGRAPHY: {
-      setGG(std::move(rhs.value_.ggVal));
-      break;
-    }
-    case Type::DURATION: {
-      setDU(std::move(rhs.value_.duVal));
-      break;
-    }
-    default: {
-      assert(false);
-      break;
-    }
-  }
-  rhs.clear();
+  memcpy(reinterpret_cast<void*>(this), reinterpret_cast<const void*>(&rhs), sizeof(*this));
+  rhs.type_ = Type::__EMPTY__;
 }
 
 Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
@@ -735,21 +590,6 @@ void Value::setDuration(std::unique_ptr<Duration>&& v) {
   setDU(std::move(v));
 }
 
-const NullType& Value::getNull() const {
-  CHECK_EQ(type_, Type::NULLVALUE);
-  return value_.nVal;
-}
-
-const bool& Value::getBool() const {
-  CHECK_EQ(type_, Type::BOOL);
-  return value_.bVal;
-}
-
-const int64_t& Value::getInt() const {
-  CHECK_EQ(type_, Type::INT);
-  return value_.iVal;
-}
-
 const double& Value::getFloat() const {
   CHECK_EQ(type_, Type::FLOAT);
   return value_.fVal;
@@ -1069,7 +909,7 @@ Duration Value::moveDuration() {
   return v;
 }
 
-void Value::clear() {
+void Value::clearSlow() {
   switch (type_) {
     case Type::__EMPTY__: {
       return;
@@ -2876,27 +2716,27 @@ bool operator<(const Value& lhs, const Value& rhs) {
   return false;
 }
 
-bool operator==(const Value& lhs, const Value& rhs) {
-  auto lType = lhs.type();
+bool Value::equals(const Value& rhs) const {
+  auto lType = type();
   auto rType = rhs.type();
   auto hasNullOrEmpty = (lType | rType) & Value::kEmptyNullType;
   auto notSameType = lType != rType;
   auto notBothNumeric = ((lType | rType) & Value::kNumericType) != Value::kNumericType;
   if (hasNullOrEmpty || (notSameType && notBothNumeric)) {
-    return lhs.type() == rhs.type();
+    return type() == rhs.type();
   }
 
   switch (lType) {
     case Value::Type::BOOL: {
-      return lhs.getBool() == rhs.getBool();
+      return getBool() == rhs.getBool();
     }
     case Value::Type::INT: {
       switch (rType) {
         case Value::Type::INT: {
-          return lhs.getInt() == rhs.getInt();
+          return getInt() == rhs.getInt();
         }
         case Value::Type::FLOAT: {
-          return std::abs(lhs.getInt() - rhs.getFloat()) < kEpsilon;
+          return std::abs(getInt() - rhs.getFloat()) < kEpsilon;
         }
         default: {
           return false;
@@ -2906,10 +2746,10 @@ bool operator==(const Value& lhs, const Value& rhs) {
     case Value::Type::FLOAT: {
       switch (rType) {
         case Value::Type::INT: {
-          return std::abs(lhs.getFloat() - rhs.getInt()) < kEpsilon;
+          return std::abs(getFloat() - rhs.getInt()) < kEpsilon;
         }
         case Value::Type::FLOAT: {
-          return std::abs(lhs.getFloat() - rhs.getFloat()) < kEpsilon;
+          return std::abs(getFloat() - rhs.getFloat()) < kEpsilon;
         }
         default: {
           return false;
@@ -2917,53 +2757,115 @@ bool operator==(const Value& lhs, const Value& rhs) {
       }
     }
     case Value::Type::STRING: {
-      return lhs.getStr() == rhs.getStr();
+      return getStr() == rhs.getStr();
     }
     case Value::Type::DATE: {
-      return lhs.getDate() == rhs.getDate();
+      return getDate() == rhs.getDate();
     }
     case Value::Type::TIME: {
       // TODO(shylock) convert to UTC then compare
-      return lhs.getTime() == rhs.getTime();
+      return getTime() == rhs.getTime();
     }
     case Value::Type::DATETIME: {
       // TODO(shylock) convert to UTC then compare
-      return lhs.getDateTime() == rhs.getDateTime();
+      return getDateTime() == rhs.getDateTime();
     }
     case Value::Type::VERTEX: {
-      return lhs.getVertex() == rhs.getVertex();
+      return getVertex() == rhs.getVertex();
     }
     case Value::Type::EDGE: {
-      return lhs.getEdge() == rhs.getEdge();
+      return getEdge() == rhs.getEdge();
     }
     case Value::Type::PATH: {
-      return lhs.getPath() == rhs.getPath();
+      return getPath() == rhs.getPath();
     }
     case Value::Type::LIST: {
-      return lhs.getList() == rhs.getList();
+      return getList() == rhs.getList();
     }
     case Value::Type::MAP: {
-      return lhs.getMap() == rhs.getMap();
+      return getMap() == rhs.getMap();
     }
     case Value::Type::SET: {
-      return lhs.getSet() == rhs.getSet();
+      return getSet() == rhs.getSet();
     }
     case Value::Type::DATASET: {
-      return lhs.getDataSet() == rhs.getDataSet();
+      return getDataSet() == rhs.getDataSet();
     }
     case Value::Type::GEOGRAPHY: {
-      return lhs.getGeography() == rhs.getGeography();
+      return getGeography() == rhs.getGeography();
     }
     case Value::Type::DURATION: {
-      return lhs.getDuration() == rhs.getDuration();
+      return getDuration() == rhs.getDuration();
     }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
     }
   }
-  DLOG(FATAL) << "Unknown type " << static_cast<int>(lhs.type());
+  DLOG(FATAL) << "Unknown type " << static_cast<int>(type());
   return false;
+}
+
+std::size_t Value::hash() const {
+  switch (type()) {
+    case Type::__EMPTY__: {
+      return 0;
+    }
+    case Type::NULLVALUE: {
+      return ~0UL;
+    }
+    case Type::BOOL: {
+      return std::hash<bool>()(getBool());
+    }
+    case Type::INT: {
+      return std::hash<int64_t>()(getInt());
+    }
+    case Type::FLOAT: {
+      return std::hash<double>()(getFloat());
+    }
+    case Type::STRING: {
+      return std::hash<std::string>()(getStr());
+    }
+    case Type::DATE: {
+      return std::hash<Date>()(getDate());
+    }
+    case Type::TIME: {
+      return std::hash<Time>()(getTime());
+    }
+    case Type::DATETIME: {
+      return std::hash<DateTime>()(getDateTime());
+    }
+    case Type::VERTEX: {
+      return std::hash<Vertex>()(getVertex());
+    }
+    case Type::EDGE: {
+      return std::hash<Edge>()(getEdge());
+    }
+    case Type::PATH: {
+      return std::hash<Path>()(getPath());
+    }
+    case Type::LIST: {
+      return std::hash<List>()(getList());
+    }
+    case Type::GEOGRAPHY: {
+      return std::hash<Geography>()(getGeography());
+    }
+    case Type::MAP: {
+      return std::hash<Map>()(getMap());
+    }
+    case Type::SET: {
+      return std::hash<Set>()(getSet());
+    }
+    case Type::DURATION: {
+      return std::hash<Duration>()(getDuration());
+    }
+    case Type::DATASET: {
+      LOG(FATAL) << "Hash for DATASET has not been implemented";
+    }
+    default: {
+      LOG(FATAL) << "Unknown type";
+    }
+  }
 }
 
 bool operator!=(const Value& lhs, const Value& rhs) {
