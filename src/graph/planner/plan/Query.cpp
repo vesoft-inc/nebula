@@ -578,6 +578,7 @@ void Dedup::cloneMembers(const Dedup& l) {
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
   auto desc = VariableDependencyNode::explain();
   addDescription("inputVar", folly::toJson(util::toJson(inputVars_)), desc.get());
+  addDescription("distinct", distinct_ ? "true" : "false", desc.get());
   switch (kind_) {
     case DCKind::kSubgraph: {
       addDescription("kind", "SUBGRAPH", desc.get());
