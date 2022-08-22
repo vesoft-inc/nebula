@@ -18,15 +18,17 @@ namespace meta {
  */
 class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
  public:
-  static CreateBackupProcessor* instance(kvstore::KVStore* kvstore, AdminClient* client) {
-    return new CreateBackupProcessor(kvstore, client);
+  static CreateBackupProcessor* instance(kvstore::KVStore* kvstore,
+                                         AdminClient* client,
+                                         ClusterID clusterId = 0) {
+    return new CreateBackupProcessor(kvstore, client, clusterId);
   }
 
   void process(const cpp2::CreateBackupReq& req);
 
  private:
-  CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client)
-      : BaseProcessor<cpp2::CreateBackupResp>(kvstore), client_(client) {}
+  CreateBackupProcessor(kvstore::KVStore* kvstore, AdminClient* client, ClusterID clusterId)
+      : BaseProcessor<cpp2::CreateBackupResp>(kvstore), client_(client), clusterId_(clusterId) {}
 
   nebula::cpp2::ErrorCode cancelWriteBlocking();
 
@@ -35,6 +37,8 @@ class CreateBackupProcessor : public BaseProcessor<cpp2::CreateBackupResp> {
 
  private:
   AdminClient* client_;
+
+  ClusterID clusterId_{0};
 };
 
 }  // namespace meta

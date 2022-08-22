@@ -83,9 +83,6 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  // Init stats
-  nebula::initMetaStats();
-
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
@@ -107,6 +104,9 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // Init stats
+  nebula::initMetaStats();
 
   if (FLAGS_daemonize) {
     status = ProcessUtils::daemonize(pidPath);
