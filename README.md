@@ -102,5 +102,5 @@ CNCF Database Landscape.</a>
 
 <br />
 
-#### If you like this repo, or it can help you, please ⭐️ Star it at the top right corner~ 
+#### If you find NebulaGraph interesting, please ⭐️ Star it on GitHub at top right corner
 https://github.com/vesoft-inc/nebula
