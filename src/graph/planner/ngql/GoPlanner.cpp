@@ -439,12 +439,11 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
 
 SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   auto qctx = goCtx_->qctx;
-  auto isSimple = goCtx_->isSimple;
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
 
   auto* start = StartNode::make(qctx);
   PlanNode* scan = nullptr;
-  if (isSimple) {
+  if (!goCtx_->joinInput) {
     auto* gd = GetDstBySrc::make(qctx, start, goCtx_->space.id);
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
@@ -461,7 +460,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   auto* sampleLimit = buildSampleLimit(scan);
 
   PlanNode* getDst = nullptr;
-  if (isSimple) {
+  if (!goCtx_->joinInput) {
     auto* dedup = Dedup::make(qctx, sampleLimit);
     dedup->setOutputVar(goCtx_->vidsVar);
     dedup->setColNames(goCtx_->colNames);

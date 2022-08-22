@@ -187,7 +187,8 @@ void GoValidator::extractPropExprs(const Expression* expr,
 
 Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
   auto pool = qctx_->objPool();
-  const auto& name = expr->toString();
+  auto name = expr->toString();
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
   if (name == "id($^)" || name == "src(edge)") {
     return EdgeSrcIdExpression::make(pool, "*");
   }
