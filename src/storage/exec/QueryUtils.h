@@ -66,6 +66,9 @@ class QueryUtils final {
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
                                            const meta::SchemaProviderIf::Field* field) {
+    if (field == nullptr) {
+      return NullType::__NULL__;
+    }
     auto value = reader->getValueByName(propName);
     if (value.type() == Value::Type::NULLVALUE) {
       // read null value
