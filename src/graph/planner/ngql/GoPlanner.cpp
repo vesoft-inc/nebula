@@ -598,6 +598,10 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
   goCtx_->isSimple = isSimpleCase();
   if (goCtx_->isSimple) {
+    // We don't need to do a inner join in such case.
+    goCtx_->joinInput = false;
+  }
+  if (goCtx_->isSimple) {
     goCtx_->yieldExpr->columns()[0]->setExpr(InputPropertyExpression::make(qctx->objPool(), kDst));
   }
 
@@ -623,17 +627,31 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 }
 
 bool GoPlanner::isSimpleCase() {
-  if (goCtx_->joinInput || goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct) {
+  if (goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct) {
     return false;
   }
-  if (goCtx_->yieldExpr->columns().size() != 1 ||
-      goCtx_->yieldExpr->columns()[0]->expr()->kind() != Expression::Kind::kEdgeDst) {
-    return false;
+  auto& exprProps = goCtx_->exprProps;
+  if (!exprProps.srcTagProps().empty()) return false;
+  if (!exprProps.dstTagProps().empty()) return false;
+  for (auto& edgeProp : exprProps.edgeProps()) {
+    auto props = edgeProp.second;
+    if (props.size() != 1) return false;
+    if (props.find(kDst) == props.end()) return false;
   }
 
-  auto expr = static_cast<const EdgeDstIdExpression*>(goCtx_->yieldExpr->columns()[0]->expr());
-  if (expr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
+  if (goCtx_->yieldExpr->columns().size() != 1) {
     return false;
+  }
+  if (goCtx_->yieldExpr->columns()[0]->expr()->kind() != Expression::Kind::kEdgeDst &&
+      goCtx_->yieldExpr->columns()[0]->expr()->kind() != Expression::Kind::kVarProperty) {
+    return false;
+  }
+  auto* expr = goCtx_->yieldExpr->columns()[0]->expr();
+  if (expr->kind() == Expression::Kind::kEdgeDst) {
+    auto dstExpr = static_cast<const EdgeDstIdExpression*>(expr);
+    if (dstExpr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
+      return false;
+    }
   }
   return true;
 }

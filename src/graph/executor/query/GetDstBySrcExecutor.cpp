@@ -26,6 +26,7 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
   auto reqList = std::move(res).value();
   if (reqList.empty()) {
     DataSet emptyResult;
+    emptyResult.colNames = gd_->colNames();
     return finish(ResultBuilder()
                       .value(Value(std::move(emptyResult)))
                       .iter(Iterator::Kind::kSequential)
