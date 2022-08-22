@@ -4,6 +4,8 @@
 
 #include "graph/executor/query/DedupExecutor.h"
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Query.h"
 namespace nebula {
 namespace graph {
@@ -21,7 +23,7 @@ folly::Future<Status> DedupExecutor::execute() {
   if (UNLIKELY(iter->isGetNeighborsIter() || iter->isDefaultIter())) {
     return Status::Error("Invalid iterator kind, %d", static_cast<uint16_t>(iter->kind()));
   }
-  std::unordered_set<const Row*> unique;
+  robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> unique;
   unique.reserve(iter->size());
   while (iter->valid()) {
     if (!unique.emplace(iter->row()).second) {

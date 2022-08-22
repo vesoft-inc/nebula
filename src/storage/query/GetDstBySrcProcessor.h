@@ -48,16 +48,17 @@ class GetDstBySrcProcessor
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       RuntimeContext* context,
-      nebula::DataSet* result,
+      nebula::List* result,
       PartitionID partId,
       const std::vector<Value>& srcIds);
 
-  StoragePlan<VertexID> buildPlan(RuntimeContext* context, nebula::DataSet* result);
+  StoragePlan<VertexID> buildPlan(RuntimeContext* context, nebula::List* result);
 
  private:
   std::vector<RuntimeContext> contexts_;
   // The process result of each part if run concurrently, then merge into resultDataSet_ at last
-  std::vector<nebula::DataSet> partResults_;
+  std::vector<nebula::List> partResults_;
+  nebula::List flatResult_;
 };
 
 }  // namespace storage
