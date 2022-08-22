@@ -1712,9 +1712,14 @@ FunctionManager::FunctionManager() {
           if (args[0].get().isStr()) {
             auto result = time::TimeUtils::parseTime(args[0].get().getStr());
             if (!result.ok()) {
+              DLOG(ERROR) << "DEBUG POINT: " << result.status();
               return Value::kNullBadData;
             }
-            return time::TimeUtils::timeToUTC(result.value());
+            if (result.value().withTimeZone) {
+              return result.value().t;
+            } else {
+              return time::TimeUtils::timeToUTC(result.value().t);
+            }
           } else if (args[0].get().isMap()) {
             auto result = time::TimeUtils::timeFromMap(args[0].get().getMap());
             if (!result.ok()) {
@@ -1749,7 +1754,11 @@ FunctionManager::FunctionManager() {
             if (!result.ok()) {
               return Value::kNullBadData;
             }
-            return time::TimeUtils::dateTimeToUTC(result.value());
+            if (result.value().withTimeZone) {
+              return result.value().dt;
+            } else {
+              return time::TimeUtils::dateTimeToUTC(result.value().dt);
+            }
           } else if (args[0].get().isMap()) {
             auto result = time::TimeUtils::dateTimeFromMap(args[0].get().getMap());
             if (!result.ok()) {

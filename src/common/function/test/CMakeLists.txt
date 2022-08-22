@@ -23,6 +23,24 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        twice_timezone_conversion_test
+    SOURCES
+        TwiceTimezoneConversionTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        gtest
+)
+
+nebula_add_test(
+    NAME
         agg_function_manager_test
     SOURCES
         AggFunctionManagerTest.cpp
