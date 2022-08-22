@@ -17,7 +17,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name             | dependencies | operator info  |
-      | 4  | DataCollect      | 5            |                |
       | 5  | Sort             | 6            |                |
       | 6  | Project          | 7            |                |
       | 7  | Limit            | 8            | {"count": "2"} |
@@ -33,7 +32,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
-      | 4  | DataCollect       | 5            |                |
       | 5  | Sort              | 6            |                |
       | 6  | Project           | 7            |                |
       | 7  | Limit             | 8            | {"count": "2"} |
@@ -49,7 +47,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name               | dependencies | operator info  |
-      | 4  | DataCollect        | 5            |                |
       | 5  | Sort               | 6            |                |
       | 6  | Project            | 7            |                |
       | 7  | Limit              | 8            | {"count": "2"} |
@@ -65,7 +62,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
-      | 4  | DataCollect         | 5            |                |
       | 5  | Sort                | 6            |                |
       | 6  | Project             | 7            |                |
       | 7  | Limit               | 8            | {"count": "2"} |
@@ -84,7 +80,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name             | dependencies | operator info  |
-      | 3  | DataCollect      | 4            |                |
       | 4  | Sort             | 5            |                |
       | 5  | Project          | 7            |                |
       | 7  | Limit            | 8            |                |
@@ -101,7 +96,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
-      | 3  | DataCollect       | 4            |                |
       | 4  | Sort              | 5            |                |
       | 5  | Project           | 7            |                |
       | 7  | Limit             | 8            |                |
@@ -118,7 +112,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name               | dependencies | operator info  |
-      | 3  | DataCollect        | 4            |                |
       | 4  | Sort               | 5            |                |
       | 5  | Project            | 7            |                |
       | 7  | Limit              | 8            |                |
@@ -135,7 +128,6 @@ Feature: Push Limit down IndexScan Rule
       | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
-      | 3  | DataCollect         | 4            |                |
       | 4  | Sort                | 5            |                |
       | 5  | Project             | 7            |                |
       | 7  | Limit               | 8            |                |

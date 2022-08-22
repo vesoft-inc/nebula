@@ -36,6 +36,11 @@ folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_getNei
   LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_getNeighbors);
 }
 
+folly::Future<cpp2::GetDstBySrcResponse> GraphStorageLocalServer::future_getDstBySrc(
+    const cpp2::GetDstBySrcRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetDstBySrcResponse, future_getDstBySrc);
+}
+
 folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_addVertices(
     const cpp2::AddVerticesRequest& request) {
   LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_addVertices);

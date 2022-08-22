@@ -76,6 +76,42 @@ StatusOr<DataSet> buildRequestDataSet(const SpaceInfo &space,
   return vertices;
 }
 
+template <typename VidType>
+StatusOr<List> buildRequestList(const SpaceInfo &space,
+                                QueryExpressionContext &exprCtx,
+                                Iterator *iter,
+                                Expression *expr,
+                                bool dedup) {
+  DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
+  nebula::List vertices;
+  auto s = iter->size();
+  vertices.reserve(s);
+
+  std::unordered_set<VidType> uniqueSet;
+  uniqueSet.reserve(s);
+
+  const auto &vidType = *(space.spaceDesc.vid_type_ref());
+
+  for (; iter->valid(); iter->next()) {
+    auto vid = expr->eval(exprCtx(iter));
+    if (vid.empty()) {
+      continue;
+    }
+    if (!SchemaUtil::isValidVid(vid, vidType)) {
+      std::stringstream ss;
+      ss << "`" << vid.toString() << "', the srcs should be type of "
+         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << vid.type()
+         << "'";
+      return Status::Error(ss.str());
+    }
+    if (dedup && !uniqueSet.emplace(Vid<VidType>::value(vid)).second) {
+      continue;
+    }
+    vertices.emplace_back(std::move(vid));
+  }
+  return vertices;
+}
+
 }  // namespace internal
 
 bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
@@ -93,6 +129,18 @@ StatusOr<DataSet> StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *
     return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup, isCypher);
   }
   return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
+}
+
+StatusOr<List> StorageAccessExecutor::buildRequestListByVidType(Iterator *iter,
+                                                                Expression *expr,
+                                                                bool dedup) {
+  const auto &space = qctx()->rctx()->session()->space();
+  QueryExpressionContext exprCtx(qctx()->ectx());
+
+  if (isIntVidType(space)) {
+    return internal::buildRequestList<int64_t>(space, exprCtx, iter, expr, dedup);
+  }
+  return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup);
 }
 
 std::string StorageAccessExecutor::getStorageDetail(

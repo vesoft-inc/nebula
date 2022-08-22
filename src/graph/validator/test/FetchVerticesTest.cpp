@@ -364,13 +364,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
 
     auto *dedup = Dedup::make(qctx, project);
 
-    // data collect
-    auto *dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
-    dataCollect->addDep(dedup);
-    dataCollect->setInputVars({dedup->outputVar()});
-    dataCollect->setColNames({"person.name", "person.age"});
-
-    auto result = Eq(qctx->plan()->root(), dataCollect);
+    auto result = Eq(qctx->plan()->root(), dedup);
     ASSERT_TRUE(result.ok()) << result;
   }
   // ON *

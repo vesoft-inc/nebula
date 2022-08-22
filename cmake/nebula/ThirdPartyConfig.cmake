@@ -6,7 +6,7 @@ message(">>>> Configuring third party for '${PROJECT_NAME}' <<<<")
 #   4. /opt/vesoft/third-party, if exists
 #   5. At last, one copy will be downloaded and installed to ${CMAKE_BINARY_DIR}/third-party/install
 
-set(NEBULA_THIRDPARTY_VERSION "3.0")
+set(NEBULA_THIRDPARTY_VERSION "5.0")
 
 if(${DISABLE_CXX11_ABI})
     SET(NEBULA_THIRDPARTY_ROOT ${CMAKE_BINARY_DIR}/third-party-98/install)

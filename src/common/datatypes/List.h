@@ -38,6 +38,13 @@ struct List {
     values.emplace_back(std::forward<T>(v));
   }
 
+  void append(List&& other) {
+    values.reserve(size() + other.size());
+    values.insert(values.end(),
+                  std::make_move_iterator(other.values.begin()),
+                  std::make_move_iterator(other.values.end()));
+  }
+
   void clear() {
     values.clear();
   }
@@ -97,6 +104,9 @@ namespace std {
 template <>
 struct hash<nebula::List> {
   std::size_t operator()(const nebula::List& h) const noexcept {
+    if (h.values.size() == 1) {
+      return std::hash<nebula::Value>()(h.values[0]);
+    }
     size_t seed = 0;
     for (auto& v : h.values) {
       seed ^= hash<nebula::Value>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -104,5 +114,34 @@ struct hash<nebula::List> {
     return seed;
   }
 };
+
+template <>
+struct equal_to<nebula::List*> {
+  bool operator()(const nebula::List* lhs, const nebula::List* rhs) const {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct equal_to<const nebula::List*> {
+  bool operator()(const nebula::List* lhs, const nebula::List* rhs) const {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct hash<nebula::List*> {
+  size_t operator()(const nebula::List* row) const {
+    return !row ? 0 : hash<nebula::List>()(*row);
+  }
+};
+
+template <>
+struct hash<const nebula::List*> {
+  size_t operator()(const nebula::List* row) const {
+    return !row ? 0 : hash<nebula::List>()(*row);
+  }
+};
+
 }  // namespace std
 #endif  // COMMON_DATATYPES_LIST_H_

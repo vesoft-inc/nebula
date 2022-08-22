@@ -190,13 +190,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto *project = Project::make(qctx, filter, yieldColumns.get());
     auto *dedup = Dedup::make(qctx, project);
 
-    // data collect
-    auto *dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
-    dataCollect->addDep(dedup);
-    dataCollect->setInputVars({dedup->outputVar()});
-    dataCollect->setColNames({"like.start", "like.end"});
-
-    auto result = Eq(qctx->plan()->root(), dataCollect);
+    auto result = Eq(qctx->plan()->root(), dedup);
     ASSERT_TRUE(result.ok()) << result;
   }
 }

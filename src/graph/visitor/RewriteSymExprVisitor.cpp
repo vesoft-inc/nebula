@@ -337,14 +337,11 @@ void RewriteSymExprVisitor::visit(SubscriptRangeExpression *expr) {
 }
 
 void RewriteSymExprVisitor::visit(MatchPathPatternExpression *expr) {
-  if (expr->inputProp() != nullptr) {
-    expr->inputProp()->accept(this);
+  if (expr->genList() != nullptr) {
+    expr->genList()->accept(this);
     if (expr_) {
-      if (expr_->kind() != Expression::Kind::kInputProperty) {
-        hasWrongType_ = true;
-        return;
-      }
-      expr->setInputProp(static_cast<InputPropertyExpression *>(expr_));
+      expr->setGenList(expr_);
+      expr_ = nullptr;
     }
   }
 }

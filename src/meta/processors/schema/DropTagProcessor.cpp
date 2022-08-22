@@ -50,7 +50,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   }
   if (!nebula::value(indexes).empty()) {
     LOG(INFO) << "Drop tag error, index conflict, please delete index first.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS);
     onFinished();
     return;
   }
@@ -59,7 +59,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   if (nebula::ok(ftIdxRet)) {
     LOG(INFO) << "Drop tag error, fulltext index conflict, "
               << "please delete fulltext index first.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS);
     onFinished();
     return;
   }
