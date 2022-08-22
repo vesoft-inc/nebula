@@ -36,7 +36,13 @@ folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
     auto partId = part->partId_;
-    auto termId = part->term_;
+    auto tr = part->getTermAndRole();
+    if (tr.second != RaftPart::Role::LEADER) {
+      VLOG(1) << part->idStr_ << "leader changed, term " << tr.first << ", do not send snapshot to "
+              << dst;
+      return;
+    }
+    auto termId = tr.first;
     const auto& localhost = part->address();
     accessAllRowsInSnapshot(
         spaceId,
