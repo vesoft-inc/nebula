@@ -437,6 +437,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   using Role = cpp2::Role;
 
   /**
+   * @brief return term and role
+   * @return
+   */
+  std::pair<TermID, Role> getTermAndRole() const;
+
+  /**
    * @brief The str of the RaftPart, used in logging
    */
   const char* idStr() const {
