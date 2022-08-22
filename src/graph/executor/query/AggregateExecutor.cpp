@@ -18,11 +18,15 @@ folly::Future<Status> AggregateExecutor::execute() {
   DCHECK(!!iter);
   QueryExpressionContext ctx(ectx_);
   // We could directly return size of input dataset for `COUNT(*)`
-  if (groupKeys.empty() && groupItems.size() == 1 && groupItems[0]->toString() == "COUNT(*)") {
-    DataSet ds;
-    ds.colNames = agg->colNames();
-    ds.rows.emplace_back(Row({Value(int64_t(iter->size()))}));
-    return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  if (groupKeys.empty() && groupItems.size() == 1) {
+    auto str = groupItems[0]->toString();
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+    if (str == "COUNT(*)") {
+      DataSet ds;
+      ds.colNames = agg->colNames();
+      ds.rows.emplace_back(Row({Value(static_cast<int64_t>(iter->size()))}));
+      return finish(ResultBuilder().value(Value(std::move(ds))).build());
+    }
   }
 
   std::unordered_map<List, std::vector<std::unique_ptr<AggData>>, std::hash<nebula::List>> result;
