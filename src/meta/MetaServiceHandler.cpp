@@ -413,7 +413,7 @@ folly::Future<cpp2::ListSnapshotsResp> MetaServiceHandler::future_listSnapshots(
 
 folly::Future<cpp2::CreateBackupResp> MetaServiceHandler::future_createBackup(
     const cpp2::CreateBackupReq& req) {
-  auto* processor = CreateBackupProcessor::instance(kvstore_, adminClient_.get());
+  auto* processor = CreateBackupProcessor::instance(kvstore_, adminClient_.get(), clusterId_);
   RETURN_FUTURE(processor);
 }
 
@@ -474,7 +474,7 @@ folly::Future<cpp2::ListListenerResp> MetaServiceHandler::future_listListener(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_restoreMeta(
+folly::Future<cpp2::RestoreMetaResp> MetaServiceHandler::future_restoreMeta(
     const cpp2::RestoreMetaReq& req) {
   auto* processor = RestoreProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);

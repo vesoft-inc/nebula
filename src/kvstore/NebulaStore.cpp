@@ -1137,7 +1137,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> NebulaStore:
     }
 
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.path_ref() = std::move(result.value());
+    cpInfo.data_path_ref() = std::move(result.value());
     cpInfo.parts_ref() = std::move(partsInfo);
     cpInfo.space_id_ref() = spaceId;
     cpInfoList.emplace_back(std::move(cpInfo));

@@ -236,8 +236,11 @@ struct Duration {
 } (cpp.type = "nebula::Duration")
 
 struct LogInfo {
-    1: LogID  log_id;
-    2: TermID term_id;
+    1: LogID  log_id,
+    2: TermID term_id,
+    3: LogID  commit_log_id,
+    // storage part checkpoint directory name
+    4: binary checkpoint_path,
 }
 
 struct DirInfo {
@@ -249,9 +252,10 @@ struct DirInfo {
 
 struct CheckpointInfo {
     1: GraphSpaceID          space_id,
+    // Only part of the leader
     2: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map") parts,
-    // storage checkpoint directory name
-    3: binary                path,
+    // The datapath corresponding to the current checkpointInfo
+    3: binary                data_path,
 }
 
 // used for drainer

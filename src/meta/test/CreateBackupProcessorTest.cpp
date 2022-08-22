@@ -51,7 +51,7 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     logInfo.term_id_ref() = termId;
     info.emplace(1, std::move(logInfo));
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.path_ref() = "snapshot_path";
+    cpInfo.data_path_ref() = "snapshot_path";
     cpInfo.parts_ref() = std::move(info);
     cpInfo.space_id_ref() = req.get_space_ids()[0];
     resp.info_ref() = {cpInfo};
@@ -211,7 +211,7 @@ TEST(ProcessorTest, CreateBackupTest) {
       ASSERT_EQ(1, spaceBackup.get_host_backups()[0].get_checkpoints().size());
 
       auto checkInfo = spaceBackup.get_host_backups()[0].get_checkpoints()[0];
-      ASSERT_EQ("snapshot_path", checkInfo.get_path());
+      ASSERT_EQ("snapshot_path", checkInfo.get_data_path());
       ASSERT_TRUE(meta.get_full());
       ASSERT_FALSE(meta.get_all_spaces());
       auto parts = checkInfo.get_parts();

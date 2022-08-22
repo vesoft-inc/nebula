@@ -92,7 +92,7 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::ResponseCommon result;
     resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.path_ref() = "snapshot_path";
+    cpInfo.data_path_ref() = "snapshot_path";
     resp.info_ref() = {cpInfo};
     pro.setValue(std::move(resp));
     return f;
