@@ -29,7 +29,7 @@ namespace meta {
  *        3. machine info: machine key -> ""
  *
  */
-class RestoreProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RestoreProcessor : public BaseProcessor<cpp2::RestoreMetaResp> {
  public:
   static RestoreProcessor* instance(kvstore::KVStore* kvstore) {
     return new RestoreProcessor(kvstore);
@@ -37,7 +37,8 @@ class RestoreProcessor : public BaseProcessor<cpp2::ExecResp> {
   void process(const cpp2::RestoreMetaReq& req);
 
  private:
-  explicit RestoreProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+  explicit RestoreProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::RestoreMetaResp>(kvstore) {}
 
   nebula::cpp2::ErrorCode replaceHostInPartition(kvstore::WriteBatch* batch,
                                                  std::map<HostAddr, HostAddr>& hostMap);
