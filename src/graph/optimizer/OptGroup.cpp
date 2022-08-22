@@ -92,9 +92,8 @@ Status OptGroup::explore(const OptRule *rule) {
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
-    DCHECK(result.checkDataFlow(boundary))
-        << "Plan of transfromed result should keep input variable same with dependencies in rule "
-        << rule->toString();
+    // In some cases, we can apply optimization rules even if the control flow and data flow are
+    // inconsistent. For now, let the optimization rules themselves guarantee correctness.
     if (result.eraseAll) {
       for (auto gnode : groupNodes_) {
         gnode->node()->releaseSymbols();

@@ -162,6 +162,8 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     timestamp = time::TimeConversion::dateTimeToUnixSeconds(dateTime);
   } else if (val.isInt()) {
     timestamp = val.getInt();
+  } else if (val.isDateTime()) {
+    timestamp = time::TimeConversion::dateTimeToUnixSeconds(val.getDateTime());
   } else {
     return Status::Error("Incorrect timestamp type: `%s'", val.toString().c_str());
   }

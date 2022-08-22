@@ -502,11 +502,11 @@ class SequentialIter : public Iterator {
     return std::move(*iter_);
   }
 
- protected:
   const Row* row() const override {
     return &*iter_;
   }
 
+ protected:
   // Notice: We only use this interface when return results to client.
   friend class DataCollectExecutor;
   friend class AppendVerticesExecutor;
@@ -588,23 +588,5 @@ class PropIter final : public SequentialIter {
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind);
 }  // namespace graph
 }  // namespace nebula
-
-namespace std {
-
-template <>
-struct equal_to<const nebula::Row*> {
-  bool operator()(const nebula::Row* lhs, const nebula::Row* rhs) const {
-    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
-  }
-};
-
-template <>
-struct hash<const nebula::Row*> {
-  size_t operator()(const nebula::Row* row) const {
-    return !row ? 0 : hash<nebula::Row>()(*row);
-  }
-};
-
-}  // namespace std
 
 #endif  // GRAPH_CONTEXT_ITERATOR_H_

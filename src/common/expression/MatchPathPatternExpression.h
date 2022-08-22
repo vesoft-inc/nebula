@@ -33,17 +33,16 @@ class MatchPathPatternExpression final : public Expression {
 
   Expression* clone() const override;
 
-  // Evaluate expression by fetch result from input variable
-  void setInputProp(const std::string& prop) {
-    prop_ = InputPropertyExpression::make(pool_, prop);
+  void setGenList(Expression* expr) {
+    genList_ = expr;
   }
 
-  void setInputProp(InputPropertyExpression* expr) {
-    prop_ = expr;
+  const Expression* genList() const {
+    return genList_;
   }
 
-  InputPropertyExpression* inputProp() const {
-    return prop_;
+  Expression* genList() {
+    return genList_;
   }
 
   const MatchPath& matchPath() const {
@@ -71,8 +70,9 @@ class MatchPathPatternExpression final : public Expression {
 
  private:
   std::unique_ptr<MatchPath> matchPath_;
-  InputPropertyExpression* prop_{
-      nullptr};  // The column of input stored the result of the expression
+  // The column of input stored the result of the expression
+  // The filter apply to each path in result List and generate a new result List.
+  Expression* genList_{nullptr};
   Value result_;
 };
 }  // namespace nebula

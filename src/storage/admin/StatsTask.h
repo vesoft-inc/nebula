@@ -52,6 +52,8 @@ class StatsTask : public AdminTask {
  private:
   nebula::cpp2::ErrorCode getSchemas(GraphSpaceID spaceId);
 
+  void sleepIfScannedSomeRecord(size_t& countToSleep);
+
  protected:
   GraphSpaceID spaceId_;
 
@@ -65,6 +67,8 @@ class StatsTask : public AdminTask {
 
   // The number of subtasks equals to the number of parts in request
   size_t subTaskSize_{0};
+
+  static constexpr size_t kRecordsToSleep{1000};
 };
 
 }  // namespace storage

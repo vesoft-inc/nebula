@@ -25,13 +25,13 @@
   </a>
 </p>
 
-# Nebula Graph是什么？
+# NebulaGraph是什么？
 
 
 
-**Nebula Graph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
+**NebulaGraph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
 
-与其他图数据库产品相比，**Nebula Graph** 具有如下优势：
+与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
 
 * 全对称分布式架构
 * 存储与计算分离
@@ -42,30 +42,30 @@
 
 ## 发布通告
 
-v1.x和v2.5.x之后的版本，Nebula Graph在这个repo管理。如需获取v2.0.0到v2.5.x之间的版本，请访问[Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph)。
+v1.x和v2.5.x之后的版本，NebulaGraph在这个repo管理。如需获取v2.0.0到v2.5.x之间的版本，请访问[NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph)。
 
-Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。Nebula Graph内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
+NebulaGraph 1.x 后续不再进行功能的更新，请升级到2.0版本中。NebulaGraph内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
 
 <!--
-如需使用稳定版本，请参见[Nebula Graph 1.0](https://github.com/vesoft-inc/nebula)。
+如需使用稳定版本，请参见[NebulaGraph 1.0](https://github.com/vesoft-inc/nebula)。
 
 
 ## 产品路线图
 
-**Nebula Graph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020)。
+**NebulaGraph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020)。
 -->
 
 ## 快速使用
 
-请查看[快速使用手册](https://docs.nebula-graph.io/2.0/2.quick-start/1.quick-start-workflow/)，开始使用 **Nebula Graph**。
+请查看[快速使用手册](https://docs.nebula-graph.com.cn/3.2.0/2.quick-start/1.quick-start-workflow/)，开始使用 **NebulaGraph**。
 
 <!--
-在开始使用 **Nebula Graph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)或者 [docker compose](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/2.build-by-docker/) 方式安装 **Nebula Graph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **Nebula Graph**。
+在开始使用 **NebulaGraph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)或者 [docker compose](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/2.build-by-docker/) 方式安装 **NebulaGraph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **NebulaGraph**。
 -->
 
 ## 获取帮助
 
-在使用 **Nebula Graph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
+在使用 **NebulaGraph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
 
 * [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
 * 访问[论坛](https://discuss.nebula-graph.com.cn/)
@@ -75,20 +75,21 @@ Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。
 * [简体中文](https://docs.nebula-graph.com.cn/)
 * [English](https://docs.nebula-graph.io/)
 
-## Nebula Graph 产品架构图
+## NebulaGraph 产品架构图
 
-![image](https://github.com/vesoft-inc/nebula-docs/raw/master/images/Nebula%20Arch.png)
+![image](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+
 
 ## 如何贡献
 
-**Nebula Graph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **Nebula Graph** 社区：
+**NebulaGraph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **NebulaGraph** 社区：
 
 * 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
 * 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/master/15.contribution/how-to-contribute/)
 
 ## 许可证
 
-**Nebula Graph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **Nebula Graph** 作为后端服务部署以支持您的 SaaS 部署。
+**NebulaGraph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **NebulaGraph** 作为后端服务部署以支持您的 SaaS 部署。
 
 ## 联系方式
 
@@ -97,4 +98,9 @@ Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。
 * [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
 * [SegmentFault](https://segmentfault.com/t/nebula)
-* email: info@vesoft.com
+* Email: info@vesoft.com
+
+## 加入 NebulaGraph 社区
+
+[![Discussions](https://img.shields.io/badge/GitHub_Discussion-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vesoft-inc/nebula/discussions) [![Discourse](https://img.shields.io/badge/中文论坛-4285F4?style=for-the-badge&logo=discourse&logoColor=white)](https://discuss.nebula-graph.com.cn/) [![Slack](https://img.shields.io/badge/Slack-9F2B68?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/nebulagraph/shared_invite/zt-7ybejuqa-NCZBroh~PCh66d9kOQj45g) [![Tecent_Meeting](https://img.shields.io/badge/腾讯会议-2D8CFF?style=for-the-badge&logo=googlemeet&logoColor=white)](https://meeting.tencent.com/dm/F8NX1aRZ8PQv) [![Google Calendar](https://img.shields.io/badge/Calander-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://calendar.google.com/calendar/u/0?cid=Z29mbGttamM3ZTVlZ2hpazI2cmNlNXVnZThAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ) [![Meetup](https://img.shields.io/badge/Meetup-FF0000?style=for-the-badge&logo=meetup&logoColor=white)](https://www.meetup.com/nebulagraph/events/287180186?utm_medium=referral&utm_campaign=share-btn_savedevents_share_modal&utm_source=link) [![Meeting Archive](https://img.shields.io/badge/Community_wiki-808080?style=for-the-badge&logo=readthedocs&logoColor=white)](https://github.com/vesoft-inc/nebula-community/wiki)
+

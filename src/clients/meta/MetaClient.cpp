@@ -955,6 +955,12 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Backup table failure!");
     case nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND:
       return Status::Error("Session not existed!");
+    case nebula::cpp2::ErrorCode::E_SCHEMA_NAME_EXISTS:
+      return Status::Error("Schema with same name exists");
+    case nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS:
+      return Status::Error("Related index exists, please drop index first");
+    case nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS:
+      return Status::Error("There are still space on the host");
     default:
       return Status::Error("Unknown error!");
   }

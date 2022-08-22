@@ -719,9 +719,6 @@ expression_internal
     | predicate_expression {
         $$ = $1;
     }
-    | list_comprehension_expression {
-        $$ = $1;
-    }
     | reduce_expression {
         $$ = $1;
     }
@@ -763,6 +760,9 @@ compound_expression
         $$ = $1;
     }
     | container_expression {
+        $$ = $1;
+    }
+    | list_comprehension_expression {
         $$ = $1;
     }
     | subscript_expression {

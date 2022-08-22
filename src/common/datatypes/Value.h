@@ -212,11 +212,23 @@ struct Value {
     return type_ == Type::DURATION;
   }
 
-  void clear();
+  void clear() {
+    if (isNumeric()) {
+      type_ = Type::__EMPTY__;
+      return;
+    }
+    clearSlow();
+  }
 
   void __clear() {
     clear();
   }
+
+  void clearSlow();
+
+  size_t hash() const;
+
+  bool equals(const Value& rhs) const;
 
   Value& operator=(Value&& rhs) noexcept;
   Value& operator=(const Value& rhs);
@@ -272,9 +284,15 @@ struct Value {
   void setDuration(Duration&& v);
   void setDuration(std::unique_ptr<Duration>&& v);
 
-  const NullType& getNull() const;
-  const bool& getBool() const;
-  const int64_t& getInt() const;
+  const NullType& getNull() const {
+    return value_.nVal;
+  }
+  const bool& getBool() const {
+    return value_.bVal;
+  }
+  const int64_t& getInt() const {
+    return value_.iVal;
+  }
   const double& getFloat() const;
   const std::string& getStr() const;
   const Date& getDate() const;
@@ -484,7 +502,14 @@ Value operator!(const Value& rhs);
 //  if lhs and rhs have at least one null or empty
 // 2. null is the biggest, empty is the smallest
 bool operator<(const Value& lhs, const Value& rhs);
-bool operator==(const Value& lhs, const Value& rhs);
+inline bool operator==(const Value& lhs, const Value& rhs) {
+  if (memcmp(reinterpret_cast<const void*>(&lhs),
+             reinterpret_cast<const void*>(&rhs),
+             sizeof(Value)) == 0) {
+    return true;
+  }
+  return lhs.equals(rhs);
+}
 bool operator!=(const Value& lhs, const Value& rhs);
 bool operator>(const Value& lhs, const Value& rhs);
 bool operator<=(const Value& lhs, const Value& rhs);
@@ -528,7 +553,14 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Value> {
-  std::size_t operator()(const nebula::Value& h) const noexcept;
+  std::size_t operator()(const nebula::Value& h) const noexcept {
+    if (h.isInt()) {
+      return h.getInt();
+    } else if (h.isStr()) {
+      return std::hash<std::string>()(h.getStr());
+    }
+    return h.hash();
+  }
 };
 
 template <>
@@ -539,7 +571,21 @@ struct hash<nebula::Value*> {
 };
 
 template <>
+struct hash<const nebula::Value*> {
+  std::size_t operator()(const nebula::Value* h) const noexcept {
+    return h == nullptr ? 0 : hash<nebula::Value>()(*h);
+  }
+};
+
+template <>
 struct equal_to<nebula::Value*> {
+  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
+    return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
+  }
+};
+
+template <>
+struct equal_to<const nebula::Value*> {
   bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
     return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
   }

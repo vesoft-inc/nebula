@@ -95,7 +95,6 @@ Feature: Collapse Project Rule
       | 29   | "Dejounte Murray"   |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 11 | DataCollect    | 10           |               |
       | 10 | Dedup          | 14           |               |
       | 14 | Project        | 12           |               |
       | 12 | Filter         | 6            |               |
