@@ -1381,10 +1381,14 @@ std::string MetaKeyUtils::jobPrefix(GraphSpaceID spaceId) {
 
 std::string MetaKeyUtils::jobKey(GraphSpaceID spaceID, JobID jobId) {
   std::string key;
+  uint32_t id = jobId;
   key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID));
   key.append(kJobTable.data(), kJobTable.size())
       .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
-      .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID));
+      .append(1, static_cast<uint8_t>(id >> 24))
+      .append(1, static_cast<uint8_t>(id >> 16))
+      .append(1, static_cast<uint8_t>(id >> 8))
+      .append(1, static_cast<uint8_t>(id));
   return key;
 }
 
@@ -1455,16 +1459,25 @@ std::pair<GraphSpaceID, JobID> MetaKeyUtils::parseJobKey(folly::StringPiece key)
   auto offset = kJobTable.size();
   auto spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
   offset += sizeof(GraphSpaceID);
-  auto jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
+  int32_t b1 = static_cast<int32_t>(key[offset++]);
+  int32_t b2 = static_cast<int32_t>(key[offset++]);
+  int32_t b3 = static_cast<int32_t>(key[offset++]);
+  int32_t b4 = static_cast<int32_t>(key[offset++]);
+  JobID jobId =
+      static_cast<int32_t>((b1 & 255) << 24 | (b2 & 255) << 16 | (b3 & 255) << 8 | (b4 & 255));
   return std::make_pair(spaceId, jobId);
 }
 
 std::string MetaKeyUtils::taskKey(GraphSpaceID spaceId, JobID jobId, TaskID taskId) {
   std::string key;
+  uint32_t id = jobId;
   key.reserve(kJobTable.size() + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
   key.append(kJobTable.data(), kJobTable.size())
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
-      .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID))
+      .append(1, static_cast<uint8_t>(id >> 24))
+      .append(1, static_cast<uint8_t>(id >> 16))
+      .append(1, static_cast<uint8_t>(id >> 8))
+      .append(1, static_cast<uint8_t>(id))
       .append(reinterpret_cast<const char*>(&taskId), sizeof(TaskID));
   return key;
 }
@@ -1473,8 +1486,12 @@ std::tuple<GraphSpaceID, JobID, TaskID> MetaKeyUtils::parseTaskKey(folly::String
   auto offset = kJobTable.size();
   auto spaceId = *reinterpret_cast<const GraphSpaceID*>(key.data() + offset);
   offset += sizeof(GraphSpaceID);
-  auto jobId = *reinterpret_cast<const JobID*>(key.data() + offset);
-  offset += sizeof(JobID);
+  int32_t b1 = static_cast<int32_t>(key[offset++]);
+  int32_t b2 = static_cast<int32_t>(key[offset++]);
+  int32_t b3 = static_cast<int32_t>(key[offset++]);
+  int32_t b4 = static_cast<int32_t>(key[offset++]);
+  JobID jobId =
+      static_cast<int32_t>((b1 & 255) << 24 | (b2 & 255) << 16 | (b3 & 255) << 8 | (b4 & 255));
   auto taskId = *reinterpret_cast<const TaskID*>(key.data() + offset);
   return std::make_tuple(spaceId, jobId, taskId);
 }
