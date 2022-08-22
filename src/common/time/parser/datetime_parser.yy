@@ -7,7 +7,7 @@
 %lex-param { nebula::time::DatetimeScanner& scanner }
 %parse-param { nebula::time::DatetimeScanner& scanner }
 %parse-param { std::string &errmsg }
-%parse-param { nebula::DateTime** output }
+%parse-param { Result** output }
 
 %code requires {
 #include <iostream>
@@ -18,6 +18,7 @@
 #include "common/time/TimeConversion.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/time/TimeUtils.h"
+#include "common/time/parser/Result.h"
 
 namespace nebula {
 namespace time {
@@ -41,11 +42,12 @@ class DatetimeScanner;
     nebula::Date                           *dVal;
     nebula::Time                           *tVal;
     std::string                            *strVal;
+    Result                                 *result;
 }
 
 /* destructors */
 %destructor {} <intVal> <doubleVal>
-%destructor {} <dtVal>  // for output
+%destructor {} <result>  // for output
 %destructor { delete $$; } <*>
 
 /* keyword */
@@ -59,10 +61,10 @@ class DatetimeScanner;
 %token <strVal> TIME_ZONE_NAME
 %token <doubleVal> DOUBLE
 
-%type <dtVal> datetime
+%type <result> datetime
 %type <dVal> date
 %type <tVal> time
-%type <intVal> opt_time_zone time_zone_offset opt_time_zone_offset opt_time_zone_name
+%type <intVal> time_zone time_zone_offset unsigned_time_zone_offset time_zone_name
 
 %define api.prefix {datetime}
 
@@ -71,24 +73,35 @@ class DatetimeScanner;
 %%
 
 datetime
-  : KW_DATETIME date date_time_delimiter time opt_time_zone {
-    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$2, *$4), -$5));
+  : KW_DATETIME date date_time_delimiter time time_zone {
+    $$ = new Result {DateTime(TimeConversion::dateTimeShift(DateTime(*$2, *$4), -$5)), true};
+    *output = $$;
+    delete $2;
+    delete $4;
+  }
+  | KW_DATETIME date date_time_delimiter time {
+    $$ = new Result {DateTime(*$2, *$4), false};
     *output = $$;
     delete $2;
     delete $4;
   }
   | KW_DATETIME date {
-    $$ = new DateTime(*$2);
+    $$ = new Result {DateTime(*$2), false};
     *output = $$;
     delete $2;
   }
   | KW_DATE date {
-    $$ = new DateTime(*$2);
+    $$ = new Result {DateTime(*$2), false};
     *output = $$;
     delete $2;
   }
-  | KW_TIME time opt_time_zone {
-    $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), -$3));
+  | KW_TIME time time_zone {
+    $$ = new Result {DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), -$3)), true};
+    *output = $$;
+    delete $2;
+  }
+  | KW_TIME time {
+    $$ = new Result {DateTime(1970, 1, 1, $2->hour, $2->minute, $2->sec, $2->microsec), false};
     *output = $$;
     delete $2;
   }
@@ -163,34 +176,31 @@ time
   }
   ;
 
-opt_time_zone
-  : %empty {
-    $$ = 0;
-  }
-  | opt_time_zone_offset opt_time_zone_name {
+time_zone
+  : time_zone_offset time_zone_name {
     if ($1 != $2) {
       throw DatetimeParser::syntax_error(@1, "Mismatched timezone offset.");
     }
     $$ = $1;
   }
-  | opt_time_zone_offset {
+  | time_zone_offset {
     $$ = $1;
   }
-  | opt_time_zone_name {
+  | time_zone_name {
     $$ = $1;
-  }
-  ;
-
-opt_time_zone_offset
-  : POSITIVE time_zone_offset {
-    $$ = $2;
-  }
-  | NEGATIVE time_zone_offset {
-    $$ = -$2;
   }
   ;
 
 time_zone_offset
+  : POSITIVE unsigned_time_zone_offset {
+    $$ = $2;
+  }
+  | NEGATIVE unsigned_time_zone_offset {
+    $$ = -$2;
+  }
+  ;
+
+unsigned_time_zone_offset
   : INTEGER TIME_DELIMITER INTEGER {
     auto time = nebula::Time($1, $3, 0, 0);
     auto result = nebula::time::TimeUtils::validateTime(time);
@@ -201,7 +211,7 @@ time_zone_offset
   }
   ;
 
-opt_time_zone_name
+time_zone_name
   : TIME_ZONE_NAME {
     auto zone = nebula::time::Timezone();
     auto result = zone.loadFromDb(*$1);

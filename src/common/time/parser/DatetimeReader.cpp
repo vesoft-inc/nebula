@@ -8,7 +8,7 @@
 namespace nebula {
 namespace time {
 
-DatetimeReader::DatetimeReader() : parser_(scanner_, error_, &dt_) {
+DatetimeReader::DatetimeReader() : parser_(scanner_, error_, &result_) {
   // Callback invoked by DatetimeScanner
   auto readBuffer = [this](char *buf, int maxSize) -> int {
     // Reach the end
@@ -26,7 +26,7 @@ DatetimeReader::DatetimeReader() : parser_(scanner_, error_, &dt_) {
   scanner_.setReadBuffer(std::move(readBuffer));
 }
 
-StatusOr<DateTime> DatetimeReader::read(std::string input) {
+StatusOr<Result> DatetimeReader::read(std::string input) {
   // Since DatetimeScanner needs a writable buffer, we have to copy the query string
   buffer_ = std::move(input);
   pos_ = &buffer_[0];
@@ -38,19 +38,19 @@ StatusOr<DateTime> DatetimeReader::read(std::string input) {
     end_ = nullptr;
     // To flush the internal buffer to recover from a failure
     scanner_.flushBuffer();
-    if (dt_ != nullptr) {
-      delete dt_;
-      dt_ = nullptr;
+    if (result_ != nullptr) {
+      delete result_;
+      result_ = nullptr;
     }
     scanner_.setInput(nullptr);
     return Status::SyntaxError(error_);
   }
 
-  if (dt_ == nullptr) {
+  if (result_ == nullptr) {
     return Status::StatementEmpty();  // empty
   }
-  auto dt = dt_;
-  dt_ = nullptr;
+  auto dt = result_;
+  result_ = nullptr;
   scanner_.setInput(nullptr);
   auto tmp = std::move(*dt);
   delete dt;
