@@ -12,7 +12,6 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
-
 namespace nebula {
 namespace graph {
 class PlanNode;

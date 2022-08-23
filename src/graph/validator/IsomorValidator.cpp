@@ -17,14 +17,12 @@ Status IsomorValidator::validateImpl() {
 }
 // Check validity of tags specified in sentence
 Status IsomorValidator::validateTag(const NameLabelList *nameLabels) {
-  // Wthether Found Tag in the storage?  --> need the coorperation of the storage section.
   auto graphs = nameLabels->labels();
 
-  // The first graph is data graph and the second graph is the query graph
+  // The first graph is query graph and the second graph is the data graph
   fetchCtx_->querySpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[0]);
   fetchCtx_->dataSpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[1]);
   return Status::OK();
 }
-
 }  // namespace graph
 }  // namespace nebula
