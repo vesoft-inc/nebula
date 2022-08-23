@@ -21,7 +21,11 @@
 
 # What is NebulaGraph?
 
-**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
+**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency. <br />
+It has a lot of famous users: Tencent, WeChat, Huawei, China Mobile, Meituan, KUAISHOU, VIVO, 360, BestPay, etc.
+
+![image](https://user-images.githubusercontent.com/5738175/186087235-ceaec8c6-1af2-46c5-acad-d00c2e5b0fdc.png)
+
 
 Compared with other graph database solutions, **NebulaGraph** has the following advantages:
 
