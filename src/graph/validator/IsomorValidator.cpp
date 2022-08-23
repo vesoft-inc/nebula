@@ -12,16 +12,19 @@ namespace graph {
 Status IsomorValidator::validateImpl() {
   auto *fSentence = static_cast<IsomorSentence *>(sentence_);
   fetchCtx_ = getContext<IsomorContext>();
-  NG_RETURN_IF_ERROR(validateTag(fSentence->tags()));
+  NG_RETURN_IF_ERROR(validateTag(fSentence->graphs()));
   return Status::OK();
 }
 // Check validity of tags specified in sentence
 Status IsomorValidator::validateTag(const NameLabelList *nameLabels) {
-  if (nameLabels == nullptr) {
-// Wthether Found Tag in the storage?  --> need the coorperation of the storage section.
-  } else {
-  }
+  // Wthether Found Tag in the storage?  --> need the coorperation of the storage section.
+  auto graphs = nameLabels->labels();
+
+  // The first graph is data graph and the second graph is the query graph
+  fetchCtx_->querySpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[0]);
+  fetchCtx_->dataSpace = qctx_->schemaMng()->toGraphSpaceID(*graphs[1]);
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

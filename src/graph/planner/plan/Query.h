@@ -1166,6 +1166,7 @@ class DataCollect final : public VariableDependencyNode {
  public:
   enum class DCKind : uint8_t {
     kSubgraph,
+    kIsomor,
     kRowBasedMove,
     kMToN,
     kBFSShortest,

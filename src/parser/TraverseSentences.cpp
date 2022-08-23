@@ -21,10 +21,10 @@ std::string IsomorSentence::toString() const {
   buf.reserve(256);
   buf += "ISOMOR";
   buf += " ";
-  if (tags_->empty()) {
+  if (graphs_->empty()) {
     buf += "*";
   } else {
-    buf += tags_->toString();
+    buf += graphs_->toString();
   }
   printf("Here is the string: %s \n", buf.c_str());
   return buf;

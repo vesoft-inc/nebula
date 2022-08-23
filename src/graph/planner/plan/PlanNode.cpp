@@ -240,6 +240,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "CartesianProduct";
     case Kind::kSubgraph:
       return "Subgraph";
+    case Kind::kIsomor:
+       return "Isomor";
     case Kind::kAddHosts:
       return "AddHosts";
     case Kind::kDropHosts:
@@ -300,9 +302,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Argument";
     case Kind::kRollUpApply:
       return "RollUpApply";
-    case Kind::kIsomor:
-      return "Isomor";
-      // no default so the compiler will warning when lack
+    // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
 }

@@ -13,17 +13,16 @@ namespace nebula {
 
 class IsomorSentence final : public Sentence {
   public:
-    explicit IsomorSentence(NameLabelList* tags) {
-      tags_.reset(tags);
+    explicit IsomorSentence(NameLabelList* graphs) {
+      graphs_.reset(graphs);
     }
-    const NameLabelList* tags() const {
-      return tags_->empty() ? nullptr : tags_.get();
+    const NameLabelList* graphs() const {
+      return graphs_->empty() ? nullptr : graphs_.get();
     }
     std::string toString() const override;
     ~IsomorSentence();
 
-  private:
-    std::unique_ptr<NameLabelList> tags_;
+    std::unique_ptr<NameLabelList> graphs_;
 };
 
 class GoSentence final : public Sentence {

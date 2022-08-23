@@ -38,6 +38,7 @@
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
+#include "graph/validator/IsomorValidator.h"
 
 namespace nebula {
 namespace graph {
@@ -103,6 +104,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<DropSpaceValidator>(sentence, context);
     case Sentence::Kind::kDropTag:
       return std::make_unique<DropTagValidator>(sentence, context);
+    case Sentence::Kind::kIsomor:
+      return std::make_unique<IsomorValidator>(sentence, context);
     case Sentence::Kind::kDropEdge:
       return std::make_unique<DropEdgeValidator>(sentence, context);
     case Sentence::Kind::kShowCreateSpace:

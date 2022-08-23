@@ -77,6 +77,7 @@ namespace graph {
     case Sentence::Kind::kCreateEdge:
     case Sentence::Kind::kAlterEdge:
     case Sentence::Kind::kDropTag:
+    case Sentence::Kind::kIsomor:
     case Sentence::Kind::kDropEdge:
     case Sentence::Kind::kCreateTagIndex:
     case Sentence::Kind::kCreateEdgeIndex:
