@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
-#define _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
+#ifndef _VALIDATOR_ISOMOR_VALIDATOR_H_
+#define _VALIDATOR_ISOMOR_VALIDATOR_H_
 
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
@@ -36,4 +36,4 @@ class IsomorValidator final : public Validator {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
+#endif  // _VALIDATOR_ISOMOR_VALIDATOR_H_

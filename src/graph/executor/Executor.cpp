@@ -51,6 +51,7 @@
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
+#include "graph/executor/algo/IsomorExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/PassThroughExecutor.h"
@@ -460,6 +461,10 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kSubgraph: {
       return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kIsomor: {
+      //  return pool->makeAndAdd<SubgraphExecutor>(node, qctx);
+      return pool->makeAndAdd<IsomorExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kAddHosts: {
       return pool->makeAndAdd<AddHostsExecutor>(node, qctx);
     }
@@ -550,9 +555,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShortestPath: {
       return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
     }
-    // case PlanNode::Kind::kIsomor: {
-    //   return pool->makeAndAdd<SomeIsomorExecutor>(node, qctx);
-    // }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;

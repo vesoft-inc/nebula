@@ -128,6 +128,7 @@ namespace graph {
     case Sentence::Kind::kFetchVertices:
     case Sentence::Kind::kFetchEdges:
     case Sentence::Kind::kFindPath:
+    case Sentence::Kind::kIsomor:
     case Sentence::Kind::kGetSubgraph:
     case Sentence::Kind::kLimit:
     case Sentence::Kind::kGroupBy:
