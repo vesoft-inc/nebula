@@ -45,14 +45,6 @@ class TimeUtils {
     if ((p[date.month] - p[date.month - 1]) < date.day) {
       return Status::Error("`%s' is not a valid date.", date.toString().c_str());
     }
-    if (date.year < 0 || date.year > 9999) {
-      return Status::Error("Invalid year number.`%s' is not a valid date.",
-                           date.toString().c_str());
-    }
-    if (date.month < 1 || date.month > 12) {
-      return Status::Error("Invalid month number.`%s' is not a valid date.",
-                           date.toString().c_str());
-    }
     return Status::OK();
   }
 

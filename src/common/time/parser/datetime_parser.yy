@@ -121,6 +121,14 @@ date
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
+  | NEGATIVE INTEGER NEGATIVE INTEGER NEGATIVE INTEGER {
+    $$ = new nebula::Date(0-$2, $4, $6);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    if (!result.ok()) {
+      delete $$;
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
+  }
   | INTEGER NEGATIVE INTEGER {
     $$ = new nebula::Date($1, $3, 1);
     auto result = nebula::time::TimeUtils::validateDate(*$$);
@@ -129,8 +137,24 @@ date
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
+  | NEGATIVE INTEGER NEGATIVE INTEGER {
+    $$ = new nebula::Date(0-$2, $4, 1);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    if (!result.ok()) {
+      delete $$;
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
+  }
   | INTEGER {
     $$ = new nebula::Date($1, 1, 1);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    if (!result.ok()) {
+      delete $$;
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
+  }
+  | NEGATIVE INTEGER {
+    $$ = new nebula::Date(0-$2, 1, 1);
     auto result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
