@@ -31,7 +31,7 @@
 
 **NebulaGraph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。 <br />
 已被腾讯、华为、美团、中国移动、网易游戏、快手、携程、OPPO、自如、360 等众多大厂和小红书、朴朴、知乎等大量中小企业使用。
-![image](https://user-images.githubusercontent.com/5738175/186084533-cb9086cd-1914-4b9f-9a11-f34190479b55.png)
+![image](https://user-images.githubusercontent.com/5738175/186091188-5f3196af-a821-448b-9e33-891cf6530640.png)
 
 与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
 
@@ -41,7 +41,6 @@
 * RAFT 协议下的数据强一致
 * 支持 openCypher
 * 用户鉴权
-
 
 ## 发布通告
 
