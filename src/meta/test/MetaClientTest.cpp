@@ -15,6 +15,7 @@
 #include "common/meta/GflagsManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/time/TimezoneInfo.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_constants.h"
 #include "meta/processors/zone/AddHostsProcessor.h"
@@ -2799,5 +2800,12 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   folly::init(&argc, &argv, true);
   google::SetStderrLogging(google::INFO);
+  // Initialize the global timezone, it's only used for datetime type compute
+  // won't affect the process timezone.
+  auto status = nebula::time::Timezone::initializeGlobalTimezone();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
   return RUN_ALL_TESTS();
 }

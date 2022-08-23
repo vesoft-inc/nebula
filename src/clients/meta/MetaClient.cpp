@@ -2792,7 +2792,8 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
 
 folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
   cpp2::DropSnapshotReq req;
-  req.name_ref() = name;
+  std::vector<std::string> names{name};
+  req.names_ref() = names;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(

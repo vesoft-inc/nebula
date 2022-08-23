@@ -11,6 +11,7 @@
 #include "common/datatypes/Date.h"
 #include "common/time/parser/DatetimeParser.hpp"
 #include "common/time/parser/DatetimeScanner.h"
+#include "common/time/parser/Result.h"
 
 namespace nebula {
 namespace time {
@@ -20,10 +21,10 @@ class DatetimeReader {
   DatetimeReader();
 
   ~DatetimeReader() {
-    if (dt_ != nullptr) delete dt_;
+    if (result_ != nullptr) delete result_;
   }
 
-  StatusOr<DateTime> readDatetime(std::string input) {
+  StatusOr<Result> readDatetime(std::string input) {
     input = kDatetimePrefix + input;
     return read(std::move(input));
   }
@@ -32,10 +33,10 @@ class DatetimeReader {
     input = kDatePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
-    return result.value().date();
+    return result.value().dt.date();
   }
 
-  StatusOr<Time> readTime(std::string input) {
+  StatusOr<TimeResult> readTime(std::string input) {
     input = kTimePrefix + input;
     auto result = read(std::move(input));
     NG_RETURN_IF_ERROR(result);
@@ -43,7 +44,7 @@ class DatetimeReader {
   }
 
  private:
-  StatusOr<DateTime> read(std::string input);
+  StatusOr<Result> read(std::string input);
 
   std::string buffer_;
   const char *pos_{nullptr};
@@ -51,7 +52,7 @@ class DatetimeReader {
   DatetimeScanner scanner_;
   DatetimeParser parser_;
   std::string error_;
-  DateTime *dt_{nullptr};
+  Result *result_{nullptr};
 
   inline static const std::string kDatetimePrefix = "DATETIME__";
   inline static const std::string kDatePrefix = "DATE__";
