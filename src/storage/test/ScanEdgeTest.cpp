@@ -338,6 +338,59 @@ TEST(ScanEdgeTest, FilterTest) {
   }
 }
 
+TEST(ScanEdgeTest, TtlTest) {
+  FLAGS_mock_ttl_col = true;
+
+  fs::TempDir rootPath("/tmp/GetNeighborsTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "Scan one edge with some properties in one batch";
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    for (PartitionID partId = 1; partId <= totalParts; partId++) {
+      auto req = buildRequest({partId}, {""}, {edge});
+      auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+
+      ASSERT_EQ(0, resp.result.failed_parts.size());
+      ASSERT_FALSE(resp.get_props()->rows.empty());
+      checkResponse(*resp.props_ref(), edge, edge.second.size(), totalRowCount);
+    }
+    CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
+  }
+  sleep(FLAGS_mock_ttl_duration + 1);
+  {
+    LOG(INFO) << "TTL expired, same request but no data returned";
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    for (PartitionID partId = 1; partId <= totalParts; partId++) {
+      auto req = buildRequest({partId}, {""}, {edge});
+      auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+
+      ASSERT_EQ(0, resp.result.failed_parts.size());
+      ASSERT_TRUE(resp.get_props()->rows.empty());
+    }
+  }
+
+  FLAGS_mock_ttl_col = false;
+}
+
 }  // namespace storage
 }  // namespace nebula
 
