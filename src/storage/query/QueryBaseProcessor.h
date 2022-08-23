@@ -182,8 +182,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   nebula::cpp2::ErrorCode checkExp(const Expression* exp,
                                    bool returned,
                                    bool filtered,
-                                   bool updated = false,
-                                   bool allowNoexistentProp = false);
+                                   bool updated = false);
 
   void addReturnPropContext(std::vector<PropContext>& ctxs,
                             const char* propName,

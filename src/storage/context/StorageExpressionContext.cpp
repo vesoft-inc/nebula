@@ -18,7 +18,8 @@ Value StorageExpressionContext::readValue(const std::string& propName) const {
     return Value::kNullValue;
   }
 
-  auto ret = QueryUtils::readValue(reader_, propName, schema_);
+  auto field = schema_->field(propName);
+  auto ret = QueryUtils::readValue(reader_, propName, field);
   if (!ret.ok()) {
     return Value::kNullValue;
   }

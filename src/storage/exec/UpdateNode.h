@@ -353,7 +353,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       // read prop value, If the RowReader contains this field,
       // read from the rowreader, otherwise read the default value
       // or null value from the latest schema
-      auto retVal = QueryUtils::readValue(reader_, propName, schema_);
+      auto field = schema_->field(propName);
+      DCHECK_NOTNULL(field);
+      auto retVal = QueryUtils::readValue(reader_, propName, field);
       if (!retVal.ok()) {
         VLOG(1) << "Bad value for tag: " << tagId_ << ", prop " << propName;
         return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
@@ -705,7 +707,9 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       // Read prop value, If the RowReader contains this field,
       // read from the rowreader, otherwise read the default value
       // or null value from the latest schema
-      auto retVal = QueryUtils::readValue(reader_, propName, schema_);
+      auto field = schema_->field(propName);
+      DCHECK_NOTNULL(field);
+      auto retVal = QueryUtils::readValue(reader_, propName, field);
       if (!retVal.ok()) {
         VLOG(1) << "Bad value for edge: " << edgeType_ << ", prop " << propName;
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;

@@ -100,25 +100,6 @@ class QueryUtils final {
     return value;
   }
 
-  /**
-   * @brief read prop value, If the RowReader contains this field, read from the rowreader,
-   * otherwise read the default value or null value from the latest schema
-   *
-   * @param reader
-   * @param propName
-   * @param schema
-   * @return StatusOr<nebula::Value>
-   */
-  static StatusOr<nebula::Value> readValue(RowReader* reader,
-                                           const std::string& propName,
-                                           const meta::NebulaSchemaProvider* schema) {
-    auto field = schema->field(propName);
-    if (!field) {
-      return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
-    }
-    return readValue(reader, propName, field);
-  }
-
   static StatusOr<nebula::Value> readEdgeProp(folly::StringPiece key,
                                               size_t vIdLen,
                                               bool isIntId,
