@@ -24,7 +24,8 @@ TEST(DatetimeReader, DateTime) {
     auto parser = time::DatetimeReader();
     auto result = parser.readDatetime("-2019-01-03T22:22:3.2333");
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(nebula::DateTime(-2019, 1, 3, 22, 22, 3, 233300), result.value());
+    EXPECT_EQ((time::Result{nebula::DateTime(-2019, 1, 3, 22, 22, 3, 233300), false}),
+              result.value());
   }
   // with offset
   {
