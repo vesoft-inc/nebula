@@ -1083,18 +1083,6 @@ function_call_expression
             throw nebula::GraphParser::syntax_error(@1, "Could not apply aggregation function on `*`");
         }
     }
-    | LABEL L_PAREN KW_DISTINCT STAR R_PAREN {
-        auto func = *$1;
-        std::transform(func.begin(), func.end(), func.begin(), ::toupper);
-        if (!func.compare("COUNT")) {
-            auto star = ConstantExpression::make(qctx->objPool(), std::string("*"));
-            $$ = AggregateExpression::make(qctx->objPool(), *$1, star, true);
-            delete $1;
-        } else {
-            delete($1);
-            throw nebula::GraphParser::syntax_error(@1, "Could not apply aggregation function on `*`");
-        }
-    }
     | KW_TIMESTAMP L_PAREN opt_argument_list R_PAREN {
         if (FunctionManager::find("timestamp", $3->numArgs()).ok()) {
             $$ = FunctionCallExpression::make(qctx->objPool(), "timestamp", $3);
