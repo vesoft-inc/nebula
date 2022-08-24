@@ -73,6 +73,9 @@ class QueryUtils final {
 
       if (nullType == NullType::UNKNOWN_PROP) {
         VLOG(1) << "Fail to read prop " << propName;
+        if (!field) {
+          return value;
+        }
         if (field->hasDefault()) {
           DefaultValueContext expCtx;
           ObjectPool pool;
