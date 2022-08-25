@@ -52,6 +52,13 @@ class TimeUtils {
     return Status::OK();
   }
 
+  static Status validateYear(int64_t year) {
+    if (year < std::numeric_limits<int16_t>::min() || year > std::numeric_limits<int16_t>::max()) {
+      return Status::Error("Out of range year `%ld'.", year);
+    }
+    return Status::OK();
+  }
+
   template <
       typename D,
       typename = std::enable_if_t<std::is_same<D, Time>::value || std::is_same<D, DateTime>::value>>

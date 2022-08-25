@@ -25,11 +25,11 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       return Status::Error("Invalid value type.");
     }
     if (kv.first == "year") {
-      // year should be in [-32767, 32767] and same as parser
-      if (kv.second.getInt() <= std::numeric_limits<int16_t>::min() ||
-          kv.second.getInt() > std::numeric_limits<int16_t>::max()) {
-        return Status::Error("Out of range year `%ld'.", kv.second.getInt());
+      auto result = validateYear(kv.second.getInt());
+      if (!result.ok()) {
+        return result;
       }
+
       dt.year = kv.second.getInt();
     } else if (kv.first == "month") {
       if (kv.second.getInt() <= 0 || kv.second.getInt() > 12) {
@@ -84,10 +84,9 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       return Status::Error("Invalid value type.");
     }
     if (kv.first == "year") {
-      // year should be in [-32767, 32767] and same as parser
-      if (kv.second.getInt() <= std::numeric_limits<int16_t>::min() ||
-          kv.second.getInt() > std::numeric_limits<int16_t>::max()) {
-        return Status::Error("Out of range year `%ld'.", kv.second.getInt());
+      auto result = validateYear(kv.second.getInt());
+      if (!result.ok()) {
+        return result;
       }
       d.year = kv.second.getInt();
     } else if (kv.first == "month") {

@@ -510,8 +510,9 @@ TEST_F(FunctionManagerTest, time) {
   { TEST_FUNCTION(date, {Map({{"year", 2021}, {"month", 4}, {"day", 31}})}, Value::kNullBadData); }
   // range [(−32,768, 1, 1), (32,767, 12, 31)]
   {
-    TEST_FUNCTION(
-        date, {Map({{"year", -32767}, {"month", 1}, {"day", 1}})}, Value(Date(-32767, 1, 1)));
+    TEST_FUNCTION(date,
+                  {Map({{"year", std::numeric_limits<int16_t>::min()}, {"month", 1}, {"day", 1}})},
+                  Value(Date(std::numeric_limits<int16_t>::min(), 1, 1)));
   }
   {
     TEST_FUNCTION(
@@ -686,13 +687,13 @@ TEST_F(FunctionManagerTest, time) {
   // range [(−32,768, 1, 1, 0, 0, 0, 0), (32,767, 12, 31, 23, 59, 59, 999999)]
   {
     TEST_FUNCTION(datetime,
-                  {Map({{"year", -32767},
+                  {Map({{"year", -32768},
                         {"month", 1},
                         {"day", 1},
                         {"hour", 0},
                         {"minute", 0},
                         {"second", 0}})},
-                  Value(time::TimeUtils::dateTimeToUTC(DateTime(-32767, 1, 1, 0, 0, 0, 0))));
+                  Value(time::TimeUtils::dateTimeToUTC(DateTime(-32768, 1, 1, 0, 0, 0, 0))));
   }
   {
     TEST_FUNCTION(datetime,

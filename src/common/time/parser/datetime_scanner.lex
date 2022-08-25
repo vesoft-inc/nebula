@@ -39,7 +39,7 @@ R_BRACKET                   "]"
 {DEC}+                  {
                           try {
                             folly::StringPiece text(yytext, yyleng);
-                            int16_t val = folly::to<int16_t>(text);
+                            int64_t val = folly::to<int64_t>(text);
                             yylval->intVal = val;
                           } catch (...) {
                             throw DatetimeParser::syntax_error(*yylloc, "Invalid integer:");

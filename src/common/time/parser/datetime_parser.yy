@@ -114,48 +114,72 @@ date_time_delimiter
 
 date
   : INTEGER NEGATIVE INTEGER NEGATIVE INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear($1);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date($1, $3, $5);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
   | NEGATIVE INTEGER NEGATIVE INTEGER NEGATIVE INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear(0-$2);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date(0-$2, $4, $6);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
   | INTEGER NEGATIVE INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear($1);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date($1, $3, 1);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
   | NEGATIVE INTEGER NEGATIVE INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear(0-$2);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date(0-$2, $4, 1);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
   | INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear($1);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date($1, 1, 1);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
   }
   | NEGATIVE INTEGER {
+    auto result = nebula::time::TimeUtils::validateYear(0-$2);
+    if (!result.ok()) {
+      throw DatetimeParser::syntax_error(@1, result.toString());
+    }
     $$ = new nebula::Date(0-$2, 1, 1);
-    auto result = nebula::time::TimeUtils::validateDate(*$$);
+    result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
       delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
