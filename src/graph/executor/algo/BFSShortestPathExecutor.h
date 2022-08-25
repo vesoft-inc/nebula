@@ -4,6 +4,8 @@
 
 #ifndef GRAPH_EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_BFSSHORTESTPATHEXECUTOR_H_
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
 
 // BFSShortestPath has two inputs.  GetNeighbors(From) & GetNeighbors(To)
@@ -42,6 +44,7 @@ namespace graph {
 class BFSShortestPath;
 class BFSShortestPathExecutor final : public Executor {
  public:
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
   BFSShortestPathExecutor(const PlanNode* node, QueryContext* qctx)
       : Executor("BFSShortestPath", node, qctx) {}
 
@@ -61,8 +64,8 @@ class BFSShortestPathExecutor final : public Executor {
  private:
   const BFSShortestPath* pathNode_{nullptr};
   size_t step_{1};
-  std::unordered_set<Value> leftVisitedVids_;
-  std::unordered_set<Value> rightVisitedVids_;
+  HashSet leftVisitedVids_;
+  HashSet rightVisitedVids_;
   std::vector<std::unordered_multimap<Value, Edge>> allLeftEdges_;
   std::vector<std::unordered_multimap<Value, Edge>> allRightEdges_;
   DataSet currentDs_;
