@@ -948,7 +948,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
       return Status::Error("Job not existed in chosen space!");
     case nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER:
-      return Status::Error("Need to recover failed data balance job firstly!");
+      return Status::Error("Need to recover or stop failed data balance job firstly!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
