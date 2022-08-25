@@ -21,7 +21,14 @@
 
 # What is NebulaGraph?
 
-**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
+**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs <br/>
+with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency. 
+
+
+It has a lot of users, including some famous and big companies of **BAT**, **TMD**,  <br/>
+and has been widely used for social media, recommendations, security, capital flows, AI, etc.<br/>
+https://nebula-graph.io/cases
+
 
 Compared with other graph database solutions, **NebulaGraph** has the following advantages:
 
@@ -34,9 +41,11 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 
 ## Notice of Release
 
-This repository hosts the source code of NebulaGraph versions before 2.0.0-alpha and after v2.5.x. If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph).
+This repository hosts the source code of NebulaGraph versions before 2.0.0-alpha and after v2.5.x.  <br/>
+If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph).
 
-NebulaGraph 1.x is not actively maintained. Please move to NebulaGraph 2.x. The data format, rpc protocols, clients, etc. are not compatible between NebulaGraph v1.x and v2.x, but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
+NebulaGraph 1.x is not actively maintained. Please move to NebulaGraph 2.x.  <br/>
+The data format, rpc protocols, clients, etc. are not compatible between NebulaGraph v1.x and v2.x,  but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
 
 <!--
 To use the stable release, see [NebulaGraph 1.0](https://github.com/vesoft-inc/nebula).
@@ -86,7 +95,8 @@ CNCF Database Landscape.</a>
 
 ## Licensing
 
-**NebulaGraph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **NebulaGraph** as a back-end service to support your SaaS deployment.
+**NebulaGraph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs.  <br/>
+You can also freely deploy **NebulaGraph** as a back-end service to support your SaaS deployment.
 
 ## Contact
 
