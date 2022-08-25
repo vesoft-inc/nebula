@@ -17,7 +17,7 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
     allRightEdges_.emplace_back();
     auto& currentEdges = allRightEdges_.back();
     auto rIter = ectx_->getResult(pathNode_->rightVidVar()).iter();
-    std::unordered_set<Value> rightVids;
+    HashSet rightVids;
     for (; rIter->valid(); rIter->next()) {
       auto& vid = rIter->getColumn(0);
       if (rightVids.emplace(vid).second) {
@@ -61,7 +61,7 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
   auto iterSize = iter->size();
   visitedVids.reserve(visitedVids.size() + iterSize);
 
-  std::unordered_set<Value> uniqueDst;
+  HashSet uniqueDst;
   uniqueDst.reserve(iterSize);
   DataSet nextStepVids;
   nextStepVids.colNames = {nebula::kVid};
@@ -108,7 +108,7 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
 folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   const auto& leftEdges = allLeftEdges_.back();
   const auto& preRightEdges = allRightEdges_[step_ - 1];
-  std::unordered_set<Value> meetVids;
+  HashSet meetVids;
   bool oddStep = true;
   for (const auto& edge : leftEdges) {
     if (preRightEdges.find(edge.first) != preRightEdges.end()) {

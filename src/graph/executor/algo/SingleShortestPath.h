@@ -11,21 +11,20 @@ namespace nebula {
 namespace graph {
 class SingleShortestPath final : public ShortestPathBase {
  public:
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
   SingleShortestPath(const ShortestPath* node,
                      QueryContext* qctx,
                      std::unordered_map<std::string, std::string>* stats)
       : ShortestPathBase(node, qctx, stats) {}
 
-  folly::Future<Status> execute(const std::unordered_set<Value>& startVids,
-                                const std::unordered_set<Value>& endVids,
+  folly::Future<Status> execute(const HashSet& startVids,
+                                const HashSet& endVids,
                                 DataSet* result) override;
 
   using HalfPath = std::vector<std::unordered_map<DstVid, std::vector<CustomStep>>>;
 
  private:
-  void init(const std::unordered_set<Value>& startVids,
-            const std::unordered_set<Value>& endVids,
-            size_t rowSize);
+  void init(const HashSet& startVids, const HashSet& endVids, size_t rowSize);
 
   folly::Future<Status> shortestPath(size_t rowNum, size_t stepNum);
 
@@ -48,8 +47,8 @@ class SingleShortestPath final : public ShortestPathBase {
   std::vector<Row> createLeftPath(size_t rowNum, const Value& meetVid);
 
  private:
-  std::vector<std::unordered_set<Value>> leftVisitedVids_;
-  std::vector<std::unordered_set<Value>> rightVisitedVids_;
+  std::vector<HashSet> leftVisitedVids_;
+  std::vector<HashSet> rightVisitedVids_;
   std::vector<HalfPath> allLeftPaths_;
   std::vector<HalfPath> allRightPaths_;
 };

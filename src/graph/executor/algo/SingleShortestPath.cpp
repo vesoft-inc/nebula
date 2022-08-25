@@ -10,8 +10,8 @@ using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
-folly::Future<Status> SingleShortestPath::execute(const std::unordered_set<Value>& startVids,
-                                                  const std::unordered_set<Value>& endVids,
+folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
+                                                  const HashSet& endVids,
                                                   DataSet* result) {
   size_t rowSize = startVids.size() * endVids.size();
   init(startVids, endVids, rowSize);
@@ -35,9 +35,7 @@ folly::Future<Status> SingleShortestPath::execute(const std::unordered_set<Value
       });
 }
 
-void SingleShortestPath::init(const std::unordered_set<Value>& startVids,
-                              const std::unordered_set<Value>& endVids,
-                              size_t rowSize) {
+void SingleShortestPath::init(const HashSet& startVids, const HashSet& endVids, size_t rowSize) {
   leftVids_.reserve(rowSize);
   rightVids_.reserve(rowSize);
 
@@ -139,7 +137,7 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
   allSteps.emplace_back();
   auto& currentStep = allSteps.back();
 
-  std::unordered_set<Value> uniqueDst;
+  HashSet uniqueDst;
   uniqueDst.reserve(iterSize);
   std::vector<Row> nextStepVids;
   nextStepVids.reserve(iterSize);
