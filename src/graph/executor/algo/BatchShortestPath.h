@@ -21,7 +21,10 @@ class BatchShortestPath final : public ShortestPathBase {
                                 DataSet* result) override;
 
   using CustomPath = Row;
-  using PathMap = std::unordered_map<DstVid, std::unordered_map<StartVid, std::vector<CustomPath>>>;
+  using PathMap = robin_hood::unordered_flat_map<
+      DstVid,
+      robin_hood::unordered_flat_map<StartVid, std::vector<CustomPath>, std::hash<StartVid>>,
+      std::hash<DstVid>>;
 
  private:
   size_t splitTask(const HashSet& startVids, const HashSet& endVids);

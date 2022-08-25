@@ -21,7 +21,8 @@ class SingleShortestPath final : public ShortestPathBase {
                                 const HashSet& endVids,
                                 DataSet* result) override;
 
-  using HalfPath = std::vector<std::unordered_map<DstVid, std::vector<CustomStep>>>;
+  using HalfPath = std::vector<
+      robin_hood::unordered_flat_map<DstVid, std::vector<CustomStep>, std::hash<Value>>>;
 
  private:
   void init(const HashSet& startVids, const HashSet& endVids, size_t rowSize);

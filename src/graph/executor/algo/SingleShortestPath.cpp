@@ -47,7 +47,7 @@ void SingleShortestPath::init(const HashSet& startVids, const HashSet& endVids, 
   resultDs_.resize(rowSize);
   for (const auto& startVid : startVids) {
     for (const auto& endVid : endVids) {
-      std::unordered_map<Value, std::vector<Row>> steps;
+      robin_hood::unordered_flat_map<Value, std::vector<Row>, std::hash<Value>> steps;
       std::vector<Row> dummy;
       steps.emplace(endVid, std::move(dummy));
       HalfPath originRightPath({std::move(steps)});

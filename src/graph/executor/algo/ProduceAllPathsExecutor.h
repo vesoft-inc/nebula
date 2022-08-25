@@ -5,6 +5,8 @@
 #ifndef GRAPH_EXECUTOR_ALGO_PRODUCEALLPATHSEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_PRODUCEALLPATHSEXECUTOR_H_
 
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
 
 // ProduceAllPath has two inputs.  GetNeighbors(From) & GetNeighbors(To)
@@ -52,7 +54,7 @@ class ProduceAllPathsExecutor final : public Executor {
 
  private:
   // k: dst, v: paths to dst
-  using Interims = std::unordered_map<Value, std::vector<Path>>;
+  using Interims = robin_hood::unordered_flat_map<Value, std::vector<Path>, std::hash<Value>>;
 
   Status buildPath(bool reverse);
   folly::Future<Status> conjunctPath();

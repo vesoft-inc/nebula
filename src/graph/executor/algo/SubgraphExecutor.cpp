@@ -27,7 +27,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
   ResultBuilder builder;
   builder.value(iter->valuePtr());
 
-  std::unordered_map<Value, int64_t> currentVids;
+  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> currentVids;
   currentVids.reserve(gnSize);
   historyVids_.reserve(historyVids_.size() + gnSize);
   if (currentStep == 1) {

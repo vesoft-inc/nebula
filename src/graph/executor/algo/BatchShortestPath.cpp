@@ -348,7 +348,7 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
     if (vertices.empty()) {
       return false;
     }
-    std::unordered_map<Value, Value> verticesMap;
+    robin_hood::unordered_flat_map<Value, Value, std::hash<Value>> verticesMap;
     for (auto& vertex : vertices) {
       verticesMap[vertex.getVertex().vid] = std::move(vertex);
     }
