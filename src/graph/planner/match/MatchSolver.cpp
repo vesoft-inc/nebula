@@ -213,62 +213,6 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
   return root;
 }
 
-void MatchSolver::extractAndDedupVidColumn(QueryContext* qctx,
-                                           Expression** initialExpr,
-                                           PlanNode* dep,
-                                           const std::string& inputVar,
-                                           SubPlan& plan) {
-  auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
-  auto* var = qctx->symTable()->getVar(inputVar);
-  Expression* vidExpr = initialExprOrEdgeDstExpr(qctx, initialExpr, var->colNames.back());
-  if (initialExpr) {
-    *initialExpr = nullptr;
-  }
-  columns->addColumn(new YieldColumn(vidExpr));
-  auto project = Project::make(qctx, dep, columns);
-  project->setInputVar(inputVar);
-  project->setColNames({kVid});
-  auto dedup = Dedup::make(qctx, project);
-  dedup->setColNames({kVid});
-
-  plan.root = dedup;
-}
-
-Expression* MatchSolver::initialExprOrEdgeDstExpr(QueryContext* qctx,
-                                                  Expression** initialExpr,
-                                                  const std::string& vidCol) {
-  if (initialExpr != nullptr && *initialExpr != nullptr) {
-    return *initialExpr;
-  } else {
-    return getEndVidInPath(qctx, vidCol);
-  }
-}
-
-Expression* MatchSolver::getEndVidInPath(QueryContext* qctx, const std::string& colName) {
-  auto* pool = qctx->objPool();
-  // expr: __Project_2[-1] => path
-  auto columnExpr = InputPropertyExpression::make(pool, colName);
-  // expr: endNode(path) => vn
-  auto args = ArgumentList::make(pool);
-  args->addArgument(columnExpr);
-  auto endNode = FunctionCallExpression::make(pool, "endNode", args);
-  // expr: en[_dst] => dst vid
-  auto vidExpr = ConstantExpression::make(pool, kVid);
-  return AttributeExpression::make(pool, endNode, vidExpr);
-}
-
-Expression* MatchSolver::getStartVidInPath(QueryContext* qctx, const std::string& colName) {
-  auto* pool = qctx->objPool();
-  // expr: __Project_2[0] => path
-  auto columnExpr = InputPropertyExpression::make(pool, colName);
-  // expr: startNode(path) => v1
-  auto args = ArgumentList::make(pool);
-  args->addArgument(columnExpr);
-  auto firstVertexExpr = FunctionCallExpression::make(pool, "startNode", args);
-  // expr: v1[_vid] => vid
-  return AttributeExpression::make(pool, firstVertexExpr, ConstantExpression::make(pool, kVid));
-}
-
 PlanNode* MatchSolver::filtPathHasSameEdge(PlanNode* input,
                                            const std::string& column,
                                            QueryContext* qctx) {
@@ -280,45 +224,6 @@ PlanNode* MatchSolver::filtPathHasSameEdge(PlanNode* input,
   auto filter = Filter::make(qctx, input, cond);
   filter->setColNames(input->colNames());
   return filter;
-}
-
-Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
-                                          const SpaceInfo& space,
-                                          QueryContext* qctx,
-                                          Expression** initialExpr,
-                                          SubPlan& plan) {
-  return appendFetchVertexPlan(nodeFilter, space, qctx, initialExpr, plan.root->outputVar(), plan);
-}
-
-Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
-                                          const SpaceInfo& space,
-                                          QueryContext* qctx,
-                                          Expression** initialExpr,
-                                          std::string inputVar,
-                                          SubPlan& plan) {
-  auto* pool = qctx->objPool();
-  // [Project && Dedup]
-  extractAndDedupVidColumn(qctx, initialExpr, plan.root, inputVar, plan);
-  auto srcExpr = InputPropertyExpression::make(pool, kVid);
-  // [Get vertices]
-  auto props = SchemaUtil::getAllVertexProp(qctx, space.id, true);
-  NG_RETURN_IF_ERROR(props);
-  auto gv = GetVertices::make(qctx, plan.root, space.id, srcExpr, std::move(props).value(), {});
-
-  PlanNode* root = gv;
-  if (nodeFilter != nullptr) {
-    auto* newFilter = MatchSolver::rewriteLabel2Vertex(qctx, nodeFilter);
-    root = Filter::make(qctx, root, newFilter);
-  }
-
-  // Normalize all columns to one
-  auto columns = pool->makeAndAdd<YieldColumns>();
-  auto pathExpr = PathBuildExpression::make(pool);
-  pathExpr->add(VertexExpression::make(pool));
-  columns->addColumn(new YieldColumn(pathExpr));
-  plan.root = Project::make(qctx, root, columns);
-  plan.root->setColNames({kPathStr});
-  return Status::OK();
 }
 
 static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias) {

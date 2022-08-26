@@ -49,6 +49,7 @@ DECLARE_uint32(password_lock_time_in_secs);
 
 // Optimizer
 DECLARE_bool(enable_optimizer);
+DECLARE_bool(optimize_appendvertice);
 
 DECLARE_int64(max_allowed_connections);
 

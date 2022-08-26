@@ -322,11 +322,12 @@ PlanNode* PathPlanner::buildVertexPlan(PlanNode* dep, const std::string& input) 
   // col 0 of the project->output is [node...]
   auto* unwindExpr = ColumnExpression::make(pool, 0);
   auto* unwind = Unwind::make(qctx, project, unwindExpr);
+  unwind->setFromPipe(true);
   unwind->setColNames({"nodes"});
 
   // extract vid from vertex, col 0 is vertex
   auto idArgs = ArgumentList::make(pool);
-  idArgs->addArgument(ColumnExpression::make(pool, 1));
+  idArgs->addArgument(ColumnExpression::make(pool, 0));
   auto* src = FunctionCallExpression::make(pool, "id", idArgs);
   // get all vertexprop
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, true);
@@ -355,23 +356,24 @@ PlanNode* PathPlanner::buildEdgePlan(PlanNode* dep, const std::string& input) {
   // col 0 of the project->output() is [edge...]
   auto* unwindExpr = ColumnExpression::make(pool, 0);
   auto* unwind = Unwind::make(qctx, project, unwindExpr);
+  unwind->setFromPipe(true);
   unwind->setColNames({"edges"});
 
   // extract src from edge
   auto srcArgs = ArgumentList::make(pool);
-  srcArgs->addArgument(ColumnExpression::make(pool, 1));
+  srcArgs->addArgument(ColumnExpression::make(pool, 0));
   auto* src = FunctionCallExpression::make(pool, "src", srcArgs);
   // extract dst from edge
   auto dstArgs = ArgumentList::make(pool);
-  dstArgs->addArgument(ColumnExpression::make(pool, 1));
+  dstArgs->addArgument(ColumnExpression::make(pool, 0));
   auto* dst = FunctionCallExpression::make(pool, "dst", dstArgs);
   // extract rank from edge
   auto rankArgs = ArgumentList::make(pool);
-  rankArgs->addArgument(ColumnExpression::make(pool, 1));
+  rankArgs->addArgument(ColumnExpression::make(pool, 0));
   auto* rank = FunctionCallExpression::make(pool, "rank", rankArgs);
   // type
   auto typeArgs = ArgumentList::make(pool);
-  typeArgs->addArgument(ColumnExpression::make(pool, 1));
+  typeArgs->addArgument(ColumnExpression::make(pool, 0));
   auto* type = FunctionCallExpression::make(pool, "typeid", typeArgs);
   // prepare edgetype
   auto edgeProp = SchemaUtil::getEdgeProps(qctx, pathCtx_->space, pathCtx_->over.edgeTypes, true);

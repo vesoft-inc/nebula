@@ -90,7 +90,10 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
       }
       auto vertexId = NebulaKeyUtils::getVertexId(vIdLen, key);
       if (vertexId != currentVertexId && !currentVertexId.empty()) {
-        collectOneRow(isIntId, vIdLen, currentVertexId);
+        ret = collectOneRow(isIntId, vIdLen, currentVertexId);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        }
       }  // collect vertex row
       currentVertexId = vertexId;
       if (static_cast<int64_t>(resultDataSet_->rowSize()) >= rowLimit) {
@@ -100,7 +103,10 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
       tagNodes_[tagIdIndex->second]->doExecute(key.toString(), value.toString());
     }  // iterate key
     if (static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit) {
-      collectOneRow(isIntId, vIdLen, currentVertexId);
+      ret = collectOneRow(isIntId, vIdLen, currentVertexId);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+      }
     }
 
     cpp2::ScanCursor c;
@@ -111,7 +117,9 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  void collectOneRow(bool isIntId, std::size_t vIdLen, const std::string& currentVertexId) {
+  nebula::cpp2::ErrorCode collectOneRow(bool isIntId,
+                                        std::size_t vIdLen,
+                                        const std::string& currentVertexId) {
     List row;
     nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     // vertexId is the first column
@@ -172,6 +180,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         tagNode->clear();
       }
     }
+    return ret;
   }
 
  private:
@@ -251,7 +260,10 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
       }
       auto value = iter->val();
       edgeNodes_[edgeNodeIndex->second]->doExecute(key.toString(), value.toString());
-      collectOneRow(isIntId, vIdLen);
+      ret = collectOneRow(isIntId, vIdLen);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+      }
     }
 
     cpp2::ScanCursor c;
@@ -262,9 +274,16 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  void collectOneRow(bool isIntId, std::size_t vIdLen) {
+  nebula::cpp2::ErrorCode collectOneRow(bool isIntId, std::size_t vIdLen) {
     List row;
     nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    // Usually there is only one edge node, when all of the egdeNodes are invalid (e.g. ttl
+    // expired), just skip the row. If we don't skip it, there will be a whole line of empty value.
+    if (!std::any_of(edgeNodes_.begin(), edgeNodes_.end(), [](const auto& edgeNode) {
+          return edgeNode->valid();
+        })) {
+      return ret;
+    }
     for (auto& edgeNode : edgeNodes_) {
       ret = edgeNode->collectEdgePropsIfValid(
           [&row, edgeNode = edgeNode.get(), this](
@@ -312,6 +331,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     for (auto& edgeNode : edgeNodes_) {
       edgeNode->clear();
     }
+    return ret;
   }
 
  private:

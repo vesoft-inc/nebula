@@ -75,6 +75,7 @@ nebula::cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(
       return nullptr;
     }
   });
+  buildTagTTLInfo();
   return ret;
 }
 
