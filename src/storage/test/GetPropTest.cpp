@@ -802,6 +802,57 @@ TEST(GetPropTest, FilterTest) {
     // }
     ASSERT_EQ(expected, *resp.props_ref());
   }
+  // invalid vertex filter
+  {
+    LOG(INFO) << "GetVertexPropInValue";
+    std::vector<VertexID> vertices = {"Tim Duncan"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        TagPropertyExpression::make(&pool, std::to_string(player), "invalid_property"),
+        ConstantExpression::make(&pool, 42));
+    auto req = buildVertexRequest(totalParts, vertices, tags, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  // invalid edge filter
+  {
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.src_ref() = "Tim Duncan";
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 1997;
+      edgeKey.dst_ref() = "Spurs";
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    Expression* filter = RelationalExpression::makeEQ(
+        &pool,
+        EdgePropertyExpression::make(&pool, std::to_string(serve), "invalid_property"),
+        ConstantExpression::make(&pool, 42));
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges, filter);
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
 }
 
 TEST(GetPropTest, LimitTest) {

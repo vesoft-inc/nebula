@@ -5,8 +5,14 @@
 
 #include "storage/query/GetDstBySrcProcessor.h"
 
+#include <robin_hood.h>
+
+#include "common/thread/GenericThreadPool.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
+
+DEFINE_uint64(concurrent_dedup_threshold, 50000000, "concurrent dedup threshold");
+DEFINE_uint64(max_dedup_threads, 6, "max dedup threads");
 
 namespace nebula {
 namespace storage {
@@ -53,7 +59,7 @@ void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
 
 void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req) {
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
-  auto plan = buildPlan(&contexts_.front(), &resultDataSet_);
+  auto plan = buildPlan(&contexts_.front(), &flatResult_);
   std::unordered_set<PartitionID> failedParts;
   for (const auto& partEntry : req.get_parts()) {
     auto partId = partEntry.first;
@@ -84,8 +90,7 @@ void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req
 
 void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& req) {
   for (size_t i = 0; i < req.get_parts().size(); i++) {
-    nebula::DataSet result = resultDataSet_;
-    partResults_.emplace_back(std::move(result));
+    partResults_.emplace_back();
     contexts_.emplace_back(RuntimeContext(planContext_.get()));
   }
   size_t i = 0;
@@ -98,15 +103,29 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
     CHECK(!t.hasException());
     const auto& tries = t.value();
+
+    size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      const auto& [code, partId] = tries[j].value();
+      if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        sum += partResults_[j].values.size();
+      }
+    }
+    flatResult_.values.reserve(sum);
+
+    for (size_t j = 0; j < tries.size(); j++) {
+      DCHECK(!tries[j].hasException());
       const auto& [code, partId] = tries[j].value();
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
       } else {
-        resultDataSet_.append(std::move(partResults_[j]));
+        for (auto& v : partResults_[j].values) {
+          flatResult_.values.emplace_back(std::move(v));
+        }
+        std::vector<Value>().swap(partResults_[j].values);
       }
     }
+
     this->onProcessFinished();
     this->onFinished();
   });
@@ -114,32 +133,33 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProcessor::runInExecutor(
     RuntimeContext* context,
-    nebula::DataSet* result,
+    nebula::List* result,
     PartitionID partId,
     const std::vector<Value>& srcIds) {
-  return folly::via(executor_, [this, context, result, partId, input = std::move(srcIds)]() {
-    auto plan = buildPlan(context, result);
-    for (const auto& src : input) {
-      auto vId = src.getStr();
+  return folly::via(executor_,
+                    [this, context, result, partId, input = std::move(srcIds)]() mutable {
+                      auto plan = buildPlan(context, result);
+                      for (const auto& src : input) {
+                        auto& vId = src.getStr();
 
-      if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-        LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
-                  << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
-        return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
-      }
+                        if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+                          LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                                    << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+                          return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
+                        }
 
-      // the first column of each row would be the vertex id
-      auto ret = plan.go(partId, vId);
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        return std::make_pair(ret, partId);
-      }
-    }
-    return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
-  });
+                        // the first column of each row would be the vertex id
+                        auto ret = plan.go(partId, vId);
+                        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                          return std::make_pair(ret, partId);
+                        }
+                      }
+                      return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+                    });
 }
 
 StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
-                                                      nebula::DataSet* result) {
+                                                      nebula::List* result) {
   /*
     The StoragePlan looks like this:
         +------------------+
@@ -211,13 +231,74 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
 
 void GetDstBySrcProcessor::onProcessFinished() {
   // dedup the dsts before we return
-  std::unordered_set<const Row*> unique;
-  for (const auto& val : resultDataSet_.rows) {
-    unique.emplace(&val);
-  }
+  static const auto kConcurrentThreshold = FLAGS_concurrent_dedup_threshold;
+  static const auto kMaxThreads = FLAGS_max_dedup_threads;
+  auto nRows = flatResult_.values.size();
   std::vector<Row> deduped;
-  for (const auto& row : unique) {
-    deduped.emplace_back(*row);
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
+  if (nRows < kConcurrentThreshold * 2) {
+    HashSet unique;
+    unique.reserve(nRows);
+    for (const auto& val : flatResult_.values) {
+      unique.emplace(val);
+    }
+    deduped.reserve(unique.size());
+    for (const auto& val : unique) {
+      deduped.emplace_back(Row({val}));
+    }
+  } else {
+    auto nThreads = nRows / kConcurrentThreshold;
+    if (nThreads > kMaxThreads) {
+      nThreads = kMaxThreads;
+    }
+    std::vector<std::pair<size_t, size_t>> ranges;
+    auto step = nRows / nThreads;
+    auto i = 0UL;
+    for (; i < nThreads - 1; i++) {
+      ranges.emplace_back(i * step, (i + 1) * step);
+    }
+    ranges.emplace_back(i * step, nRows);
+    nebula::thread::GenericThreadPool pool;
+    pool.start(nThreads, "deduper");
+
+    std::vector<HashSet> sets;
+    sets.resize(nThreads);
+    for (auto& set : sets) {
+      set.reserve(step);
+    }
+
+    auto cb = [this, &ranges, &sets](size_t idx) {
+      auto start = ranges[idx].first;
+      auto end = ranges[idx].second;
+      for (auto j = start; j < end; j++) {
+        sets[idx].emplace(std::move(flatResult_.values[j]));
+      }
+    };
+
+    std::vector<folly::SemiFuture<folly::Unit>> futures;
+    for (i = 0UL; i < nThreads; i++) {
+      futures.emplace_back(pool.addTask(cb, i));
+    }
+    for (auto& future : futures) {
+      std::move(future).get();
+    }
+
+    for (i = 1UL; i < sets.size(); i++) {
+      auto& set = sets[0];
+      for (auto& v : sets[i]) {
+        set.emplace(std::move(v));
+      }
+    }
+
+    deduped.reserve(sets[0].size());
+    for (auto& v : sets[0]) {
+      std::vector<Value> values;
+      values.emplace_back(std::move(v));
+      deduped.emplace_back(std::move(values));
+    }
+
+    pool.stop();
+    pool.wait();
   }
   resultDataSet_.rows = std::move(deduped);
   resp_.dsts_ref() = std::move(resultDataSet_);

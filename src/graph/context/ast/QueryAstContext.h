@@ -93,6 +93,9 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
+  // Optimize for some simple go sentence which only need dst id.
+  // eg. GO 1 TO N STEPS FROM "A" OVER like YIELD DISTINCT like._dst
+  bool isSimple{false};
 
   ExpressionProps exprProps;
 

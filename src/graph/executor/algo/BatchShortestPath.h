@@ -16,18 +16,20 @@ class BatchShortestPath final : public ShortestPathBase {
                     std::unordered_map<std::string, std::string>* stats)
       : ShortestPathBase(node, qctx, stats) {}
 
-  folly::Future<Status> execute(const std::unordered_set<Value>& startVids,
-                                const std::unordered_set<Value>& endVids,
+  folly::Future<Status> execute(const HashSet& startVids,
+                                const HashSet& endVids,
                                 DataSet* result) override;
 
   using CustomPath = Row;
-  using PathMap = std::unordered_map<DstVid, std::unordered_map<StartVid, std::vector<CustomPath>>>;
+  using PathMap = robin_hood::unordered_flat_map<
+      DstVid,
+      robin_hood::unordered_flat_map<StartVid, std::vector<CustomPath>, std::hash<StartVid>>,
+      std::hash<DstVid>>;
 
  private:
-  size_t splitTask(const std::unordered_set<Value>& startVids,
-                   const std::unordered_set<Value>& endVids);
+  size_t splitTask(const HashSet& startVids, const HashSet& endVids);
 
-  size_t init(const std::unordered_set<Value>& startVids, const std::unordered_set<Value>& endVids);
+  size_t init(const HashSet& startVids, const HashSet& endVids);
 
   folly::Future<Status> getNeighbors(size_t rowNum, size_t stepNum, bool reverse);
 

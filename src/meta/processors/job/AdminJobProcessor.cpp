@@ -134,7 +134,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
 
   auto retCode = jobMgr_->checkNeedRecoverJobExist(spaceId_, type);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "There is a failed data balance job, need to recover it firstly!";
+    LOG(INFO) << "There is a failed data balance job, need to recover or stop it firstly!";
     return retCode;
   }
 
@@ -145,7 +145,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
   }
 
   JobDescription jobDesc(spaceId_, nebula::value(jobId), type, paras);
-  auto errorCode = jobMgr_->addJob(jobDesc, adminClient_);
+  auto errorCode = jobMgr_->addJob(std::move(jobDesc), adminClient_);
   if (errorCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
     result.job_id_ref() = nebula::value(jobId);
   }

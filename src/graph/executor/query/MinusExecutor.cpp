@@ -4,6 +4,8 @@
 
 #include "graph/executor/query/MinusExecutor.h"
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -17,7 +19,8 @@ folly::Future<Status> MinusExecutor::execute() {
   auto left = getLeftInputData();
   auto right = getRightInputData();
 
-  std::unordered_set<const Row*> hashSet;
+  robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> hashSet;
+  hashSet.reserve(right.iterRef()->size());
   for (; right.iterRef()->valid(); right.iterRef()->next()) {
     hashSet.insert(right.iterRef()->row());
     // TODO: should test duplicate rows

@@ -13,7 +13,8 @@ namespace nebula {
 namespace meta {
 
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
-  auto& snapshot = req.get_name();
+  auto& snapshots = req.get_names();
+  auto snapshot = snapshots[0];
   folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
 
   // Check snapshot is exists

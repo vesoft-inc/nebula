@@ -90,7 +90,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @param client
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode addJob(JobDescription& jobDesc, AdminClient* client);
+  nebula::cpp2::ErrorCode addJob(JobDescription jobDesc, AdminClient* client);
 
   /**
    * @brief The same job in inFlightJobs_.

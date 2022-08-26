@@ -4,6 +4,8 @@
 
 #include "graph/executor/query/DataCollectExecutor.h"
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -138,7 +140,7 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
   DataSet ds;
   ds.colNames = std::move(colNames_);
   DCHECK(!ds.colNames.empty());
-  std::unordered_set<const Row*> unique;
+  robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> unique;
   // itersHolder keep life cycle of iters util this method return.
   std::vector<std::unique_ptr<Iterator>> itersHolder;
   for (auto& var : vars) {
@@ -150,6 +152,7 @@ Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
       auto iter = hist[i].iter();
       if (iter->isSequentialIter()) {
         auto* seqIter = static_cast<SequentialIter*>(iter.get());
+        unique.reserve(seqIter->size());
         while (seqIter->valid()) {
           if (distinct && !unique.emplace(seqIter->row()).second) {
             seqIter->unstableErase();

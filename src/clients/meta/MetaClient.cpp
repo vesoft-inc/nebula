@@ -698,7 +698,7 @@ void MetaClient::getResponse(Request req,
   auto* evb = ioThreadPool_->getEventBase();
   HostAddr host;
   {
-    folly::RWSpinLock::ReadHolder holder(&hostLock_);
+    folly::SharedMutex::ReadHolder holder(&hostLock_);
     host = toLeader ? leader_ : active_;
   }
   folly::via(evb,
@@ -948,7 +948,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
       return Status::Error("Job not existed in chosen space!");
     case nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER:
-      return Status::Error("Need to recover failed data balance job firstly!");
+      return Status::Error("Need to recover or stop failed data balance job firstly!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -987,7 +987,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& local
 }
 
 void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
-  folly::RWSpinLock::WriteHolder holder(listenerLock_);
+  folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
     return;
@@ -1048,7 +1048,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 }
 
 void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newCache) {
-  folly::RWSpinLock::WriteHolder holder(listenerLock_);
+  folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
     return;
@@ -1147,7 +1147,7 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
 }
 
 void MetaClient::loadRemoteListeners() {
-  folly::RWSpinLock::WriteHolder holder(listenerLock_);
+  folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
     return;
@@ -2284,7 +2284,7 @@ StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, P
   }
 
   {
-    folly::RWSpinLock::ReadHolder holder(leadersLock_);
+    folly::SharedMutex::ReadHolder holder(leadersLock_);
     auto iter = leadersInfo_.leaderMap_.find({spaceId, partId});
     if (iter != leadersInfo_.leaderMap_.end()) {
       return iter->second;
@@ -2297,7 +2297,7 @@ StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, P
       return partHostsRet.status();
     }
     auto partHosts = partHostsRet.value();
-    folly::RWSpinLock::WriteHolder wh(leadersLock_);
+    folly::SharedMutex::WriteHolder wh(leadersLock_);
     VLOG(1) << "No leader exists. Choose one in round-robin.";
     auto index = (leadersInfo_.pickedIndex_[{spaceId, partId}] + 1) % partHosts.hosts_.size();
     auto picked = partHosts.hosts_[index];
@@ -2311,13 +2311,13 @@ void MetaClient::updateStorageLeader(GraphSpaceID spaceId,
                                      PartitionID partId,
                                      const HostAddr& leader) {
   VLOG(1) << "Update the leader for [" << spaceId << ", " << partId << "] to " << leader;
-  folly::RWSpinLock::WriteHolder holder(leadersLock_);
+  folly::SharedMutex::WriteHolder holder(leadersLock_);
   leadersInfo_.leaderMap_[{spaceId, partId}] = leader;
 }
 
 void MetaClient::invalidStorageLeader(GraphSpaceID spaceId, PartitionID partId) {
   VLOG(1) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
-  folly::RWSpinLock::WriteHolder holder(leadersLock_);
+  folly::SharedMutex::WriteHolder holder(leadersLock_);
   leadersInfo_.leaderMap_.erase({spaceId, partId});
 }
 
@@ -2325,7 +2325,7 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(leadersLock_);
+  folly::SharedMutex::ReadHolder holder(leadersLock_);
   return leadersInfo_;
 }
 
@@ -2496,7 +2496,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       listener_->fetchLeaderInfo(leaderIds);
       if (leaderIds_ != leaderIds) {
         {
-          folly::RWSpinLock::WriteHolder holder(leaderIdsLock_);
+          folly::SharedMutex::WriteHolder holder(leaderIdsLock_);
           leaderIds_.clear();
           leaderIds_ = leaderIds;
         }
@@ -2511,7 +2511,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       listener_->fetchDiskParts(diskParts);
       if (diskParts_ != diskParts) {
         {
-          folly::RWSpinLock::WriteHolder holder(&diskPartsLock_);
+          folly::SharedMutex::WriteHolder holder(&diskPartsLock_);
           diskParts_.clear();
           diskParts_ = diskParts;
         }
@@ -2792,7 +2792,8 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
 
 folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
   cpp2::DropSnapshotReq req;
-  req.name_ref() = name;
+  std::vector<std::string> names{name};
+  req.names_ref() = names;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3007,7 +3008,7 @@ bool MetaClient::loadCfg() {
     }
     {
       // For any configurations that is in meta, update in cache to replace previous value
-      folly::RWSpinLock::WriteHolder holder(configCacheLock_);
+      folly::SharedMutex::WriteHolder holder(configCacheLock_);
       for (const auto& entry : metaConfigMap) {
         auto& key = entry.first;
         auto it = metaConfigMap_.find(key);
@@ -3107,7 +3108,7 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
     // todo(doodle): in worst case, storage and meta isolated, so graph may get a outdate
     // leader info. The problem could be solved if leader term are cached as well.
     LOG(INFO) << "Load leader ok";
-    folly::RWSpinLock::WriteHolder wh(leadersLock_);
+    folly::SharedMutex::WriteHolder wh(leadersLock_);
     leadersInfo_ = std::move(leaderInfo);
   }
 }
