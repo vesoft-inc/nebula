@@ -72,6 +72,7 @@ nebula::cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::Sca
       return nullptr;
     }
   });
+  buildEdgeTTLInfo();
   return ret;
 }
 
