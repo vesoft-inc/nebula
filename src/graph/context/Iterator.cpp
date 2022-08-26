@@ -440,7 +440,7 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
     return Value::kNullValue;
   }
 
-  auto vidVal = getColumn(nebula::kVid);
+  auto vidVal = getColumn(0);
   if (UNLIKELY(!SchemaUtil::isValidVid(vidVal))) {
     return Value::kNullBadType;
   }
@@ -502,12 +502,13 @@ Value GetNeighborsIter::getEdge() const {
   edge.name = edgeName;
 
   auto type = getEdgeProp(edgeName, kType);
-  if (!type.isInt()) {
-    return Value::kNullBadType;
+  if (type.isInt()) {
+    edge.type = type.getInt();
+  } else {
+    edge.type = 0;
   }
-  edge.type = type.getInt();
 
-  auto& srcVal = getColumn(kVid);
+  auto& srcVal = getColumn(0);
   if (!SchemaUtil::isValidVid(srcVal)) {
     return Value::kNullBadType;
   }
@@ -520,10 +521,11 @@ Value GetNeighborsIter::getEdge() const {
   edge.dst = dstVal;
 
   auto& rank = getEdgeProp(edgeName, kRank);
-  if (!rank.isInt()) {
-    return Value::kNullBadType;
+  if (rank.isInt()) {
+    edge.ranking = rank.getInt();
+  } else {
+    edge.ranking = 0;
   }
-  edge.ranking = rank.getInt();
 
   auto& edgePropMap = currentDs_->edgePropsMap;
   auto edgeProp = edgePropMap.find(currentEdgeName());
@@ -535,7 +537,7 @@ Value GetNeighborsIter::getEdge() const {
   DCHECK_EQ(edgeNamePropList.size(), propList.size());
   for (size_t i = 0; i < propList.size(); ++i) {
     auto propName = edgeNamePropList[i];
-    if (propName == kSrc || propName == kDst || propName == kRank || propName == kType) {
+    if (propName == kDst || propName == kRank || propName == kType || propName == kSrc) {
       continue;
     }
     edge.props.emplace(edgeNamePropList[i], propList[i]);
