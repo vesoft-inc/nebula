@@ -88,19 +88,6 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
         }
         break;
       }
-      // [e IN $-.e WHERE is_edge($e)] AS e
-      // PathBuild[$-.v,$-.e,$-.v2] AS p
-      case Expression::Kind::kSubscript:
-      case Expression::Kind::kPathBuild:
-      case Expression::Kind::kListComprehension: {
-        if (propsUsed_.hasAlias(alias)) {
-          status_ = extractPropsFromExpr(expr);
-          if (!status_.ok()) {
-            return;
-          }
-        }
-        break;
-      }
       default: {
         status_ = extractPropsFromExpr(expr);
         if (!status_.ok()) {
@@ -361,53 +348,6 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
 
 void PrunePropertiesVisitor::visit(BiCartesianProduct *node) {
   status_ = pruneMultiBranch(node->dependencies());
-}
-
-void PrunePropertiesVisitor::visit(Union *node) {
-  status_ = pruneMultiBranch(node->dependencies());
-}
-
-void PrunePropertiesVisitor::visit(Unwind *node) {
-  visitCurrent(node);
-  status_ = depsPruneProperties(node->dependencies());
-}
-
-void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
-  const auto &alias = node->alias();
-  if (propsUsed_.hasAlias(alias)) {
-    status_ = extractPropsFromExpr(node->unwindExpr());
-    if (!status_.ok()) {
-      return;
-    }
-  }
-}
-
-Status PrunePropertiesVisitor::pruneMultiBranch(std::vector<const PlanNode *> &dependencies) {
-  DCHECK_EQ(dependencies.size(), 2);
-  auto rightPropsUsed = propsUsed_;
-  auto *leftDep = dependencies.front();
-  const_cast<PlanNode *>(leftDep)->accept(this);
-  if (!status_.ok()) {
-    return status_;
-  }
-  rootNode_ = true;
-  propsUsed_ = std::move(rightPropsUsed);
-  auto *rightDep = dependencies.back();
-  const_cast<PlanNode *>(rightDep)->accept(this);
-  if (!status_.ok()) {
-    return status_;
-  }
-  return Status::OK();
-}
-
-Status PrunePropertiesVisitor::depsPruneProperties(std::vector<const PlanNode *> &dependencies) {
-  for (const auto *dep : dependencies) {
-    const_cast<PlanNode *>(dep)->accept(this);
-    if (!status_.ok()) {
-      return status_;
-    }
-  }
-  return Status::OK();
 }
 
 void PrunePropertiesVisitor::visit(Union *node) {

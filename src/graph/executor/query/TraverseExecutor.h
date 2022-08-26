@@ -39,8 +39,8 @@ using Paths = std::vector<Row>;
 struct JobResult {
   // Newly traversed paths size
   size_t pathCnt{0};
-  // Request dataset for next traverse
-  DataSet reqDs;
+  // Request vids for next traverse
+  std::unordered_set<Value> vids;
   // Newly traversed paths
   std::unordered_map<Dst, Paths> newPaths;
 };
@@ -57,7 +57,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   Status close() override;
 
  private:
-  Status buildRequestDataSet();
+  Status buildRequestVids();
 
   folly::Future<Status> traverse();
 
@@ -104,13 +104,12 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
  private:
   ObjectPool objPool_;
-  DataSet reqDs_;
+  std::unordered_set<Value> vids_;
   const Traverse* traverse_{nullptr};
   MatchStepRange* range_{nullptr};
   size_t currentStep_{0};
   std::list<std::unordered_map<Dst, Paths>> paths_;
   size_t totalPathCnt_{0};
-  folly::ConcurrentHashMap<Dst, uint8_t> uniqueDsts_;
 };
 
 }  // namespace graph

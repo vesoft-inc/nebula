@@ -163,7 +163,10 @@ class StorageAccessExecutor : public Executor {
                                                  bool dedup,
                                                  bool isCypher = false);
 
-  StatusOr<List> buildRequestListByVidType(Iterator *iter, Expression *expr, bool dedup);
+  StatusOr<std::vector<Value>> buildRequestListByVidType(Iterator *iter,
+                                                         Expression *expr,
+                                                         bool dedup,
+                                                         bool isCypher = false);
 };
 
 }  // namespace graph
