@@ -7,7 +7,7 @@
 
 #include "version/Version.h"
 
-DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
+DEFINE_int32(port, 3699, "NebulaGraph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs,
              28800,
              "The number of seconds Nebula service waits before closing the idle connections");

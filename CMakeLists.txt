@@ -21,7 +21,7 @@
 cmake_minimum_required(VERSION 3.9.0)
 
 # Set the project name
-project("Nebula Graph" C CXX)
+project("NebulaGraph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)

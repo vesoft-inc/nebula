@@ -1,6 +1,6 @@
 # Overview
 
-This document handles **Nebula Graph** installation, and all the operations are done on single hosts.
+This document handles **NebulaGraph** installation, and all the operations are done on single hosts.
 
 Firstly, you need to create the config files for the three daemons in the `conf` directory based on their `*.default` counterparts.
 

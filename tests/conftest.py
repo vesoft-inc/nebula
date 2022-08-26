@@ -58,11 +58,11 @@ def pytest_addoption(parser):
     parser.addoption("--build_dir",
                      dest="build_dir",
                      default=BUILD_DIR,
-                     help="Nebula Graph CMake build directory")
+                     help="NebulaGraph CMake build directory")
     parser.addoption("--src_dir",
                      dest="src_dir",
                      default=NEBULA_HOME,
-                     help="Nebula Graph workspace")
+                     help="NebulaGraph workspace")
 
 
 def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func_args):
