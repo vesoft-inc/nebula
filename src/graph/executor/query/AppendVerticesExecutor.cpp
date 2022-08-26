@@ -9,7 +9,7 @@
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
-
+DECLARE_bool(optimize_appendvertices);
 namespace nebula {
 namespace graph {
 folly::Future<Status> AppendVerticesExecutor::execute() {
@@ -26,11 +26,19 @@ DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
 
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
-
   auto *av = asNode<AppendVertices>(node());
-  StorageClient *storageClient = qctx()->getStorageClient();
+  if (FLAGS_optimize_appendvertices && av != nullptr && av->props() == nullptr) {
+    return handleNullProp(av);
+  }
 
+<<<<<<< HEAD
   DataSet vertices = buildRequestDataSet(av);
+=======
+  StorageClient *storageClient = qctx()->getStorageClient();
+  auto res = buildRequestDataSet(av);
+  NG_RETURN_IF_ERROR(res);
+  auto vertices = std::move(res).value();
+>>>>>>> decd85339 (Prune properties (#4523))
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
@@ -65,6 +73,39 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
           return handleRespMultiJobs(std::move(rpcResp));
         }
       });
+}
+
+Status AppendVerticesExecutor::handleNullProp(const AppendVertices *av) {
+  auto iter = ectx_->getResult(av->inputVar()).iter();
+  auto *src = av->src();
+
+  auto size = iter->size();
+  DataSet ds;
+  ds.colNames = av->colNames();
+  ds.rows.reserve(size);
+
+  QueryExpressionContext ctx(ectx_);
+  bool canBeMoved = movable(av->inputVars().front());
+
+  for (; iter->valid(); iter->next()) {
+    const auto &vid = src->eval(ctx(iter.get()));
+    if (vid.empty()) {
+      continue;
+    }
+    Vertex vertex;
+    vertex.vid = vid;
+    if (!av->trackPrevPath()) {
+      Row row;
+      row.values.emplace_back(std::move(vertex));
+      ds.rows.emplace_back(std::move(row));
+    } else {
+      Row row;
+      row = canBeMoved ? iter->moveRow() : *iter->row();
+      row.values.emplace_back(std::move(vertex));
+      ds.rows.emplace_back(std::move(row));
+    }
+  }
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 Status AppendVerticesExecutor::handleResp(

@@ -753,6 +753,8 @@ class Union final : public SetOp {
     return qctx->objPool()->makeAndAdd<Union>(qctx, left, right);
   }
 
+  void accept(PlanNodeVisitor* visitor) override;
+
   PlanNode* clone() const override;
 
  private:
@@ -837,12 +839,14 @@ class Unwind final : public SingleInputNode {
     return unwindExpr_;
   }
 
-  const std::string alias() const {
+  const std::string& alias() const {
     return alias_;
   }
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   friend ObjectPool;

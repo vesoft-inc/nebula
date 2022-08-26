@@ -301,6 +301,10 @@ void Union::cloneMembers(const Union& f) {
   SetOp::cloneMembers(f);
 }
 
+void Union::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 PlanNode* Intersect::clone() const {
   auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
   newIntersect->cloneMembers(*this);
@@ -378,6 +382,10 @@ void Unwind::cloneMembers(const Unwind& p) {
 
   unwindExpr_ = p.unwindExpr()->clone();
   alias_ = p.alias();
+}
+
+void Unwind::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {
