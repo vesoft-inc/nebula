@@ -5,7 +5,10 @@
 #ifndef GRAPH_EXECUTOR_ALGO_MULTISHORTESTPATHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_MULTISHORTESTPATHEXECUTOR_H_
 
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
+
 // MultiShortestPath has two inputs.  GetNeighbors(From) & GetNeighbors(To)
 // There are two Main functions
 // First : Get the next vid for GetNeighbors to expand
@@ -58,7 +61,10 @@ class MultiShortestPathExecutor final : public Executor {
 
  private:
   // key: dst, value: {key : src, value: paths}
-  using Interims = std::unordered_map<Value, std::unordered_map<Value, std::vector<Path>>>;
+  using Interims = robin_hood::unordered_flat_map<
+      Value,
+      robin_hood::unordered_flat_map<Value, std::vector<Path>, std::hash<Value>>,
+      std::hash<Value>>;
 
   void init();
   std::vector<Path> createPaths(const std::vector<Path>& paths, const Edge& edge);

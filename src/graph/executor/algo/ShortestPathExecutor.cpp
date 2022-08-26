@@ -22,8 +22,8 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   DataSet result;
   result.colNames = pathNode_->colNames();
 
-  std::unordered_set<Value> startVids;
-  std::unordered_set<Value> endVids;
+  HashSet startVids;
+  HashSet endVids;
   size_t rowSize = checkInput(startVids, endVids);
   std::unique_ptr<ShortestPathBase> pathPtr = nullptr;
   if (rowSize <= FLAGS_num_path_thread) {
@@ -36,8 +36,7 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
-size_t ShortestPathExecutor::checkInput(std::unordered_set<Value>& startVids,
-                                        std::unordered_set<Value>& endVids) {
+size_t ShortestPathExecutor::checkInput(HashSet& startVids, HashSet& endVids) {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
   const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
   for (; iter->valid(); iter->next()) {

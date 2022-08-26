@@ -25,11 +25,14 @@
   </a>
 </p>
 
-# NebulaGraph是什么？
-
+# NebulaGraph 是什么？
 
 
 **NebulaGraph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
+
+已陆续被包括在 **BAT**, **TMD** 中的众多知名大厂和大量国内外中小企业使用，<br />
+广泛应用在社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等。<br />
+https://nebula-graph.com.cn/cases
 
 与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
 
@@ -42,9 +45,11 @@
 
 ## 发布通告
 
-v1.x和v2.5.x之后的版本，NebulaGraph在这个repo管理。如需获取v2.0.0到v2.5.x之间的版本，请访问[NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph)。
+v1.x 和 v2.5.x 之后的版本，NebulaGraph 在这个 repo 管理。<br />
+如需获取 v2.0.0 到 v2.5.x 之间的版本，请访问 [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph)。
 
-NebulaGraph 1.x 后续不再进行功能的更新，请升级到2.0版本中。NebulaGraph内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
+NebulaGraph 1.x 后续不再进行功能的更新，请升级到 2.0+ 版本。<br />
+NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
 
 <!--
 如需使用稳定版本，请参见[NebulaGraph 1.0](https://github.com/vesoft-inc/nebula)。
@@ -89,7 +94,8 @@ NebulaGraph 1.x 后续不再进行功能的更新，请升级到2.0版本中。N
 
 ## 许可证
 
-**NebulaGraph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。您还可以将 **NebulaGraph** 作为后端服务部署以支持您的 SaaS 部署。
+**NebulaGraph** 使用 [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证，您可以免费下载，修改以及部署源代码。<br />
+您还可以将 **NebulaGraph** 作为后端服务部署以支持您的 SaaS 部署。
 
 ## 联系方式
 
