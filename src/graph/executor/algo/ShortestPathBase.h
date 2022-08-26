@@ -4,6 +4,8 @@
 #ifndef GRAPH_EXECUTOR_ALGO_SHORTESTPATHBASE_H_
 #define GRAPH_EXECUTOR_ALGO_SHORTESTPATHBASE_H_
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Algo.h"
 
 using nebula::storage::StorageRpcResponse;
@@ -14,6 +16,7 @@ namespace nebula {
 namespace graph {
 class ShortestPathBase {
  public:
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
   ShortestPathBase(const ShortestPath* node,
                    QueryContext* qctx,
                    std::unordered_map<std::string, std::string>* stats)
@@ -24,8 +27,8 @@ class ShortestPathBase {
 
   virtual ~ShortestPathBase() {}
 
-  virtual folly::Future<Status> execute(const std::unordered_set<Value>& startVids,
-                                        const std::unordered_set<Value>& endVids,
+  virtual folly::Future<Status> execute(const HashSet& startVids,
+                                        const HashSet& endVids,
                                         DataSet* result) = 0;
 
   using DstVid = Value;

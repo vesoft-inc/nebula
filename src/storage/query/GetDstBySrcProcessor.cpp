@@ -11,6 +11,9 @@
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
 
+DEFINE_uint64(concurrent_dedup_threshold, 50000000, "concurrent dedup threshold");
+DEFINE_uint64(max_dedup_threads, 6, "max dedup threads");
+
 namespace nebula {
 namespace storage {
 
@@ -228,15 +231,18 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
 
 void GetDstBySrcProcessor::onProcessFinished() {
   // dedup the dsts before we return
-  static constexpr auto kConcurrentThreshold = 50000000UL;
-  static constexpr auto kMaxThreads = 6UL;
+  static const auto kConcurrentThreshold = FLAGS_concurrent_dedup_threshold;
+  static const auto kMaxThreads = FLAGS_max_dedup_threads;
   auto nRows = flatResult_.values.size();
   std::vector<Row> deduped;
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
   if (nRows < kConcurrentThreshold * 2) {
-    std::unordered_set<Value> unique;
+    HashSet unique;
+    unique.reserve(nRows);
     for (const auto& val : flatResult_.values) {
       unique.emplace(val);
     }
+    deduped.reserve(unique.size());
     for (const auto& val : unique) {
       deduped.emplace_back(Row({val}));
     }
@@ -255,8 +261,6 @@ void GetDstBySrcProcessor::onProcessFinished() {
     nebula::thread::GenericThreadPool pool;
     pool.start(nThreads, "deduper");
 
-    // using HashSet = std::unordered_set<const Row*>;
-    using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
     std::vector<HashSet> sets;
     sets.resize(nThreads);
     for (auto& set : sets) {

@@ -12,8 +12,8 @@ using nebula::storage::StorageClient;
 DECLARE_uint32(num_path_thread);
 namespace nebula {
 namespace graph {
-folly::Future<Status> BatchShortestPath::execute(const std::unordered_set<Value>& startVids,
-                                                 const std::unordered_set<Value>& endVids,
+folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
+                                                 const HashSet& endVids,
                                                  DataSet* result) {
   size_t rowSize = init(startVids, endVids);
   std::vector<folly::Future<Status>> futures;
@@ -36,8 +36,7 @@ folly::Future<Status> BatchShortestPath::execute(const std::unordered_set<Value>
       });
 }
 
-size_t BatchShortestPath::init(const std::unordered_set<Value>& startVids,
-                               const std::unordered_set<Value>& endVids) {
+size_t BatchShortestPath::init(const HashSet& startVids, const HashSet& endVids) {
   size_t rowSize = splitTask(startVids, endVids);
 
   leftVids_.reserve(rowSize);
@@ -349,7 +348,7 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
     if (vertices.empty()) {
       return false;
     }
-    std::unordered_map<Value, Value> verticesMap;
+    robin_hood::unordered_flat_map<Value, Value, std::hash<Value>> verticesMap;
     for (auto& vertex : vertices) {
       verticesMap[vertex.getVertex().vid] = std::move(vertex);
     }
@@ -473,8 +472,7 @@ void BatchShortestPath::setNextStepVid(const PathMap& paths, size_t rowNum, bool
   }
 }
 
-size_t BatchShortestPath::splitTask(const std::unordered_set<Value>& startVids,
-                                    const std::unordered_set<Value>& endVids) {
+size_t BatchShortestPath::splitTask(const HashSet& startVids, const HashSet& endVids) {
   size_t threadNum = FLAGS_num_path_thread;
   size_t startVidsSize = startVids.size();
   size_t endVidsSize = endVids.size();

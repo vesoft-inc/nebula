@@ -5,6 +5,8 @@
 #ifndef GRAPH_EXECUTOR_ALGO_SUBGRAPHEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_SUBGRAPHEXECUTOR_H_
 
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
 
 // Subgraph receive result from GetNeighbors
@@ -45,7 +47,7 @@ class SubgraphExecutor : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  std::unordered_map<Value, int64_t> historyVids_;
+  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> historyVids_;
 };
 
 }  // namespace graph
