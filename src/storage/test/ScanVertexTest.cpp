@@ -501,6 +501,56 @@ TEST(ScanVertexTest, FilterTest) {
   }
 }
 
+TEST(ScanVertexTest, TtlTest) {
+  FLAGS_mock_ttl_col = true;
+
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    size_t totalRowCount = 0;
+    auto tag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    for (PartitionID partId = 1; partId <= totalParts; partId++) {
+      auto req = buildRequest({partId}, {""}, {tag});
+      auto* processor = ScanVertexProcessor::instance(env, nullptr);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+
+      ASSERT_EQ(0, resp.result.failed_parts.size());
+      checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    }
+    CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+  }
+  sleep(FLAGS_mock_ttl_duration + 1);
+  {
+    LOG(INFO) << "TTL expired, same request but no data returned";
+    auto tag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    for (PartitionID partId = 1; partId <= totalParts; partId++) {
+      auto req = buildRequest({partId}, {""}, {tag});
+      auto* processor = ScanVertexProcessor::instance(env, nullptr);
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+
+      ASSERT_EQ(0, resp.result.failed_parts.size());
+      ASSERT_TRUE(resp.get_props()->rows.empty());
+    }
+  }
+
+  FLAGS_mock_ttl_col = false;
+}
+
 }  // namespace storage
 }  // namespace nebula
 
