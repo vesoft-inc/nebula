@@ -205,30 +205,30 @@ Feature: single shortestPath
       """
       MATCH (a:player{name:"Tim Duncan"}), (b:team)
       MATCH p = shortestPath( (a)-[e:serve*..3]-(b) )
-      RETURN b, length(p)
+      RETURN length(p)
       """
     Then the result should be, in any order, with relax comparison:
-      | b                                              | length(p) |
-      | ("76ers" :team{name: "76ers"})                 | 3         |
-      | ("Grizzlies" :team{name: "Grizzlies"})         | 3         |
-      | ("Spurs" :team{name: "Spurs"})                 | 1         |
-      | ("Bulls" :team{name: "Bulls"})                 | 3         |
-      | ("Cavaliers" :team{name: "Cavaliers"})         | 3         |
-      | ("Celtics" :team{name: "Celtics"})             | 3         |
-      | ("Pacers" :team{name: "Pacers"})               | 3         |
-      | ("Hawks" :team{name: "Hawks"})                 | 3         |
-      | ("Lakers" :team{name: "Lakers"})               | 3         |
-      | ("Raptors" :team{name: "Raptors"})             | 3         |
-      | ("Warriors" :team{name: "Warriors"})           | 3         |
-      | ("Hornets" :team{name: "Hornets"})             | 3         |
-      | ("Kings" :team{name: "Kings"})                 | 3         |
-      | ("Pistons" :team{name: "Pistons"})             | 3         |
-      | ("Rockets" :team{name: "Rockets"})             | 3         |
-      | ("Suns" :team{name: "Suns"})                   | 3         |
-      | ("Trail Blazers" :team{name: "Trail Blazers"}) | 3         |
-      | ("Bucks" :team{name: "Bucks"})                 | 3         |
-      | ("Jazz" :team{name: "Jazz"})                   | 3         |
-      | ("Magic" :team{name: "Magic"})                 | 3         |
+      | length(p) |
+      | 3         |
+      | 3         |
+      | 1         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
+      | 3         |
     When executing query:
       """
       MATCH (b:team), (a:player{age:30})
