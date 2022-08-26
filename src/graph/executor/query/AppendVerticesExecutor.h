@@ -28,6 +28,8 @@ class AppendVerticesExecutor final : public GetPropExecutor {
 
   Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
 
+  Status handleNullProp(const AppendVertices *av);
+
   folly::Future<Status> handleRespMultiJobs(
       storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
 

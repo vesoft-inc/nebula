@@ -313,6 +313,8 @@ class BiCartesianProduct final : public BinaryInputNode {
 
   PlanNode* clone() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   friend ObjectPool;
 

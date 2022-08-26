@@ -63,20 +63,23 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   void pruneCurrent(AppendVertices *node);
 
   void visit(BiJoin *node) override;
-  // \param node, the current node to visit
-  // \param used, whether properties in current node are used
-  void visitCurrent(BiJoin *node);
+
+  void visit(Union *node) override;
+  void visit(BiCartesianProduct *node) override;
+
+  void visit(Unwind *node) override;
+  void visitCurrent(Unwind *node);
 
  private:
   Status depsPruneProperties(std::vector<const PlanNode *> &dependencies);
+  Status pruneMultiBranch(std::vector<const PlanNode *> &dependencies);
   Status extractPropsFromExpr(const Expression *expr, const std::string &entityAlias = "");
 
   PropertyTracker &propsUsed_;
   QueryContext *qctx_;
   GraphSpaceID spaceID_;
   Status status_;
-  // force use all properties in current node, e.g. the root node in plan
-  bool used_{true};
+  bool rootNode_{true};
 };
 
 }  // namespace graph
