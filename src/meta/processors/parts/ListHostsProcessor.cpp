@@ -5,6 +5,7 @@
 
 #include "meta/processors/parts/ListHostsProcessor.h"
 
+#include "common/utils/Utils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "version/Version.h"
@@ -83,17 +84,25 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     LOG(INFO) << "List Hosts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
-  auto metaPeers = nebula::value(errOrPart)->peers();
+  auto part = nebula::value(errOrPart);
+  auto metaPeers = part->peers();
   // transform raft port to severe port
   for (auto& metaHost : metaPeers) {
     metaHost = Utils::getStoreAddrFromRaftAddr(metaHost);
   }
   for (auto& host : metaPeers) {
     cpp2::HostItem item;
+    // Leader it self must be online
+    auto partAddr = Utils::getRaftAddrFromStoreAddr(host);
+    item.status_ref() = cpp2::HostStatus::ONLINE;
+    if (partAddr != part->address()) {
+      if (!part->checkAlive(partAddr)) {
+        item.status_ref() = cpp2::HostStatus::OFFLINE;
+      }
+    }
     item.hostAddr_ref() = std::move(host);
     item.role_ref() = cpp2::HostRole::META;
     item.git_info_sha_ref() = gitInfoSha();
-    item.status_ref() = cpp2::HostStatus::ONLINE;
     item.version_ref() = getOriginVersion();
     hostItems_.emplace_back(item);
   }
