@@ -18,8 +18,16 @@ namespace storage {
 
 class QueryUtils final {
  public:
-  static inline bool vTrue(const Value& v) {
-    return v.isBool() && v.getBool();
+  // The behavior keep same with filter executor
+  static inline StatusOr<bool> vTrue(const Value& val) {
+    if (val.isBadNull() || (!val.empty() && !val.isBool() && !val.isNull())) {
+      return Status::Error("Wrong type result, the type should be NULL, EMPTY or BOOL");
+    }
+    if (val.empty() || val.isNull() || !val.getBool()) {
+      return false;
+    } else {
+      return true;
+    }
   }
 
   enum class ReturnColType : uint16_t {
