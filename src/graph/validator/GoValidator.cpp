@@ -193,7 +193,7 @@ Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
     }
     auto name = e->toString();
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-    std::unordered_set<std::string> colNames({"id($$)", "id($^)", "rank(edge)", "type(edge)"});
+    std::unordered_set<std::string> colNames({"id($$)", "id($^)", "rank(edge)", "typeid(edge)"});
     if (colNames.find(name) != colNames.end()) {
       return true;
     }
@@ -207,7 +207,7 @@ Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
     if (name == "id($$)") {
       return EdgeDstIdExpression::make(pool, "*");
     } else if (name == "id($^)") {
-      return EdgeDstIdExpression::make(pool, "*");
+      return EdgeSrcIdExpression::make(pool, "*");
     } else if (name == "rank(edge)") {
       return EdgeRankExpression::make(pool, "*");
     } else {
