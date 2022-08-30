@@ -21,10 +21,10 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   auto *gv = asNode<GetVertices>(node());
   StorageClient *storageClient = qctx()->getStorageClient();
 
-  auto res = buildRequestDataSet(gv);
+  auto res = buildRequestVids(gv);
   NG_RETURN_IF_ERROR(res);
-  auto vertices = std::move(res).value();
-  if (vertices.rows.empty()) {
+  auto vids = std::move(res).value();
+  if (vids.empty()) {
     // TODO: add test for empty input.
     return finish(
         ResultBuilder().value(Value(DataSet(gv->colNames()))).iter(Iterator::Kind::kProp).build());
@@ -37,7 +37,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                                           qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
-                 std::move(vertices),
+                 std::move(vids),
                  gv->props(),
                  nullptr,
                  gv->exprs(),
@@ -57,14 +57,14 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
       });
 }
 
-StatusOr<DataSet> GetVerticesExecutor::buildRequestDataSet(const GetVertices *gv) {
+StatusOr<std::vector<Value>> GetVerticesExecutor::buildRequestVids(const GetVertices *gv) {
   if (gv == nullptr) {
-    return nebula::DataSet({kVid});
+    return std::vector<Value>();
   }
   // Accept Table such as | $a | $b | $c |... as input which one column indicate
   // src
   auto valueIter = ectx_->getResult(gv->inputVar()).iter();
-  return buildRequestDataSetByVidType(valueIter.get(), gv->src(), gv->dedup());
+  return buildRequestListByVidType(valueIter.get(), gv->src(), gv->dedup());
 }
 
 }  // namespace graph

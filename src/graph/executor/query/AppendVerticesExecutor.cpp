@@ -16,12 +16,12 @@ folly::Future<Status> AppendVerticesExecutor::execute() {
   return appendVertices();
 }
 
-StatusOr<DataSet> AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
+StatusOr<std::vector<Value>> AppendVerticesExecutor::buildRequestVids(const AppendVertices *av) {
   if (av == nullptr) {
-    return nebula::DataSet({kVid});
+    return std::vector<Value>();
   }
   auto valueIter = ectx_->getResult(av->inputVar()).iter();
-  return buildRequestDataSetByVidType(valueIter.get(), av->src(), av->dedup(), true);
+  return buildRequestListByVidType(valueIter.get(), av->src(), av->dedup(), true);
 }
 
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
@@ -32,10 +32,10 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   }
 
   StorageClient *storageClient = qctx()->getStorageClient();
-  auto res = buildRequestDataSet(av);
+  auto res = buildRequestVids(av);
   NG_RETURN_IF_ERROR(res);
-  auto vertices = std::move(res).value();
-  if (vertices.rows.empty()) {
+  auto vids = std::move(res).value();
+  if (vids.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
 
@@ -47,7 +47,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
-                 std::move(vertices),
+                 std::move(vids),
                  av->props(),
                  nullptr,
                  av->exprs(),

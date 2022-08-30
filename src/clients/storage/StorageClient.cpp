@@ -222,7 +222,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
 
 StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
     const CommonRequestParam& param,
-    const DataSet& input,
+    const std::vector<Value>& vids,
     const std::vector<cpp2::VertexProp>* vertexProps,
     const std::vector<cpp2::EdgeProp>* edgeProps,
     const std::vector<cpp2::Expr>* expressions,

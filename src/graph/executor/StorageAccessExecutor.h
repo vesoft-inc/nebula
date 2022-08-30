@@ -158,11 +158,6 @@ class StorageAccessExecutor : public Executor {
 
   bool isIntVidType(const SpaceInfo &space) const;
 
-  StatusOr<DataSet> buildRequestDataSetByVidType(Iterator *iter,
-                                                 Expression *expr,
-                                                 bool dedup,
-                                                 bool isCypher = false);
-
   StatusOr<std::vector<Value>> buildRequestListByVidType(Iterator *iter,
                                                          Expression *expr,
                                                          bool dedup,
