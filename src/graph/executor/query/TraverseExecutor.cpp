@@ -26,7 +26,7 @@ folly::Future<Status> TraverseExecutor::execute() {
 
 Status TraverseExecutor::close() {
   // clear the members
-  std::unordered_set<Value>().swap(vids_);
+  vids_.clear();
   return Executor::close();
 }
 
@@ -43,7 +43,7 @@ Status TraverseExecutor::buildRequestVids() {
   auto* src = traverse_->src();
 
   QueryExpressionContext ctx(ectx_);
-  std::unordered_map<Value, Paths> prev;
+  HashMap prev;
 
   bool mv = movable(traverse_->inputVars().front());
   for (; iter->valid(); iter->next()) {
@@ -205,7 +205,7 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
 Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   size_t count = 0;
 
-  const std::unordered_map<Value, Paths>& prev = paths_.back();
+  const auto& prev = paths_.back();
   if (currentStep_ == 1 && zeroStep()) {
     paths_.emplace_back();
     NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
@@ -216,7 +216,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     }
   }
   paths_.emplace_back();
-  std::unordered_map<Value, Paths>& current = paths_.back();
+  auto& current = paths_.back();
 
   auto* vFilter = traverse_->vFilter();
   auto* eFilter = traverse_->eFilter();
@@ -236,7 +236,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       }
     }
     auto& dst = iter->getEdgeProp("*", kDst);
-    if (dst.type() == nebula::Value::kEmpty) {
+    if (dst.type() == Value::Type::__EMPTY__) {
       // no edge return Empty
       continue;
     }
@@ -283,7 +283,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
 folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
     std::unique_ptr<GetNeighborsIter> iter) {
   size_t pathCnt = 0;
-  const std::unordered_map<Value, Paths>* prev = &paths_.back();
+  const auto* prev = &paths_.back();
   if (currentStep_ == 1 && zeroStep()) {
     paths_.emplace_back();
     NG_RETURN_IF_ERROR(handleZeroStep(*prev, iter->getVertices(), paths_.back(), pathCnt));
@@ -301,7 +301,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
   };
 
   auto gather = [this, pathCnt](std::vector<StatusOr<JobResult>> results) mutable -> Status {
-    std::unordered_map<Value, Paths>& current = paths_.back();
+    auto& current = paths_.back();
     size_t mapCnt = 0;
     for (auto& r : results) {
       if (!r.ok()) {
@@ -335,7 +335,7 @@ folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
 StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
                                                 size_t end,
                                                 Iterator* iter,
-                                                const std::unordered_map<Value, Paths>& prev) {
+                                                const HashMap& prev) {
   // Handle edges from begin to end, [begin, end)
   JobResult jobResult;
   size_t& pathCnt = jobResult.pathCnt;
@@ -343,7 +343,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
   QueryExpressionContext ctx(ectx_);
   auto* vFilter = traverse_->vFilter() ? traverse_->vFilter()->clone() : nullptr;
   auto* eFilter = traverse_->eFilter() ? traverse_->eFilter()->clone() : nullptr;
-  std::unordered_map<Value, Paths>& current = jobResult.newPaths;
+  auto& current = jobResult.newPaths;
   for (; iter->valid() && begin++ < end; iter->next()) {
     if (vFilter != nullptr && currentStep_ == 1) {
       const auto& vFilterVal = vFilter->eval(ctx(iter));
@@ -395,9 +395,7 @@ StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
   return jobResult;
 }
 
-void TraverseExecutor::buildPath(std::unordered_map<Dst, std::vector<Row>>& currentPaths,
-                                 const Value& dst,
-                                 Row&& path) {
+void TraverseExecutor::buildPath(HashMap& currentPaths, const Value& dst, Row&& path) {
   auto pathToDstFound = currentPaths.find(dst);
   if (pathToDstFound == currentPaths.end()) {
     Paths interimPaths;
@@ -460,11 +458,11 @@ void TraverseExecutor::releasePrevPaths(size_t cnt) {
   }
 }
 
-Status TraverseExecutor::handleZeroStep(const std::unordered_map<Value, Paths>& prev,
+Status TraverseExecutor::handleZeroStep(const HashMap& prev,
                                         List&& vertices,
-                                        std::unordered_map<Value, Paths>& zeroSteps,
+                                        HashMap& zeroSteps,
                                         size_t& count) {
-  std::unordered_set<Value> uniqueSrc;
+  HashSet uniqueSrc;
   for (auto& srcV : vertices.values) {
     auto src = srcV.getVertex().vid;
     if (!uniqueSrc.emplace(src).second) {
