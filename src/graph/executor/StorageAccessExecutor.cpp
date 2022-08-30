@@ -77,39 +77,43 @@ StatusOr<DataSet> buildRequestDataSet(const SpaceInfo &space,
 }
 
 template <typename VidType>
-StatusOr<List> buildRequestList(const SpaceInfo &space,
-                                QueryExpressionContext &exprCtx,
-                                Iterator *iter,
-                                Expression *expr,
-                                bool dedup) {
+StatusOr<std::vector<Value>> buildRequestList(const SpaceInfo &space,
+                                              QueryExpressionContext &exprCtx,
+                                              Iterator *iter,
+                                              Expression *expr,
+                                              bool dedup,
+                                              bool isCypher) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
-  nebula::List vertices;
-  auto s = iter->size();
-  vertices.reserve(s);
+  std::vector<Value> vids;
+  auto iterSize = iter->size();
+  vids.reserve(iterSize);
 
   std::unordered_set<VidType> uniqueSet;
-  uniqueSet.reserve(s);
+  uniqueSet.reserve(iterSize);
 
-  const auto &vidType = *(space.spaceDesc.vid_type_ref());
+  const auto &metaVidType = *(space.spaceDesc.vid_type_ref());
+  auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
 
   for (; iter->valid(); iter->next()) {
     auto vid = expr->eval(exprCtx(iter));
     if (vid.empty()) {
       continue;
     }
-    if (!SchemaUtil::isValidVid(vid, vidType)) {
+    if (vid.type() != vidType) {
+      if (isCypher) {
+        continue;
+      }
       std::stringstream ss;
-      ss << "`" << vid.toString() << "', the srcs should be type of "
-         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << vid.type()
-         << "'";
+      ss << "`" << vid.toString() << "', the srcs should be type of " << vidType << ", but was`"
+         << vid.type() << "'";
       return Status::Error(ss.str());
     }
     if (dedup && !uniqueSet.emplace(Vid<VidType>::value(vid)).second) {
       continue;
     }
-    vertices.emplace_back(std::move(vid));
+    vids.emplace_back(std::move(vid));
   }
-  return vertices;
+  return vids;
 }
 
 }  // namespace internal
@@ -131,16 +135,17 @@ StatusOr<DataSet> StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *
   return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
-StatusOr<List> StorageAccessExecutor::buildRequestListByVidType(Iterator *iter,
-                                                                Expression *expr,
-                                                                bool dedup) {
+StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(Iterator *iter,
+                                                                              Expression *expr,
+                                                                              bool dedup,
+                                                                              bool isCypher) {
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
   if (isIntVidType(space)) {
-    return internal::buildRequestList<int64_t>(space, exprCtx, iter, expr, dedup);
+    return internal::buildRequestList<int64_t>(space, exprCtx, iter, expr, dedup, isCypher);
   }
-  return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup);
+  return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
 std::string StorageAccessExecutor::getStorageDetail(

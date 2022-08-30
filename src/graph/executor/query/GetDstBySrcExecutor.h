@@ -20,7 +20,7 @@ class GetDstBySrcExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> execute() override;
 
-  StatusOr<List> buildRequestList();
+  StatusOr<std::vector<Value>> buildRequestList();
 
  private:
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetDstBySrcResponse>;
