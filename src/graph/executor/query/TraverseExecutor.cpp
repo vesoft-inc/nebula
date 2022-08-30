@@ -236,6 +236,10 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       }
     }
     auto& dst = iter->getEdgeProp("*", kDst);
+    if (dst.type() == nebula::Value::kEmpty) {
+      // no edge return Empty
+      continue;
+    }
     auto srcV = iter->getVertex();
     auto e = iter->getEdge();
     // Join on dst = src

@@ -82,7 +82,7 @@ class StorageClient
 
   StorageRpcRespFuture<cpp2::GetDstBySrcResponse> getDstBySrc(
       const CommonRequestParam& param,
-      const List& vertices,
+      const std::vector<Value>& vertices,
       const std::vector<EdgeType>& edgeTypes);
 
   StorageRpcRespFuture<cpp2::GetPropResponse> getProps(

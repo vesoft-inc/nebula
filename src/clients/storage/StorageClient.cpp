@@ -108,14 +108,16 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
 }
 
 StorageRpcRespFuture<cpp2::GetDstBySrcResponse> StorageClient::getDstBySrc(
-    const CommonRequestParam& param, const List& vertices, const std::vector<EdgeType>& edgeTypes) {
+    const CommonRequestParam& param,
+    const std::vector<Value>& vertices,
+    const std::vector<EdgeType>& edgeTypes) {
   auto cbStatus = getIdFromValue(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
         std::runtime_error(cbStatus.status().toString()));
   }
 
-  auto status = clusterIdsToHosts(param.space, vertices.values, std::move(cbStatus).value());
+  auto status = clusterIdsToHosts(param.space, vertices, std::move(cbStatus).value());
   if (!status.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
         std::runtime_error(status.status().toString()));
