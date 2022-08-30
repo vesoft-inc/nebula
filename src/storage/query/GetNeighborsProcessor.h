@@ -80,7 +80,7 @@ class GetNeighborsProcessor
       StorageExpressionContext* expCtx,
       nebula::DataSet* result,
       PartitionID partId,
-      const std::vector<nebula::Row>& rows,
+      const std::vector<nebula::Value>& vids,
       int64_t limit,
       bool random);
   void profilePlan(StoragePlan<VertexID>& plan);

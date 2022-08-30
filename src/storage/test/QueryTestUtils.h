@@ -307,9 +307,7 @@ class QueryTestUtils {
     (*req.column_names_ref()).emplace_back(kVid);
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex) % totalParts) + 1;
-      nebula::Row row;
-      row.values.emplace_back(vertex);
-      (*req.parts_ref())[partId].emplace_back(std::move(row));
+      (*req.parts_ref())[partId].emplace_back(vertex);
     }
     for (const auto& edge : over) {
       (*traverseSpec.edge_types_ref()).emplace_back(edge);

@@ -51,19 +51,19 @@ size_t BatchShortestPath::init(const HashSet& startVids, const HashSet& endVids)
   resultDs_.resize(rowSize);
 
   for (auto& _startVids : batchStartVids_) {
-    DataSet startDs;
+    HashSet srcVids;
     PathMap leftPathMap;
     for (auto& startVid : _startVids) {
-      startDs.rows.emplace_back(Row({startVid}));
+      srcVids.emplace(startVid);
       std::vector<CustomPath> dummy;
       leftPathMap[startVid].emplace(startVid, std::move(dummy));
     }
     for (auto& _endVids : batchEndVids_) {
-      DataSet endDs;
+      HashSet dstVids;
       PathMap preRightPathMap;
       PathMap rightPathMap;
       for (auto& endVid : _endVids) {
-        endDs.rows.emplace_back(Row({endVid}));
+        dstVids.emplace(endVid);
         std::vector<CustomPath> dummy;
         rightPathMap[endVid].emplace(endVid, dummy);
         preRightPathMap[endVid].emplace(endVid, std::move(dummy));
@@ -75,8 +75,8 @@ size_t BatchShortestPath::init(const HashSet& startVids, const HashSet& endVids)
       currentRightPathMaps_.emplace_back(std::move(rightPathMap));
 
       // set vid for getNeightbor
-      leftVids_.emplace_back(startDs);
-      rightVids_.emplace_back(std::move(endDs));
+      leftVids_.emplace_back(srcVids);
+      rightVids_.emplace_back(dstVids);
 
       // set terminateMap
       std::unordered_multimap<StartVid, std::pair<EndVid, bool>> terminationMap;
@@ -116,11 +116,13 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t step
                                                    qctx_->rctx()->session()->id(),
                                                    qctx_->plan()->id(),
                                                    qctx_->plan()->isProfileEnabled());
-  auto& inputRows = reverse ? rightVids_[rowNum].rows : leftVids_[rowNum].rows;
+  auto& inputVids = reverse ? rightVids_[rowNum] : leftVids_[rowNum];
+  std::vector<Value> vids(inputVids.begin(), inputVids.end());
+  inputVids.clear();
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
-                     std::move(inputRows),
+                     std::move(vids),
                      {},
                      pathNode_->edgeDirection(),
                      nullptr,
@@ -271,8 +273,8 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
         if (result || stepNum * 2 >= maxStep_) {
           return folly::makeFuture<Status>(Status::OK());
         }
-        auto& leftVids = leftVids_[rowNum].rows;
-        auto& rightVids = rightVids_[rowNum].rows;
+        auto& leftVids = leftVids_[rowNum];
+        auto& rightVids = rightVids_[rowNum];
         if (leftVids.empty() || rightVids.empty()) {
           return folly::makeFuture<Status>(Status::OK());
         }
@@ -458,17 +460,10 @@ std::vector<Row> BatchShortestPath::createPaths(const std::vector<CustomPath>& p
 }
 
 void BatchShortestPath::setNextStepVid(const PathMap& paths, size_t rowNum, bool reverse) {
-  std::vector<Row> nextStepVids;
+  auto& nextStepVids = reverse ? rightVids_[rowNum] : leftVids_[rowNum];
   nextStepVids.reserve(paths.size());
   for (const auto& path : paths) {
-    Row row;
-    row.values.emplace_back(path.first);
-    nextStepVids.emplace_back(std::move(row));
-  }
-  if (reverse) {
-    rightVids_[rowNum].rows.swap(nextStepVids);
-  } else {
-    leftVids_[rowNum].rows.swap(nextStepVids);
+    nextStepVids.emplace(path.first);
   }
 }
 

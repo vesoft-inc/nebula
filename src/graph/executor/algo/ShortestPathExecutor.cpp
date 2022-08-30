@@ -38,14 +38,14 @@ folly::Future<Status> ShortestPathExecutor::execute() {
 
 size_t ShortestPathExecutor::checkInput(HashSet& startVids, HashSet& endVids) {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
-  const auto& vidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
+  const auto& metaVidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
+  auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
   for (; iter->valid(); iter->next()) {
     auto start = iter->getColumn(0);
     auto end = iter->getColumn(1);
-    if (!SchemaUtil::isValidVid(start, vidType) || !SchemaUtil::isValidVid(end, vidType)) {
+    if (start.type() != vidType || end.type() != vidType) {
       LOG(ERROR) << "Mismatched shortestPath vid type. start type : " << start.type()
-                 << ", end type: " << end.type()
-                 << ", space vid type: " << SchemaUtil::typeToString(vidType);
+                 << ", end type: " << end.type() << ", space vid type: " << vidType;
       continue;
     }
     if (start == end) {
