@@ -14,11 +14,6 @@ namespace nebula {
 namespace graph {
 folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
     const std::vector<Value>& meetVids) {
-  nebula::DataSet vertices({kVid});
-  vertices.rows.reserve(meetVids.size());
-  for (auto& vid : meetVids) {
-    vertices.emplace_back(Row({vid}));
-  }
 
   time::Duration getPropsTime;
   StorageClient* storageClient = qctx_->getStorageClient();
@@ -27,15 +22,7 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
                                           qctx_->plan()->id(),
                                           qctx_->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vertices),
-                 pathNode_->vertexProps(),
-                 nullptr,
-                 nullptr,
-                 false,
-                 {},
-                 -1,
-                 nullptr)
+      ->getVertexProps(param, meetVids, pathNode_->vertexProps(), nullptr, false, {}, -1, nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, getPropsTime](PropRpcResponse&& resp) {
         addStats(resp, getPropsTime.elapsedInUSec());

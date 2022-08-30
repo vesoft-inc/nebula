@@ -18,34 +18,33 @@ folly::Future<Status> GetEdgesExecutor::execute() {
   return getEdges();
 }
 
-StatusOr<DataSet> GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
+StatusOr < std::vector<std::vector<Value>> GetEdgesExecutor::buildRequestEdges(const GetEdges *ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();
   QueryExpressionContext exprCtx(qctx()->ectx());
 
-  nebula::DataSet edges({kSrc, kType, kRank, kDst});
-  edges.rows.reserve(valueIter->size());
+  std::vector<std::vector<Value>> edges;
+  edges.reserve(valueIter->size());
   std::unordered_set<std::tuple<Value, Value, Value, Value>> uniqueEdges;
   uniqueEdges.reserve(valueIter->size());
 
   const auto &space = qctx()->rctx()->session()->space();
-  const auto &vidType = *(space.spaceDesc.vid_type_ref());
+  const auto &metaVidType = *(space.spaceDesc.vid_type_ref());
+  auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
   for (; valueIter->valid(); valueIter->next()) {
     auto type = ge->type()->eval(exprCtx(valueIter.get()));
-    auto src = ge->src()->eval(exprCtx(valueIter.get()));
-    auto dst = ge->dst()->eval(exprCtx(valueIter.get()));
+    const auto &src = ge->src()->eval(exprCtx(valueIter.get()));
+    const auto &dst = ge->dst()->eval(exprCtx(valueIter.get()));
     auto rank = ge->ranking()->eval(exprCtx(valueIter.get()));
-    if (!SchemaUtil::isValidVid(src, vidType)) {
+    if (src.type() != vidType) {
       std::stringstream ss;
-      ss << "`" << src.toString() << "', the src should be type of "
-         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << src.type()
-         << "'";
+      ss << "`" << src.toString() << "', the src should be type of " << vidType << ", but was`"
+         << src.type() << "'";
       return Status::Error(ss.str());
     }
-    if (!SchemaUtil::isValidVid(dst, vidType)) {
+    if (dst.type() != vidType) {
       std::stringstream ss;
-      ss << "`" << dst.toString() << "', the dst should be type of "
-         << apache::thrift::util::enumNameSafe(vidType.get_type()) << ", but was`" << dst.type()
-         << "'";
+      ss << "`" << dst.toString() << "', the dst should be type of " << vidType << ", but was`"
+         << dst.type() << "'";
       return Status::Error(ss.str());
     }
     type = type < 0 ? -type : type;
@@ -56,7 +55,7 @@ StatusOr<DataSet> GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
     if (!rank.isInt()) {
       continue;
     }
-    edges.emplace_back(Row({std::move(src), type, rank, std::move(dst)}));
+    edges.emplace_back(std::vector<Value>({src, type, rank, dst}));
   }
   return edges;
 }
@@ -70,11 +69,11 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
     return Status::Error("ptr is nullptr");
   }
 
-  auto res = buildRequestDataSet(ge);
+  auto res = buildRequestEdges(ge);
   NG_RETURN_IF_ERROR(res);
   auto edges = std::move(res).value();
 
-  if (edges.rows.empty()) {
+  if (edges.empty()) {
     // TODO: add test for empty input.
     return finish(
         ResultBuilder().value(Value(DataSet(ge->colNames()))).iter(Iterator::Kind::kProp).build());
@@ -86,15 +85,14 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(client)
-      ->getProps(param,
-                 std::move(edges),
-                 nullptr,
-                 ge->props(),
-                 ge->exprs(),
-                 ge->dedup(),
-                 ge->orderBy(),
-                 ge->limit(qctx()),
-                 ge->filter())
+      ->getEdgeProps(param,
+                     std::move(edges),
+                     ge->props(),
+                     ge->exprs(),
+                     ge->dedup(),
+                     ge->orderBy(),
+                     ge->limit(qctx()),
+                     ge->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);

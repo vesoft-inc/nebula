@@ -220,10 +220,61 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
                          });
 }
 
-StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
+StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getVertexProps(
     const CommonRequestParam& param,
     const std::vector<Value>& vids,
     const std::vector<cpp2::VertexProp>* vertexProps,
+    const std::vector<cpp2::Expr>* expressions,
+    bool dedup,
+    const std::vector<cpp2::OrderBy>& orderBy,
+    int64_t limit,
+    const Expression* filter) {
+  auto cbStatus = getIdFromValue(param.space);
+  if (!cbStatus.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::GetPropResponse>>(
+        std::runtime_error(cbStatus.status().toString()));
+  }
+
+  auto status = clusterIdsToHosts(param.space, vids, std::move(cbStatus).value());
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::GetPropResponse>>(
+        std::runtime_error(status.status().toString()));
+  }
+
+  auto& clusters = status.value();
+  std::unordered_map<HostAddr, cpp2::GetPropRequest> requests;
+  auto common = param.toReqCommon();
+  for (auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.dedup_ref() = dedup;
+    if (vertexProps != nullptr) {
+      req.vertex_props_ref() = *vertexProps;
+    }
+    if (expressions != nullptr) {
+      req.expressions_ref() = *expressions;
+    }
+    if (!orderBy.empty()) {
+      req.order_by_ref() = orderBy;
+    }
+    req.limit_ref() = limit;
+    if (filter != nullptr) {
+      req.filter_ref() = filter->encode();
+    }
+    req.common_ref() = common;
+  }
+
+  return collectResponse(
+      param.evb, std::move(requests), [](ThriftClientType* client, const cpp2::GetPropRequest& r) {
+        return client->future_getProps(r);
+      });
+}
+
+StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getEdgeProps(
+    const CommonRequestParam& param,
+    const std::vector<std::vector<Value>>& edges,
     const std::vector<cpp2::EdgeProp>* edgeProps,
     const std::vector<cpp2::Expr>* expressions,
     bool dedup,

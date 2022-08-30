@@ -19,7 +19,7 @@ class GetEdgesExecutor final : public GetPropExecutor {
   folly::Future<Status> execute() override;
 
  private:
-  StatusOr<DataSet> buildRequestDataSet(const GetEdges *ge);
+  StatusOr<std::vector<std::vector<Value>>> buildRequestEdges(const GetEdges *ge);
 
   folly::Future<Status> getEdges();
 };

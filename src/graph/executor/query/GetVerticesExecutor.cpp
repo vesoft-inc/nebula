@@ -36,15 +36,14 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vids),
-                 gv->props(),
-                 nullptr,
-                 gv->exprs(),
-                 gv->dedup(),
-                 gv->orderBy(),
-                 gv->limit(qctx()),
-                 gv->filter())
+      ->getVertexProps(param,
+                       std::move(vids),
+                       gv->props(),
+                       gv->exprs(),
+                       gv->dedup(),
+                       gv->orderBy(),
+                       gv->limit(qctx()),
+                       gv->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);

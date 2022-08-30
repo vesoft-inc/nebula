@@ -46,15 +46,14 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
 
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vids),
-                 av->props(),
-                 nullptr,
-                 av->exprs(),
-                 av->dedup(),
-                 av->orderBy(),
-                 av->limit(qctx()),
-                 av->filter())
+      ->getVertexProps(param,
+                       std::move(vids),
+                       av->props(),
+                       av->exprs(),
+                       av->dedup(),
+                       av->orderBy(),
+                       av->limit(qctx()),
+                       av->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);

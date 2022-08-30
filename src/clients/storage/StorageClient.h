@@ -85,10 +85,19 @@ class StorageClient
       const std::vector<Value>& vertices,
       const std::vector<EdgeType>& edgeTypes);
 
-  StorageRpcRespFuture<cpp2::GetPropResponse> getProps(
+  StorageRpcRespFuture<cpp2::GetPropResponse> getVertexProps(
       const CommonRequestParam& param,
       const std::vector<Value>& vids,
       const std::vector<cpp2::VertexProp>* vertexProps,
+      const std::vector<cpp2::Expr>* expressions,
+      bool dedup = false,
+      const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
+      int64_t limit = std::numeric_limits<int64_t>::max(),
+      const Expression* filter = nullptr);
+
+  StorageRpcRespFuture<cpp2::GetPropResponse> getEdgeProps(
+      const CommonRequestParam& param,
+      const std::vector<std::vector<Value>>& edges,
       const std::vector<cpp2::EdgeProp>* edgeProps,
       const std::vector<cpp2::Expr>* expressions,
       bool dedup = false,
