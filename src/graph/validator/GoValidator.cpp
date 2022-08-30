@@ -187,7 +187,7 @@ void GoValidator::extractPropExprs(const Expression* expr,
 
 Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
   auto pool = qctx_->objPool();
-  auto matcher = [this](const Expression* e) -> bool {
+  auto matcher = [](const Expression* e) -> bool {
     if (e->kind() != Expression::Kind::kFunctionCall) {
       return false;
     }
