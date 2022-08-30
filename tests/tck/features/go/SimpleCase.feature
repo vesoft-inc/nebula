@@ -100,6 +100,28 @@ Feature: Simple case
       | 2  | GetDstBySrc  | 1            |                   |
       | 1  | Start        |              |                   |
       | 0  | Start        |              |                   |
+    # Because GetDstBySrc doesn't support limit push down, so degenrate to GetNeighbors when the query contains limit/simple clause
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER * YIELD DISTINCT id($$) LIMIT [100, 100, 100] | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 13       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 11 | Aggregate    | 10           |                   |
+      | 10 | Dedup        | 9            |                   |
+      | 9  | Project      | 12           |                   |
+      | 12 | Limit        | 13           |                   |
+      | 13 | GetNeighbors | 6            |                   |
+      | 6  | Loop         | 0            | {"loopBody": "5"} |
+      | 5  | Dedup        | 4            |                   |
+      | 4  | Project      | 14           |                   |
+      | 14 | Limit        | 15           |                   |
+      | 15 | GetNeighbors | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
 
   Scenario: go m to n steps yield distinct dst id
     When profiling query:

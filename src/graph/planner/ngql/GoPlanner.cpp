@@ -443,7 +443,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
 
   auto* start = StartNode::make(qctx);
   PlanNode* scan = nullptr;
-  if (!goCtx_->joinInput) {
+  if (!goCtx_->joinInput && goCtx_->limits.empty()) {
     auto* gd = GetDstBySrc::make(qctx, start, goCtx_->space.id);
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
@@ -460,7 +460,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   auto* sampleLimit = buildSampleLimit(scan);
 
   PlanNode* getDst = nullptr;
-  if (!goCtx_->joinInput) {
+  if (!goCtx_->joinInput && goCtx_->limits.empty()) {
     auto* dedup = Dedup::make(qctx, sampleLimit);
     dedup->setOutputVar(goCtx_->vidsVar);
     dedup->setColNames(goCtx_->colNames);
@@ -626,7 +626,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 }
 
 bool GoPlanner::isSimpleCase() {
-  if (goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct) {
+  if (goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct || !goCtx_->limits.empty()) {
     return false;
   }
   auto& exprProps = goCtx_->exprProps;
