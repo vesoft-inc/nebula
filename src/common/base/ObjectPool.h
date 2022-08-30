@@ -37,7 +37,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&... args) {
+  T *makeAndAdd(Args &&...args) {
     lock_.lock();
     void *ptr = arena_.allocateAligned(sizeof(T));
     lock_.unlock();
@@ -54,7 +54,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
    public:
     template <typename T>
     explicit OwnershipHolder(T *obj)
-        : obj_(obj), deleteFn_([](void *p) { reinterpret_cast<T *>(p)->~T(); }) {}
+        : obj_(obj), deleteFn_(+[](void *p) { reinterpret_cast<T *>(p)->~T(); }) {}
 
     ~OwnershipHolder() {
       deleteFn_(obj_);
@@ -62,7 +62,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
 
    private:
     void *obj_;
-    std::function<void(void *)> deleteFn_;
+    void (*deleteFn_)(void *);
   };
 
   template <typename T>
