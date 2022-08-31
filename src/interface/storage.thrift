@@ -169,7 +169,7 @@ struct GetNeighborsRequest {
     // Column names for input data. The first column name must be "_vid"
     2: list<binary>                             column_names,
     // partId => rows
-    3: map<common.PartitionID, list<common.Row>>
+    3: map<common.PartitionID, list<common.Value>>
         (cpp.template = "std::unordered_map")   parts,
     4: TraverseSpec                             traverse_spec,
     5: optional RequestCommon                   common,

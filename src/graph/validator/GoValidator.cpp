@@ -187,20 +187,34 @@ void GoValidator::extractPropExprs(const Expression* expr,
 
 Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
   auto pool = qctx_->objPool();
-  auto name = expr->toString();
-  if (name == "id($^)" || name == "src(edge)") {
-    return EdgeSrcIdExpression::make(pool, "*");
-  }
-  if (name == "id($$)" || name == "dst(edge)") {
-    return EdgeDstIdExpression::make(pool, "*");
-  }
-  if (name == "rank(edge)") {
-    return EdgeRankExpression::make(pool, "*");
-  }
-  if (name == "type(edge)") {
-    return EdgeTypeExpression::make(pool, "*");
-  }
-  return const_cast<Expression*>(expr);
+  auto matcher = [](const Expression* e) -> bool {
+    if (e->kind() != Expression::Kind::kFunctionCall) {
+      return false;
+    }
+    auto name = e->toString();
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+    std::unordered_set<std::string> colNames({"id($$)", "id($^)", "rank(edge)", "typeid(edge)"});
+    if (colNames.find(name) != colNames.end()) {
+      return true;
+    }
+    return false;
+  };
+
+  auto rewriter = [&, pool](const Expression* e) -> Expression* {
+    DCHECK(e->kind() == Expression::Kind::kFunctionCall);
+    auto name = e->toString();
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+    if (name == "id($$)") {
+      return EdgeDstIdExpression::make(pool, "*");
+    } else if (name == "id($^)") {
+      return EdgeSrcIdExpression::make(pool, "*");
+    } else if (name == "rank(edge)") {
+      return EdgeRankExpression::make(pool, "*");
+    } else {
+      return EdgeTypeExpression::make(pool, "*");
+    }
+  };
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 // Rewrites the property expression to corresponding Variable/Input expression

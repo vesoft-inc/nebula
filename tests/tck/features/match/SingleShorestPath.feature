@@ -66,34 +66,18 @@ Feature: single shortestPath
       | <("Blake Griffin" :player{age: 30, name: "Blake Griffin"})-[:like@0 {likeness: -1}]->("Chris Paul" :player{age: 33, name: "Chris Paul"})-[:like@0 {likeness: 90}]->("LeBron James" :player{age: 34, name: "LeBron James"})> |
     When executing query:
       """
-      MATCH p = shortestPath( (a:player{age:30})-[e*..5]->(b:team) ) RETURN b, length(p)
+      MATCH p = shortestPath( (a:player{age:30})-[e*..5]->(b:team) ) WHERE id(a) != 'Blake Griffin' RETURN p
       """
     Then the result should be, in any order, with relax comparison:
-      | b                                    | length(p) |
-      | ("Celtics":team{name:"Celtics"})     | 4         |
-      | ("Kings":team{name:"Kings"})         | 5         |
-      | ("Cavaliers":team{name:"Cavaliers"}) | 3         |
-      | ("Thunders":team{name:"Thunders"})   | 3         |
-      | ("Nuggets":team{name:"Nuggets"})     | 3         |
-      | ("Rockets":team{name:"Rockets"})     | 2         |
-      | ("Mavericks":team{name:"Mavericks"}) | 5         |
-      | ("Bucks":team{name:"Bucks"})         | 4         |
-      | ("Lakers":team{name:"Lakers"})       | 3         |
-      | ("Pistons":team{name:"Pistons"})     | 1         |
-      | ("Bulls":team{name:"Bulls"})         | 3         |
-      | ("Clippers":team{name:"Clippers"})   | 1         |
-      | ("Pelicans":team{name:"Pelicans"})   | 5         |
-      | ("Knicks":team{name:"Knicks"})       | 3         |
-      | ("Heat":team{name:"Heat"})           | 3         |
-      | ("Hornets":team{name:"Hornets"})     | 2         |
-      | ("Mavericks":team{name:"Mavericks"}) | 1         |
-      | ("Clippers":team{name:"Clippers"})   | 1         |
-      | ("Knicks":team{name:"Knicks"})       | 1         |
-      | ("Thunders":team{name:"Thunders"})   | 1         |
-      | ("Rockets":team{name:"Rockets"})     | 2         |
-      | ("Pacers":team{name:"Pacers"})       | 2         |
-      | ("Thunders":team{name:"Thunders"})   | 1         |
-      | ("Warriors":team{name:"Warriors"})   | 1         |
+      | p                                                                                                                                                                                                                                       |
+      | <("DeAndre Jordan" :player{age: 30, name: "DeAndre Jordan"})-[:serve@0 {end_year: 2019, start_year: 2019}]->("Knicks" :team{name: "Knicks"})>                                                                                           |
+      | <("DeAndre Jordan" :player{age: 30, name: "DeAndre Jordan"})-[:serve@0 {end_year: 2019, start_year: 2018}]->("Mavericks" :team{name: "Mavericks"})>                                                                                     |
+      | <("DeAndre Jordan" :player{age: 30, name: "DeAndre Jordan"})-[:serve@0 {end_year: 2018, start_year: 2008}]->("Clippers" :team{name: "Clippers"})>                                                                                       |
+      | <("Kevin Durant" :player{age: 30, name: "Kevin Durant"})-[:serve@0 {end_year: 2016, start_year: 2007}]->("Thunders" :team{name: "Thunders"})>                                                                                           |
+      | <("Kevin Durant" :player{age: 30, name: "Kevin Durant"})-[:serve@0 {end_year: 2019, start_year: 2016}]->("Warriors" :team{name: "Warriors"})>                                                                                           |
+      | <("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"})-[:like@0 {likeness: 90}]->("James Harden" :player{age: 29, name: "James Harden"})-[:serve@0 {end_year: 2019, start_year: 2012}]->("Rockets" :team{name: "Rockets"})> |
+      | <("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"})-[:serve@0 {end_year: 2019, start_year: 2008}]->("Thunders" :team{name: "Thunders"})>                                                                                 |
+      | <("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"})-[:like@0 {likeness: 90}]->("Paul George" :player{age: 28, name: "Paul George"})-[:serve@0 {end_year: 2017, start_year: 2010}]->("Pacers" :team{name: "Pacers"})>     |
     When executing query:
       """
       MATCH p = shortestPath( (a:player{age:30})-[e*..5]->(b:team) )
