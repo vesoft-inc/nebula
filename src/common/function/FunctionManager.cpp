@@ -2511,7 +2511,8 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
-      return args[0].get().getGeography().isValid();
+      auto status = args[0].get().getGeography().isValid();
+      return status.ok() ? true : false;
     };
   }
   // geo predicates

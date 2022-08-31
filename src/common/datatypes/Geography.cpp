@@ -58,13 +58,23 @@ void Coordinate::normalize() {
   }
 }
 
-bool Coordinate::isValid() const {
-  return std::abs(x) <= kMaxLongitude && std::abs(y) <= kMaxLatitude;
+Status Coordinate::isValid() const {
+  if (std::abs(x) > kMaxLongitude) {
+    return Status::Error("Invalid longitude: %f", x);
+  }
+  if (std::abs(y) > kMaxLatitude) {
+    return Status::Error("Invalid latitude: %f", y);
+  }
+  return Status::OK();
+}
+
+std::string Coordinate::toString() const {
+  return "(" + std::to_string(x) + " " + std::to_string(y) + ")";
 }
 
 void Point::normalize() {}
 
-bool Point::isValid() const {
+Status Point::isValid() const {
   return coord.isValid();
 }
 
@@ -72,17 +82,28 @@ void LineString::normalize() {
   geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList);
 }
 
-bool LineString::isValid() const {
-  // LineString must have at least 2 coordinates;
+Status LineString::isValid() const {
   if (coordList.size() < 2) {
-    return false;
+    return Status::Error("LineString contains %zu coordinates, requires at least 2 coordinates",
+                         coordList.size());
   }
-  for (const auto& coord : coordList) {
-    if (!coord.isValid()) return false;
+  for (size_t i = 0; i < coordList.size(); ++i) {
+    auto& coord = coordList[i];
+    auto status = coord.isValid();
+    if (!status.ok()) {
+      return Status::Error("The %zu-th coordinate is invalid: %s", i, status.message().c_str());
+    }
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   CHECK_NOTNULL(s2Region);
-  return static_cast<S2Polyline*>(s2Region.get())->IsValid();
+
+  S2Error error;
+  if (static_cast<S2Polyline*>(s2Region.get())->FindValidationError(&error)) {
+    std::stringstream ss;
+    ss << "FindValidationError, S2 Errorcode: " << error.code() << ", message: " << error.text();
+    return Status::Error(ss.str());
+  }
+  return Status::OK();
 }
 
 void Polygon::normalize() {
@@ -91,23 +112,39 @@ void Polygon::normalize() {
   }
 }
 
-bool Polygon::isValid() const {
-  for (const auto& coordList : coordListList) {
-    // Polygon's LinearRing must have at least 4 coordinates
+Status Polygon::isValid() const {
+  for (size_t i = 0; i < coordListList.size(); ++i) {
+    auto& coordList = coordListList[i];
     if (coordList.size() < 4) {
-      return false;
+      return Status::Error(
+          "Polygon's %zu-th LinearRing contains %zu coordinates, requires at least 4",
+          i,
+          coordList.size());
     }
-    // Polygon's LinearRing must be closed
     if (coordList.front() != coordList.back()) {
-      return false;
+      return Status::Error("Polygon's %zu-th LinearRing is not closed", i);
     }
-    for (const auto& coord : coordList) {
-      if (!coord.isValid()) return false;
+    for (size_t j = 0; j < coordList.size(); ++j) {
+      auto& coord = coordList[j];
+      auto status = coord.isValid();
+      if (!status.ok()) {
+        return Status::Error("The %zu-th coordinate of %zu-th LinearRing is invalid: %s",
+                             j,
+                             i,
+                             status.message().c_str());
+      }
     }
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   CHECK_NOTNULL(s2Region);
-  return static_cast<S2Polygon*>(s2Region.get())->IsValid();
+
+  S2Error error;
+  if (static_cast<S2Polygon*>(s2Region.get())->FindValidationError(&error)) {
+    std::stringstream ss;
+    ss << "FindValidationError, S2 Errorcode: " << error.code() << ", message: " << error.text();
+    return Status::Error(ss.str());
+  }
+  return Status::OK();
 }
 
 StatusOr<Geography> Geography::fromWKT(const std::string& wkt,
@@ -122,9 +159,12 @@ StatusOr<Geography> Geography::fromWKT(const std::string& wkt,
     geog.normalize();
   }
   if (verifyValidity) {
-    if (!geog.isValid()) {
-      return Status::Error("Failed to parse an valid Geography instance from the wkt `%s'",
-                           wkt.c_str());
+    auto status = geog.isValid();
+    if (!status.ok()) {
+      std::stringstream ss;
+      ss << "The geography " << geog.toString() << " built from wkt " << wkt
+         << " is invalid, error: " << status.message();
+      return Status::Error(ss.str());
     }
   }
 
@@ -143,9 +183,12 @@ StatusOr<Geography> Geography::fromWKB(const std::string& wkb,
     geog.normalize();
   }
   if (verifyValidity) {
-    if (!geog.isValid()) {
-      return Status::Error("Failed to parse an valid Geography instance from the wkb `%s'",
-                           wkb.c_str());
+    auto status = geog.isValid();
+    if (!status.ok()) {
+      std::stringstream ss;
+      ss << "The geography " << geog.toString() << " built from wkb " << wkb
+         << " is invalid, error: " << status.message();
+      return Status::Error(ss.str());
     }
   }
 
@@ -222,7 +265,7 @@ void Geography::normalize() {
   }
 }
 
-bool Geography::isValid() const {
+Status Geography::isValid() const {
   switch (shape()) {
     case GeoShape::POINT: {
       const auto& point = this->point();
@@ -238,9 +281,8 @@ bool Geography::isValid() const {
     }
     case GeoShape::UNKNOWN:
     default: {
-      LOG(ERROR)
-          << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-      return false;
+      return Status::Error(
+          "Geography shapes other than Point/LineString/Polygon are not currently supported");
     }
   }
 }
@@ -266,7 +308,7 @@ Point Geography::centroid() const {
     default: {
       LOG(ERROR)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-      return Point();
+      return {};
     }
   }
 }
