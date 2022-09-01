@@ -69,17 +69,14 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
   gn->setInputVar("input_gn");
 
   auto gnExe = std::make_unique<GetNeighborsExecutor>(gn, qctx_.get());
-  auto res = gnExe->buildRequestDataSet();
-  auto reqDs = std::move(res).value();
+  auto res = gnExe->buildRequestVids();
+  auto reqVids = std::move(res).value();
 
-  DataSet expected;
-  expected.colNames = {kVid};
+  std::vector<Value> expectedVids;
   for (auto i = 0; i < 10; ++i) {
-    Row row;
-    row.values.emplace_back(folly::to<std::string>(i));
-    expected.rows.emplace_back(std::move(row));
+    expectedVids.emplace_back(folly::to<std::string>(i));
   }
-  EXPECT_EQ(reqDs, expected);
+  EXPECT_EQ(reqVids, expectedVids);
 }
 }  // namespace graph
 }  // namespace nebula
