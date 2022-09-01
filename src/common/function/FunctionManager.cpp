@@ -2512,7 +2512,10 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       auto status = args[0].get().getGeography().isValid();
-      return status.ok() ? true : false;
+      if (!status.ok()) {
+        LOG(ERROR) << "ST_IsValid error: " << status;
+      }
+      return status.ok();
     };
   }
   // geo predicates
