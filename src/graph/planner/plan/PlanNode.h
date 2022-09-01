@@ -217,8 +217,6 @@ class PlanNode {
     return numDeps() == 1U;
   }
 
-  bool isSafeInputVar() const;
-
   bool isBiInput() const {
     return numDeps() == 2U;
   }

@@ -63,6 +63,15 @@ class Result final {
     }
   }
 
+  std::vector<std::string> getColNames() const {
+    auto& ds = value();
+    if (ds.isDataSet()) {
+      return ds.getDataSet().colNames;
+    }
+
+    return {};
+  }
+
  private:
   friend class ResultBuilder;
   friend class ExecutionContext;
