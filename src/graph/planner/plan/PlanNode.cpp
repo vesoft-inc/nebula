@@ -330,6 +330,16 @@ void PlanNode::readVariable(Variable* varPtr) {
   qctx_->symTable()->readBy(varPtr->name, this);
 }
 
+bool PlanNode::isSafeInputVar() const {
+  bool isSafe = true;
+  for (const auto& inputVar : inputVars_) {
+    if (inputVar->readBy.size() > 1) {
+      isSafe = false;
+    }
+  }
+  return isSafe;
+}
+
 void PlanNode::calcCost() {
   VLOG(1) << "unimplemented cost calculation.";
 }

@@ -78,32 +78,51 @@ StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *
 
 Status FilterExecutor::handleSingleJobFilter() {
   auto *filter = asNode<Filter>(node());
+  bool isSafe = filter->isSafeInputVar();
   Result result = ectx_->getResult(filter->inputVar());
   auto *iter = result.iterRef();
 
   ResultBuilder builder;
-  builder.value(result.valuePtr());
   QueryExpressionContext ctx(ectx_);
   auto condition = filter->condition();
-  while (iter->valid()) {
-    auto val = condition->eval(ctx(iter));
-    if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
-      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
-    }
-    if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
-      if (UNLIKELY(filter->needStableFilter())) {
-        iter->erase();
-      } else {
-        iter->unstableErase();
+  if (isSafe) {
+    builder.value(result.valuePtr());
+    while (iter->valid()) {
+      auto val = condition->eval(ctx(iter));
+      if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
+        return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
       }
-    } else {
-      iter->next();
+      if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
+        if (UNLIKELY(filter->needStableFilter())) {
+          iter->erase();
+        } else {
+          iter->unstableErase();
+        }
+      } else {
+        iter->next();
+      }
     }
-  }
 
-  iter->reset();
-  builder.iter(std::move(result).iter());
-  return finish(builder.build());
+    iter->reset();
+    builder.iter(std::move(result).iter());
+    return finish(builder.build());
+  } else {
+    DataSet ds;
+    ds.colNames = filter->colNames();
+    ds.rows.reserve(iter->size());
+    for (; iter->valid(); iter->next()) {
+      auto val = condition->eval(ctx(iter));
+      if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
+        return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
+      }
+      if (!val.empty() && !val.isNull() && (!val.isImplicitBool() || val.implicitBool())) {
+        Row row;
+        row = *iter->row();
+        ds.rows.emplace_back(std::move(row));
+      }
+    }
+    return finish(builder.value(Value(std::move(ds))).build());
+  }
 }
 
 }  // namespace graph
