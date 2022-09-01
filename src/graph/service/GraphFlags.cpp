@@ -10,7 +10,7 @@
 DEFINE_int32(port, 3699, "NebulaGraph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs,
              28800,
-             "The number of seconds Nebula service waits before closing the idle connections");
+             "The number of seconds NebulaGraph service waits before closing the idle connections");
 DEFINE_int32(session_idle_timeout_secs, 28800, "The number of seconds before idle sessions expire");
 DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expired sessions");
 DEFINE_int32(num_netio_threads,

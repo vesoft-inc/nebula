@@ -343,15 +343,15 @@ TEST_F(FunctionManagerTest, functionCall) {
   }
   {
     TEST_FUNCTION(extract,
-                  std::vector<Value>({"Hello NebulaGraph", "\\w+"}),
-                  List({"Hello", "NebulaGraph"}));
+                  std::vector<Value>({"Hello Nebula Graph", "\\w+"}),
+                  List({"Hello", "Nebula","Graph"}));
     TEST_FUNCTION(extract,
-                  std::vector<Value>({"你好，NebulaGraph 图数据库", "(图|数据库|测试|Nebula)"}),
-                  List({"NebulaGraph", "图", "数据库"}));
+                  std::vector<Value>({"你好，Nebula 图数据库", "(图|数据库|测试|Nebula)"}),
+                  List({"Nebula", "图", "数据库"}));
     TEST_FUNCTION(extract,
                   std::vector<Value>({"Hello Nebula Graph", "(Nebula|Graph)"}),
                   List({"Nebula", "Graph"}));
-    TEST_FUNCTION(extract, std::vector<Value>({"Hello NebulaGraph", "testing"}), List());
+    TEST_FUNCTION(extract, std::vector<Value>({"Hello Nebula Graph", "testing"}), List());
     TEST_FUNCTION(extract, std::vector<Value>({"Hello 2022 year", "\\d+"}), List({"2022"}));
   }
   {
