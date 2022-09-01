@@ -74,8 +74,6 @@ class PropertyTrackerVisitor : public ExprVisitorImpl {
   void visit(ColumnExpression* expr) override;
   void visit(AggregateExpression* expr) override;
 
-  std::string extractColNameFromInputPropOrVarPropExpr(const Expression* expr);
-
   const QueryContext* qctx_{nullptr};
   GraphSpaceID space_;
   PropertyTracker& propsUsed_;
