@@ -186,11 +186,11 @@ void ScanVertexProcessor::runInMultipleThread(const cpp2::ScanVertexRequest& req
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
+      CHECK(!tries[j].hasException());
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
       const auto& [code, partId] = tries[j].value();
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
