@@ -188,6 +188,15 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
         auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
         auto &edgeAlias = propExpr->prop();
         propsUsed_.insertEdgeProp(edgeAlias, kUnknownType, propName);
+      } else if (kind == Expression::Kind::kListComprehension) {
+        //  match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v) return e[0].start_year
+        auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
+        auto *collectExpr = listExpr->collection();
+        if (collectExpr->kind() == Expression::Kind::kInputProperty) {
+          auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
+          auto &aliasName = inputPropExpr->prop();
+          propsUsed_.insertEdgeProp(aliasName, kUnknownType, propName);
+        }
       }
       break;
     }
