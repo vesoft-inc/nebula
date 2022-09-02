@@ -93,7 +93,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 
   auto engineRet = kvstore->part(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
   if (!nebula::ok(engineRet)) {
-    LOG(ERROR) << "Get NebulaGraph store engine failed";
+    LOG(ERROR) << "Get Nebula store engine failed";
     return nullptr;
   }
 
@@ -103,7 +103,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   while (true) {
     auto ret = kvstore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
-      LOG(ERROR) << "NebulaGraph store init failed";
+      LOG(ERROR) << "Nebula store init failed";
       return nullptr;
     }
     leader = nebula::value(ret);
@@ -154,7 +154,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V3);
   }
 
-  LOG(INFO) << "NebulaGraph store init succeeded, clusterId " << gClusterId;
+  LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
   return kvstore;
 }
 
