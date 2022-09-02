@@ -19,7 +19,7 @@ using nebula::cpp2::PropertyType;
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;
 const std::string str = "Hello world!";    // NOLINT
-const std::string fixed = "NebulaGraph";  // NOLINT
+const std::string fixed = "Nebula Graph";  // NOLINT
 const Timestamp now = 1582183355;
 // Convert timestamp now to datetime string
 const Date date = {2020, 2, 20};
