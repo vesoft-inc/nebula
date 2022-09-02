@@ -30,7 +30,7 @@ def init_parser():
         '--build_dir',
         dest='build_dir',
         default=BUILD_DIR,
-        help='Build directory of nebula graph',
+        help='Build directory of NebulaGraph',
     )
     opt_parser.add_option(
         '--rm_dir',
@@ -39,10 +39,10 @@ def init_parser():
         help='Whether to remove the test folder',
     )
     opt_parser.add_option(
-        '--user', dest='user', default='root', help='nebula graph user'
+        '--user', dest='user', default='root', help='NebulaGraph user'
     )
     opt_parser.add_option(
-        '--password', dest='password', default='nebula', help='nebula graph password'
+        '--password', dest='password', default='nebula', help='NebulaGraph password'
     )
     opt_parser.add_option('--cmd', dest='cmd', default='', help='start or stop command')
     opt_parser.add_option(
@@ -114,7 +114,7 @@ def opt_is(val, expect):
 
 def start_nebula(nb, configs):
     if configs.address is not None and configs.address != "":
-        print('test remote nebula graph, address is {}'.format(configs.address))
+        print('test remote NebulaGraph, address is {}'.format(configs.address))
         if len(configs.address.split(':')) != 2:
             raise Exception('Invalid address, address is {}'.format(configs.address))
         address, port = configs.address.split(':')
@@ -161,7 +161,7 @@ def start_nebula(nb, configs):
 
 def start_standalone(nb, configs):
     if configs.address is not None and configs.address != "":
-        print('test remote nebula graph, address is {}'.format(configs.address))
+        print('test remote NebulaGraph, address is {}'.format(configs.address))
         if len(configs.address.split(':')) != 2:
             raise Exception('Invalid address, address is {}'.format(configs.address))
         address, port = configs.address.split(':')
@@ -209,7 +209,7 @@ def start_standalone(nb, configs):
 
 def stop_nebula(nb, configs=None):
     if configs.address is not None and configs.address != "":
-        print('test remote nebula graph, no need to stop nebula.')
+        print('test remote NebulaGraph, no need to stop nebula.')
         return
 
     with open(NB_TMP_PATH, "r") as f:
@@ -235,7 +235,7 @@ if __name__ == "__main__":
             graphd_inst = 2
             is_standalone = False
 
-        # Setup nebula graph service
+        # Setup NebulaGraph service
         nebula_svc = NebulaService(
             configs.build_dir,
             NEBULA_HOME,

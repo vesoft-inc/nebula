@@ -82,9 +82,8 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
   for (const auto& partEntry : req.get_parts()) {
     contexts_.front().resultStat_ = ResultStatus::NORMAL;
     auto partId = partEntry.first;
-    for (const auto& row : partEntry.second) {
-      CHECK_GE(row.values.size(), 1);
-      auto vId = row.values[0].getStr();
+    for (const auto& vid : partEntry.second) {
+      auto vId = vid.getStr();
 
       if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
         LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
@@ -122,9 +121,9 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   }
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
-  for (const auto& [partId, rows] : req.get_parts()) {
+  for (const auto& [partId, vids] : req.get_parts()) {
     futures.emplace_back(
-        runInExecutor(&contexts_[i], &expCtxs_[i], &results_[i], partId, rows, limit, random));
+        runInExecutor(&contexts_[i], &expCtxs_[i], &results_[i], partId, vids, limit, random));
     i++;
   }
 
@@ -155,15 +154,14 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     StorageExpressionContext* expCtx,
     nebula::DataSet* result,
     PartitionID partId,
-    const std::vector<nebula::Row>& rows,
+    const std::vector<nebula::Value>& vids,
     int64_t limit,
     bool random) {
   return folly::via(
-      executor_, [this, context, expCtx, result, partId, input = std::move(rows), limit, random]() {
+      executor_, [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
         auto plan = buildPlan(context, expCtx, result, limit, random);
-        for (const auto& row : input) {
-          CHECK_GE(row.values.size(), 1);
-          auto vId = row.values[0].getStr();
+        for (const auto& vid : input) {
+          auto vId = vid.getStr();
 
           if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
             LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "

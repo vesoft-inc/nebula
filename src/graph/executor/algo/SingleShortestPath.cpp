@@ -46,6 +46,7 @@ void SingleShortestPath::init(const HashSet& startVids, const HashSet& endVids, 
   allRightPaths_.reserve(rowSize);
   resultDs_.resize(rowSize);
   for (const auto& startVid : startVids) {
+    HashSet srcVid({startVid});
     for (const auto& endVid : endVids) {
       robin_hood::unordered_flat_map<Value, std::vector<Row>, std::hash<Value>> steps;
       std::vector<Row> dummy;
@@ -53,11 +54,9 @@ void SingleShortestPath::init(const HashSet& startVids, const HashSet& endVids, 
       HalfPath originRightPath({std::move(steps)});
       allRightPaths_.emplace_back(std::move(originRightPath));
 
-      DataSet startDs, endDs;
-      startDs.rows.emplace_back(Row({startVid}));
-      endDs.rows.emplace_back(Row({endVid}));
-      leftVids_.emplace_back(std::move(startDs));
-      rightVids_.emplace_back(std::move(endDs));
+      HashSet dstVid({endVid});
+      leftVids_.emplace_back(srcVid);
+      rightVids_.emplace_back(std::move(dstVid));
     }
   }
 }
@@ -88,11 +87,13 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
                                                    qctx_->rctx()->session()->id(),
                                                    qctx_->plan()->id(),
                                                    qctx_->plan()->isProfileEnabled());
-  auto& inputRows = reverse ? rightVids_[rowNum].rows : leftVids_[rowNum].rows;
+  auto& inputVids = reverse ? rightVids_[rowNum] : leftVids_[rowNum];
+  std::vector<Value> vids(inputVids.begin(), inputVids.end());
+  inputVids.clear();
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
-                     std::move(inputRows),
+                     std::move(vids),
                      {},
                      pathNode_->edgeDirection(),
                      nullptr,
@@ -137,9 +138,7 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
   allSteps.emplace_back();
   auto& currentStep = allSteps.back();
 
-  HashSet uniqueDst;
-  uniqueDst.reserve(iterSize);
-  std::vector<Row> nextStepVids;
+  auto& nextStepVids = reverse ? rightVids_[rowNum] : leftVids_[rowNum];
   nextStepVids.reserve(iterSize);
 
   QueryExpressionContext ctx(qctx_->ectx());
@@ -149,14 +148,12 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
       continue;
     }
     auto& edge = edgeVal.getEdge();
-    auto dst = edge.dst;
+    auto& dst = edge.dst;
     if (visitedVids.find(dst) != visitedVids.end()) {
       continue;
     }
     visitedVids.emplace(edge.src);
-    if (uniqueDst.emplace(dst).second) {
-      nextStepVids.emplace_back(Row({dst}));
-    }
+    nextStepVids.emplace(dst);
     auto vertex = iter->getVertex();
     Row step;
     step.emplace_back(std::move(vertex));
@@ -170,13 +167,7 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
       steps.emplace_back(std::move(step));
     }
   }
-  visitedVids.insert(std::make_move_iterator(uniqueDst.begin()),
-                     std::make_move_iterator(uniqueDst.end()));
-  if (reverse) {
-    rightVids_[rowNum].rows.swap(nextStepVids);
-  } else {
-    leftVids_[rowNum].rows.swap(nextStepVids);
-  }
+  visitedVids.insert(nextStepVids.begin(), nextStepVids.end());
   return Status::OK();
 }
 
@@ -191,8 +182,8 @@ folly::Future<Status> SingleShortestPath::handleResponse(size_t rowNum, size_t s
         if (result || stepNum * 2 >= maxStep_) {
           return folly::makeFuture<Status>(Status::OK());
         }
-        auto& leftVids = leftVids_[rowNum].rows;
-        auto& rightVids = rightVids_[rowNum].rows;
+        auto& leftVids = leftVids_[rowNum];
+        auto& rightVids = rightVids_[rowNum];
         if (leftVids.empty() || rightVids.empty()) {
           return folly::makeFuture<Status>(Status::OK());
         }

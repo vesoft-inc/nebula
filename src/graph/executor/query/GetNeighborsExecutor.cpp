@@ -13,18 +13,18 @@ using nebula::storage::cpp2::GetNeighborsResponse;
 namespace nebula {
 namespace graph {
 
-StatusOr<DataSet> GetNeighborsExecutor::buildRequestDataSet() {
+StatusOr<std::vector<Value>> GetNeighborsExecutor::buildRequestVids() {
   SCOPED_TIMER(&execTime_);
   auto inputVar = gn_->inputVar();
   auto iter = ectx_->getResult(inputVar).iter();
-  return buildRequestDataSetByVidType(iter.get(), gn_->src(), gn_->dedup());
+  return buildRequestListByVidType(iter.get(), gn_->src(), gn_->dedup());
 }
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
-  auto res = buildRequestDataSet();
+  auto res = buildRequestVids();
   NG_RETURN_IF_ERROR(res);
-  auto reqDs = std::move(res).value();
-  if (reqDs.rows.empty()) {
+  auto vids = std::move(res).value();
+  if (vids.empty()) {
     List emptyResult;
     return finish(ResultBuilder()
                       .value(Value(std::move(emptyResult)))
@@ -41,8 +41,8 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
                                           qctx()->plan()->isProfileEnabled());
   return storageClient
       ->getNeighbors(param,
-                     std::move(reqDs.colNames),
-                     std::move(reqDs.rows),
+                     {nebula::kVid},
+                     std::move(vids),
                      gn_->edgeTypes(),
                      gn_->edgeDirection(),
                      gn_->statProps(),

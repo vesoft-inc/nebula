@@ -282,11 +282,9 @@ class Perf {
     auto* evb = threadPool_->getEventBase();
     std::vector<std::string> colNames;
     colNames.emplace_back(kVid);
-    std::vector<Row> vertices;
+    std::vector<Value> vids;
     for (auto& vertex : randomVertices()) {
-      nebula::Row row;
-      row.values.emplace_back(vertex);
-      vertices.emplace_back(row);
+      vids.emplace_back(vertex);
     }
 
     cpp2::EdgeDirection edgeDire = cpp2::EdgeDirection::BOTH;
@@ -300,15 +298,8 @@ class Perf {
 
       StorageClient::CommonRequestParam param(spaceId_, 0, 0, false);
       storageClient_
-          ->getNeighbors(param,
-                         colNames,
-                         vertices,
-                         {edgeType_},
-                         edgeDire,
-                         &statProps,
-                         &vProps,
-                         &eProps,
-                         nullptr)
+          ->getNeighbors(
+              param, colNames, vids, {edgeType_}, edgeDire, &statProps, &vProps, &eProps, nullptr)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {

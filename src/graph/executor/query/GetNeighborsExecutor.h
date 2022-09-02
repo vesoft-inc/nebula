@@ -21,7 +21,7 @@ class GetNeighborsExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> execute() override;
 
-  StatusOr<DataSet> buildRequestDataSet();
+  StatusOr<std::vector<Value>> buildRequestVids();
 
  private:
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
