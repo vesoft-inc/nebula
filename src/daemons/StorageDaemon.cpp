@@ -24,7 +24,7 @@ DEFINE_string(data_path,
               "For rocksdb engine, one path one instance.");
 DEFINE_string(wal_path,
               "",
-              "Nebula wal path. By default, wal will be stored as a sibling of "
+              "NebulaGraph wal path. By default, wal will be stored as a sibling of "
               "rocksdb data.");
 DEFINE_string(listener_path,
               "",
