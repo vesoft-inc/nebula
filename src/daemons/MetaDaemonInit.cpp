@@ -87,7 +87,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
       std::move(options), ioPool, localhost, threadManager);
   if (!(kvstore->init())) {
-    LOG(ERROR) << "NebulaGraph store init failed";
+    LOG(ERROR) << "Nebula store init failed";
     return nullptr;
   }
 
