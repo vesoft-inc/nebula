@@ -131,6 +131,7 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
+      CHECK(!tries[j].hasException());
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);
