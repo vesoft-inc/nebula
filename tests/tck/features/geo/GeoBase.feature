@@ -93,7 +93,7 @@ Feature: Geo base
       """
     Then the execution should be successful
     And wait 3 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       INSERT VERTEX test_1() VALUES "test_101":()
       """
@@ -245,7 +245,7 @@ Feature: Geo base
     Then the execution should be successful
     And wait 3 seconds
     # Show create tag index
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       SHOW CREATE TAG INDEX any_shape_geo_index;
       """
@@ -741,7 +741,7 @@ Feature: Geo base
       """
     Then the execution should be successful
     And wait 3 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       LOOKUP ON any_shape YIELD id(vertex) as id;
       """
@@ -753,7 +753,7 @@ Feature: Geo base
       """
     Then the execution should be successful
     And wait 3 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       LOOKUP ON any_shape_edge YIELD edge as e;
       """
