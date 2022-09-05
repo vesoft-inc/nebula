@@ -51,6 +51,27 @@ Feature: Not In Expression
       | r     |
       | false |
 
+  Scenario: Match Not In Set
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      match p0 =  (n0)<-[e0:`like`|`teammate`|`teammate`]->(n1)
+      where id(n0) == "Suns"
+      and  not (e0.like.likeness in  [e0.teammate.end_year, ( e0.teammate.start_year ) ] )
+      or  not (( "" ) not ends with ( ""  +  ""  +  "" ))
+      and ("" not in ( ""  +  ""  +  ""  +  "" ))
+      or (e0.teammate.start_year > ( e0.teammate.end_year ))
+      and (( ( ( e0.like.likeness ) ) ) / e0.teammate.start_year >
+      e0.teammate.start_year)
+      or (e0.like.likeness*e0.teammate.start_year%e0.teammate.end_year+
+      ( ( e0.teammate.start_year ) ) > e0.teammate.end_year)
+      or (( ( ( ( e0.teammate.end_year ) ) ) ) in  [9.8978784E7 ] )
+      return e0.like.likeness, e0.teammate.start_year, e0.teammate.start_year,
+      e0.teammate.end_year, e0.teammate.end_year
+      limit 91
+      """
+    Then a SemanticError should be raised at runtime: Type error `("" NOT IN "")'
+
   Scenario: Using NOT IN list in GO
     Given a graph with space named "nba"
     When executing query:
