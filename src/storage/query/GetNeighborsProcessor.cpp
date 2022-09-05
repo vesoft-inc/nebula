@@ -130,8 +130,13 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
     CHECK(!t.hasException());
     const auto& tries = t.value();
+    size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
       CHECK(!tries[j].hasException());
+      sum += results_[j].size();
+    }
+    resultDataSet_.rows.reserve(sum);
+    for (size_t j = 0; j < tries.size(); j++) {
       const auto& [code, partId] = tries[j].value();
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);

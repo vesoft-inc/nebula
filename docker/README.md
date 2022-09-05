@@ -1,4 +1,4 @@
-# Docker Files for Nebula Graph Services
+# Docker Files for NebulaGraph Services
 
 Following docker images will be ready in production.
 
