@@ -63,7 +63,6 @@ class FunctionManager final {
   static StatusOr<Value::Type> getReturnType(const std::string &funcName,
                                              const std::vector<Value::Type> &argsType);
 
- private:
   // The attributes of the function call
   struct FunctionAttributes final {
     size_t minArity_{0};
@@ -89,6 +88,7 @@ class FunctionManager final {
     }
   }
 
+ private:
   /**
    * FunctionManager functions as a singleton, since the dynamic loading is
    * process-wide.
