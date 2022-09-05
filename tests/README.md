@@ -1,4 +1,4 @@
-# Nebula Graph Test Manual
+# NebulaGraph Test Manual
 
 ## Usage
 
@@ -35,7 +35,7 @@ $ make BUILD_DIR=/path/to/nebula/build/directory up
 
 ### Run all test cases
 
-There are two classes of nebula graph test cases, one is built on pytest and another is built on TCK. We split them into different execution methods:
+There are two classes of NebulaGraph test cases, one is built on pytest and another is built on TCK. We split them into different execution methods:
 
 ```shell
 $ make test # run pytest cases
