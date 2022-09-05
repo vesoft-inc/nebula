@@ -559,7 +559,6 @@ Feature: Prune Properties rule
       ALTER TAG player ADD (sex string NOT NULL DEFAULT "男");
       ALTER EDGE like ADD (start_year int64 NOT NULL DEFAULT 2022);
       ALTER EDGE serve ADD (degree int64 NOT NULL DEFAULT 88);
-      ALTER EDGE follow ADD (start_year int64 NOT NULL DEFAULT 2022);
       """
     And wait 6 seconds
     When executing query:

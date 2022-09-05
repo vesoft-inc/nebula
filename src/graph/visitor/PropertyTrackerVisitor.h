@@ -75,6 +75,7 @@ class PropertyTrackerVisitor : public ExprVisitorImpl {
   void visit(AggregateExpression* expr) override;
 
   const QueryContext* qctx_{nullptr};
+  const int unKnowType_{0};
   GraphSpaceID space_;
   PropertyTracker& propsUsed_;
   std::string entityAlias_;

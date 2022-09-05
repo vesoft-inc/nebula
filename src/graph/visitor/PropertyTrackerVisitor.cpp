@@ -171,13 +171,12 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
     return;
   }
   auto &propName = constVal.getStr();
-  static const int kUnknownType = 0;
   switch (lhs->kind()) {
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kVarProperty: {  // $e.name
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
       auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.insertEdgeProp(edgeAlias, kUnknownType, propName);
+      propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
       break;
     }
     case Expression::Kind::kSubscript: {  // $-.e[0].name
@@ -187,7 +186,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       if (kind == Expression::Kind::kInputProperty || kind == Expression::Kind::kVarProperty) {
         auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
         auto &edgeAlias = propExpr->prop();
-        propsUsed_.insertEdgeProp(edgeAlias, kUnknownType, propName);
+        propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
       } else if (kind == Expression::Kind::kListComprehension) {
         //  match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v) return e[0].start_year
         auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
@@ -195,7 +194,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
         if (collectExpr->kind() == Expression::Kind::kInputProperty) {
           auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
           auto &aliasName = inputPropExpr->prop();
-          propsUsed_.insertEdgeProp(aliasName, kUnknownType, propName);
+          propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
         }
       }
       break;
@@ -210,11 +209,12 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       auto *argExpr = funCallExpr->args()->args().front();
       auto kind = argExpr->kind();
       switch (kind) {
+        case Expression::Kind::kVarProperty:
         case Expression::Kind::kInputProperty: {
           //  match (v) return properties(v).name
           auto *inputPropExpr = static_cast<InputPropertyExpression *>(argExpr);
           auto &aliasName = inputPropExpr->prop();
-          propsUsed_.insertVertexProp(aliasName, kUnknownType, propName);
+          propsUsed_.insertVertexProp(aliasName, unKnowType_, propName);
           break;
         }
         case Expression::Kind::kSubscript: {
@@ -226,7 +226,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
             //  match (v)-[e]->(b) return properties(e).start_year
             auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
             auto &aliasName = propExpr->prop();
-            propsUsed_.insertEdgeProp(aliasName, kUnknownType, propName);
+            propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
           } else if (leftKind == Expression::Kind::kListComprehension) {
             //  match (v)-[c*2]->(b) retrun properties(c[0]).start_year
             //  properties([e IN $-.c WHERE is_edge($e)][0]).start_year
@@ -235,7 +235,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
             if (collectExpr->kind() == Expression::Kind::kInputProperty) {
               auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
               auto &aliasName = inputPropExpr->prop();
-              propsUsed_.insertEdgeProp(aliasName, kUnknownType, propName);
+              propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
             }
           }
           break;
