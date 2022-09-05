@@ -349,7 +349,7 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
 
 Expression *FoldConstantExprVisitor::fold(Expression *expr) {
   // Container expression should remain the same type after being folded
-  if (expr->isContainerExpr()) {
+  if (expr->isContainerExpr() || !status_.ok()) {
     return expr;
   }
 
