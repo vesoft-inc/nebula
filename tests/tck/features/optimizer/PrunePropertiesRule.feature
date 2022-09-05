@@ -1,15 +1,12 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: Prune Properties rule
-
-  Background:
-    Given a graph with space named "nba"
 
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
   Scenario: Single Match
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
@@ -152,6 +149,7 @@ Feature: Prune Properties rule
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
   Scenario: Multi Path Patterns
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
@@ -229,6 +227,7 @@ Feature: Prune Properties rule
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
   Scenario: Multi Match
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -333,6 +332,7 @@ Feature: Prune Properties rule
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
   Scenario: Optional Match
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -392,6 +392,7 @@ Feature: Prune Properties rule
 
   @distonly
   Scenario: return function
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (v1)-[e:like*1..5]->(v2)
@@ -482,6 +483,7 @@ Feature: Prune Properties rule
 
   @distonly
   Scenario: union match
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (v:player{name:'Tim Duncan'})-[:like]->(b) RETURN id(b)
@@ -515,6 +517,7 @@ Feature: Prune Properties rule
 
   @distonly
   Scenario: optional match
+    Given a graph with space named "nba"
     When profiling query:
       """
       MATCH (v:player)-[:like]-(:player)<-[:teammate]-(b:player)-[:serve]->(t:team)
@@ -553,8 +556,11 @@ Feature: Prune Properties rule
       | 11 | Argument       |              |                                                                                                                                                                 |
       | 12 | Start          |              |                                                                                                                                                                 |
 
-  Scenario: match single vertex:
-    Given having executed:
+  @distonly
+  Scenario: test properties:
+    Given an empty graph
+    And load "nba" csv data to a new space
+    And having executed:
       """
       ALTER TAG player ADD (sex string NOT NULL DEFAULT "男");
       ALTER EDGE like ADD (start_year int64 NOT NULL DEFAULT 2022);
@@ -604,8 +610,8 @@ Feature: Prune Properties rule
       match (v:player) where properties(v).name=="LaMarcus Aldridge" return v.player.sex,properties(v).age;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.sex | v.player.age |
-      | "男"         | 33           |
+      | v.player.sex | properties(v).age |
+      | "男"         | 33                |
     When executing query:
       """
       match (v:player) where id(v)=="Carmelo Anthony" return v.player.age;
@@ -615,7 +621,7 @@ Feature: Prune Properties rule
       | 34           |
     When executing query:
       """
-      match (v:player) where id(v)=="Carmelo Anthony" return v.player.age;
+      match (v:player) where id(v)=="Carmelo Anthony" return properties(v).age;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(v).age |
@@ -664,8 +670,6 @@ Feature: Prune Properties rule
       | id(v)               | properties(v).name  | v.player.age |
       | "Amar'e Stoudemire" | "Amar'e Stoudemire" | 36           |
       | "Carmelo Anthony"   | "Carmelo Anthony"   | 34           |
-
-  Scenario: match single edge
     When executing query:
       """
       match ()-[e]->() return properties(e).start_year limit 2;
@@ -680,48 +684,40 @@ Feature: Prune Properties rule
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).start_year |
-      | 2015                     |
-      | 1994                     |
+      | 2008                     |
+      | 2018                     |
     When executing query:
       """
       match ()-[e:serve]->() return properties(e).start_year,e.end_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).start_year | e.end_year |
-      | 2015                     | 2017       |
-      | 1994                     | 2000       |
+      | 2008                     | 2012       |
+      | 2018                     | 2019       |
     When executing query:
       """
       match ()-[e:serve]->() where e.start_year>1022 return properties(e).end_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).end_year |
-      | 2017                   |
-      | 2000                   |
+      | 2012                   |
+      | 2019                   |
     When executing query:
       """
       match ()-[e:serve]->() where e.start_year>1022 return e.end_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | e.end_year |
-      | 2017       |
-      | 2000       |
+      | 2012       |
+      | 2019       |
     When executing query:
       """
       match ()-[e:serve]->() where e.start_year>1022 return e.end_year,properties(e).degree limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | e.end_year | properties(e).degree |
-      | 2017       | 88                   |
-      | 2000       | 88                   |
-    When executing query:
-      """
-      match ()-[e:serve]->() where e.start_year>1022 return e.end_year limit 2;
-      """
-    Then the result should be, in any order, with relax comparison:
-      | e.end_year |
-      | 2017       |
-      | 2000       |
+      | 2012       | 88                   |
+      | 2019       | 88                   |
     When executing query:
       """
       match ()-[e:serve]->() where e.start_year>1022 return properties(e).degree limit 2;
@@ -732,139 +728,127 @@ Feature: Prune Properties rule
       | 88                   |
     When executing query:
       """
-      match ()-[e:serve]->() where e.start_year>1022 return e.end_year,properties(e).degree limit 2;
-      """
-    Then the result should be, in any order, with relax comparison:
-      | e.end_year | properties(e).degree |
-      | 2017       | 88                   |
-      | 2000       | 88                   |
-    When executing query:
-      """
       match ()-[e:serve{degree:88}]->()  return properties(e).start_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).start_year |
-      | 2015                     |
-      | 1994                     |
+      | 2008                     |
+      | 2018                     |
     When executing query:
       """
       match ()-[e:serve{degree:88}]->()  return e.end_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | e.end_year |
-      | 2017       |
-      | 2000       |
+      | 2012       |
+      | 2019       |
     When executing query:
       """
       match ()-[e:serve{degree:88}]->()  return e.end_year,properties(e).start_year limit 2;
       """
     Then the result should be, in any order, with relax comparison:
       | e.end_year | properties(e).start_year |
-      | 2017       | 2015                     |
-      | 2000       | 1994                     |
-
-  Scenario: match complex pattern
+      | 2012       | 2008                     |
+      | 2019       | 2018                     |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e]-(dst_v) return properties(src_v).age,properties(e).degree,properties(dst_v).name,src_v.player.sex,e.start_year,dst_v.player.age limit 3;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(src_v).age | properties(e).degree | properties(dst_v).name | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | 88                   | "Spurs"                | "男"             | 2002         | __NULL__         |
-      | 41                    | 88                   | "Dejounte Murray"      | "男"             | 2022         | 29               |
-      | 41                    | 88                   | "Tiago Splitter"       | "男"             | 2022         | 34               |
+      | 41                    | 88                   | "Spurs"                | "男"             | 2002         | NULL             |
+      | 41                    | UNKNOWN_PROP         | "Tony Parker"          | "男"             | 2002         | 36               |
+      | 41                    | UNKNOWN_PROP         | "Tony Parker"          | "男"             | 2002         | 36               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v) return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age, e[1].start_year,dst_v.player.age limit 5;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | src_v.player.age | e[1].start_year | dst_v.player.age |
-      | "男"                  | 88                      | "Tracy McGrady"        | 41               | 2013            | 39               |
-      | "男"                  | 88                      | "Rudy Gay"             | 41               | 2017            | 32               |
-      | "男"                  | 88                      | "Paul Gasol"           | 41               | 2016            | 38               |
-      | "男"                  | UNKNOWN_PROP            | "Hornets"              | 41               | 2018            | __NULL__         |
-      | "男"                  | UNKNOWN_PROP            | "Hornets"              | 41               | 2018            | __NULL__         |
+      | "男"                  | 88                      | "Cory Joseph"          | 41               | 2011            | 27               |
+      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41               | 2022            | 34               |
+      | "男"                  | UNKNOWN_PROP            | "76ers"                | 41               | 2017            | NULL             |
+      | "男"                  | 88                      | "Danny Green"          | 41               | 2010            | 31               |
+      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41               | 2022            | 31               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v) return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age, e[1].start_year,dst_v.player.age limit 5;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | src_v.player.age | e[1].start_year | dst_v.player.age |
-      | "男"                  | 88                      | "LaMarcus Aldridge"    | 41               | 2022            | 33               |
-      | "男"                  | 88                      | "LaMarcus Aldridge"    | 41               | 2022            | 33               |
-      | "男"                  | 88                      | "LaMarcus Aldridge"    | 41               | 2022            | 33               |
-      | "男"                  | 88                      | "LaMarcus Aldridge"    | 41               | 2022            | 33               |
-      | "男"                  | 88                      | "Manu Ginobili"        | 41               | 2022            | 41               |
+      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41               | 2022            | 34               |
+      | "男"                  | UNKNOWN_PROP            | "Kyle Anderson"        | 41               | 2022            | 25               |
+      | "男"                  | UNKNOWN_PROP            | "Kevin Durant"         | 41               | 2022            | 30               |
+      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41               | 2022            | 31               |
+      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41               | 2022            | 31               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"  return properties(v1).name,properties(v2).age,properties(v3).name limit 1;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(v1).name | properties(v2).age | properties(v3).name |
-      | "Manu Ginobili"     | 36                 | "Hornets"           |
+      | "Manu Ginobili"     | 36                 | "Spurs"             |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"  return properties(v1).name,properties(v2).age,properties(v3).name,v1.player.sex,v2.player.sex,id(v3) limit 1;
       """
     Then the result should be, in any order, with relax comparison:
-      | properties(v1).name | properties(v2).age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)    |
-      | "Manu Ginobili"     | 36                 | "Hornets"           | "男"          | "男"          | "Hornets" |
+      | properties(v1).name | properties(v2).age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)  |
+      | "Manu Ginobili"     | 36                 | "Spurs"             | "男"          | "男"          | "Spurs" |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"  return properties(v1).name,properties(v2).age,properties(v3).name,v2.player.sex,v1.player.age limit 1;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(v1).name | properties(v2).age | properties(v3).name | v2.player.sex | v1.player.age |
-      | "Yao Ming"          | 47                 | "Suns"              | "男"          | 38            |
+      | "Yao Ming"          | 47                 | "JaVale McGee"      | "男"          | 38            |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"  return properties(v1).name,properties(v2).age,properties(v3).name limit 1;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(v1).name | properties(v2).age | properties(v3).name |
-      | "Yao Ming"          | 47                 | "Suns"              |
+      | "Yao Ming"          | 47                 | "JaVale McGee"      |
     When executing query:
       """
       match (v1)-->(v2)-->(v3:team{name:"Celtics"})   return properties(v1).name,properties(v2).age,properties(v3).name limit 1;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(v1).name | properties(v2).age | properties(v3).name |
-      | "Rajon Rondo"       | 43                 | "Celtics"           |
+      | "Yao Ming"          | 47                 | "Celtics"           |
     When executing query:
       """
-      match (src_v)-[e:like|serve{degree:88}]->(dst_v) where  id(src_v)=="Rajon Rondo" return properties(e).degree,e.end_year limit 10;
+      match (src_v)-[e:like|serve]->(dst_v) where  id(src_v)=="Rajon Rondo" return properties(e).degree,e.end_year limit 10;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).degree | e.end_year   |
-      | 88                   | 2018         |
-      | 88                   | 2015         |
-      | 88                   | 2017         |
-      | 88                   | 2016         |
-      | 88                   | 2019         |
-      | 88                   | UNKNOWN_PROP |
       | 88                   | 2014         |
+      | 88                   | 2016         |
+      | 88                   | 2017         |
+      | 88                   | 2019         |
+      | 88                   | 2018         |
+      | UNKNOWN_PROP         | UNKNOWN_PROP |
+      | 88                   | 2015         |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree,properties(e2).degree limit 5;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).degree | properties(e2).degree |
-      | 90                   | 88                    |
+      | UNKNOWN_PROP         | UNKNOWN_PROP          |
+      | UNKNOWN_PROP         | 88                    |
       | 88                   | 88                    |
       | 88                   | 88                    |
-      | 95                   | 80                    |
-      | 88                   | 88                    |
-
-  Scenario: match wrong syntax
+      | UNKNOWN_PROP         | 88                    |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree1,properties(e).degree1,e2.a,dst_v.p.name,dst_v.player.sex1,properties(src_v).name2 limit 5;
       """
     Then the result should be, in any order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a         | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | __NULL__     | __NULL__          | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | __NULL__     | __NULL__          | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | __NULL__     | __NULL__          | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | __NULL__     | __NULL__          | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | __NULL__     | __NULL__          | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
     Then drop the used space

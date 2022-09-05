@@ -158,9 +158,10 @@ void PrunePropertiesVisitor::pruneCurrent(ScanEdges *node) {
     newEdgeProp.type_ref() = edgeType;
     if (edgeAliasIter == edgePropsMap.end()) {
       // only type, dst are used
-      newEdgeProp.props_ref() = {nebula::kDst, nebula::kType, nebula::kRank};
+      newEdgeProp.props_ref() = {nebula::kSrc, nebula::kDst, nebula::kType, nebula::kRank};
     } else {
-      std::unordered_set<std::string> uniqueProps{nebula::kDst, nebula::kType, nebula::kRank};
+      std::unordered_set<std::string> uniqueProps{
+          nebula::kSrc, nebula::kDst, nebula::kType, nebula::kRank};
       std::vector<std::string> newProps;
       auto &usedEdgeProps = edgeAliasIter->second;
       auto edgeTypeIter = usedEdgeProps.find(std::abs(edgeType));
