@@ -8,7 +8,7 @@
 
 #include <gtest/gtest_prod.h>
 #include <rocksdb/db.h>
-#include <rocksdb/utilities/backup_engine.h>
+#include <rocksdb/utilities/backupable_db.h>
 #include <rocksdb/utilities/checkpoint.h>
 
 #include "common/base/Base.h"
