@@ -143,7 +143,7 @@ function start_daemon {
     eval ${command}
     code=$?
     INFO "Done"
-    exit ${code}
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
@@ -178,7 +178,7 @@ function stop_daemon {
     stop_by_pid_file $(get_pid_file_from_config ${config})
     code=$? 
     INFO "Done"
-    exit ${code}
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
@@ -219,7 +219,7 @@ function kill_daemon {
     stop_by_pid_file $(get_pid_file_from_config ${config}) "KILL"
     code=$? 
     INFO "Done"
-    exit ${code}
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
