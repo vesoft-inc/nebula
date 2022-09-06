@@ -36,21 +36,6 @@ this_libc_version=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
 this_gcc_version=$($cxx_cmd -dumpfullversion -dumpversion)
 this_abi_version=$($this_dir/cxx-compiler-abi-version.sh)
 
-hash wget &>/dev/null || {
-    echo "'wget' not found, please install it first" 1>&2
-    exit 1
-}
-
-download_cmd="wget -c"
-if [[ -t 1 ]]
-then
-    wget --help | grep -q '\--show-progress' && \
-            download_cmd="$download_cmd -q --show-progress" || \
-            download_cmd="$download_cmd --progress=bar:force:noscroll"
-else
-    download_cmd="$download_cmd -q"
-fi
-
 function version_cmp {
     mapfile -t left < <( echo $1 | tr . '\n' )
     mapfile -t right < <( echo $2 | tr . '\n')
@@ -90,14 +75,38 @@ selected_gcc_version=$(select_by_version $this_gcc_version "${gcc_preset_version
     exit 1
 }
 
+archive_prefix=/tmp/vesoft/.cache
 selected_archive=vesoft-third-party-$version-$(uname -m)-libc-$selected_libc_version-gcc-$selected_gcc_version-abi-$this_abi_version.sh
 
-url=$url_base/$selected_archive
-echo "Downloading $selected_archive..."
-$download_cmd $url
-[[ $? -ne 0 ]] && {
-    echo "Downloading $selected_archive failed" 1>&2
-    exit 1
-}
+if [[ -f $archive_prefix/$selected_archive ]]
+then
+    checksum=$(md5sum $archive_prefix/$selected_archive | cut -d ' ' -f 1)
+fi
 
-bash $selected_archive $@ && rm -rf $selected_archive
+# NOTE Please adjust the expected checksum once the archive changed
+# The checksum value is the latest vesoft-third-party-3.0-x86_64-libc-2.34-gcc-11.2.0-abi-11.sh
+if [[ ! $checksum = 47c98d269617736a926d82e4a0be0f07 ]]
+then
+    hash wget &>/dev/null || {
+        echo "'wget' not found, please install it first" 1>&2
+        exit 1
+    }
+    download_cmd="wget -c"
+    if [[ -t 1 ]]
+    then
+        wget --help | grep -q '\--show-progress' && \
+                download_cmd="$download_cmd -q --show-progress" || \
+                download_cmd="$download_cmd --progress=bar:force:noscroll"
+    else
+        download_cmd="$download_cmd -q"
+    fi
+    url=$url_base/$selected_archive
+    echo "Downloading $selected_archive..."
+    $download_cmd $url -P $archive_prefix
+    [[ $? -ne 0 ]] && {
+        echo "Downloading $selected_archive failed" 1>&2
+        exit 1
+    }
+fi
+
+bash $archive_prefix/$selected_archive $@
