@@ -54,9 +54,9 @@ bool CaseExpression::operator==(const Expression& rhs) const {
 }
 
 const Value& CaseExpression::eval(ExpressionContext& ctx) {
-  auto cond = condition_ != nullptr ? condition_->eval(ctx) : Value();
+  const auto& cond = condition_ != nullptr ? condition_->eval(ctx) : Value();
   for (const auto& whenThen : cases_) {
-    auto when = whenThen.when->eval(ctx);
+    const auto& when = whenThen.when->eval(ctx);
     if (condition_ != nullptr) {
       if (cond == when) {
         result_ = whenThen.then->eval(ctx);

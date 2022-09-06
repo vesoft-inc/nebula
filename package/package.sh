@@ -149,11 +149,11 @@ function _build_graph {
           ${project_dir}
 
     if ! ( make -j ${jobs} ); then
-        echo ">>> build nebula graph failed <<<"
+        echo ">>> build NebulaGraph failed <<<"
         exit 1
     fi
     popd
-    echo ">>> build nebula graph successfully <<<"
+    echo ">>> build NebulaGraph successfully <<<"
 }
 
 # args: <version>
@@ -179,7 +179,7 @@ function package {
     [[ $strip_enable == TRUE ]] && args="-D CPACK_STRIP_FILES=TRUE -D CPACK_RPM_SPEC_MORE_DEFINE="
 
     if ! ( cpack --verbose $args ); then
-        echo ">>> package nebula failed <<<"
+        echo ">>> package NebulaGraph failed <<<"
         exit 1
     else
         # rename package file

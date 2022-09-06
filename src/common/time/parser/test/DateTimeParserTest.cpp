@@ -20,6 +20,13 @@ TEST(DatetimeReader, DateTime) {
     EXPECT_EQ((time::Result{nebula::DateTime(2019, 1, 3, 22, 22, 3, 233300), false}),
               result.value());
   }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("-2019-01-03T22:22:3.2333");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ((time::Result{nebula::DateTime(-2019, 1, 3, 22, 22, 3, 233300), false}),
+              result.value());
+  }
   // with offset
   {
     auto parser = time::DatetimeReader();
@@ -152,8 +159,24 @@ TEST(DatetimeReader, DateTimeFailed) {
   // not exits prefix
   {
     auto parser = time::DatetimeReader();
-    auto result = parser.readDatetime("-01-03T22:22:3.2333");
-    EXPECT_FALSE(result.ok());
+    auto result = parser.readDatetime("abc01-03T22:22:3.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  // not in range
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1659602415-01-03");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1999-13-03T22:22:3.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDatetime("1999-01-32T22:22:3.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
   }
 }
 
@@ -163,6 +186,12 @@ TEST(DatetimeReader, Date) {
     auto result = parser.readDate("2019-01-03");
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(nebula::Date(2019, 1, 3), result.value());
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("-2019-01-03");
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(nebula::Date(-2019, 1, 3), result.value());
   }
   // lack day
   {
@@ -230,8 +259,24 @@ TEST(DatetimeReader, DateFailed) {
   // not exits prefix
   {
     auto parser = time::DatetimeReader();
-    auto result = parser.readDate("-01-03");
-    EXPECT_FALSE(result.ok());
+    auto result = parser.readDate("abc-01-03");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  // not in range
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1659602415-01-03");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1999-13-03");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader();
+    auto result = parser.readDate("1999-01-32");
+    EXPECT_FALSE(result.ok()) << result.value();
   }
 }
 

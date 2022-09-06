@@ -86,8 +86,8 @@ class ShortestPathBase {
   folly::SpinLock statsLock_;
 
   std::vector<DataSet> resultDs_;
-  std::vector<DataSet> leftVids_;
-  std::vector<DataSet> rightVids_;
+  std::vector<HashSet> leftVids_;
+  std::vector<HashSet> rightVids_;
 };
 
 }  // namespace graph

@@ -21,7 +21,7 @@ Feature: Simple case
       | 1  | GetDstBySrc | 0            |               |
       | 0  | Start       |              |               |
 
-  Scenario: go m steps yield distinct dst id
+  Scenario: go m steps
     When profiling query:
       """
       GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD DISTINCT id($$) AS dst | YIELD count(*)
@@ -39,6 +39,89 @@ Feature: Simple case
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
       | 0  | Start       |              |                   |
+    # The last step degenerates to `GetNeighbors` when yield or filter properties other than `_dst`
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD id($$) AS dst | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 65       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 7  | Aggregate    | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD $$.player.age AS age | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 65       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 11 | Aggregate    | 10           |                   |
+      | 10 | Project      | 9            |                   |
+      | 9  | LeftJoin     | 8            |                   |
+      | 8  | Project      | 7            |                   |
+      | 7  | GetVertices  | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER * WHERE $$.player.age > 36 YIELD $$.player.age AS age | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 10       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 12 | Aggregate    | 11           |                   |
+      | 11 | Project      | 10           |                   |
+      | 10 | Filter       | 9            |                   |
+      | 9  | LeftJoin     | 8            |                   |
+      | 8  | Project      | 7            |                   |
+      | 7  | GetVertices  | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    # Because GetDstBySrc doesn't support limit push down, so degenrate to GetNeighbors when the query contains limit/simple clause
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER * YIELD DISTINCT id($$) LIMIT [100, 100, 100] | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 13       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 11 | Aggregate    | 10           |                   |
+      | 10 | Dedup        | 9            |                   |
+      | 9  | Project      | 12           |                   |
+      | 12 | Limit        | 13           |                   |
+      | 13 | GetNeighbors | 6            |                   |
+      | 6  | Loop         | 0            | {"loopBody": "5"} |
+      | 5  | Dedup        | 4            |                   |
+      | 4  | Project      | 14           |                   |
+      | 14 | Limit        | 15           |                   |
+      | 15 | GetNeighbors | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
 
   Scenario: go m to n steps yield distinct dst id
     When profiling query:
