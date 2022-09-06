@@ -839,7 +839,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX name_edge_index ON name_edge(name(10));
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 12 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX;
@@ -1000,7 +1000,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG student(name string, age int);
       """
     And wait 6 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       INSERT VERTEX
         student(name, age)
@@ -1021,7 +1021,7 @@ Feature: IndexTest_Vid_String
       """
     Then the execution should be successful
     And wait 6 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       CREATE TAG INDEX student_name_teacher ON student(name(10), teacher(10))
       """
