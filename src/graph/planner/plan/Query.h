@@ -670,6 +670,8 @@ class ScanEdges final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   friend ObjectPool;
   ScanEdges(QueryContext* qctx,

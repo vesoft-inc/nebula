@@ -240,6 +240,10 @@ PlanNode* ScanEdges::clone() const {
   return newGE;
 }
 
+void ScanEdges::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 void ScanEdges::cloneMembers(const ScanEdges& ge) {
   Explore::cloneMembers(ge);
 
