@@ -48,6 +48,9 @@ class GetEdgesTransformUtils final {
         limit_count,
         {},
         traverse->filter() == nullptr ? nullptr : traverse->filter()->clone());
+    auto &colNames = traverse->colNames();
+    DCHECK_EQ(colNames.size(), 2);
+    scanEdges->setColNames({colNames.back()});
     return scanEdges;
   }
 
