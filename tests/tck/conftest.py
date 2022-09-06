@@ -405,6 +405,21 @@ def executing_query(query, exec_ctx, request):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
 
+@when(parse("executing query and retrying it on failure every {secs:d} seconds for {retryTimes:d} times:\n{query}"))
+def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
+    ngql = combine_query(query)
+    exec_query(request, ngql, exec_ctx)
+    res = exec_ctx["result_set"]
+    if not res.is_succeeded():
+      retryCounter = 0
+      while retryCounter < retryTimes:
+        time.sleep(secs)
+        exec_query(request, ngql, exec_ctx)
+        resRetry = exec_ctx["result_set"]
+        if not resRetry.is_succeeded():
+          retryCounter = retryCounter + 1
+        else:
+          break
 
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
 def executing_query(
