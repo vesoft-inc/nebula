@@ -171,9 +171,15 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
           break;
         }
       }
-      if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-          (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
-        resultDataSet_->rows.emplace_back(std::move(row));
+      if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        if (filter_ == nullptr) {
+          resultDataSet_->rows.emplace_back(std::move(row));
+        } else {
+          auto result = QueryUtils::vTrue(filter_->eval(*expCtx_));
+          if (result.ok() && result.value()) {
+            resultDataSet_->rows.emplace_back(std::move(row));
+          }
+        }
       }
       expCtx_->clear();
       for (auto& tagNode : tagNodes_) {
@@ -323,9 +329,15 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
         break;
       }
     }
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
-        (filter_ == nullptr || QueryUtils::vTrue(filter_->eval(*expCtx_)))) {
-      resultDataSet_->rows.emplace_back(std::move(row));
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      if (filter_ == nullptr) {
+        resultDataSet_->rows.emplace_back(std::move(row));
+      } else {
+        auto result = QueryUtils::vTrue(filter_->eval(*expCtx_));
+        if (result.ok() && result.value()) {
+          resultDataSet_->rows.emplace_back(std::move(row));
+        }
+      }
     }
     expCtx_->clear();
     for (auto& edgeNode : edgeNodes_) {
