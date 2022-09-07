@@ -768,6 +768,16 @@ std::string MetaKeyUtils::indexTagKey(GraphSpaceID spaceId, const std::string& n
   return key;
 }
 
+std::string MetaKeyUtils::indexTagPrefix(GraphSpaceID spaceId) {
+  EntryType type = EntryType::TAG;
+  std::string key;
+  key.reserve(128);
+  key.append(kIndexTable.data(), kIndexTable.size())
+      .append(reinterpret_cast<const char*>(&type), sizeof(type))
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+  return key;
+}
+
 std::string MetaKeyUtils::indexEdgeKey(GraphSpaceID spaceId, const std::string& name) {
   EntryType type = EntryType::EDGE;
   std::string key;
@@ -776,6 +786,16 @@ std::string MetaKeyUtils::indexEdgeKey(GraphSpaceID spaceId, const std::string& 
       .append(reinterpret_cast<const char*>(&type), sizeof(type))
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(name);
+  return key;
+}
+
+std::string MetaKeyUtils::indexEdgePrefix(GraphSpaceID spaceId) {
+  EntryType type = EntryType::EDGE;
+  std::string key;
+  key.reserve(128);
+  key.append(kIndexTable.data(), kIndexTable.size())
+      .append(reinterpret_cast<const char*>(&type), sizeof(type))
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
   return key;
 }
 
@@ -792,6 +812,16 @@ std::string MetaKeyUtils::indexIndexKey(GraphSpaceID spaceID, const std::string&
       .append(reinterpret_cast<const char*>(&type), sizeof(type))
       .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID))
       .append(indexName);
+  return key;
+}
+
+std::string MetaKeyUtils::indexIndexPrefix(GraphSpaceID spaceID) {
+  EntryType type = EntryType::INDEX;
+  std::string key;
+  key.reserve(128);
+  key.append(kIndexTable.data(), kIndexTable.size())
+      .append(reinterpret_cast<const char*>(&type), sizeof(type))
+      .append(reinterpret_cast<const char*>(&spaceID), sizeof(GraphSpaceID));
   return key;
 }
 
