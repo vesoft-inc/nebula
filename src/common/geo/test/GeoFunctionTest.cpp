@@ -1054,22 +1054,22 @@ TEST(s2CellIdFromPoint, polygon) {
 TEST(isValid, point) {
   {
     auto point = Geography::fromWKT("POINT(1.0 1.0)").value();
-    bool b = point.isValid();
+    bool b = point.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
     auto point = Geography::fromWKT("POINT(181.0 1.0)").value();
-    bool b = point.isValid();
+    bool b = point.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto point = Geography::fromWKT("POINT(1.0 91.0)").value();
-    bool b = point.isValid();
+    bool b = point.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto point = Geography::fromWKT("POINT(-181.0 -91.0)").value();
-    bool b = point.isValid();
+    bool b = point.isValid().ok();
     EXPECT_EQ(false, b);
   }
 }
@@ -1077,32 +1077,32 @@ TEST(isValid, point) {
 TEST(isValid, lineString) {
   {
     auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 2.0 2.0)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
     auto line = Geography::fromWKT("LINESTRING(1 1, 2 3, 4 8, -6 3)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
     auto line = Geography::fromWKT("LINESTRING(1.0 1.0)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 1.0 1.0)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 181.0 2.0)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 1.0 90.001)").value();
-    bool b = line.isValid();
+    bool b = line.isValid().ok();
     EXPECT_EQ(false, b);
   }
 }
@@ -1110,12 +1110,12 @@ TEST(isValid, lineString) {
 TEST(isValid, polygon) {
   {
     auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
     auto polygon = Geography::fromWKT("POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
@@ -1123,7 +1123,7 @@ TEST(isValid, polygon) {
         Geography::fromWKT(
             "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (10 0, 0 10, 0 -10, 10 0))")
             .value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
@@ -1131,7 +1131,7 @@ TEST(isValid, polygon) {
                        "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (10 0, 0 10, 0 -10, 10 "
                        "0), (-10 0, 0 10, -5 -10, -10 0))")
                        .value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
@@ -1139,17 +1139,17 @@ TEST(isValid, polygon) {
                        "POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1.0 1.0, 2.0 2.0, 0.0 "
                        "2.0, 1.0 1.0))")
                        .value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(true, b);
   }
   {
     auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 2.0))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 2.0, 1.2 1.2))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(false, b);
   }
   // The first loop doesn't contain the second loop
@@ -1159,18 +1159,18 @@ TEST(isValid, polygon) {
   //                      "
   //                      "-20, -20 -20))")
   //                      .value();
-  //   bool b = polygon.isValid();
+  //   bool b = polygon.isValid().ok();
   //   EXPECT_EQ(false, b);  // Expect false, got true
   // }
   {
     auto polygon =
         Geography::fromWKT("POLYGON((1.0 1.0, -180.0001 2.0, 0.0 2.0, 1.0 1.0))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(false, b);
   }
   {
     auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 -90.001, 1.0 1.0))").value();
-    bool b = polygon.isValid();
+    bool b = polygon.isValid().ok();
     EXPECT_EQ(false, b);
   }
 }
