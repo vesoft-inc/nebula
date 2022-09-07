@@ -130,7 +130,7 @@ function start_daemon {
     if [[ -f ${pid_file} ]]; then
         if is_process_running ${pid_file}; then
             ERROR "${daemon_name} already running: $(cat ${pid_file})"
-            return 1
+            exit 1
         fi
     fi
 
@@ -141,7 +141,9 @@ function start_daemon {
     local command="${executable} --flagfile ${config}"
     INFO "Starting ${daemon_name}..."
     eval ${command}
+    code=$?
     INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
@@ -174,7 +176,9 @@ function stop_daemon {
 
     INFO "Stopping ${daemon_name}..."
     stop_by_pid_file $(get_pid_file_from_config ${config})
+    code=$? 
     INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
@@ -213,7 +217,9 @@ function kill_daemon {
 
     INFO "Force killing ${daemon_name}..."
     stop_by_pid_file $(get_pid_file_from_config ${config}) "KILL"
+    code=$? 
     INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
 }
 
 
