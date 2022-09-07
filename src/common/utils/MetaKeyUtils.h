@@ -245,9 +245,15 @@ class MetaKeyUtils final {
 
   static std::string indexTagKey(GraphSpaceID spaceId, const std::string& name);
 
+  static std::string indexTagPrefix(GraphSpaceID spaceId);
+
   static std::string indexEdgeKey(GraphSpaceID spaceId, const std::string& name);
 
+  static std::string indexEdgePrefix(GraphSpaceID spaceId);
+
   static std::string indexIndexKey(GraphSpaceID spaceId, const std::string& name);
+
+  static std::string indexIndexPrefix(GraphSpaceID spaceId);
 
   static std::string indexZoneKey(const std::string& name);
 

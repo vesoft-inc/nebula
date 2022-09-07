@@ -357,18 +357,23 @@ TEST(IndexProcessorTest, TagIndexTest) {
     auto items = resp.get_items();
 
     ASSERT_EQ(3, items.size());
+    // meta will be read in the order of indexname
     {
-      cpp2::ColumnDef column;
-      column.name_ref() = "tag_0_col_0";
-      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
-      columns.emplace_back(std::move(column));
+      cpp2::ColumnDef stringColumn;
+      stringColumn.name_ref() = "tag_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
+      columns.emplace_back(std::move(stringColumn));
+      cpp2::ColumnDef intColumn;
+      intColumn.name_ref() = "tag_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
+      columns.emplace_back(std::move(intColumn));
 
-      auto singleItem = items[0];
-      ASSERT_EQ(2, singleItem.get_index_id());
-      ASSERT_EQ("single_field_index", singleItem.get_index_name());
-      auto singleFieldResult = singleItem.get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
+      auto disorderItem = items[0];
+      ASSERT_EQ(4, disorderItem.get_index_id());
+      auto disorderFieldResult = disorderItem.get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
     }
     {
       std::vector<cpp2::ColumnDef> columns;
@@ -389,21 +394,17 @@ TEST(IndexProcessorTest, TagIndexTest) {
       ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
     }
     {
+      cpp2::ColumnDef column;
+      column.name_ref() = "tag_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
-      cpp2::ColumnDef stringColumn;
-      stringColumn.name_ref() = "tag_0_col_1";
-      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
-      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
-      columns.emplace_back(std::move(stringColumn));
-      cpp2::ColumnDef intColumn;
-      intColumn.name_ref() = "tag_0_col_0";
-      intColumn.type.type_ref() = PropertyType::INT64;
-      columns.emplace_back(std::move(intColumn));
+      columns.emplace_back(std::move(column));
 
-      auto disorderItem = items[2];
-      ASSERT_EQ(4, disorderItem.get_index_id());
-      auto disorderFieldResult = disorderItem.get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+      auto singleItem = items[2];
+      ASSERT_EQ(2, singleItem.get_index_id());
+      ASSERT_EQ("single_field_index", singleItem.get_index_name());
+      auto singleFieldResult = singleItem.get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
     }
   }
   {
@@ -708,6 +709,7 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_EXISTED, resp.get_code());
   }
+  // meta will be read in the order of indexname
   {
     cpp2::ListEdgeIndexesReq req;
     req.space_id_ref() = 1;
@@ -719,16 +721,21 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     auto items = resp.get_items();
     ASSERT_EQ(3, items.size());
     {
-      cpp2::ColumnDef column;
-      column.name_ref() = "edge_0_col_0";
-      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
-      columns.emplace_back(std::move(column));
+      cpp2::ColumnDef stringColumn;
+      stringColumn.name_ref() = "edge_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
+      columns.emplace_back(std::move(stringColumn));
+      cpp2::ColumnDef intColumn;
+      intColumn.name_ref() = "edge_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
+      columns.emplace_back(std::move(intColumn));
 
-      auto singleItem = items[0];
-      ASSERT_EQ(2, singleItem.get_index_id());
-      auto singleFieldResult = singleItem.get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
+      auto disorderItem = items[0];
+      ASSERT_EQ(4, disorderItem.get_index_id());
+      auto disorderFieldResult = disorderItem.get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
     }
     {
       std::vector<cpp2::ColumnDef> columns;
@@ -749,21 +756,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
       ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
     }
     {
+      cpp2::ColumnDef column;
+      column.name_ref() = "edge_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
-      cpp2::ColumnDef stringColumn;
-      stringColumn.name_ref() = "edge_0_col_1";
-      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
-      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
-      columns.emplace_back(std::move(stringColumn));
-      cpp2::ColumnDef intColumn;
-      intColumn.name_ref() = "edge_0_col_0";
-      intColumn.type.type_ref() = PropertyType::INT64;
-      columns.emplace_back(std::move(intColumn));
+      columns.emplace_back(std::move(column));
 
-      auto disorderItem = items[2];
-      ASSERT_EQ(4, disorderItem.get_index_id());
-      auto disorderFieldResult = disorderItem.get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, disorderFieldResult));
+      auto singleItem = items[2];
+      ASSERT_EQ(2, singleItem.get_index_id());
+      auto singleFieldResult = singleItem.get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
     }
   }
   {
