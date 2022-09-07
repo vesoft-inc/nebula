@@ -202,15 +202,11 @@ Feature: explorer start
       | "LeBron James"    |
     When executing query:
       """
-      FIND ALL PATH FROM "Spurs", "Tim Duncan", "Marco Belinelli", "LeBron James" TO "Dejounte Murray", "Danny Green" OVER *  BIDIRECT UPTO 1 STEPS YIELD path as p | limit 5
+      FIND ALL PATH FROM "Spurs", "Tim Duncan", "Marco Belinelli", "LeBron James" TO "Dejounte Murray", "Danny Green" OVER *  BIDIRECT UPTO 1 STEPS YIELD path AS p | limit 5 | YIELD count(*)
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                   |
-      | <("Tim Duncan")<-[:like@0 {}]-("Danny Green")>      |
-      | <("Tim Duncan")-[:teammate@0 {}]->("Danny Green")>  |
-      | <("Spurs")<-[:serve@0 {}]-("Danny Green")>          |
-      | <("LeBron James")<-[:like@0 {}]-("Danny Green")>    |
-      | <("Marco Belinelli")<-[:like@0 {}]-("Danny Green")> |
+      | count(*) |
+      | 5        |
     When executing query:
       """
       MATCH (n) WHERE id(n) IN ["Danny Green", "Tim Duncan", "Spurs", "LeBron James", "Marco Belinelli", "Dejounte Murray"] RETURN count(*)
@@ -229,15 +225,11 @@ Feature: explorer start
   Scenario: path explorer
     When executing query:
       """
-      FIND ALL PATH FROM "Dejounte Murray" TO "Danny Green" over `like`, `serve`, `teammate`  UPTO 5 STEPS yield path as `_path` | LIMIT 5
+      FIND ALL PATH FROM "Dejounte Murray" TO "Danny Green" over `like`, `serve`, `teammate`  UPTO 5 STEPS yield path as `_path` | LIMIT 5 |Yield count(*)
       """
     Then the result should be, in any order, with relax comparison:
-      | _path                                                                                                               |
-      | <("Dejounte Murray")-[:like@0 {}]->("Danny Green")>                                                                 |
-      | <("Dejounte Murray")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")>                                |
-      | <("Dejounte Murray")-[:like@0 {}]->("Marco Belinelli")-[:like@0 {}]->("Danny Green")>                               |
-      | <("Dejounte Murray")-[:like@0 {}]->("Danny Green")-[:like@0 {}]->("Marco Belinelli")-[:like@0 {}]->("Danny Green")> |
-      | <("Dejounte Murray")-[:like@0 {}]->("Danny Green")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")>  |
+      | count(*) |
+      | 5        |
     When executing query:
       """
       MATCH (n) WHERE id(n) IN ["Dejounte Murray", "Danny Green", "Tim Duncan", "Marco Belinelli"] RETURN n
