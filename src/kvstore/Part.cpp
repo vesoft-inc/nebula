@@ -214,6 +214,7 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
     std::unique_ptr<LogIterator> iter, bool wait, bool needLock) {
   // We should apply any membership change which happens before start time. Because when we start
   // up, the peers comes from meta, has already contains all previous changes.
+  execTime_ = 0;
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   LogID lastId = kNoCommitLogId;
@@ -364,6 +365,7 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Part::commitSnapshot(
     LogID committedLogId,
     TermID committedLogTerm,
     bool finished) {
+  execTime_ = 0;
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;

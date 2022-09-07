@@ -876,6 +876,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     committed = committedLogId_;
     // Step 1: Write WAL
     {
+      execTime_ = 0;
       SCOPED_TIMER(&execTime_);
       if (!wal_->appendLogs(iter)) {
         VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to write into WAL";
@@ -1744,6 +1745,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     if (hasLogsToAppend) {
       bool result = false;
       {
+        execTime_ = 0;
         SCOPED_TIMER(&execTime_);
         result = wal_->appendLogs(logIter);
       }
