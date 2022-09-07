@@ -594,6 +594,13 @@ Status CreateFTIndexValidator::validateImpl() {
   if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
     return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
   }
+  bool containUpper = false;
+  for (auto c : name) {
+    containUpper |= std::isupper(c);
+  }
+  if (containUpper) {
+    return Status::SyntaxError("Fulltext index names cannot contain uppercase letters");
+  }
   auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
   NG_RETURN_IF_ERROR(tsRet);
   auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name);
