@@ -61,14 +61,6 @@ int main(int argc, char *argv[]) {
 
   Status status;
 
-#if defined(ENABLE_BREAKPAD)
-  status = setupBreakpad();
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return EXIT_FAILURE;
-  }
-#endif
-
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);
   if (!status.ok()) {
@@ -80,11 +72,6 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  if (FLAGS_daemonize) {
-    google::SetStderrLogging(google::FATAL);
-  } else {
-    google::SetStderrLogging(google::INFO);
-  }
 
   // Setup logging
   status = setupLogging(argv[0]);
@@ -92,6 +79,20 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  if (FLAGS_daemonize) {
+    google::SetStderrLogging(google::FATAL);
+  } else {
+    google::SetStderrLogging(google::INFO);
+  }
+
+#if defined(ENABLE_BREAKPAD)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
 
   // Init stats
   nebula::initStorageStats();
