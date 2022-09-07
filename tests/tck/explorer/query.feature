@@ -205,11 +205,11 @@ Feature: explorer start
       """
     Then the result should be, in any order, with relax comparison:
       | p                                                                                                                                                                                                         |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})> |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})>     |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 70}]-("Danny Green" :player{age: 31, name: "Danny Green"})>             |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 80}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})>             |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 80}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})>               |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})> |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})>     |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 70}]-("Danny Green" :player{age: 31, name: "Danny Green"})>             |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})>             |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})>               |
     When executing query:
       """
       MATCH (n) WHERE id(n) IN ["Tony Parker", "Tim Duncan", "Tiago Splitter", "Shaquille O'Neal", "Marco Belinelli", "Manu Ginobili", "Boris Diaw", "Aron Baynes", "Spurs", "Danny Green", "Dejounte Murray", "LaMarcus Aldridge"] RETURN n
