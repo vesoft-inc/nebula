@@ -34,7 +34,7 @@ class LabelAttributeExpression final : public Expression {
   }
 
   const Value& eval(ExpressionContext&) override {
-    LOG(FATAL) << "LabelAttributeExpression has to be rewritten";
+    DLOG(FATAL) << "LabelAttributeExpression has to be rewritten";
     return Value::kNullBadData;
   }
 
