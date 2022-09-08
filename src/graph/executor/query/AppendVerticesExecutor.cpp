@@ -31,7 +31,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
     return handleNullProp(av);
   }
 
-
   StorageClient *storageClient = qctx()->getStorageClient();
   auto res = buildRequestDataSet(av);
   NG_RETURN_IF_ERROR(res);
