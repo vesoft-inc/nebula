@@ -17,7 +17,7 @@ Feature: delete vertex without edge
       CREATE EDGE e();
       """
     And wait 6 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 9 times:
       """
       INSERT VERTEX t(id) VALUES 1:(1),2:(2),3:(3);
       INSERT EDGE e() VALUES 1->2:(),1->3:();
@@ -74,7 +74,7 @@ Feature: delete vertex without edge
       CREATE EDGE e();
       """
     And wait 6 seconds
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       INSERT VERTEX t(id) VALUES 1:(1),2:(2),3:(2);
       INSERT EDGE e() VALUES 1->2:(),1->3:();

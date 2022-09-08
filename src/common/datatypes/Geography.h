@@ -52,7 +52,9 @@ struct Coordinate {
   Coordinate(double lng, double lat) : x(lng), y(lat) {}
 
   void normalize();
-  bool isValid() const;
+  Status isValid() const;
+
+  std::string toString() const;
 
   void clear() {
     x = 0.0;
@@ -87,7 +89,7 @@ struct Point {
   explicit Point(Coordinate&& v) : coord(std::move(v)) {}
 
   void normalize();
-  bool isValid() const;
+  Status isValid() const;
 
   void clear() {
     coord.clear();
@@ -116,7 +118,7 @@ struct LineString {
   }
 
   void normalize();
-  bool isValid() const;
+  Status isValid() const;
 
   void clear() {
     coordList.clear();
@@ -145,7 +147,7 @@ struct Polygon {
   }
 
   void normalize();
-  bool isValid() const;
+  Status isValid() const;
 
   void clear() {
     coordListList.clear();
@@ -193,7 +195,7 @@ struct Geography {
   Polygon& mutablePolygon();
 
   void normalize();
-  bool isValid() const;
+  Status isValid() const;
 
   Point centroid() const;
 

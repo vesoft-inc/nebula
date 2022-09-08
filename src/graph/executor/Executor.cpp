@@ -699,6 +699,10 @@ bool Executor::movable(const Variable *var) {
     return false;
   }
   if (node()->loopLayers() != 0) {
+    // Guaranteed forward compatibility of go statement execution behavior
+    if (node()->kind() == PlanNode::Kind::kFilter) {
+      return true;
+    }
     // The lifetime of loop body is managed by Loop node
     return false;
   }
