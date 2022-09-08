@@ -346,6 +346,11 @@ Feature: Go Sentence
       | like._dst     |
       | "Kobe Bryant" |
       | "Marc Gasol"  |
+      | EMPTY         |
+      | EMPTY         |
+      | EMPTY         |
+      | EMPTY         |
+      | EMPTY         |
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
@@ -354,11 +359,6 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
-      | EMPTY     |
-      | EMPTY     |
-      | EMPTY     |
-      | EMPTY     |
-      | EMPTY     |
     When executing query:
       """
       GO FROM "Manu Ginobili" OVER * REVERSELY YIELD like.likeness, teammate.start_year, serve.start_year, $$.player.name
@@ -1467,14 +1467,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1483,14 +1483,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1564,8 +1564,8 @@ Feature: Go Sentence
       GO FROM 'Tim Duncan' OVER serve YIELD $$.player.name as name
       """
     Then the result should be, in any order, with relax comparison:
-      | name  |
-      | EMPTY |
+      | name |
+      | NULL |
 
   Scenario: zero step
     When executing query:

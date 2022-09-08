@@ -394,35 +394,30 @@ Feature: TTLTest
       """
     Then the result should be, in any order, with relax comparison:
       | node  |
-      | ("1") |
     When executing query:
       """
       FETCH PROP ON person "1" YIELD person.id as id
       """
     Then the result should be, in any order:
       | id    |
-      | EMPTY |
     When executing query:
       """
       FETCH PROP ON * "1" YIELD person.id, career.id
       """
     Then the result should be, in any order:
       | person.id | career.id |
-      | EMPTY     | EMPTY     |
     When executing query:
       """
       FETCH PROP ON person "2" YIELD person.id
       """
     Then the result should be, in any order:
       | person.id |
-      | EMPTY     |
     When executing query:
       """
       FETCH PROP ON person "2" YIELD person.id as id
       """
     Then the result should be, in any order:
       | id    |
-      | EMPTY |
     When executing query:
       """
       FETCH PROP ON career "2" YIELD career.id;
@@ -492,5 +487,4 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | age   |
-      | EMPTY |
     And drop the used space

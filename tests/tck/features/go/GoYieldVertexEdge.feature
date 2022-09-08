@@ -352,6 +352,11 @@ Feature: Go Yield Vertex And Edge Sentence
       | e                                                     |
       | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}] |
       | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]  |
+      | [:serve "Paul Gasol"->"Bucks"@0{end_year:2020,start_year:2019}]|
+      | [:serve "Paul Gasol"->"Bulls"@0{end_year:2016,start_year:2014}]|
+      | [:serve "Paul Gasol"->"Grizzlies"@0{end_year:2008,start_year:2001}]|
+      | [:serve "Paul Gasol"->"Lakers"@0{end_year:2014,start_year:2008}]|
+      | [:serve "Paul Gasol"->"Spurs"@0{end_year:2019,start_year:2016}]|
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
@@ -360,11 +365,6 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | type    |
-      | "serve" |
-      | "serve" |
-      | "serve" |
-      | "serve" |
-      | "serve" |
     When executing query:
       """
       GO FROM "Manu Ginobili" OVER * REVERSELY YIELD like.likeness, teammate.start_year, serve.start_year, $$.player.name, type(edge) as type
@@ -1383,13 +1383,13 @@ Feature: Go Yield Vertex And Edge Sentence
       | dst                 | serve.start_year | like.likeness | $$.player.name      |
       | "James Harden"      | EMPTY            | 90            | "James Harden"      |
       | "Paul George"       | EMPTY            | 90            | "Paul George"       |
-      | "Thunders"          | 2008             | EMPTY         | EMPTY               |
+      | "Thunders"          | 2008             | EMPTY         | NULL                |
       | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
-      | "Rockets"           | 2012             | EMPTY         | EMPTY               |
-      | "Thunders"          | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"           | 2012             | EMPTY         | NULL                |
+      | "Thunders"          | 2009             | EMPTY         | NULL                |
       | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Pacers"            | 2010             | EMPTY         | EMPTY               |
-      | "Thunders"          | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"            | 2010             | EMPTY         | NULL                |
+      | "Thunders"          | 2017             | EMPTY         | NULL                |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * REVERSELY YIELD edge as e

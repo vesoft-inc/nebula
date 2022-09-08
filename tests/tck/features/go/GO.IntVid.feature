@@ -1383,14 +1383,14 @@ Feature: IntegerVid Go  Sentence
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1399,14 +1399,14 @@ Feature: IntegerVid Go  Sentence
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1480,8 +1480,8 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash('Tim Duncan') OVER serve YIELD $$.player.name as name
       """
     Then the result should be, in any order, with relax comparison:
-      | name  |
-      | EMPTY |
+      | name |
+      | NULL |
 
   Scenario: Integer Vid zero step
     When executing query:

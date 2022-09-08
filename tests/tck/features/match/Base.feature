@@ -494,6 +494,7 @@ Feature: Basic match
       """
     Then a SemanticError should be raised at runtime: Match clause is not supported to be followed by other cypher clauses
 
+  @wtf
   Scenario: exists
     When executing query:
       """

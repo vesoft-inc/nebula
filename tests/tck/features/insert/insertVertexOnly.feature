@@ -19,6 +19,10 @@ Feature: insert vertex without tag
     When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       INSERT VERTEX VALUES 1:(),2:(),3:();
+      """
+    Then a SemanticError should be raised at runtime: Insert vertex is forbidden, please speicify the tag
+    When executing query:
+      """
       INSERT EDGE e() VALUES 1->2:(),2->3:();
       """
     Then the execution should be successful
@@ -35,6 +39,4 @@ Feature: insert vertex without tag
       """
     Then the result should be, in any order, with relax comparison:
       | v   |
-      | (1) |
-      | (2) |
     Then drop the used space
