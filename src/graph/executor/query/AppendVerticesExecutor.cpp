@@ -31,14 +31,8 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
     return handleNullProp(av);
   }
 
-<<<<<<< HEAD
   DataSet vertices = buildRequestDataSet(av);
-=======
   StorageClient *storageClient = qctx()->getStorageClient();
-  auto res = buildRequestDataSet(av);
-  NG_RETURN_IF_ERROR(res);
-  auto vertices = std::move(res).value();
->>>>>>> decd85339 (Prune properties (#4523))
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
