@@ -31,14 +31,11 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
     return handleNullProp(av);
   }
 
-<<<<<<< HEAD
-  DataSet vertices = buildRequestDataSet(av);
+
   StorageClient *storageClient = qctx()->getStorageClient();
-=======
   auto res = buildRequestDataSet(av);
   NG_RETURN_IF_ERROR(res);
   auto vertices = std::move(res).value();
->>>>>>> fc434bbc4 (add unwind & check vidType when executing not validate (#4456))
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
