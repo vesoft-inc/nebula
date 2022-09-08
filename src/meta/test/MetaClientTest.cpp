@@ -741,19 +741,10 @@ TEST(MetaClientTest, TagIndexTest) {
     ASSERT_EQ(Status::Error("conflict"), result.status());
   }
   {
+    // meta will be read in the order of indexname
     auto result = client->listTagIndexes(space).get();
     auto values = result.value();
     ASSERT_EQ(2, values.size());
-
-    {
-      cpp2::ColumnDef singleColumn;
-      singleColumn.name_ref() = "tag_0_col_0";
-      singleColumn.type.type_ref() = PropertyType::INT64;
-      std::vector<cpp2::ColumnDef> columns;
-      columns.emplace_back(std::move(singleColumn));
-      auto singleFieldResult = values[0].get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
-    }
 
     {
       std::vector<cpp2::ColumnDef> columns;
@@ -768,8 +759,18 @@ TEST(MetaClientTest, TagIndexTest) {
       stringColumn.type.type_length_ref() = 50;
       columns.emplace_back(std::move(stringColumn));
 
-      auto multiFieldResult = values[1].get_fields();
+      auto multiFieldResult = values[0].get_fields();
       ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
+    }
+
+    {
+      cpp2::ColumnDef singleColumn;
+      singleColumn.name_ref() = "tag_0_col_0";
+      singleColumn.type.type_ref() = PropertyType::INT64;
+      std::vector<cpp2::ColumnDef> columns;
+      columns.emplace_back(std::move(singleColumn));
+      auto singleFieldResult = values[1].get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
     }
   }
   sleep(FLAGS_heartbeat_interval_secs * 5);
@@ -919,20 +920,10 @@ TEST(MetaClientTest, EdgeIndexTest) {
     ASSERT_EQ(Status::Error("not existed!"), result.status());
   }
   {
+    // meta will be read in the order of indexname
     auto result = client->listEdgeIndexes(space).get();
     auto values = result.value();
     ASSERT_EQ(2, values.size());
-
-    {
-      cpp2::ColumnDef column;
-      column.name_ref() = "edge_0_col_0";
-      column.type.type_ref() = PropertyType::INT64;
-      std::vector<cpp2::ColumnDef> columns;
-      columns.emplace_back(std::move(column));
-
-      auto singleFieldResult = values[0].get_fields();
-      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
-    }
 
     {
       std::vector<cpp2::ColumnDef> columns;
@@ -945,8 +936,19 @@ TEST(MetaClientTest, EdgeIndexTest) {
       stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
       stringColumn.type.type_length_ref() = 50;
       columns.emplace_back(std::move(stringColumn));
-      auto multiFieldResult = values[1].get_fields();
+      auto multiFieldResult = values[0].get_fields();
       ASSERT_TRUE(TestUtils::verifyResult(columns, multiFieldResult));
+    }
+
+    {
+      cpp2::ColumnDef column;
+      column.name_ref() = "edge_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
+      std::vector<cpp2::ColumnDef> columns;
+      columns.emplace_back(std::move(column));
+
+      auto singleFieldResult = values[1].get_fields();
+      ASSERT_TRUE(TestUtils::verifyResult(columns, singleFieldResult));
     }
   }
   sleep(FLAGS_heartbeat_interval_secs * 5);

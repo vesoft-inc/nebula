@@ -58,7 +58,7 @@ Feature: Test lookup on tag index 2
     Then drop the used space
 
   Scenario Outline: [tag] scan without hints
-    When executing query:
+    When executing query and retrying it on failure every 6 seconds for 3 times:
       """
       LOOKUP ON
         lookup_tag_1

@@ -40,10 +40,10 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
         SCOPED_TIMER(&execTime_);
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", scanEdgesTime.elapsedInUSec()));
       })
-      .thenValue([this, se](StorageRpcResponse<ScanResponse> &&rpcResp) {
+      .thenValue([this](StorageRpcResponse<ScanResponse> &&rpcResp) {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
-        return handleResp(std::move(rpcResp), se->colNames());
+        return handleResp(std::move(rpcResp), {});
       });
 }
 

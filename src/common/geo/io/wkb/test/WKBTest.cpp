@@ -41,25 +41,25 @@ TEST_F(WKBTest, TestWKB) {
     Point v(Coordinate(24.7, 36.842));
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     Point v(Coordinate(-179, 36.842));
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     Point v(Coordinate(24.7, 36.842));
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     Point v(Coordinate(298.4, 499.99));
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   {
     Point v(Coordinate(24.7, 36.842));
@@ -75,32 +75,32 @@ TEST_F(WKBTest, TestWKB) {
         Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(3, 4)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(0, 1)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   // LineString must have at least 2 points
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
@@ -124,7 +124,7 @@ TEST_F(WKBTest, TestWKB) {
         Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(0, 1)}});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   {
     Polygon v(std::vector<std::vector<Coordinate>>{
@@ -137,7 +137,7 @@ TEST_F(WKBTest, TestWKB) {
                                 Coordinate(4, 5)}});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(true, v.isValid().ok());
   }
   // The loop is not closed
   {
@@ -145,7 +145,7 @@ TEST_F(WKBTest, TestWKB) {
         Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(3, 4)}});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   // Loop must have at least 4 points
   {
@@ -153,7 +153,7 @@ TEST_F(WKBTest, TestWKB) {
         std::vector<Coordinate>{Coordinate(0, 1), Coordinate(1, 2), Coordinate(0, 1)}});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(false, v.isValid());
+    EXPECT_EQ(false, v.isValid().ok());
   }
   {
     Polygon v(std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{

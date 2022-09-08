@@ -22,23 +22,23 @@ Feature: Push Filter down LeftJoin rule
       | "Tim Duncan"   |
     And the execution plan should be:
       | id | name               | dependencies | operator info |
-      | 24 | Project            | 23           |               |
-      | 23 | Filter             | 22           |               |
-      | 22 | InnerJoin          | 21           |               |
+      | 24 | Project            | 34           |               |
+      | 34 | InnerJoin          | 33           |               |
+      | 33 | Filter             | 21           |               |
       | 21 | LeftJoin           | 20           |               |
       | 20 | Project            | 19           |               |
       | 19 | GetVertices        | 18           |               |
-      | 18 | Project            | 31           |               |
-      | 31 | GetNeighbors       | 14           |               |
-      | 14 | Project            | 13           |               |
-      | 13 | Filter             | 12           |               |
-      | 12 | InnerJoin          | 11           |               |
+      | 18 | Project            | 30           |               |
+      | 30 | GetNeighbors       | 14           |               |
+      | 14 | Project            | 32           |               |
+      | 32 | InnerJoin          | 31           |               |
+      | 31 | Filter             | 11           |               |
       | 11 | LeftJoin           | 10           |               |
       | 10 | Project            | 9            |               |
       | 9  | GetVertices        | 8            |               |
-      | 8  | Project            | 30           |               |
-      | 30 | GetNeighbors       | 27           |               |
-      | 27 | Project            | 25           |               |
+      | 8  | Project            | 29           |               |
+      | 29 | GetNeighbors       | 26           |               |
+      | 26 | Project            | 25           |               |
       | 25 | TagIndexPrefixScan | 0            |               |
       | 0  | Start              |              |               |
     When profiling query:
