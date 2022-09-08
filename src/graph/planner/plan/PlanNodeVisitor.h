@@ -6,6 +6,7 @@
 #ifndef PLAN_PLANNODEVISITOR_H_
 #define PLAN_PLANNODEVISITOR_H_
 
+#include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 
@@ -23,6 +24,9 @@ class PlanNodeVisitor {
   virtual void visit(Traverse *node) = 0;
   virtual void visit(AppendVertices *node) = 0;
   virtual void visit(BiJoin *node) = 0;
+  virtual void visit(Union *node) = 0;
+  virtual void visit(Unwind *node) = 0;
+  virtual void visit(BiCartesianProduct *node) = 0;
 };
 
 }  // namespace graph

@@ -3,7 +3,10 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Algo.h"
+
 DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
@@ -14,7 +17,8 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
 
   if (step_ == 1) {
     auto rIter = ectx_->getResult(pathNode_->rightVidVar()).iter();
-    std::unordered_set<Value> rightVids;
+    using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
+    HashSet rightVids;
     for (; rIter->valid(); rIter->next()) {
       auto& vid = rIter->getColumn(0);
       if (rightVids.emplace(vid).second) {

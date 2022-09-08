@@ -5,40 +5,54 @@
 
 #include "common/hdfs/HdfsCommandHelper.h"
 
+#include <folly/Subprocess.h>
+#include <folly/system/Shell.h>
+
 #include "common/process/ProcessUtils.h"
 
 namespace nebula {
 namespace hdfs {
 
-StatusOr<std::string> HdfsCommandHelper::ls(const std::string& hdfsHost,
-                                            int32_t hdfsPort,
-                                            const std::string& hdfsPath) {
+Status HdfsCommandHelper::ls(const std::string& hdfsHost,
+                             int32_t hdfsPort,
+                             const std::string& hdfsPath) {
   auto command = folly::stringPrintf(
       "hdfs dfs -ls hdfs://%s:%d%s", hdfsHost.c_str(), hdfsPort, hdfsPath.c_str());
   LOG(INFO) << "Running HDFS Command: " << command;
-  auto result = ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Failed to run %s", command.c_str()));
+  try {
+    folly::Subprocess proc(std::vector<std::string>({command}));
+    auto result = proc.wait();
+    if (!result.exited()) {
+      return Status::Error("Failed to ls hdfs");
+    } else {
+      return Status::OK();
+    }
+  } catch (const folly::SubprocessSpawnError& ex) {
+    return Status::Error("Exception when ls hdfs: %s", ex.what());
   }
 }
 
-StatusOr<std::string> HdfsCommandHelper::copyToLocal(const std::string& hdfsHost,
-                                                     int32_t hdfsPort,
-                                                     const std::string& hdfsPath,
-                                                     const std::string& localPath) {
+Status HdfsCommandHelper::copyToLocal(const std::string& hdfsHost,
+                                      int32_t hdfsPort,
+                                      const std::string& hdfsPath,
+                                      const std::string& localPath) {
   auto command = folly::stringPrintf("hdfs dfs -copyToLocal hdfs://%s:%d%s %s",
                                      hdfsHost.c_str(),
                                      hdfsPort,
                                      hdfsPath.c_str(),
                                      localPath.c_str());
   LOG(INFO) << "Running HDFS Command: " << command;
-  auto result = ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Failed to run %s", command.c_str()));
+  try {
+    folly::Subprocess proc(std::vector<std::string>({command}));
+    auto result = proc.wait();
+    if (!result.exited()) {
+      return Status::Error("Failed to download from hdfs");
+    } else {
+      return Status::OK();
+    }
+  } catch (const folly::SubprocessSpawnError& ex) {
+    LOG(ERROR) << "Download exception: " << ex.what();
+    return Status::Error("Exception when download: %s", ex.what());
   }
 }
 

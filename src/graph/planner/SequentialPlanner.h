@@ -26,8 +26,6 @@ class SequentialPlanner final : public Planner {
    */
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-  void ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx);
-
   void rmLeftTailStartNode(Validator* validator, Sentence::Kind appendPlanKind);
 
  private:

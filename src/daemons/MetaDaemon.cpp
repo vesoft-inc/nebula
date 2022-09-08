@@ -66,12 +66,7 @@ int main(int argc, char* argv[]) {
   // the 2nd will make the 1st failed to output log anymore
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
-  // Setup logging
-  auto status = setupLogging(argv[0]);
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return EXIT_FAILURE;
-  }
+  Status status;
 
 #if defined(ENABLE_BREAKPAD)
   status = setupBreakpad();
@@ -88,9 +83,6 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  // Init stats
-  nebula::initMetaStats();
-
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
@@ -105,6 +97,16 @@ int main(int argc, char* argv[]) {
   } else {
     google::SetStderrLogging(google::INFO);
   }
+
+  // Setup logging
+  status = setupLogging(argv[0]);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
+  // Init stats
+  nebula::initMetaStats();
 
   if (FLAGS_daemonize) {
     status = ProcessUtils::daemonize(pidPath);

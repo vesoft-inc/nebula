@@ -6,6 +6,7 @@
 #include "graph/planner/plan/Algo.h"
 
 #include "PlanNode.h"
+#include "graph/planner/plan/PlanNodeVisitor.h"
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
@@ -123,6 +124,10 @@ BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanN
   auto rColNames = right->colNames();
   lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
   setColNames(lColNames);
+}
+
+void BiCartesianProduct::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 BiCartesianProduct::BiCartesianProduct(QueryContext* qctx)

@@ -50,7 +50,6 @@ Feature: Remove Useless Project Rule
       | 48  | 1     |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 7  | DataCollect    | 6            |               |
       | 6  | Sort           | 8            |               |
       | 8  | Aggregate      | 2            |               |
       | 2  | AppendVertices | 1            |               |

@@ -17,14 +17,12 @@ Feature: Push TopN down IndexScan Rule
       | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info                     |
-      | 4  | DataCollect      | 5            |                                   |
       | 5  | TopN             | 6            | {"count": "2"}                    |
       | 6  | Project          | 7            |                                   |
       | 7  | TagIndexFullScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start            |              |                                   |
     And the execution plan should be:
       | id | name             | dependencies | operator info     |
-      | 4  | DataCollect      | 5            |                   |
       | 5  | TopN             | 6            |                   |
       | 6  | Project          | 7            |                   |
       | 7  | TagIndexFullScan | 0            | {"orderBy": "[]"} |
@@ -39,14 +37,12 @@ Feature: Push TopN down IndexScan Rule
       | "DeAndre Jordan" |
     And the execution plan should be:
       | id | name               | dependencies | operator info                     |
-      | 4  | DataCollect        | 5            |                                   |
       | 5  | TopN               | 6            | {"count": "2"}                    |
       | 6  | Project            | 7            |                                   |
       | 7  | TagIndexPrefixScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start              |              |                                   |
     And the execution plan should be:
       | id | name               | dependencies | operator info     |
-      | 4  | DataCollect        | 5            |                   |
       | 5  | TopN               | 6            |                   |
       | 6  | Project            | 7            |                   |
       | 7  | TagIndexPrefixScan | 0            | {"orderBy": "[]"} |
@@ -61,14 +57,12 @@ Feature: Push TopN down IndexScan Rule
       | "Tim Duncan"     |
     And the execution plan should be:
       | id | name              | dependencies | operator info                     |
-      | 4  | DataCollect       | 5            |                                   |
       | 5  | TopN              | 6            | {"count": "2"}                    |
       | 6  | Project           | 7            |                                   |
       | 7  | TagIndexRangeScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start             |              |                                   |
     And the execution plan should be:
       | id | name              | dependencies | operator info     |
-      | 4  | DataCollect       | 5            |                   |
       | 5  | TopN              | 6            |                   |
       | 6  | Project           | 7            |                   |
       | 7  | TagIndexRangeScan | 0            | {"orderBy": "[]"} |
@@ -83,14 +77,12 @@ Feature: Push TopN down IndexScan Rule
       | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info                     |
-      | 4  | DataCollect      | 5            |                                   |
       | 5  | TopN             | 6            | {"count": "2"}                    |
       | 6  | Project          | 7            |                                   |
       | 7  | TagIndexFullScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start            |              |                                   |
     And the execution plan should be:
       | id | name             | dependencies | operator info     |
-      | 4  | DataCollect      | 5            |                   |
       | 5  | TopN             | 6            |                   |
       | 6  | Project          | 7            |                   |
       | 7  | TagIndexFullScan | 0            | {"orderBy": "[]"} |
@@ -105,14 +97,12 @@ Feature: Push TopN down IndexScan Rule
       | "Aron Baynes"       | "Tim Duncan" | 0    |
     And the execution plan should be:
       | id | name              | dependencies | operator info                     |
-      | 4  | DataCollect       | 5            |                                   |
       | 5  | TopN              | 6            | {"count": "2"}                    |
       | 6  | Project           | 7            |                                   |
       | 7  | EdgeIndexFullScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start             |              |                                   |
     And the execution plan should be:
       | id | name              | dependencies | operator info     |
-      | 4  | DataCollect       | 5            |                   |
       | 5  | TopN              | 6            |                   |
       | 6  | Project           | 7            |                   |
       | 7  | EdgeIndexFullScan | 0            | {"orderBy": "[]"} |
@@ -127,14 +117,12 @@ Feature: Push TopN down IndexScan Rule
       | "Carmelo Anthony"   | "Chris Paul" | 0    |
     And the execution plan should be:
       | id | name                | dependencies | operator info                     |
-      | 4  | DataCollect         | 5            |                                   |
       | 5  | TopN                | 6            | {"count": "2"}                    |
       | 6  | Project             | 7            |                                   |
       | 7  | EdgeIndexPrefixScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start               |              |                                   |
     And the execution plan should be:
       | id | name                | dependencies | operator info     |
-      | 4  | DataCollect         | 5            |                   |
       | 5  | TopN                | 6            |                   |
       | 6  | Project             | 7            |                   |
       | 7  | EdgeIndexPrefixScan | 0            | {"orderBy": "[]"} |
@@ -149,14 +137,12 @@ Feature: Push TopN down IndexScan Rule
       | "Dejounte Murray" | "Chris Paul"  | 0    |
     And the execution plan should be:
       | id | name               | dependencies | operator info                     |
-      | 4  | DataCollect        | 5            |                                   |
       | 5  | TopN               | 6            | {"count": "2"}                    |
       | 6  | Project            | 7            |                                   |
       | 7  | EdgeIndexRangeScan | 0            | {"limit": "9223372036854775807" } |
       | 0  | Start              |              |                                   |
     And the execution plan should be:
       | id | name               | dependencies | operator info     |
-      | 4  | DataCollect        | 5            |                   |
       | 5  | TopN               | 6            |                   |
       | 6  | Project            | 7            |                   |
       | 7  | EdgeIndexRangeScan | 0            | {"orderBy": "[]"} |
@@ -173,7 +159,6 @@ Feature: Push TopN down IndexScan Rule
       | "Aron Baynes"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info   |
-      | 4  | DataCollect      | 5            |                 |
       | 5  | TopN             | 6            | {"count": "2"}  |
       | 6  | Project          | 7            |                 |
       | 7  | TagIndexFullScan | 0            | {"limit": "2" } |
@@ -188,7 +173,6 @@ Feature: Push TopN down IndexScan Rule
       | "Kevin Durant"      |
     And the execution plan should be:
       | id | name               | dependencies | operator info   |
-      | 4  | DataCollect        | 5            |                 |
       | 5  | TopN               | 6            | {"count": "2"}  |
       | 6  | Project            | 7            |                 |
       | 7  | TagIndexPrefixScan | 0            | {"limit": "2" } |
@@ -203,7 +187,6 @@ Feature: Push TopN down IndexScan Rule
       | "DeAndre Jordan" |
     And the execution plan should be:
       | id | name               | dependencies | operator info   |
-      | 4  | DataCollect        | 5            |                 |
       | 5  | TopN               | 6            | {"count": "2"}  |
       | 6  | Project            | 7            |                 |
       | 7  | TagIndexPrefixScan | 0            | {"limit": "2" } |
@@ -218,7 +201,6 @@ Feature: Push TopN down IndexScan Rule
       | "Tim Duncan"     |
     And the execution plan should be:
       | id | name              | dependencies | operator info   |
-      | 4  | DataCollect       | 5            |                 |
       | 5  | TopN              | 6            | {"count": "2"}  |
       | 6  | Project           | 7            |                 |
       | 7  | TagIndexRangeScan | 0            | {"limit": "2" } |
@@ -233,7 +215,6 @@ Feature: Push TopN down IndexScan Rule
       | -1       |
     And the execution plan should be:
       | id | name              | dependencies | operator info   |
-      | 4  | DataCollect       | 5            |                 |
       | 5  | TopN              | 6            | {"count": "2"}  |
       | 6  | Project           | 7            |                 |
       | 7  | EdgeIndexFullScan | 0            | {"limit": "2" } |
@@ -248,7 +229,6 @@ Feature: Push TopN down IndexScan Rule
       | 100      |
     And the execution plan should be:
       | id | name              | dependencies | operator info   |
-      | 4  | DataCollect       | 5            |                 |
       | 5  | TopN              | 6            | {"count": "2"}  |
       | 6  | Project           | 7            |                 |
       | 7  | EdgeIndexFullScan | 0            | {"limit": "2" } |
@@ -263,7 +243,6 @@ Feature: Push TopN down IndexScan Rule
       | 90       |
     And the execution plan should be:
       | id | name                | dependencies | operator info   |
-      | 4  | DataCollect         | 5            |                 |
       | 5  | TopN                | 6            | {"count": "2"}  |
       | 6  | Project             | 7            |                 |
       | 7  | EdgeIndexPrefixScan | 0            | {"limit": "2" } |
@@ -278,7 +257,6 @@ Feature: Push TopN down IndexScan Rule
       | 95       |
     And the execution plan should be:
       | id | name               | dependencies | operator info   |
-      | 4  | DataCollect        | 5            |                 |
       | 5  | TopN               | 6            | {"count": "2"}  |
       | 6  | Project            | 7            |                 |
       | 7  | EdgeIndexRangeScan | 0            | {"limit": "2" } |

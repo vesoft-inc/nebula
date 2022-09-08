@@ -21,16 +21,16 @@ DownloadJobExecutor::DownloadJobExecutor(GraphSpaceID space,
   helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
 }
 
-bool DownloadJobExecutor::check() {
+nebula::cpp2::ErrorCode DownloadJobExecutor::check() {
   if (paras_.size() != 1) {
-    return false;
+    return nebula::cpp2::ErrorCode::E_INVALID_JOB;
   }
 
   auto& url = paras_[0];
   std::string hdfsPrefix = "hdfs://";
   if (url.find(hdfsPrefix) != 0) {
     LOG(ERROR) << "URL should start with " << hdfsPrefix;
-    return false;
+    return nebula::cpp2::ErrorCode::E_INVALID_JOB;
   }
 
   auto u = url.substr(hdfsPrefix.size(), url.size());
@@ -44,20 +44,20 @@ bool DownloadJobExecutor::check() {
         port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
       } catch (const std::exception& ex) {
         LOG(ERROR) << "URL's port parse failed: " << url;
-        return false;
+        return nebula::cpp2::ErrorCode::E_INVALID_JOB;
       }
       path_ =
           std::make_unique<std::string>(tokens[1].toString().substr(position, tokens[1].size()));
     } else {
       LOG(ERROR) << "URL Parse Failed: " << url;
-      return false;
+      return nebula::cpp2::ErrorCode::E_INVALID_JOB;
     }
   } else {
     LOG(ERROR) << "URL Parse Failed: " << url;
-    return false;
+    return nebula::cpp2::ErrorCode::E_INVALID_JOB;
   }
 
-  return true;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode DownloadJobExecutor::prepare() {
@@ -109,10 +109,6 @@ folly::Future<Status> DownloadJobExecutor::executeInternal(HostAddr&& address,
         }
       });
   return f;
-}
-
-nebula::cpp2::ErrorCode DownloadJobExecutor::stop() {
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

@@ -220,11 +220,13 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"datetime",
      {TypeSignature({}, Value::Type::DATETIME),
       TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
-      TypeSignature({Value::Type::MAP}, Value::Type::DATETIME)}},
+      TypeSignature({Value::Type::MAP}, Value::Type::DATETIME),
+      TypeSignature({Value::Type::INT}, Value::Type::DATETIME)}},
     {"timestamp",
      {TypeSignature({}, Value::Type::INT),
       TypeSignature({Value::Type::STRING}, Value::Type::INT),
-      TypeSignature({Value::Type::INT}, Value::Type::INT)}},
+      TypeSignature({Value::Type::INT}, Value::Type::INT),
+      TypeSignature({Value::Type::DATETIME}, Value::Type::INT)}},
     {"tags",
      {
          TypeSignature({Value::Type::VERTEX}, Value::Type::LIST),
@@ -418,6 +420,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {TypeSignature({Value::Type::STRING}, Value::Type::DURATION),
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
+    {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
 };
 
 // static
@@ -1709,9 +1712,14 @@ FunctionManager::FunctionManager() {
           if (args[0].get().isStr()) {
             auto result = time::TimeUtils::parseTime(args[0].get().getStr());
             if (!result.ok()) {
+              DLOG(ERROR) << "DEBUG POINT: " << result.status();
               return Value::kNullBadData;
             }
-            return time::TimeUtils::timeToUTC(result.value());
+            if (result.value().withTimeZone) {
+              return result.value().t;
+            } else {
+              return time::TimeUtils::timeToUTC(result.value().t);
+            }
           } else if (args[0].get().isMap()) {
             auto result = time::TimeUtils::timeFromMap(args[0].get().getMap());
             if (!result.ok()) {
@@ -1746,13 +1754,19 @@ FunctionManager::FunctionManager() {
             if (!result.ok()) {
               return Value::kNullBadData;
             }
-            return time::TimeUtils::dateTimeToUTC(result.value());
+            if (result.value().withTimeZone) {
+              return result.value().dt;
+            } else {
+              return time::TimeUtils::dateTimeToUTC(result.value().dt);
+            }
           } else if (args[0].get().isMap()) {
             auto result = time::TimeUtils::dateTimeFromMap(args[0].get().getMap());
             if (!result.ok()) {
               return Value::kNullBadData;
             }
             return time::TimeUtils::dateTimeToUTC(result.value());
+          } else if (args[0].get().isInt()) {
+            return time::TimeConversion::unixSecondsToDateTime(args[0].get().getInt());
           } else {
             return Value::kNullBadData;
           }
@@ -2723,6 +2737,29 @@ FunctionManager::FunctionManager() {
         res.emplace_back(beg->str());
       }
       return res;
+    };
+  }
+  {
+    auto &attr = functions_["_nodeid"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isPath() || !args[1].get().isInt()) {
+        return Value::kNullBadType;
+      }
+
+      const auto &p = args[0].get().getPath();
+      const std::size_t nodeIndex = args[1].get().getInt();
+      if (nodeIndex < 0 || nodeIndex >= (1 + p.steps.size())) {
+        DLOG(FATAL) << "Out of range node index.";
+        return Value::kNullBadData;
+      }
+      if (nodeIndex == 0) {
+        return p.src.vid;
+      } else {
+        return p.steps[nodeIndex - 1].dst.vid;
+      }
     };
   }
 }  // NOLINT

@@ -19,7 +19,7 @@ class GetVerticesExecutor final : public GetPropExecutor {
   folly::Future<Status> execute() override;
 
  private:
-  DataSet buildRequestDataSet(const GetVertices *gv);
+  StatusOr<DataSet> buildRequestDataSet(const GetVertices *gv);
 
   folly::Future<Status> getVertices();
 };

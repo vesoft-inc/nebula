@@ -36,7 +36,6 @@ Feature: Push Filter down Aggregate rule
       | 29  | 3     |
     And the execution plan should be:
       | id | name        | dependencies | operator info |
-      | 13 | DataCollect | 12           |               |
       | 12 | Sort        | 19           |               |
       | 19 | Aggregate   | 18           |               |
       | 18 | Filter      | 8            |               |

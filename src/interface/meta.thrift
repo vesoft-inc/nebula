@@ -813,7 +813,7 @@ struct CreateSnapshotReq {
 }
 
 struct DropSnapshotReq {
-    1: binary   name,
+    1: list<binary> names,
 }
 
 struct ListSnapshotsReq {
@@ -953,7 +953,7 @@ struct SpaceBackupInfo {
 }
 
 struct BackupMeta {
-    // space_name => SpaceBackupInfo
+   // spaceId => SpaceBackupInfo
     1: map<common.GraphSpaceID, SpaceBackupInfo>(cpp.template = "std::unordered_map")  space_backups,
     // sst file
     2: list<binary>                               meta_files,
@@ -962,11 +962,21 @@ struct BackupMeta {
     4: bool                                       full,
     5: bool                                       all_spaces,
     6: i64                                        create_time,
+    7: binary                                     base_backup_name,
+    8: list<common.HostAddr>                      storage_hosts,
+    // The clusterId of the current cluster
+    9: ClusterID                                  cluster_id,
 }
 
 struct CreateBackupReq {
     // null means all spaces
     1: optional list<binary>  spaces,
+    // When empty, it means full backup
+    // When there is a value, it indicates the last incremental backup
+    2: optional binary        base_backup_name,
+    // The clusterId of the cluster corresponding to base_backup_name
+    3: optional ClusterID     cluster_id,
+
 }
 
 struct CreateBackupResp {
@@ -983,6 +993,19 @@ struct HostPair {
 struct RestoreMetaReq {
     1: list<binary>     files,
     2: list<HostPair>   hosts,
+}
+
+struct PartInfo {
+    1: common.PartitionID    part_id,
+    2: list<common.HostAddr> hosts,
+}
+
+struct RestoreMetaResp {
+    1: common.ErrorCode code,
+    // Valid if ret equals E_LEADER_CHANGED.
+    2: common.HostAddr  leader,
+    3: map<common.GraphSpaceID, list<PartInfo>>
+    (cpp.template = "std::unordered_map")  part_hosts,
 }
 
 enum ExternalServiceType {
@@ -1271,7 +1294,7 @@ service MetaService {
 
     // Interfaces for backup and restore
     CreateBackupResp createBackup(1: CreateBackupReq req);
-    ExecResp       restoreMeta(1: RestoreMetaReq req);
+    RestoreMetaResp  restoreMeta(1: RestoreMetaReq req);
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 

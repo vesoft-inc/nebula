@@ -7,6 +7,7 @@
 
 #include <glog/logging.h>
 
+#include <filesystem>
 #include <string>
 
 #include "common/base/Base.h"
@@ -23,15 +24,19 @@ using nebula::fs::FileUtils;
 
 Status setupLogging(const std::string &exe) {
   // If the log directory does not exist, try to create
+  auto executable = std::filesystem::path(exe).filename().string();
   if (!FileUtils::exist(FLAGS_log_dir) && !FileUtils::makeDir(FLAGS_log_dir)) {
     return Status::Error("Failed to create log directory `%s'", FLAGS_log_dir.c_str());
   }
   if (!FLAGS_timestamp_in_logfile_name) {
-    google::SetLogDestination(google::GLOG_INFO, (FLAGS_log_dir + '/' + exe + ".INFO").c_str());
+    google::SetLogDestination(google::GLOG_INFO,
+                              (FLAGS_log_dir + '/' + executable + ".INFO.impl").c_str());
     google::SetLogDestination(google::GLOG_WARNING,
-                              (FLAGS_log_dir + '/' + exe + ".WARNING").c_str());
-    google::SetLogDestination(google::GLOG_ERROR, (FLAGS_log_dir + '/' + exe + ".ERROR").c_str());
-    google::SetLogDestination(google::GLOG_FATAL, (FLAGS_log_dir + '/' + exe + ".FATAL").c_str());
+                              (FLAGS_log_dir + '/' + executable + ".WARNING.impl").c_str());
+    google::SetLogDestination(google::GLOG_ERROR,
+                              (FLAGS_log_dir + '/' + executable + ".ERROR.impl").c_str());
+    google::SetLogDestination(google::GLOG_FATAL,
+                              (FLAGS_log_dir + '/' + executable + ".FATAL.impl").c_str());
   }
 
   if (!FLAGS_redirect_stdout) {

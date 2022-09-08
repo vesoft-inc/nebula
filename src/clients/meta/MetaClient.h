@@ -6,7 +6,7 @@
 #ifndef CLIENTS_META_METACLIENT_H_
 #define CLIENTS_META_METACLIENT_H_
 
-#include <folly/RWSpinLock.h>
+#include <folly/SharedMutex.h>
 #include <folly/concurrency/ConcurrentHashMap.h>
 #include <folly/container/F14Map.h>
 #include <folly/container/F14Set.h>
@@ -252,13 +252,13 @@ class MetaClient : public BaseMetaClient {
   void stop();
 
   void registerListener(MetaChangedListener* listener) {
-    folly::RWSpinLock::WriteHolder holder(listenerLock_);
+    folly::SharedMutex::WriteHolder holder(listenerLock_);
     CHECK(listener_ == nullptr);
     listener_ = listener;
   }
 
   void unRegisterListener() {
-    folly::RWSpinLock::WriteHolder holder(listenerLock_);
+    folly::SharedMutex::WriteHolder holder(listenerLock_);
     listener_ = nullptr;
   }
 
@@ -693,12 +693,12 @@ class MetaClient : public BaseMetaClient {
   std::unordered_map<HostAddr, std::vector<PartitionID>> reverse(const PartsAlloc& parts);
 
   void updateActive() {
-    folly::RWSpinLock::WriteHolder holder(hostLock_);
+    folly::SharedMutex::WriteHolder holder(hostLock_);
     active_ = addrs_[folly::Random::rand64(addrs_.size())];
   }
 
   void updateLeader(HostAddr leader = {"", 0}) {
-    folly::RWSpinLock::WriteHolder holder(hostLock_);
+    folly::SharedMutex::WriteHolder holder(hostLock_);
     if (leader != HostAddr("", 0)) {
       leader_ = leader;
     } else {
@@ -752,10 +752,10 @@ class MetaClient : public BaseMetaClient {
   // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is useless?
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
-  folly::RWSpinLock leaderIdsLock_;
+  folly::SharedMutex leaderIdsLock_;
   // diskPartsLock_ is used to protect diskParts_;
   kvstore::SpaceDiskPartsMap diskParts_;
-  folly::RWSpinLock diskPartsLock_;
+  folly::SharedMutex diskPartsLock_;
 
   std::atomic<int64_t> localDataLastUpdateTime_{-1};
   std::atomic<int64_t> localCfgLastUpdateTime_{-1};
@@ -765,13 +765,13 @@ class MetaClient : public BaseMetaClient {
   static constexpr int64_t EXPECT_META_VERSION = 3;
 
   // leadersLock_ is used to protect leadersInfo
-  folly::RWSpinLock leadersLock_;
+  folly::SharedMutex leadersLock_;
   LeaderInfo leadersInfo_;
 
   LocalCache localCache_;
   std::vector<HostAddr> addrs_;
   // The lock used to protect active_ and leader_.
-  folly::RWSpinLock hostLock_;
+  folly::SharedMutex hostLock_;
   HostAddr active_;
   HostAddr leader_;
   HostAddr localHost_;
@@ -832,13 +832,13 @@ class MetaClient : public BaseMetaClient {
   // The listener_ is the NebulaStore
   MetaChangedListener* listener_{nullptr};
   // The lock used to protect listener_
-  folly::RWSpinLock listenerLock_;
+  folly::SharedMutex listenerLock_;
   std::atomic<ClusterID> clusterId_{0};
   bool isRunning_{false};
   bool sendHeartBeat_{false};
   std::atomic_bool ready_{false};
   MetaConfigMap metaConfigMap_;
-  folly::RWSpinLock configCacheLock_;
+  folly::SharedMutex configCacheLock_;
   cpp2::ConfigModule gflagsModule_{cpp2::ConfigModule::UNKNOWN};
   std::atomic_bool configReady_{false};
   std::vector<cpp2::ConfigItem> gflagsDeclared_;

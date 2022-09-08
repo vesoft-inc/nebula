@@ -35,7 +35,7 @@ class MetaJobExecutor : public JobExecutor {
    *
    * @return
    */
-  bool check() override;
+  nebula::cpp2::ErrorCode check() override;
 
   /**
    * @brief Prepare the Job info from the arguments.
@@ -71,7 +71,7 @@ class MetaJobExecutor : public JobExecutor {
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) override;
 
  protected:
-  virtual folly::Future<Status> executeInternal();
+  virtual folly::Future<nebula::cpp2::ErrorCode> executeInternal();
 
  protected:
   JobID jobId_{INT_MIN};

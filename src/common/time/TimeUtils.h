@@ -22,6 +22,7 @@
 #include "common/time/TimeConversion.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/time/WallClock.h"
+#include "common/time/parser/Result.h"
 
 namespace nebula {
 namespace time {
@@ -66,7 +67,7 @@ class TimeUtils {
     return Status::OK();
   }
 
-  static StatusOr<DateTime> parseDateTime(const std::string &str);
+  static StatusOr<Result> parseDateTime(const std::string &str);
 
   static StatusOr<DateTime> dateTimeFromMap(const Map &m);
 
@@ -153,7 +154,7 @@ class TimeUtils {
 
   static StatusOr<Time> timeFromMap(const Map &m);
 
-  static StatusOr<Time> parseTime(const std::string &str);
+  static StatusOr<TimeResult> parseTime(const std::string &str);
 
   // utc + offset = local
   static Time timeToUTC(const Time &time) {

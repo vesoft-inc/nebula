@@ -236,8 +236,11 @@ struct Duration {
 } (cpp.type = "nebula::Duration")
 
 struct LogInfo {
-    1: LogID  log_id;
-    2: TermID term_id;
+    1: LogID  log_id,
+    2: TermID term_id,
+    3: LogID  commit_log_id,
+    // storage part checkpoint directory name
+    4: binary checkpoint_path,
 }
 
 struct DirInfo {
@@ -249,9 +252,10 @@ struct DirInfo {
 
 struct CheckpointInfo {
     1: GraphSpaceID          space_id,
+    // Only part of the leader
     2: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map") parts,
-    // storage checkpoint directory name
-    3: binary                path,
+    // The datapath corresponding to the current checkpointInfo
+    3: binary                data_path,
 }
 
 // used for drainer
@@ -357,6 +361,9 @@ enum ErrorCode {
     E_WRONGCLUSTER                    = -2010,  // Wrong cluster
     E_ZONE_NOT_ENOUGH                 = -2011,  // Listener conflicts
     E_ZONE_IS_EMPTY                   = -2012,  // Host not exist
+    E_SCHEMA_NAME_EXISTS              = -2013,  // Schema name alreay exists
+    E_RELATED_INDEX_EXISTS            = -2014,  // There are stil indexes related to tag or edge, cannot drop it
+    E_RELATED_SPACE_EXISTS            = -2015,  // There are still some spaec on the host, cannot drop it
 
     E_STORE_FAILURE                   = -2021,  // Failed to store data
     E_STORE_SEGMENT_ILLEGAL           = -2022,  // Illegal storage segment
@@ -389,6 +396,7 @@ enum ErrorCode {
     E_TASK_REPORT_OUT_DATE            = -2049,  // Task report failed
     E_JOB_NOT_IN_SPACE                = -2050,  // The current task is not in the graph space
     E_JOB_NEED_RECOVER                = -2051,  // The current task needs to be resumed
+    E_JOB_NOT_STOPPABLE               = -2052,  // Failed or finished job could not be stopped
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure

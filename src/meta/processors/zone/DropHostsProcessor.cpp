@@ -54,7 +54,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
       for (auto& h : partHosts) {
         if (std::find(hosts.begin(), hosts.end(), h) != hosts.end()) {
           LOG(INFO) << h << " is related with partition";
-          code = nebula::cpp2::ErrorCode::E_CONFLICT;
+          code = nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS;
           break;
         }
       }

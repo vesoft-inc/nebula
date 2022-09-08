@@ -49,7 +49,7 @@ class DataBalanceJobExecutor : public BalanceJobExecutor {
    *
    * @return
    */
-  folly::Future<Status> executeInternal() override;
+  folly::Future<nebula::cpp2::ErrorCode> executeInternal() override;
 
   /**
    * @brief Build a balance plan, which balance data in each zone

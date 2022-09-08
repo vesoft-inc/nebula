@@ -22,11 +22,13 @@ class AppendVerticesExecutor final : public GetPropExecutor {
   folly::Future<Status> execute() override;
 
  private:
-  DataSet buildRequestDataSet(const AppendVertices *gv);
+  StatusOr<DataSet> buildRequestDataSet(const AppendVertices *gv);
 
   folly::Future<Status> appendVertices();
 
   Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
+
+  Status handleNullProp(const AppendVertices *av);
 
   folly::Future<Status> handleRespMultiJobs(
       storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);

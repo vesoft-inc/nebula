@@ -45,20 +45,20 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::stop() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
+folly::Future<nebula::cpp2::ErrorCode> ZoneBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
       if (status == Status::Balanced()) {
         executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
-        return Status::OK();
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
-      return status;
+      return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) { executorOnFinished_(status); });
   plan_->invoke();
-  return Status::OK();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {

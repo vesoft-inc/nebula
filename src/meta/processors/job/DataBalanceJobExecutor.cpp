@@ -15,15 +15,15 @@
 namespace nebula {
 namespace meta {
 
-folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
+folly::Future<nebula::cpp2::ErrorCode> DataBalanceJobExecutor::executeInternal() {
   if (plan_ == nullptr) {
     Status status = buildBalancePlan();
     if (status != Status::OK()) {
       if (status == Status::Balanced()) {
         executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
-        return Status::OK();
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
-      return status;
+      return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }
   plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
@@ -35,7 +35,7 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
     executorOnFinished_(status);
   });
   plan_->invoke();
-  return Status::OK();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 Status DataBalanceJobExecutor::buildBalancePlan() {

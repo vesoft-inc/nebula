@@ -227,17 +227,14 @@ nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::finish(bool) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
-  folly::Promise<Status> promise;
+folly::Future<nebula::cpp2::ErrorCode> LeaderBalanceJobExecutor::executeInternal() {
+  folly::Promise<nebula::cpp2::ErrorCode> promise;
   auto future = promise.getFuture();
   // Space ID, Replica Factor and Dependent On Group
   std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
   auto ret = getAllSpaces(spaces);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    if (ret != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      ret = nebula::cpp2::ErrorCode::E_STORE_FAILURE;
-    }
-    return Status::Error("Can't get spaces");
+    return ret;
   }
 
   bool expected = false;
@@ -246,7 +243,7 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
     auto status = adminClient_->getLeaderDist(hostLeaderMap_.get()).get();
     if (!status.ok() || hostLeaderMap_->empty()) {
       inLeaderBalance_ = false;
-      return Status::Error("Get leader distribution failed");
+      return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
 
     std::vector<folly::SemiFuture<Status>> futures;
@@ -286,13 +283,13 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
 
     inLeaderBalance_ = false;
     if (failed != 0) {
-      return Status::Error("partiton failed to transfer leader");
+      LOG(INFO) << folly::stringPrintf("%d partitons failed to transfer leader", failed);
     }
     executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
-    return Status::OK();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
-  return Status::OK();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBalancePlan(

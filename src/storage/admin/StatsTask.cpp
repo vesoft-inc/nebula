@@ -11,6 +11,11 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/Common.h"
 
+DEFINE_int32(stats_sleep_interval_ms,
+             0,
+             "If interval is greater than 0, sleep a period of time when scanned 1000 records. "
+             "Default value 0 means won't sleep");
+
 namespace nebula {
 namespace storage {
 
@@ -132,6 +137,9 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   std::unordered_map<PartitionID, int64_t> negativeRelevancy;
   int64_t spaceVertices = 0;
   int64_t spaceEdges = 0;
+  // Once 1000 records are scanned, check if we need to sleep for a while to prevent high pressure
+  // on io, the sleep time is stats_sleep_interval_ms
+  size_t countToSleep = 0;
 
   for (auto tag : tags) {
     tagsVertices[tag.first] = 0;
@@ -167,6 +175,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     }
     tagsVertices[tagId] += 1;
     tagIter->next();
+    sleepIfScannedSomeRecord(++countToSleep);
   }
 
   // Only stats valid edge data, no multi version
@@ -216,10 +225,12 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       negativeRelevancy[sourceVid % partitionNum + 1]++;
     }
     edgeIter->next();
+    sleepIfScannedSomeRecord(++countToSleep);
   }
   while (vertexIter && vertexIter->valid()) {
     spaceVertices++;
     vertexIter->next();
+    sleepIfScannedSomeRecord(++countToSleep);
   }
   nebula::meta::cpp2::StatsItem statsItem;
 
@@ -331,6 +342,13 @@ void StatsTask::finish(nebula::cpp2::ErrorCode rc) {
   } else {
     LOG(WARNING) << "The number of subtasks is not equal to the number of parts";
     ctx_.onFinish_(nebula::cpp2::ErrorCode::E_PART_NOT_FOUND, result);
+  }
+}
+
+void StatsTask::sleepIfScannedSomeRecord(size_t& countToSleep) {
+  if (FLAGS_stats_sleep_interval_ms > 0 && countToSleep >= kRecordsToSleep) {
+    usleep(FLAGS_stats_sleep_interval_ms * 1000);
+    countToSleep = 0;
   }
 }
 

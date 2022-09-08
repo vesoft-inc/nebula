@@ -390,7 +390,7 @@ using namespace nebula;
 %type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 
-%type <sentence> traverse_sentence
+%type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
@@ -719,9 +719,6 @@ expression_internal
     | predicate_expression {
         $$ = $1;
     }
-    | list_comprehension_expression {
-        $$ = $1;
-    }
     | reduce_expression {
         $$ = $1;
     }
@@ -763,6 +760,9 @@ compound_expression
         $$ = $1;
     }
     | container_expression {
+        $$ = $1;
+    }
+    | list_comprehension_expression {
         $$ = $1;
     }
     | subscript_expression {
@@ -1077,18 +1077,6 @@ function_call_expression
         if (!func.compare("COUNT")) {
             auto star = ConstantExpression::make(qctx->objPool(), std::string("*"));
             $$ = AggregateExpression::make(qctx->objPool(), *$1, star, false);
-            delete $1;
-        } else {
-            delete($1);
-            throw nebula::GraphParser::syntax_error(@1, "Could not apply aggregation function on `*`");
-        }
-    }
-    | LABEL L_PAREN KW_DISTINCT STAR R_PAREN {
-        auto func = *$1;
-        std::transform(func.begin(), func.end(), func.begin(), ::toupper);
-        if (!func.compare("COUNT")) {
-            auto star = ConstantExpression::make(qctx->objPool(), std::string("*"));
-            $$ = AggregateExpression::make(qctx->objPool(), *$1, star, true);
             delete $1;
         } else {
             delete($1);
@@ -1670,6 +1658,13 @@ unwind_clause
     : KW_UNWIND expression KW_AS name_label {
         $$ = new UnwindClause($2, *$4);
         delete $4;
+    }
+    ;
+
+unwind_sentence
+    : KW_UNWIND expression KW_AS name_label {
+      $$ = new UnwindSentence($2, *$4);
+      delete $4;
     }
     ;
 
@@ -2935,6 +2930,7 @@ traverse_sentence
     | show_queries_sentence { $$ = $1; }
     | kill_query_sentence { $$ = $1; }
     | describe_user_sentence { $$ = $1; }
+    | unwind_sentence { $$ = $1; }
     ;
 
 piped_sentence

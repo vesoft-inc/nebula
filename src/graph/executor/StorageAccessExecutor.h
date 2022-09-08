@@ -158,7 +158,12 @@ class StorageAccessExecutor : public Executor {
 
   bool isIntVidType(const SpaceInfo &space) const;
 
-  DataSet buildRequestDataSetByVidType(Iterator *iter, Expression *expr, bool dedup);
+  StatusOr<DataSet> buildRequestDataSetByVidType(Iterator *iter,
+                                                 Expression *expr,
+                                                 bool dedup,
+                                                 bool isCypher = false);
+
+  StatusOr<List> buildRequestListByVidType(Iterator *iter, Expression *expr, bool dedup);
 };
 
 }  // namespace graph

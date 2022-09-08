@@ -102,6 +102,26 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
   }
 }
 
+std::unique_ptr<PlanNodeDescription> GetDstBySrc::explain() const {
+  auto desc = Explore::explain();
+  addDescription("src", src_ ? src_->toString() : "", desc.get());
+  addDescription("edgeTypes", folly::toJson(util::toJson(edgeTypes_)), desc.get());
+  return desc;
+}
+
+PlanNode* GetDstBySrc::clone() const {
+  auto* newGV = GetDstBySrc::make(qctx_, nullptr, space_);
+  newGV->cloneMembers(*this);
+  return newGV;
+}
+
+void GetDstBySrc::cloneMembers(const GetDstBySrc& gd) {
+  Explore::cloneMembers(gd);
+
+  src_ = gd.src()->clone();
+  edgeTypes_ = gd.edgeTypes_;
+}
+
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
   auto desc = Explore::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
@@ -301,6 +321,10 @@ void Union::cloneMembers(const Union& f) {
   SetOp::cloneMembers(f);
 }
 
+void Union::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 PlanNode* Intersect::clone() const {
   auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
   newIntersect->cloneMembers(*this);
@@ -369,6 +393,7 @@ std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
 
 PlanNode* Unwind::clone() const {
   auto* newUnwind = Unwind::make(qctx_, nullptr);
+  newUnwind->setFromPipe(fromPipe_);
   newUnwind->cloneMembers(*this);
   return newUnwind;
 }
@@ -378,6 +403,10 @@ void Unwind::cloneMembers(const Unwind& p) {
 
   unwindExpr_ = p.unwindExpr()->clone();
   alias_ = p.alias();
+}
+
+void Unwind::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {
@@ -557,6 +586,7 @@ void Dedup::cloneMembers(const Dedup& l) {
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
   auto desc = VariableDependencyNode::explain();
   addDescription("inputVar", folly::toJson(util::toJson(inputVars_)), desc.get());
+  addDescription("distinct", distinct_ ? "true" : "false", desc.get());
   switch (kind_) {
     case DCKind::kSubgraph: {
       addDescription("kind", "SUBGRAPH", desc.get());

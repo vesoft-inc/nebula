@@ -218,8 +218,7 @@ TEST_F(GetSubgraphValidatorTest, RefNotExist) {
         "PROP FROM $-.id YIELD vertices as nodes";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `$-.id', the srcs should be type of "
-              "FIXED_STRING, but was`INT'");
+              "SemanticError: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'");
   }
   {
     std::string query =
@@ -227,8 +226,7 @@ TEST_F(GetSubgraphValidatorTest, RefNotExist) {
         "FROM $a.ID YIELD edges as relationships";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `$a.ID', the srcs should be type of "
-              "FIXED_STRING, but was`INT'");
+              "SemanticError: `$a.ID', the srcs should be type of FIXED_STRING, but was`INT'");
   }
   {
     std::string query =

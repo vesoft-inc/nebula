@@ -21,7 +21,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     LOG(INFO) << "Failed to create edge `" << edgeName
               << "': some tag with the same name already exists.";
     resp_.id_ref() = to(nebula::value(conflictRet), EntryType::EDGE);
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SCHEMA_NAME_EXISTS);
     onFinished();
     return;
   } else {

@@ -640,7 +640,7 @@ TEST(ProcessorTest, CreateTagTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SCHEMA_NAME_EXISTS, resp.get_code());
   }
   {
     // Set schema ttl property
@@ -3596,7 +3596,7 @@ TEST(ProcessorTest, DropHostsTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS, resp.get_code());
   }
   {
     // Drop hosts which hold partition.
@@ -3607,7 +3607,7 @@ TEST(ProcessorTest, DropHostsTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS, resp.get_code());
   }
   {
     cpp2::DropSpaceReq req;
@@ -4665,7 +4665,7 @@ TEST(ProcessorTest, DropZoneTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_ENOUGH, resp.get_code());
   }
   {
     cpp2::DropSpaceReq req;
@@ -4699,7 +4699,7 @@ TEST(ProcessorTest, DropZoneTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS, resp.get_code());
   }
 }
 

@@ -112,6 +112,7 @@ struct DataSet {
     rows.reserve(rowSize() + o.rowSize());
     rows.insert(
         rows.end(), std::make_move_iterator(o.rows.begin()), std::make_move_iterator(o.rows.end()));
+    std::vector<Row>().swap(o.rows);
     return true;
   }
 
@@ -127,7 +128,7 @@ struct DataSet {
                     std::make_move_iterator(o.colNames.end()));
     for (std::size_t i = 0; i < rowSize(); ++i) {
       rows[i].values.reserve(newColSize);
-      rows[i].values.insert(rows[i].values.begin(),
+      rows[i].values.insert(rows[i].values.end(),
                             std::make_move_iterator(o.rows[i].values.begin()),
                             std::make_move_iterator(o.rows[i].values.end()));
     }

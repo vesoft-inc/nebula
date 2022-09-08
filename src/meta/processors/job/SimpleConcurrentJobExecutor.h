@@ -20,11 +20,9 @@ class SimpleConcurrentJobExecutor : public StorageJobExecutor {
                               AdminClient* adminClient,
                               const std::vector<std::string>& params);
 
-  bool check() override;
+  nebula::cpp2::ErrorCode check() override;
 
   nebula::cpp2::ErrorCode prepare() override;
-
-  nebula::cpp2::ErrorCode stop() override;
 };
 
 }  // namespace meta
