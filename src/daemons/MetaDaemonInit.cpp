@@ -93,7 +93,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 
   auto engineRet = kvstore->part(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
   if (!nebula::ok(engineRet)) {
-    LOG(ERROR) << "Get nebula store engine failed";
+    LOG(ERROR) << "Get Nebula store engine failed";
     return nullptr;
   }
 

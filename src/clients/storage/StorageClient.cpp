@@ -40,7 +40,7 @@ cpp2::RequestCommon StorageClient::CommonRequestParam::toReqCommon() const {
 StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
     const CommonRequestParam& param,
     std::vector<std::string> colNames,
-    const std::vector<Row>& vertices,
+    const std::vector<Value>& vids,
     const std::vector<EdgeType>& edgeTypes,
     cpp2::EdgeDirection edgeDirection,
     const std::vector<cpp2::StatProp>* statProps,
@@ -52,13 +52,12 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
     const std::vector<cpp2::OrderBy>& orderBy,
     int64_t limit,
     const Expression* filter) {
-  auto cbStatus = getIdFromRow(param.space, false);
+  auto cbStatus = getIdFromValue(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
         std::runtime_error(cbStatus.status().toString()));
   }
-
-  auto status = clusterIdsToHosts(param.space, vertices, std::move(cbStatus).value());
+  auto status = clusterIdsToHosts(param.space, vids, std::move(cbStatus).value());
   if (!status.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
         std::runtime_error(status.status().toString()));
@@ -109,14 +108,16 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
 }
 
 StorageRpcRespFuture<cpp2::GetDstBySrcResponse> StorageClient::getDstBySrc(
-    const CommonRequestParam& param, const List& vertices, const std::vector<EdgeType>& edgeTypes) {
+    const CommonRequestParam& param,
+    const std::vector<Value>& vertices,
+    const std::vector<EdgeType>& edgeTypes) {
   auto cbStatus = getIdFromValue(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
         std::runtime_error(cbStatus.status().toString()));
   }
 
-  auto status = clusterIdsToHosts(param.space, vertices.values, std::move(cbStatus).value());
+  auto status = clusterIdsToHosts(param.space, vertices, std::move(cbStatus).value());
   if (!status.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetDstBySrcResponse>>(
         std::runtime_error(status.status().toString()));

@@ -41,9 +41,21 @@ class TimeUtils {
       typename D,
       typename = std::enable_if_t<std::is_same<D, Date>::value || std::is_same<D, DateTime>::value>>
   static Status validateDate(const D &date) {
+    // first check month
+    if (date.month < 1 || date.month > 12) {
+      return Status::Error("Invalid month number.`%s' is not a valid date.",
+                           date.toString().c_str());
+    }
     const int64_t *p = isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
     if ((p[date.month] - p[date.month - 1]) < date.day) {
       return Status::Error("`%s' is not a valid date.", date.toString().c_str());
+    }
+    return Status::OK();
+  }
+
+  static Status validateYear(int64_t year) {
+    if (year < std::numeric_limits<int16_t>::min() || year > std::numeric_limits<int16_t>::max()) {
+      return Status::Error("Out of range year `%ld'.", year);
     }
     return Status::OK();
   }

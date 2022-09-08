@@ -55,6 +55,10 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   // prune properties in Traverse according to the used properties collected previous
   void pruneCurrent(Traverse *node);
 
+  void visit(ScanEdges *node) override;
+
+  void pruneCurrent(ScanEdges *node);
+
   void visit(AppendVertices *node) override;
   // \param node, the current node to visit
   // \param used, whether properties in current node are used
@@ -80,6 +84,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   GraphSpaceID spaceID_;
   Status status_;
   bool rootNode_{true};
+  const int unKnowType_ = 0;
 };
 
 }  // namespace graph

@@ -129,6 +129,61 @@ void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
   }
 }
 
+void PrunePropertiesVisitor::visit(ScanEdges *node) {
+  rootNode_ = false;
+  pruneCurrent(node);
+  status_ = depsPruneProperties(node->dependencies());
+}
+
+void PrunePropertiesVisitor::pruneCurrent(ScanEdges *node) {
+  auto &colNames = node->colNames();
+  DCHECK(!colNames.empty());
+  auto &edgeAlias = colNames.back();
+  auto it = propsUsed_.colsSet.find(edgeAlias);
+  if (it != propsUsed_.colsSet.end()) {
+    // all properties are used
+    return;
+  }
+  auto *edgeProps = node->props();
+  auto &edgePropsMap = propsUsed_.edgePropsMap;
+
+  auto prunedEdgeProps = std::make_unique<std::vector<EdgeProp>>();
+  prunedEdgeProps->reserve(edgeProps->size());
+  auto edgeAliasIter = edgePropsMap.find(edgeAlias);
+
+  for (auto &edgeProp : *edgeProps) {
+    auto edgeType = edgeProp.type_ref().value();
+    auto &props = edgeProp.props_ref().value();
+    EdgeProp newEdgeProp;
+    newEdgeProp.type_ref() = edgeType;
+    if (edgeAliasIter == edgePropsMap.end()) {
+      // only type, dst are used
+      newEdgeProp.props_ref() = {nebula::kSrc, nebula::kDst, nebula::kType, nebula::kRank};
+    } else {
+      std::unordered_set<std::string> uniqueProps{
+          nebula::kSrc, nebula::kDst, nebula::kType, nebula::kRank};
+      std::vector<std::string> newProps;
+      auto &usedEdgeProps = edgeAliasIter->second;
+      auto edgeTypeIter = usedEdgeProps.find(std::abs(edgeType));
+      if (edgeTypeIter != usedEdgeProps.end()) {
+        uniqueProps.insert(edgeTypeIter->second.begin(), edgeTypeIter->second.end());
+      }
+      auto unKnowEdgeIter = usedEdgeProps.find(unKnowType_);
+      if (unKnowEdgeIter != usedEdgeProps.end()) {
+        uniqueProps.insert(unKnowEdgeIter->second.begin(), unKnowEdgeIter->second.end());
+      }
+      for (auto &prop : props) {
+        if (uniqueProps.find(prop) != uniqueProps.end()) {
+          newProps.emplace_back(prop);
+        }
+      }
+      newEdgeProp.props_ref() = std::move(newProps);
+    }
+    prunedEdgeProps->emplace_back(std::move(newEdgeProp));
+  }
+  node->setEdgeProps(std::move(prunedEdgeProps));
+}
+
 void PrunePropertiesVisitor::visit(Traverse *node) {
   rootNode_ = false;
   visitCurrent(node);
@@ -176,24 +231,34 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
       if (usedVertexProps.empty()) {
         node->setVertexProps(nullptr);
       } else {
+        auto unknowIter = usedVertexProps.find(unKnowType_);
         auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
         prunedVertexProps->reserve(usedVertexProps.size());
         for (auto &vertexProp : *vertexProps) {
           auto tagId = vertexProp.tag_ref().value();
           auto &props = vertexProp.props_ref().value();
+          std::unordered_set<std::string> usedProps;
+          if (unknowIter != usedVertexProps.end()) {
+            usedProps.insert(unknowIter->second.begin(), unknowIter->second.end());
+          }
           auto tagIter = usedVertexProps.find(tagId);
-          if (tagIter == usedVertexProps.end()) {
+          if (tagIter != usedVertexProps.end()) {
+            usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+          }
+          if (usedProps.empty()) {
             continue;
           }
-          auto &usedProps = tagIter->second;
-          VertexProp newVProp;
-          newVProp.tag_ref() = tagId;
           std::vector<std::string> newProps;
           for (auto &prop : props) {
             if (usedProps.find(prop) != usedProps.end()) {
               newProps.emplace_back(prop);
             }
           }
+          if (newProps.empty()) {
+            continue;
+          }
+          VertexProp newVProp;
+          newVProp.tag_ref() = tagId;
           newVProp.props_ref() = std::move(newProps);
           prunedVertexProps->emplace_back(std::move(newVProp));
         }
@@ -227,8 +292,7 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
       if (edgeTypeIter != usedEdgeProps.end()) {
         uniqueProps.insert(edgeTypeIter->second.begin(), edgeTypeIter->second.end());
       }
-      int kUnknowEdgeType = 0;
-      auto unKnowEdgeIter = usedEdgeProps.find(kUnknowEdgeType);
+      auto unKnowEdgeIter = usedEdgeProps.find(unKnowType_);
       if (unKnowEdgeIter != usedEdgeProps.end()) {
         uniqueProps.insert(unKnowEdgeIter->second.begin(), unKnowEdgeIter->second.end());
       }
@@ -318,24 +382,33 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     }
     return;
   }
-
+  auto unknowIter = usedVertexProps.find(unKnowType_);
   prunedVertexProps->reserve(usedVertexProps.size());
   for (auto &vertexProp : *vertexProps) {
     auto tagId = vertexProp.tag_ref().value();
     auto &props = vertexProp.props_ref().value();
     auto tagIter = usedVertexProps.find(tagId);
-    if (tagIter == usedVertexProps.end()) {
+    std::unordered_set<std::string> usedProps;
+    if (unknowIter != usedVertexProps.end()) {
+      usedProps.insert(unknowIter->second.begin(), unknowIter->second.end());
+    }
+    if (tagIter != usedVertexProps.end()) {
+      usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+    }
+    if (usedProps.empty()) {
       continue;
     }
-    auto &usedProps = tagIter->second;
-    VertexProp newVProp;
-    newVProp.tag_ref() = tagId;
     std::vector<std::string> newProps;
     for (auto &prop : props) {
       if (usedProps.find(prop) != usedProps.end()) {
         newProps.emplace_back(prop);
       }
     }
+    if (newProps.empty()) {
+      continue;
+    }
+    VertexProp newVProp;
+    newVProp.tag_ref() = tagId;
     newVProp.props_ref() = std::move(newProps);
     prunedVertexProps->emplace_back(std::move(newVProp));
   }

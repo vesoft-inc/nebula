@@ -52,7 +52,7 @@ class Result final {
     return std::move(core_.iter);
   }
 
-  Iterator* iterRef() {
+  Iterator* iterRef() const {
     return core_.iter.get();
   }
 

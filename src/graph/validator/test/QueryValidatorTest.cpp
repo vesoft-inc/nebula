@@ -81,8 +81,7 @@ TEST_F(QueryValidatorTest, GoNSteps) {
                                             PK::kLoop,
                                             PK::kStart,
                                             PK::kDedup,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kGetDstBySrc,
                                             PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -96,8 +95,7 @@ TEST_F(QueryValidatorTest, GoNSteps) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -114,8 +112,7 @@ TEST_F(QueryValidatorTest, GoNSteps) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -131,8 +128,7 @@ TEST_F(QueryValidatorTest, GoNSteps) {
                                             PK::kLoop,
                                             PK::kStart,
                                             PK::kDedup,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kGetDstBySrc,
                                             PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -166,8 +162,7 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
                                             PK::kLoop,
                                             PK::kStart,
                                             PK::kDedup,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kGetDstBySrc,
                                             PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -459,8 +454,7 @@ TEST_F(QueryValidatorTest, GoReversely) {
         PK::kLoop,
         PK::kStart,
         PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
+        PK::kGetDstBySrc,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));

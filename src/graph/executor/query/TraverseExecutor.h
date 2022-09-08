@@ -5,6 +5,8 @@
 #ifndef EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 #define EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 
+#include <robin_hood.h>
+
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -35,14 +37,16 @@ namespace graph {
 using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
 using Dst = Value;
 using Paths = std::vector<Row>;
+using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
+using HashMap = robin_hood::unordered_flat_map<Dst, Paths, std::hash<Value>>;
 
 struct JobResult {
   // Newly traversed paths size
   size_t pathCnt{0};
-  // Request dataset for next traverse
-  DataSet reqDs;
+  // Request vids for next traverse
+  HashSet vids;
   // Newly traversed paths
-  std::unordered_map<Dst, Paths> newPaths;
+  HashMap newPaths;
 };
 
 class TraverseExecutor final : public StorageAccessExecutor {
@@ -57,7 +61,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   Status close() override;
 
  private:
-  Status buildRequestDataSet();
+  Status buildRequestVids();
 
   folly::Future<Status> traverse();
 
@@ -71,10 +75,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> buildInterimPathMultiJobs(std::unique_ptr<GetNeighborsIter> iter);
 
-  StatusOr<JobResult> handleJob(size_t begin,
-                                size_t end,
-                                Iterator* iter,
-                                const std::unordered_map<Value, Paths>& prev);
+  StatusOr<JobResult> handleJob(size_t begin, size_t end, Iterator* iter, const HashMap& prev);
 
   Status buildResult();
 
@@ -91,26 +92,20 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   void releasePrevPaths(size_t cnt);
 
-  void buildPath(std::unordered_map<Value, std::vector<Row>>& currentPaths,
-                 const Value& dst,
-                 Row&& path);
+  void buildPath(HashMap& currentPaths, const Value& dst, Row&& path);
 
-  Status handleZeroStep(const std::unordered_map<Value, Paths>& prev,
-                        List&& vertices,
-                        std::unordered_map<Value, Paths>& zeroSteps,
-                        size_t& count);
+  Status handleZeroStep(const HashMap& prev, List&& vertices, HashMap& zeroSteps, size_t& count);
 
   Expression* selectFilter();
 
  private:
   ObjectPool objPool_;
-  DataSet reqDs_;
+  HashSet vids_;
   const Traverse* traverse_{nullptr};
   MatchStepRange* range_{nullptr};
   size_t currentStep_{0};
-  std::list<std::unordered_map<Dst, Paths>> paths_;
+  std::list<HashMap> paths_;
   size_t totalPathCnt_{0};
-  folly::ConcurrentHashMap<Dst, uint8_t> uniqueDsts_;
 };
 
 }  // namespace graph

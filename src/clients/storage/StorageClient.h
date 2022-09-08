@@ -67,7 +67,7 @@ class StorageClient
       const CommonRequestParam& param,
       std::vector<std::string> colNames,
       // The first column has to be the VertexID
-      const std::vector<Row>& vertices,
+      const std::vector<Value>& vids,
       const std::vector<EdgeType>& edgeTypes,
       cpp2::EdgeDirection edgeDirection,
       const std::vector<cpp2::StatProp>* statProps,
@@ -82,7 +82,7 @@ class StorageClient
 
   StorageRpcRespFuture<cpp2::GetDstBySrcResponse> getDstBySrc(
       const CommonRequestParam& param,
-      const List& vertices,
+      const std::vector<Value>& vertices,
       const std::vector<EdgeType>& edgeTypes);
 
   StorageRpcRespFuture<cpp2::GetPropResponse> getProps(

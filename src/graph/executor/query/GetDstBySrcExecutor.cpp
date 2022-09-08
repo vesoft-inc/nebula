@@ -13,7 +13,7 @@ using nebula::storage::cpp2::GetDstBySrcResponse;
 namespace nebula {
 namespace graph {
 
-StatusOr<List> GetDstBySrcExecutor::buildRequestList() {
+StatusOr<std::vector<Value>> GetDstBySrcExecutor::buildRequestList() {
   SCOPED_TIMER(&execTime_);
   auto inputVar = gd_->inputVar();
   auto iter = ectx_->getResult(inputVar).iter();

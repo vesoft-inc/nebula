@@ -439,11 +439,8 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
   if (!valid()) {
     return Value::kNullValue;
   }
-
   auto vidVal = getColumn(0);
-  if (UNLIKELY(!SchemaUtil::isValidVid(vidVal))) {
-    return Value::kNullBadType;
-  }
+
   Vertex vertex;
   vertex.vid = vidVal;
   auto& tagPropMap = currentDs_->tagPropsMap;
