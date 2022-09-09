@@ -88,30 +88,31 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   } else {
     VLOG(1) << "Remove legacy logs at part: " << part << " successful";
   }
+  {
+    // todo(doodle): this place has potential bug is that we'd better lock the
+    // part at first, then switch to BUILDING, otherwise some data won't build
+    // index in worst case.
+    env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::BUILDING);
+    SCOPE_EXIT {
+      env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::FINISHED);
+    };
+    LOG(INFO) << "Start building index";
+    result = buildIndexGlobal(space, part, items, rateLimiter.get());
+    if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Building index failed";
+      return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
+    } else {
+      LOG(INFO) << folly::sformat("Building index successful, space={}, part={}", space, part);
+    }
 
-  // todo(doodle): this place has potential bug is that we'd better lock the
-  // part at first, then switch to BUILDING, otherwise some data won't build
-  // index in worst case.
-  env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::BUILDING);
-
-  LOG(INFO) << "Start building index";
-  result = buildIndexGlobal(space, part, items, rateLimiter.get());
-  if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Building index failed";
-    return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
-  } else {
-    LOG(INFO) << folly::sformat("Building index successful, space={}, part={}", space, part);
+    LOG(INFO) << folly::sformat("Processing operation logs, space={}, part={}", space, part);
+    result = buildIndexOnOperations(space, part, rateLimiter.get());
+    if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << folly::sformat(
+          "Building index with operation logs failed, space={}, part={}", space, part);
+      return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
+    }
   }
-
-  LOG(INFO) << folly::sformat("Processing operation logs, space={}, part={}", space, part);
-  result = buildIndexOnOperations(space, part, rateLimiter.get());
-  if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << folly::sformat(
-        "Building index with operation logs failed, space={}, part={}", space, part);
-    return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
-  }
-
-  env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::FINISHED);
   LOG(INFO) << folly::sformat("RebuildIndexTask Finished, space={}, part={}", space, part);
   return result;
 }
