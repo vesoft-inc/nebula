@@ -326,7 +326,7 @@ Feature: Prune Properties rule
       | 2  | Start          |              |                                                                                                                                                                                                                                |
       | 9  | Project        | 8            |                                                                                                                                                                                                                                |
       | 8  | AppendVertices | 7            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                           |
-      | 7  | Traverse       | 6            | {  "vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"props\": [\"_type\", \"_rank\", \"_dst\"], \"type\": -3}, {\"props\": [\"_type\", \"_rank\", \"_dst\"], \"type\": -4}]" } |
+      | 7  | Traverse       | 6            | {  "vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -4}]" } |
       | 6  | Argument       |              |                                                                                                                                                                                                                                |
 
   # The schema id is not fixed in standalone cluster, so we skip it
@@ -407,7 +407,7 @@ Feature: Prune Properties rule
       | 7  | Aggregate      | 6            |                                                                                                    |
       | 6  | Project        | 5            |                                                                                                    |
       | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"],\"tagId\":9}]" }                                                |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 2  | Dedup          | 1            |                                                                                                    |
       | 1  | PassThrough    | 3            |                                                                                                    |
       | 3  | Start          |              |                                                                                                    |
@@ -425,7 +425,7 @@ Feature: Prune Properties rule
       | 7  | Aggregate      | 6            |                                                                                                    |
       | 6  | Project        | 5            |                                                                                                    |
       | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":9}]" }                                               |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 2  | Dedup          | 1            |                                                                                                    |
       | 1  | PassThrough    | 3            |                                                                                                    |
       | 3  | Start          |              |                                                                                                    |
@@ -443,7 +443,7 @@ Feature: Prune Properties rule
       | 13 | Project        | 11           |                                                                                                    |
       | 11 | Limit          | 5            |                                                                                                    |
       | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":9}]" }                                               |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 2  | Dedup          | 1            |                                                                                                    |
       | 1  | PassThrough    | 3            |                                                                                                    |
       | 3  | Start          |              |                                                                                                    |
@@ -471,13 +471,13 @@ Feature: Prune Properties rule
       | 13 | BiInnerJoin    | 15,12        |                                                                                                                                                |
       | 15 | Project        | 17           |                                                                                                                                                |
       | 17 | AppendVertices | 16           | {  "props": "[{\"props\":[\"name\",\"age\"],\"tagId\":9}]" }                                                                                   |
-      | 16 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                             |
+      | 16 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                                             |
       | 2  | Dedup          | 1            |                                                                                                                                                |
       | 1  | PassThrough    | 3            |                                                                                                                                                |
       | 3  | Start          |              |                                                                                                                                                |
       | 12 | Project        | 18           |                                                                                                                                                |
       | 18 | AppendVertices | 10           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":10}]" }                                                                                          |
-      | 10 | Traverse       | 8            | {"vertexProps": "[{\"props\":[\"name\",\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 10 | Traverse       | 8            | {"vertexProps": "[{\"props\":[\"name\",\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 8  | Argument       |              |                                                                                                                                                |
       | 9  | Start          |              |                                                                                                                                                |
 
@@ -506,12 +506,12 @@ Feature: Prune Properties rule
       | 13 | Union          | 18, 19       |                                                                                                                                                                 |
       | 18 | Project        | 4            |                                                                                                                                                                 |
       | 4  | AppendVertices | 20           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":9}]" }                                                                                                            |
-      | 20 | Traverse       | 16           | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                              |
+      | 20 | Traverse       | 16           | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                                                              |
       | 16 | IndexScan      | 2            |                                                                                                                                                                 |
       | 2  | Start          |              |                                                                                                                                                                 |
       | 19 | Project        | 10           |                                                                                                                                                                 |
       | 10 | AppendVertices | 21           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":9}]" }                                                                                                            |
-      | 21 | Traverse       | 17           | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 21 | Traverse       | 17           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 17 | IndexScan      | 8            |                                                                                                                                                                 |
       | 8  | Start          |              |                                                                                                                                                                 |
 
@@ -541,18 +541,18 @@ Feature: Prune Properties rule
       | 23 | Project        | 22           |                                                                                                                                                                 |
       | 22 | Filter         | 29           |                                                                                                                                                                 |
       | 29 | AppendVertices | 28           | {  "props": "[{\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" }                                                                                                 |
-      | 28 | Traverse       | 27           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                           |
-      | 27 | Traverse       | 26           | {"vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                             |
-      | 26 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 28 | Traverse       | 27           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                           |
+      | 27 | Traverse       | 26           | {"vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                                                             |
+      | 26 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 2  | Dedup          | 1            |                                                                                                                                                                 |
       | 1  | PassThrough    | 3            |                                                                                                                                                                 |
       | 3  | Start          |              |                                                                                                                                                                 |
       | 25 | Project        | 24           |                                                                                                                                                                 |
       | 24 | Filter         | 16           |                                                                                                                                                                 |
       | 16 | AppendVertices | 15           | {  "props": "[{\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" }                                                                                                 |
-      | 15 | Traverse       | 14           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                           |
-      | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                             |
-      | 13 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 15 | Traverse       | 14           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                           |
+      | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  }                                                             |
+      | 13 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}]"  } |
       | 11 | Argument       |              |                                                                                                                                                                 |
       | 12 | Start          |              |                                                                                                                                                                 |
 
