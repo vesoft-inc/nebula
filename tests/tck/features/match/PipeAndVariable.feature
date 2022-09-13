@@ -81,24 +81,106 @@ Feature: Pipe or use variable to store the lookup results
   Scenario: mixed usage of cypher and ngql
     When executing query:
       """
+      YIELD ['Tim Duncan', 'Tony Parker'] AS a
+      | UNWIND $-.a AS b
+      | GO FROM $-.b OVER like YIELD edge AS e
+      """
+    Then the result should be, in any order:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      YIELD {a:1, b:['Tim Duncan', 'Tony Parker'], c:'Tim Duncan'} AS a
+      | YIELD $-.a.b AS b
+      | UNWIND $-.b AS c
+      | GO FROM $-.c OVER like YIELD edge AS e
+      """
+    Then the result should be, in any order:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      YIELD {a:1, b:['Tim Duncan', 'Tony Parker'], c:'Tim Duncan'} AS a
+      | YIELD $-.a.c AS b
+      | UNWIND $-.b AS c
+      | GO FROM $-.c OVER like YIELD edge AS e
+      """
+    Then the result should be, in any order:
+      | e                                                       |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
       LOOKUP ON player
       WHERE player.name == 'Tim Duncan'
       YIELD player.age as age, id(vertex) as vid
-      | UNWIND $-.vid as a RETURN a
+      | UNWIND $-.vid as a | YIELD $-.a AS a
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `UNWIND'
+    Then the result should be, in any order, with relax comparison:
+      | a            |
+      | "Tim Duncan" |
     When executing query:
       """
       GET SUBGRAPH 2 STEPS FROM "Tim Duncan" BOTH like YIELD edges as e
-      | UNWIND $-.e as a RETURN a
+      | UNWIND $-.e as a | YIELD $-.a AS a
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `UNWIND'
+    Then the result should be, in any order, with relax comparison:
+      | a                                                    |
+      | [:like "Aron Baynes"->"Tim Duncan" @0 {}]            |
+      | [:like "Boris Diaw"->"Tim Duncan" @0 {}]             |
+      | [:like "Danny Green"->"Tim Duncan" @0 {}]            |
+      | [:like "Dejounte Murray"->"Tim Duncan" @0 {}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {}]      |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {}]          |
+      | [:like "Marco Belinelli"->"Tim Duncan" @0 {}]        |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {}]       |
+      | [:like "Tiago Splitter"->"Tim Duncan" @0 {}]         |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {}]            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {}]          |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {}]            |
+      | [:like "Damian Lillard"->"LaMarcus Aldridge" @0 {}]  |
+      | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {}]        |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {}]     |
+      | [:like "Boris Diaw"->"Tony Parker" @0 {}]            |
+      | [:like "Dejounte Murray"->"Chris Paul" @0 {}]        |
+      | [:like "Dejounte Murray"->"Danny Green" @0 {}]       |
+      | [:like "Dejounte Murray"->"James Harden" @0 {}]      |
+      | [:like "Dejounte Murray"->"Kevin Durant" @0 {}]      |
+      | [:like "Dejounte Murray"->"Kyle Anderson" @0 {}]     |
+      | [:like "Dejounte Murray"->"LeBron James" @0 {}]      |
+      | [:like "Dejounte Murray"->"Manu Ginobili" @0 {}]     |
+      | [:like "Dejounte Murray"->"Marco Belinelli" @0 {}]   |
+      | [:like "Dejounte Murray"->"Russell Westbrook" @0 {}] |
+      | [:like "Dejounte Murray"->"Tony Parker" @0 {}]       |
+      | [:like "Danny Green"->"LeBron James" @0 {}]          |
+      | [:like "Danny Green"->"Marco Belinelli" @0 {}]       |
+      | [:like "Marco Belinelli"->"Danny Green" @0 {}]       |
+      | [:like "Marco Belinelli"->"Tony Parker" @0 {}]       |
+      | [:like "Yao Ming"->"Shaquille O'Neal" @0 {}]         |
+      | [:like "Shaquille O'Neal"->"JaVale McGee" @0 {}]     |
+      | [:like "Tiago Splitter"->"Manu Ginobili" @0 {}]      |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}]     |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {}]         |
+      | [:like "James Harden"->"Russell Westbrook" @0 {}]    |
+      | [:like "Chris Paul"->"LeBron James" @0 {}]           |
+      | [:like "Russell Westbrook"->"James Harden" @0 {}]    |
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Tim Duncan" TO "Yao Ming" OVER like YIELD path as p
-      | UNWIND $-.p as a RETURN a
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER like YIELD path as p
+      | YIELD nodes($-.p) AS nodes | UNWIND $-.nodes AS a | YIELD $-.a AS a
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `UNWIND'
+    Then the result should be, in any order, with relax comparison:
+      | a               |
+      | ("Tim Duncan")  |
+      | ("Tony Parker") |
     When executing query:
       """
       GO 2 STEPS FROM "Tim Duncan" OVER * YIELD dst(edge) as id

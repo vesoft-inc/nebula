@@ -670,6 +670,8 @@ class ScanEdges final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  void accept(PlanNodeVisitor* visitor) override;
+
  private:
   friend ObjectPool;
   ScanEdges(QueryContext* qctx,
@@ -752,6 +754,8 @@ class Union final : public SetOp {
   static Union* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
     return qctx->objPool()->makeAndAdd<Union>(qctx, left, right);
   }
+
+  void accept(PlanNodeVisitor* visitor) override;
 
   PlanNode* clone() const override;
 
@@ -837,12 +841,22 @@ class Unwind final : public SingleInputNode {
     return unwindExpr_;
   }
 
-  const std::string alias() const {
+  const std::string& alias() const {
     return alias_;
+  }
+
+  bool fromPipe() const {
+    return fromPipe_;
+  }
+
+  void setFromPipe(bool fromPipe) {
+    fromPipe_ = fromPipe;
   }
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
 
  private:
   friend ObjectPool;
@@ -854,6 +868,7 @@ class Unwind final : public SingleInputNode {
  private:
   Expression* unwindExpr_{nullptr};
   std::string alias_;
+  bool fromPipe_{false};
 };
 
 // Sort the given record set.

@@ -78,6 +78,33 @@ class GoSentence final : public Sentence {
   std::unique_ptr<TruncateClause> truncateClause_;
 };
 
+class UnwindSentence final : public Sentence {
+ public:
+  UnwindSentence(Expression* expr, const std::string& alias) {
+    expr_ = expr;
+    alias_ = alias;
+    kind_ = Kind::kUnwind;
+  }
+
+  Expression* expr() {
+    return expr_;
+  }
+
+  const Expression* expr() const {
+    return expr_;
+  }
+
+  const std::string& alias() const {
+    return alias_;
+  }
+
+  std::string toString() const override;
+
+ private:
+  Expression* expr_{nullptr};
+  std::string alias_;
+};
+
 class LookupSentence final : public Sentence {
  public:
   LookupSentence(std::string* from, WhereClause* where, YieldClause* yield);

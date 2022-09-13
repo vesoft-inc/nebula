@@ -5,14 +5,56 @@
 
 #include "graph/visitor/PropertyTrackerVisitor.h"
 
-#include <sstream>
-#include <unordered_set>
-
 #include "common/expression/Expression.h"
 #include "graph/context/QueryContext.h"
 
 namespace nebula {
 namespace graph {
+void PropertyTracker::insertVertexProp(const std::string &name,
+                                       TagID tagId,
+                                       const std::string &propName) {
+  if (colsSet.find(name) != colsSet.end()) {
+    return;
+  }
+  auto iter = vertexPropsMap.find(name);
+  if (iter == vertexPropsMap.end()) {
+    vertexPropsMap[name][tagId].emplace(propName);
+  } else {
+    auto propIter = iter->second.find(tagId);
+    if (propIter == iter->second.end()) {
+      std::unordered_set<std::string> temp({propName});
+      iter->second.emplace(tagId, std::move(temp));
+    } else {
+      propIter->second.emplace(propName);
+    }
+  }
+}
+
+void PropertyTracker::insertEdgeProp(const std::string &name,
+                                     EdgeType type,
+                                     const std::string &propName) {
+  if (colsSet.find(name) != colsSet.end()) {
+    return;
+  }
+  auto iter = edgePropsMap.find(name);
+  if (iter == edgePropsMap.end()) {
+    edgePropsMap[name][type].emplace(propName);
+  } else {
+    auto propIter = iter->second.find(type);
+    if (propIter == iter->second.end()) {
+      std::unordered_set<std::string> temp({propName});
+      iter->second.emplace(type, std::move(temp));
+    } else {
+      propIter->second.emplace(propName);
+    }
+  }
+}
+
+void PropertyTracker::insertCols(const std::string &name) {
+  colsSet.emplace(name);
+  vertexPropsMap.erase(name);
+  edgePropsMap.erase(name);
+}
 
 Status PropertyTracker::update(const std::string &oldName, const std::string &newName) {
   if (oldName == newName) {
@@ -32,6 +74,7 @@ Status PropertyTracker::update(const std::string &oldName, const std::string &ne
     }
     vertexPropsMap[newName] = std::move(it1->second);
     vertexPropsMap.erase(it1);
+    colsSet.erase(oldName);
   }
   if (hasEdgeAlias) {
     if (edgePropsMap.find(newName) != edgePropsMap.end()) {
@@ -39,12 +82,13 @@ Status PropertyTracker::update(const std::string &oldName, const std::string &ne
     }
     edgePropsMap[newName] = std::move(it2->second);
     edgePropsMap.erase(it2);
+    colsSet.erase(oldName);
   }
 
   auto it3 = colsSet.find(oldName);
   if (it3 != colsSet.end()) {
     colsSet.erase(it3);
-    colsSet.insert(newName);
+    insertCols(newName);
   }
 
   return Status::OK();
@@ -72,7 +116,7 @@ void PropertyTrackerVisitor::visit(TagPropertyExpression *expr) {
     return;
   }
   auto tagId = ret.value();
-  propsUsed_.vertexPropsMap[entityAlias_][tagId].emplace(propName);
+  propsUsed_.insertVertexProp(entityAlias_, tagId, propName);
 }
 
 void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
@@ -84,7 +128,7 @@ void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
     return;
   }
   auto edgeType = ret.value();
-  propsUsed_.edgePropsMap[entityAlias_][edgeType].emplace(propName);
+  propsUsed_.insertEdgeProp(entityAlias_, edgeType, propName);
 }
 
 void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
@@ -102,17 +146,17 @@ void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
     return;
   }
   auto tagId = ret.value();
-  propsUsed_.vertexPropsMap[nodeAlias][tagId].emplace(propName);
+  propsUsed_.insertVertexProp(nodeAlias, tagId, propName);
 }
 
 void PropertyTrackerVisitor::visit(InputPropertyExpression *expr) {
   auto &colName = expr->prop();
-  propsUsed_.colsSet.emplace(colName);
+  propsUsed_.insertCols(colName);
 }
 
 void PropertyTrackerVisitor::visit(VariablePropertyExpression *expr) {
   auto &colName = expr->prop();
-  propsUsed_.colsSet.emplace(colName);
+  propsUsed_.insertCols(colName);
 }
 
 void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
@@ -127,28 +171,79 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
     return;
   }
   auto &propName = constVal.getStr();
-  static const int kUnknownEdgeType = 0;
   switch (lhs->kind()) {
+    case Expression::Kind::kInputProperty:
     case Expression::Kind::kVarProperty: {  // $e.name
-      auto *varPropExpr = static_cast<VariablePropertyExpression *>(lhs);
+      auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
       auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
-      break;
-    }
-    case Expression::Kind::kInputProperty: {
-      auto *inputPropExpr = static_cast<InputPropertyExpression *>(lhs);
-      auto &edgeAlias = inputPropExpr->prop();
-      propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
+      propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
       break;
     }
     case Expression::Kind::kSubscript: {  // $-.e[0].name
       auto *subscriptExpr = static_cast<SubscriptExpression *>(lhs);
       auto *subLeftExpr = subscriptExpr->left();
-      if (subLeftExpr->kind() == Expression::Kind::kInputProperty) {
-        auto *inputPropExpr = static_cast<InputPropertyExpression *>(subLeftExpr);
-        auto &edgeAlias = inputPropExpr->prop();
-        propsUsed_.edgePropsMap[edgeAlias][kUnknownEdgeType].emplace(propName);
+      auto kind = subLeftExpr->kind();
+      if (kind == Expression::Kind::kInputProperty || kind == Expression::Kind::kVarProperty) {
+        auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
+        auto &edgeAlias = propExpr->prop();
+        propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
+      } else if (kind == Expression::Kind::kListComprehension) {
+        //  match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v) return e[0].start_year
+        auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
+        auto *collectExpr = listExpr->collection();
+        if (collectExpr->kind() == Expression::Kind::kInputProperty) {
+          auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
+          auto &aliasName = inputPropExpr->prop();
+          propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+        }
       }
+      break;
+    }
+    case Expression::Kind::kFunctionCall: {  // properties(t3).name
+      auto *funCallExpr = static_cast<FunctionCallExpression *>(lhs);
+      auto funName = funCallExpr->name();
+      std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
+      if (funName != "properties") {
+        break;
+      }
+      auto *argExpr = funCallExpr->args()->args().front();
+      auto kind = argExpr->kind();
+      switch (kind) {
+        case Expression::Kind::kVarProperty:
+        case Expression::Kind::kInputProperty: {
+          //  match (v) return properties(v).name
+          auto *inputPropExpr = static_cast<InputPropertyExpression *>(argExpr);
+          auto &aliasName = inputPropExpr->prop();
+          propsUsed_.insertVertexProp(aliasName, unKnowType_, propName);
+          break;
+        }
+        case Expression::Kind::kSubscript: {
+          auto *subscriptExpr = static_cast<SubscriptExpression *>(argExpr);
+          auto *subLeftExpr = subscriptExpr->left();
+          auto leftKind = subLeftExpr->kind();
+          if (leftKind == Expression::Kind::kInputProperty ||
+              leftKind == Expression::Kind::kVarProperty) {
+            //  match (v)-[e]->(b) return properties(e).start_year
+            auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
+            auto &aliasName = propExpr->prop();
+            propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+          } else if (leftKind == Expression::Kind::kListComprehension) {
+            //  match (v)-[c*2]->(b) retrun properties(c[0]).start_year
+            //  properties([e IN $-.c WHERE is_edge($e)][0]).start_year
+            auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
+            auto *collectExpr = listExpr->collection();
+            if (collectExpr->kind() == Expression::Kind::kInputProperty) {
+              auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
+              auto &aliasName = inputPropExpr->prop();
+              propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+            }
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      break;
     }
     default:
       break;
@@ -156,32 +251,12 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
-  static const std::unordered_set<std::string> kVertexIgnoreFuncs = {"id"};
-  static const std::unordered_set<std::string> kEdgeIgnoreFuncs = {
-      "src", "dst", "type", "typeid", "rank"};
+  static const std::unordered_set<std::string> ignoreFuncs = {
+      "src", "dst", "type", "typeid", "id", "rank", "length"};
 
   auto funName = expr->name();
-  if (kVertexIgnoreFuncs.find(funName) != kVertexIgnoreFuncs.end()) {
-    DCHECK_EQ(expr->args()->numArgs(), 1);
-    auto argExpr = expr->args()->args()[0];
-    auto nodeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
-    if (!nodeAlias.empty()) {
-      auto it = propsUsed_.vertexPropsMap.find(nodeAlias);
-      if (it == propsUsed_.vertexPropsMap.end()) {
-        propsUsed_.vertexPropsMap[nodeAlias] = {};
-      }
-    }
-    return;
-  } else if (kEdgeIgnoreFuncs.find(funName) != kEdgeIgnoreFuncs.end()) {
-    DCHECK_EQ(expr->args()->numArgs(), 1);
-    auto argExpr = expr->args()->args()[0];
-    auto edgeAlias = extractColNameFromInputPropOrVarPropExpr(argExpr);
-    if (!edgeAlias.empty()) {
-      auto it = propsUsed_.edgePropsMap.find(edgeAlias);
-      if (it == propsUsed_.edgePropsMap.end()) {
-        propsUsed_.edgePropsMap[edgeAlias] = {};
-      }
-    }
+  std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
+  if (ignoreFuncs.find(funName) != ignoreFuncs.end()) {
     return;
   }
 
@@ -191,6 +266,20 @@ void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
       break;
     }
   }
+}
+
+void PropertyTrackerVisitor::visit(AggregateExpression *expr) {
+  auto funName = expr->name();
+  std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
+  if (funName == "count") {
+    auto kind = expr->arg()->kind();
+    if (kind == Expression::Kind::kConstant || kind == Expression::Kind::kInputProperty ||
+        kind == Expression::Kind::kVarProperty) {
+      return;
+    }
+  }
+  // count(v.player.age)
+  expr->arg()->accept(this);
 }
 
 void PropertyTrackerVisitor::visit(DestPropertyExpression *expr) {
@@ -251,18 +340,6 @@ void PropertyTrackerVisitor::visit(VertexExpression *expr) {
 
 void PropertyTrackerVisitor::visit(EdgeExpression *expr) {
   UNUSED(expr);
-}
-
-std::string PropertyTrackerVisitor::extractColNameFromInputPropOrVarPropExpr(
-    const Expression *expr) {
-  if (expr->kind() == Expression::Kind::kInputProperty) {
-    auto *inputPropExpr = static_cast<const InputPropertyExpression *>(expr);
-    return inputPropExpr->prop();
-  } else if (expr->kind() == Expression::Kind::kVarProperty) {
-    auto *varPropExpr = static_cast<const VariablePropertyExpression *>(expr);
-    return varPropExpr->prop();
-  }
-  return "";
 }
 
 }  // namespace graph

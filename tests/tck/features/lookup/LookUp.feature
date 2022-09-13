@@ -73,6 +73,13 @@ Feature: LookUpTest_Vid_String
       | "200" | "201" | 0    |
     When executing query:
       """
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col2 IN [201] and lookup_edge_1.col2>3 YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
+      """
+    Then the result should be, in any order:
+      | src   | dst   | rank |
+      | "200" | "201" | 0    |
+    When executing query:
+      """
       LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col1 == 200 YIELD edge as e
       """
     Then a SemanticError should be raised at runtime:

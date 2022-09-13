@@ -240,6 +240,10 @@ PlanNode* ScanEdges::clone() const {
   return newGE;
 }
 
+void ScanEdges::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
 void ScanEdges::cloneMembers(const ScanEdges& ge) {
   Explore::cloneMembers(ge);
 
@@ -299,6 +303,10 @@ PlanNode* Union::clone() const {
 
 void Union::cloneMembers(const Union& f) {
   SetOp::cloneMembers(f);
+}
+
+void Union::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 PlanNode* Intersect::clone() const {
@@ -369,6 +377,7 @@ std::unique_ptr<PlanNodeDescription> Unwind::explain() const {
 
 PlanNode* Unwind::clone() const {
   auto* newUnwind = Unwind::make(qctx_, nullptr);
+  newUnwind->setFromPipe(fromPipe_);
   newUnwind->cloneMembers(*this);
   return newUnwind;
 }
@@ -378,6 +387,10 @@ void Unwind::cloneMembers(const Unwind& p) {
 
   unwindExpr_ = p.unwindExpr()->clone();
   alias_ = p.alias();
+}
+
+void Unwind::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
 }
 
 std::unique_ptr<PlanNodeDescription> Sort::explain() const {

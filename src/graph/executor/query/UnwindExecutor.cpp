@@ -26,7 +26,7 @@ folly::Future<Status> UnwindExecutor::execute() {
     std::vector<Value> vals = extractList(list);
     for (auto &v : vals) {
       Row row;
-      if (!emptyInput) {
+      if (!unwind->fromPipe() && !emptyInput) {
         row = *(iter->row());
       }
       row.values.emplace_back(std::move(v));
