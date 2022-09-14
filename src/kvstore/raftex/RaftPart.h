@@ -377,6 +377,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    */
   std::vector<HostAddr> peers() const;
 
+  bool checkAlive(const HostAddr& host);
+
   /**
    * @brief All listeners address
    *
