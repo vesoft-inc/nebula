@@ -84,7 +84,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
         onFinished();
         return;
       } else if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-        stats::StatsManager::addValue(kTransferLeaderLatencyUs, part->execTime());
+        // stats::StatsManager::addValue(kTransferLeaderLatencyUs, part->execTime());
         // To avoid dead lock, we use another ioThreadPool to check the
         // leader information.
         folly::via(folly::getGlobalIOExecutor().get(), [this, part, spaceId, partId] {
