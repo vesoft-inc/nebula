@@ -7,6 +7,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "MetaDaemonInit.h"
+#include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
@@ -44,6 +45,7 @@ DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DECLARE_string(data_path);
 DECLARE_string(meta_server_addrs);
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
@@ -168,27 +170,40 @@ int main(int argc, char* argv[]) {
   }
 
   {
-    /**
-     *  Only leader part needed.
-     */
-    auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
-    if (!nebula::ok(ret)) {
-      LOG(ERROR) << "Part leader get failed";
-      return EXIT_FAILURE;
-    }
-    if (nebula::value(ret) == localhost) {
-      LOG(INFO) << "Check and init root user";
+    const int kMaxRetryTime = FLAGS_raft_heartbeat_interval_secs * 2;
+    constexpr int kRetryInterval = 1;
+    int retryTime = 0;
+    while (true) {
+      auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
+      if (!nebula::ok(ret)) {
+        LOG(ERROR) << "Part leader get failed";
+        return EXIT_FAILURE;
+      }
+      LOG(INFO) << "Check root user";
       auto checkRet = nebula::meta::RootUserMan::isGodExists(gKVStore.get());
       if (!nebula::ok(checkRet)) {
         auto retCode = nebula::error(checkRet);
+        if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+          LOG(INFO) << "Leader changed, retry";
+          retryTime += kRetryInterval;
+          if (retryTime > kMaxRetryTime) {
+            LOG(ERROR) << "Retry too many times";
+            return EXIT_FAILURE;
+          }
+          sleep(kRetryInterval);
+          continue;
+        }
         LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
         return EXIT_FAILURE;
       }
-      auto existGod = nebula::value(checkRet);
-      if (!existGod && !nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
-        LOG(ERROR) << "Init root user failed";
-        return EXIT_FAILURE;
+      if (nebula::value(ret) == localhost) {
+        auto existGod = nebula::value(checkRet);
+        if (!existGod && !nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
+          LOG(ERROR) << "Init root user failed";
+          return EXIT_FAILURE;
+        }
       }
+      break;
     }
   }
 

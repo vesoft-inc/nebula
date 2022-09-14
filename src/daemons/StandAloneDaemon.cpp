@@ -224,30 +224,42 @@ int main(int argc, char *argv[]) {
     }
 
     {
-      /**
-       *  Only leader part needed.
-       */
-      auto ret = gMetaKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
-      if (!nebula::ok(ret)) {
-        LOG(ERROR) << "Part leader get failed";
-        return;
-      }
-      if (nebula::value(ret) == metaLocalhost) {
-        LOG(INFO) << "Check and init root user";
-        auto checkRet = nebula::meta::RootUserMan::isGodExists(gMetaKVStore.get());
+      const int kMaxRetryTime = FLAGS_raft_heartbeat_interval_secs * 2;
+      constexpr int kRetryInterval = 1;
+      int retryTime = 0;
+      while (true) {
+        auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
+        if (!nebula::ok(ret)) {
+          LOG(ERROR) << "Part leader get failed";
+          return EXIT_FAILURE;
+        }
+        LOG(INFO) << "Check root user";
+        auto checkRet = nebula::meta::RootUserMan::isGodExists(gKVStore.get());
         if (!nebula::ok(checkRet)) {
           auto retCode = nebula::error(checkRet);
+          if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+            LOG(INFO) << "Leader changed, retry";
+            retryTime += kRetryInterval;
+            if (retryTime > kMaxRetryTime) {
+              LOG(ERROR) << "Retry too many times";
+              return EXIT_FAILURE;
+            }
+            sleep(kRetryInterval);
+            continue;
+          }
           LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
-          return;
+          return EXIT_FAILURE;
         }
-        auto existGod = nebula::value(checkRet);
-        if (!existGod && !nebula::meta::RootUserMan::initRootUser(gMetaKVStore.get())) {
-          LOG(ERROR) << "Init root user failed";
-          return;
+        if (nebula::value(ret) == localhost) {
+          auto existGod = nebula::value(checkRet);
+          if (!existGod && !nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
+            LOG(ERROR) << "Init root user failed";
+            return EXIT_FAILURE;
+          }
         }
+        break;
       }
     }
-
     auto handler =
         std::make_shared<nebula::meta::MetaServiceHandler>(gMetaKVStore.get(), metaClusterId());
     LOG(INFO) << "The meta deamon start on " << metaLocalhost;
