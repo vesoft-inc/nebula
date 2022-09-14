@@ -377,6 +377,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    */
   std::vector<HostAddr> peers() const;
 
+  bool checkAlive(const HostAddr& host);
+
   /**
    * @brief All listeners address
    *
@@ -395,15 +397,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Reset the part, clean up all data and WALs.
    */
   void reset();
-
-  /**
-   * @brief Execution time of some operation, for statistics
-   *
-   * @return uint64_t Time in us
-   */
-  uint64_t execTime() const {
-    return execTime_;
-  }
 
  protected:
   /**
@@ -896,9 +889,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   int64_t startTimeMs_ = 0;
 
   std::atomic<bool> blocking_{false};
-
-  // For stats info
-  uint64_t execTime_{0};
 };
 
 }  // namespace raftex

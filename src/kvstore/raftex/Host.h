@@ -216,6 +216,14 @@ class Host final : public std::enable_shared_from_this<Host> {
    */
   void setResponse(const cpp2::AppendLogResponse& resp);
 
+  void setLastHeartbeatTime(int64_t time) {
+    lastHeartbeatTime_ = time;
+  }
+
+  int64_t getLastHeartbeatTime() const {
+    return lastHeartbeatTime_;
+  }
+
   /**
    * @brief If there are more logs to send, build the append log request
    *
@@ -262,6 +270,9 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   // CommittedLogId of follower
   LogID followerCommittedLogId_{0};
+
+  // last HB response time from the peer
+  int64_t lastHeartbeatTime_{0};
 };
 
 }  // namespace raftex

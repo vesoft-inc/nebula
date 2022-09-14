@@ -19,6 +19,7 @@
 #include "common/time/ScopedTimer.h"
 #include "common/time/WallClock.h"
 #include "common/utils/LogStrListIterator.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
@@ -626,6 +627,21 @@ void RaftPart::updateQuorum() {
   quorum_ = (total + 1) / 2;
 }
 
+bool RaftPart::checkAlive(const HostAddr& addr) {
+  static const int64_t kTimeoutInMs = FLAGS_raft_heartbeat_interval_secs * 1000 * 2;
+  int64_t now = time::WallClock::fastNowInMilliSec();
+  auto it = std::find_if(
+      hosts_.begin(), hosts_.end(), [&addr](const auto& h) { return h->address() == addr; });
+  if (it == hosts_.end()) {
+    return false;
+  }
+  auto last = it->get()->getLastHeartbeatTime();
+  if (now - last > kTimeoutInMs) {
+    return false;
+  }
+  return true;
+}
+
 void RaftPart::addPeer(const HostAddr& peer) {
   CHECK(!raftLock_.try_lock());
   if (peer == addr_) {
@@ -876,7 +892,8 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     committed = committedLogId_;
     // Step 1: Write WAL
     {
-      SCOPED_TIMER(&execTime_);
+      SCOPED_TIMER(
+          [](uint64_t execTime) { stats::StatsManager::addValue(kAppendWalLatencyUs, execTime); });
       if (!wal_->appendLogs(iter)) {
         VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to write into WAL";
         res = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
@@ -885,7 +902,6 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
         break;
       }
     }
-    stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
     lastId = wal_->lastLogId();
     VLOG(4) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
             << "] to WAL";
@@ -1063,7 +1079,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       */
       auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true, true);
       if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-        stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
         std::lock_guard<std::mutex> g(raftLock_);
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
@@ -1744,10 +1759,11 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     if (hasLogsToAppend) {
       bool result = false;
       {
-        SCOPED_TIMER(&execTime_);
+        SCOPED_TIMER([](uint64_t execTime) {
+          stats::StatsManager::addValue(kAppendWalLatencyUs, execTime);
+        });
         result = wal_->appendLogs(logIter);
       }
-      stats::StatsManager::addValue(kAppendWalLatencyUs, execTime_);
       if (result) {
         CHECK_EQ(lastId, wal_->lastLogId());
         lastLogId_ = wal_->lastLogId();
@@ -1776,7 +1792,6 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     // raftLock_ has been acquired, so the third parameter is false as well.
     auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false, false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
       VLOG(4) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       CHECK_EQ(lastLogIdCanCommit, lastCommitId);
@@ -1993,7 +2008,6 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED;
     return;
   }
-  stats::StatsManager::addValue(kCommitSnapshotLatencyUs, execTime_);
   lastTotalCount_ += std::get<1>(ret);
   lastTotalSize_ += std::get<2>(ret);
   if (lastTotalCount_ != req.get_total_count() || lastTotalSize_ != req.get_total_size()) {
@@ -2079,6 +2093,10 @@ void RaftPart::sendHeartbeat() {
           if (!hosts[resp.first]->isLearner() &&
               resp.second.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
+            // only metad 0 space 0 part need this state now.
+            if (spaceId_ == kDefaultSpaceId) {
+              hosts[resp.first]->setLastHeartbeatTime(time::WallClock::fastNowInMilliSec());
+            }
           }
           highestTerm = std::max(highestTerm, resp.second.get_current_term());
         }
