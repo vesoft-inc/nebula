@@ -1,5 +1,5 @@
 option(ENABLE_COMPILER_LAUNCHER "Using compiler launcher if available" ON)
-if(NOT ENABLE_COMPILER_LAUNCHER)
+if(NOT (ENABLE_COMPILER_LAUNCHER AND ENABLE_CCACHE))
   return()
 endif()
 
