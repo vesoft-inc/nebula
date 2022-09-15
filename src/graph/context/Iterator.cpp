@@ -5,6 +5,8 @@
 
 #include "graph/context/Iterator.h"
 
+#include <robin_hood.h>
+
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
 #include "common/memory/MemoryUtils.h"
@@ -478,7 +480,6 @@ List GetNeighborsIter::getVertices() {
     for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
          ++currentRow_) {
       vertices.values.emplace_back(getVertex());
-      VLOG(1) << "vertex: " << getVertex() << " size: " << vertices.size();
     }
   }
   reset();
@@ -549,8 +550,9 @@ List GetNeighborsIter::getEdges() {
     auto edge = getEdge();
     if (edge.isEdge()) {
       const_cast<Edge&>(edge.getEdge()).format();
+      DLOG(ERROR) << "dc edge: " << edge.toString();
+      edges.values.emplace_back(std::move(edge));
     }
-    edges.values.emplace_back(std::move(edge));
   }
   reset();
   return edges;

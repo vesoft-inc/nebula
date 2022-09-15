@@ -98,6 +98,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
 
     list.values.emplace_back(std::move(*dataset));
   }
+  DLOG(ERROR) << "getNeightbor result : " << list.toString();
   builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
   return finish(builder.build());
 }
