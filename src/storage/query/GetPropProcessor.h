@@ -54,9 +54,10 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
       : QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse>(env, counters, executor) {}
 
  private:
-  StoragePlan<VertexID> buildTagPlan(RuntimeContext* context, nebula::DataSet* result);
+  StoragePlan<std::vector<VertexID>> buildTagPlan(RuntimeContext* context, nebula::DataSet* result);
 
-  StoragePlan<cpp2::EdgeKey> buildEdgePlan(RuntimeContext* context, nebula::DataSet* result);
+  StoragePlan<std::vector<cpp2::EdgeKey>> buildEdgePlan(RuntimeContext* context,
+                                                        nebula::DataSet* result);
 
   void onProcessFinished() override;
 

@@ -1091,7 +1091,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
               [self = shared_from_this(), term = term_] { self->onLeaderReady(term); });
         }
       } else {
-        LOG(FATAL) << idStr_ << "Failed to commit logs";
+        LOG(FATAL) << idStr_ << "Failed to commit logs. ErrorCode:" << static_cast<int>(code);
       }
       VLOG(4) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
               << lastLogId;

@@ -55,6 +55,7 @@ nebula_add_library(
     exec/IndexSelectionNode.cpp
     exec/IndexVertexScanNode.cpp
     exec/IndexTopNNode.cpp
+    exec/GetPropNode3.cpp
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
