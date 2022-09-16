@@ -950,7 +950,6 @@ Feature: LookUpTest_Vid_String
       | 28  |
       | 21  |
       | 21  |
-      | 60  |
       | 20  |
     When executing query:
       """
@@ -964,7 +963,6 @@ Feature: LookUpTest_Vid_String
       | 35  |
       | 28  |
       | 21  |
-      | 60  |
       | 20  |
     When executing query:
       """
