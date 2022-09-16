@@ -939,6 +939,35 @@ Feature: LookUpTest_Vid_String
       | '121' |
     When executing query:
       """
+      LOOKUP ON player where player.age < 100 YIELD player.age as age
+      """
+    Then the result should be, in any order:
+      | age |
+      | 42  |
+      | 36  |
+      | 33  |
+      | 35  |
+      | 28  |
+      | 21  |
+      | 21  |
+      | 60  |
+      | 20  |
+    When executing query:
+      """
+      LOOKUP ON player where player.age < 100 YIELD distinct player.age as age
+      """
+    Then the result should be, in any order:
+      | age |
+      | 42  |
+      | 36  |
+      | 33  |
+      | 35  |
+      | 28  |
+      | 21  |
+      | 60  |
+      | 20  |
+    When executing query:
+      """
       LOOKUP ON player where player.name == "Useless" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
