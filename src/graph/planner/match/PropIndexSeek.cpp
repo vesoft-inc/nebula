@@ -122,6 +122,9 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
     return false;
   }
 
+  // var.prop support
+  nodeCtx->qctx->vctx()->registerNodePropIndexTag(node.alias, node.labels.at(0));
+
   Expression* filterInWhere = nullptr;
   Expression* filterInPattern = nullptr;
   if (nodeCtx->bindWhereClause != nullptr && nodeCtx->bindWhereClause->filter != nullptr) {

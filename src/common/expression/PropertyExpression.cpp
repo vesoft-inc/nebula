@@ -194,7 +194,7 @@ const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
     return Value::kNullBadType;
   }
   for (const auto& tag : var.getVertex().tags) {
-    if (tag.name == sym_) {
+    if ("*" == sym_ || tag.name == sym_) {
       auto iter = tag.props.find(prop_);
       if (iter != tag.props.end()) {
         return iter->second;
@@ -210,6 +210,9 @@ void LabelTagPropertyExpression::accept(ExprVisitor* visitor) {
 
 std::string LabelTagPropertyExpression::toString() const {
   std::string labelStr = label_ != nullptr ? label_->toString().erase(0, 1) : "";
+  if ("*" == sym_) {
+    return labelStr + "." + prop_;
+  }
   return labelStr + "." + sym_ + "." + prop_;
 }
 

@@ -88,13 +88,15 @@ void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
-  if (!status.ok()) {
-    status_ = std::move(status).status();
-    return;
-  }
+  // auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
+  // if (!status.ok()) {
+  //   status_ = std::move(status).status();
+  //   return;
+  // }
   auto &nodeAlias = static_cast<VariablePropertyExpression *>(expr->label())->prop();
-  auto &tagName = expr->sym();
+  auto &tagName = (expr->sym() != "*")
+                                       ? expr->sym()
+                                       : qctx_->vctx()->getNodePropIndexTag(nodeAlias);
   auto &propName = expr->prop();
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
   if (!ret.ok()) {
