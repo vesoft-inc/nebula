@@ -824,7 +824,6 @@ TEST(BalanceTest, RecoveryTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   balancer.spaceInfo_.loadInfo(space, kv);
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
-  folly::Baton<true, std::atomic> baton;
 
   auto ret = balancer.executeInternal().get();
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
