@@ -737,7 +737,7 @@ class MetaClient : public BaseMetaClient {
 
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
 
-  // Checks if the the client version is compatible with the server version by checking the
+  // Checks if the client version is compatible with the server version by checking the
   // whilelist in meta.
   Status verifyVersion();
 
