@@ -358,11 +358,13 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       node->setVertexProps(nullptr);
     } else {
       // only get _tag when props is nullptr
-      auto tagId = vertexProps->front().tag_ref().value();
-      VertexProp newVProp;
-      newVProp.tag_ref() = tagId;
-      newVProp.props_ref() = {nebula::kTag};
-      prunedVertexProps->emplace_back(std::move(newVProp));
+      for (auto &vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        VertexProp newVProp;
+        newVProp.tag_ref() = tagId;
+        newVProp.props_ref() = {nebula::kTag};
+        prunedVertexProps->emplace_back(std::move(newVProp));
+      }
       node->setVertexProps(std::move(prunedVertexProps));
     }
     return;
@@ -373,11 +375,13 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       node->setVertexProps(nullptr);
     } else {
       // only get _tag when props is nullptr
-      auto tagId = vertexProps->front().tag_ref().value();
-      VertexProp newVProp;
-      newVProp.tag_ref() = tagId;
-      newVProp.props_ref() = {nebula::kTag};
-      prunedVertexProps->emplace_back(std::move(newVProp));
+      for (auto &vertexProp : *vertexProps) {
+        auto tagId = vertexProp.tag_ref().value();
+        VertexProp newVProp;
+        newVProp.tag_ref() = tagId;
+        newVProp.props_ref() = {nebula::kTag};
+        prunedVertexProps->emplace_back(std::move(newVProp));
+      }
       node->setVertexProps(std::move(prunedVertexProps));
     }
     return;
