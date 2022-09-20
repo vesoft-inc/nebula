@@ -345,26 +345,26 @@ Feature: Go Yield Vertex And Edge Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NOT EMPTY
+      WHERE $$.player.name IS NOT NULL
       YIELD edge as e
       """
     Then the result should be, in any order, with relax comparison:
       | e                                                                   |
       | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}]               |
       | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]                |
-      | [:serve "Paul Gasol"->"Bucks"@0{end_year:2020,start_year:2019}]     |
-      | [:serve "Paul Gasol"->"Bulls"@0{end_year:2016,start_year:2014}]     |
-      | [:serve "Paul Gasol"->"Grizzlies"@0{end_year:2008,start_year:2001}] |
-      | [:serve "Paul Gasol"->"Lakers"@0{end_year:2014,start_year:2008}]    |
-      | [:serve "Paul Gasol"->"Spurs"@0{end_year:2019,start_year:2016}]     |
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS EMPTY
+      WHERE $$.player.name IS NULL
       YIELD type(edge) as type
       """
     Then the result should be, in any order, with relax comparison:
-      | type |
+      | type    |
+      | "serve" |
+      | "serve" |
+      | "serve" |
+      | "serve" |
+      | "serve" |
     When executing query:
       """
       GO FROM "Manu Ginobili" OVER * REVERSELY YIELD like.likeness, teammate.start_year, serve.start_year, $$.player.name, type(edge) as type
