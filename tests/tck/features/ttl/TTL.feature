@@ -393,13 +393,13 @@ Feature: TTLTest
       FETCH PROP ON person "1" YIELD vertex as node;
       """
     Then the result should be, in any order, with relax comparison:
-      | node  |
+      | node |
     When executing query:
       """
       FETCH PROP ON person "1" YIELD person.id as id
       """
     Then the result should be, in any order:
-      | id    |
+      | id |
     When executing query:
       """
       FETCH PROP ON * "1" YIELD person.id, career.id
@@ -417,7 +417,7 @@ Feature: TTLTest
       FETCH PROP ON person "2" YIELD person.id as id
       """
     Then the result should be, in any order:
-      | id    |
+      | id |
     When executing query:
       """
       FETCH PROP ON career "2" YIELD career.id;
@@ -486,5 +486,5 @@ Feature: TTLTest
       FETCH PROP ON person "1" YIELD person.age as age;
       """
     Then the result should be, in any order:
-      | age   |
+      | age |
     And drop the used space

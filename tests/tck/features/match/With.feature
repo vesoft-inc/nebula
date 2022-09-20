@@ -133,8 +133,8 @@ Feature: With clause
       RETURN collect(names)
       """
     Then the result should be, in any order, with relax comparison:
-      | collect(names)                                                           |
-      | ["Tony Parker", "Tiago Splitter", "Shaquille O'Neal", "Marco Belinelli"] |
+      | collect(names)                                                                            |
+      | ["Tony Parker", "Tiago Splitter", "Shaquille O'Neal", "Marco Belinelli", "Manu Ginobili"] |
     When profiling query:
       """
       MATCH (v:player)
