@@ -703,6 +703,9 @@ expression_internal
     | expression_internal EQ expression_internal {
         $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
     }
+    | expression_internal ASSIGN expression_internal {
+        $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
+    }
     | expression_internal NE expression_internal {
         $$ = RelationalExpression::makeNE(qctx->objPool(), $1, $3);
     }

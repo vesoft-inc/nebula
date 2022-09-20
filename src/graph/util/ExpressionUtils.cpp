@@ -87,7 +87,14 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
   ObjectPool *pool = expr->getObjPool();
 
   auto matcher = [&aliasTypeMap](const Expression *e) -> bool {
-    if (e->kind() != Expression::Kind::kAttribute) {
+    if (e->kind() == Expression::Kind::kLabelAttribute) {
+      auto label = static_cast<const LabelAttributeExpression *>(e)->left()->name();
+      auto iter = aliasTypeMap.find(label);
+      if (iter == aliasTypeMap.end() || iter->second != AliasType::kNode) {
+        return false;
+      }
+      return true;
+    } else if (e->kind() != Expression::Kind::kAttribute) {
       return false;
     }
     auto attrExpr = static_cast<const AttributeExpression *>(e);
@@ -103,17 +110,28 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
   };
 
   auto rewriter = [pool](const Expression *e) -> Expression * {
-    auto attrExpr = static_cast<const AttributeExpression *>(e);
-    auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(attrExpr->left());
-    auto labelExpr = const_cast<LabelExpression *>(labelAttrExpr->left());
-    auto tagExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
-    auto propExpr = static_cast<const LabelExpression *>(attrExpr->right());
-    QueryExpressionContext ctx(nullptr);
-    const auto &labelVal = labelExpr->eval(ctx);
-    auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
-    const auto &tag = tagExpr->eval(ctx);
-    const auto &prop = const_cast<LabelExpression *>(propExpr)->eval(ctx);
-    return LabelTagPropertyExpression::make(pool, label, tag.getStr(), prop.getStr());
+    if (e->kind() == Expression::Kind::kLabelAttribute) {
+      auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
+      auto labelExpr = const_cast<LabelExpression *>(labelAttrExpr->left());
+      auto propExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
+      QueryExpressionContext ctx(nullptr);
+      const auto &labelVal = labelExpr->eval(ctx);
+      auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
+      const auto &prop = propExpr->eval(ctx);
+      return LabelTagPropertyExpression::make(pool, label, "*", prop.getStr());
+    } else {
+      auto attrExpr = static_cast<const AttributeExpression *>(e);
+      auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(attrExpr->left());
+      auto labelExpr = const_cast<LabelExpression *>(labelAttrExpr->left());
+      auto tagExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
+      auto propExpr = static_cast<const LabelExpression *>(attrExpr->right());
+      QueryExpressionContext ctx(nullptr);
+      const auto &labelVal = labelExpr->eval(ctx);
+      auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
+      const auto &tag = tagExpr->eval(ctx);
+      const auto &prop = const_cast<LabelExpression *>(propExpr)->eval(ctx);
+      return LabelTagPropertyExpression::make(pool, label, tag.getStr(), prop.getStr());
+    }
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
