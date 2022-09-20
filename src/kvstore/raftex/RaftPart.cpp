@@ -1988,7 +1988,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     lastTotalSize_ = 0;
   } else if (lastSnapshotCommitId_ != req.get_committed_log_id() ||
              lastSnapshotCommitTerm_ != req.get_committed_log_term()) {
-    // Still waiting for snapshot from another peer, just return error. If the the peer doesn't
+    // Still waiting for snapshot from another peer, just return error. If the peer doesn't
     // send any logs during raft_snapshot_timeout, will convert to Status::RUNNING, so we can accept
     // snapshot again
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAITING_SNAPSHOT;
