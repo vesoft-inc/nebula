@@ -58,8 +58,11 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
   if (lookupCtx->filter) {
     plan.root = Filter::make(qctx, plan.root, lookupCtx->filter);
   }
-
   plan.root = Project::make(qctx, plan.root, lookupCtx->yieldExpr);
+  if (lookupCtx->dedup) {
+    plan.root = Dedup::make(qctx, plan.root);
+  }
+
   return plan;
 }
 
