@@ -9,6 +9,7 @@
 
 #include "common/base/Status.h"
 #include "common/hdfs/HdfsCommandHelper.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/KVStore.h"
 #include "webservice/WebService.h"
 
@@ -18,4 +19,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                  nebula::HostAddr localhost);
 
 nebula::Status initWebService(nebula::WebService* svc, nebula::kvstore::KVStore* kvstore);
+
+nebula::cpp2::ErrorCode initGodUser(nebula::kvstore::KVStore* kvstore,
+                                    const nebula::HostAddr& localhost);
 #endif

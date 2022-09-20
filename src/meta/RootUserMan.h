@@ -10,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -53,7 +54,7 @@ class RootUserMan {
     }
   }
 
-  static bool initRootUser(kvstore::KVStore* kv) {
+  static nebula::cpp2::ErrorCode initRootUser(kvstore::KVStore* kv) {
     LOG(INFO) << "Init root user";
     auto encodedPwd = proxygen::md5Encode(folly::StringPiece("nebula"));
     auto userKey = MetaKeyUtils::userKey("root");
@@ -64,18 +65,15 @@ class RootUserMan {
     std::vector<kvstore::KV> data;
     data.emplace_back(std::move(userKey), std::move(userVal));
     data.emplace_back(std::move(roleKey), std::move(roleVal));
-    bool ret = true;
+    nebula::cpp2::ErrorCode ec;
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(
         kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(INFO) << "Put failed, error " << static_cast<int32_t>(code);
-            ret = false;
-          }
+          ec = code;
           baton.post();
         });
     baton.wait();
-    return ret;
+    return ec;
   }
 };
 

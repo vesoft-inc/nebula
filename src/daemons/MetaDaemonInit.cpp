@@ -10,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
@@ -17,12 +18,14 @@
 #include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "kvstore/KVStore.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaVersionMan.h"
+#include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/stats/MetaStats.h"
@@ -45,6 +48,8 @@ DEFINE_string(meta_data_path, "", "Root data path");
 DECLARE_string(meta_server_addrs);  // use define from grap flags.
 DEFINE_int32(ws_meta_http_port, 11000, "Port to listen on Meta with HTTP protocol");
 #endif
+
+DECLARE_uint32(raft_heartbeat_interval_secs);
 
 using nebula::web::PathParams;
 
@@ -156,6 +161,57 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
 
   LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
   return kvstore;
+}
+
+nebula::cpp2::ErrorCode initGodUser(nebula::kvstore::KVStore* kvstore,
+                                    const nebula::HostAddr& localhost) {
+  const int kMaxRetryTime = FLAGS_raft_heartbeat_interval_secs * 3;
+  constexpr int kRetryInterval = 1;
+  int retryTime = 0;
+  // Both leader & follower need to wait all reading ok.
+  // leader init need to retry writing if leader changed.
+  while (true) {
+    retryTime += kRetryInterval;
+    if (retryTime > kMaxRetryTime) {
+      LOG(ERROR) << "Retry too many times";
+      return nebula::cpp2::ErrorCode::E_RETRY_EXHAUSTED;
+    }
+    auto ret = kvstore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
+    if (!nebula::ok(ret)) {
+      LOG(ERROR) << "Part leader get failed";
+      return nebula::error(ret);
+    }
+    LOG(INFO) << "Check root user";  // follower need to wait reading all ok, too.
+    auto checkRet = nebula::meta::RootUserMan::isGodExists(kvstore);
+    if (!nebula::ok(checkRet)) {
+      auto retCode = nebula::error(checkRet);
+      if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+        LOG(INFO) << "Leader changed, retry";
+        sleep(kRetryInterval);
+        continue;
+      }
+      LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
+      return nebula::error(checkRet);
+    }
+    if (nebula::value(ret) == localhost) {
+      auto existGod = nebula::value(checkRet);
+      if (!existGod) {
+        auto initGod = nebula::meta::RootUserMan::initRootUser(kvstore);
+        if (initGod != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          if (initGod != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+            LOG(ERROR) << "Init God Role error:" << apache::thrift::util::enumNameSafe(initGod);
+            return initGod;
+          } else {
+            LOG(INFO) << "Leader changed, retry";
+            sleep(kRetryInterval);
+            continue;
+          }
+        }
+      }
+    }
+    break;
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::Status initWebService(nebula::WebService* svc, nebula::kvstore::KVStore* kvstore) {
