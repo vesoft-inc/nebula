@@ -349,9 +349,9 @@ Feature: Go Yield Vertex And Edge Sentence
       YIELD edge as e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                                                   |
-      | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}]               |
-      | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]                |
+      | e                                                     |
+      | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}] |
+      | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]  |
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
