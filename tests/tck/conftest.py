@@ -17,6 +17,7 @@ from nebula3.data.DataObject import ValueWrapper
 from nebula3.Exception import AuthFailedException
 from pytest_bdd import given, parsers, then, when
 
+from tests.common import utils
 from tests.common.dataset_printer import DataSetPrinter
 from tests.common.comparator import DataSetComparator, CmpType
 from tests.common.plan_differ import PlanDiffer
@@ -271,8 +272,13 @@ def exec_query(request, ngql, exec_ctx, sess=None, need_try: bool = False):
     ngql = normalize_outline_scenario(request, ngql)
     if sess is None:
         sess = exec_ctx.get('current_session')
-    exec_ctx['result_set'] = response(sess, ngql, need_try)
+
+    resp = response(sess, ngql, need_try)
+    exec_ctx['result_set'] = resp
     exec_ctx['ngql'] = ngql
+
+    space_desc = exec_ctx.get("space_desc", None)
+    utils.upload_2_sqlauto(ngql, resp, None if space_desc is None else space_desc.name)
 
 
 @given(

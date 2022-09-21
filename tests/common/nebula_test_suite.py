@@ -15,6 +15,8 @@ from nebula3.common import ttypes as CommonTtypes
 # from nebula3.gclient.net import ConnectionPool
 # from nebula3.Config import Config
 from nebula3.graph import ttypes
+
+from tests.common import utils
 from tests.common.configs import get_delay_time
 from tests.common.utils import (
     compare_value,
@@ -152,10 +154,15 @@ class NebulaTestSuite(object):
     #         self.client.release()
     #     self.close_nebula_clients()
 
+
     @classmethod
-    def execute(self, ngql, profile=True):
-        return self.client.execute(
+    def execute(self, ngql, profile=True, space_name=None):
+        resp = self.client.execute(
             'PROFILE {{{}}}'.format(ngql) if profile else ngql)
+
+        utils.upload_2_sqlauto(ngql, resp, space_name)
+        return resp
+
 
     @classmethod
     def check_rows_with_header(cls, stmt: str, expected: dict):

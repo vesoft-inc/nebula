@@ -10,6 +10,8 @@ import json
 import random
 import string
 import time
+
+import requests
 import yaml
 from typing import Pattern
 
@@ -472,3 +474,65 @@ def get_ssl_config(is_graph_ssl: bool, ca_signed: bool):
         ssl_config.certfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.crt')
         ssl_config.keyfile = os.path.join(NEBULA_HOME, 'tests/cert/test.derive.key')
     return ssl_config
+
+
+sqlauto_cookies = None
+
+
+def upload_2_sqlauto(ngql, resp, space_name=None):
+    try:  # Upload testcases and their responses to SQLAuto Server
+        key_code = "code"
+        host = "http://apijson.cn:8080"
+        code_success = 200
+
+        global sqlauto_cookies
+
+        if sqlauto_cookies is None:
+            login_resp = requests.post(host + "/login", json={
+                "phone": "13000082005",
+                "password": "123456",
+                "remember": True
+            })
+            sqlauto_cookies = login_resp.cookies
+
+        exist_resp = requests.post(host + "/get/Document", json={
+            "url": "/" + ("" if space_name is None else space_name),
+            "sqlauto": ngql,
+        }, cookies=sqlauto_cookies)
+
+        exist_resp = {key_code: exist_resp.status_code} if exist_resp.status_code != code_success else exist_resp.json()
+
+        is_doc = exist_resp.get(key_code) != code_success or exist_resp.get("Document") is None
+        upload_resp = requests.post(host + "/post", json={
+            "format": False,
+            "Document": {
+                "testAccountId": None,
+                "name": ngql if len(ngql) <= 20 else (ngql[:16] + "..."),
+                "type": "JSON",
+                "url": "/" + space_name,
+                "request": "{}",
+                "sqlauto": ngql,
+                "standard": None,
+                "header": ""
+            } if is_doc else None,
+            "TestRecord": {
+                "randomId": 0,
+                "host": "jdbc:nebula://localhost:9669",
+                "testAccountId": None,
+                "response": ('{"code":200,msg:"success","list":' + json.dumps(resp.rows) + '}')
+                if resp.is_succeeded else ('{"code":' + resp.error_code + ',msg:' + resp.error_msg + '}'),
+                "standard": None
+            },
+            "tag": "Document" if is_doc else "TestRecord"
+        }, cookies=sqlauto_cookies)
+
+        result = {key_code: upload_resp.status_code} if upload_resp.status_code != code_success else upload_resp.json()
+        if result.get(key_code) != code_success:
+            print("\n\nupload case to SQLAuto server failed: statusCode: " + upload_resp.status_code
+                  + ", responseText: " + upload_resp.text + "\n\n")
+    except Exception as e:
+        print("\n\nupload case to SQLAuto server failed: {}".format(e))
+
+
+if __name__ == "__main__":
+    upload_2_sqlauto("show hosts;", requests.Response(), "testSpace")
