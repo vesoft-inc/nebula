@@ -7,6 +7,7 @@
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "MetaDaemonInit.h"
+#include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
@@ -25,7 +26,6 @@
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
 #include "meta/MetaVersionMan.h"
-#include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/stats/MetaStats.h"
@@ -167,29 +167,10 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  {
-    /**
-     *  Only leader part needed.
-     */
-    auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
-    if (!nebula::ok(ret)) {
-      LOG(ERROR) << "Part leader get failed";
-      return EXIT_FAILURE;
-    }
-    if (nebula::value(ret) == localhost) {
-      LOG(INFO) << "Check and init root user";
-      auto checkRet = nebula::meta::RootUserMan::isGodExists(gKVStore.get());
-      if (!nebula::ok(checkRet)) {
-        auto retCode = nebula::error(checkRet);
-        LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
-        return EXIT_FAILURE;
-      }
-      auto existGod = nebula::value(checkRet);
-      if (!existGod && !nebula::meta::RootUserMan::initRootUser(gKVStore.get())) {
-        LOG(ERROR) << "Init root user failed";
-        return EXIT_FAILURE;
-      }
-    }
+  auto godInit = initGodUser(gKVStore.get(), localhost);
+  if (godInit != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Init god user failed";
+    return EXIT_FAILURE;
   }
 
   auto metaServer = std::make_unique<apache::thrift::ThriftServer>();

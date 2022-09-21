@@ -223,29 +223,10 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    {
-      /**
-       *  Only leader part needed.
-       */
-      auto ret = gMetaKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
-      if (!nebula::ok(ret)) {
-        LOG(ERROR) << "Part leader get failed";
-        return;
-      }
-      if (nebula::value(ret) == metaLocalhost) {
-        LOG(INFO) << "Check and init root user";
-        auto checkRet = nebula::meta::RootUserMan::isGodExists(gMetaKVStore.get());
-        if (!nebula::ok(checkRet)) {
-          auto retCode = nebula::error(checkRet);
-          LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
-          return;
-        }
-        auto existGod = nebula::value(checkRet);
-        if (!existGod && !nebula::meta::RootUserMan::initRootUser(gMetaKVStore.get())) {
-          LOG(ERROR) << "Init root user failed";
-          return;
-        }
-      }
+    auto godInit = initGodUser(gMetaKVStore.get(), metaLocalhost);
+    if (godInit != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Init god user failed";
+      return;
     }
 
     auto handler =
