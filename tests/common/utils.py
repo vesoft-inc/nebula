@@ -509,7 +509,7 @@ def upload_2_sqlauto(ngql, resp, space_name=None):
                 "testAccountId": None,
                 "name": ngql if len(ngql) <= 20 else (ngql[:16] + "..."),
                 "type": "JSON",
-                "url": "/" + space_name,
+                "url": "/" + ("" if space_name is None else space_name),
                 "request": "{}",
                 "sqlauto": ngql,
                 "standard": None,
@@ -519,8 +519,8 @@ def upload_2_sqlauto(ngql, resp, space_name=None):
                 "randomId": 0,
                 "host": "jdbc:nebula://localhost:9669",
                 "testAccountId": None,
-                "response": ('{"code":200,msg:"success","list":' + json.dumps(resp.rows) + '}')
-                if resp.is_succeeded else ('{"code":' + resp.error_code + ',msg:' + resp.error_msg + '}'),
+                "response": ('{"code":200,"msg":"success","list":' + json.dumps(resp.rows) + '}')
+                if resp.is_succeeded else ('{"code":' + resp.error_code + ',"msg":' + resp.error_msg + '}'),
                 "standard": None
             },
             "tag": "Document" if is_doc else "TestRecord"
