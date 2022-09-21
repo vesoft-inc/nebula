@@ -104,4 +104,4 @@ DEFINE_uint32(
     0,
     "Background garbage clean workers, default number is 0 which means using hardware core size.");
 
-DEFINE_bool(use_vertex_key, false, "whether allow insert or query the vertex key");
+DEFINE_bool(graph_use_vertex_key, false, "whether allow insert or query the vertex key");
