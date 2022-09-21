@@ -244,7 +244,7 @@ TEST(IndexTest, VerticesValueTest) {
     auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
     schemaMan->addTagSchema(spaceId, tagId, mock::MockData::mockTypicaSchemaV2(pool));
   }
-  // Mock a index for nullable column and default column.
+  // Mock an index for nullable column and default column.
   {
     auto* indexMan = reinterpret_cast<mock::AdHocIndexManager*>(env->indexMan_);
     indexMan->addTagIndex(spaceId, tagId, indexId, mock::MockData::mockTypicaIndexColumns());
@@ -363,7 +363,7 @@ TEST(IndexTest, AlterTagIndexTest) {
     auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
     schemaMan->addTagSchema(spaceId, tagId, mock::MockData::mockGeneralTagSchemaV1());
   }
-  // Mock a index for nullable column and default column.
+  // Mock an index for nullable column and default column.
   {
     auto* indexMan = reinterpret_cast<mock::AdHocIndexManager*>(env->indexMan_);
     indexMan->addTagIndex(spaceId, tagId, indexId1, mock::MockData::mockGeneralTagIndexColumns());
