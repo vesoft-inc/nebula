@@ -442,8 +442,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
-  QueryExpressionContext dummy(nullptr);
-  auto v = Expression::eval(expr, dummy);
+  auto v = Expression::eval(expr, QueryExpressionContext(qctx_->ectx())());
   // TODO(Aiee) extract the type cast logic as a method if we decide to support
   // more cross-type comparisons.
 
