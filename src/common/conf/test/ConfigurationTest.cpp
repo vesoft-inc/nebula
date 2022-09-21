@@ -123,7 +123,7 @@ TEST(Configuration, ParseFromFile) {
   fprintf(file, "// This a C++ style comment line\n");
   fprintf(file, "# This a shell style comment line\n");
   fprintf(file, "{ \n");
-  fprintf(file, "\t\"int\": 123, // this is a integer\n");
+  fprintf(file, "\t\"int\": 123, // this is an integer\n");
   fprintf(file, "\t\"double\": 3.14 # this is a double\n");
   fprintf(file, "} \n");
   ::fflush(file);

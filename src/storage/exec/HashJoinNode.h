@@ -19,7 +19,7 @@ namespace storage {
 // several SingleEdgeNode of different edge types all edges of a vertex. The
 // output would be the result of tag, it is a List, each cell save a list of
 // property values, if tag not found, it will be a empty value. Also it will
-// return a iterator of edges which can pass ttl check and ready to be read.
+// return an iterator of edges which can pass ttl check and ready to be read.
 class HashJoinNode : public IterateNode<VertexID> {
  public:
   using RelNode::doExecute;
