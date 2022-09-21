@@ -66,6 +66,6 @@ DECLARE_int32(max_job_size);
 DECLARE_bool(enable_async_gc);
 DECLARE_uint32(gc_worker_size);
 
-DECLARE_bool(use_vertex_key);
+DECLARE_bool(graph_use_vertex_key);
 
 #endif  // GRAPH_GRAPHFLAGS_H_
