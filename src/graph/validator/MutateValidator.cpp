@@ -46,7 +46,7 @@ Status InsertVerticesValidator::check() {
   }
 
   auto tagItems = sentence->tagItems();
-  if (!FLAGS_use_vertex_key && tagItems.empty()) {
+  if (!FLAGS_graph_use_vertex_key && tagItems.empty()) {
     return Status::SemanticError("Insert vertex is forbidden, please speicify the tag");
   }
 
