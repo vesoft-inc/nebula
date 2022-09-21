@@ -488,7 +488,6 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       }
     }
     // step 3, insert new vertex data
-    batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
     batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
   }

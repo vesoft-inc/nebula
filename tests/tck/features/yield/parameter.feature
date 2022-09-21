@@ -100,6 +100,19 @@ Feature: Parameter
   Scenario: ngql with parameters
     When executing query:
       """
+      LOOKUP ON player where player.age>$p1+40 YIELD player.name AS name
+      """
+    Then the result should be, in any order:
+      | name               |
+      | "Grant Hill"       |
+      | "Jason Kidd"       |
+      | "Vince Carter"     |
+      | "Tim Duncan"       |
+      | "Shaquille O'Neal" |
+      | "Steve Nash"       |
+      | "Ray Allen"        |
+    When executing query:
+      """
       $p1=GO FROM "Tim Duncan" OVER like WHERE like.likeness>$p1 yield like._dst as dst;
       GO FROM $p1.dst OVER like YIELD DISTINCT $$.player.name AS name
       """

@@ -345,7 +345,7 @@ Feature: Go Yield Vertex And Edge Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NOT EMPTY
+      WHERE $$.player.name IS NOT NULL
       YIELD edge as e
       """
     Then the result should be, in any order, with relax comparison:
@@ -355,7 +355,7 @@ Feature: Go Yield Vertex And Edge Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS EMPTY
+      WHERE $$.player.name IS NULL
       YIELD type(edge) as type
       """
     Then the result should be, in any order, with relax comparison:
@@ -1383,13 +1383,13 @@ Feature: Go Yield Vertex And Edge Sentence
       | dst                 | serve.start_year | like.likeness | $$.player.name      |
       | "James Harden"      | EMPTY            | 90            | "James Harden"      |
       | "Paul George"       | EMPTY            | 90            | "Paul George"       |
-      | "Thunders"          | 2008             | EMPTY         | EMPTY               |
+      | "Thunders"          | 2008             | EMPTY         | NULL                |
       | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
-      | "Rockets"           | 2012             | EMPTY         | EMPTY               |
-      | "Thunders"          | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"           | 2012             | EMPTY         | NULL                |
+      | "Thunders"          | 2009             | EMPTY         | NULL                |
       | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Pacers"            | 2010             | EMPTY         | EMPTY               |
-      | "Thunders"          | 2017             | EMPTY         | EMPTY               |
+      | "Pacers"            | 2010             | EMPTY         | NULL                |
+      | "Thunders"          | 2017             | EMPTY         | NULL                |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * REVERSELY YIELD edge as e

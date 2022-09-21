@@ -46,3 +46,5 @@ DEFINE_bool(query_concurrently,
             false,
             "whether to run query of each part concurrently, only lookup and "
             "go are supported");
+
+DEFINE_bool(use_vertex_key, false, "whether allow insert or query the vertex key");
