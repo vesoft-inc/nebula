@@ -323,7 +323,14 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
 
   auto optJobDesc = nebula::value(optJobDescRet);
 
-  if (!optJobDesc.setStatus(jobStatus)) {
+  bool force = false;
+  if (optJobDesc.getStatus() == cpp2::JobStatus::FAILED && jobStatus == cpp2::JobStatus::STOPPED &&
+      (optJobDesc.getJobType() == cpp2::JobType::ZONE_BALANCE ||
+       optJobDesc.getJobType() == cpp2::JobType::DATA_BALANCE)) {
+    force = true;
+  }
+
+  if (!optJobDesc.setStatus(jobStatus, force)) {
     // job already been set as finished, failed or stopped
     return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
   }
@@ -891,6 +898,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     if ((jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) &&
         it->second.getStatus() == cpp2::JobStatus::FINISHED) {
       lastBalanceJobFinished = it->first;
+      break;
     }
   }
   for (auto it = jobsMaybeRecover.begin(); it != jobsMaybeRecover.end();) {
