@@ -14,6 +14,7 @@
 #include "common/utils/OperationKeyUtils.h"
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
+#include "storage/StorageFlags.h"
 
 namespace nebula {
 namespace storage {
@@ -36,6 +37,8 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
       return !edgeValid(spaceId, key, val);
     } else if (IndexKeyUtils::isIndexKey(key)) {
       return !indexValid(spaceId, key, val);
+    } else if (!FLAGS_use_vertex_key && NebulaKeyUtils::isVertex(key)) {
+      return true;
     } else if (NebulaKeyUtils::isLock(vIdLen_, key)) {
       return !lockValid(spaceId, key);
     } else {
