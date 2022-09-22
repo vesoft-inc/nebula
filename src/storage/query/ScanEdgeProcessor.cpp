@@ -65,7 +65,8 @@ nebula::cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::Sca
   std::vector<cpp2::EdgeProp> returnProps = *req.return_columns_ref();
   ret = handleEdgeProps(returnProps);
   buildEdgeColName(returnProps);
-  ret = buildFilter(req, [](const cpp2::ScanEdgeRequest& r) -> const std::string* {
+  ret = buildFilter(req, [](const cpp2::ScanEdgeRequest& r, bool isVertex) -> const std::string* {
+    UNUSED(isVertex);
     if (r.filter_ref().has_value()) {
       return r.get_filter();
     } else {

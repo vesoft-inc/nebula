@@ -68,6 +68,10 @@ class FilterNode : public IterateNode<T> {
     mode_ = mode;
   }
 
+  void setVertexFilter(Expression* vertexFilter) {
+    vertexFilterExp_ = vertexFilter;
+  }
+
  private:
   bool check() override {
     if (filterExp_ == nullptr) {
@@ -93,6 +97,13 @@ class FilterNode : public IterateNode<T> {
   // return true when the value iter points to a value which can filter
   bool checkTagAndEdge() {
     expCtx_->reset(this->reader(), this->key().str());
+    if (vertexFilterExp_ != nullptr) {
+      auto res = vertexFilterExp_->eval(*expCtx_);
+      if (!res.isBool() || !res.getBool()) {
+        context_->resultStat_ = ResultStatus::TAG_FILTER_OUT;
+        return false;
+      }
+    }
     // result is false when filter out
     auto result = filterExp_->eval(*expCtx_);
     // NULL is always false
@@ -104,6 +115,7 @@ class FilterNode : public IterateNode<T> {
   RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
   Expression* filterExp_;
+  Expression* vertexFilterExp_;
   FilterMode mode_{FilterMode::TAG_AND_EDGE};
   int32_t callCheck{0};
 };

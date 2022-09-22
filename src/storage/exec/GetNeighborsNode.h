@@ -50,6 +50,10 @@ class GetNeighborsNode : public QueryNode<VertexID> {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
 
+    if (context_->resultStat_ == ResultStatus::TAG_FILTER_OUT) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
+
     std::vector<Value> row;
     // vertexId is the first column
     if (context_->isIntId()) {

@@ -158,6 +158,8 @@ struct TraverseSpec {
     10: optional i64                            limit,
     // If provided, only the rows satisfied the given expression will be returned
     11: optional binary                         filter,
+    // only contain filter expression for vertex
+    12: optional binary                         vertex_filter,
 }
 
 

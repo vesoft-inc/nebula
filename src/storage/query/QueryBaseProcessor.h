@@ -169,7 +169,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   nebula::cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
 
   nebula::cpp2::ErrorCode buildFilter(
-      const REQ& req, std::function<const std::string*(const REQ& req)>&& getFilter);
+      const REQ& req, std::function<const std::string*(const REQ& req, bool isVertex)>&& getFilter);
   nebula::cpp2::ErrorCode buildYields(const REQ& req);
 
   // build ttl info map
@@ -207,6 +207,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   TagContext tagContext_;
   EdgeContext edgeContext_;
   Expression* filter_{nullptr};
+  Expression* vertexFilter_{nullptr};
 
   // Collect prop in value expression in upsert set clause
   std::unordered_set<std::string> valueProps_;

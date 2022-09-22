@@ -51,7 +51,8 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
     bool random,
     const std::vector<cpp2::OrderBy>& orderBy,
     int64_t limit,
-    const Expression* filter) {
+    const Expression* filter,
+    const Expression* vertexFilter) {
   auto cbStatus = getIdFromValue(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>(
@@ -96,6 +97,9 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
     spec.limit_ref() = limit;
     if (filter != nullptr) {
       spec.filter_ref() = filter->encode();
+    }
+    if (vertexFilter != nullptr) {
+      spec.vertex_filter_ref() = vertexFilter->encode();
     }
     req.traverse_spec_ref() = std::move(spec);
   }
