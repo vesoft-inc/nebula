@@ -54,7 +54,9 @@ class PathPlanner final : public Planner {
 
   void buildStart(Starts& starts, std::string& startVidsVar, bool reverse);
 
-  Expression* singlePairLoopCondition(uint32_t steps, const std::string& pathVar, const std::string& terminateEarlyVar);
+  Expression* singlePairLoopCondition(uint32_t steps,
+                                      const std::string& pathVar,
+                                      const std::string& terminateEarlyVar);
 
   Expression* multiPairLoopCondition(uint32_t steps, const std::string& pathVar);
 

@@ -248,7 +248,9 @@ PlanNode* PathPlanner::buildPathProp(PlanNode* dep) {
 
 // loopSteps{0} <= ((steps + 1) / 2)  && (pathVar is Empty || size(pathVar) ==
 // 0)
-Expression* PathPlanner::singlePairLoopCondition(uint32_t steps, const std::string& pathVar, const std::string& terminateEarlyVar) {
+Expression* PathPlanner::singlePairLoopCondition(uint32_t steps,
+                                                 const std::string& pathVar,
+                                                 const std::string& terminateEarlyVar) {
   auto loopSteps = pathCtx_->qctx->vctx()->anonVarGen()->getVar();
   pathCtx_->qctx->ectx()->setValue(loopSteps, 0);
   auto* pool = pathCtx_->qctx->objPool();
