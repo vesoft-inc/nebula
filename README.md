@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/1651790/191656620-3e24764f-26d2-4b9b-b408-94b9eca5cc3e.png"/>
+  <img src="https://user-images.githubusercontent.com/1651790/191658336-7bec3e0f-e92b-42f2-8e13-2f0b418282d1.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
