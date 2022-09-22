@@ -55,7 +55,9 @@ class FilterNode : public IterateNode<T> {
         break;
       }
       if (this->valid() && !check()) {
-        context_->resultStat_ = ResultStatus::FILTER_OUT;
+        if (context_->resultStat_ != ResultStatus::TAG_FILTER_OUT) {
+          context_->resultStat_ = ResultStatus::FILTER_OUT;
+        }
         this->next();
         continue;
       }
@@ -114,8 +116,8 @@ class FilterNode : public IterateNode<T> {
  private:
   RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
-  Expression* filterExp_;
-  Expression* vertexFilterExp_;
+  Expression* filterExp_{nullptr};
+  Expression* vertexFilterExp_{nullptr};
   FilterMode mode_{FilterMode::TAG_AND_EDGE};
   int32_t callCheck{0};
 };
