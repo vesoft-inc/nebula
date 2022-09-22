@@ -80,12 +80,20 @@ class BFSShortestPath : public BinaryInputNode {
     return rightVidVar_;
   }
 
+  std::string terminateEarlyVar() const {
+    return terminateEarlyVar_;
+  }
+
   void setLeftVidVar(const std::string& var) {
     leftVidVar_ = var;
   }
 
   void setRightVidVar(const std::string& var) {
     rightVidVar_ = var;
+  }
+
+  void setTerminateEarlyVar(const std::string& var) {
+    terminateEarlyVar_ = var;
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -98,6 +106,7 @@ class BFSShortestPath : public BinaryInputNode {
  private:
   std::string leftVidVar_;
   std::string rightVidVar_;
+  std::string terminateEarlyVar_;
   size_t steps_{0};
 };
 
