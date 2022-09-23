@@ -181,8 +181,9 @@ nebula::cpp2::ErrorCode initGodUser(nebula::kvstore::KVStore* kvstore,
       LOG(ERROR) << "Part leader get failed";
       return nebula::error(ret);
     }
+    bool isLeader = nebula::value(ret) == localhost;
     LOG(INFO) << "Check root user";  // follower need to wait reading all ok, too.
-    auto checkRet = nebula::meta::RootUserMan::isGodExists(kvstore);
+    auto checkRet = nebula::meta::RootUserMan::isGodExists(kvstore, isLeader);
     if (!nebula::ok(checkRet)) {
       auto retCode = nebula::error(checkRet);
       if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -193,7 +194,7 @@ nebula::cpp2::ErrorCode initGodUser(nebula::kvstore::KVStore* kvstore,
       LOG(ERROR) << "Parser God Role error:" << apache::thrift::util::enumNameSafe(retCode);
       return nebula::error(checkRet);
     }
-    if (nebula::value(ret) == localhost) {
+    if (isLeader) {
       auto existGod = nebula::value(checkRet);
       if (!existGod) {
         auto initGod = nebula::meta::RootUserMan::initRootUser(kvstore);
