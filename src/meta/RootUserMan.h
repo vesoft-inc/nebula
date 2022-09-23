@@ -21,10 +21,10 @@ namespace meta {
  * */
 class RootUserMan {
  public:
-  static ErrorOr<nebula::cpp2::ErrorCode, bool> isGodExists(kvstore::KVStore* kv) {
+  static ErrorOr<nebula::cpp2::ErrorCode, bool> isGodExists(kvstore::KVStore* kv, bool fromLeader) {
     auto rolePrefix = MetaKeyUtils::roleSpacePrefix(kDefaultSpaceId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &iter, false);
+    auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &iter, !fromLeader);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
