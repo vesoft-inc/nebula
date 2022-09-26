@@ -354,3 +354,10 @@ Feature: Multi Line Multi Query Parts
       RETURN m
       """
     Then a SemanticError should be raised at runtime: Alias used but not defined: `m'
+    When executing query:
+      """
+      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
+      OPTIONAL MATCH (n)-->(v) WHERE v.player.age < m.player.age
+      RETURN n,v
+      """
+    Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.

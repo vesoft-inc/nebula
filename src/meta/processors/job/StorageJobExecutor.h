@@ -57,7 +57,7 @@ class StorageJobExecutor : public JobExecutor {
    *
    * @return
    */
-  nebula::cpp2::ErrorCode execute() override;
+  folly::Future<nebula::cpp2::ErrorCode> execute() override;
 
   void interruptExecution(JobID jobId);
 
@@ -83,8 +83,21 @@ class StorageJobExecutor : public JobExecutor {
     return false;
   }
 
+  JobDescription getJobDescription() override {
+    JobDescription ret;
+    return ret;
+  }
+
   nebula::cpp2::ErrorCode recovery() override {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  bool isRunning() override {
+    return isRunning_.load();
+  }
+
+  void resetRunningStatus() override {
+    isRunning_.store(false);
   }
 
  protected:

@@ -127,8 +127,10 @@ ErrOrHosts StorageJobExecutor::getListenerHost(GraphSpaceID space, cpp2::Listene
   return hosts;
 }
 
-nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
+folly::Future<nebula::cpp2::ErrorCode> StorageJobExecutor::execute() {
   ErrOrHosts addressesRet;
+  isRunning_.store(true);
+
   switch (toHost_) {
     case TargetHosts::LEADER: {
       addressesRet = getLeaderHost(space_);

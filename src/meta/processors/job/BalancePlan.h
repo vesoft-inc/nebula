@@ -52,7 +52,7 @@ class BalancePlan {
     tasks_.emplace_back(std::move(task));
   }
 
-  void invoke();
+  folly::Future<meta::cpp2::JobStatus> invoke();
 
   /**
    * @brief
@@ -133,13 +133,6 @@ class BalancePlan {
                                                                                kvstore::KVStore* kv,
                                                                                AdminClient* client);
 
-  /**
-   * @brief Set a callback function, which would be called when job finished
-   *
-   * @param func
-   */
-  void setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func);
-
   template <typename InputIterator>
   void insertTask(InputIterator first, InputIterator last) {
     tasks_.insert(tasks_.end(), first, last);
@@ -152,7 +145,6 @@ class BalancePlan {
   std::vector<BalanceTask> tasks_;
   std::mutex lock_;
   size_t finishedTaskNum_ = 0;
-  std::function<void(meta::cpp2::JobStatus)> onFinished_;
   bool stopped_ = false;
   bool failed_ = false;
 
@@ -160,6 +152,8 @@ class BalancePlan {
   using Bucket = std::vector<int32_t>;
   std::vector<Bucket> buckets_;
   std::atomic<int32_t> curIndex_;
+
+  folly::Promise<meta::cpp2::JobStatus> promise_;
 };
 
 }  // namespace meta
