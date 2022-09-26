@@ -1802,7 +1802,7 @@ TEST(GetNeighborsTest, FilterTest) {
         SourcePropertyExpression::make(pool, folly::to<std::string>(player), "age"),
         ConstantExpression::make(pool, Value(50)));
     (*req.traverse_spec_ref()).filter_ref() = Expression::encode(exp);
-    (*req.traverse_spec_ref()).vertex_filter_ref() = Expression::encode(exp);
+    (*req.traverse_spec_ref()).tag_filter_ref() = Expression::encode(exp);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();
@@ -1832,7 +1832,7 @@ TEST(GetNeighborsTest, FilterTest) {
         SourcePropertyExpression::make(pool, folly::to<std::string>(player), "age"),
         ConstantExpression::make(pool, Value(40)));
     (*req.traverse_spec_ref()).filter_ref() = Expression::encode(exp);
-    (*req.traverse_spec_ref()).vertex_filter_ref() = Expression::encode(exp);
+    (*req.traverse_spec_ref()).tag_filter_ref() = Expression::encode(exp);
 
     auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
     auto fut = processor->getFuture();

@@ -138,7 +138,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildYields(const REQ& re
 
 template <typename REQ, typename RESP>
 nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(
-    const REQ& req, std::function<const std::string*(const REQ& req, bool isVertex)>&& getFilter) {
+    const REQ& req, std::function<const std::string*(const REQ& req, bool onlyTag)>&& getFilter) {
   const auto* filterStr = getFilter(req, false);
   if (filterStr == nullptr) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -152,10 +152,10 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::buildFilter(
     if (filter_ == nullptr) {
       return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
     }
-    const auto* vertexFilterStr = getFilter(req, true);
-    if (vertexFilterStr != nullptr && !vertexFilterStr->empty()) {
-      vertexFilter_ = Expression::decode(pool, *vertexFilterStr);
-      if (vertexFilter_ == nullptr) {
+    const auto* tagFilterStr = getFilter(req, true);
+    if (tagFilterStr != nullptr && !tagFilterStr->empty()) {
+      tagFilter_ = Expression::decode(pool, *tagFilterStr);
+      if (tagFilter_ == nullptr) {
         return nebula::cpp2::ErrorCode::E_INVALID_FILTER;
       }
     }

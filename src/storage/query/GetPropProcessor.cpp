@@ -272,8 +272,8 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
       return code;
     }
   }
-  code = buildFilter(req, [](const cpp2::GetPropRequest& r, bool isVertex) -> const std::string* {
-    UNUSED(isVertex);
+  code = buildFilter(req, [](const cpp2::GetPropRequest& r, bool onlyTag) -> const std::string* {
+    UNUSED(onlyTag);
     if (r.filter_ref().has_value()) {
       return r.get_filter();
     } else {
