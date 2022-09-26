@@ -185,15 +185,7 @@ nebula::cpp2::ErrorCode GetTagPropNode3::doExecute(PartitionID partId,
     }
 
     if (isEmpty) {
-      auto kvstore = context_->env()->kvstore_;
-      auto vertexKey = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vIds[i]);
-      std::string value;
-      ret = kvstore->get(context_->spaceId(), partId, vertexKey, &value);
-      if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
         continue;
-      } else if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
-      }
     }
 
     if (filter_ == nullptr) {
