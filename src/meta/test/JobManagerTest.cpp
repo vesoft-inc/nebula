@@ -66,7 +66,7 @@ class JobManagerTest : public ::testing::Test {
           }
           delete p;
         });
-    jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
+    jobMgr->status_.store(JobManager::JbmgrStatus::NOT_START, std::memory_order_release);
     jobMgr->kvStore_ = kv_.get();
     jobMgr->init(kv_.get());
     return jobMgr;
@@ -543,14 +543,15 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
 }
 
 TEST_F(JobManagerTest, RecoverJob) {
+  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  // set status to prevent running the job since AdminClient is a injector
+  jobMgr->status_.store(JobManager::JbmgrStatus::STOPPED, std::memory_order_release);
+  jobMgr->bgThread_.join();
+  GraphSpaceID spaceId = 1;
+  int32_t nJob = 3;
+
   // case 1,recover Queue status job
   {
-    std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
-    // set status to prevent running the job since AdminClient is a injector
-    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
-    jobMgr->bgThread_.join();
-    GraphSpaceID spaceId = 1;
-    int32_t nJob = 3;
     for (auto jobId = 1; jobId <= nJob; ++jobId) {
       JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH);
       jd.setStatus(cpp2::JobStatus::STOPPED);
@@ -589,19 +590,17 @@ TEST_F(JobManagerTest, RecoverJob) {
     }
     auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
     ASSERT_EQ(nebula::value(nJobRecovered), 3);
+    std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
+    while (jobMgr->jobSize() != 0) {
+      jobMgr->tryDequeue(opJobId);
+    }
   }
 
   // case 2
   // For the balance job, if there are stopped jobs and failed jobs in turn
   // only recover the last balance job
   {
-    std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
-    // set status to prevent running the job since AdminClient is a injector
-    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
-    jobMgr->bgThread_.join();
-    GraphSpaceID spaceId = 1;
-    int32_t nJob = 3;
-    for (auto jobId = 1; jobId <= nJob; ++jobId) {
+    for (auto jobId = 11; jobId <= 13; ++jobId) {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::STOPPED;
       JobDescription jd(spaceId, jobId, cpp2::JobType::ZONE_BALANCE, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
@@ -613,9 +612,9 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    for (auto jobId = nJob + 1; jobId <= nJob + 3; ++jobId) {
+    for (auto jobId = 14; jobId <= 16; ++jobId) {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::FAILED;
-      JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH, {}, jobStatus);
+      JobDescription jd(spaceId, jobId, cpp2::JobType::STATS, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
       auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
                                          jd.getParas(),
@@ -627,7 +626,7 @@ TEST_F(JobManagerTest, RecoverJob) {
     }
     {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::FAILED;
-      JobDescription jd(spaceId, 7, cpp2::JobType::ZONE_BALANCE, {}, jobStatus);
+      JobDescription jd(spaceId, 17, cpp2::JobType::ZONE_BALANCE, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
       auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
                                          jd.getParas(),
@@ -637,28 +636,27 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {11});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {2});
+    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {12});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {3});
+    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {13});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {7});
+    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {17});
     ASSERT_EQ(nebula::value(nJobRecovered), 1);
+
+    std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
+    while (jobMgr->jobSize() != 0) {
+      jobMgr->tryDequeue(opJobId);
+    }
   }
 
   // case 3
   // For the balance jobs, if there is a newer balance job, the failed or stopped jobs can't be
   // recovered
   {
-    std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
-    // set status to prevent running the job since AdminClient is a injector
-    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
-    jobMgr->bgThread_.join();
-    GraphSpaceID spaceId = 1;
-    int32_t nJob = 4;
-    for (auto jobId = 1; jobId <= nJob; ++jobId) {
+    for (auto jobId = 21; jobId <= 24; ++jobId) {
       cpp2::JobStatus jobStatus;
       if (jobId / 2) {
         jobStatus = cpp2::JobStatus::FAILED;
@@ -675,7 +673,7 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    for (auto jobId = nJob + 1; jobId <= nJob + 3; ++jobId) {
+    for (auto jobId = 25; jobId <= 27; ++jobId) {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::FAILED;
       JobDescription jd(spaceId, jobId, cpp2::JobType::FLUSH, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
@@ -689,7 +687,7 @@ TEST_F(JobManagerTest, RecoverJob) {
     }
     {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::FINISHED;
-      JobDescription jd(spaceId, 7, cpp2::JobType::ZONE_BALANCE, {}, jobStatus);
+      JobDescription jd(spaceId, 28, cpp2::JobType::ZONE_BALANCE, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
       auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
                                          jd.getParas(),
@@ -701,7 +699,7 @@ TEST_F(JobManagerTest, RecoverJob) {
     }
     {
       cpp2::JobStatus jobStatus = cpp2::JobStatus::FINISHED;
-      JobDescription jd(spaceId, 8, cpp2::JobType::COMPACT, {}, jobStatus);
+      JobDescription jd(spaceId, 29, cpp2::JobType::COMPACT, {}, jobStatus);
       auto jobKey = MetaKeyUtils::jobKey(jd.getSpace(), jd.getJobId());
       auto jobVal = MetaKeyUtils::jobVal(jd.getJobType(),
                                          jd.getParas(),
@@ -711,11 +709,11 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {21});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
     nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
-    ASSERT_EQ(nebula::value(nJobRecovered), 2);
+    ASSERT_EQ(nebula::value(nJobRecovered), 1);
   }
 }
 
