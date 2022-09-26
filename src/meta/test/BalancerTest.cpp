@@ -856,21 +856,7 @@ TEST(BalanceTest, StopPlanTest) {
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> delayClient;
   EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
-      .Times(15)
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-      .WillOnce(
-          Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
+      .Times(8)
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
       .WillOnce(
@@ -887,17 +873,16 @@ TEST(BalanceTest, StopPlanTest) {
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
-
   FLAGS_task_concurrency = 8;
   JobDescription jd = makeJobDescription(space, kv, cpp2::JobType::DATA_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
   balancer.spaceInfo_.loadInfo(space, kv);
-  balancer.lostZones_ = {"5"};
+  balancer.lostZones_ = {"4", "5"};
 
-  auto ret = balancer.executeInternal().get();
-  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+  auto ret = balancer.executeInternal();
   auto stopRet = balancer.stop();
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, stopRet);
+  ret.wait();
 
   const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balancer.jobId_);
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -933,10 +918,10 @@ TEST(BalanceTest, StopPlanTest) {
     }
     iter->next();
   }
-  EXPECT_EQ(15, taskEnded);
-  EXPECT_EQ(0, taskStopped);
-  EXPECT_EQ(0, invalid);
-  EXPECT_EQ(15, success);
+  EXPECT_EQ(8, taskEnded);
+  EXPECT_EQ(22, taskStopped);
+  EXPECT_EQ(22, invalid);
+  EXPECT_EQ(8, success);
   EXPECT_EQ(0, progress);
 }
 
