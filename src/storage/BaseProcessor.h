@@ -43,17 +43,16 @@ class BaseProcessor {
       }
     }
 
+    this->result_.latency_in_us_ref() = this->duration_.elapsedInUSec();
+    if (!profileDetail_.empty()) {
+      this->result_.latency_detail_us_ref() = std::move(profileDetail_);
+    }
     this->result_.failed_parts_ref() = this->codes_;
     this->resp_.result_ref() = std::move(this->result_);
     this->promise_.setValue(std::move(this->resp_));
 
-    // if (counters_) {
-    //   stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
-    // }
-
-    this->result_.latency_in_us_ref() = this->duration_.elapsedInUSec();
-    if (!profileDetail_.empty()) {
-      this->result_.latency_detail_us_ref() = std::move(profileDetail_);
+    if (counters_) {
+      stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
     }
 
     delete this;
