@@ -18,6 +18,16 @@ DEFINE_double(leader_balance_deviation,
 namespace nebula {
 namespace meta {
 
+LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(JobDescription jobDescription,
+                                                   kvstore::KVStore* kvstore,
+                                                   AdminClient* adminClient,
+                                                   const std::vector<std::string>& params)
+    : MetaJobExecutor(jobDescription, kvstore, adminClient, params),
+      inLeaderBalance_(false),
+      hostLeaderMap_(nullptr) {
+  executor_.reset(new folly::CPUThreadPoolExecutor(1));
+}
+
 nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::getAllSpaces(
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces) {
   // Get all spaces
@@ -212,24 +222,11 @@ void LeaderBalanceJobExecutor::calDiff(const HostParts& hostParts,
   }
 }
 
-LeaderBalanceJobExecutor::LeaderBalanceJobExecutor(GraphSpaceID space,
-                                                   JobID jobId,
-                                                   kvstore::KVStore* kvstore,
-                                                   AdminClient* adminClient,
-                                                   const std::vector<std::string>& params)
-    : MetaJobExecutor(space, jobId, kvstore, adminClient, params),
-      inLeaderBalance_(false),
-      hostLeaderMap_(nullptr) {
-  executor_.reset(new folly::CPUThreadPoolExecutor(1));
-}
-
 nebula::cpp2::ErrorCode LeaderBalanceJobExecutor::finish(bool) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 folly::Future<nebula::cpp2::ErrorCode> LeaderBalanceJobExecutor::executeInternal() {
-  folly::Promise<nebula::cpp2::ErrorCode> promise;
-  auto future = promise.getFuture();
   // Space ID, Replica Factor and Dependent On Group
   std::vector<std::tuple<GraphSpaceID, int32_t, bool>> spaces;
   auto ret = getAllSpaces(spaces);
@@ -285,10 +282,10 @@ folly::Future<nebula::cpp2::ErrorCode> LeaderBalanceJobExecutor::executeInternal
     if (failed != 0) {
       LOG(INFO) << folly::stringPrintf("%d partitons failed to transfer leader", failed);
     }
-    executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+    jobDescription_.setStatus(meta::cpp2::JobStatus::FINISHED, true);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
+  jobDescription_.setStatus(meta::cpp2::JobStatus::FINISHED, true);
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

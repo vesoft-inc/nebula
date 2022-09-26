@@ -186,7 +186,7 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status stats data in prepare function of runJobInternal.
   // Update stats data to finished or failed status in finish function of
   // runJobInternal.
-  auto result = jobMgr->runJobInternal(statsJob, JobManager::JbOp::ADD);
+  auto result = jobMgr->runJobInternal(statsJob, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
   // JobManager does not set the job finished status in RunJobInternal function.
   // But set stats data.
@@ -205,6 +205,7 @@ TEST_F(GetStatsTest, StatsJob) {
 
   copyData(kv_.get(), 0, 0, statsKey, tempKey);
   jobMgr->jobFinished(spaceId, statsJob.getJobId(), cpp2::JobStatus::FINISHED);
+  jobMgr->resetSpaceRunning(spaceId);
   {
     auto job2Ret =
         JobDescription::loadJobDescription(statsJob.getSpace(), statsJob.getJobId(), kv_.get());
@@ -343,13 +344,14 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status stats data in prepare function of runJobInternal.
   // Update stats data to finished or failed status in finish function of
   // runJobInternal.
-  auto result2 = jobMgr->runJobInternal(statsJob2, JobManager::JbOp::ADD);
+  auto result2 = jobMgr->runJobInternal(statsJob2, JobManager::JbOp::ADD).get();
 
   auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
   copyData(kv_.get(), 0, 0, statsKey2, tempKey2);
   jobMgr->jobFinished(spaceId, statsJob2.getJobId(), cpp2::JobStatus::FINISHED);
+  jobMgr->resetSpaceRunning(spaceId);
 
   ASSERT_EQ(result2, nebula::cpp2::ErrorCode::SUCCEEDED);
   // JobManager does not set the job finished status in RunJobInternal function.

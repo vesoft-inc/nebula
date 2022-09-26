@@ -67,8 +67,7 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
       ret.reset(new ZoneBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
     case cpp2::JobType::LEADER_BALANCE:
-      ret.reset(
-          new LeaderBalanceJobExecutor(jd.getSpace(), jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(new LeaderBalanceJobExecutor(jd, store, client, jd.getParas()));
       break;
     case cpp2::JobType::REBUILD_TAG_INDEX:
       ret.reset(

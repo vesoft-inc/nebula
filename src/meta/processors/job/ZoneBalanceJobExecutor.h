@@ -25,9 +25,7 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
                          kvstore::KVStore* kvstore,
                          AdminClient* adminClient,
                          const std::vector<std::string>& params)
-      : BalanceJobExecutor(
-            jobDescription.getSpace(), jobDescription.getJobId(), kvstore, adminClient, params),
-        jobDescription_(jobDescription) {}
+      : BalanceJobExecutor(jobDescription, kvstore, adminClient, params) {}
 
   nebula::cpp2::ErrorCode prepare() override;
   nebula::cpp2::ErrorCode stop() override;
@@ -78,7 +76,6 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
 
  private:
   std::vector<std::string> lostZones_;
-  JobDescription jobDescription_;
 };
 
 }  // namespace meta

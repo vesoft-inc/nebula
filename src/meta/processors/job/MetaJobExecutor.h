@@ -19,14 +19,15 @@ namespace meta {
 
 class MetaJobExecutor : public JobExecutor {
  public:
-  MetaJobExecutor(GraphSpaceID space,
-                  JobID jobId,
+  MetaJobExecutor(JobDescription jobDescription,
                   kvstore::KVStore* kvstore,
                   AdminClient* adminClient,
                   const std::vector<std::string>& paras)
-      : JobExecutor(kvstore, space), jobId_(jobId), adminClient_(adminClient), paras_(paras) {
-    executorOnFinished_ = [](meta::cpp2::JobStatus) { return nebula::cpp2::ErrorCode::SUCCEEDED; };
-  }
+      : JobExecutor(kvstore, jobDescription.getSpace()),
+        jobDescription_(jobDescription),
+        jobId_(jobDescription.getJobId()),
+        adminClient_(adminClient),
+        paras_(paras) {}
 
   virtual ~MetaJobExecutor() = default;
 
@@ -50,7 +51,7 @@ class MetaJobExecutor : public JobExecutor {
    *
    * @return
    */
-  nebula::cpp2::ErrorCode execute() override;
+  folly::Future<nebula::cpp2::ErrorCode> execute() override;
 
   /**
    * @brief Stop the job when the user cancel it.
@@ -65,15 +66,28 @@ class MetaJobExecutor : public JobExecutor {
 
   nebula::cpp2::ErrorCode recovery() override;
 
-  void setFinishCallBack(
-      std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> func) override;
-
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) override;
+
+  /**
+   * @brief return job description
+   *
+   */
+  JobDescription getJobDescription() override {
+    return jobDescription_;
+  }
+
+  bool isRunning() override {
+    return isRunning_.load();
+  }
+  void resetRunningStatus() override {
+    isRunning_.store(false);
+  }
 
  protected:
   virtual folly::Future<nebula::cpp2::ErrorCode> executeInternal();
 
  protected:
+  JobDescription jobDescription_;
   JobID jobId_{INT_MIN};
   TaskID taskId_{0};
   AdminClient* adminClient_{nullptr};
@@ -81,7 +95,6 @@ class MetaJobExecutor : public JobExecutor {
   volatile bool stopped_{false};
   std::mutex muInterrupt_;
   std::condition_variable condInterrupt_;
-  std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> executorOnFinished_;
 };
 
 }  // namespace meta
