@@ -185,7 +185,7 @@ nebula::cpp2::ErrorCode GetTagPropNode3::doExecute(PartitionID partId,
     }
 
     if (isEmpty) {
-        continue;
+      continue;
     }
 
     if (filter_ == nullptr) {
