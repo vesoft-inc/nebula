@@ -1818,6 +1818,44 @@ TEST(GetNeighborsTest, FilterTest) {
     ASSERT_EQ(0, (*resp.vertices_ref()).rows.size());
   }
   {
+    LOG(INFO) << "Filter apply to vertices2";
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<EdgeType> over = {serve};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    std::vector<std::pair<EdgeType, std::vector<std::string>>> edges;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age"});
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    auto req = QueryTestUtils::buildRequest(totalParts, vertices, over, tags, edges);
+    // where $^.player.age > 40
+    const auto& exp = *RelationalExpression::makeGT(
+        pool,
+        SourcePropertyExpression::make(pool, folly::to<std::string>(player), "age"),
+        ConstantExpression::make(pool, Value(40)));
+    (*req.traverse_spec_ref()).filter_ref() = Expression::encode(exp);
+    (*req.traverse_spec_ref()).vertex_filter_ref() = Expression::encode(exp);
+
+    auto* processor = GetNeighborsProcessor::instance(env, nullptr, threadPool.get());
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    // vId, stat, player, serve, expr
+    nebula::DataSet expected;
+    expected.colNames = {
+        kVid, "_stats", "_tag:1:name:age", "_edge:+101:teamName:startYear:endYear", "_expr"};
+    ASSERT_EQ(expected.colNames, (*resp.vertices_ref()).colNames);
+    auto serveEdges = nebula::List();
+    serveEdges.values.emplace_back(nebula::List({"Spurs", 1997, 2016}));
+    nebula::Row row({"Tim Duncan", Value(), nebula::List({"Tim Duncan", 44}), serveEdges, Value()});
+    for (size_t i = 0; i < 4; i++) {
+      if ((*resp.vertices_ref()).rows[i].values[0].getStr() == "Tim Duncan") {
+        ASSERT_EQ(row, (*resp.vertices_ref()).rows[i]);
+        break;
+      }
+    }
+  }
+  {
     LOG(INFO) << "Filter apply to multi vertices";
     std::vector<VertexID> vertices = {
         "Tracy McGrady", "Tim Duncan", "Tony Parker", "Manu Ginobili"};
