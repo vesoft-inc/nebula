@@ -32,37 +32,22 @@ nebula::cpp2::ErrorCode TagScan::doExecute(PartitionID partId, const std::vector
   keys_.clear();
   values_.clear();
   statuses_.clear();
-
-  // for (size_t i = 0; i < vIds.size(); i += 100) {
-  //   std::vector<std::string> keys;
-  //   for (size_t j = 0; j < 100 && i + j < vIds.size(); j++) {
-  //     auto key = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vIds[i + j], tagId_);
-  //     keys.emplace_back(std::move(key));
-  //   }
-  //   std::vector<std::string> values;
-  //   auto ret = context_->env()->kvstore_->multiGet(context_->spaceId(), partId, keys, &values);
-  //   if (ret.first != nebula::cpp2::ErrorCode::SUCCEEDED &&
-  //       ret.first != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
-  //     LOG(INFO) << static_cast<int>(ret.first);
-  //     return ret.first;
-  //   }
-  //   keys_.insert(keys_.end(), keys.begin(), keys.end());
-  //   values_.insert(values_.end(), values.begin(), values.end());
-  //   statuses_.insert(statuses_.end(), ret.second.begin(), ret.second.end());
-  // }
-  for (size_t i = 0; i < vIds.size(); i++) {
-    auto key = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vIds[i], tagId_);
-    std::string value;
-    auto ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key, &value);
-    keys_.push_back(key);
-    values_.push_back(value);
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      statuses_.push_back(Status::OK());
-    } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      statuses_.push_back(Status::KeyNotFound());
-    } else {
-      return ret;
+  for (size_t i = 0; i < vIds.size(); i += 100) {
+    std::vector<std::string> keys;
+    for (size_t j = 0; j < 100 && i + j < vIds.size(); j++) {
+      auto key = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vIds[i + j], tagId_);
+      keys.emplace_back(std::move(key));
     }
+    std::vector<std::string> values;
+    auto ret = context_->env()->kvstore_->multiGet(context_->spaceId(), partId, keys, &values);
+    if (ret.first != nebula::cpp2::ErrorCode::SUCCEEDED &&
+        ret.first != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
+      LOG(INFO) << static_cast<int>(ret.first);
+      return ret.first;
+    }
+    keys_.insert(keys_.end(), keys.begin(), keys.end());
+    values_.insert(values_.end(), values.begin(), values.end());
+    statuses_.insert(statuses_.end(), ret.second.begin(), ret.second.end());
   }
   next_ = 0;
   return nebula::cpp2::ErrorCode::SUCCEEDED;
