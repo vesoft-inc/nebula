@@ -142,6 +142,8 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     edgetypeEdges[edge.first] = 0;
   }
 
+  VertexID lastVertexId = "";
+
   // Only stats valid vertex data, no multi version
   // For example
   // Vid  tagId
@@ -166,8 +168,15 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       tagIter->next();
       continue;
     }
-    spaceVertices++;
-    tagsVertices[tagId] += 1;
+
+    if (vId == lastVertexId) {
+      tagsVertices[tagId] += 1;
+    } else {
+      tagsVertices[tagId] += 1;
+      spaceVertices++;
+      lastVertexId = vId;
+    }
+
     tagIter->next();
     sleepIfScannedSomeRecord(++countToSleep);
   }
