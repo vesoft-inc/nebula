@@ -72,7 +72,6 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
         }
         vIds.push_back(vId);
       }
-      std::sort(vIds.begin(), vIds.end());
       auto ret = plan.go(partId, vIds);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
           failedParts.find(partId) == failedParts.end()) {
@@ -168,7 +167,6 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
         }
         vIds.push_back(vId);
       }
-      std::sort(vIds.begin(), vIds.end());
       auto ret = plan.go(partId, vIds);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return std::make_pair(ret, partId);
