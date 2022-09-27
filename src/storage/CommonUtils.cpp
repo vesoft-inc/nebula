@@ -5,8 +5,6 @@
 
 #include "storage/CommonUtils.h"
 
-#include "common/time/WallClock.h"
-
 namespace nebula {
 namespace storage {
 
@@ -27,7 +25,7 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
       ftype != nebula::cpp2::PropertyType::INT64) {
     return false;
   }
-  auto now = time::WallClock::fastNowInSec();
+  auto now = ::time(NULL);
 
   // if the value is not INT type (sush as NULL), it will never expire.
   // TODO (sky) : DateTime
