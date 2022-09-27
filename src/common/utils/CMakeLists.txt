@@ -1,3 +1,7 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+#
 # The base_obj is a basic library. Other libraries are not allowed to depend on it.
 
 nebula_add_library(

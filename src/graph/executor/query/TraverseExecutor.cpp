@@ -94,7 +94,8 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->random() : false,
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
-                     selectFilter())
+                     selectFilter(),
+                     nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         SCOPED_TIMER(&execTime_);

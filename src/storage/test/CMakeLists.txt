@@ -1,3 +1,7 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
 set(storage_test_deps
     $<TARGET_OBJECTS:hdfs_helper_obj>
     $<TARGET_OBJECTS:mock_obj>

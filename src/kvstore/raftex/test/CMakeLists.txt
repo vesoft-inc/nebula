@@ -1,3 +1,7 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
 set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
