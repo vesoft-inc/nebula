@@ -66,7 +66,7 @@ class JobManagerTest : public ::testing::Test {
           }
           delete p;
         });
-    jobMgr->status_.store(JobManager::JbmgrStatus::NOT_START, std::memory_order_release);
+    jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
     jobMgr->kvStore_ = kv_.get();
     jobMgr->init(kv_.get());
     return jobMgr;
