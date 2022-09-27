@@ -78,7 +78,8 @@ class StorageClient
       bool random = false,
       const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
       int64_t limit = std::numeric_limits<int64_t>::max(),
-      const Expression* filter = nullptr);
+      const Expression* filter = nullptr,
+      const Expression* tagFilter = nullptr);
 
   StorageRpcRespFuture<cpp2::GetDstBySrcResponse> getDstBySrc(
       const CommonRequestParam& param,

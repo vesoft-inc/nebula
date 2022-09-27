@@ -256,12 +256,12 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
   }
 
   if (filter_) {
-    auto filter =
-        std::make_unique<FilterNode<VertexID>>(context, upstream, expCtx, filter_->clone());
+    auto filter = std::make_unique<FilterNode<VertexID>>(
+        context, upstream, expCtx, filter_->clone(), tagFilter_ ? tagFilter_->clone() : nullptr);
     filter->addDependency(upstream);
     upstream = filter.get();
     if (edges.empty()) {
-      filter.get()->setFilterMode(FilterMode::TAG_ONLY);
+      filter->setFilterMode(FilterMode::TAG_ONLY);
     }
     plan.addNode(std::move(filter));
   }
@@ -313,13 +313,16 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
-  code = buildFilter(req, [](const cpp2::GetNeighborsRequest& r) -> const std::string* {
-    if (r.get_traverse_spec().filter_ref().has_value()) {
-      return r.get_traverse_spec().get_filter();
-    } else {
-      return nullptr;
-    }
-  });
+  code =
+      buildFilter(req, [](const cpp2::GetNeighborsRequest& r, bool onlyTag) -> const std::string* {
+        if (onlyTag) {
+          return r.get_traverse_spec().tag_filter_ref().has_value()
+                     ? r.get_traverse_spec().get_tag_filter()
+                     : nullptr;
+        }
+        return r.get_traverse_spec().filter_ref().has_value() ? r.get_traverse_spec().get_filter()
+                                                              : nullptr;
+      });
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
