@@ -158,6 +158,8 @@ struct TraverseSpec {
     10: optional i64                            limit,
     // If provided, only the rows satisfied the given expression will be returned
     11: optional binary                         filter,
+    // only contain filter expression for tag, tag_filter is a subset of filter
+    12: optional binary                         tag_filter,
 }
 
 

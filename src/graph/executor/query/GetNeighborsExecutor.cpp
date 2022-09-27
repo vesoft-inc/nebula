@@ -53,7 +53,8 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
                      gn_->random(),
                      gn_->orderBy(),
                      gn_->limit(qec),
-                     gn_->filter())
+                     gn_->filter(),
+                     nullptr)
       .via(runner())
       .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
