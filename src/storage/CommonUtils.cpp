@@ -25,7 +25,7 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
       ftype != nebula::cpp2::PropertyType::INT64) {
     return false;
   }
-  auto now = ::time(NULL);
+  auto now = std::time(NULL);
 
   // if the value is not INT type (sush as NULL), it will never expire.
   // TODO (sky) : DateTime
