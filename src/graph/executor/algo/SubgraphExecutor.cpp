@@ -47,7 +47,8 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      false,
                      {},
                      -1,
-                     currentStep_ == 1 ? subgraph_->edgeFilter() : subgraph_->filter())
+                     currentStep_ == 1 ? subgraph_->edgeFilter() : subgraph_->filter(),
+                     currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
         // addStats(resp, getNbrTime.elapsedInUSec());

@@ -126,7 +126,8 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
                                {Expression::Kind::kAggregate,
                                 Expression::Kind::kSrcProperty,
                                 Expression::Kind::kVarProperty,
-                                Expression::Kind::kInputProperty})) {
+                                Expression::Kind::kInputProperty,
+                                Expression::Kind::kLogicalOr})) {
     return Status::SemanticError("Not support `%s' in where sentence.", expr->toString().c_str());
   }
 
@@ -152,7 +153,9 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
     if (!visitor.ok()) {
       return Status::SemanticError("filter error");
     }
-    subgraphCtx_->edgeFilter = std::move(visitor).remainedExpr();
+    subgraphCtx_->edgeFilter = visitor.remainedExpr();
+    auto tagFilter = visitor.extractedExpr() ? visitor.extractedExpr() : filter;
+    subgraphCtx_->tagFilter = rewriteDstProp2SrcProp(tagFilter);
   } else {
     subgraphCtx_->edgeFilter = condition;
   }

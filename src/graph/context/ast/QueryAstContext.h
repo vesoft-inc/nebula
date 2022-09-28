@@ -128,6 +128,7 @@ struct SubgraphContext final : public AstContext {
   StepClause steps;
   std::string loopSteps;
   Expression* filter{nullptr};
+  Expression* tagFilter{nullptr};
   Expression* edgeFilter{nullptr};
   std::vector<std::string> colNames;
   std::unordered_set<EdgeType> edgeTypes;

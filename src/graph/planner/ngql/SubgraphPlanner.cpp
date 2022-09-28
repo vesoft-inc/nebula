@@ -81,6 +81,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
                                   startVidPlan.root,
                                   space.id,
                                   subgraphCtx_->from.src,
+                                  subgraphCtx_->tagFilter,
                                   subgraphCtx_->edgeFilter,
                                   subgraphCtx_->filter,
                                   steps.steps() + 1);

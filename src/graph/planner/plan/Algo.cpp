@@ -135,9 +135,10 @@ BiCartesianProduct::BiCartesianProduct(QueryContext* qctx)
 
 std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("src", src_ != nullptr ? src_->toString() : "", desc.get());
-  addDescription("edge_filter", edgeFilter_ != nullptr ? edgeFilter_->toString() : "", desc.get());
-  addDescription("filter", filter_ != nullptr ? filter_->toString() : "", desc.get());
+  addDescription("src", src_ ? src_->toString() : "", desc.get());
+  addDescription("tag_filter", tagFilter_ ? tagFilter_->toString() : "", desc.get());
+  addDescription("edge_filter", edgeFilter_ ? edgeFilter_->toString() : "", desc.get());
+  addDescription("filter", filter_ ? filter_->toString() : "", desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
   addDescription(

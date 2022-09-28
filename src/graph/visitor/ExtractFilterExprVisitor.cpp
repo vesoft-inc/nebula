@@ -230,6 +230,14 @@ void ExtractFilterExprVisitor::ExtractRemainExpr(LogicalExpression *expr,
   }
 
   operands.resize(lastUsedExprInd);
+  if (lastUsedExprInd > 1) {
+    auto extractedExpr = LogicalExpression::makeAnd(pool_);
+    extractedExpr->setOperands(std::move(operands));
+    extractedExpr_ = std::move(extractedExpr);
+  } else {
+    extractedExpr_ = std::move(operands[0]);
+  }
+
   if (remainedOperands.size() > 1) {
     auto remainedExpr = LogicalExpression::makeAnd(pool_);
     remainedExpr->setOperands(std::move(remainedOperands));

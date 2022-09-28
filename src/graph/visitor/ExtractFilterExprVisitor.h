@@ -20,6 +20,10 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
     return canBePushed_;
   }
 
+  Expression *extractedExpr() {
+    return extractedExpr_;
+  }
+
   Expression *remainedExpr() {
     return remainedExpr_;
   }
@@ -88,6 +92,7 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   bool hasSplit{false};
   bool splitForbidden{false};
   Expression *remainedExpr_{nullptr};
+  Expression *extractedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
 };
 

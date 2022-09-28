@@ -270,11 +270,12 @@ class Subgraph final : public SingleInputNode {
                         PlanNode* input,
                         GraphSpaceID space,
                         Expression* src,
+                        const Expression* tagFilter,
                         const Expression* edgeFilter,
                         const Expression* filter,
                         size_t steps) {
     return qctx->objPool()->makeAndAdd<Subgraph>(
-        qctx, input, space, DCHECK_NOTNULL(src), edgeFilter, filter, steps);
+        qctx, input, space, DCHECK_NOTNULL(src), tagFilter, edgeFilter, filter, steps);
   }
 
   GraphSpaceID space() const {
@@ -283,6 +284,10 @@ class Subgraph final : public SingleInputNode {
 
   Expression* src() const {
     return src_;
+  }
+
+  const Expression* tagFilter() const {
+    return tagFilter_;
   }
 
   const Expression* edgeFilter() const {
@@ -337,12 +342,14 @@ class Subgraph final : public SingleInputNode {
            PlanNode* input,
            GraphSpaceID space,
            Expression* src,
+           const Expression* tagFilter,
            const Expression* edgeFilter,
            const Expression* filter,
            size_t steps)
       : SingleInputNode(qctx, Kind::kSubgraph, input),
         space_(space),
         src_(src),
+        tagFilter_(tagFilter),
         edgeFilter_(edgeFilter),
         filter_(filter),
         steps_(steps) {}
@@ -350,6 +357,7 @@ class Subgraph final : public SingleInputNode {
   GraphSpaceID space_;
   // vertices may be parsing from runtime.
   Expression* src_{nullptr};
+  const Expression* tagFilter_{nullptr};
   const Expression* edgeFilter_{nullptr};
   const Expression* filter_{nullptr};
   size_t steps_{1};
