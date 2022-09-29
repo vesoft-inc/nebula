@@ -419,13 +419,13 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
 
   auto& currentEdge = currentEdgeName();
   if (edge != "*" && (currentEdge.compare(1, std::string::npos, edge) != 0)) {
-    VLOG(1) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
+    DLOG(INFO) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
     return Value::kEmpty;
   }
   auto index = currentDs_->edgePropsMap.find(currentEdge);
   if (index == currentDs_->edgePropsMap.end()) {
-    VLOG(1) << "No edge found: " << edge;
-    VLOG(1) << "Current edge: " << currentEdge;
+    DLOG(INFO) << "No edge found: " << edge;
+    DLOG(INFO) << "Current edge: " << currentEdge;
     return Value::kEmpty;
   }
   auto propIndex = index->second.propIndices.find(prop);
@@ -468,6 +468,22 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
     vertex.tags.emplace_back(std::move(tag));
   }
   return Value(std::move(vertex));
+}
+
+std::vector<Value> GetNeighborsIter::vids() {
+  std::vector<Value> vids;
+  vids.reserve(numRows());
+  valid_ = true;
+  colIdx_ = -2;
+  for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
+    rowsUpperBound_ = currentDs_->ds->rows.end();
+    for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
+         ++currentRow_) {
+      vids.emplace_back(getColumn(0));
+    }
+  }
+  reset();
+  return vids;
 }
 
 List GetNeighborsIter::getVertices() {

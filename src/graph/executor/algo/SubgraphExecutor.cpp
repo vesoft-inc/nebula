@@ -128,7 +128,7 @@ void SubgraphExecutor::filterEdges(int version) {
 }
 
 bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
-  auto gnSize = iter->size();
+  auto gnSize = iter->numRows();
   if (gnSize == 0) {
     return false;
   }
@@ -139,22 +139,26 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   HashMap currentVids;
   currentVids.reserve(gnSize);
   historyVids_.reserve(historyVids_.size() + gnSize);
+  auto startVids = iter->vids();
   if (currentStep_ == 1) {
-    for (; iter->valid(); iter->next()) {
-      const auto& src = iter->getColumn(0);
-      currentVids.emplace(src, 0);
+    for (auto& startVid : startVids) {
+      currentVids.emplace(startVid, 0);
     }
-    iter->reset();
+  }
+  validVids_.insert(std::make_move_iterator(startVids.begin()),
+                    std::make_move_iterator(startVids.end()));
+  for (auto vid : validVids_) {
+    DLOG(ERROR) << "valid vid : " << vid.toString();
   }
   vids_.clear();
   auto& biDirectEdgeTypes = subgraph_->biDirectEdgeTypes();
   while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);
-    validVids_.emplace(iter->getColumn(0));
-    // if (currentStep_ != 1 && preDsts.find(dst) == preDsts.end()) {
-    //   iter->erase();
-    //   continue;
-    // }
+    if (dst.empty()) {
+      // no edge, dst is empty
+      iter->next();
+      continue;
+    }
     auto findIter = historyVids_.find(dst);
     if (findIter != historyVids_.end()) {
       if (biDirectEdgeTypes.empty()) {
@@ -194,7 +198,7 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
-  if (currentStep_ != 1) {
+  if (currentStep_ != 1 && subgraph_->tagFilter()) {
     filterEdges(-1);
   }
   if (vids_.empty()) {
