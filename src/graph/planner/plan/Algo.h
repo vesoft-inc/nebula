@@ -339,6 +339,18 @@ class Isomor final : public SingleInputNode {
     return qctx->objPool()->makeAndAdd<Isomor>(
         qctx, input, dScanVOut, qScanVOut, dScanEOut, qScanEOut);
   }
+  const std::string& getdScanVOut() const {
+    return dScanVOut_;
+  }
+  const std::string& getqScanVOut() const {
+    return qScanVOut_;
+  }
+  const std::string& getdScanEOut() const {
+    return dScanEOut_;
+  }
+  const std::string& getqScanEOut() const {
+    return qScanEOut_;
+  }
 
  private:
   friend ObjectPool;
