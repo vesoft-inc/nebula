@@ -22,10 +22,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
     std::string query = "GET SUBGRAPH FROM \"1\" YIELD vertices as nodes";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
-        PK::kLoop,
-        PK::kStart,
         PK::kSubgraph,
-        PK::kGetNeighbors,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -34,22 +31,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
     std::string query = "GET SUBGRAPH WITH PROP 3 STEPS FROM \"1\" YIELD edges as relationships";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
-        PK::kLoop,
-        PK::kStart,
         PK::kSubgraph,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
-    EXPECT_TRUE(checkResult(query, expected));
-  }
-  {
-    std::string query = "GET SUBGRAPH  WITH PROP FROM \"1\" BOTH like YIELD vertices AS a";
-    std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
-        PK::kStart,
-        PK::kSubgraph,
-        PK::kGetNeighbors,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -59,10 +41,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
         "GET SUBGRAPH WITH PROP FROM \"1\", \"2\" IN like YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
-        PK::kLoop,
-        PK::kStart,
         PK::kSubgraph,
-        PK::kGetNeighbors,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -76,13 +55,10 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         "PROP FROM $-.src YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
-        PK::kLoop,
-        PK::kDedup,
         PK::kSubgraph,
+        PK::kDedup,
         PK::kProject,
-        PK::kGetNeighbors,
         PK::kProject,
-        PK::kStart,
         PK::kGetNeighbors,
         PK::kStart,
     };
@@ -94,13 +70,10 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         "FROM $a.src YIELD vertices as a, edges as b";
     std::vector<PlanNode::Kind> expected = {
         PK::kDataCollect,
-        PK::kLoop,
-        PK::kDedup,
         PK::kSubgraph,
+        PK::kDedup,
         PK::kProject,
-        PK::kGetNeighbors,
         PK::kProject,
-        PK::kStart,
         PK::kGetNeighbors,
         PK::kStart,
     };
