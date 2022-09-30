@@ -51,8 +51,24 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
-        // addStats(resp, getNbrTime.elapsedInUSec());
-        // vids_.clear();
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
+        auto& hostLatency = resp.hostLatency();
+        for (size_t i = 0; i < hostLatency.size(); ++i) {
+          size_t size = 0u;
+          auto& result = resp.responses()[i];
+          if (result.vertices_ref().has_value()) {
+            size = (*result.vertices_ref()).size();
+          }
+          auto& info = hostLatency[i];
+          otherStats_.emplace(
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
+              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
+          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+          if (!detail.empty()) {
+            otherStats_.emplace("storage_detail", detail);
+          }
+        }
+        vids_.clear();
         return handleResponse(std::move(resp));
       });
 }
@@ -72,21 +88,6 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
     }
     list.values.emplace_back(std::move(*dataset));
   }
-
-  List vids(vids_);
-  DLOG(ERROR) << " step is " << currentStep_;
-  if (subgraph_->edgeFilter()) {
-    DLOG(ERROR) << "subgraph edge filter: " << subgraph_->edgeFilter()->toString();
-  } else {
-    DLOG(ERROR) << "subgraph edge filter is nullptr";
-  }
-  if (subgraph_->filter()) {
-    DLOG(ERROR) << "subgraph filter: " << subgraph_->filter()->toString();
-  } else {
-    DLOG(ERROR) << " subgraph filter is nullptr";
-  }
-  DLOG(ERROR) << "vids is " << vids.toString();
-  DLOG(ERROR) << "getNeightbor result: " << list.toString();
 
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
@@ -112,7 +113,6 @@ void SubgraphExecutor::filterEdges(int version) {
     if (validVids_.find(dst) == validVids_.end()) {
       auto edge = gnIter->getEdge();
       gnIter->erase();
-      DLOG(ERROR) << "erase dst " << dst.toString() << " edge is : " << edge.toString();
     } else {
       gnIter->next();
     }
@@ -121,10 +121,6 @@ void SubgraphExecutor::filterEdges(int version) {
   ResultBuilder builder;
   builder.iter(std::move(iter));
   ectx_->setVersionedResult(subgraph_->outputVar(), builder.build(), version);
-
-  std::vector<Value> vids(validVids_.begin(), validVids_.end());
-  List list(vids);
-  DLOG(ERROR) << "pre Dst is : " << list;
 }
 
 bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
@@ -147,10 +143,6 @@ bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
   }
   validVids_.insert(std::make_move_iterator(startVids.begin()),
                     std::make_move_iterator(startVids.end()));
-  for (auto vid : validVids_) {
-    DLOG(ERROR) << "valid vid : " << vid.toString();
-  }
-  vids_.clear();
   auto& biDirectEdgeTypes = subgraph_->biDirectEdgeTypes();
   while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);

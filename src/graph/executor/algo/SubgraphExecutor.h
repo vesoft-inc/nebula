@@ -68,6 +68,7 @@ class SubgraphExecutor : public StorageAccessExecutor {
   size_t currentStep_{1};
   size_t totalSteps_{1};
   std::vector<Value> vids_;
+  // save vids already visited
   HashSet validVids_;
 };
 
