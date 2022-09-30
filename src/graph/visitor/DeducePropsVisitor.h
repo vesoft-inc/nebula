@@ -54,6 +54,10 @@ class ExpressionProps final {
     return !inputProps_.empty() || !varProps_.empty();
   }
 
+  bool hasSrcTagProperty() const {
+    return !srcTagProps_.empty();
+  }
+
   bool hasSrcDstTagProperty() const {
     return !srcTagProps_.empty() || !dstTagProps_.empty();
   }

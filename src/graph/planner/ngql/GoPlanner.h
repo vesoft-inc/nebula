@@ -90,6 +90,8 @@ class GoPlanner final : public Planner {
   Expression* stepSampleLimit();
 
   bool isSimpleCase();
+  bool edgePropsOnlyUseDstId();
+  bool onlyYieldDistinctDstId();
   std::vector<EdgeType> buildEdgeTypes();
 
  private:

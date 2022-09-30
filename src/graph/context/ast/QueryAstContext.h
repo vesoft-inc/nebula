@@ -95,6 +95,8 @@ struct GoContext final : AstContext {
   bool joinDst{false};
   // Optimize for some simple go sentence which only need dst id.
   // eg. GO 1 TO N STEPS FROM "A" OVER like YIELD DISTINCT like._dst
+  bool onlyYieldDistinctDstId{false};
+  bool edgePropsOnlyUseDstId{false};
   bool isSimple{false};
 
   ExpressionProps exprProps;
