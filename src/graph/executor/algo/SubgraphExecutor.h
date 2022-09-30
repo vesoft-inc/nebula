@@ -58,6 +58,7 @@ class SubgraphExecutor : public StorageAccessExecutor {
 
   bool process(std::unique_ptr<GetNeighborsIter> iter);
 
+  // filter out edges that do not meet the conditions in the previous step
   void filterEdges(int version);
 
   folly::Future<Status> handleResponse(RpcResponse&& resps);

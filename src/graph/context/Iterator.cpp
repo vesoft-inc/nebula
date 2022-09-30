@@ -566,7 +566,6 @@ List GetNeighborsIter::getEdges() {
     auto edge = getEdge();
     if (edge.isEdge()) {
       const_cast<Edge&>(edge.getEdge()).format();
-      DLOG(ERROR) << "dc edge: " << edge.toString();
       edges.values.emplace_back(std::move(edge));
     }
   }
