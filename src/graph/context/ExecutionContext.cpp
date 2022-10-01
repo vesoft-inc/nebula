@@ -75,6 +75,20 @@ const Result& ExecutionContext::getResult(const std::string& name) const {
   }
 }
 
+void ExecutionContext::setVersionedResult(const std::string& name,
+                                          Result&& result,
+                                          int64_t version) {
+  auto it = valueMap_.find(name);
+  if (it != valueMap_.end()) {
+    auto& hist = it->second;
+    auto size = hist.size();
+    if (static_cast<size_t>(std::abs(version)) >= size) {
+      return;
+    }
+    hist[(size + version - 1) % size] = std::move(result);
+  }
+}
+
 const Result& ExecutionContext::getVersionedResult(const std::string& name, int64_t version) const {
   auto& result = getHistory(name);
   auto size = result.size();

@@ -51,6 +51,8 @@ class ExecutionContext {
 
   const Result& getVersionedResult(const std::string& name, int64_t version) const;
 
+  void setVersionedResult(const std::string& name, Result&& result, int64_t version);
+
   size_t numVersions(const std::string& name) const;
 
   // Return all existing history of the value. The front is the latest value

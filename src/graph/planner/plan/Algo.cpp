@@ -133,5 +133,20 @@ void BiCartesianProduct::accept(PlanNodeVisitor* visitor) {
 BiCartesianProduct::BiCartesianProduct(QueryContext* qctx)
     : BinaryInputNode(qctx, Kind::kBiCartesianProduct) {}
 
+std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("src", src_ ? src_->toString() : "", desc.get());
+  addDescription("tag_filter", tagFilter_ ? tagFilter_->toString() : "", desc.get());
+  addDescription("edge_filter", edgeFilter_ ? edgeFilter_->toString() : "", desc.get());
+  addDescription("filter", filter_ ? filter_->toString() : "", desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  addDescription(
+      "steps", folly::toJson(util::toJson(oneMoreStep_ ? steps_ : steps_ - 1)), desc.get());
+  return desc;
+}
+
 }  // namespace graph
 }  // namespace nebula
