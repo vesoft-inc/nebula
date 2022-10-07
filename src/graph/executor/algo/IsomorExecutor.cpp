@@ -111,13 +111,42 @@ folly::Future<Status> IsomorExecutor::execute() {
   Graph* query_graph = new Graph();
   query_graph->loadGraphFromExecutor(v_count, l_count, e_count, offset, neighbors, labels);
 
-  delete offset;
-  delete neighbors;
-  delete labels;
+  ui** candidates = nullptr;
+  ui* candidates_count = nullptr;
+
+  TreeNode* ceci_tree = nullptr;
+  ui* ceci_order = nullptr;
+  ui* provenance = nullptr;
+
+  std::vector<std::unordered_map<V_ID, std::vector<V_ID>>>
+      P_Candidates;  //  Parent, first branch, second branch.
+  std::vector<std::unordered_map<V_ID, std::vector<V_ID>>> P_Provenance;
+  // std::cout"Provenance Function: " << std::endl:endl;
+
+  bool result = CECIFunction(data_graph,
+                             query_graph,
+                             candidates,
+                             candidates_count,
+                             ceci_order,
+                             provenance,
+                             ceci_tree,
+                             P_Candidates,
+                             P_Provenance);
+  delete data_graph;
+  delete query_graph;
+  delete[] ceci_order;
+  delete[] provenance;
+  delete[] candidates_count;
+  delete[] candidates;
+  delete ceci_tree;
+
+  delete[] offset;
+  delete[] neighbors;
+  delete[] labels;
   ResultBuilder builder;
 
   // Set result in the ds and set the new column name for the (isomor matching 's) result.
-  return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 }  // namespace graph
 }  // namespace nebula

@@ -3365,7 +3365,7 @@ std::cout <<i << std::endl;
   outside = false;
   CheckRepartiton2(
       query_graph, order_1, order_2, order_count_1, order_count_2, inside, outside, counnt);
-  bool nodo = false;
+  // bool nodo = false;
   if (order_count_1 <= 1 || order_count_2 <= 1) {
     // nodo = true;
   }
