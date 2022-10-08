@@ -93,8 +93,11 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
+  // true when yield clause only yield distinct dst id
+  bool onlyYieldDistinctDstId{false};
+  // true when edge props only use dst id
+  bool edgePropsOnlyUseDstId{false};
   // Optimize for some simple go sentence which only need dst id.
-  // eg. GO 1 TO N STEPS FROM "A" OVER like YIELD DISTINCT like._dst
   bool isSimple{false};
 
   ExpressionProps exprProps;
