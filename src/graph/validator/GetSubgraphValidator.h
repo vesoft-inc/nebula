@@ -25,6 +25,8 @@ class GetSubgraphValidator final : public Validator {
 
   Status validateBothInOutBound(BothInOutClause* out);
 
+  Status validateWhere(WhereClause* where);
+
   Status validateYield(YieldClause* yield);
 
   AstContext* getAstContext() override {
