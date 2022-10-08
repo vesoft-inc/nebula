@@ -39,7 +39,29 @@ Feature: Simple case
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
       | 0  | Start       |              |                   |
-    # The last step degenerates to `GetNeighbors` when yield or filter properties other than `_dst`
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE $$.team.name != "Lakers" YIELD DISTINCT id($$) | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 21       |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info     |
+      | 12 | Aggregate   | 11           |                   |
+      | 11 | Project     | 10           |                   |
+      | 10 | Filter      | 9            |                   |
+      | 9  | LeftJoin    | 8            |                   |
+      | 8  | Project     | 7            |                   |
+      | 7  | GetVertices | 6            |                   |
+      | 6  | Dedup       | 5            |                   |
+      | 5  | GetDstBySrc | 4            |                   |
+      | 4  | Loop        | 0            | {"loopBody": "3"} |
+      | 3  | Dedup       | 2            |                   |
+      | 2  | GetDstBySrc | 1            |                   |
+      | 1  | Start       |              |                   |
+      | 0  | Start       |              |                   |
+    # The last step degenerates to `GetNeighbors` when the yield clause is not `YIELD DISTINCT id($$)`
     When profiling query:
       """
       GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD id($$) AS dst | YIELD count(*)
@@ -52,6 +74,41 @@ Feature: Simple case
       | 7  | Aggregate    | 6            |                   |
       | 6  | Project      | 5            |                   |
       | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT YIELD id($$) AS dst | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 65       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 7  | Aggregate    | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE $^.player.age > 30 YIELD DISTINCT id($$) AS dst | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 22       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 9  | Aggregate    | 8            |                   |
+      | 8  | Dedup        | 7            |                   |
+      | 7  | Project      | 10           |                   |
+      | 10 | GetNeighbors | 4            |                   |
       | 4  | Loop         | 0            | {"loopBody": "3"} |
       | 3  | Dedup        | 2            |                   |
       | 2  | GetDstBySrc  | 1            |                   |
