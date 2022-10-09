@@ -8,7 +8,7 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 
-// get the dst id of the src id
+// Get the dst id of the src id. The dst is is partially deduplicated on the storage side.
 namespace nebula {
 namespace graph {
 class GetDstBySrcExecutor final : public StorageAccessExecutor {

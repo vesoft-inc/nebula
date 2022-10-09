@@ -80,12 +80,20 @@ class BFSShortestPath : public BinaryInputNode {
     return rightVidVar_;
   }
 
+  std::string terminateEarlyVar() const {
+    return terminateEarlyVar_;
+  }
+
   void setLeftVidVar(const std::string& var) {
     leftVidVar_ = var;
   }
 
   void setRightVidVar(const std::string& var) {
     rightVidVar_ = var;
+  }
+
+  void setTerminateEarlyVar(const std::string& var) {
+    terminateEarlyVar_ = var;
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -98,6 +106,7 @@ class BFSShortestPath : public BinaryInputNode {
  private:
   std::string leftVidVar_;
   std::string rightVidVar_;
+  std::string terminateEarlyVar_;
   size_t steps_{0};
 };
 
@@ -259,48 +268,103 @@ class Subgraph final : public SingleInputNode {
  public:
   static Subgraph* make(QueryContext* qctx,
                         PlanNode* input,
-                        const std::string& resultVar,
-                        const std::string& currentStepVar,
-                        uint32_t steps) {
-    return qctx->objPool()->makeAndAdd<Subgraph>(qctx, input, resultVar, currentStepVar, steps);
+                        GraphSpaceID space,
+                        Expression* src,
+                        const Expression* tagFilter,
+                        const Expression* edgeFilter,
+                        const Expression* filter,
+                        size_t steps) {
+    return qctx->objPool()->makeAndAdd<Subgraph>(
+        qctx, input, space, DCHECK_NOTNULL(src), tagFilter, edgeFilter, filter, steps);
   }
 
-  const std::string& resultVar() const {
-    return resultVar_;
+  GraphSpaceID space() const {
+    return space_;
   }
 
-  const std::string& currentStepVar() const {
-    return currentStepVar_;
+  Expression* src() const {
+    return src_;
   }
 
-  uint32_t steps() const {
+  const Expression* tagFilter() const {
+    return tagFilter_;
+  }
+
+  const Expression* edgeFilter() const {
+    return edgeFilter_;
+  }
+
+  const Expression* filter() const {
+    return filter_;
+  }
+
+  size_t steps() const {
     return steps_;
+  }
+
+  bool oneMoreStep() const {
+    return oneMoreStep_;
   }
 
   const std::unordered_set<EdgeType> biDirectEdgeTypes() const {
     return biDirectEdgeTypes_;
   }
 
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
+  void setOneMoreStep() {
+    oneMoreStep_ = true;
+  }
+
   void setBiDirectEdgeTypes(std::unordered_set<EdgeType> edgeTypes) {
     biDirectEdgeTypes_ = std::move(edgeTypes);
   }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
   friend ObjectPool;
   Subgraph(QueryContext* qctx,
            PlanNode* input,
-           const std::string& resultVar,
-           const std::string& currentStepVar,
-           uint32_t steps)
+           GraphSpaceID space,
+           Expression* src,
+           const Expression* tagFilter,
+           const Expression* edgeFilter,
+           const Expression* filter,
+           size_t steps)
       : SingleInputNode(qctx, Kind::kSubgraph, input),
-        resultVar_(resultVar),
-        currentStepVar_(currentStepVar),
+        space_(space),
+        src_(src),
+        tagFilter_(tagFilter),
+        edgeFilter_(edgeFilter),
+        filter_(filter),
         steps_(steps) {}
 
-  std::string resultVar_;
-  std::string currentStepVar_;
-  uint32_t steps_;
+  GraphSpaceID space_;
+  // vertices may be parsing from runtime.
+  Expression* src_{nullptr};
+  const Expression* tagFilter_{nullptr};
+  const Expression* edgeFilter_{nullptr};
+  const Expression* filter_{nullptr};
+  size_t steps_{1};
+  bool oneMoreStep_{false};
   std::unordered_set<EdgeType> biDirectEdgeTypes_;
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_;
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
 };
 
 class BiCartesianProduct final : public BinaryInputNode {

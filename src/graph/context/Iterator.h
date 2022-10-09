@@ -327,6 +327,9 @@ class GetNeighborsIter final : public Iterator {
   // Its unique based on the plan
   List getVertices();
 
+  // return start vids
+  std::vector<Value> vids();
+
   // Its unique based on the GN interface dedup
   List getEdges();
 

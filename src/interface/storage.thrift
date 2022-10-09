@@ -159,6 +159,9 @@ struct TraverseSpec {
     // If provided, only the rows satisfied the given expression will be returned
     11: optional binary                         filter,
     // only contain filter expression for tag, tag_filter is a subset of filter
+    // Attention: tag_filter cannot extract expression from filter
+    //            when filter contains logicalOR expression
+    //            bcz $^.player.age > 30 OR like.likeness > 80 can't filter data only by tag_Filter
     12: optional binary                         tag_filter,
 }
 

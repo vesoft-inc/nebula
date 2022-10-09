@@ -75,7 +75,15 @@ void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
 }
 
 void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {
-  canBePushed_ = false;
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = true;
+      break;
+  }
 }
 
 void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
@@ -222,6 +230,14 @@ void ExtractFilterExprVisitor::ExtractRemainExpr(LogicalExpression *expr,
   }
 
   operands.resize(lastUsedExprInd);
+  if (lastUsedExprInd > 1) {
+    auto extractedExpr = LogicalExpression::makeAnd(pool_);
+    extractedExpr->setOperands(operands);
+    extractedExpr_ = std::move(extractedExpr);
+  } else {
+    extractedExpr_ = operands[0];
+  }
+
   if (remainedOperands.size() > 1) {
     auto remainedExpr = LogicalExpression::makeAnd(pool_);
     remainedExpr->setOperands(std::move(remainedOperands));

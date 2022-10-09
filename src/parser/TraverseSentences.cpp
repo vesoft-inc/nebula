@@ -277,6 +277,10 @@ std::string GetSubgraphSentence::toString() const {
     buf += " ";
     buf += both_->toString();
   }
+  if (where_ != nullptr) {
+    buf += " ";
+    buf += where_->toString();
+  }
   if (yield_ != nullptr) {
     buf += " ";
     buf += yield_->toString();

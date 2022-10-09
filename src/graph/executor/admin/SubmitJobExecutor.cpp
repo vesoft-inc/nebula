@@ -151,7 +151,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
                           apache::thrift::util::enumNameSafe(tsk.get_result()),
                           convertJobTimestampToDateTime(std::move(tsk).get_start_time()),
                           convertJobTimestampToDateTime(std::move(tsk).get_stop_time()),
-                          jd.get_code() == nebula::cpp2::ErrorCode::E_UNKNOWN
+                          jd.get_code() == nebula::cpp2::ErrorCode::E_JOB_SUBMITTED
                               ? ""
                               : apache::thrift::util::enumNameSafe(jd.get_code())}));
     }
@@ -197,7 +197,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
           apache::thrift::util::enumNameSafe(taskDesc.get_status()),
           convertJobTimestampToDateTime(taskDesc.get_start_time()),
           convertJobTimestampToDateTime(taskDesc.get_stop_time()),
-          jd.get_code() == nebula::cpp2::ErrorCode::E_UNKNOWN
+          jd.get_code() == nebula::cpp2::ErrorCode::E_JOB_SUBMITTED
               ? ""
               : apache::thrift::util::enumNameSafe(jd.get_code()),
       }));

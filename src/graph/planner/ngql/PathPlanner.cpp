@@ -109,12 +109,15 @@ PlanNode* PathPlanner::getNeighbors(PlanNode* dep, bool reverse) {
 SubPlan PathPlanner::singlePairPlan(PlanNode* left, PlanNode* right) {
   auto qctx = pathCtx_->qctx;
   auto steps = pathCtx_->steps.steps();
+  auto terminateEarlyVar = qctx->vctx()->anonVarGen()->getVar();
+  qctx->ectx()->setValue(terminateEarlyVar, false);
   auto* path = BFSShortestPath::make(qctx, left, right, steps);
   path->setLeftVidVar(pathCtx_->fromVidsVar);
   path->setRightVidVar(pathCtx_->toVidsVar);
   path->setColNames({kPathStr});
+  path->setTerminateEarlyVar(terminateEarlyVar);
 
-  auto* loopCondition = singlePairLoopCondition(steps, path->outputVar());
+  auto* loopCondition = singlePairLoopCondition(steps, path->outputVar(), terminateEarlyVar);
   auto* loop = Loop::make(qctx, nullptr, path, loopCondition);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kBFSShortest);
@@ -245,7 +248,9 @@ PlanNode* PathPlanner::buildPathProp(PlanNode* dep) {
 
 // loopSteps{0} <= ((steps + 1) / 2)  && (pathVar is Empty || size(pathVar) ==
 // 0)
-Expression* PathPlanner::singlePairLoopCondition(uint32_t steps, const std::string& pathVar) {
+Expression* PathPlanner::singlePairLoopCondition(uint32_t steps,
+                                                 const std::string& pathVar,
+                                                 const std::string& terminateEarlyVar) {
   auto loopSteps = pathCtx_->qctx->vctx()->anonVarGen()->getVar();
   pathCtx_->qctx->ectx()->setValue(loopSteps, 0);
   auto* pool = pathCtx_->qctx->objPool();
@@ -253,8 +258,10 @@ Expression* PathPlanner::singlePairLoopCondition(uint32_t steps, const std::stri
   auto step = ExpressionUtils::stepCondition(pool, loopSteps, ((steps + 1) / 2));
   auto empty = ExpressionUtils::equalCondition(pool, pathVar, Value::kEmpty);
   auto zero = ExpressionUtils::zeroCondition(pool, pathVar);
+  auto loopTerminateEarly = ExpressionUtils::equalCondition(pool, terminateEarlyVar, false);
   auto* noFound = LogicalExpression::makeOr(pool, empty, zero);
-  return LogicalExpression::makeAnd(pool, step, noFound);
+  auto* earlyStop = LogicalExpression::makeAnd(pool, step, loopTerminateEarly);
+  return LogicalExpression::makeAnd(pool, earlyStop, noFound);
 }
 
 // loopSteps{0} <= (steps + 1) / 2
