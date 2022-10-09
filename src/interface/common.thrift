@@ -397,6 +397,7 @@ enum ErrorCode {
     E_JOB_NOT_IN_SPACE                = -2050,  // The current task is not in the graph space
     E_JOB_NEED_RECOVER                = -2051,  // The current task needs to be resumed
     E_JOB_NOT_STOPPABLE               = -2052,  // Failed or finished job could not be stopped
+    E_JOB_SUBMITTED                   = -2053,  // Job default status.
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure

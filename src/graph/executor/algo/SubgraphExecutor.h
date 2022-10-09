@@ -7,7 +7,8 @@
 
 #include <robin_hood.h>
 
-#include "graph/executor/Executor.h"
+#include "graph/executor/StorageAccessExecutor.h"
+#include "graph/planner/plan/Algo.h"
 
 // Subgraph receive result from GetNeighbors
 // There are two Main functions
@@ -39,15 +40,37 @@
 
 namespace nebula {
 namespace graph {
-class SubgraphExecutor : public Executor {
+using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
+
+class SubgraphExecutor : public StorageAccessExecutor {
  public:
+  using HashMap = robin_hood::unordered_flat_map<Value, size_t, std::hash<Value>>;
+  using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
+
   SubgraphExecutor(const PlanNode* node, QueryContext* qctx)
-      : Executor("SubgraphExecutor", node, qctx) {}
+      : StorageAccessExecutor("SubgraphExecutor", node, qctx) {
+    subgraph_ = asNode<Subgraph>(node);
+  }
 
   folly::Future<Status> execute() override;
 
+  folly::Future<Status> getNeighbors();
+
+  bool process(std::unique_ptr<GetNeighborsIter> iter);
+
+  // filter out edges that do not meet the conditions in the previous step
+  void filterEdges(int version);
+
+  folly::Future<Status> handleResponse(RpcResponse&& resps);
+
  private:
-  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> historyVids_;
+  HashMap historyVids_;
+  const Subgraph* subgraph_{nullptr};
+  size_t currentStep_{1};
+  size_t totalSteps_{1};
+  std::vector<Value> vids_;
+  // save vids already visited
+  HashSet validVids_;
 };
 
 }  // namespace graph

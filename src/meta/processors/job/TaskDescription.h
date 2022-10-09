@@ -118,7 +118,7 @@ class TaskDescription {
   cpp2::JobStatus status_;
   int64_t startTime_;
   int64_t stopTime_;
-  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_JOB_SUBMITTED};
 };
 
 }  // namespace meta

@@ -72,27 +72,13 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
     bool notEmpty = false;
     for (const auto& type : colType) {
       if (type == Value::Type::VERTEX) {
-        auto originVertices = gnIter->getVertices();
-        vertices.reserve(originVertices.size());
-        for (auto& v : originVertices.values) {
-          if (UNLIKELY(!v.isVertex())) {
-            continue;
-          }
-          vertices.emplace_back(std::move(v));
-        }
+        vertices = gnIter->getVertices();
         if (!vertices.empty()) {
           notEmpty = true;
           row.emplace_back(std::move(vertices));
         }
       } else {
-        auto originEdges = gnIter->getEdges();
-        edges.reserve(originEdges.size());
-        for (auto& edge : originEdges.values) {
-          if (UNLIKELY(!edge.isEdge())) {
-            continue;
-          }
-          edges.emplace_back(std::move(edge));
-        }
+        edges = gnIter->getEdges();
         if (!edges.empty()) {
           notEmpty = true;
         }
