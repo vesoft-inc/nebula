@@ -1044,7 +1044,7 @@ TEST(GetNeighborsTest, TtlTest) {
     QueryTestUtils::checkResponse(
         *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColsNum);
   }
-  sleep(FLAGS_mock_ttl_duration + 2);
+  sleep(FLAGS_mock_ttl_duration + 1);
   {
     LOG(INFO) << "OutEdgeReturnAllProperty";
     std::vector<VertexID> vertices = {"Tim Duncan"};

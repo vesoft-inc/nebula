@@ -531,7 +531,7 @@ TEST(ScanVertexTest, TtlTest) {
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
-  sleep(FLAGS_mock_ttl_duration + 2);
+  sleep(FLAGS_mock_ttl_duration + 1);
   {
     LOG(INFO) << "TTL expired, same request but no data returned";
     auto tag =

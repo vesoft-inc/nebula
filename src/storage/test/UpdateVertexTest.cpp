@@ -846,7 +846,7 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
   }
   req.insertable_ref() = false;
 
-  sleep(FLAGS_mock_ttl_duration + 2);
+  sleep(FLAGS_mock_ttl_duration + 1);
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -925,7 +925,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   }
   req.insertable_ref() = true;
 
-  sleep(FLAGS_mock_ttl_duration + 2);
+  sleep(FLAGS_mock_ttl_duration + 1);
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1044,7 +1044,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   }
   req.insertable_ref() = true;
 
-  sleep(FLAGS_mock_ttl_duration + 2);
+  sleep(FLAGS_mock_ttl_duration + 1);
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
