@@ -62,6 +62,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
 void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
   const auto& partVertices = req.get_parts();
   const auto& propNamesMap = req.get_prop_names();
+  bool onlyVertex = propNamesMap.empty();
   for (auto& part : partVertices) {
     auto partId = part.first;
     const auto& vertices = part.second;
@@ -81,7 +82,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-      if (FLAGS_use_vertex_key) {
+      if (onlyVertex && FLAGS_use_vertex_key) {
         data.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
       }
       for (auto& newTag : newTags) {
@@ -139,6 +140,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
 void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& req) {
   const auto& partVertices = req.get_parts();
   const auto& propNamesMap = req.get_prop_names();
+  bool onlyVertex = propNamesMap.empty();
 
   for (const auto& part : partVertices) {
     auto partId = part.first;
@@ -161,7 +163,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-      if (FLAGS_use_vertex_key) {
+      if (onlyVertex && FLAGS_use_vertex_key) {
         verticeData.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid));
       }
       for (const auto& newTag : newTags) {
