@@ -1112,7 +1112,7 @@ TEST(UpdateEdgeTest, TTL_NoInsert_Test) {
   req.return_props_ref() = std::move(tmpProps);
   req.insertable_ref() = false;
 
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
   auto* processor = UpdateEdgeProcessor::instance(env, nullptr);
@@ -1207,7 +1207,7 @@ TEST(UpdateEdgeTest, TTL_Insert_No_Exist_Test) {
   req.return_props_ref() = std::move(tmpProps);
   req.insertable_ref() = true;
 
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
   auto* processor = UpdateEdgeProcessor::instance(env, nullptr);
@@ -1341,7 +1341,7 @@ TEST(UpdateEdgeTest, TTL_Insert_Test) {
   req.return_props_ref() = std::move(tmpProps);
   req.insertable_ref() = true;
 
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
 
   LOG(INFO) << "Test UpdateEdgeRequest...";
   auto* processor = UpdateEdgeProcessor::instance(env, nullptr);

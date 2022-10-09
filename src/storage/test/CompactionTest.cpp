@@ -212,7 +212,7 @@ TEST(CompactionFilterTest, TTLFilterDataExpiredTest) {
   checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
 
   // wait ttl data Expire
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
 
   LOG(INFO) << "Do compaction";
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
@@ -389,7 +389,7 @@ TEST(CompactionFilterTest, TTLFilterDataIndexExpiredTest) {
   checkIndexData(spaceId, 102, 6, env, 18);
 
   // wait ttl data Expire
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
 
   LOG(INFO) << "Do compaction";
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);

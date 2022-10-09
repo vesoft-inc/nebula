@@ -222,7 +222,7 @@ TEST_F(GetDstBySrcTTLTest, TTLTest) {
                                  "Dwight Howard"};
     verify(vertices, edges, expect);
   }
-  sleep(FLAGS_mock_ttl_duration + 1);
+  sleep(FLAGS_mock_ttl_duration + 2);
   LOG(INFO) << "Read data when data expired";
   {
     std::vector<VertexID> vertices{"Tim Duncan"};
