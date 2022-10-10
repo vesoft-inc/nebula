@@ -35,6 +35,7 @@ template <typename T>
 class FilterNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
+  nebula::DataSet reqDataSet;
 
   FilterNode(RuntimeContext* context,
              IterateNode<T>* upstream,
@@ -93,6 +94,7 @@ class FilterNode : public IterateNode<T> {
   // return true when the value iter points to a value which can filter
   bool checkTagAndEdge() {
     expCtx_->reset(this->reader(), this->key().str());
+    expCtx_ ->reqDataSet = reqDataSet;
     // result is false when filter out
     auto result = filterExp_->eval(*expCtx_);
     // NULL is always false
