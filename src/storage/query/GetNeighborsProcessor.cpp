@@ -92,6 +92,19 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
         onFinished();
         return;
       }
+      nebula::DataSet ds(*req.column_names_ref());
+      ds.rows.emplace_back(row);
+      size_t len = plan.getNodes().size();
+      for (size_t i =0; i < len; i ++)
+      {
+        RelNode<VertexID>* rn = plan.getNode(i);
+        std::string& na = const_cast<std::string&>(rn->name());
+        if(na == "FilterNode"){
+          FilterNode<VertexID>* der = dynamic_cast<FilterNode<VertexID>*>(rn);
+          der->reqDataSet = ds;
+          break;
+        }
+      }
 
       // the first column of each row would be the vertex id
       auto ret = plan.go(partId, vId);
