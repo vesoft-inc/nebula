@@ -399,17 +399,14 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     if (tagIter != usedVertexProps.end()) {
       usedProps.insert(tagIter->second.begin(), tagIter->second.end());
     }
-    if (usedProps.empty()) {
-      continue;
-    }
     std::vector<std::string> newProps;
     for (auto &prop : props) {
       if (usedProps.find(prop) != usedProps.end()) {
         newProps.emplace_back(prop);
       }
     }
-    if (newProps.empty()) {
-      continue;
+    if (newProps.empty()) {  // It's used to ensure there is one row when vertex exists
+      newProps.emplace_back(kTag);
     }
     VertexProp newVProp;
     newVProp.tag_ref() = tagId;

@@ -22,6 +22,13 @@ namespace graph {
 //  GetVertices,
 //  GetEdges,
 //  IndexScan
+
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using EdgeProp = nebula::storage::cpp2::EdgeProp;
+using StatProp = nebula::storage::cpp2::StatProp;
+using Expr = nebula::storage::cpp2::Expr;
+using Direction = nebula::storage::cpp2::EdgeDirection;
+
 class Explore : public SingleInputNode {
  public:
   GraphSpaceID space() const {
@@ -119,6 +126,26 @@ class Explore : public SingleInputNode {
   void cloneMembers(const Explore&);
 
  protected:
+  void fillLackTags(std::vector<VertexProp>& props) {
+    auto* schemaMng = DCHECK_NOTNULL(qctx_)->schemaMng();
+    auto result = schemaMng->getAllTags(space_);
+    if (!result.ok()) {
+      return;
+    }
+    auto tags = std::move(result).value();
+    for (const auto& tag : tags) {
+      auto found = std::find_if(props.begin(), props.end(), [&tag](const auto& prop) {
+        return prop.tag_ref() == tag.first;
+      });
+      if (found == props.end()) {
+        VertexProp vp;
+        vp.tag_ref() = tag.first;
+        vp.props_ref() = std::vector<std::string>({kTag});
+        props.emplace_back(std::move(vp));
+      }
+    }
+  }
+
   GraphSpaceID space_;
   bool dedup_{false};
   // Use expression to get the limit value in runtime
@@ -127,12 +154,6 @@ class Explore : public SingleInputNode {
   Expression* filter_{nullptr};
   std::vector<storage::cpp2::OrderBy> orderBy_;
 };
-
-using VertexProp = nebula::storage::cpp2::VertexProp;
-using EdgeProp = nebula::storage::cpp2::EdgeProp;
-using StatProp = nebula::storage::cpp2::StatProp;
-using Expr = nebula::storage::cpp2::Expr;
-using Direction = nebula::storage::cpp2::EdgeDirection;
 
 // Get neighbors' property
 class GetNeighbors : public Explore {
@@ -352,6 +373,7 @@ class GetVertices : public Explore {
 
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> props) {
     props_ = std::move(props);
+    fillLackTags(*DCHECK_NOTNULL(props_));
   }
 
   void setExprs(std::unique_ptr<std::vector<Expr>> exprs) {
@@ -377,7 +399,13 @@ class GetVertices : public Explore {
       : Explore(qctx, kind, input, space, dedup, limit, filter, std::move(orderBy)),
         src_(src),
         props_(std::move(props)),
-        exprs_(std::move(exprs)) {}
+        exprs_(std::move(exprs)) {
+    if (props_ != nullptr) {
+      // This is aim to ensure there is one row when vertex exists
+      // TODO we could add it in filter instead of return?
+      fillLackTags(*DCHECK_NOTNULL(props_));
+    }
+  }
 
   void cloneMembers(const GetVertices&);
 
