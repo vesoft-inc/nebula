@@ -590,7 +590,9 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
-    case Expression::Kind::kInputProperty:
+    case Expression::Kind::kInputProperty:{
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     case Expression::Kind::kSubscript:
     case Expression::Kind::kAttribute:
     case Expression::Kind::kLabelTagProperty:
