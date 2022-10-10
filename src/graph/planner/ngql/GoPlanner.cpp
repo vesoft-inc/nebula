@@ -241,29 +241,31 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 }
 
 PlanNode* GoPlanner::buildJoinInputPlan(PlanNode* dep) {
-  auto qctx = goCtx_->qctx;
-  const auto& from = goCtx_->from;
-  const auto& steps = goCtx_->steps;
-  auto* pool = qctx->objPool();
+  if (!goCtx_->exprProps.inputProps().empty()) {
+    auto qctx = goCtx_->qctx;
+    const auto& from = goCtx_->from;
+    const auto& steps = goCtx_->steps;
+    auto* pool = qctx->objPool();
 
-  const auto& vidName = (!steps.isMToN() && steps.steps() == 1) ? kVid : from.runtimeVidName;
-  auto* hashKey = VariablePropertyExpression::make(pool, dep->outputVar(), vidName);
-  auto* probeKey = from.originalSrc;
-  std::string probeName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
+    const auto& vidName = (!steps.isMToN() && steps.steps() == 1) ? kVid : from.runtimeVidName;
+    auto* hashKey = VariablePropertyExpression::make(pool, dep->outputVar(), vidName);
+    auto* probeKey = from.originalSrc;
+    std::string probeName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
 
-  auto* join = InnerJoin::make(qctx,
-                               dep,
-                               {dep->outputVar(), ExecutionContext::kLatestVersion},
-                               {probeName, ExecutionContext::kLatestVersion},
-                               {hashKey},
-                               {probeKey});
-  std::vector<std::string> colNames = dep->colNames();
-  auto* varPtr = qctx->symTable()->getVar(probeName);
-  DCHECK(varPtr != nullptr);
-  colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
-  join->setColNames(std::move(colNames));
-
-  return join;
+    auto* join = InnerJoin::make(qctx,
+                                 dep,
+                                 {dep->outputVar(), ExecutionContext::kLatestVersion},
+                                 {probeName, ExecutionContext::kLatestVersion},
+                                 {hashKey},
+                                 {probeKey});
+    std::vector<std::string> colNames = dep->colNames();
+    auto* varPtr = qctx->symTable()->getVar(probeName);
+    DCHECK(varPtr != nullptr);
+    colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
+    join->setColNames(std::move(colNames));
+    return join;
+  }
+  return dep;
 }
 
 // The column named as dstVidColName of the left plan node join on the column named as kVid of the
@@ -382,7 +384,7 @@ Expression* GoPlanner::stepSampleLimit() {
   return subscript;
 }
 
-SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
+SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx) {
   auto qctx = goCtx_->qctx;
 
   auto* gn = GetNeighbors::make(qctx, startVidPlan.root, goCtx_->space.id);
@@ -398,6 +400,15 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   subPlan.root = buildOneStepJoinPlan(sampleLimit);
 
   if (goCtx_->filter != nullptr) {
+    auto* gc = static_cast<GoSentence*>(astCtx->sentence);
+    if (gc->whereClause() != nullptr) {
+      bool hasFilter = true;
+      bool hasInput = false;
+      auto* newFilter =
+          checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasFilter, &hasInput);
+      gn->setFilter(newFilter);
+      gn->setIsPush(hasInput);
+    }
     subPlan.root = Filter::make(qctx, subPlan.root, goCtx_->filter);
   }
 
@@ -408,6 +419,58 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   }
 
   return subPlan;
+}
+
+Expression* GoPlanner::checkFilterExpressionIsPush(GetNeighbors* gn,
+                                                   Expression* filter,
+                                                   bool* hasFilter,
+                                                   bool* hasInput) {
+  if (filter->kind() == Expression::Kind::kLogicalAnd) {
+    auto* logicAnd = static_cast<LogicalExpression*>(filter);
+    std::vector<Expression*> opers = logicAnd->operands();
+    for (size_t i = 0; i < opers.size(); i++) {
+      filter = checkFilterExpressionIsPush(gn, opers[i], hasFilter, hasInput);
+      if (!*hasFilter || filter == nullptr) {
+        opers[i] = nullptr;
+      }
+    }
+    Expression* newFilter;
+    if (opers[0] == nullptr && opers[1] != nullptr) {
+      newFilter = logicAnd->operand(1);
+    } else if (opers[1] == nullptr && opers[0] != nullptr) {
+      newFilter = logicAnd->operand(0);
+    } else if (opers[0] == nullptr && opers[1] == nullptr) {
+      newFilter = nullptr;
+    } else {
+      newFilter = logicAnd;
+    }
+    *hasFilter = true;
+    return newFilter;
+
+  } else if (filter->kind() == Expression::Kind::kLogicalOr) {
+    auto* logicOr = static_cast<LogicalExpression*>(filter);
+    std::vector<Expression*> opers = logicOr->operands();
+    for (size_t i = 0; i < opers.size(); i++) {
+      filter = checkFilterExpressionIsPush(gn, opers[i], hasFilter, hasInput);
+      if (!*hasFilter || filter == nullptr || opers[i] != filter) {
+        return nullptr;
+      }
+    }
+    *hasFilter = true;
+    return logicOr;
+  } else if (filter->isRelExpr()) {
+    auto* relation = static_cast<RelationalExpression*>(filter);
+    checkFilterExpressionIsPush(gn, relation->left(), hasFilter, hasInput);
+    checkFilterExpressionIsPush(gn, relation->right(), hasFilter, hasInput);
+    if (!*hasFilter) {
+      filter = nullptr;
+    }
+  } else if (filter->kind() == Expression::Kind::kDstProperty) {
+    *hasFilter = false;
+  } else if (filter->kind() == Expression::Kind::kInputProperty) {
+    *hasInput = true;
+  }
+  return filter;
 }
 
 SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
@@ -536,7 +599,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   }
 
   if (steps.steps() == 1) {
-    return oneStepPlan(startPlan);
+    return oneStepPlan(startPlan, astCtx);
   }
   return nStepsPlan(startPlan);
 }

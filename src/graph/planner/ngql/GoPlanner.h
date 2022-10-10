@@ -32,7 +32,7 @@ class GoPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
-  SubPlan oneStepPlan(SubPlan& startVidPlan);
+  SubPlan oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx);
 
   SubPlan nStepsPlan(SubPlan& startVidPlan);
 
@@ -66,6 +66,8 @@ class GoPlanner final : public Planner {
   PlanNode* lastStep(PlanNode* dep, PlanNode* join);
 
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
+
+  Expression* checkFilterExpressionIsPush(GetNeighbors* gn, Expression* filter, bool* hasFilter, bool* hasInput);
 
   template <typename T>
   PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
