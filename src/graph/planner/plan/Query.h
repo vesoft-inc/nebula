@@ -126,25 +126,7 @@ class Explore : public SingleInputNode {
   void cloneMembers(const Explore&);
 
  protected:
-  void fillLackTags(std::vector<VertexProp>& props) {
-    auto* schemaMng = DCHECK_NOTNULL(qctx_)->schemaMng();
-    auto result = schemaMng->getAllTags(space_);
-    if (!result.ok()) {
-      return;
-    }
-    auto tags = std::move(result).value();
-    for (const auto& tag : tags) {
-      auto found = std::find_if(props.begin(), props.end(), [&tag](const auto& prop) {
-        return prop.tag_ref() == tag.first;
-      });
-      if (found == props.end()) {
-        VertexProp vp;
-        vp.tag_ref() = tag.first;
-        vp.props_ref() = std::vector<std::string>({kTag});
-        props.emplace_back(std::move(vp));
-      }
-    }
-  }
+  void fillLackTags(std::vector<VertexProp>& props);
 
   GraphSpaceID space_;
   bool dedup_{false};
