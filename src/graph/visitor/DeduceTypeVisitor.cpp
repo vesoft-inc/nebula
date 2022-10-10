@@ -249,13 +249,7 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
     status_ = Status::SemanticError(out.str());
     return;
   }
-  QueryExpressionContext ctx(nullptr);
-  auto val = expr->eval(ctx(nullptr));
-  if (val.isNull()) {
-    status_ = Status::SemanticError("`%s' is not a valid expression ", expr->toString().c_str());
-    return;
-  }
-  type_ = val.type();
+  type_ = expr->type();
   status_ = Status::OK();
 }
 
@@ -486,7 +480,21 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
 void DeduceTypeVisitor::visit(AggregateExpression *expr) {
   expr->arg()->accept(this);
   if (!ok()) return;
-  type_ = Value::Type::__EMPTY__;
+  auto func = expr->name();
+  std::transform(func.begin(), func.end(), func.begin(), ::toupper);
+  if ("COUNT" == func) {
+    type_ = Value::Type::INT;
+  } else if ("COLLECT" == func) {
+    type_ = Value::Type::LIST;
+  } else if ("COLLECT_SET" == func) {
+    type_ = Value::Type::SET;
+  } else if ("AVG" == func || "SUM" == func) {
+    type_ = Value::Type::FLOAT;
+  } else if ("MAX" == func || "MIN" == func) {
+    // Keep same with arg's type
+  } else {
+    type_ = Value::Type::__EMPTY__;
+  }
 }
 
 void DeduceTypeVisitor::visit(UUIDExpression *) {
