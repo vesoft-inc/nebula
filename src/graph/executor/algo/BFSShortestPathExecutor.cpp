@@ -12,6 +12,7 @@ namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
+  terminateEarlyVar_ = pathNode_->terminateEarlyVar();
 
   if (step_ == 1) {
     allRightEdges_.emplace_back();
@@ -99,7 +100,10 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
   // set nextVid
   const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
   ectx_->setResult(nextVidVar, ResultBuilder().value(std::move(nextStepVids)).build());
-
+  if (uniqueDst.size() == 0) {
+    ectx_->setValue(terminateEarlyVar_, true);
+    return Status::OK();
+  }
   visitedVids.insert(std::make_move_iterator(uniqueDst.begin()),
                      std::make_move_iterator(uniqueDst.end()));
   return Status::OK();

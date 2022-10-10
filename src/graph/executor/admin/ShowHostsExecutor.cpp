@@ -38,7 +38,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     for (const auto &host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
-                     FLAGS_ws_http_port,
+                     19779,  // FIXME: update real http port.
                      apache::thrift::util::enumNameSafe(host.get_status())});
       int64_t leaderCount = 0;
       for (const auto &spaceEntry : host.get_leader_parts()) {

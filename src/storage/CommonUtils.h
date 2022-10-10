@@ -134,6 +134,7 @@ enum class ResultStatus {
   NORMAL = 0,
   ILLEGAL_DATA = -1,
   FILTER_OUT = -2,
+  TAG_FILTER_OUT = -3,
 };
 
 struct PropContext;

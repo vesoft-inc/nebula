@@ -310,13 +310,28 @@ PlanNode* GoPlanner::buildLastStepJoinPlan(PlanNode* gn, PlanNode* join) {
 PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
   auto qctx = goCtx_->qctx;
   PlanNode* scan = nullptr;
-  if (goCtx_->isSimple) {
+
+  if (!goCtx_->joinInput && goCtx_->limits.empty() && goCtx_->onlyYieldDistinctDstId &&
+      !goCtx_->exprProps.hasSrcTagProperty() && goCtx_->edgePropsOnlyUseDstId) {
     auto* gd = GetDstBySrc::make(qctx, dep, goCtx_->space.id);
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
     gd->setInputVar(goCtx_->vidsVar);
-    gd->setColNames({kDst});
-    scan = gd;
+    gd->setColNames(goCtx_->colNames);
+    auto* dedup = Dedup::make(qctx, gd);
+    dedup->setColNames(goCtx_->colNames);
+    scan = dedup;
+
+    auto* root = goCtx_->joinDst ? buildJoinDstPlan(scan) : scan;
+    if (goCtx_->filter != nullptr) {
+      root = Filter::make(qctx, root, goCtx_->filter);
+    }
+    if (goCtx_->joinDst) {
+      goCtx_->yieldExpr->columns()[0]->setExpr(ColumnExpression::make(qctx->objPool(), 0));
+      root = Project::make(qctx, root, goCtx_->yieldExpr);
+    }
+    root->setColNames(std::move(goCtx_->colNames));
+    return root;
   } else {
     auto* gn = GetNeighbors::make(qctx, dep, goCtx_->space.id);
     gn->setSrc(goCtx_->from.src);
@@ -324,27 +339,24 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
     gn->setEdgeProps(buildEdgeProps(false));
     gn->setInputVar(goCtx_->vidsVar);
     scan = gn;
-  }
 
-  const auto& steps = goCtx_->steps;
-  auto* sampleLimit = buildSampleLimit(scan, steps.isMToN() ? steps.nSteps() : steps.steps());
+    const auto& steps = goCtx_->steps;
+    auto* sampleLimit = buildSampleLimit(scan, steps.isMToN() ? steps.nSteps() : steps.steps());
 
-  auto* root = buildLastStepJoinPlan(sampleLimit, join);
+    auto* root = buildLastStepJoinPlan(sampleLimit, join);
 
-  if (goCtx_->filter != nullptr) {
-    root = Filter::make(qctx, root, goCtx_->filter);
-  }
+    if (goCtx_->filter != nullptr) {
+      root = Filter::make(qctx, root, goCtx_->filter);
+    }
 
-  if (!goCtx_->isSimple) {
     root = Project::make(qctx, root, goCtx_->yieldExpr);
-  }
-  root->setColNames(std::move(goCtx_->colNames));
+    root->setColNames(std::move(goCtx_->colNames));
 
-  if (goCtx_->distinct) {
-    root = Dedup::make(qctx, root);
+    if (goCtx_->distinct) {
+      root = Dedup::make(qctx, root);
+    }
+    return root;
   }
-
-  return root;
 }
 
 PlanNode* GoPlanner::buildOneStepJoinPlan(PlanNode* gn) {
@@ -595,6 +607,8 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   auto qctx = goCtx_->qctx;
   goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
+  goCtx_->onlyYieldDistinctDstId = onlyYieldDistinctDstId();
+  goCtx_->edgePropsOnlyUseDstId = edgePropsOnlyUseDstId();
   goCtx_->isSimple = isSimpleCase();
   if (goCtx_->isSimple) {
     // We don't need to do a inner join in such case.
@@ -626,18 +640,31 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 }
 
 bool GoPlanner::isSimpleCase() {
-  if (goCtx_->joinDst || goCtx_->filter || !goCtx_->distinct || !goCtx_->limits.empty()) {
+  if (!goCtx_->onlyYieldDistinctDstId) {
+    return false;
+  }
+  if (goCtx_->joinDst || goCtx_->filter || !goCtx_->limits.empty()) {
     return false;
   }
   auto& exprProps = goCtx_->exprProps;
   if (!exprProps.srcTagProps().empty()) return false;
   if (!exprProps.dstTagProps().empty()) return false;
-  for (auto& edgeProp : exprProps.edgeProps()) {
+
+  return goCtx_->edgePropsOnlyUseDstId;
+}
+
+bool GoPlanner::edgePropsOnlyUseDstId() {
+  for (auto& edgeProp : goCtx_->exprProps.edgeProps()) {
     auto props = edgeProp.second;
     if (props.size() != 1) return false;
     if (props.find(kDst) == props.end()) return false;
   }
 
+  return true;
+}
+
+bool GoPlanner::onlyYieldDistinctDstId() {
+  if (!goCtx_->distinct) return false;
   if (goCtx_->yieldExpr->columns().size() != 1) {
     return false;
   }

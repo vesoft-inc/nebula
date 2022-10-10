@@ -4,42 +4,153 @@
 
 #include "graph/executor/algo/SubgraphExecutor.h"
 
-#include "graph/planner/plan/Algo.h"
+#include "graph/service/GraphFlags.h"
 
+using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> SubgraphExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* subgraph = asNode<Subgraph>(node());
-  DataSet ds;
-  ds.colNames = subgraph->colNames();
+  totalSteps_ = subgraph_->steps();
+  auto iter = ectx_->getResult(subgraph_->inputVar()).iter();
+  auto res = buildRequestListByVidType(iter.get(), subgraph_->src(), true);
+  NG_RETURN_IF_ERROR(res);
+  vids_ = res.value();
+  if (vids_.empty()) {
+    DataSet emptyResult;
+    return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
+  }
+  return getNeighbors();
+}
 
-  uint32_t steps = subgraph->steps();
-  const auto& currentStepVal = ectx_->getValue(subgraph->currentStepVar());
-  DCHECK(currentStepVal.isInt());
-  auto currentStep = currentStepVal.getInt();
-  auto resultVar = subgraph->resultVar();
+folly::Future<Status> SubgraphExecutor::getNeighbors() {
+  time::Duration getNbrTime;
+  StorageClient* storageClient = qctx_->getStorageClient();
+  StorageClient::CommonRequestParam param(subgraph_->space(),
+                                          qctx_->rctx()->session()->id(),
+                                          qctx_->plan()->id(),
+                                          qctx_->plan()->isProfileEnabled());
 
-  auto iter = ectx_->getResult(subgraph->inputVar()).iter();
-  auto gnSize = iter->size();
+  storage::cpp2::EdgeDirection edgeDirection{Direction::OUT_EDGE};
+  return storageClient
+      ->getNeighbors(param,
+                     {nebula::kVid},
+                     std::move(vids_),
+                     {},
+                     edgeDirection,
+                     nullptr,
+                     subgraph_->vertexProps(),
+                     subgraph_->edgeProps(),
+                     nullptr,
+                     false,
+                     false,
+                     {},
+                     -1,
+                     currentStep_ == 1 ? subgraph_->edgeFilter() : subgraph_->filter(),
+                     currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
+      .via(runner())
+      .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
+        auto& hostLatency = resp.hostLatency();
+        for (size_t i = 0; i < hostLatency.size(); ++i) {
+          size_t size = 0u;
+          auto& result = resp.responses()[i];
+          if (result.vertices_ref().has_value()) {
+            size = (*result.vertices_ref()).size();
+          }
+          auto& info = hostLatency[i];
+          otherStats_.emplace(
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
+              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
+          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+          if (!detail.empty()) {
+            otherStats_.emplace("storage_detail", detail);
+          }
+        }
+        vids_.clear();
+        return handleResponse(std::move(resp));
+      });
+}
+
+folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
+  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
+  if (!result.ok()) {
+    return folly::makeFuture<Status>(std::move(result).status());
+  }
+
+  auto& responses = resps.responses();
+  List list;
+  for (auto& resp : responses) {
+    auto dataset = resp.get_vertices();
+    if (dataset == nullptr) {
+      continue;
+    }
+    list.values.emplace_back(std::move(*dataset));
+  }
+
+  auto listVal = std::make_shared<Value>(std::move(list));
+  auto iter = std::make_unique<GetNeighborsIter>(listVal);
+
+  auto steps = totalSteps_;
+  if (!subgraph_->oneMoreStep()) {
+    --steps;
+  }
+
+  if (!process(std::move(iter)) || ++currentStep_ > steps) {
+    filterEdges(0);
+    return folly::makeFuture<Status>(Status::OK());
+  } else {
+    return getNeighbors();
+  }
+}
+
+void SubgraphExecutor::filterEdges(int version) {
+  auto iter = ectx_->getVersionedResult(subgraph_->outputVar(), version).iter();
+  auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
+  while (gnIter->valid()) {
+    const auto& dst = gnIter->getEdgeProp("*", nebula::kDst);
+    if (validVids_.find(dst) == validVids_.end()) {
+      auto edge = gnIter->getEdge();
+      gnIter->erase();
+    } else {
+      gnIter->next();
+    }
+  }
+  gnIter->reset();
+  ResultBuilder builder;
+  builder.iter(std::move(iter));
+  ectx_->setVersionedResult(subgraph_->outputVar(), builder.build(), version);
+}
+
+bool SubgraphExecutor::process(std::unique_ptr<GetNeighborsIter> iter) {
+  auto gnSize = iter->numRows();
+  if (gnSize == 0) {
+    return false;
+  }
 
   ResultBuilder builder;
   builder.value(iter->valuePtr());
 
-  robin_hood::unordered_flat_map<Value, int64_t, std::hash<Value>> currentVids;
+  HashMap currentVids;
   currentVids.reserve(gnSize);
   historyVids_.reserve(historyVids_.size() + gnSize);
-  if (currentStep == 1) {
-    for (; iter->valid(); iter->next()) {
-      const auto& src = iter->getColumn(nebula::kVid);
-      currentVids.emplace(src, 0);
+  auto startVids = iter->vids();
+  if (currentStep_ == 1) {
+    for (auto& startVid : startVids) {
+      currentVids.emplace(startVid, 0);
     }
-    iter->reset();
   }
-  auto& biDirectEdgeTypes = subgraph->biDirectEdgeTypes();
+  validVids_.insert(std::make_move_iterator(startVids.begin()),
+                    std::make_move_iterator(startVids.end()));
+  auto& biDirectEdgeTypes = subgraph_->biDirectEdgeTypes();
   while (iter->valid()) {
     const auto& dst = iter->getEdgeProp("*", nebula::kDst);
+    if (dst.empty()) {
+      // no edge, dst is empty
+      iter->next();
+      continue;
+    }
     auto findIter = historyVids_.find(dst);
     if (findIter != historyVids_.end()) {
       if (biDirectEdgeTypes.empty()) {
@@ -52,7 +163,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
         }
         auto type = typeVal.getInt();
         if (biDirectEdgeTypes.find(type) != biDirectEdgeTypes.end()) {
-          if (type < 0 || findIter->second + 2 == currentStep) {
+          if (type < 0 || findIter->second + 2 == currentStep_) {
             iter->erase();
           } else {
             iter->next();
@@ -62,25 +173,30 @@ folly::Future<Status> SubgraphExecutor::execute() {
         }
       }
     } else {
-      if (currentStep == steps) {
+      if (currentStep_ == totalSteps_) {
         iter->erase();
         continue;
       }
-      if (currentVids.emplace(dst, currentStep).second) {
-        Row row;
-        row.values.emplace_back(std::move(dst));
-        ds.rows.emplace_back(std::move(row));
+      if (currentVids.emplace(dst, currentStep_).second) {
+        // next vids for getNeighbor
+        vids_.emplace_back(std::move(dst));
       }
       iter->next();
     }
   }
   iter->reset();
   builder.iter(std::move(iter));
-  ectx_->setResult(resultVar, builder.build());
+  finish(builder.build());
   // update historyVids
   historyVids_.insert(std::make_move_iterator(currentVids.begin()),
                       std::make_move_iterator(currentVids.end()));
-  return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  if (currentStep_ != 1 && subgraph_->tagFilter()) {
+    filterEdges(-1);
+  }
+  if (vids_.empty()) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace graph

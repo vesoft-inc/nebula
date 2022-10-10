@@ -44,6 +44,8 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   FRIEND_TEST(JobManagerTest, DownloadJob);
   FRIEND_TEST(JobManagerTest, IngestJob);
   FRIEND_TEST(JobManagerTest, StopJob);
+  FRIEND_TEST(JobManagerTest, NotStoppableJob);
+  FRIEND_TEST(JobManagerTest, StoppableJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
   FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
   FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
@@ -237,7 +239,11 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @param op
    * @return error code
    */
-  nebula::cpp2::ErrorCode runJobInternal(const JobDescription& jobDesc, JbOp op);
+  folly::Future<nebula::cpp2::ErrorCode> runJobInternal(const JobDescription& jobDesc, JbOp op);
+
+  nebula::cpp2::ErrorCode prepareRunJob(JobExecutor* jobExec,
+                                        const JobDescription& jobDesc,
+                                        JbOp op);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
@@ -286,6 +292,14 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    */
   void compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired);
 
+  /**
+   * @brief reset spaceRunning of spaceId to false
+   *
+   * @param spaceId
+   * @return
+   */
+  void resetSpaceRunning(GraphSpaceID spaceId);
+
  private:
   using PriorityQueue = folly::PriorityUMPSCQueueSet<std::tuple<JbOp, JobID, GraphSpaceID>, true>;
   // Each PriorityQueue contains high and low priority queues.
@@ -308,6 +322,8 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   // in finish-callback in the same thread with runJobInternal
   folly::ConcurrentHashMap<GraphSpaceID, std::unique_ptr<std::recursive_mutex>> muJobFinished_;
   std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
+
+  std::unique_ptr<folly::Executor> executor_;
 };
 
 }  // namespace meta

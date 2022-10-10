@@ -108,6 +108,8 @@
   X(E_TASK_REPORT_OUT_DATE, -2049)                                            \
   X(E_JOB_NOT_IN_SPACE, -2050)                                                \
   X(E_JOB_NEED_RECOVER, -2051)                                                \
+  X(E_JOB_NOT_STOPPABLE, -2052)                                               \
+  X(E_JOB_SUBMITTED, -2053)                                                   \
   X(E_INVALID_JOB, -2065)                                                     \
                                                                               \
   /* Backup Failure */                                                        \

@@ -39,8 +39,13 @@ class FilterNode : public IterateNode<T> {
   FilterNode(RuntimeContext* context,
              IterateNode<T>* upstream,
              StorageExpressionContext* expCtx = nullptr,
-             Expression* exp = nullptr)
-      : IterateNode<T>(upstream), context_(context), expCtx_(expCtx), filterExp_(exp) {
+             Expression* exp = nullptr,
+             Expression* tagFilterExp = nullptr)
+      : IterateNode<T>(upstream),
+        context_(context),
+        expCtx_(expCtx),
+        filterExp_(exp),
+        tagFilterExp_(tagFilterExp) {
     IterateNode<T>::name_ = "FilterNode";
   }
 
@@ -55,7 +60,9 @@ class FilterNode : public IterateNode<T> {
         break;
       }
       if (this->valid() && !check()) {
-        context_->resultStat_ = ResultStatus::FILTER_OUT;
+        if (context_->resultStat_ != ResultStatus::TAG_FILTER_OUT) {
+          context_->resultStat_ = ResultStatus::FILTER_OUT;
+        }
         this->next();
         continue;
       }
@@ -93,6 +100,13 @@ class FilterNode : public IterateNode<T> {
   // return true when the value iter points to a value which can filter
   bool checkTagAndEdge() {
     expCtx_->reset(this->reader(), this->key().str());
+    if (tagFilterExp_ != nullptr) {
+      auto res = tagFilterExp_->eval(*expCtx_);
+      if (!res.isBool() || !res.getBool()) {
+        context_->resultStat_ = ResultStatus::TAG_FILTER_OUT;
+        return false;
+      }
+    }
     // result is false when filter out
     auto result = filterExp_->eval(*expCtx_);
     // NULL is always false
@@ -103,7 +117,8 @@ class FilterNode : public IterateNode<T> {
  private:
   RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
-  Expression* filterExp_;
+  Expression* filterExp_{nullptr};
+  Expression* tagFilterExp_{nullptr};
   FilterMode mode_{FilterMode::TAG_AND_EDGE};
   int32_t callCheck{0};
 };

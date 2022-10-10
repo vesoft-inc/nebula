@@ -581,7 +581,7 @@ TEST(IteratorTest, TestHead) {
     auto val = std::make_shared<Value>(std::move(datasets));
     GetNeighborsIter iter(nullptr);
     auto status = iter.processList(val);
-    EXPECT_FALSE(status.ok());
+    EXPECT_TRUE(status.ok());
   }
   {
     // no _stats
@@ -592,7 +592,7 @@ TEST(IteratorTest, TestHead) {
     auto val = std::make_shared<Value>(std::move(datasets));
     GetNeighborsIter iter(nullptr);
     auto status = iter.processList(val);
-    EXPECT_FALSE(status.ok());
+    EXPECT_TRUE(status.ok());
   }
   {
     // no _expr
@@ -603,7 +603,7 @@ TEST(IteratorTest, TestHead) {
     auto val = std::make_shared<Value>(std::move(datasets));
     GetNeighborsIter iter(nullptr);
     auto status = iter.processList(val);
-    EXPECT_FALSE(status.ok());
+    EXPECT_TRUE(status.ok());
   }
   {
     // no +/- before edge name
@@ -615,7 +615,7 @@ TEST(IteratorTest, TestHead) {
     auto val = std::make_shared<Value>(std::move(datasets));
     GetNeighborsIter iter(nullptr);
     auto status = iter.processList(val);
-    EXPECT_FALSE(status.ok());
+    EXPECT_TRUE(status.ok());
   }
   // no prop
   {
@@ -645,7 +645,7 @@ TEST(IteratorTest, TestHead) {
     auto val = std::make_shared<Value>(std::move(datasets));
     GetNeighborsIter iter(nullptr);
     auto status = iter.processList(val);
-    EXPECT_FALSE(status.ok());
+    EXPECT_TRUE(status.ok());
   }
 }
 

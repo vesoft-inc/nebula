@@ -31,7 +31,7 @@ class JobDescription {
                  Status status = Status::QUEUE,
                  int64_t startTime = 0,
                  int64_t stopTime = 0,
-                 nebula::cpp2::ErrorCode errCode = nebula::cpp2::ErrorCode::E_UNKNOWN);
+                 nebula::cpp2::ErrorCode errCode = nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
 
   /**
    * @brief Return the JobDescription if both key & val is valid
@@ -160,7 +160,10 @@ class JobDescription {
   cpp2::JobDesc toJobDesc();
 
   bool operator==(const JobDescription& that) const {
-    return space_ == that.space_ && type_ == that.type_ && paras_ == that.paras_;
+    bool res = (space_ == that.space_) && (type_ == that.type_);
+    return (type_ == cpp2::JobType::ZONE_BALANCE || type_ == cpp2::JobType::DATA_BALANCE)
+               ? res
+               : res && (paras_ == that.paras_);
   }
 
   bool operator!=(const JobDescription& that) const {
@@ -176,7 +179,7 @@ class JobDescription {
   Status status_;
   int64_t startTime_;
   int64_t stopTime_;
-  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_UNKNOWN};
+  nebula::cpp2::ErrorCode errCode_{nebula::cpp2::ErrorCode::E_JOB_SUBMITTED};
 };
 
 }  // namespace meta

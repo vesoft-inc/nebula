@@ -5,6 +5,8 @@
 
 #include "graph/context/Iterator.h"
 
+#include <robin_hood.h>
+
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
 #include "common/memory/MemoryUtils.h"
@@ -112,9 +114,12 @@ Status GetNeighborsIter::processList(std::shared_ptr<Value> value) {
     if (UNLIKELY(!val.isDataSet())) {
       return Status::Error("There is a value in list which is not a data set.");
     }
-    auto status = makeDataSetIndex(val.getDataSet());
-    NG_RETURN_IF_ERROR(status);
-    dsIndices_.emplace_back(std::move(status).value());
+    const auto& dataSet = val.getDataSet();
+    if (dataSet.rowSize() != 0) {
+      auto status = makeDataSetIndex(dataSet);
+      NG_RETURN_IF_ERROR(status);
+      dsIndices_.emplace_back(std::move(status).value());
+    }
   }
   return Status::OK();
 }
@@ -417,13 +422,13 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
 
   auto& currentEdge = currentEdgeName();
   if (edge != "*" && (currentEdge.compare(1, std::string::npos, edge) != 0)) {
-    VLOG(1) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
+    DLOG(INFO) << "Current edge: " << currentEdgeName() << " Wanted: " << edge;
     return Value::kEmpty;
   }
   auto index = currentDs_->edgePropsMap.find(currentEdge);
   if (index == currentDs_->edgePropsMap.end()) {
-    VLOG(1) << "No edge found: " << edge;
-    VLOG(1) << "Current edge: " << currentEdge;
+    DLOG(INFO) << "No edge found: " << edge;
+    DLOG(INFO) << "Current edge: " << currentEdge;
     return Value::kEmpty;
   }
   auto propIndex = index->second.propIndices.find(prop);
@@ -468,6 +473,22 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
   return Value(std::move(vertex));
 }
 
+std::vector<Value> GetNeighborsIter::vids() {
+  std::vector<Value> vids;
+  vids.reserve(numRows());
+  valid_ = true;
+  colIdx_ = -2;
+  for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
+    rowsUpperBound_ = currentDs_->ds->rows.end();
+    for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
+         ++currentRow_) {
+      vids.emplace_back(getColumn(0));
+    }
+  }
+  reset();
+  return vids;
+}
+
 List GetNeighborsIter::getVertices() {
   List vertices;
   vertices.reserve(numRows());
@@ -478,7 +499,6 @@ List GetNeighborsIter::getVertices() {
     for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
          ++currentRow_) {
       vertices.values.emplace_back(getVertex());
-      VLOG(1) << "vertex: " << getVertex() << " size: " << vertices.size();
     }
   }
   reset();
@@ -549,8 +569,8 @@ List GetNeighborsIter::getEdges() {
     auto edge = getEdge();
     if (edge.isEdge()) {
       const_cast<Edge&>(edge.getEdge()).format();
+      edges.values.emplace_back(std::move(edge));
     }
-    edges.values.emplace_back(std::move(edge));
   }
   reset();
   return edges;

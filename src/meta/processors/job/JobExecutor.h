@@ -42,7 +42,7 @@ class JobExecutor {
    *
    * @return
    */
-  virtual nebula::cpp2::ErrorCode execute() = 0;
+  virtual folly::Future<nebula::cpp2::ErrorCode> execute() = 0;
 
   /**
    * @brief Stop the job when the user cancel it.
@@ -68,15 +68,7 @@ class JobExecutor {
 
   virtual bool isMetaJob() = 0;
 
-  /**
-   * @brief Set a callback which will be called when job finished, storage executor don't need it,
-   *
-   * @param func
-   */
-  virtual void setFinishCallBack(
-      std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> func) {
-    UNUSED(func);
-  }
+  virtual JobDescription getJobDescription() = 0;
 
   /**
    * @brief Provide an extra status for some special tasks
@@ -85,6 +77,15 @@ class JobExecutor {
    */
   virtual nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) = 0;
 
+  /**
+   * @brief Determine whether the current job executor is running
+   *
+   * @return
+   */
+  virtual bool isRunning() = 0;
+
+  virtual void resetRunningStatus() = 0;
+
  protected:
   nebula::cpp2::ErrorCode spaceExist();
 
@@ -92,6 +93,8 @@ class JobExecutor {
   kvstore::KVStore* kvstore_{nullptr};
 
   GraphSpaceID space_;
+
+  std::atomic<bool> isRunning_{false};
 };
 
 class JobExecutorFactory {

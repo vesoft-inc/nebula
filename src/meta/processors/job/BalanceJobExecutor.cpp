@@ -12,12 +12,11 @@
 
 namespace nebula {
 namespace meta {
-BalanceJobExecutor::BalanceJobExecutor(GraphSpaceID space,
-                                       JobID jobId,
+BalanceJobExecutor::BalanceJobExecutor(JobDescription jobDescription,
                                        kvstore::KVStore* kvstore,
                                        AdminClient* adminClient,
                                        const std::vector<std::string>& paras)
-    : MetaJobExecutor(space, jobId, kvstore, adminClient, paras) {}
+    : MetaJobExecutor(jobDescription, kvstore, adminClient, paras) {}
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::check() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -49,14 +48,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   auto optJobRet = JobDescription::makeJobDescription(jobKey, value);
   auto optJob = nebula::value(optJobRet);
   plan_.reset(new BalancePlan(optJob, kvstore_, adminClient_));
-  plan_->setFinishCallBack([this](meta::cpp2::JobStatus status) {
-    folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-    auto ret = updateLastTime();
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Balance plan " << plan_->id() << " update meta failed";
-    }
-    executorOnFinished_(status);
-  });
+
   auto recRet = plan_->recovery();
   if (recRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     plan_.reset(nullptr);

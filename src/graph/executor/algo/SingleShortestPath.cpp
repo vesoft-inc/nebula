@@ -104,6 +104,7 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
                      false,
                      {},
                      -1,
+                     nullptr,
                      nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, stepNum, getNbrTime, reverse](auto&& resp) {

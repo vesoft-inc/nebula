@@ -23,14 +23,9 @@ nebula::cpp2::ErrorCode MetaJobExecutor::prepare() {
 
 // The skeleton to run the job.
 // You should rewrite the executeInternal to trigger the calling.
-nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
-  folly::SemiFuture<nebula::cpp2::ErrorCode> future = executeInternal();
-  future.wait();
-  if (!future.hasValue()) {
-    LOG(INFO) << "Exception occur when execute job";
-    return nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED;
-  }
-  return future.value();
+folly::Future<nebula::cpp2::ErrorCode> MetaJobExecutor::execute() {
+  isRunning_.store(true);
+  return executeInternal();
 }
 
 // Stop the job when the user cancel it.
@@ -49,11 +44,6 @@ bool MetaJobExecutor::isMetaJob() {
 
 nebula::cpp2::ErrorCode MetaJobExecutor::recovery() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-void MetaJobExecutor::setFinishCallBack(
-    std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> func) {
-  executorOnFinished_ = func;
 }
 
 nebula::cpp2::ErrorCode MetaJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskReq&) {
