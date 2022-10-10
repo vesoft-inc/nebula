@@ -571,7 +571,7 @@ Feature: Prune Properties rule
       """
       match (v:player) return properties(v).name AS name order by name limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | name                |
       | "Amar'e Stoudemire" |
       | "Aron Baynes"       |
@@ -579,7 +579,7 @@ Feature: Prune Properties rule
       """
       match (v:player) return properties(v).name AS name, v.player.age AS age order by name limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | name                | age |
       | "Amar'e Stoudemire" | 36  |
       | "Aron Baynes"       | 32  |
@@ -587,70 +587,70 @@ Feature: Prune Properties rule
       """
       match (v:player) where properties(v).name ==  "LaMarcus Aldridge" return properties(v).age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v).age |
       | 33                |
     When executing query:
       """
       match (v:player) where properties(v).name ==  "LaMarcus Aldridge" return v.player.age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | v.player.age |
       | 33           |
     When executing query:
       """
       match (v:player) where properties(v).name=="LaMarcus Aldridge" return v.player.sex,properties(v).age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | v.player.sex | properties(v).age |
       | "男"         | 33                |
     When executing query:
       """
       match (v:player) where id(v)=="Carmelo Anthony" return v.player.age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | v.player.age |
       | 34           |
     When executing query:
       """
       match (v:player) where id(v)=="Carmelo Anthony" return properties(v).age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v).age |
       | 34                |
     When executing query:
       """
       match (v:player) where id(v)=="Carmelo Anthony" return properties(v).age,v.player.sex;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v).age | v.player.sex |
       | 34                | "男"         |
     When executing query:
       """
       match (v:player{name:"LaMarcus Aldridge"}) return v.player.age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | v.player.age |
       | 33           |
     When executing query:
       """
       match (v:player{name:"LaMarcus Aldridge"}) return properties(v).age;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v).age |
       | 33                |
     When executing query:
       """
       match (v:player{name:"LaMarcus Aldridge"}) return properties(v).age,v.player.sex;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v).age | v.player.sex |
       | 33                | "男"         |
     When executing query:
       """
       match (v:player) return id(v) AS id, properties(v).name AS name, v.player.age AS age order by name limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | id                  | name                | age |
       | "Amar'e Stoudemire" | "Amar'e Stoudemire" | 36  |
       | "Aron Baynes"       | "Aron Baynes"       | 32  |
@@ -658,7 +658,7 @@ Feature: Prune Properties rule
       """
       match (v)-[]->(b:player) return id(v) AS id, properties(v).name AS name, v.player.age AS age order by name limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | id                  | name                | age |
       | "Amar'e Stoudemire" | "Amar'e Stoudemire" | 36  |
       | "Aron Baynes"       | "Aron Baynes"       | 32  |
@@ -666,7 +666,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() return properties(e).start_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year |
       | 1992 |
       | 1994 |
@@ -674,7 +674,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() return properties(e).start_year AS year,e.end_year  order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year | e.end_year |
       | 1992 | 1996       |
       | 1994 | 1996       |
@@ -682,7 +682,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() where e.start_year>1022 return properties(e).end_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year |
       | 1996 |
       | 1996 |
@@ -690,7 +690,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() where e.start_year>1022 return e.end_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year |
       | 1996 |
       | 1996 |
@@ -698,7 +698,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() where e.start_year>1022 return e.end_year AS year, properties(e).degree order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year | properties(e).degree |
       | 1996 | 88                   |
       | 1996 | 88                   |
@@ -706,7 +706,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve]->() where e.start_year>1022 return properties(e).degree limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(e).degree |
       | 88                   |
       | 88                   |
@@ -714,7 +714,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve{degree:88}]->()  return properties(e).start_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year |
       | 1992 |
       | 1994 |
@@ -722,7 +722,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve{degree:88}]->()  return e.end_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | year |
       | 1996 |
       | 1996 |
@@ -730,7 +730,7 @@ Feature: Prune Properties rule
       """
       match ()-[e:serve{degree:88}]->()  return e.end_year, properties(e).start_year AS year order by year limit 2;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | e.end_year | year |
       | 1996       | 1992 |
       | 1996       | 1994 |
@@ -740,7 +740,7 @@ Feature: Prune Properties rule
         return properties(src_v).age,properties(e).degree,properties(dst_v).name AS name,src_v.player.sex,e.start_year,dst_v.player.age
         order by name limit 3;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
       | 41                    | UNKNOWN_PROP         | "Dejounte Murray" | "男"             | 2022         | 29               |
       | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
@@ -751,7 +751,7 @@ Feature: Prune Properties rule
         return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
         order by age limit 5;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
       | "男"                  | 88                      | "Danny Green"          | 41  | 2010            | 31               |
       | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
@@ -764,7 +764,7 @@ Feature: Prune Properties rule
         return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
         order by age limit 5;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
       | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
       | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
@@ -777,7 +777,7 @@ Feature: Prune Properties rule
         return properties(v1).name,properties(v2).age AS age,properties(v3).name
         order by age limit 1;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v1).name | age | properties(v3).name |
       | "Manu Ginobili"     | 36  | "Spurs"             |
     When executing query:
@@ -786,7 +786,7 @@ Feature: Prune Properties rule
         return properties(v1).name,properties(v2).age AS age,properties(v3).name,v1.player.sex,v2.player.sex,id(v3)
         order by age limit 1;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v1).name | age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)  |
       | "Manu Ginobili"     | 36  | "Spurs"             | "男"          | "男"          | "Spurs" |
     When executing query:
@@ -795,7 +795,7 @@ Feature: Prune Properties rule
         return properties(v1).name,properties(v2).age,properties(v3).name AS name,v2.player.sex,v1.player.age
         order by name limit 1;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v1).name | properties(v2).age | name        | v2.player.sex | v1.player.age |
       | "Yao Ming"          | 47                 | "Cavaliers" | "男"          | 38            |
     When executing query:
@@ -804,7 +804,7 @@ Feature: Prune Properties rule
         return properties(v1).name,properties(v2).age,properties(v3).name AS name
         order by name limit 1;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v1).name | properties(v2).age | name        |
       | "Yao Ming"          | 47                 | "Cavaliers" |
     When executing query:
@@ -813,7 +813,7 @@ Feature: Prune Properties rule
         return properties(v1).name,properties(v2).age,properties(v3).name AS name
         order by name limit 1;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(v1).name | properties(v2).age | name      |
       | "Yao Ming"          | 47                 | "Celtics" |
     When executing query:
@@ -822,7 +822,7 @@ Feature: Prune Properties rule
         return properties(e).degree, e.end_year AS year
         order by year limit 3;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(e).degree | year |
       | 88                   | 2014 |
       | 88                   | 2015 |
@@ -833,7 +833,7 @@ Feature: Prune Properties rule
         return properties(e).degree,properties(e2).degree AS degree
         order by degree limit 5;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(e).degree | degree |
       | 88                   | 88     |
       | UNKNOWN_PROP         | 88     |
@@ -844,7 +844,7 @@ Feature: Prune Properties rule
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree1,properties(e).degree1,e2.a,dst_v.p.name,dst_v.player.sex1,properties(src_v).name2 limit 5;
       """
-    Then the result should be, in any order, with relax comparison:
+    Then the result should be, in order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a         | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
       | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
       | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
