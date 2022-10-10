@@ -31,6 +31,7 @@ namespace storage {
  */
 class StorageExpressionContext final : public ExpressionContext {
  public:
+  nebula::DataSet reqDataSet;
   StorageExpressionContext(size_t vIdLen,
                            bool isIntId,
                            const std::string& name = "",
@@ -100,14 +101,26 @@ class StorageExpressionContext final : public ExpressionContext {
    *
    * @return const Value&
    */
-  const Value& getInputProp(const std::string&) const override {
-    return Value::kNullValue;
+  const Value& getInputProp(const std::string& name) const override {
+    auto vals = reqDataSet.colValues(name);
+    if (vals.empty()) {
+      return Value::kEmpty;
+    }
+    Value& v = vals[0];
+    return v;
   }
 
   // Get index of property in input tuple
-  StatusOr<std::size_t> getInputPropIndex(const std::string&) const override {
-    DLOG(FATAL) << "Unimplemented";
-    return Status::Error("Unimplemented");
+  StatusOr<std::size_t> getInputPropIndex(const std::string& name) const override {
+    for (size_t i = 0; i < reqDataSet.colSize(); i++) {
+      std::string col = reqDataSet.colNames[i];
+      if (col == name) {
+        return i;
+      }
+    }
+    return 0;
+    //    DLOG(FATAL) << "Unimplemented";
+    //    return Status::Error("Unimplemented");
   }
 
   /**
@@ -115,7 +128,12 @@ class StorageExpressionContext final : public ExpressionContext {
    *
    * @return Value
    */
-  const Value& getColumn(int32_t) const override {
+  const Value& getColumn(int32_t index) const override {
+    if (reqDataSet.rowSize() > 0) {
+      if ((int)reqDataSet.rowValues(0).size() >= index) {
+        return reqDataSet.rowValues(0)[index];
+      }
+    }
     return Value::kNullValue;
   }
 

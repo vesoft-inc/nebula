@@ -395,8 +395,11 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kInputProperty: {
-      LOG(FATAL) << "Should not decode input property expression";
+      exp = InputPropertyExpression::make(pool);
+      exp->resetFrom(decoder);
       return exp;
+      /*LOG(FATAL) << "Should not decode input property expression";
+      return exp;*/
     }
     case Expression::Kind::kVarProperty: {
       exp = VariablePropertyExpression::make(pool);
