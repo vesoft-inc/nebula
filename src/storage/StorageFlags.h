@@ -34,6 +34,4 @@ DECLARE_int32(max_edge_returned_per_vertex);
 
 DECLARE_bool(query_concurrently);
 
-DECLARE_bool(use_vertex_key);
-
 #endif  // STORAGE_STORAGEFLAGS_H_
