@@ -81,7 +81,9 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-      data.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
+      if (FLAGS_use_vertex_key) {
+        data.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
+      }
       for (auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;
@@ -160,7 +162,9 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         break;
       }
 
-      verticeData.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid));
+      if (FLAGS_use_vertex_key) {
+        verticeData.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid));
+      }
       for (const auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;

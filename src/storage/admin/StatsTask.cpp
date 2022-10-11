@@ -111,8 +111,6 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   std::unique_ptr<kvstore::KVIterator> tagIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
-  auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
-  std::unique_ptr<kvstore::KVIterator> vertexIter;
 
   // When the storage occurs leader change, continue to read data from the
   // follower instead of reporting an error.
@@ -122,11 +120,6 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     return ret;
   }
   ret = env_->kvstore_->prefix(spaceId, part, edgePrefix, &edgeIter, true);
-  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Stats task failed";
-    return ret;
-  }
-  ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Stats task failed";
     return ret;
@@ -148,6 +141,8 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   for (auto edge : edges) {
     edgetypeEdges[edge.first] = 0;
   }
+
+  VertexID lastVertexId = "";
 
   // Only stats valid vertex data, no multi version
   // For example
@@ -173,7 +168,15 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       tagIter->next();
       continue;
     }
-    tagsVertices[tagId] += 1;
+
+    if (vId == lastVertexId) {
+      tagsVertices[tagId] += 1;
+    } else {
+      tagsVertices[tagId] += 1;
+      spaceVertices++;
+      lastVertexId = vId;
+    }
+
     tagIter->next();
     sleepIfScannedSomeRecord(++countToSleep);
   }
@@ -225,11 +228,6 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       negativeRelevancy[sourceVid % partitionNum + 1]++;
     }
     edgeIter->next();
-    sleepIfScannedSomeRecord(++countToSleep);
-  }
-  while (vertexIter && vertexIter->valid()) {
-    spaceVertices++;
-    vertexIter->next();
     sleepIfScannedSomeRecord(++countToSleep);
   }
   nebula::meta::cpp2::StatsItem statsItem;

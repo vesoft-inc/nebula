@@ -35,6 +35,4 @@ Feature: insert vertex without tag
       """
     Then the result should be, in any order, with relax comparison:
       | v   |
-      | (1) |
-      | (2) |
     Then drop the used space

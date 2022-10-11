@@ -95,14 +95,12 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | bachelor.name | bachelor.speciality |
-      | EMPTY         | EMPTY               |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -149,14 +147,12 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | bachelor.name | bachelor.speciality |
-      | EMPTY         | EMPTY               |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -165,6 +161,7 @@ Feature: Delete int vid of tag
       | id |
     Then drop the used space
 
+  @wtf
   Scenario: delete int vid multiple vertex one tag
     Given an empty graph
     And load "nba_int_vid" csv data to a new space
@@ -217,7 +214,6 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -263,7 +259,6 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | team.name |
-      | EMPTY     |
     # delete tag from pipe and normal
     When executing query:
       """
@@ -303,7 +298,6 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | team.name |
-      | EMPTY     |
     # delete one tag from var and normal
     When executing query:
       """

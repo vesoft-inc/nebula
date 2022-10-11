@@ -95,14 +95,12 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | bachelor.name | bachelor.speciality |
-      | EMPTY         | EMPTY               |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -149,14 +147,12 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | bachelor.name | bachelor.speciality |
-      | EMPTY         | EMPTY               |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -217,7 +213,6 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
-      | EMPTY       | EMPTY      |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
@@ -263,7 +258,6 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | team.name |
-      | EMPTY     |
     # delete tag from pipe and normal
     When executing query:
       """
@@ -303,7 +297,6 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | team.name |
-      | EMPTY     |
     # delete one tag from var and normal
     When executing query:
       """
