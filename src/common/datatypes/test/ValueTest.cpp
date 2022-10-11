@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
+#include <robin_hood.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
 #include "common/base/Base.h"
@@ -1706,6 +1707,72 @@ TEST(Value, DedupByConstRowPointer) {
     unique.emplace(&row);
   }
   ASSERT_EQ(unique.size(), 1);
+}
+
+TEST(Value, Hash) {
+  {
+    std::vector<Row> rows;
+    for (size_t i = 0; i < 128; ++i) {
+      Row row;
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      row.values.emplace_back(m);
+      rows.emplace_back(row);
+    }
+    EXPECT_EQ(rows.size(), 128);
+
+    robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> unique;
+    unique.reserve(rows.size());
+    for (auto& row : rows) {
+      unique.emplace(&row);
+    }
+    EXPECT_EQ(unique.size(), 128);
+  }
+  {
+    std::vector<Map> maps;
+    for (size_t i = 0; i < 128; ++i) {
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      maps.emplace_back(m);
+    }
+    EXPECT_EQ(maps.size(), 128);
+
+    robin_hood::unordered_flat_set<Map, std::hash<Map>> unique;
+    unique.reserve(maps.size());
+    for (auto& m : maps) {
+      unique.emplace(m);
+    }
+    EXPECT_EQ(unique.size(), 128);
+  }
+  {
+    std::vector<Map> maps;
+    for (size_t i = 0; i < 128; ++i) {
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      maps.emplace_back(m);
+    }
+    EXPECT_EQ(maps.size(), 128);
+
+    struct BadMapHasher {
+      size_t operator()(const Map& m) const {
+        size_t seed = 0;
+        for (auto& v : m.kvs) {
+          // Only the `key` participates in the hash, `value` is ignored.
+          // It's easy to lead to hash collision if the `key` is the same.
+          seed ^= std::hash<std::string>()(v.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+      }
+    };
+    robin_hood::unordered_flat_set<Map, BadMapHasher> unique;
+    unique.reserve(maps.size());
+    for (size_t i = 0; i < maps.size() - 1; ++i) {
+      unique.emplace(maps[i]);
+    }
+    EXPECT_EQ(unique.size(), 127);
+    // std::overflow_error: robin_hood::map overflow
+    EXPECT_THROW(unique.emplace(maps.back()), std::overflow_error);
+  }
 }
 
 }  // namespace nebula
