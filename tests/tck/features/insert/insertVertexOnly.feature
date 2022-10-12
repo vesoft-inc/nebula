@@ -34,5 +34,5 @@ Feature: insert vertex without tag
       FETCH PROP ON * 1,2 yield vertex AS v;
       """
     Then the result should be, in any order, with relax comparison:
-      | v   |
+      | v |
     Then drop the used space
