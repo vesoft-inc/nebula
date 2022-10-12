@@ -402,10 +402,14 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx) {
   if (goCtx_->filter != nullptr) {
     auto* gc = static_cast<GoSentence*>(astCtx->sentence);
     if (gc->whereClause() != nullptr) {
-      bool hasFilter = true;
       bool hasInput = false;
-      auto* newFilter =
-          checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasFilter, &hasInput);
+      //filter剪枝
+      auto* newFilter = checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
+      //判断是否需要变量下推
+      if(hasInput){
+        hasInput = false;
+        checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
+      }
       gn->setFilter(newFilter);
       gn->setIsPush(hasInput);
     }
@@ -423,50 +427,49 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx) {
 
 Expression* GoPlanner::checkFilterExpressionIsPush(GetNeighbors* gn,
                                                    Expression* filter,
-                                                   bool* hasFilter,
                                                    bool* hasInput) {
   if (filter->kind() == Expression::Kind::kLogicalAnd) {
     auto* logicAnd = static_cast<LogicalExpression*>(filter);
     std::vector<Expression*> opers = logicAnd->operands();
     for (size_t i = 0; i < opers.size(); i++) {
-      filter = checkFilterExpressionIsPush(gn, opers[i], hasFilter, hasInput);
-      if (!*hasFilter || filter == nullptr) {
-        opers[i] = nullptr;
-      }
+      filter = checkFilterExpressionIsPush(gn, opers[i], hasInput);
+      opers[i] = filter;
     }
     Expression* newFilter;
-    if (opers[0] == nullptr && opers[1] != nullptr) {
-      newFilter = logicAnd->operand(1);
-    } else if (opers[1] == nullptr && opers[0] != nullptr) {
-      newFilter = logicAnd->operand(0);
-    } else if (opers[0] == nullptr && opers[1] == nullptr) {
+    if (opers[0] == nullptr && opers[1] == nullptr) {
       newFilter = nullptr;
-    } else {
-      newFilter = logicAnd;
+    } else if (opers[0] == nullptr) {
+      newFilter = logicAnd->operand(1);
+    } else if (opers[1] == nullptr) {
+      newFilter = logicAnd->operand(0);
+    }else {
+      auto filterAnd = LogicalExpression::makeAnd(logicAnd->getObjPool());
+      for (size_t i = 0; i < opers.size(); i++) {
+        filterAnd->addOperand(opers[i]);
+      }
+      newFilter = filterAnd;
     }
-    *hasFilter = true;
     return newFilter;
 
   } else if (filter->kind() == Expression::Kind::kLogicalOr) {
     auto* logicOr = static_cast<LogicalExpression*>(filter);
     std::vector<Expression*> opers = logicOr->operands();
     for (size_t i = 0; i < opers.size(); i++) {
-      filter = checkFilterExpressionIsPush(gn, opers[i], hasFilter, hasInput);
-      if (!*hasFilter || filter == nullptr || opers[i] != filter) {
+      filter = checkFilterExpressionIsPush(gn, opers[i], hasInput);
+      if (filter == nullptr || opers[i] != filter) {
         return nullptr;
       }
     }
-    *hasFilter = true;
     return logicOr;
   } else if (filter->isRelExpr()) {
     auto* relation = static_cast<RelationalExpression*>(filter);
-    checkFilterExpressionIsPush(gn, relation->left(), hasFilter, hasInput);
-    checkFilterExpressionIsPush(gn, relation->right(), hasFilter, hasInput);
-    if (!*hasFilter) {
-      filter = nullptr;
+    auto left = checkFilterExpressionIsPush(gn, relation->left(), hasInput);
+    auto right = checkFilterExpressionIsPush(gn, relation->right(), hasInput);
+    if (left == nullptr || right == nullptr) {
+      return nullptr;
     }
   } else if (filter->kind() == Expression::Kind::kDstProperty) {
-    *hasFilter = false;
+    return nullptr;
   } else if (filter->kind() == Expression::Kind::kInputProperty) {
     *hasInput = true;
   }
