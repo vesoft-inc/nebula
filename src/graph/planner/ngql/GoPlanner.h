@@ -67,7 +67,7 @@ class GoPlanner final : public Planner {
 
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
-  Expression* checkFilterExpressionIsPush(GetNeighbors* gn, Expression* filter, bool* hasFilter, bool* hasInput);
+  Expression* checkFilterExpressionIsPush(GetNeighbors* gn, Expression* filter, bool* hasInput);
 
   template <typename T>
   PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
