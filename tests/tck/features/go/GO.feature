@@ -16,6 +16,13 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
+      GO FROM "Tim Duncan" OVER serve YIELD DISTINCT properties(edge) | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 1        |
+    When executing query:
+      """
       GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > 9223372036854775807+1 YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer

@@ -46,7 +46,7 @@ int64_t verifyResultNum(GraphSpaceID spaceId,
   std::unique_ptr<kvstore::KVIterator> iter;
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, kv->prefix(spaceId, partId, prefix, &iter));
   int64_t rowCount = 0;
-  auto now = time::WallClock::fastNowInSec();
+  auto now = std::time(NULL);
   while (iter->valid()) {
     if (ts > 0) {
       EXPECT_TRUE(!iter->val().empty());
@@ -111,7 +111,7 @@ void insertVertex(storage::StorageEnv* env, size_t vIdLen, TagID tagId) {
     newTag.tag_id_ref() = tagId;
     std::vector<Value> props;
     props.emplace_back(Value(1L));
-    props.emplace_back(Value(time::WallClock::fastNowInSec()));
+    props.emplace_back(Value(std::time(NULL)));
     newTag.props_ref() = std::move(props);
     std::vector<nebula::storage::cpp2::NewTag> newTags;
     newTags.push_back(std::move(newTag));
@@ -140,7 +140,7 @@ void insertEdge(storage::StorageEnv* env, size_t vIdLen, EdgeType edgeType) {
     newEdge.key_ref() = std::move(edgeKey);
     std::vector<Value> props;
     props.emplace_back(Value(1L));
-    props.emplace_back(Value(time::WallClock::fastNowInSec()));
+    props.emplace_back(Value(std::time(NULL)));
     newEdge.props_ref() = std::move(props);
     (*req.parts_ref())[partId].emplace_back(newEdge);
     (*newEdge.key_ref()).edge_type_ref() = -edgeType;
@@ -160,7 +160,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1, false);
   createIndex(env->indexMan_, 2021001, 2021002, false);
   insertVertex(env, vIdLen, 2021001);
@@ -207,7 +207,7 @@ TEST(IndexWithTTLTest, AddEdgesIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1, true);
   createIndex(env->indexMan_, 2021001, 2021002, true);
   insertEdge(env, vIdLen, 2021001);
@@ -254,7 +254,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1800, false);
   createIndex(env->indexMan_, 2021001, 2021002, false);
   insertVertex(env, vIdLen, 2021001);
@@ -325,7 +325,7 @@ TEST(IndexWithTTLTest, UpdateEdgesIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1800, true);
   createIndex(env->indexMan_, 2021001, 2021002, true);
   insertEdge(env, vIdLen, 2021001);
@@ -402,7 +402,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 180000, false);
   insertVertex(env, vIdLen, 2021001);
 
@@ -471,7 +471,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 180000, true);
   insertEdge(env, vIdLen, 2021001);
 
@@ -540,7 +540,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1, false);
   insertVertex(env, vIdLen, 2021001);
 
@@ -611,7 +611,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   auto* env = cluster.storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(1).value();
 
-  auto beginTime = time::WallClock::fastNowInSec();
+  auto beginTime = std::time(NULL);
   createSchema(env->schemaMan_, 2021001, 1, true);
   insertEdge(env, vIdLen, 2021001);
 

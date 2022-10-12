@@ -114,9 +114,12 @@ Status GetNeighborsIter::processList(std::shared_ptr<Value> value) {
     if (UNLIKELY(!val.isDataSet())) {
       return Status::Error("There is a value in list which is not a data set.");
     }
-    auto status = makeDataSetIndex(val.getDataSet());
-    NG_RETURN_IF_ERROR(status);
-    dsIndices_.emplace_back(std::move(status).value());
+    const auto& dataSet = val.getDataSet();
+    if (dataSet.rowSize() != 0) {
+      auto status = makeDataSetIndex(dataSet);
+      NG_RETURN_IF_ERROR(status);
+      dsIndices_.emplace_back(std::move(status).value());
+    }
   }
   return Status::OK();
 }

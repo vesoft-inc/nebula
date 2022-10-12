@@ -261,7 +261,7 @@ class QueryTestUtils {
     }
     auto indexes =
         IndexKeyUtils::vertexIndexKeys(spaceVidLen, partId, indexId, vId, {std::move(row)});
-    auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
+    auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(std::time(NULL)) : "";
     for (auto& index : indexes) {
       data.emplace_back(std::move(index), std::move(val));
     }
@@ -287,7 +287,7 @@ class QueryTestUtils {
     }
     auto indexes = IndexKeyUtils::edgeIndexKeys(
         spaceVidLen, partId, indexId, srcId, rank, dstId, {std::move(row)});
-    auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
+    auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(std::time(NULL)) : "";
     for (auto& index : indexes) {
       data.emplace_back(std::move(index), val);
     }

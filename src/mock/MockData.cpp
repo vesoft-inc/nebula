@@ -6,7 +6,6 @@
 #include "mock/MockData.h"
 
 #include "common/expression/ConstantExpression.h"
-#include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "interface/gen-cpp2/meta_types.h"
 
@@ -686,7 +685,7 @@ std::vector<VertexData> MockData::mockVertices(bool upper) {
 
     // Use insert time as ttl col
     if (FLAGS_mock_ttl_col) {
-      props.emplace_back(time::WallClock::fastNowInSec());
+      props.emplace_back(std::time(NULL));
     }
     // Use default value and nullable
     if (player.country_.compare("") != 0) {
@@ -809,7 +808,7 @@ std::vector<EdgeData> MockData::mockEdges(bool upper, bool hasInEdges) {
 
     // Use insert time as ttl col
     if (FLAGS_mock_ttl_col) {
-      props.emplace_back(time::WallClock::fastNowInSec());
+      props.emplace_back(std::time(NULL));
     }
     // Use default value and nullable
     if (!serve.type_.empty()) {
@@ -929,7 +928,7 @@ std::unordered_map<VertexID, std::vector<EdgeData>> MockData::mockmMultiRankServ
 
       // Use insert time as ttl col
       if (FLAGS_mock_ttl_col) {
-        props.emplace_back(time::WallClock::fastNowInSec());
+        props.emplace_back(std::time(NULL));
       }
       // Use default value and nullable
       if (!serve.type_.empty()) {
