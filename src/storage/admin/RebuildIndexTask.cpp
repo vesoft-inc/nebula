@@ -17,6 +17,15 @@ const int32_t kReserveNum = 1024 * 4;
 bool RebuildIndexTask::check() {
   return env_->kvstore_ != nullptr;
 }
+void RebuildIndexTask::finish(nebula::cpp2::ErrorCode rc) {
+  auto space = *ctx_.parameters_.space_id_ref();
+  for (auto it = env_->rebuildIndexGuard_->begin(); it != env_->rebuildIndexGuard_->end(); ++it) {
+    if (std::get<0>(it->first) == space) {
+      env_->rebuildIndexGuard_->insert_or_assign(it->first, IndexState::FINISHED);
+    }
+  }
+  AdminTask::finish(rc);
+}
 
 RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
     : AdminTask(env, std::move(ctx)) {
