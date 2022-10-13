@@ -346,7 +346,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NOT NULL
+      WHERE $$.player.name IS NOT EMPTY
       YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
@@ -356,7 +356,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NULL
+      WHERE $$.player.name IS EMPTY
       YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
@@ -1474,14 +1474,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1490,14 +1490,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1571,8 +1571,8 @@ Feature: Go Sentence
       GO FROM 'Tim Duncan' OVER serve YIELD $$.player.name as name
       """
     Then the result should be, in any order, with relax comparison:
-      | name |
-      | NULL |
+      | name  |
+      | EMPTY |
 
   Scenario: zero step
     When executing query:

@@ -101,6 +101,7 @@ Feature: Integer Vid Match By Id
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -113,6 +114,7 @@ Feature: Integer Vid Match By Id
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
