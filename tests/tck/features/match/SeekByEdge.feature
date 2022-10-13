@@ -333,6 +333,158 @@ Feature: Match seek by edge
       """
     Then the result should be, in any order:
       | player.player.name      | team.team.name  |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
+      | NULL                    | NULL            |
       | "Vince Carter"          | "Nets"          |
       | "Jason Kidd"            | "Nets"          |
       | "Grant Hill"            | "Pistons"       |
@@ -1139,7 +1291,6 @@ Feature: Match seek by edge
     Then the result should be, in any order:
       | p1.player.name | p2.team.name |
 
-  @wtf
   Scenario Outline: Seek by edge with properties
     When executing query:
       """
@@ -1165,6 +1316,8 @@ Feature: Match seek by edge
       | player       | team        |
       | "Paul Gasol" | "Grizzlies" |
       | "Jason Kidd" | "Nets"      |
+      | NULL         | NULL        |
+      | NULL         | NULL        |
     When executing query:
       """
       match (player)-[s:serve]->(team) where s.start_year == 2001 return player.player.name AS player, team.team.name AS team
@@ -1189,6 +1342,8 @@ Feature: Match seek by edge
       | player       | team        |
       | "Paul Gasol" | "Grizzlies" |
       | "Jason Kidd" | "Nets"      |
+      | NULL         | NULL        |
+      | NULL         | NULL        |
 
   Scenario Outline: Seek by edge with range with properties
     When executing query:
