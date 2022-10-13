@@ -79,9 +79,14 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
       }
       const auto &jobsDesc = *resp.job_desc_ref();
       for (const auto &jobDesc : jobsDesc) {
+        // show zone balance as data balance
+        auto type = jobDesc.get_type();
+        if (type == meta::cpp2::JobType::ZONE_BALANCE) {
+          type = meta::cpp2::JobType::DATA_BALANCE;
+        }
         v.emplace_back(nebula::Row({
             jobDesc.get_job_id(),
-            apache::thrift::util::enumNameSafe(jobDesc.get_type()),
+            apache::thrift::util::enumNameSafe(type),
             apache::thrift::util::enumNameSafe(jobDesc.get_status()),
             convertJobTimestampToDateTime(jobDesc.get_start_time()),
             convertJobTimestampToDateTime(jobDesc.get_stop_time()),
