@@ -16,6 +16,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   const auto& indexName = req.get_index_name();
   auto& tagName = req.get_tag_name();
   const auto& fields = req.get_fields();
+  auto ifNotExists = req.get_if_not_exists();
 
   std::set<std::string> columnSet;
   for (const auto& field : fields) {
@@ -42,7 +43,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   // check if the space has the index with the same name
   auto ret = getIndexID(space, indexName);
   if (nebula::ok(ret)) {
-    if (req.get_if_not_exists()) {
+    if (ifNotExists) {
       handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
     } else {
       LOG(INFO) << "Create Tag Index Failed: " << indexName << " has existed";
@@ -96,7 +97,15 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     }
 
     if (checkIndexExist(fields, item)) {
-      resp_.code_ref() = nebula::cpp2::ErrorCode::E_EXISTED;
+      if (ifNotExists) {
+        resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+        cpp2::ID thriftID;
+        // Fill index id to avoid broken promise
+        thriftID.index_id_ref() = item.get_index_id();
+        resp_.id_ref() = thriftID;
+      } else {
+        resp_.code_ref() = nebula::cpp2::ErrorCode::E_EXISTED;
+      }
       onFinished();
       return;
     }
