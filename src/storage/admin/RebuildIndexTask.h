@@ -75,6 +75,7 @@ class RebuildIndexTask : public AdminTask {
 
  protected:
   GraphSpaceID space_;
+  bool changedSpaceGuard_{false};
 };
 
 }  // namespace storage
