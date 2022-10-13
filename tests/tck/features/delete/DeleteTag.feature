@@ -41,6 +41,7 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
@@ -205,6 +206,7 @@ Feature: Delete string vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age

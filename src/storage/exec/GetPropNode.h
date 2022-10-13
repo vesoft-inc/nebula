@@ -42,8 +42,10 @@ class GetTagPropNode : public QueryNode<VertexID> {
       return ret;
     }
 
-    // If none of the tag node valid, will check vertex key if use_vertex_key is true,
-    // do not emplace the row if the flag is false
+    // If none of the tag node valid, will check if vertex exists:
+    // 1. if use_vertex_key is true, check it by vertex key
+    // 2. if use_vertex_key is false, check it by scanning vertex prefix
+    // If vertex does not exists, do not emplace the row.
     if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
           return tagNode->valid();
         })) {
@@ -58,7 +60,16 @@ class GetTagPropNode : public QueryNode<VertexID> {
           return ret;
         }
       } else {
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
+        // check if vId has any valid tag by prefix scan
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto tagPrefix = NebulaKeyUtils::tagPrefix(context_->vIdLen(), partId, vId);
+        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, tagPrefix, &iter);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        } else if (!iter->valid()) {
+          return nebula::cpp2::ErrorCode::SUCCEEDED;
+        }
+        // if has any tag, will emplace a row with vId
       }
     }
 
