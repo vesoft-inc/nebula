@@ -253,6 +253,7 @@ std::vector<std::string> NebulaKeyUtils::snapshotPrefix(PartitionID partId) {
   if (partId == 0) {
     result.emplace_back("");
   } else {
+    result.emplace_back(vertexPrefix(partId));
     result.emplace_back(tagPrefix(partId));
     result.emplace_back(edgePrefix(partId));
     result.emplace_back(IndexKeyUtils::indexPrefix(partId));
