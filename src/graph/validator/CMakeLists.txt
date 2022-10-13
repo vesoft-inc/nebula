@@ -24,6 +24,7 @@ nebula_add_library(
     YieldValidator.cpp
     ExplainValidator.cpp
     GroupByValidator.cpp
+    SamplingValidator.cpp
     FindPathValidator.cpp
     LookupValidator.cpp
     MatchValidator.cpp

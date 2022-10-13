@@ -98,6 +98,7 @@ class Sentence {
     kRevoke,
     kChangePassword,
     kOrderBy,
+    kSampling,
     kShowConfigs,
     kSetConfig,
     kGetConfig,

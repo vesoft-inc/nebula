@@ -87,6 +87,7 @@
 #include "graph/executor/query/ScanVerticesExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
+#include "graph/executor/query/SamplingExecutor.h"
 #include "graph/executor/query/TraverseExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
@@ -176,6 +177,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kTopN: {
       return pool->makeAndAdd<TopNExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kSampling: {
+      return pool->makeAndAdd<SamplingExecutor>(node, qctx);
     }
     case PlanNode::Kind::kFilter: {
       return pool->makeAndAdd<FilterExecutor>(node, qctx);

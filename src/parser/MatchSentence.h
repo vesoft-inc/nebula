@@ -61,12 +61,14 @@ class MatchReturnItems final {
 class MatchReturn final {
  public:
   MatchReturn(MatchReturnItems* returnItems = nullptr,
+              SamplingFactors* samplingFactors = nullptr,
               OrderFactors* orderFactors = nullptr,
               Expression* skip = nullptr,
               Expression* limit = nullptr,
               bool distinct = false) {
     returnItems_.reset(returnItems);
     orderFactors_.reset(orderFactors);
+    samplingFactors_.reset(samplingFactors);
     skip_ = skip;
     limit_ = limit;
     isDistinct_ = distinct;
@@ -100,12 +102,21 @@ class MatchReturn final {
     return orderFactors_.get();
   }
 
+  SamplingFactors* samplingFactors() {
+    return samplingFactors_.get();
+  }
+
+  const SamplingFactors* samplingFactors() const {
+    return samplingFactors_.get();
+  }
+
   std::string toString() const;
 
  private:
   std::unique_ptr<MatchReturnItems> returnItems_;
   bool isDistinct_{false};
   std::unique_ptr<OrderFactors> orderFactors_;
+  std::unique_ptr<SamplingFactors> samplingFactors_;
   Expression* skip_{nullptr};
   Expression* limit_{nullptr};
 };
@@ -210,6 +221,7 @@ class UnwindClause final : public ReadingClause {
 class WithClause final : public ReadingClause {
  public:
   explicit WithClause(MatchReturnItems* returnItems,
+                      SamplingFactors* samplingFactors = nullptr,
                       OrderFactors* orderFactors = nullptr,
                       Expression* skip = nullptr,
                       Expression* limit = nullptr,
@@ -218,6 +230,7 @@ class WithClause final : public ReadingClause {
       : ReadingClause(Kind::kWith) {
     returnItems_.reset(returnItems);
     orderFactors_.reset(orderFactors);
+    samplingFactors_.reset(samplingFactors);
     skip_ = skip;
     limit_ = limit;
     where_.reset(where);
@@ -238,6 +251,14 @@ class WithClause final : public ReadingClause {
 
   const OrderFactors* orderFactors() const {
     return orderFactors_.get();
+  }
+
+  SamplingFactors* samplingFactors() {
+    return samplingFactors_.get();
+  }
+
+  const SamplingFactors* samplingFactors() const {
+    return samplingFactors_.get();
   }
 
   Expression* skip() {
@@ -273,6 +294,7 @@ class WithClause final : public ReadingClause {
  private:
   std::unique_ptr<MatchReturnItems> returnItems_;
   std::unique_ptr<OrderFactors> orderFactors_;
+  std::unique_ptr<SamplingFactors> samplingFactors_;
   Expression* skip_{nullptr};
   Expression* limit_{nullptr};
   std::unique_ptr<WhereClause> where_;

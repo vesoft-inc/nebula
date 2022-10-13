@@ -48,6 +48,12 @@ std::string WithClause::toString() const {
 
   buf += returnItems_->toString();
 
+  if (samplingFactors_ != nullptr) {
+    buf += " ";
+    buf += "SAMPLING ";
+    buf += samplingFactors_->toString();
+  }
+
   if (orderFactors_ != nullptr) {
     buf += " ";
     buf += "ORDER BY ";
@@ -100,6 +106,12 @@ std::string MatchReturn::toString() const {
   }
 
   buf += returnItems_->toString();
+
+  if (samplingFactors_ != nullptr) {
+    buf += " ";
+    buf += "SAMPLING ";
+    buf += samplingFactors_->toString();
+  }
 
   if (orderFactors_ != nullptr) {
     buf += " ";

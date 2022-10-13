@@ -14,6 +14,7 @@ nebula_add_library(
     match/UnwindClausePlanner.cpp
     match/ReturnClausePlanner.cpp
     match/OrderByClausePlanner.cpp
+    match/SamplingClausePlanner.cpp
     match/YieldClausePlanner.cpp
     match/PaginationPlanner.cpp
     match/WhereClausePlanner.cpp
