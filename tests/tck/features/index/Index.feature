@@ -19,6 +19,11 @@ Feature: IndexTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
+      CREATE TAG INDEX IF NOT EXISTS single_tag_index_1 ON tag_1(col2);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
       CREATE TAG INDEX duplicate_tag_index_1 ON tag_1(col2);
       """
     Then a ExecutionError should be raised at runtime:
@@ -153,6 +158,11 @@ Feature: IndexTest_Vid_String
     When executing query:
       """
       CREATE EDGE INDEX single_edge_index ON edge_1(col2);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX IF NOT EXISTS single_edge_index_1 ON edge_1(col2);
       """
     Then the execution should be successful
     When executing query:
