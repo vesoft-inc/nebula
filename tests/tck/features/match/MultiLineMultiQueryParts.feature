@@ -174,6 +174,37 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
     When executing query:
       """
+      MATCH (m)-[]->(n) WHERE id(m)=="Tim Duncan"
+      OPTIONAL MATCH (n)-[]->(l) WHERE id(n)=="Tony Parker"
+      RETURN id(m) AS m, id(n) AS n, id(l) AS l;
+      """
+    Then the result should be, in any order:
+      | m            | n                   | l                   |
+      | "Tim Duncan" | "Spurs"             | NULL                |
+      | "Tim Duncan" | "LaMarcus Aldridge" | NULL                |
+      | "Tim Duncan" | "Tony Parker"       | "Spurs"             |
+      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "Tony Parker"       | "Kyle Anderson"     |
+      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
+      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
+      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tony Parker"       | "Hornets"           |
+      | "Tim Duncan" | "Tony Parker"       | "Spurs"             |
+      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
+      | "Tim Duncan" | "Tony Parker"       | "Kyle Anderson"     |
+      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
+      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
+      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
+      | "Tim Duncan" | "Tony Parker"       | "Hornets"           |
+      | "Tim Duncan" | "Danny Green"       | NULL                |
+      | "Tim Duncan" | "Manu Ginobili"     | NULL                |
+      | "Tim Duncan" | "Manu Ginobili"     | NULL                |
+    When executing query:
+      """
       OPTIONAL match (v:player) WHERE v.player.age > 41
       MATCH (v:player) WHERE v.player.age>40
       RETURN count(*) AS count
@@ -359,5 +390,11 @@ Feature: Multi Line Multi Query Parts
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (n)-->(v) WHERE v.player.age < m.player.age
       RETURN n,v
+      """
+    Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
+    When executing query:
+      """
+      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan" 
+      OPTIONAL MATCH (n)-->(v) WHERE id(v) < id(m) RETURN count(*) AS count
       """
     Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
