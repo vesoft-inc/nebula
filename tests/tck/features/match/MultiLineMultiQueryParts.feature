@@ -275,7 +275,7 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in any order:
       | count |
       | 4     |
-  
+
   Scenario: Multi Line Multi Query Parts
     When executing query:
       """
@@ -384,7 +384,7 @@ Feature: Multi Line Multi Query Parts
     Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
     When executing query:
       """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan" 
+      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (n)-->(v) WHERE id(v) < id(m) RETURN count(*) AS count
       """
     Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
