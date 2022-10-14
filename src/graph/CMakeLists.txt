@@ -2,6 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+
 nebula_add_subdirectory(context)
 nebula_add_subdirectory(executor)
 nebula_add_subdirectory(optimizer)
@@ -14,4 +15,3 @@ nebula_add_subdirectory(util)
 nebula_add_subdirectory(validator)
 nebula_add_subdirectory(visitor)
 nebula_add_subdirectory(gc)
-nebula_add_subdirectory(subgraph_provenance)

@@ -2,7 +2,6 @@
 #include "subgraph.h"
 
 #include <memory.h>
-#include <omp.h>
 #include <pthread.h>
 
 #include <algorithm>
@@ -2457,7 +2456,7 @@ bool CECIFunction(Graph *data_graph,
   //   Initial the CECI Index.
   //   In this case,
 
-  double timer_all_s = omp_get_wtime();
+  // double timer_all_s = omp_get_wtime();
 
   // std::cout <<"a" << std::endl;
   V_ID start_vertex = InitialStartVertex(data_graph, query_graph);
@@ -3597,7 +3596,7 @@ std::cout <<i << std::endl;
   // int NTHREADS = 1, nthreads;
   int64_t total_result = 0;
   // double sum[NTHREADS];
-  double timer_start1 = omp_get_wtime();
+  // double timer_start1 = omp_get_wtime();
   // omp_set_num_threads(NTHREADS);
 
   std::vector<V_ID> order_index_1(query_count);
@@ -4084,11 +4083,11 @@ std::cout <<i << std::endl;
   std::cout << "I->" << candidates_l_1[order_count_1 - 1] << std::endl;
   std::cout << "J->" << candidates_l_2[order_count_2 - 1] << std::endl;
 
-  double timer_middle = omp_get_wtime();
+  // double timer_middle = omp_get_wtime();
   int64_t total_sum = 0;
   V_ID res_1_1[32];
 
-  double timer_local_enumeration = omp_get_wtime();
+  // double timer_local_enumeration = omp_get_wtime();
 
   bool *visited_j = new bool[candidates_l_2[order_count_2 - 1]];
   for (int64_t k = 0; k < candidates_l_2[order_count_2 - 1]; k++) {
@@ -4418,18 +4417,20 @@ std::cout <<i << std::endl;
   std::cout << "Data count" << data_count << std::endl;
   total_result = total_sum;
 
-  double timer_end = omp_get_wtime();
-  double timer_took =
-      timer_end - timer_middle +
-      std::chrono::duration_cast<std::chrono::nanoseconds>(f_5 - f_4).count() / 1000000000.0 +
-      std::chrono::duration_cast<std::chrono::nanoseconds>(f_6 - f_5).count() /
-          1000000000.0;  // timer_start1;
+  // double timer_end = omp_get_wtime();
+  // double timer_took =
+  // timer_end - timer_middle +
+  // std::chrono::duration_cast<std::chrono::nanoseconds>(f_5 - f_4).count() / 1000000000.0 +
+  // std::chrono::duration_cast<std::chrono::nanoseconds>(f_6 - f_5).count() /
+  // 1000000000.0;  // timer_start1;
   // double timer_took3 = timer_took;
 
-  std::cout << "call count->" << call_count << ", per call nanoseconds->"
-            << timer_took * 1000000000.0 / call_count << std::endl;
-  std::cout << "total results:" << total_result << ",Time:" << timer_took << ",local enumeration-->"
-            << (timer_local_enumeration - timer_start1) * 100 / timer_took << std::endl;
+  std::cout << "call count->" << call_count << ", per call nanoseconds->" << std::endl;
+  //<< timer_took * 1000000000.0 / call_count << std::endl;
+  std::cout
+      << "total results:" << total_result
+      << std::endl;  // ",Time:" << timer_took << ",local enumeration-->"
+                     // << (timer_local_enumeration - timer_start1) * 100 / timer_took << std::endl;
 
   //   (6) Global node based-enumeration result comparasion
   // std::cout <<"Start enumeration" <<  endl;
@@ -4449,7 +4450,7 @@ std::cout <<i << std::endl;
 
   std::fill(visited, visited + data_count, false);
 
-  double timer_start = omp_get_wtime();
+  // double timer_start = omp_get_wtime();
   auto first = std::chrono::steady_clock::now();
 
   auto f_2 = first;
@@ -4501,17 +4502,18 @@ std::cout <<i << std::endl;
                    1000000000.0
             << std::endl;
 
-  timer_end = omp_get_wtime();
+  // timer_end = omp_get_wtime();
   std::cout << "BFS->"
             << std::chrono::duration_cast<std::chrono::nanoseconds>(f_3 - f_2).count() /
                    1000000000.0
             << std::endl;
-  double last_r = timer_took;
-  timer_took = timer_end - timer_start;
-  std::cout << "Node total results:" << candidates_l[query_count - 1] - total_result
-            << ",Time:" << timer_took << ", ratio->"
-            << timer_took * 100 / (timer_took + timer_start1 - timer_all_s) << " %, Accelera rate->"
-            << timer_took / last_r << std::endl;
+  // double last_r = timer_took;
+  // timer_took = timer_end - timer_start;
+  // std::cout << "Node total results:" << candidates_l[query_count - 1] - total_result
+  //          << ",Time:" << timer_took << ", ratio->"
+  //          << timer_took * 100 / (timer_took + timer_start1 - timer_all_s) << " %, Accelera
+  //          rate->"
+  //          << timer_took / last_r << std::endl;
 
   // freopen("output.txt", "a", stdout);
 
