@@ -156,6 +156,7 @@ Feature: LDBC Business Intelligence Workload - Read
         (forum)-[:HAS_MEMBER]->(person:Person)
       OPTIONAL MATCH
         (person)<-[:HAS_CREATOR]-(post:Post)<-[:CONTAINER_OF]-(popularForum:Forum)
+      WITH popularForums, popularForum, person, post
       WHERE popularForum IN popularForums
       RETURN
         person.Person.id AS personId,
