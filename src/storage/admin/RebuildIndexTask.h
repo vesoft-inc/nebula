@@ -23,6 +23,8 @@ using IndexItems = std::vector<std::shared_ptr<meta::cpp2::IndexItem>>;
  */
 class RebuildIndexTask : public AdminTask {
  public:
+  using AdminTask::finish;
+
   RebuildIndexTask(StorageEnv* env, TaskContext&& ctx);
 
   ~RebuildIndexTask() {
@@ -30,6 +32,8 @@ class RebuildIndexTask : public AdminTask {
   }
 
   bool check() override;
+
+  void finish(nebula::cpp2::ErrorCode rc) override;
 
   /**
    * @brief Generate subtasks for rebuilding index.
@@ -71,6 +75,7 @@ class RebuildIndexTask : public AdminTask {
 
  protected:
   GraphSpaceID space_;
+  bool changedSpaceGuard_{false};
 };
 
 }  // namespace storage
