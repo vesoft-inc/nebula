@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@czp
 Feature: Multi Line Multi Query Parts
 
   Background:
@@ -275,8 +276,7 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in any order:
       | count |
       | 4     |
-
-  @skip
+  
   Scenario: Multi Line Multi Query Parts
     When executing query:
       """
@@ -319,15 +319,6 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in order:
       | scount |
       | 270    |
-    When executing query:
-      """
-      MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
-      OPTIONAL MATCH (n)-->(v) WHERE v.player.age < m.player.age
-      RETURN count(*) AS count
-      """
-    Then the result should be, in order:
-      | count |
-      | 45    |
     When executing query:
       """
       MATCH (a:player{age:42}) WITH a
