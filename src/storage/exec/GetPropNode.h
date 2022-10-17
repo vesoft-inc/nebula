@@ -21,7 +21,8 @@ class GetTagPropNode : public QueryNode<VertexID> {
                  std::vector<TagNode*> tagNodes,
                  nebula::DataSet* resultDataSet,
                  Expression* filter,
-                 std::size_t limit)
+                 std::size_t limit,
+                 TagContext* tagContext)
       : context_(context),
         tagNodes_(std::move(tagNodes)),
         resultDataSet_(resultDataSet),
@@ -29,7 +30,8 @@ class GetTagPropNode : public QueryNode<VertexID> {
                     ? nullptr
                     : new StorageExpressionContext(context->vIdLen(), context->isIntId())),
         filter_(filter),
-        limit_(limit) {
+        limit_(limit),
+        tagContext_(tagContext) {
     name_ = "GetTagPropNode";
   }
 
@@ -69,7 +71,36 @@ class GetTagPropNode : public QueryNode<VertexID> {
         } else if (!iter->valid()) {
           return nebula::cpp2::ErrorCode::SUCCEEDED;
         }
-        // if has any tag, will emplace a row with vId
+
+        bool hasValidTag = false;
+        for (; iter->valid(); iter->next()) {
+          // check if tag schema exists
+          auto key = iter->key();
+          auto tagId = NebulaKeyUtils::getTagId(context_->vIdLen(), key);
+          auto schemaIter = tagContext_->schemas_.find(tagId);
+          if (schemaIter == tagContext_->schemas_.end()) {
+            continue;
+          }
+          // check if ttl expired
+          auto schemas = &(schemaIter->second);
+          RowReaderWrapper reader;
+          reader.reset(*schemas, iter->val());
+          if (!reader) {
+            continue;
+          }
+          auto ttl = QueryUtils::getTagTTLInfo(tagContext_, tagId);
+          if (ttl.has_value() &&
+              CommonUtils::checkDataExpiredForTTL(
+                  schemas->back().get(), reader.get(), ttl.value().first, ttl.value().second)) {
+            continue;
+          }
+          hasValidTag = true;
+          break;
+        }
+        if (!hasValidTag) {
+          return nebula::cpp2::ErrorCode::SUCCEEDED;
+        }
+        // if has any valid tag, will emplace a row with vId
       }
     }
 
@@ -131,6 +162,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
   std::unique_ptr<StorageExpressionContext> expCtx_{nullptr};
   Expression* filter_{nullptr};
   const std::size_t limit_{std::numeric_limits<std::size_t>::max()};
+  TagContext* tagContext_;
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {

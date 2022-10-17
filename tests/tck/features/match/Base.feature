@@ -718,3 +718,46 @@ Feature: Basic match
     Then the result should be, in any order:
       | v                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  Scenario: Match with id when all tag is dropped, ent-#1420
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS player(name string, age int);
+      CREATE TAG IF NOT EXISTS team(name string);
+      CREATE TAG INDEX IF NOT EXISTS player_index_1 on player(name(10), age);
+      """
+    And wait 5 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX player() VALUES "v2":();
+      INSERT VERTEX player(name, age) VALUES "v3":("v3", 18);
+      UPSERT VERTEX ON player "v4" SET name = "v4", age = 18;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) in ["v1", "v2", "v3", "v4"] return id(v) limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id(v) |
+      | "v2"  |
+      | "v3"  |
+      | "v4"  |
+    When try to execute query:
+      """
+      DROP TAG INDEX player_index_1;
+      DROP TAG player;
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) in ["v1", "v2", "v3", "v4"] return id(v) limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id(v) |
