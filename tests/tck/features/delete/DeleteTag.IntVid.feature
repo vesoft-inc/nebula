@@ -161,7 +161,6 @@ Feature: Delete int vid of tag
       | id |
     Then drop the used space
 
-  @wtf
   Scenario: delete int vid multiple vertex one tag
     Given an empty graph
     And load "nba_int_vid" csv data to a new space

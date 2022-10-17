@@ -149,6 +149,16 @@ Feature: Go Sentence
       | "Spurs"         |
       | "Hornets"       |
       | "Trail Blazers" |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like WHERE like._rank<10 YIELD like._src AS src, like._dst AS dst, like._rank AS rank
+      | YIELD $-.src AS src, $-.dst AS dst, max($-.rank) AS maxRank
+      | FETCH PROP ON like $-.src -> $-.dst@$-.maxRank YIELD edge AS e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
 
   Scenario: In expression
     When executing query:

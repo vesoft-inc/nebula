@@ -92,6 +92,12 @@
 # if use experimental features
 --enable_experimental_feature=false
 
+# if use toss feature, only work if enable_experimental_feature is true
+--enable_toss=false
+
+# if use balance data feature, only work if enable_experimental_feature is true
+--enable_data_balance=true
+
 ######### Raft #########
 # Raft election timeout
 --raft_heartbeat_interval_secs=30

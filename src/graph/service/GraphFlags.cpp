@@ -70,6 +70,8 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
+DEFINE_bool(enable_toss, false, "Whether to enable toss feature");
+DEFINE_bool(enable_data_balance, true, "Whether to enable data balance feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
 DEFINE_int32(max_sessions_per_ip_per_user,
@@ -103,3 +105,5 @@ DEFINE_uint32(
     gc_worker_size,
     0,
     "Background garbage clean workers, default number is 0 which means using hardware core size.");
+
+DEFINE_bool(graph_use_vertex_key, false, "whether allow insert or query the vertex key");
