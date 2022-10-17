@@ -6,6 +6,7 @@
 #include "graph/validator/AdminJobValidator.h"
 
 #include "graph/planner/plan/Admin.h"
+#include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
@@ -13,7 +14,7 @@ namespace graph {
 Status AdminJobValidator::validateImpl() {
   if (sentence_->getJobType() == meta::cpp2::JobType::DATA_BALANCE ||
       sentence_->getJobType() == meta::cpp2::JobType::ZONE_BALANCE) {
-    if (!FLAGS_enable_experimental_feature) {
+    if (!(FLAGS_enable_experimental_feature && FLAGS_enable_data_balance)) {
       return Status::SemanticError("Data balance not support");
     }
   }
