@@ -908,7 +908,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
   } while (false);
 
   if (!checkAppendLogResult(res)) {
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
+    iter.commit(res);
     return;
   }
   // Step 2: Replicate to followers
@@ -941,7 +941,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
 
   if (!checkAppendLogResult(res)) {
     VLOG(3) << idStr_ << "replicateLogs failed because of not leader or term changed";
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
+    iter.commit(res);
     return;
   }
 
@@ -1039,7 +1039,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     }
   }
   if (!checkAppendLogResult(res)) {
-    iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
+    iter.commit(res);
     return;
   }
 
@@ -1063,7 +1063,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       VLOG(3) << idStr_
               << "processAppendLogResponses failed because of not leader "
                  "or term changed";
-      iter.commit(nebula::cpp2::ErrorCode::E_LEADER_CHANGED);
+      iter.commit(res);
       return;
     }
 
