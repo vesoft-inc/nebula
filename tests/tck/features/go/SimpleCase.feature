@@ -240,3 +240,24 @@ Feature: Simple case
       | 2  | Dedup       | 1            |               |
       | 1  | GetDstBySrc | 0            |               |
       | 0  | Start       |              |               |
+    When profiling query:
+      """
+      GO 1 STEP FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 3 STEP FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 22       |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info     |
+      | 11 | Aggregate   | 10           |                   |
+      | 10 | Dedup       | 9            |                   |
+      | 9  | GetDstBySrc | 8            |                   |
+      | 8  | Loop        | 4            | {"loopBody": "7"} |
+      | 7  | Dedup       | 6            |                   |
+      | 6  | GetDstBySrc | 5            |                   |
+      | 5  | Start       |              |                   |
+      | 4  | Dedup       | 3            |                   |
+      | 3  | Project     | 2            |                   |
+      | 2  | Dedup       | 1            |                   |
+      | 1  | GetDstBySrc | 0            |                   |
+      | 0  | Start       |              |                   |
