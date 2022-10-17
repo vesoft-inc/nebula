@@ -482,7 +482,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   }
 
   PlanNode* loopBody = getDst;
-  PlanNode* loopDep = nullptr;
+  PlanNode* loopDep = startVidPlan.root;
   if (goCtx_->joinInput) {
     auto* joinLeft = extractVidFromRuntimeInput(startVidPlan.root);
     auto* joinRight = extractSrcDstFromGN(getDst, sampleLimit->outputVar());
