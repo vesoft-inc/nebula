@@ -46,6 +46,9 @@ Status InsertVerticesValidator::check() {
   }
 
   auto tagItems = sentence->tagItems();
+  if (!FLAGS_graph_use_vertex_key && tagItems.empty()) {
+    return Status::SemanticError("Insert vertex is forbidden, please speicify the tag");
+  }
 
   schemas_.reserve(tagItems.size());
 
@@ -206,7 +209,8 @@ Status InsertEdgesValidator::check() {
 // Check validity of vertices data.
 // Check edge key type, check properties value, fill to NewEdge structure.
 Status InsertEdgesValidator::prepareEdges() {
-  auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
+  auto size =
+      FLAGS_enable_experimental_feature && FLAGS_enable_toss ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
@@ -291,7 +295,7 @@ Status InsertEdgesValidator::prepareEdges() {
     edge.key_ref() = key;
     edge.props_ref() = std::move(entirePropValues);
     edges_.emplace_back(edge);
-    if (!FLAGS_enable_experimental_feature) {
+    if (!(FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
       // inbound
       key.src_ref() = dstId;
       key.dst_ref() = srcId;
@@ -826,7 +830,7 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  if (FLAGS_enable_experimental_feature) {
+  if ((FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
     root_ = outNode;
     tail_ = root_;
   } else {

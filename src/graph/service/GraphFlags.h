@@ -54,6 +54,8 @@ DECLARE_bool(optimize_appendvertice);
 DECLARE_int64(max_allowed_connections);
 
 DECLARE_bool(enable_experimental_feature);
+DECLARE_bool(enable_toss);
+DECLARE_bool(enable_data_balance);
 
 DECLARE_bool(enable_client_white_list);
 DECLARE_string(client_white_list);
@@ -65,4 +67,7 @@ DECLARE_int32(max_job_size);
 
 DECLARE_bool(enable_async_gc);
 DECLARE_uint32(gc_worker_size);
+
+DECLARE_bool(graph_use_vertex_key);
+
 #endif  // GRAPH_GRAPHFLAGS_H_
