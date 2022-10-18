@@ -6,6 +6,23 @@ Feature: Basic match
   Background:
     Given a graph with space named "nba"
 
+  Scenario: Tagless property
+    When executing query:
+      """
+      match p = (v{name: "hello"})-->(v1{name: "hello"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"hello"': No tag found for property.
+    When executing query:
+      """
+      match p = (v:player{name: "hello"})-->(v1{name: "world"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"world"': No tag found for property.
+    When executing query:
+      """
+      match p = (v{name: "hello"})-->(v1:player{name: "world"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"hello"': No tag found for property.
+
   Scenario: Undefined aliases
     When executing query:
       """
