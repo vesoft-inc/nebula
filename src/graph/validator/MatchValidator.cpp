@@ -192,6 +192,12 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     auto alias = node->alias();
     auto *props = node->props();
     auto anonymous = false;
+    // if there exists some property with no tag, return a semantic error
+    if (node->labels() == nullptr && props != nullptr) {
+      return Status::SemanticError("`%s:%s': No tag found for property.",
+                                   props->items()[0].first.c_str(),
+                                   props->items()[0].second->toString().c_str());
+    }
     if (node->labels() != nullptr) {
       auto &labels = node->labels()->labels();
       for (const auto &label : labels) {
