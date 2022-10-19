@@ -41,7 +41,19 @@ class JobManagerTest : public ::testing::Test {
     kv_ = cluster.initMetaKV(rootPath_->path());
     GraphSpaceID spaceId = 1;
     int32_t partitionNum = 1;
+    PartitionID partId = 1;
     ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
+
+    // write some random leader key into kv, make sure that job will find a target storage
+    std::vector<nebula::kvstore::KV> data{std::make_pair(MetaKeyUtils::leaderKey(spaceId, partId),
+                                                         MetaKeyUtils::leaderValV3(HostAddr(), 1))};
+    folly::Baton<true, std::atomic> baton;
+    kv_->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
+    baton.wait();
 
     TestUtils::assembleSpace(kv_.get(), spaceId, partitionNum);
 
@@ -748,18 +760,14 @@ TEST_F(JobManagerTest, NotStoppableJob) {
       cpp2::JobType::REBUILD_FULLTEXT_INDEX,
       // cpp2::JobType::DOWNLOAD,       // download need hdfs command, it is unstoppable as well
       cpp2::JobType::INGEST,
-      cpp2::JobType::LEADER_BALANCE};
+      // JobManangerTest has only 1 storage replica, and it won't trigger leader balance
+      // cpp2::JobType::LEADER_BALANCE
+  };
   for (const auto& type : notStoppableJob) {
     if (type != cpp2::JobType::LEADER_BALANCE) {
       EXPECT_CALL(*adminClient_, addTask(_, _, _, _, _, _, _))
           .WillOnce(Return(
               ByMove(folly::makeFuture<StatusOr<bool>>(true).delayed(std::chrono::seconds(1)))));
-    } else {
-      HostLeaderMap dist;
-      dist[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
-      EXPECT_CALL(*adminClient_, getLeaderDist(_))
-          .WillOnce(testing::DoAll(SetArgPointee<0>(dist),
-                                   Return(ByMove(folly::Future<Status>(Status::OK())))));
     }
 
     JobDescription jobDesc(spaceId, jobId, type);
@@ -778,10 +786,20 @@ TEST_F(JobManagerTest, NotStoppableJob) {
       auto tup = MetaKeyUtils::parseJobVal(value);
       status = std::get<2>(tup);
     }
+    EXPECT_EQ(cpp2::JobStatus::RUNNING, status);
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     code = jobMgr->stopJob(spaceId, jobId);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE);
     jobId++;
+
+    // check job status again, it still should be running
+    {
+      code = kv_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
+      ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+      auto tup = MetaKeyUtils::parseJobVal(value);
+      status = std::get<2>(tup);
+      EXPECT_EQ(cpp2::JobStatus::RUNNING, status);
+    }
 
     // If the jobExecutor is still executing, resetSpaceRunning is not set in stoppJob
     // When the jobExecutor completes, set the resetSpaceRunning of the meta job
@@ -852,6 +870,15 @@ TEST_F(JobManagerTest, StoppableJob) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     code = jobMgr->stopJob(spaceId, jobId);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    // check job status again, it still should be running
+    {
+      code = kv_->get(kDefaultSpaceId, kDefaultPartId, jobKey, &value);
+      ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+      auto tup = MetaKeyUtils::parseJobVal(value);
+      status = std::get<2>(tup);
+      EXPECT_EQ(cpp2::JobStatus::STOPPED, status);
+    }
 
     jobId++;
     // If the jobExecutor is still executing, resetSpaceRunning is not set in stoppJob
