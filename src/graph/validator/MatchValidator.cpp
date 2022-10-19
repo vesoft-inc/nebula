@@ -219,11 +219,18 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       nodeAliases.emplace(alias, AliasType::kNode);
     }
     Expression *filter = nullptr;
+    /* Note(Xuntao): Commented out the following part. With the current parser,
+       if no tag is given in match clauses, node->props() is not nullptr but
+       node-labels() is. This is not supposed to be valid.
+    */
+    /*
     if (props != nullptr) {
       auto result = makeNodeSubFilter(const_cast<MapExpression *>(props), "*");
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
-    } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
+    } else
+    */
+    if (node->labels() != nullptr && !node->labels()->labels().empty()) {
       const auto &labels = node->labels()->labels();
       for (const auto &label : labels) {
         auto result = makeNodeSubFilter(label->props(), *label->label());
