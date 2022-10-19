@@ -61,7 +61,7 @@ Feature: Parameter
       | "Tony Parker"   |
     When executing query:
       """
-      MATCH (v:player)-[:like]->(n{name:$p7.a.b.c})
+      MATCH (v:player)-[:like]->(n:player{name:$p7.a.b.c})
       RETURN n.player.name AS dst LIMIT $p7.a.b.d[0]
       """
     Then the result should be, in any order:
