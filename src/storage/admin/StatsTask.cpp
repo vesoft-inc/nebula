@@ -10,6 +10,7 @@
 #include "common/base/MurmurHash2.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/Common.h"
+#include "storage/StorageFlags.h"
 
 DEFINE_int32(stats_sleep_interval_ms,
              0,
@@ -111,6 +112,8 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   std::unique_ptr<kvstore::KVIterator> tagIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
+  auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
+  std::unique_ptr<kvstore::KVIterator> vertexIter;
 
   // When the storage occurs leader change, continue to read data from the
   // follower instead of reporting an error.
@@ -123,6 +126,13 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Stats task failed";
     return ret;
+  }
+  if (FLAGS_use_vertex_key) {
+    ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(INFO) << "Stats task failed";
+      return ret;
+    }
   }
   std::unordered_map<TagID, int64_t> tagsVertices;
   std::unordered_map<EdgeType, int64_t> edgetypeEdges;
@@ -230,6 +240,14 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     edgeIter->next();
     sleepIfScannedSomeRecord(++countToSleep);
   }
+  int64_t verticesCountByVertexKey = 0;
+  if (FLAGS_use_vertex_key) {
+    while (vertexIter && vertexIter->valid()) {
+      verticesCountByVertexKey++;
+      vertexIter->next();
+      sleepIfScannedSomeRecord(++countToSleep);
+    }
+  }
   nebula::meta::cpp2::StatsItem statsItem;
 
   // convert tagId/edgeType to tagName/edgeName
@@ -246,7 +264,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     }
   }
 
-  statsItem.space_vertices_ref() = spaceVertices;
+  statsItem.space_vertices_ref() = FLAGS_use_vertex_key ? verticesCountByVertexKey : spaceVertices;
   statsItem.space_edges_ref() = spaceEdges;
   using Correlativities = std::vector<nebula::meta::cpp2::Correlativity>;
   Correlativities positiveCorrelativity;
