@@ -8,6 +8,8 @@
 
 #include <unordered_map>
 
+#include <folly/json.h>
+
 #include "common/datatypes/Value.h"
 
 namespace nebula {
@@ -20,6 +22,22 @@ struct Map {
   Map(Map&&) noexcept = default;
   explicit Map(std::unordered_map<std::string, Value> values) {
     kvs = std::move(values);
+  }
+
+  // constructor to convert from json string
+  explicit Map(const std::string& json) {
+    auto obj = folly::parseJson(json);
+    for (auto& kv : obj.items()) {
+      kvs.emplace(kv.first.getString(), Value(kv.second));
+    }
+  }
+
+  // constructor to convert from Value::Type::STRING in JSON format
+  explicit Map(const Value& value) {
+    auto obj = folly::parseJson(value.getStr());
+    for (auto& kv : obj.items()) {
+      kvs.emplace(kv.first.getString(), Value(kv.second));
+    }
   }
 
   Map& operator=(const Map& rhs) {

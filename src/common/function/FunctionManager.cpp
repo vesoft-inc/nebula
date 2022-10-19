@@ -421,6 +421,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
+    {"json_extract", {TypeSignature({Value::Type::STRING}, Value::Type::MAP)}},
 };
 
 // static
@@ -2764,6 +2765,20 @@ FunctionManager::FunctionManager() {
       } else {
         return p.steps[nodeIndex - 1].dst.vid;
       }
+    };
+  }
+  {
+    auto &attr = functions_["json_extract"];
+    // note, we don't support second argument(path) like MySQL JSON_EXTRACT for now
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto json = args[0].get().getStr();
+      return Map(json);
     };
   }
 }  // NOLINT

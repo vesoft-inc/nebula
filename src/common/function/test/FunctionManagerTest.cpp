@@ -1962,6 +1962,22 @@ TEST_F(FunctionManagerTest, PurityTest) {
   ASSERT_TRUE(result.ok() && result.value() == true);
 }
 
+TEST_F(FunctionManagerTest, JsonExtract) {
+  {
+    std::vector<Value> args = {Value(R"({"a": 1, "b": 2})")};
+    TEST_FUNCTION(jsonExtract, args, {Map({{"a", 1}, {"b", 2}})});
+  }
+  // empty string
+  {
+    std::vector<Value> args = {Value("")};
+    TEST_FUNCTION(jsonExtract, args, Value::kNullBadData);
+  }
+  // invalid json string
+  {
+    std::vector<Value> args = {Value(R"({a: 1, "b": 2})")};
+    TEST_FUNCTION(jsonExtract, args, Value::kNullBadData);
+  }
+
 }  // namespace nebula
 
 int main(int argc, char **argv) {
