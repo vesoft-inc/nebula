@@ -91,6 +91,17 @@ class GetStatsTest : public ::testing::Test {
     mock::MockCluster cluster;
     kv_ = cluster.initMetaKV(rootPath_->path());
 
+    // write some random leader key into kv, make sure that job will find a target storage
+    std::vector<nebula::kvstore::KV> data{
+        std::make_pair(MetaKeyUtils::leaderKey(1, 1), MetaKeyUtils::leaderValV3(HostAddr(), 1))};
+    folly::Baton<true, std::atomic> baton;
+    kv_->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+          baton.post();
+        });
+    baton.wait();
+
     DefaultValue<folly::Future<Status>>::SetFactory(
         [] { return folly::Future<Status>(Status::OK()); });
     DefaultValue<folly::Future<StatusOr<bool>>>::SetFactory(
