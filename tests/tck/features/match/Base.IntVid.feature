@@ -128,7 +128,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
@@ -137,7 +137,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       WHERE r.start_year <= 2005 AND r.end_year >= 2005
       RETURN r.start_year AS Start_Year, r.end_year AS Start_Year
       """
