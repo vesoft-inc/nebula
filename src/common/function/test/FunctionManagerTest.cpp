@@ -1977,6 +1977,7 @@ TEST_F(FunctionManagerTest, JsonExtract) {
     std::vector<Value> args = {Value(R"({a: 1, "b": 2})")};
     TEST_FUNCTION(jsonExtract, args, Value::kNullBadData);
   }
+}
 
 }  // namespace nebula
 
