@@ -18,7 +18,7 @@ Feature: Optional Match
       optional match (v:player) where v.player.name == "Boris Diaw" return v limit 10;
       """
     Then the result should be, in any order:
-      | v |
+      | v                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
     When executing query:
       """
@@ -29,9 +29,9 @@ Feature: Optional Match
       """
     Then the result should be, in any order:
       | v0                                                            | v1                                                      | v2                                                                                                          |
-      | ("Kyrie Irving" :player{age: 26, name: "Kyrie Irving"})       | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                    |
-      | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})         | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                    |
-      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"}) | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                    |
-      | ("Chris Paul" :player{age: 33, name: "Chris Paul"})           | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                    |
+      | ("Kyrie Irving" :player{age: 26, name: "Kyrie Irving"})       | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                        |
+      | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})         | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                        |
+      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"}) | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                        |
+      | ("Chris Paul" :player{age: 33, name: "Chris Paul"})           | ("LeBron James" :player{age: 34, name: "LeBron James"}) | NULL                                                                                                        |
       | ("Danny Green" :player{age: 31, name: "Danny Green"})         | ("LeBron James" :player{age: 34, name: "LeBron James"}) | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
       | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"}) | ("LeBron James" :player{age: 34, name: "LeBron James"}) | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
