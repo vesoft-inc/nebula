@@ -127,7 +127,8 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
   for (auto& match : queryPart.matchs) {
     NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, match.get()));
     // connect match filter
-    if (match->where != nullptr) {
+    if ((match->where != nullptr && !match->isOptional) ||
+        (match->isOptional && queryPart.matchs.size() == 1)) {
       match->where->inputColNames = queryPlan.root->colNames();
       auto wherePlanStatus = std::make_unique<WhereClausePlanner>()->transform(match->where.get());
       NG_RETURN_IF_ERROR(wherePlanStatus);
