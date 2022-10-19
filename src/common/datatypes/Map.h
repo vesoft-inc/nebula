@@ -32,14 +32,6 @@ struct Map {
     }
   }
 
-  // constructor to convert from Value::Type::STRING in JSON format
-  explicit Map(const Value& value) {
-    auto obj = folly::parseJson(value.getStr());
-    for (auto& kv : obj.items()) {
-      kvs.emplace(kv.first.getString(), Value(kv.second));
-    }
-  }
-
   Map& operator=(const Map& rhs) {
     if (this == &rhs) {
       return *this;
