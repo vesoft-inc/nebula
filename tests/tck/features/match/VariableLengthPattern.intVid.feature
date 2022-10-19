@@ -310,7 +310,7 @@ Feature: Integer Vid Variable length Pattern match (m to n)
   Scenario: Integer Vid  multi-steps and filter by node properties
     When executing query:
       """
-      MATCH (v:player{name: 'Tim Duncan'})-[e1:like*1..2]-(v2{name: 'Tony Parker'})-[e2:serve]-(v3{name: 'Spurs'})
+      MATCH (v:player{name: 'Tim Duncan'})-[e1:like*1..2]-(v2:player{name: 'Tony Parker'})-[e2:serve]-(v3:team{name: 'Spurs'})
       RETURN e1, e2
       """
     Then the result should be, in any order, with relax comparison:
