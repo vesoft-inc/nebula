@@ -626,7 +626,7 @@ Feature: Basic match
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
-      MATCH (v{name: "Tim Duncan"}) return v
+      MATCH (v:player{name: "Tim Duncan"}) return v
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
