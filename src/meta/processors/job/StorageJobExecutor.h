@@ -84,7 +84,7 @@ class StorageJobExecutor : public JobExecutor {
   }
 
   JobDescription getJobDescription() override {
-    JobDescription ret;
+    JobDescription ret{space_, jobId_, cpp2::JobType::UNKNOWN};
     return ret;
   }
 
