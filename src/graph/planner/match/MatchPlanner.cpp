@@ -109,6 +109,7 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
       }
       queryPlan =
           SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
+      matchCtx->isOptional = false;
     } else {
       queryPlan =
           SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
@@ -127,7 +128,8 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
   for (auto& match : queryPart.matchs) {
     NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, match.get()));
     // connect match filter
-    if (match->where != nullptr && !match->isOptional) {
+    if ((match->where != nullptr && !match->isOptional) ||
+        (match->isOptional && queryPart.matchs.size())) {
       match->where->inputColNames = queryPlan.root->colNames();
       auto wherePlanStatus = std::make_unique<WhereClausePlanner>()->transform(match->where.get());
       NG_RETURN_IF_ERROR(wherePlanStatus);
