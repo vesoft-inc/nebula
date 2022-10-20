@@ -100,8 +100,8 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
+  goCtx_->filter = rewriteVertexEdge2EdgeProp(filter);
   NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, &tagIds_, &goCtx_->over.edgeTypes));
-  goCtx_->filter = filter;
   return Status::OK();
 }
 

@@ -322,19 +322,17 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
 
     if (goCtx_->joinDst) {
       cur = buildJoinDstPlan(cur);
-    } else if (goCtx_->filter) {
-      // LoopBody is `Dedup` currently. We should make a copy of `Dedup` and then do the filter.
-      cur = buildCopy(cur);
     }
     if (goCtx_->filter) {
       cur = Filter::make(qctx, cur, goCtx_->filter);
     }
     if (goCtx_->joinDst || goCtx_->yieldExpr->columns().size() != 1) {
       cur = Project::make(qctx, cur, goCtx_->yieldExpr);
-      cur->setColNames(goCtx_->colNames);
     } else {
       gd->setColNames(goCtx_->colNames);
+      dedup->setColNames(goCtx_->colNames);
     }
+    cur->setColNames(goCtx_->colNames);
     return cur;
   } else {
     auto* gn = GetNeighbors::make(qctx, dep, goCtx_->space.id);
@@ -437,11 +435,11 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
 
     if (goCtx_->joinDst || goCtx_->yieldExpr->columns().size() != 1) {
       cur = Project::make(qctx, cur, goCtx_->yieldExpr);
-      cur->setColNames(std::move(goCtx_->colNames));
     } else {
       gd->setColNames(goCtx_->colNames);
+      dedup->setColNames(goCtx_->colNames);
     }
-    // cur->setColNames(std::move(goCtx_->colNames));
+    cur->setColNames(std::move(goCtx_->colNames));
   } else {
     auto* gn = GetNeighbors::make(qctx, startVidPlan.root, goCtx_->space.id);
     gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
@@ -539,32 +537,28 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
     gd->setInputVar(goCtx_->vidsVar);
-    gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
     // The outputVar of `Dedup` is the same as the inputVar of `GetDstBySrc`.
     // So the output of `Dedup` of current iteration feeds into the input of `GetDstBySrc` of next
     // iteration.
     dedup->setOutputVar(goCtx_->vidsVar);
-    dedup->setColNames(gd->colNames());
+    // dedup->setColNames(gd->colNames());
     getDst = dedup;
     loopBody = getDst;
+
+    loopBody = extractDstId(loopBody);
     // In the simple case, there are only one parent plan...
     if (joinDst) {
       // Left join, join the dst id with `GetVertices`
       loopBody = buildJoinDstPlan(loopBody);
-    } else if (goCtx_->filter) {
-      // LoopBody is `Dedup` currently. We should make a copy of `Dedup` and then do the filter.
-      loopBody = buildCopy(loopBody);
     }
     if (goCtx_->filter) {
       loopBody = Filter::make(qctx, loopBody, goCtx_->filter);
     }
     if (joinDst || goCtx_->yieldExpr->columns().size() != 1) {
       loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
-      loopBody->setColNames(goCtx_->colNames);
-    } else {
-      gd->setColNames(goCtx_->colNames);
     }
+    loopBody->setColNames(goCtx_->colNames);
   } else {
     auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
     gn->setSrc(goCtx_->from.src);
@@ -685,12 +679,14 @@ std::vector<EdgeType> GoPlanner::buildEdgeTypes() {
   return {};
 }
 
-PlanNode* GoPlanner::buildCopy(PlanNode* node) {
+PlanNode* GoPlanner::extractDstId(PlanNode* node) {
   auto pool = goCtx_->qctx->objPool();
   auto* columns = pool->makeAndAdd<YieldColumns>();
-  auto* column = new YieldColumn(ColumnExpression::make(pool, 0), node->colNames()[0]);
+  auto* column = new YieldColumn(ColumnExpression::make(pool, 0));
   columns->addColumn(column);
-  return Project::make(goCtx_->qctx, node, columns);
+  auto* project = Project::make(goCtx_->qctx, node, columns);
+  project->setColNames({goCtx_->dstIdColName});
+  return project;
 }
 
 }  // namespace graph

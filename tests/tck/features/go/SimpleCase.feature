@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jie
 Feature: Simple case
 
   Background:
@@ -67,9 +66,10 @@ Feature: Simple case
     And the execution plan should be:
       | id | name        | dependencies | operator info |
       | 8  | Sort        | 7            |               |
-      | 7  | Project     | 6            |               |
-      | 6  | Filter      | 5            |               |
-      | 5  | LeftJoin    | 4            |               |
+      | 7  | Project     | 11           |               |
+      | 11 | Filter      | 10           |               |
+      | 10 | LeftJoin    | 9            |               |
+      | 9  | Filter      | 4            |               |
       | 4  | Project     | 3            |               |
       | 3  | GetVertices | 2            |               |
       | 2  | Dedup       | 1            |               |
@@ -172,6 +172,28 @@ Feature: Simple case
       | 11 | Project     | 10           |                   |
       | 10 | Filter      | 9            |                   |
       | 9  | LeftJoin    | 8            |                   |
+      | 8  | Project     | 7            |                   |
+      | 7  | GetVertices | 6            |                   |
+      | 6  | Dedup       | 5            |                   |
+      | 5  | GetDstBySrc | 4            |                   |
+      | 4  | Loop        | 0            | {"loopBody": "3"} |
+      | 3  | Dedup       | 2            |                   |
+      | 2  | GetDstBySrc | 1            |                   |
+      | 1  | Start       |              |                   |
+      | 0  | Start       |              |                   |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE id($$) != "Not exists" YIELD DISTINCT id($$), $$.player.age | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 22       |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info     |
+      | 12 | Aggregate   | 11           |                   |
+      | 11 | Project     | 14           |                   |
+      | 14 | LeftJoin    | 13           |                   |
+      | 13 | Filter      | 8            |                   |
       | 8  | Project     | 7            |                   |
       | 7  | GetVertices | 6            |                   |
       | 6  | Dedup       | 5            |                   |
@@ -354,29 +376,35 @@ Feature: Simple case
       | 41       |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 6  | Aggregate   | 5            |                   |
-      | 5  | DataCollect | 4            |                   |
-      | 4  | Loop        | 0            | {"loopBody": "3"} |
+      | 7  | Aggregate   | 6            |                   |
+      | 6  | DataCollect | 5            |                   |
+      | 5  | Loop        | 0            | {"loopBody": "4"} |
+      | 4  | Project     | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
       | 0  | Start       |              |                   |
-    # When profiling query:
-    # """
-    # GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE like._dst != "Yao Ming" YIELD DISTINCT id($$) AS dst | YIELD count(*)
-    # """
-    # Then the result should be, in any order, with relax comparison:
-    # | count(*) |
-    # | 41       |
-    # And the execution plan should be:
-    # | id | name        | dependencies | operator info     |
-    # | 6  | Aggregate   | 5            |                   |
-    # | 5  | DataCollect | 4            |                   |
-    # | 4  | Loop        | 0            | {"loopBody": "3"} |
-    # | 3  | Dedup       | 2            |                   |
-    # | 2  | GetDstBySrc | 1            |                   |
-    # | 1  | Start       |              |                   |
-    # | 0  | Start       |              |                   |
+    When profiling query:
+      """
+      GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE like._dst != "Yao Ming" YIELD DISTINCT id($$) AS a | ORDER BY $-.a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                   |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+      | "Tony Parker"       |
+    And the execution plan should be:
+      | id | name        | dependencies | operator info     |
+      | 8  | Sort        | 7            |                   |
+      | 7  | DataCollect | 6            |                   |
+      | 6  | Loop        | 0            | {"loopBody": "5"} |
+      | 5  | Filter      | 4            |                   |
+      | 4  | Project     | 3            |                   |
+      | 3  | Dedup       | 2            |                   |
+      | 2  | GetDstBySrc | 1            |                   |
+      | 1  | Start       |              |                   |
+      | 0  | Start       |              |                   |
     When profiling query:
       """
       GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
@@ -387,14 +415,15 @@ Feature: Simple case
       | "Tim Duncan"    | 42  | "Tim Duncan"    |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 11 | Sort        | 10           |                   |
-      | 10 | DataCollect | 9            |                   |
-      | 9  | Loop        | 0            | {"loopBody": "8"} |
-      | 8  | Project     | 7            |                   |
-      | 7  | Filter      | 6            |                   |
-      | 6  | LeftJoin    | 5            |                   |
-      | 5  | Project     | 4            |                   |
-      | 4  | GetVertices | 3            |                   |
+      | 12 | Sort        | 11           |                   |
+      | 11 | DataCollect | 10           |                   |
+      | 10 | Loop        | 0            | {"loopBody": "9"} |
+      | 9  | Project     | 8            |                   |
+      | 8  | Filter      | 7            |                   |
+      | 7  | LeftJoin    | 6            |                   |
+      | 6  | Project     | 5            |                   |
+      | 5  | GetVertices | 4            |                   |
+      | 4  | Project     | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
@@ -410,14 +439,15 @@ Feature: Simple case
       | "Manu Ginobili"     | 41  | "Manu Ginobili"     |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 11 | Sort        | 10           |                   |
-      | 10 | DataCollect | 9            |                   |
-      | 9  | Loop        | 0            | {"loopBody": "8"} |
-      | 8  | Project     | 7            |                   |
-      | 7  | Filter      | 6            |                   |
-      | 6  | LeftJoin    | 5            |                   |
-      | 5  | Project     | 4            |                   |
-      | 4  | GetVertices | 3            |                   |
+      | 12 | Sort        | 11           |                   |
+      | 11 | DataCollect | 10           |                   |
+      | 10 | Loop        | 0            | {"loopBody": "9"} |
+      | 9  | Project     | 14           |                   |
+      | 14 | LeftJoin    | 13           |                   |
+      | 13 | Filter      | 6            |                   |
+      | 6  | Project     | 5            |                   |
+      | 5  | GetVertices | 4            |                   |
+      | 4  | Project     | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
@@ -448,13 +478,14 @@ Feature: Simple case
       | 19            |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 10 | Aggregate   | 9            |                   |
-      | 9  | DataCollect | 8            |                   |
-      | 8  | Loop        | 0            | {"loopBody": "7"} |
-      | 7  | Project     | 6            |                   |
-      | 6  | LeftJoin    | 5            |                   |
-      | 5  | Project     | 4            |                   |
-      | 4  | GetVertices | 3            |                   |
+      | 11 | Aggregate   | 10           |                   |
+      | 10 | DataCollect | 9            |                   |
+      | 9  | Loop        | 0            | {"loopBody": "8"} |
+      | 8  | Project     | 7            |                   |
+      | 7  | LeftJoin    | 6            |                   |
+      | 6  | Project     | 5            |                   |
+      | 5  | GetVertices | 4            |                   |
+      | 4  | Project     | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
@@ -508,19 +539,20 @@ Feature: Simple case
       | 28       |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 14 | Aggregate   | 12           |                   |
-      | 12 | Minus       | 10,11        |                   |
-      | 10 | Project     | 13           |                   |
-      | 13 | PassThrough | 9            |                   |
-      | 9  | Dedup       | 15           |                   |
-      | 15 | GetDstBySrc | 5            |                   |
-      | 5  | DataCollect | 4            |                   |
-      | 4  | Loop        | 0            | {"loopBody": "3"} |
+      | 15 | Aggregate   | 13           |                   |
+      | 13 | Minus       | 11,12        |                   |
+      | 11 | Project     | 14           |                   |
+      | 14 | PassThrough | 10           |                   |
+      | 10 | Dedup       | 16           |                   |
+      | 16 | GetDstBySrc | 6            |                   |
+      | 6  | DataCollect | 5            |                   |
+      | 5  | Loop        | 0            | {"loopBody": "4"} |
+      | 4  | Project     | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
       | 0  | Start       |              |                   |
-      | 11 | Project     | 13           |                   |
+      | 12 | Project     | 14           |                   |
 
   Scenario: other simple case
     When profiling query:
@@ -577,14 +609,15 @@ Feature: Simple case
       | "Grant Hill"        | 46  | "Grant Hill"        |
     And the execution plan should be:
       | id | name        | dependencies | operator info      |
-      | 15 | Sort        | 14           |                    |
-      | 14 | DataCollect | 13           |                    |
-      | 13 | Loop        | 4            | {"loopBody": "12"} |
-      | 12 | Project     | 11           |                    |
-      | 11 | Filter      | 10           |                    |
-      | 10 | LeftJoin    | 9            |                    |
-      | 9  | Project     | 8            |                    |
-      | 8  | GetVertices | 7            |                    |
+      | 16 | Sort        | 15           |                    |
+      | 15 | DataCollect | 14           |                    |
+      | 14 | Loop        | 4            | {"loopBody": "13"} |
+      | 13 | Project     | 18           |                    |
+      | 18 | LeftJoin    | 17           |                    |
+      | 17 | Filter      | 10           |                    |
+      | 10 | Project     | 9            |                    |
+      | 9  | GetVertices | 8            |                    |
+      | 8  | Project     | 7            |                    |
       | 7  | Dedup       | 6            |                    |
       | 6  | GetDstBySrc | 5            |                    |
       | 5  | Start       |              |                    |
@@ -593,10 +626,3 @@ Feature: Simple case
       | 2  | Dedup       | 1            |                    |
       | 1  | GetDstBySrc | 0            |                    |
       | 0  | Start       |              |                    |
-
-# When profiling query:
-# """
-# GO FROM "Tony Parker" OVER like YIELD like._dst AS id | GO FROM $-.id OVER serve, like WHERE $$.team.name != "abc" YIELD DISTINCT serve._dst
-# """
-# Then the result should be, in any order, with relax comparison:
-# And the execution plan should be:
