@@ -6,8 +6,6 @@
 #ifndef COMMON_DATATYPES_MAP_H_
 #define COMMON_DATATYPES_MAP_H_
 
-#include <folly/json.h>
-
 #include <unordered_map>
 
 #include "common/base/Logging.h"
@@ -25,29 +23,7 @@ struct Map {
     kvs = std::move(values);
   }
 
-  // constructor to convert from json string
-  explicit Map(const std::string& json) {
-    auto obj = folly::parseJson(json);
-    for (auto& kv : obj.items()) {
-      // for now, only limited primitive types in value field are supported
-      //   no nested type(list, map, set) is supported
-      if (kv.second.isString()) {
-        kvs.emplace(kv.first.asString(), Value(kv.second.asString()));
-      } else if (kv.second.isInt()) {
-        kvs.emplace(kv.first.asString(), Value(kv.second.asInt()));
-      } else if (kv.second.isDouble()) {
-        kvs.emplace(kv.first.asString(), Value(kv.second.asDouble()));
-      } else if (kv.second.isBool()) {
-        kvs.emplace(kv.first.asString(), Value(kv.second.asBool()));
-      } else if (kv.second.isNull()) {
-        kvs.emplace(kv.first.asString(), Value());
-      } else {
-        LOG(ERROR) << "Only string, int64, double, bool, null are supported in "
-                      "parseJson to construct Map, now trying to parse from: "
-                   << kv.second.typeName();
-      }
-    }
-  }
+  explicit Map(const folly::dynamic& obj);
 
   Map& operator=(const Map& rhs) {
     if (this == &rhs) {

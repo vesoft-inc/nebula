@@ -5,6 +5,8 @@
 
 #include "FunctionManager.h"
 
+#include <folly/json.h>
+
 #include <boost/algorithm/string/replace.hpp>
 
 #include "common/base/Base.h"
@@ -421,7 +423,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
-    {"json_extract", {TypeSignature({Value::Type::STRING}, Value::Type::MAP)}},
+    {"json_extract",
+     {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
+      TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
 };
 
 // static
@@ -2778,7 +2782,21 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       auto json = args[0].get().getStr();
-      return Map(json);
+
+      // invalid string to json will be caught and returned as null
+      try {
+        auto obj = folly::parseJson(json);
+        if (!obj.isObject()) {
+          return Value::kNullBadData;
+        }
+        // if obj is empty, i.e. "{}", return empty map
+        if (obj.empty()) {
+          return Map();
+        }
+        return Map(obj);
+      } catch (const std::exception &e) {
+        return Value::kNullBadData;
+      }
     };
   }
 }  // NOLINT
