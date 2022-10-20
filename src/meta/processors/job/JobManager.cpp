@@ -330,6 +330,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
     force = true;
   }
 
+  auto rollbackStatus = optJobDesc.getStatus();
   if (!optJobDesc.setStatus(jobStatus, force)) {
     // job already been set as finished, failed or stopped
     return nebula::cpp2::ErrorCode::E_JOB_ALREADY_FINISH;
@@ -396,6 +397,9 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
       }
       // job has been stopped successfully, so update the job status
       return save(jobKey, jobVal);
+    } else if (code == nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE) {
+      // rollback the job status
+      optJobDesc.setStatus(rollbackStatus, true);
     }
     // job could not be stopped, so do not update the job status
     return code;
