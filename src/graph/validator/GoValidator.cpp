@@ -23,7 +23,6 @@ Status GoValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateStarts(goSentence->fromClause(), goCtx_->from));
   NG_RETURN_IF_ERROR(ValidateUtil::validateOver(qctx_, goSentence->overClause(), goCtx_->over));
   NG_RETURN_IF_ERROR(extractTagIds());
-  // filter where should also call rewriteVertexEdge2EdgeProp()
   NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
   NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
   NG_RETURN_IF_ERROR(validateTruncate(goSentence->truncateClause()));

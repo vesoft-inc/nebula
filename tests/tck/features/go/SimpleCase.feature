@@ -376,10 +376,9 @@ Feature: Simple case
       | 41       |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 7  | Aggregate   | 6            |                   |
-      | 6  | DataCollect | 5            |                   |
-      | 5  | Loop        | 0            | {"loopBody": "4"} |
-      | 4  | Project     | 3            |                   |
+      | 6  | Aggregate   | 5            |                   |
+      | 5  | DataCollect | 4            |                   |
+      | 4  | Loop        | 0            | {"loopBody": "3"} |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
@@ -396,11 +395,10 @@ Feature: Simple case
       | "Tony Parker"       |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 8  | Sort        | 7            |                   |
-      | 7  | DataCollect | 6            |                   |
-      | 6  | Loop        | 0            | {"loopBody": "5"} |
-      | 5  | Filter      | 4            |                   |
-      | 4  | Project     | 3            |                   |
+      | 7  | Sort        | 6            |                   |
+      | 6  | DataCollect | 5            |                   |
+      | 5  | Loop        | 0            | {"loopBody": "4"} |
+      | 4  | Filter      | 3            |                   |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
@@ -539,20 +537,19 @@ Feature: Simple case
       | 28       |
     And the execution plan should be:
       | id | name        | dependencies | operator info     |
-      | 15 | Aggregate   | 13           |                   |
-      | 13 | Minus       | 11,12        |                   |
-      | 11 | Project     | 14           |                   |
-      | 14 | PassThrough | 10           |                   |
-      | 10 | Dedup       | 16           |                   |
-      | 16 | GetDstBySrc | 6            |                   |
-      | 6  | DataCollect | 5            |                   |
-      | 5  | Loop        | 0            | {"loopBody": "4"} |
-      | 4  | Project     | 3            |                   |
+      | 14 | Aggregate   | 12           |                   |
+      | 12 | Minus       | 10,11        |                   |
+      | 10 | Project     | 13           |                   |
+      | 13 | PassThrough | 9            |                   |
+      | 9  | Dedup       | 15           |                   |
+      | 15 | GetDstBySrc | 5            |                   |
+      | 5  | DataCollect | 4            |                   |
+      | 4  | Loop        | 0            | {"loopBody": "3"} |
       | 3  | Dedup       | 2            |                   |
       | 2  | GetDstBySrc | 1            |                   |
       | 1  | Start       |              |                   |
       | 0  | Start       |              |                   |
-      | 12 | Project     | 14           |                   |
+      | 11 | Project     | 13           |                   |
 
   Scenario: other simple case
     When profiling query:

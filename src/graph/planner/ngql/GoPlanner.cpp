@@ -537,18 +537,18 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
     gd->setInputVar(goCtx_->vidsVar);
+    gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
     // The outputVar of `Dedup` is the same as the inputVar of `GetDstBySrc`.
     // So the output of `Dedup` of current iteration feeds into the input of `GetDstBySrc` of next
     // iteration.
     dedup->setOutputVar(goCtx_->vidsVar);
-    // dedup->setColNames(gd->colNames());
+    dedup->setColNames(gd->colNames());
     getDst = dedup;
     loopBody = getDst;
 
-    loopBody = extractDstId(loopBody);
-    // In the simple case, there are only one parent plan...
     if (joinDst) {
+      loopBody = extractDstId(loopBody);
       // Left join, join the dst id with `GetVertices`
       loopBody = buildJoinDstPlan(loopBody);
     }
@@ -557,6 +557,9 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     }
     if (joinDst || goCtx_->yieldExpr->columns().size() != 1) {
       loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
+    } else {
+      gd->setColNames(goCtx_->colNames);
+      dedup->setColNames(goCtx_->colNames);
     }
     loopBody->setColNames(goCtx_->colNames);
   } else {
