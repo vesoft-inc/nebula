@@ -41,9 +41,9 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 
 NebulaGraph used to be split into three repositories: [Nebula-Graph](https://github.com/vesoft-inc/nebula-graph), [Nebula-Storage,](https://github.com/vesoft-inc/nebula-storage) and [Nebula-Common](https://github.com/vesoft-inc/nebula-common) for versions between v2.0.0 and v2.5.x, which will be archived.
 
-It's back to mono-repo since v2.6.0 and v3.x here at [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula).
+The one and only codebase of NebulaGraph is now [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula), as it's back to mono-repo since v2.6.0.
 
-Please check the latest released version via the documentation: https://docs.nebula-graph.io/.
+Please check the latest release via the documentation: https://docs.nebula-graph.io/.
 
 <!--
 

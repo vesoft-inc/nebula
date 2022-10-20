@@ -30,7 +30,7 @@
 
 **NebulaGraph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
 
-在被[众多社区用户](https://nebula-graph.com.cn/cases)采用、共建、与演进中，[NebulaGraph 社区](https://github.com/vesoft-inc/nebula-community/)被广泛应用、验证在社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等大规模生产场景，并且成长为一个活跃的开源社区，拥有[丰富的生态周边项目](https://docs.nebula-graph.com.cn/master/20.appendix/6.eco-tool-version/)，欢迎从[nebula-graph.com.cn/cases](https://nebula-graph.com.cn/cases)了解我们的用户案例。
+NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图技术场景实践知识的活跃开源社区。你可以在其中与大家共同交流 NebulaGraph [周边生态项目](https://docs.nebula-graph.com.cn/master/20.appendix/6.eco-tool-version/)的应用心得，或者社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等[大规模生产场景](https://nebula-graph.com.cn/cases)的实践经验。
 
 
 与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
