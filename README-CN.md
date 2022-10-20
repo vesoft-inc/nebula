@@ -46,7 +46,7 @@
 
 NebulaGraph 的 GitHub 仓库经历过拆分和合并的过程，所以其 v2.0.0 到 v2.5.x 的代码分布在另外几个仓库中：[Nebula-Graph](https://github.com/vesoft-inc/nebula-graph)、[Nebula-Storage](https://github.com/vesoft-inc/nebula-storage)、[Nebula-Common](https://github.com/vesoft-inc/nebula-common)，这几个仓库将被归档。
 
-从 v2.6.0 开始，包括现在的 v3.x，NebulaGraph 内核代码都在单独的当前 [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula) 下。
+从 v2.6.0 开始，包括现在的 v3.x，NebulaGraph 内核代码集中在 [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula) 下。
 
 请访问 NebulaGraph 文档：https://docs.nebula-graph.com.cn/ 了解、获取 NebulaGraph 的最新的正式版本。
 
