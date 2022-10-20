@@ -791,7 +791,8 @@ def drop_used_space(exec_ctx):
 
 
 @then(parse("the execution plan should be:\n{plan}"))
-def check_plan(plan, exec_ctx):
+def check_plan(request, plan, exec_ctx):
+    ngql = exec_ctx["ngql"]
     resp = exec_ctx["result_set"]
     expect = table(plan)
     column_names = expect.get('column_names', [])
@@ -801,7 +802,19 @@ def check_plan(plan, exec_ctx):
         row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
-    assert differ.diff(), differ.err_msg()
+
+    res = differ.diff()
+    if not res:
+        scen = request.function.__scenario__
+        feature = scen.feature.rel_filename
+        location = f"{feature}:{line_number(scen._steps, plan)}"
+        msg = [
+            f"Fail to exec: {ngql}",
+            f"Location: {location}",
+            differ.err_msg(),
+        ]
+    
+    assert res, "\n".join(msg)
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
