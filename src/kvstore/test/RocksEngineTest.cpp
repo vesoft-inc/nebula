@@ -225,6 +225,8 @@ TEST_P(RocksEngineTest, IngestTest) {
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->get("key_empty", &result));
   EXPECT_EQ("", result);
   EXPECT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, engine->get("key_not_exist", &result));
+
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->ingest({}));
 }
 
 TEST_P(RocksEngineTest, BackupRestoreTable) {
