@@ -310,7 +310,7 @@ Feature: Case Expression
       """
       match (a:player)-[e:like]->(b) with case when e.likeness > 90 then e else {likeness:13} end as n return n.likeness;
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | n.likeness |
       | 100        |
       | 13         |
@@ -397,7 +397,7 @@ Feature: Case Expression
       """
       match (a:player)-[e:like]->(b) with properties(case when e.likeness > 90 then e else {likeness:13} end) as n return n.likeness;
       """
-    Then the result should be, in order:
+    Then the result should be, in any order:
       | n.likeness |
       | 100        |
       | 13         |
