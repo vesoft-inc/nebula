@@ -179,6 +179,20 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
       break;
     }
+    case Expression::Kind::kCase: {  // (case xxx).name
+      auto *casePropExpr = static_cast<CaseExpression *>(lhs);
+      if (casePropExpr->hasCondition()) {
+        casePropExpr->condition()->accept(this);
+      }
+      if (casePropExpr->hasDefault()) {
+        casePropExpr->defaultResult()->accept(this);
+      }
+      for (const auto &whenThen : casePropExpr->cases()) {
+        whenThen.when->accept(this);
+        whenThen.then->accept(this);
+      }
+      break;
+    }
     case Expression::Kind::kSubscript: {  // $-.e[0].name
       auto *subscriptExpr = static_cast<SubscriptExpression *>(lhs);
       auto *subLeftExpr = subscriptExpr->left();
@@ -199,7 +213,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       }
       break;
     }
-    case Expression::Kind::kFunctionCall: {  // properties(t3).name
+    case Expression::Kind::kFunctionCall: {
       auto *funCallExpr = static_cast<FunctionCallExpression *>(lhs);
       auto funName = funCallExpr->name();
       std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
@@ -210,14 +224,28 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       auto kind = argExpr->kind();
       switch (kind) {
         case Expression::Kind::kVarProperty:
-        case Expression::Kind::kInputProperty: {
+        case Expression::Kind::kInputProperty: {  // properties($e).name
           //  match (v) return properties(v).name
           auto *inputPropExpr = static_cast<InputPropertyExpression *>(argExpr);
           auto &aliasName = inputPropExpr->prop();
           propsUsed_.insertVertexProp(aliasName, unKnowType_, propName);
           break;
         }
-        case Expression::Kind::kSubscript: {
+        case Expression::Kind::kCase: {  // properties(case xxx).name
+          auto *casePropExpr = static_cast<CaseExpression *>(argExpr);
+          if (casePropExpr->hasCondition()) {
+            casePropExpr->condition()->accept(this);
+          }
+          if (casePropExpr->hasDefault()) {
+            casePropExpr->defaultResult()->accept(this);
+          }
+          for (const auto &whenThen : casePropExpr->cases()) {
+            whenThen.when->accept(this);
+            whenThen.then->accept(this);
+          }
+          break;
+        }
+        case Expression::Kind::kSubscript: {  // properties($-.e[0]).name
           auto *subscriptExpr = static_cast<SubscriptExpression *>(argExpr);
           auto *subLeftExpr = subscriptExpr->left();
           auto leftKind = subLeftExpr->kind();
