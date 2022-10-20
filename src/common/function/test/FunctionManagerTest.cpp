@@ -1970,7 +1970,7 @@ TEST_F(FunctionManagerTest, JsonExtract) {
   // nested depth-1
   {
     std::vector<Value> args = {Value(R"({"a": 1, "b": 0.2, "c": {"d": true}})")};
-    TEST_FUNCTION(jsonExtract, args, {Map({"a": 1, "b": 0.2, "c": {"d": true}})});
+    TEST_FUNCTION(jsonExtract, args, {Map({"a" : 1, "b" : 0.2, "c" : {"d" : true}})});
   }
   // empty string
   {
@@ -1985,7 +1985,7 @@ TEST_F(FunctionManagerTest, JsonExtract) {
   // nested depth-2 as {}
   {
     std::vector<Value> args = {Value(R"({"a": "foo", "b": 0.2, "c": {"d": {"e": 0.1}}})")};
-    TEST_FUNCTION(jsonExtract, args, {Map({"a": "foo", "b": 0.2, "c": {}})});
+    TEST_FUNCTION(jsonExtract, args, {Map({"a" : "foo", "b" : 0.2, "c" : {}})});
   }
 }
 
