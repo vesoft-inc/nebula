@@ -405,21 +405,27 @@ def executing_query(query, exec_ctx, request):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
 
-@when(parse("executing query and retrying it on failure every {secs:d} seconds for {retryTimes:d} times:\n{query}"))
+
+@when(
+    parse(
+        "executing query and retrying it on failure every {secs:d} seconds for {retryTimes:d} times:\n{query}"
+    )
+)
 def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
     res = exec_ctx["result_set"]
     if not res.is_succeeded():
-      retryCounter = 0
-      while retryCounter < retryTimes:
-        time.sleep(secs)
-        exec_query(request, ngql, exec_ctx)
-        resRetry = exec_ctx["result_set"]
-        if not resRetry.is_succeeded():
-          retryCounter = retryCounter + 1
-        else:
-          break
+        retryCounter = 0
+        while retryCounter < retryTimes:
+            time.sleep(secs)
+            exec_query(request, ngql, exec_ctx)
+            resRetry = exec_ctx["result_set"]
+            if not resRetry.is_succeeded():
+                retryCounter = retryCounter + 1
+            else:
+                break
+
 
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
 def executing_query(
@@ -572,13 +578,11 @@ def cmp_dataset(
     if not res:
         scen = request.function.__scenario__
         feature = scen.feature.rel_filename
-        location = f"{feature}:{line_number(scen._steps, result)}"
         msg = [
             f"Fail to exec: {ngql}",
             f"Response: {dsp(rds)}",
             f"Expected: {dsp(ds)}",
             f"NotFoundRow: {rowp(ds, i)}",
-            f"Location: {location}",
             f"Space: {str(space_desc)}",
             f"vid_fn: {vid_fn}",
         ]
