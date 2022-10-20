@@ -57,7 +57,21 @@ Status GoValidator::validateImpl() {
     return Status::SemanticError("Only support single input in a go sentence.");
   }
 
+  goCtx_->isSimple = isSimpleCase();
+  if (goCtx_->isSimple) {
+    // Need to unify all EdgeDstIdExpr to *._dst.
+    // eg. serve._dst will be unified to *._dst
+    rewrite2EdgeDst();
+  }
   NG_RETURN_IF_ERROR(buildColumns());
+  if (goCtx_->isSimple) {
+    auto iter = propExprColMap_.find("*._dst");
+    if (iter != propExprColMap_.end()) {
+      goCtx_->dstIdColName = iter->second->alias();
+    }
+    // Rewrite *._dst/serve._dst to $dstIdColName
+    rewriteEdgeDst2VarProp();
+  }
   return Status::OK();
 }
 
@@ -85,8 +99,8 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
+  goCtx_->filter = rewriteVertexEdge2EdgeProp(filter);
   NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, &tagIds_, &goCtx_->over.edgeTypes));
-  goCtx_->filter = filter;
   return Status::OK();
 }
 
@@ -241,13 +255,13 @@ Status GoValidator::buildColumns() {
   const auto& inputProps = exprProps.inputProps();
   const auto& varProps = exprProps.varProps();
   const auto& from = goCtx_->from;
+  auto pool = qctx_->objPool();
 
   if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
       from.fromType == FromType::kInstantExpr) {
     return Status::OK();
   }
 
-  auto pool = qctx_->objPool();
   if (!exprProps.isAllPropsEmpty() || from.fromType != FromType::kInstantExpr) {
     goCtx_->srcEdgePropsExpr = pool->makeAndAdd<YieldColumns>();
   }
@@ -272,8 +286,83 @@ Status GoValidator::buildColumns() {
     extractPropExprs(col->expr(), uniqueEdgeVertexExpr);
     newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
   }
+
   goCtx_->yieldExpr = newYieldExpr;
   return Status::OK();
+}
+
+bool GoValidator::isSimpleCase() {
+  // Check limit clause
+  if (!goCtx_->limits.empty()) {
+    return false;
+  }
+  // Check if the filter or yield cluase uses:
+  // 1. src tag props,
+  // 2. or edge props, except the dst id of edge.
+  // 3. input or var props.
+  auto& exprProps = goCtx_->exprProps;
+  if (!exprProps.srcTagProps().empty()) return false;
+  if (!exprProps.edgeProps().empty()) {
+    for (auto& edgeProp : exprProps.edgeProps()) {
+      auto props = edgeProp.second;
+      if (props.size() != 1) return false;
+      if (props.find(kDst) == props.end()) return false;
+    }
+  }
+  if (exprProps.hasInputVarProperty()) return false;
+
+  // Check yield clause
+  if (!goCtx_->distinct) return false;
+  bool atLeastOneDstId = false;
+  for (auto& col : goCtx_->yieldExpr->columns()) {
+    auto expr = col->expr();
+    if (expr->kind() != Expression::Kind::kEdgeDst) continue;
+    atLeastOneDstId = true;
+    auto dstIdExpr = static_cast<const EdgeDstIdExpression*>(expr);
+    if (dstIdExpr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
+      return false;
+    }
+  }
+  return atLeastOneDstId;
+}
+
+void GoValidator::rewrite2EdgeDst() {
+  auto matcher = [](const Expression* e) -> bool {
+    if (e->kind() != Expression::Kind::kEdgeDst) {
+      return false;
+    }
+    auto* edgeDstExpr = static_cast<const EdgeDstIdExpression*>(e);
+    return edgeDstExpr->sym() != "*";
+  };
+  auto rewriter = [this](const Expression*) -> Expression* {
+    return EdgeDstIdExpression::make(qctx_->objPool(), "*");
+  };
+
+  if (goCtx_->filter != nullptr) {
+    goCtx_->filter = RewriteVisitor::transform(goCtx_->filter, matcher, rewriter);
+  }
+  auto* newYieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
+  for (auto* col : goCtx_->yieldExpr->columns()) {
+    newYieldExpr->addColumn(
+        new YieldColumn(RewriteVisitor::transform(col->expr(), matcher, rewriter), col->alias()));
+  }
+  goCtx_->yieldExpr = newYieldExpr;
+}
+
+void GoValidator::rewriteEdgeDst2VarProp() {
+  auto matcher = [](const Expression* expr) { return expr->kind() == Expression::Kind::kEdgeDst; };
+  auto rewriter = [this](const Expression*) {
+    return VariablePropertyExpression::make(qctx_->objPool(), "", goCtx_->dstIdColName);
+  };
+  if (goCtx_->filter != nullptr) {
+    goCtx_->filter = RewriteVisitor::transform(goCtx_->filter, matcher, rewriter);
+  }
+  auto* newYieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
+  for (auto* col : goCtx_->yieldExpr->columns()) {
+    newYieldExpr->addColumn(
+        new YieldColumn(RewriteVisitor::transform(col->expr(), matcher, rewriter), col->alias()));
+  }
+  goCtx_->yieldExpr = newYieldExpr;
 }
 
 }  // namespace graph
