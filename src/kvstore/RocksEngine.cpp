@@ -438,6 +438,9 @@ int32_t RocksEngine::totalPartsNum() {
 
 nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& files,
                                             bool verifyFileChecksum) {
+  if (files.empty()) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
   rocksdb::IngestExternalFileOptions options;
   options.move_files = FLAGS_move_files;
   options.verify_file_checksum = verifyFileChecksum;
