@@ -303,7 +303,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
-  auto transformRes = ExpressionUtils::filterTransform(filter);
+  auto *newFilter = graph::ExpressionUtils::rewriteInnerInExpr(filter);
+  auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
   whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(

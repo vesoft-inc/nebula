@@ -93,12 +93,10 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
-  // true when yield clause only yield distinct dst id
-  bool onlyYieldDistinctDstId{false};
-  // true when edge props only use dst id
-  bool edgePropsOnlyUseDstId{false};
   // Optimize for some simple go sentence which only need dst id.
   bool isSimple{false};
+  // The column name used by plan node`GetDstBySrc`
+  std::string dstIdColName{kDst};
 
   ExpressionProps exprProps;
 

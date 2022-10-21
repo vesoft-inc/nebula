@@ -332,7 +332,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
 
   if (!optJobDesc.setStatus(jobStatus, force)) {
     // job already been set as finished, failed or stopped
-    return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
+    return nebula::cpp2::ErrorCode::E_JOB_ALREADY_FINISH;
   }
 
   // If the job is marked as FAILED, one of the following will be triggered
@@ -373,17 +373,13 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
                                      optJobDesc.getStartTime(),
                                      optJobDesc.getStopTime(),
                                      optJobDesc.getErrorCode());
-  auto rc = save(jobKey, jobVal);
-  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return rc;
-  }
 
   auto it = runningJobs_.find(jobId);
   // Job has not started yet
   if (it == runningJobs_.end()) {
     // TODO job not existing in runningJobs_ also means leader changed, we handle it later
     cleanJob(jobId);
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return save(jobKey, jobVal);
   }
 
   // Job has been started
@@ -398,12 +394,19 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
         cleanJob(jobId);
         resetSpaceRunning(optJobDesc.getSpace());
       }
+      // job has been stopped successfully, so update the job status
+      return save(jobKey, jobVal);
     }
+    // job could not be stopped, so do not update the job status
     return code;
   } else {
     // If the job is failed or finished, clean and call finish.  We clean the job at first, no
     // matter `finish` return SUCCEEDED or not. Because the job has already come to the end.
     cleanJob(jobId);
+    auto rc = save(jobKey, jobVal);
+    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return rc;
+    }
     return jobExec->finish(jobStatus == cpp2::JobStatus::FINISHED);
   }
 }

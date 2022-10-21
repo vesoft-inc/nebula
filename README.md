@@ -22,13 +22,10 @@
 
 # What is NebulaGraph?
 
-**NebulaGraph** is an open-source graph database capable of hosting super large scale graphs <br/>
-with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency. 
+**NebulaGraph** is an open-source graph database capable of hosting super large-scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
 
 
-It has a lot of users, including some famous and big companies of **BAT**, **TMD**,  <br/>
-and has been widely used for social media, recommendations, security, capital flows, AI, etc.<br/>
-https://nebula-graph.io/cases
+Trusted and contributed by users, the [NebulaGraph community](https://github.com/vesoft-inc/nebula-community/) comes with a rich [open-source ecosystem](https://docs.nebula-graph.io/master/20.appendix/6.eco-tool-version/). And it has been widely used for social media, recommendation systems, knowledge graphs, security, capital flows, AI, etc, see [our users](https://nebula-graph.io/cases).
 
 
 Compared with other graph database solutions, **NebulaGraph** has the following advantages:
@@ -38,17 +35,21 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 * Horizontal scalability
 * Strong data consistency by RAFT protocol
 * OpenCypher-compatible query language
-* Role-based access control for higher level security
+* Role-based access control for higher-level security
 
 ## Notice of Release
 
-This repository hosts the source code of NebulaGraph versions before 2.0.0-alpha and after v2.5.x.  <br/>
-If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph).
+NebulaGraph used to be split into three repositories: [Nebula-Graph](https://github.com/vesoft-inc/nebula-graph), [Nebula-Storage,](https://github.com/vesoft-inc/nebula-storage) and [Nebula-Common](https://github.com/vesoft-inc/nebula-common) for versions between v2.0.0 and v2.5.x, which will be archived.
+
+The one and only codebase of NebulaGraph is now [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula), as it's back to mono-repo since v2.6.0.
+
+Please check the latest release via the documentation: https://docs.nebula-graph.io/.
+
+<!--
 
 NebulaGraph 1.x is not actively maintained. Please move to NebulaGraph 2.x.  <br/>
 The data format, rpc protocols, clients, etc. are not compatible between NebulaGraph v1.x and v2.x,  but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
 
-<!--
 To use the stable release, see [NebulaGraph 1.0](https://github.com/vesoft-inc/nebula).
 
 
