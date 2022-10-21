@@ -226,7 +226,6 @@ Feature: Match seek by id
       | "Rajon Rondo"      | "Lakers"    |
       | "LeBron James"     | "Lakers"    |
 
-  @czp
   Scenario: can't refer
     When executing query:
       """
