@@ -58,43 +58,6 @@ Feature: Simple case
       | 0  | Start       |              |               |
     When profiling query:
       """
-      GO FROM "Yao Ming" OVER like WHERE $$.player.age > 40 AND id($$) != "Tony Parker" YIELD DISTINCT id($$) AS dst, id($$) AS dst2, $$.player.age + 100 AS age | ORDER BY $-.dst
-      """
-    Then the result should be, in any order, with relax comparison:
-      | dst                | dst2               | age |
-      | "Shaquille O'Neal" | "Shaquille O'Neal" | 147 |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 8  | Sort        | 7            |               |
-      | 7  | Project     | 11           |               |
-      | 11 | Filter      | 10           |               |
-      | 10 | LeftJoin    | 9            |               |
-      | 9  | Filter      | 4            |               |
-      | 4  | Project     | 3            |               |
-      | 3  | GetVertices | 2            |               |
-      | 2  | Dedup       | 1            |               |
-      | 1  | GetDstBySrc | 0            |               |
-      | 0  | Start       |              |               |
-    When profiling query:
-      """
-      GO FROM "Tony Parker" OVER serve, like WHERE serve._dst !="abc" YIELD DISTINCT id($$) AS a | ORDER BY $-.a
-      """
-    Then the result should be, in any order, with relax comparison:
-      | a                   |
-      | "Hornets"           |
-      | "LaMarcus Aldridge" |
-      | "Manu Ginobili"     |
-      | "Spurs"             |
-      | "Tim Duncan"        |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 4  | Sort        | 3            |               |
-      | 3  | Filter      | 3            |               |
-      | 2  | Dedup       | 1            |               |
-      | 1  | GetDstBySrc | 0            |               |
-      | 0  | Start       |              |               |
-    When profiling query:
-      """
       GO FROM "Tony Parker" OVER like YIELD DISTINCT id($$) AS a | ORDER BY $-.a
       """
     Then the result should be, in any order, with relax comparison:
@@ -121,22 +84,6 @@ Feature: Simple case
       | id | name        | dependencies | operator info |
       | 4  | Sort        | 3            |               |
       | 3  | Project     | 3            |               |
-      | 2  | Dedup       | 1            |               |
-      | 1  | GetDstBySrc | 0            |               |
-      | 0  | Start       |              |               |
-    When profiling query:
-      """
-      GO FROM "Tony Parker" OVER like WHERE like._dst != "Tim Duncan" YIELD DISTINCT id($$), 2, like._dst AS a | ORDER BY $-.a
-      """
-    Then the result should be, in any order, with relax comparison:
-      | id($$)              | 2 | a                   |
-      | "LaMarcus Aldridge" | 2 | "LaMarcus Aldridge" |
-      | "Manu Ginobili"     | 2 | "Manu Ginobili"     |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 5  | Sort        | 4            |               |
-      | 4  | Project     | 3            |               |
-      | 3  | Filter      | 2            |               |
       | 2  | Dedup       | 1            |               |
       | 1  | GetDstBySrc | 0            |               |
       | 0  | Start       |              |               |
@@ -172,28 +119,6 @@ Feature: Simple case
       | 11 | Project     | 10           |                   |
       | 10 | Filter      | 9            |                   |
       | 9  | LeftJoin    | 8            |                   |
-      | 8  | Project     | 7            |                   |
-      | 7  | GetVertices | 6            |                   |
-      | 6  | Dedup       | 5            |                   |
-      | 5  | GetDstBySrc | 4            |                   |
-      | 4  | Loop        | 0            | {"loopBody": "3"} |
-      | 3  | Dedup       | 2            |                   |
-      | 2  | GetDstBySrc | 1            |                   |
-      | 1  | Start       |              |                   |
-      | 0  | Start       |              |                   |
-    When profiling query:
-      """
-      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE id($$) != "Not exists" YIELD DISTINCT id($$), $$.player.age | YIELD count(*)
-      """
-    Then the result should be, in any order, with relax comparison:
-      | count(*) |
-      | 22       |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info     |
-      | 12 | Aggregate   | 11           |                   |
-      | 11 | Project     | 14           |                   |
-      | 14 | LeftJoin    | 13           |                   |
-      | 13 | Filter      | 8            |                   |
       | 8  | Project     | 7            |                   |
       | 7  | GetVertices | 6            |                   |
       | 6  | Dedup       | 5            |                   |
@@ -385,26 +310,6 @@ Feature: Simple case
       | 0  | Start       |              |                   |
     When profiling query:
       """
-      GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE like._dst != "Yao Ming" YIELD DISTINCT id($$) AS a | ORDER BY $-.a
-      """
-    Then the result should be, in any order, with relax comparison:
-      | a                   |
-      | "LaMarcus Aldridge" |
-      | "Manu Ginobili"     |
-      | "Tim Duncan"        |
-      | "Tony Parker"       |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info     |
-      | 7  | Sort        | 6            |                   |
-      | 6  | DataCollect | 5            |                   |
-      | 5  | Loop        | 0            | {"loopBody": "4"} |
-      | 4  | Filter      | 3            |                   |
-      | 3  | Dedup       | 2            |                   |
-      | 2  | GetDstBySrc | 1            |                   |
-      | 1  | Start       |              |                   |
-      | 0  | Start       |              |                   |
-    When profiling query:
-      """
       GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
       """
     Then the result should be, in any order, with relax comparison:
@@ -419,30 +324,6 @@ Feature: Simple case
       | 9  | Project     | 8            |                   |
       | 8  | Filter      | 7            |                   |
       | 7  | LeftJoin    | 6            |                   |
-      | 6  | Project     | 5            |                   |
-      | 5  | GetVertices | 4            |                   |
-      | 4  | Project     | 3            |                   |
-      | 3  | Dedup       | 2            |                   |
-      | 2  | GetDstBySrc | 1            |                   |
-      | 1  | Start       |              |                   |
-      | 0  | Start       |              |                   |
-    When profiling query:
-      """
-      GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
-      """
-    Then the result should be, in any order, with relax comparison:
-      | id($$)              | age | $$.player.name      |
-      | "LaMarcus Aldridge" | 33  | "LaMarcus Aldridge" |
-      | "Tony Parker"       | 36  | "Tony Parker"       |
-      | "Manu Ginobili"     | 41  | "Manu Ginobili"     |
-    And the execution plan should be:
-      | id | name        | dependencies | operator info     |
-      | 12 | Sort        | 11           |                   |
-      | 11 | DataCollect | 10           |                   |
-      | 10 | Loop        | 0            | {"loopBody": "9"} |
-      | 9  | Project     | 14           |                   |
-      | 14 | LeftJoin    | 13           |                   |
-      | 13 | Filter      | 6            |                   |
       | 6  | Project     | 5            |                   |
       | 5  | GetVertices | 4            |                   |
       | 4  | Project     | 3            |                   |
@@ -590,6 +471,151 @@ Feature: Simple case
       | 2  | Dedup       | 1            |                   |
       | 1  | GetDstBySrc | 0            |                   |
       | 0  | Start       |              |                   |
+
+  Scenario: could not be optimied cases
+    When profiling query:
+      """
+      GO FROM "Yao Ming" OVER like WHERE $$.player.age > 40 AND id($$) != "Tony Parker" YIELD DISTINCT id($$) AS dst, id($$) AS dst2, $$.player.age + 100 AS age | ORDER BY $-.dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                | dst2               | age |
+      | "Shaquille O'Neal" | "Shaquille O'Neal" | 147 |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info |
+      | 9  | Sort         | 8            |               |
+      | 8  | Dedup        | 7            |               |
+      | 7  | Project      | 6            |               |
+      | 6  | Filter       | 5            |               |
+      | 5  | LeftJoin     | 4            |               |
+      | 4  | Project      | 3            |               |
+      | 3  | GetVertices  | 2            |               |
+      | 2  | Project      | 1            |               |
+      | 1  | GetNeighbors | 0            |               |
+      | 0  | Start        |              |               |
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER like WHERE like._dst != "Tim Duncan" YIELD DISTINCT id($$), 2, like._dst AS a | ORDER BY $-.a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id($$)              | 2 | a                   |
+      | "LaMarcus Aldridge" | 2 | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     | 2 | "Manu Ginobili"     |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info |
+      | 5  | Sort         | 4            |               |
+      | 4  | Dedup        | 3            |               |
+      | 3  | Project      | 6            |               |
+      | 6  | GetNeighbors | 0            |               |
+      | 0  | Start        |              |               |
+    When profiling query:
+      """
+      GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE id($$) != "Not exists" YIELD DISTINCT id($$), $$.player.age | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 22       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 13 | Aggregate    | 12           |                   |
+      | 12 | Dedup        | 11           |                   |
+      | 11 | Project      | 10           |                   |
+      | 10 | Filter       | 9            |                   |
+      | 9  | LeftJoin     | 8            |                   |
+      | 8  | Project      | 7            |                   |
+      | 7  | GetVertices  | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | GetNeighbors | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER serve, like WHERE serve._dst !="abc" YIELD DISTINCT id($$) AS a | ORDER BY $-.a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                   |
+      | "Hornets"           |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Spurs"             |
+      | "Tim Duncan"        |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info |
+      | 5  | Sort         | 4            |               |
+      | 4  | Dedup        | 3            |               |
+      | 3  | Project      | 6            |               |
+      | 6  | GetNeighbors | 0            |               |
+      | 0  | Start        |              |               |
+    When profiling query:
+      """
+      GO 1 STEP FROM "Tony Parker" OVER like, serve REVERSELY WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$)  | YIELD  count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 4        |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info |
+      | 9  | Aggregate    | 8            |               |
+      | 8  | Dedup        | 7            |               |
+      | 7  | Project      | 6            |               |
+      | 6  | Filter       | 5            |               |
+      | 5  | LeftJoin     | 4            |               |
+      | 4  | Project      | 3            |               |
+      | 3  | GetVertices  | 2            |               |
+      | 2  | Project      | 1            |               |
+      | 1  | GetNeighbors | 0            |               |
+      | 0  | Start        |              |               |
+    When profiling query:
+      """
+      GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE like._dst != "Yao Ming" YIELD DISTINCT id($$) AS a | ORDER BY $-.a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                   |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+      | "Tony Parker"       |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info     |
+      | 10 | Sort         | 9            |                   |
+      | 9  | DataCollect  | 8            |                   |
+      | 8  | Loop         | 0            | {"loopBody": "7"} |
+      | 7  | Dedup        | 6            |                   |
+      | 6  | Project      | 5            |                   |
+      | 5  | Filter       | 4            |                   |
+      | 4  | Dedup        | 3            |                   |
+      | 3  | Project      | 2            |                   |
+      | 2  | GetNeighbors | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+    When profiling query:
+      """
+      GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id($$)              | age | $$.player.name      |
+      | "LaMarcus Aldridge" | 33  | "LaMarcus Aldridge" |
+      | "Tony Parker"       | 36  | "Tony Parker"       |
+      | "Manu Ginobili"     | 41  | "Manu Ginobili"     |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info      |
+      | 14 | Sort         | 13           |                    |
+      | 13 | DataCollect  | 12           |                    |
+      | 12 | Loop         | 0            | {"loopBody": "11"} |
+      | 11 | Dedup        | 10           |                    |
+      | 10 | Project      | 9            |                    |
+      | 9  | Filter       | 8            |                    |
+      | 8  | LeftJoin     | 7            |                    |
+      | 7  | Project      | 6            |                    |
+      | 6  | GetVertices  | 5            |                    |
+      | 5  | Project      | 4            |                    |
+      | 4  | Dedup        | 3            |                    |
+      | 3  | Project      | 2            |                    |
+      | 2  | GetNeighbors | 1            |                    |
+      | 1  | Start        |              |                    |
+      | 0  | Start        |              |                    |
     When profiling query:
       """
       GO FROM "Yao Ming" OVER like YIELD DISTINCT id($$) AS aa | GO 1 to 3 STEP FROM $-.aa OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
@@ -605,21 +631,32 @@ Feature: Simple case
       | "Manu Ginobili"     | 41  | "Manu Ginobili"     |
       | "Grant Hill"        | 46  | "Grant Hill"        |
     And the execution plan should be:
-      | id | name        | dependencies | operator info      |
-      | 16 | Sort        | 15           |                    |
-      | 15 | DataCollect | 14           |                    |
-      | 14 | Loop        | 4            | {"loopBody": "13"} |
-      | 13 | Project     | 18           |                    |
-      | 18 | LeftJoin    | 17           |                    |
-      | 17 | Filter      | 10           |                    |
-      | 10 | Project     | 9            |                    |
-      | 9  | GetVertices | 8            |                    |
-      | 8  | Project     | 7            |                    |
-      | 7  | Dedup       | 6            |                    |
-      | 6  | GetDstBySrc | 5            |                    |
-      | 5  | Start       |              |                    |
-      | 4  | Dedup       | 3            |                    |
-      | 3  | Project     | 2            |                    |
-      | 2  | Dedup       | 1            |                    |
-      | 1  | GetDstBySrc | 0            |                    |
-      | 0  | Start       |              |                    |
+      | id | name         | dependencies | operator info      |
+      | 27 | Sort         | 26           |                    |
+      | 26 | DataCollect  | 25           |                    |
+      | 25 | Loop         | 10           | {"loopBody": "24"} |
+      | 24 | Dedup        | 23           |                    |
+      | 23 | Project      | 22           |                    |
+      | 22 | Filter       | 21           |                    |
+      | 21 | InnerJoin    | 20           |                    |
+      | 20 | InnerJoin    | 19           |                    |
+      | 19 | LeftJoin     | 18           |                    |
+      | 18 | Project      | 17           |                    |
+      | 17 | GetVertices  | 16           |                    |
+      | 16 | Project      | 15           |                    |
+      | 15 | Dedup        | 14           |                    |
+      | 14 | Project      | 13           |                    |
+      | 13 | InnerJoin    | 12           |                    |
+      | 12 | Dedup        | 11           |                    |
+      | 11 | Project      | 8            |                    |
+      | 8  | Dedup        | 7            |                    |
+      | 7  | Project      | 6            |                    |
+      | 6  | GetNeighbors | 5            |                    |
+      | 5  | Start        |              |                    |
+      | 10 | Dedup        | 9            |                    |
+      | 9  | Project      | 4            |                    |
+      | 4  | Dedup        | 3            |                    |
+      | 3  | Project      | 2            |                    |
+      | 2  | Dedup        | 1            |                    |
+      | 1  | GetDstBySrc  | 0            |                    |
+      | 0  | Start        |              |                    |

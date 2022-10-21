@@ -6,6 +6,9 @@
 #ifndef COMMON_EXPRESSION_CONTAINEREXPRESSION_H_
 #define COMMON_EXPRESSION_CONTAINEREXPRESSION_H_
 
+#include "common/base/ObjectPool.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/ContainerExpression.h"
 #include "common/expression/Expression.h"
 
 namespace nebula {
@@ -63,7 +66,16 @@ class MapItemList final {
   std::vector<Pair> items_;
 };
 
-class ListExpression final : public Expression {
+class ContainerExpression : public Expression {
+ public:
+  virtual const std::vector<Expression *> getKeys() const = 0;
+  virtual size_t size() const = 0;
+
+ protected:
+  ContainerExpression(ObjectPool *pool, Expression::Kind kind) : Expression(pool, kind) {}
+};
+
+class ListExpression final : public ContainerExpression {
  public:
   ListExpression &operator=(const ListExpression &rhs) = delete;
   ListExpression &operator=(ListExpression &&) = delete;
@@ -84,7 +96,7 @@ class ListExpression final : public Expression {
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() {
+  const std::vector<Expression *> getKeys() const override {
     return items_;
   }
 
@@ -92,7 +104,7 @@ class ListExpression final : public Expression {
     items_ = items;
   }
 
-  size_t size() const {
+  size_t size() const override {
     return items_.size();
   }
 
@@ -116,9 +128,9 @@ class ListExpression final : public Expression {
 
  private:
   friend ObjectPool;
-  explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
+  explicit ListExpression(ObjectPool *pool) : ContainerExpression(pool, Kind::kList) {}
 
-  ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
+  ListExpression(ObjectPool *pool, ExpressionList *items) : ContainerExpression(pool, Kind::kList) {
     items_ = items->get();
   }
 
@@ -131,7 +143,7 @@ class ListExpression final : public Expression {
   Value result_;
 };
 
-class SetExpression final : public Expression {
+class SetExpression final : public ContainerExpression {
  public:
   SetExpression &operator=(const SetExpression &rhs) = delete;
   SetExpression &operator=(SetExpression &&) = delete;
@@ -152,7 +164,7 @@ class SetExpression final : public Expression {
     items_[index] = item;
   }
 
-  std::vector<Expression *> get() {
+  const std::vector<Expression *> getKeys() const override {
     return items_;
   }
 
@@ -160,7 +172,7 @@ class SetExpression final : public Expression {
     items_ = items;
   }
 
-  size_t size() const {
+  size_t size() const override {
     return items_.size();
   }
 
@@ -184,9 +196,9 @@ class SetExpression final : public Expression {
 
  private:
   friend ObjectPool;
-  explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
+  explicit SetExpression(ObjectPool *pool) : ContainerExpression(pool, Kind::kSet) {}
 
-  SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
+  SetExpression(ObjectPool *pool, ExpressionList *items) : ContainerExpression(pool, Kind::kSet) {
     items_ = items->get();
   }
 
@@ -199,7 +211,7 @@ class SetExpression final : public Expression {
   Value result_;
 };
 
-class MapExpression final : public Expression {
+class MapExpression final : public ContainerExpression {
  public:
   MapExpression &operator=(const MapExpression &rhs) = delete;
   MapExpression &operator=(MapExpression &&) = delete;
@@ -230,7 +242,15 @@ class MapExpression final : public Expression {
     return items_;
   }
 
-  size_t size() const {
+  const std::vector<Expression *> getKeys() const override {
+    std::vector<Expression *> keys;
+    for (const auto &item : items_) {
+      keys.emplace_back(ConstantExpression::make(pool_, item.first));
+    }
+    return keys;
+  }
+
+  size_t size() const override {
     return items_.size();
   }
 
@@ -254,9 +274,9 @@ class MapExpression final : public Expression {
 
  private:
   friend ObjectPool;
-  explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
+  explicit MapExpression(ObjectPool *pool) : ContainerExpression(pool, Kind::kMap) {}
 
-  MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
+  MapExpression(ObjectPool *pool, MapItemList *items) : ContainerExpression(pool, Kind::kMap) {
     items_ = items->get();
   }
 
