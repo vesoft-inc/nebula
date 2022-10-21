@@ -135,7 +135,8 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
       queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
     }
   }
-  if (queryPart.matchs.size() == 1 && queryPart.matchs[0]->isOptional) {
+  if (queryPart.matchs.size() == 1 && queryPart.matchs[0]->isOptional &&
+      queryPlan.root->kind() != PlanNode::Kind::kBiLeftJoin) {
     // NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, queryPart.matchs[0].get()));
     // connect match filter
     if (queryPart.matchs[0]->where != nullptr) {
