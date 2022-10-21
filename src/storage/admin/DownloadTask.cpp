@@ -50,6 +50,13 @@ nebula::cpp2::ErrorCode DownloadTask::subTask(GraphSpaceID space, PartitionID pa
     }
   }
 
+  auto listResult = helper_->ls(hdfsHost_, hdfsPort_, hdfsPartPath);
+  if (!listResult.ok()) {
+    LOG(INFO) << "Can't found data of space: " << space << ", part: " << part
+              << ", just skip the part";
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
   auto result = helper_->copyToLocal(hdfsHost_, hdfsPort_, hdfsPartPath, localPath);
   return result.ok() ? nebula::cpp2::ErrorCode::SUCCEEDED
                      : nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED;
