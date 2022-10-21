@@ -59,6 +59,35 @@ Feature: Index selecting for match statement
       | 0  | Start          |              |                                                     |
     When profiling query:
       """
+      MATCH (v:player) WHERE v.player.name in ["Yao Ming"] RETURN v.player.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name       |
+      | "Yao Ming" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 6  | Project        | 2            |                                                     |
+      | 2  | Filter         | 5            |                                                     |
+      | 2  | AppendVertices | 5            |                                                     |
+      | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.player.name in ["Yao Ming", "Tim Duncan"] RETURN v.player.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         |
+      | "Tim Duncan" |
+      | "Yao Ming"   |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 6  | Project        | 2            |                                                     |
+      | 2  | Filter         | 5            |                                                     |
+      | 2  | AppendVertices | 5            |                                                     |
+      | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
       MATCH (v:player) WHERE v.player.name == "Tim Duncan" and v.player.name < "Zom" RETURN v.player.name AS name
       """
     Then the result should be, in any order, with relax comparison:

@@ -4,8 +4,11 @@
 
 #include "graph/util/ExpressionUtils.h"
 
+#include "ExpressionUtils.h"
 #include "common/base/ObjectPool.h"
 #include "common/expression/ArithmeticExpression.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/ContainerExpression.h"
 #include "common/expression/Expression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/function/AggFunctionManager.h"
@@ -201,6 +204,50 @@ Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryConte
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
+  auto matcher = [](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kRelIn) {
+      return false;
+    }
+    auto rhs = static_cast<const RelationalExpression *>(e)->right();
+    if (rhs->kind() != Expression::Kind::kList && rhs->kind() != Expression::Kind::kSet) {
+      return false;
+    }
+    auto items = static_cast<const ContainerExpression *>(rhs)->getKeys();
+    for (const auto *item : items) {
+      if (!ExpressionUtils::isEvaluableExpr(item)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  auto rewriter = [](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kRelIn);
+    const auto re = static_cast<const RelationalExpression *>(e);
+    auto lhs = re->left();
+    auto rhs = re->right();
+    DCHECK(rhs->kind() == Expression::Kind::kList || rhs->kind() == Expression::Kind::kSet);
+    auto ce = static_cast<const ContainerExpression *>(rhs);
+    auto pool = e->getObjPool();
+    auto *rewrittenExpr = LogicalExpression::makeOr(pool);
+    // Pointer to a single-level expression
+    Expression *singleExpr = nullptr;
+    auto items = ce->getKeys();
+    for (auto i = 0u; i < items.size(); ++i) {
+      auto *ee = RelationalExpression::makeEQ(pool, lhs->clone(), items[i]->clone());
+      rewrittenExpr->addOperand(ee);
+      if (i == 0) {
+        singleExpr = ee;
+      } else {
+        singleExpr = nullptr;
+      }
+    }
+    return singleExpr ? singleExpr : rewrittenExpr;
+  };
+
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
 Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
@@ -368,10 +415,10 @@ std::vector<Expression *> ExpressionUtils::getContainerExprOperands(const Expres
   std::vector<Expression *> containerOperands;
   switch (containerExpr->kind()) {
     case Expression::Kind::kList:
-      containerOperands = static_cast<ListExpression *>(containerExpr)->get();
+      containerOperands = static_cast<ListExpression *>(containerExpr)->getKeys();
       break;
     case Expression::Kind::kSet: {
-      containerOperands = static_cast<SetExpression *>(containerExpr)->get();
+      containerOperands = static_cast<SetExpression *>(containerExpr)->getKeys();
       break;
     }
     case Expression::Kind::kMap: {
