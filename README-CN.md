@@ -30,9 +30,8 @@
 
 **NebulaGraph** 是一款开源的图数据库，擅长处理千亿个顶点和万亿条边的超大规模数据集。
 
-已陆续被包括在 **BAT**, **TMD** 中的众多知名大厂和大量国内外中小企业使用，<br />
-广泛应用在社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等。<br />
-https://nebula-graph.com.cn/cases
+NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图技术场景实践知识的活跃开源社区。你可以在其中与大家共同交流 NebulaGraph [周边生态项目](https://docs.nebula-graph.com.cn/master/20.appendix/6.eco-tool-version/)的应用心得，或者社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等[大规模生产场景](https://nebula-graph.com.cn/cases)的实践经验。
+
 
 与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
 
@@ -45,13 +44,17 @@ https://nebula-graph.com.cn/cases
 
 ## 发布通告
 
-v1.x 和 v2.5.x 之后的版本，NebulaGraph 在这个 repo 管理。<br />
-如需获取 v2.0.0 到 v2.5.x 之间的版本，请访问 [NebulaGraph repo](https://github.com/vesoft-inc/nebula-graph)。
+NebulaGraph 的 GitHub 仓库经历过拆分和合并的过程，所以其 v2.0.0 到 v2.5.x 的代码分布在另外几个仓库中：[Nebula-Graph](https://github.com/vesoft-inc/nebula-graph)、[Nebula-Storage](https://github.com/vesoft-inc/nebula-storage)、[Nebula-Common](https://github.com/vesoft-inc/nebula-common)，这几个仓库将被归档。
+
+从 v2.6.0 开始，包括现在的 v3.x，NebulaGraph 内核代码集中在 [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula) 下。
+
+请访问 NebulaGraph 文档：https://docs.nebula-graph.com.cn/ 了解、获取 NebulaGraph 的最新的正式版本。
+
+<!--
 
 NebulaGraph 1.x 后续不再进行功能的更新，请升级到 2.0+ 版本。<br />
 NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
 
-<!--
 如需使用稳定版本，请参见[NebulaGraph 1.0](https://github.com/vesoft-inc/nebula)。
 
 
