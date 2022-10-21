@@ -53,6 +53,30 @@ const Expression *ExpressionUtils::findAny(const Expression *self,
   return nullptr;
 }
 
+bool ExpressionUtils::findEdgeDstExpr(const Expression *expr) {
+  auto finder = [](const Expression *e) -> bool {
+    if (e->kind() == Expression::Kind::kEdgeDst) {
+      return true;
+    } else {
+      auto name = e->toString();
+      std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+      if (name == "id($$)") {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (finder(expr)) {
+    return true;
+  }
+  FindVisitor visitor(finder);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  if (!visitor.results().empty()) {
+    return true;
+  }
+  return false;
+}
+
 // Finds all expressions fit the exprected list
 // Returns an empty vector if no expression found
 std::vector<const Expression *> ExpressionUtils::collectAll(

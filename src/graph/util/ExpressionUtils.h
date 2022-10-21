@@ -196,6 +196,9 @@ class ExpressionUtils {
   // Checks if expr contains function call expression that generate a random value
   static bool findInnerRandFunction(const Expression* expr);
 
+  // Checks if expr contains function EdgeDst expr or id($$) expr
+  static bool findEdgeDstExpr(const Expression* expr);
+
   // ** Loop node condition **
   // Generates an expression that is used as the condition of loop node:
   // ++loopSteps <= steps
