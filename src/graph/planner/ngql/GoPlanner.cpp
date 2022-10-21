@@ -318,6 +318,7 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
     gd->setInputVar(goCtx_->vidsVar);
     gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
+    dedup->setColNames(gd->colNames());
     cur = dedup;
 
     if (goCtx_->joinDst) {
@@ -486,6 +487,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
     gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
     dedup->setOutputVar(goCtx_->vidsVar);
+    dedup->setColNames(gd->colNames());
     getDst = dedup;
 
     loopBody = getDst;
