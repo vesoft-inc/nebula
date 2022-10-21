@@ -123,8 +123,20 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
 Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
                                       SubPlan& queryPlan,
                                       const QueryPart& queryPart) {
+  // generate plan for matchs
+  for (auto& match : queryPart.matchs) {
+    NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, match.get()));
+    // connect match filter
+    if (match->where != nullptr && !match->isOptional) {
+      match->where->inputColNames = queryPlan.root->colNames();
+      auto wherePlanStatus = std::make_unique<WhereClausePlanner>()->transform(match->where.get());
+      NG_RETURN_IF_ERROR(wherePlanStatus);
+      auto wherePlan = std::move(wherePlanStatus).value();
+      queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
+    }
+  }
   if (queryPart.matchs.size() == 1 && queryPart.matchs[0]->isOptional) {
-    NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, queryPart.matchs[0].get()));
+    // NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, queryPart.matchs[0].get()));
     // connect match filter
     if (queryPart.matchs[0]->where != nullptr) {
       queryPart.matchs[0]->where->inputColNames = queryPlan.root->colNames();
@@ -133,20 +145,6 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
       NG_RETURN_IF_ERROR(wherePlanStatus);
       auto wherePlan = std::move(wherePlanStatus).value();
       queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
-    }
-  } else {
-    // generate plan for matchs
-    for (auto& match : queryPart.matchs) {
-      NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, match.get()));
-      // connect match filter
-      if (match->where != nullptr && !match->isOptional) {
-        match->where->inputColNames = queryPlan.root->colNames();
-        auto wherePlanStatus =
-            std::make_unique<WhereClausePlanner>()->transform(match->where.get());
-        NG_RETURN_IF_ERROR(wherePlanStatus);
-        auto wherePlan = std::move(wherePlanStatus).value();
-        queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
-      }
     }
   }
 
