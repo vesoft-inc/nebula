@@ -99,8 +99,8 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
-  goCtx_->filter = rewriteVertexEdge2EdgeProp(filter);
   NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, &tagIds_, &goCtx_->over.edgeTypes));
+  goCtx_->filter = filter;
   return Status::OK();
 }
 
@@ -310,6 +310,15 @@ bool GoValidator::isSimpleCase() {
     }
   }
   if (exprProps.hasInputVarProperty()) return false;
+
+  // Check filter clause
+  // Because GetDstBySrc doesn't support filter push down,
+  // so we don't optimize such case.
+  if (goCtx_->filter) {
+    if (ExpressionUtils::findEdgeDstExpr(goCtx_->filter)) {
+      return false;
+    }
+  }
 
   // Check yield clause
   if (!goCtx_->distinct) return false;
