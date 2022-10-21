@@ -30,6 +30,10 @@ class VertexIdSeek final : public StartVidFinder {
 
   std::string listToAnnoVarVid(QueryContext* qctx, const List& list);
 
+  const char* name() const override {
+    return "VertexIdSeekFinder";
+  }
+
  private:
   VertexIdSeek() = default;
 };
