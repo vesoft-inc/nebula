@@ -83,6 +83,9 @@ class ExpressionUtils {
   // Rewrites ParameterExpression to ConstantExpression
   static Expression* rewriteParameter(const Expression* expr, QueryContext* qctx);
 
+  // Rewrite RelInExpr with only one operand in expression tree
+  static Expression* rewriteInnerInExpr(const Expression* expr);
+
   // Rewrites relational expression, gather all evaluable expressions in the left operands and move
   // them to the right
   static Expression* rewriteRelExpr(const Expression* expr);
