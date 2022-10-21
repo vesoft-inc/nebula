@@ -135,6 +135,13 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
       queryPlan = SegmentsConnector::addInput(wherePlan, queryPlan, true);
     }
   }
+  /*
+    FIXME(Xuntao): the following if scope is to prevent a singular optional match caluse
+    to produce random records without applying a predicate. With this predicate added to the query
+    plan, however, it would produce an empty result set, if no match was found in the filter. This
+    is wrong, actually. An optional match shall always produce a NULL result in such cases.
+    A root fix for this issue needs further discussions.
+  */
   if (queryPart.matchs.size() == 1 && queryPart.matchs[0]->isOptional &&
       queryPlan.root->kind() != PlanNode::Kind::kBiLeftJoin) {
     // NG_RETURN_IF_ERROR(connectMatchPlan(queryPlan, queryPart.matchs[0].get()));
