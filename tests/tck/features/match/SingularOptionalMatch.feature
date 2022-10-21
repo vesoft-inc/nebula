@@ -9,13 +9,13 @@ Feature: Singular Optional Match
   Scenario: singular optional match
     When executing query:
       """
-        OPTIONAL MATCH (v:player)
-        WHERE v.player.name == "Cheng Xuntao"
-        RETURN v
-        LIMIT 10;
+      OPTIONAL MATCH (v:player)
+      WHERE v.player.name == "Cheng Xuntao"
+      RETURN v
+      LIMIT 10;
       """
     Then the result should be, in any order:
-      | v   |
+      | v |
     # the above result set is actually wrong. it shall produce a null record.
     # but we leave it as an todo. Currently, we prevent it from producing
     # random records.
@@ -23,11 +23,11 @@ Feature: Singular Optional Match
     # all optional match queries.
     When executing query:
       """
-        OPTIONAL MATCH (v:player)
-        WHERE v.player.name == "Tim Duncan"
-        RETURN v.player.name as name
-        LIMIT 10;
+      OPTIONAL MATCH (v:player)
+      WHERE v.player.name == "Tim Duncan"
+      RETURN v.player.name as name
+      LIMIT 10;
       """
     Then the result should be, in any order:
-      | name  |
-      | "Tim Duncan"  |
+      | name         |
+      | "Tim Duncan" |
