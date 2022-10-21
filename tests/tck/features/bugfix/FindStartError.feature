@@ -10,7 +10,7 @@ Feature: Test find start error for property index seek
   Scenario: Find start of match pattern
     When executing query:
       """
-      MATCH (v:player) WHERE (1 + 1) == 3 RETURN v.player.name;
+      WITH 1 as a MATCH (v:player) WHERE a == 3 OR (a + 1) == 4 RETURN v.player.name;
       """
     Then the result should be, in any order:
       | v.player.name |
