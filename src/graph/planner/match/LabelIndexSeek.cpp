@@ -91,7 +91,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
 
     if (filter->kind() == Expression::Kind::kLogicalOr) {
       auto exprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
-      bool matched = true;
+      bool matched = exprs.empty() ? false : true;
       for (auto* expr : exprs) {
         auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
         if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias ||
