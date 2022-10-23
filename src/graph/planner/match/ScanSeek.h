@@ -26,6 +26,10 @@ class ScanSeek final : public StartVidFinder {
 
   StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
+  const char* name() const override {
+    return "ScanSeekFinder";
+  }
+
  private:
   ScanSeek() = default;
 };

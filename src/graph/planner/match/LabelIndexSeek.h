@@ -18,6 +18,10 @@ class LabelIndexSeek final : public StartVidFinder {
     return std::unique_ptr<LabelIndexSeek>(new LabelIndexSeek());
   }
 
+  const char* name() const override {
+    return "LabelIndexSeekFinder";
+  }
+
  private:
   LabelIndexSeek() = default;
 

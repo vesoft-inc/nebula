@@ -61,6 +61,8 @@ class StartVidFinder {
 
   virtual StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) = 0;
 
+  virtual const char* name() const = 0;
+
  protected:
   StartVidFinder() = default;
 };
