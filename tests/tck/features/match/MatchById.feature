@@ -133,7 +133,7 @@ Feature: Match By Id
       | 'serve' | 'Lakers'    |
     When executing query:
       """
-      MATCH (v1) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1) -[r:serve]-> (v2:team{name: "Cavaliers"})
       WHERE id(v1) == "LeBron James"
       RETURN type(r) AS Type, v2.team.name AS Name
       """

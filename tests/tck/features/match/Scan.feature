@@ -87,9 +87,8 @@ Feature: Match seek by scan
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
-      MATCH (v{name: "Mary"})
+      MATCH (v:person)
       RETURN v.student.name AS Name
-      LIMIT 3
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
