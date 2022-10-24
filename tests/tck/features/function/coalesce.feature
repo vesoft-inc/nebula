@@ -1,4 +1,4 @@
-Feature: Fetch Int Vid Edges
+Feature: Coalesce Function
 
   Background:
     Test coalesce function

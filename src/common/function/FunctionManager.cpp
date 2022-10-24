@@ -5,6 +5,8 @@
 
 #include "FunctionManager.h"
 
+#include <folly/json.h>
+
 #include <boost/algorithm/string/replace.hpp>
 
 #include "common/base/Base.h"
@@ -421,6 +423,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
+    {"json_extract",
+     {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
+      TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
 };
 
 // static
@@ -2763,6 +2768,34 @@ FunctionManager::FunctionManager() {
         return p.src.vid;
       } else {
         return p.steps[nodeIndex - 1].dst.vid;
+      }
+    };
+  }
+  {
+    auto &attr = functions_["json_extract"];
+    // note, we don't support second argument(path) like MySQL JSON_EXTRACT for now
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto json = args[0].get().getStr();
+
+      // invalid string to json will be caught and returned as null
+      try {
+        auto obj = folly::parseJson(json);
+        if (!obj.isObject()) {
+          return Value::kNullBadData;
+        }
+        // if obj is empty, i.e. "{}", return empty map
+        if (obj.empty()) {
+          return Map();
+        }
+        return Map(obj);
+      } catch (const std::exception &e) {
+        return Value::kNullBadData;
       }
     };
   }
