@@ -423,7 +423,11 @@ BinaryInputNode::BinaryInputNode(QueryContext* qctx,
   }
 
   addDep(right);
-  readVariable(right->outputVarPtr());
+  if (right != nullptr) {
+    readVariable(right->outputVarPtr());
+  } else {
+    inputVars_.emplace_back(nullptr);
+  }
 }
 
 // It's used for clone
