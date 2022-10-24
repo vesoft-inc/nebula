@@ -26,6 +26,10 @@ class ArgumentFinder final : public StartVidFinder {
 
   StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
+  const char* name() const override {
+    return "ArgumentFinder";
+  }
+
  private:
   ArgumentFinder() = default;
 };
