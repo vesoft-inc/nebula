@@ -132,7 +132,11 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"date", {Date(1984, 10, 11)}},
     {"datetime", {DateTime(1984, 10, 11, 12, 31, 14, 341)}},
     {"edge", {Edge("1", "2", -1, "e1", 0, {{"e1", 1}, {"e2", 2}})}},
-};
+    {"json_extract0", {"{\"a\": 1, \"b\": 0.2}"}},
+    {"json_extract1", {"{\"a\": 1, \"b\": 0.2, \"c\": {\"d\": true}}"}},
+    {"json_extract2", {"_"}},
+    {"json_extract3", {"{a: 1, \"b\": 0.2}"}},
+    {"json_extract4", {"{\"a\": \"foo\", \"b\": 0.2, \"c\": {\"d\": {\"e\": 0.1}}}"}}};
 
 #define TEST_FUNCTION(expr, ...)                   \
   do {                                             \
@@ -385,6 +389,21 @@ TEST_F(FunctionManagerTest, functionCall) {
   { TEST_FUNCTION(rand32, args_["empty"]); }
   { TEST_FUNCTION(now, args_["empty"]); }
   { TEST_FUNCTION(hash, args_["string"]); }
+  {
+    TEST_FUNCTION(
+        json_extract, args_["json_extract0"], Value(Map({{"a", Value(1)}, {"b", Value(0.2)}})));
+    TEST_FUNCTION(
+        json_extract,
+        args_["json_extract1"],
+        Value(Map({{"a", Value(1)}, {"b", Value(0.2)}, {"c", Value(Map({{"d", Value(true)}}))}})));
+    // invalid json string
+    TEST_FUNCTION(json_extract, args_["json_extract2"], Value::kNullBadData);
+    TEST_FUNCTION(json_extract, args_["json_extract3"], Value::kNullBadData);
+    // when there is nested Map in depth >= 2, the value will be dropped as empty Map()
+    TEST_FUNCTION(json_extract,
+                  args_["json_extract4"],
+                  Value(Map({{"a", Value("foo")}, {"b", Value(0.2)}, {"c", Value(Map())}})));
+  }
   {
     auto result = FunctionManager::get("hash", 1);
     ASSERT_TRUE(result.ok());

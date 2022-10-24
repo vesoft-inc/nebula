@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 
+#include "common/base/Logging.h"
 #include "common/datatypes/Value.h"
 
 namespace nebula {
@@ -21,6 +22,8 @@ struct Map {
   explicit Map(std::unordered_map<std::string, Value> values) {
     kvs = std::move(values);
   }
+
+  explicit Map(const folly::dynamic& obj);
 
   Map& operator=(const Map& rhs) {
     if (this == &rhs) {
