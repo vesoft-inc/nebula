@@ -918,9 +918,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Stop job failure!");
     case nebula::cpp2::ErrorCode::E_SAVE_JOB_FAILURE:
       return Status::Error("Save job failure!");
-    case nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE:
+    case nebula::cpp2::ErrorCode::E_JOB_ALREADY_FINISH:
       return Status::Error(
           "Finished job or failed job can not be stopped, please start another job instead");
+    case nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE:
+      return Status::Error(
+          "The job type do not support stopping, either wait previous job done or restart the "
+          "cluster to start another job");
     case nebula::cpp2::ErrorCode::E_BALANCER_FAILURE:
       return Status::Error("Balance failure!");
     case nebula::cpp2::ErrorCode::E_NO_INVALID_BALANCE_PLAN:

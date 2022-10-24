@@ -81,6 +81,12 @@ ErrOrHosts StorageJobExecutor::getLeaderHost(GraphSpaceID space) {
       it->second.emplace_back(partId);
     }
   }
+  // If storage has not report leader distribution to meta and we don't report error here,
+  // JobMananger will think of the job consists of 0 task, and the task will not send to any
+  // storage. And the job will always be RUNNING.
+  if (hosts.empty()) {
+    return nebula::cpp2::ErrorCode::E_JOB_HAS_NO_TARGET_STORAGE;
+  }
   return hosts;
 }
 

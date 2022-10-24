@@ -83,6 +83,9 @@ class ExpressionUtils {
   // Rewrites ParameterExpression to ConstantExpression
   static Expression* rewriteParameter(const Expression* expr, QueryContext* qctx);
 
+  // Rewrite RelInExpr with only one operand in expression tree
+  static Expression* rewriteInnerInExpr(const Expression* expr);
+
   // Rewrites relational expression, gather all evaluable expressions in the left operands and move
   // them to the right
   static Expression* rewriteRelExpr(const Expression* expr);
@@ -192,6 +195,9 @@ class ExpressionUtils {
 
   // Checks if expr contains function call expression that generate a random value
   static bool findInnerRandFunction(const Expression* expr);
+
+  // Checks if expr contains function EdgeDst expr or id($$) expr
+  static bool findEdgeDstExpr(const Expression* expr);
 
   // ** Loop node condition **
   // Generates an expression that is used as the condition of loop node:

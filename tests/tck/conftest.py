@@ -405,21 +405,27 @@ def executing_query(query, exec_ctx, request):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
 
-@when(parse("executing query and retrying it on failure every {secs:d} seconds for {retryTimes:d} times:\n{query}"))
+
+@when(
+    parse(
+        "executing query and retrying it on failure every {secs:d} seconds for {retryTimes:d} times:\n{query}"
+    )
+)
 def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
     res = exec_ctx["result_set"]
     if not res.is_succeeded():
-      retryCounter = 0
-      while retryCounter < retryTimes:
-        time.sleep(secs)
-        exec_query(request, ngql, exec_ctx)
-        resRetry = exec_ctx["result_set"]
-        if not resRetry.is_succeeded():
-          retryCounter = retryCounter + 1
-        else:
-          break
+        retryCounter = 0
+        while retryCounter < retryTimes:
+            time.sleep(secs)
+            exec_query(request, ngql, exec_ctx)
+            resRetry = exec_ctx["result_set"]
+            if not resRetry.is_succeeded():
+                retryCounter = retryCounter + 1
+            else:
+                break
+
 
 @when(parse("executing query with user {username} with password {password}:\n{query}"))
 def executing_query(
@@ -572,13 +578,11 @@ def cmp_dataset(
     if not res:
         scen = request.function.__scenario__
         feature = scen.feature.rel_filename
-        location = f"{feature}:{line_number(scen._steps, result)}"
         msg = [
             f"Fail to exec: {ngql}",
             f"Response: {dsp(rds)}",
             f"Expected: {dsp(ds)}",
             f"NotFoundRow: {rowp(ds, i)}",
-            f"Location: {location}",
             f"Space: {str(space_desc)}",
             f"vid_fn: {vid_fn}",
         ]
@@ -787,7 +791,8 @@ def drop_used_space(exec_ctx):
 
 
 @then(parse("the execution plan should be:\n{plan}"))
-def check_plan(plan, exec_ctx):
+def check_plan(request, plan, exec_ctx):
+    ngql = exec_ctx["ngql"]
     resp = exec_ctx["result_set"]
     expect = table(plan)
     column_names = expect.get('column_names', [])
@@ -797,7 +802,19 @@ def check_plan(plan, exec_ctx):
         row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
-    assert differ.diff(), differ.err_msg()
+
+    res = differ.diff()
+    if not res:
+        scen = request.function.__scenario__
+        feature = scen.feature.rel_filename
+        location = f"{feature}:{line_number(scen._steps, plan)}"
+        msg = [
+            f"Fail to exec: {ngql}",
+            f"Location: {location}",
+            differ.err_msg(),
+        ]
+    
+    assert res, "\n".join(msg)
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
