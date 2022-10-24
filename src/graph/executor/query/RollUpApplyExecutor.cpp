@@ -142,17 +142,21 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
   NG_RETURN_IF_ERROR(checkBiInputDataSets());
   DataSet result;
   mv_ = movable(node()->inputVars()[0]);
+
   if (rollUpApplyNode->compareCols().size() == 0) {
     List hashTable;
     buildZeroKeyHashTable(rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
     result = probeZeroKey(lhsIter_.get(), hashTable);
   } else if (rollUpApplyNode->compareCols().size() == 1) {
     std::unordered_map<Value, List> hashTable;
-    buildSingleKeyHashTable(rollUpApplyNode->compareCols()[0],
+    // Clone the expression so when evaluating the InputPropertyExpression, the propIndex_ will not
+    // be buffered.
+    buildSingleKeyHashTable(rollUpApplyNode->compareCols()[0]->clone(),
                             rollUpApplyNode->collectCol(),
                             rhsIter_.get(),
                             hashTable);
-    result = probeSingleKey(rollUpApplyNode->compareCols()[0], lhsIter_.get(), hashTable);
+
+    result = probeSingleKey(rollUpApplyNode->compareCols()[0]->clone(), lhsIter_.get(), hashTable);
   } else {
     std::unordered_map<List, List> hashTable;
     buildHashTable(
