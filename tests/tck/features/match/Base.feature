@@ -756,3 +756,10 @@ Feature: Basic match
       """
     Then the result should be, in any order, with relax comparison:
       | id(v) |
+
+  Scenario: match_with_wrong_syntax
+    When executing query:
+      """
+      MATCH (v{name: "Tim Duncan"}) return v
+      """
+    Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
