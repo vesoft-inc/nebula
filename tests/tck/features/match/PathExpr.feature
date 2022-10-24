@@ -140,6 +140,16 @@ Feature: Basic match
       | name         |
       | "Tim Duncan" |
       | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"})<-[:like]-(v2) WHERE NOT (v2)<-[:like]-() RETURN v2;
+      """
+    Then the result should be, in any order:
+      | v2                                                            |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"}) |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})         |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})           |
 
   Scenario: In With
     When executing query:
