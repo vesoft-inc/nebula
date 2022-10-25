@@ -127,7 +127,6 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
                                 Expression::Kind::kSrcProperty,
                                 Expression::Kind::kVarProperty,
                                 Expression::Kind::kInputProperty,
-                                Expression::Kind::kFunctionCall,
                                 Expression::Kind::kLogicalOr})) {
     return Status::SemanticError("Not support `%s' in where sentence.", expr->toString().c_str());
   }
