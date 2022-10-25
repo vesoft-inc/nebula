@@ -1019,6 +1019,21 @@ Feature: Match By Id
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
+      MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      OPTIONAL MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      OPTIONAL MATCH (n) OPTIONAL MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v3) == 'Spurs' AND id(v1) == 'Tony Parker'
       RETURN v1, v2, v3

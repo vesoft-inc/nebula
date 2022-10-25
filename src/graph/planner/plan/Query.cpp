@@ -870,7 +870,9 @@ std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
 }
 
 PlanNode* BiLeftJoin::clone() const {
-  auto* newLeftJoin = BiLeftJoin::make(qctx_, nullptr, nullptr);
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newLeftJoin = BiLeftJoin::make(qctx_, lnode, rnode);
   newLeftJoin->cloneMembers(*this);
   return newLeftJoin;
 }
@@ -886,7 +888,9 @@ std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
 }
 
 PlanNode* BiInnerJoin::clone() const {
-  auto* newInnerJoin = BiInnerJoin::make(qctx_, nullptr, nullptr);
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newInnerJoin = BiInnerJoin::make(qctx_, lnode, rnode);
   newInnerJoin->cloneMembers(*this);
   return newInnerJoin;
 }
@@ -925,7 +929,9 @@ void RollUpApply::cloneMembers(const RollUpApply& r) {
 }
 
 PlanNode* RollUpApply::clone() const {
-  auto* newRollUpApply = RollUpApply::make(qctx_, nullptr, nullptr, {}, nullptr);
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newRollUpApply = RollUpApply::make(qctx_, lnode, rnode, {}, nullptr);
   newRollUpApply->cloneMembers(*this);
   return newRollUpApply;
 }
