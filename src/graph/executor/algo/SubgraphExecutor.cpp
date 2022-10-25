@@ -92,12 +92,7 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
 
-  auto steps = totalSteps_;
-  if (!subgraph_->oneMoreStep()) {
-    --steps;
-  }
-
-  if (!process(std::move(iter)) || ++currentStep_ > steps) {
+  if (!process(std::move(iter)) || ++currentStep_ > totalSteps_) {
     filterEdges(0);
     return folly::makeFuture<Status>(Status::OK());
   } else {

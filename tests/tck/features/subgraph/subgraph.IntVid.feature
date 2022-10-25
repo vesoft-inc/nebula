@@ -145,6 +145,14 @@ Feature: Integer Vid subgraph
       | nodes            | relationships |
       | [("Tim Duncan")] | <[edge1]>     |
       | <[vertex2]>      | <[edge2]>     |
+    When executing query:
+      """
+      GET SUBGRAPH FROM hash('Tim Duncan') OUT like YIELD vertices as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                    |
+      | [("Tim Duncan")]                     |
+      | [("Manu Ginobili"), ("Tony Parker")] |
 
   Scenario: yield Integer Vid two steps
     When executing query:

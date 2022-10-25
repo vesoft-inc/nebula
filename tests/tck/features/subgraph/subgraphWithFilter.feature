@@ -9,6 +9,14 @@ Feature: subgraph with fitler
   Scenario: subgraph with edge filter
     When executing query:
       """
+      GET SUBGRAPH FROM 'Tim Duncan' OUT like WHERE like.likeness > 90 YIELD vertices as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                    |
+      | [("Tim Duncan")]                     |
+      | [("Manu Ginobili"), ("Tony Parker")] |
+    When executing query:
+      """
       GET SUBGRAPH FROM 'Tim Duncan' OUT like WHERE like.likeness > 90 YIELD vertices as v, edges as e
       """
     Then the result should be, in any order, with relax comparison:

@@ -6,6 +6,23 @@ Feature: Basic match
   Background:
     Given a graph with space named "nba"
 
+  Scenario: Tagless property
+    When executing query:
+      """
+      match p = (v{name: "hello"})-->(v1{name: "hello"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"hello"': No tag found for property.
+    When executing query:
+      """
+      match p = (v:player{name: "hello"})-->(v1{name: "world"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"world"': No tag found for property.
+    When executing query:
+      """
+      match p = (v{name: "hello"})-->(v1:player{name: "world"}) where id(v) == "kk" return p limit 1;
+      """
+    Then a SemanticError should be raised at runtime: `name:"hello"': No tag found for property.
+
   Scenario: Undefined aliases
     When executing query:
       """
@@ -123,6 +140,16 @@ Feature: Basic match
       | name         |
       | "Tim Duncan" |
       | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"})<-[:like]-(v2) WHERE NOT (v2)<-[:like]-() RETURN v2;
+      """
+    Then the result should be, in any order:
+      | v2                                                            |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"}) |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})         |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})   |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})           |
 
   Scenario: In With
     When executing query:
