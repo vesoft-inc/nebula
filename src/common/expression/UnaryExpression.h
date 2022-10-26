@@ -87,7 +87,7 @@ class UnaryExpression final : public Expression {
   void resetFrom(Decoder& decoder) override;
 
  private:
-  Expression* operand_;
+  Expression* operand_{nullptr};
   Value result_;
 };
 

@@ -121,7 +121,10 @@ DataSet RollUpApplyExecutor::probe(std::vector<Expression*> probeKeys,
     List list;
     list.values.reserve(probeKeys.size());
     for (auto& col : probeKeys) {
-      Value val = col->eval(ctx(probeIter));
+      // Clone the expression so when evaluating the InputPropertyExpression, the propIndex_ will
+      // not be cached
+      auto* colCopy = col->clone();
+      Value val = colCopy->eval(ctx(probeIter));
       list.values.emplace_back(std::move(val));
     }
 
@@ -150,7 +153,7 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
   } else if (rollUpApplyNode->compareCols().size() == 1) {
     std::unordered_map<Value, List> hashTable;
     // Clone the expression so when evaluating the InputPropertyExpression, the propIndex_ will not
-    // be buffered.
+    // be cached.
     buildSingleKeyHashTable(rollUpApplyNode->compareCols()[0]->clone(),
                             rollUpApplyNode->collectCol(),
                             rhsIter_.get(),
