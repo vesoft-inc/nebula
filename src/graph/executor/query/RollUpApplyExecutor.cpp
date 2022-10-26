@@ -42,10 +42,18 @@ void RollUpApplyExecutor::buildHashTable(const std::vector<Expression*>& compare
                                          Iterator* iter,
                                          std::unordered_map<List, List>& hashTable) const {
   QueryExpressionContext ctx(ectx_);
+  std::vector<Expression*> collectColsCopy;
+  collectColsCopy.reserve(compareCols.size());
+
+  // Copy the collectCols to make sure the propIndex_ is not cached in the expr
+  for (auto* col : compareCols) {
+    collectColsCopy.emplace_back(col->clone());
+  }
+
   for (; iter->valid(); iter->next()) {
     List list;
-    list.values.reserve(compareCols.size());
-    for (auto& col : compareCols) {
+    list.values.reserve(collectColsCopy.size());
+    for (auto& col : collectColsCopy) {
       Value val = col->eval(ctx(iter));
       list.values.emplace_back(std::move(val));
     }
@@ -114,13 +122,21 @@ DataSet RollUpApplyExecutor::probeSingleKey(Expression* probeKey,
 DataSet RollUpApplyExecutor::probe(std::vector<Expression*> probeKeys,
                                    Iterator* probeIter,
                                    const std::unordered_map<List, List>& hashTable) {
+  std::vector<Expression*> probeKeysCopy;
+  probeKeysCopy.reserve(probeKeys.size());
+
+  // Copy the collectCols to make sure the propIndex_ is not cached in the expr
+  for (auto* col : probeKeys) {
+    probeKeysCopy.emplace_back(col->clone());
+  }
+
   DataSet ds;
   ds.rows.reserve(probeIter->size());
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
     List list;
-    list.values.reserve(probeKeys.size());
-    for (auto& col : probeKeys) {
+    list.values.reserve(probeKeysCopy.size());
+    for (auto& col : probeKeysCopy) {
       // Clone the expression so when evaluating the InputPropertyExpression, the propIndex_ will
       // not be cached
       auto* colCopy = col->clone();
