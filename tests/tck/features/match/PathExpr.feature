@@ -150,6 +150,13 @@ Feature: Basic match
       | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})         |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})           |
+    When executing query:
+      """
+      MATCH p = (v:player{name:"Tim Duncan"})-[e]->(t) WHERE NOT (v)-[]->(t:player) RETURN t
+      """
+    Then the result should be, in any order:
+      | t                              |
+      | ("Spurs" :team{name: "Spurs"}) |
 
   Scenario: In With
     When executing query:
