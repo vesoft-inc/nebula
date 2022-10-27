@@ -33,17 +33,36 @@ folly::Future<Status> IsomorExecutor::execute() {
   // Vetices 3: 0, 1, 2, 3
   // Edges:
   // 0 1
-  //
+  // 1 2
+  // 2 3
+  // 3 0
   // To store the degree of each vertex
   unsigned int* degree = new unsigned int[v_count];
-
+  // degree[0] = 2
+  // degree[1] = 2
+  // degree[2] = 2
+  // degree[3] = 2
   // To store the starting position of each vertex in neighborhood array.
 
   unsigned int* offset = new unsigned int[v_count + 1];
+  // offset[0] = 0
+  // offset[1] = 2
+  // offset[2] = 4
+  // offset[3] = 6
+  // offset[4] = 8 // End of the neighborhood array
 
   // Array of the neighborhood can be initialized by 2 dimension of the matrix,
   // However, here we use 2*edge count as we have in edge and out edges.
   unsigned int* neighbors = new unsigned int[e_count * 2];
+  // neighbors[0] = 1
+  // neighbors[1] = 3
+  // neighbors[2] = 0
+  // neighbors[3] = 2
+  // neighbors[4] = 1
+  // neighbors[5] = 3
+  // neighbors[6] = 2
+  // neighbors[7] = 0
+
   unsigned int* labels = new unsigned int[l_count];
 
   // Initialize the degree for data graph
