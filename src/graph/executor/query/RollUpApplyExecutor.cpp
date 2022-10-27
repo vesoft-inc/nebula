@@ -42,6 +42,7 @@ void RollUpApplyExecutor::buildHashTable(const std::vector<Expression*>& compare
                                          Iterator* iter,
                                          std::unordered_map<List, List>& hashTable) const {
   QueryExpressionContext ctx(ectx_);
+
   for (; iter->valid(); iter->next()) {
     List list;
     list.values.reserve(compareCols.size());
@@ -143,25 +144,33 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
   DataSet result;
   mv_ = movable(node()->inputVars()[0]);
 
-  if (rollUpApplyNode->compareCols().size() == 0) {
+  auto compareCols = rollUpApplyNode->compareCols();
+
+  if (compareCols.size() == 0) {
     List hashTable;
     buildZeroKeyHashTable(rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
     result = probeZeroKey(lhsIter_.get(), hashTable);
-  } else if (rollUpApplyNode->compareCols().size() == 1) {
+  } else if (compareCols.size() == 1) {
     std::unordered_map<Value, List> hashTable;
-    // Clone the expression so when evaluating the InputPropertyExpression, the propIndex_ will not
-    // be buffered.
-    buildSingleKeyHashTable(rollUpApplyNode->compareCols()[0]->clone(),
-                            rollUpApplyNode->collectCol(),
-                            rhsIter_.get(),
-                            hashTable);
-
-    result = probeSingleKey(rollUpApplyNode->compareCols()[0]->clone(), lhsIter_.get(), hashTable);
+    buildSingleKeyHashTable(
+        compareCols[0]->clone(), rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
+    result = probeSingleKey(compareCols[0]->clone(), lhsIter_.get(), hashTable);
   } else {
+    // Copy the compareCols to make sure the propIndex_ is not cached in the expr
+    auto cloneExpr = [](std::vector<Expression*> exprs) {
+      std::vector<Expression*> collectColsCopy;
+      collectColsCopy.reserve(exprs.size());
+      for (auto& expr : exprs) {
+        collectColsCopy.emplace_back(expr->clone());
+      }
+      return collectColsCopy;
+    };
+
     std::unordered_map<List, List> hashTable;
     buildHashTable(
-        rollUpApplyNode->compareCols(), rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
-    result = probe(rollUpApplyNode->compareCols(), lhsIter_.get(), hashTable);
+        cloneExpr(compareCols), rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
+
+    result = probe(cloneExpr(compareCols), lhsIter_.get(), hashTable);
   }
   result.colNames = rollUpApplyNode->colNames();
   return finish(ResultBuilder().value(Value(std::move(result))).build());
