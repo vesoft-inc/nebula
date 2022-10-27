@@ -5,6 +5,9 @@
 nebula_add_library(
     executor_obj OBJECT
     Executor.cpp
+    subgraph_provenance/ceci.cpp
+    subgraph_provenance/graph.cpp
+    subgraph_provenance/subgraph.cpp
     StorageAccessExecutor.cpp
     logic/LoopExecutor.cpp
     logic/PassThroughExecutor.cpp
@@ -90,4 +93,4 @@ nebula_add_library(
     mutate/UpdateExecutor.cpp
 )
 
-nebula_add_subdirectory(test)
+

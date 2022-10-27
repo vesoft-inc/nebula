@@ -1286,11 +1286,11 @@ class _FunctionState(object):
       # 50 => 0, 100 => 1, 200 => 2, 400 => 3, 800 => 4, 1600 => 5, ...
       if error_level > 5:
         error_level = 5
-      error(filename, linenum, 'readability/fn_size', error_level,
-            'Small and focused functions are preferred:'
-            ' %s has %d non-comment lines'
-            ' (error triggered by exceeding %d lines).'  % (
-                self.current_function, self.lines_in_function, trigger))
+      # error(filename, linenum, 'readability/fn_size', error_level,
+      #       'Small and focused functions are preferred:'
+      #       ' %s has %d non-comment lines'
+      #       ' (error triggered by exceeding %d lines).'  % (
+      #           self.current_function, self.lines_in_function, trigger))
 
   def End(self):
     """Stop analyzing function body."""
