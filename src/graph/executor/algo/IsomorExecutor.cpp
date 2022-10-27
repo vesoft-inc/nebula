@@ -31,11 +31,13 @@ folly::Future<Status> IsomorExecutor::execute() {
   unsigned int e_count = iterDE->size();
   // Example:
   // Vetices 3: 0, 1, 2, 3
+
   // Edges:
   // 0 1
   // 1 2
   // 2 3
   // 3 0
+
   // To store the degree of each vertex
   unsigned int* degree = new unsigned int[v_count];
   // degree[0] = 2
