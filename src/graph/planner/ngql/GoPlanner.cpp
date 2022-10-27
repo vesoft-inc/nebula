@@ -458,31 +458,20 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx) {
     if (goCtx_->filter != nullptr) {
       auto* gc = static_cast<GoSentence*>(astCtx->sentence);
       if (gc->whereClause() != nullptr) {
-        bool hasFilter = true;
         bool hasInput = false;
+        // filter剪枝
         auto* newFilter =
-            checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasFilter, &hasInput);
+            checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
+        //判断是否需要变量下推
+        if (hasInput) {
+          hasInput = false;
+          checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
+        }
         gn->setFilter(newFilter);
         gn->setIsPush(hasInput);
       }
       cur = Filter::make(qctx, cur, goCtx_->filter);
     }
-  if (goCtx_->filter != nullptr) {
-    auto* gc = static_cast<GoSentence*>(astCtx->sentence);
-    if (gc->whereClause() != nullptr) {
-      bool hasInput = false;
-      //filter剪枝
-      auto* newFilter = checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
-      //判断是否需要变量下推
-      if(hasInput){
-        hasInput = false;
-        checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
-      }
-      gn->setFilter(newFilter);
-      gn->setIsPush(hasInput);
-    }
-    cur = Filter::make(qctx, cur, goCtx_->filter);
-  }
 
     cur = Project::make(qctx, cur, goCtx_->yieldExpr);
     cur->setColNames(std::move(goCtx_->colNames));
@@ -514,7 +503,7 @@ Expression* GoPlanner::checkFilterExpressionIsPush(GetNeighbors* gn,
       newFilter = logicAnd->operand(1);
     } else if (opers[1] == nullptr) {
       newFilter = logicAnd->operand(0);
-    }else {
+    } else {
       auto filterAnd = LogicalExpression::makeAnd(logicAnd->getObjPool());
       for (size_t i = 0; i < opers.size(); i++) {
         filterAnd->addOperand(opers[i]);
