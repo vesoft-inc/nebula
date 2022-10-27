@@ -240,6 +240,7 @@ folly::Future<nebula::cpp2::ErrorCode> LeaderBalanceJobExecutor::executeInternal
     auto status = adminClient_->getLeaderDist(hostLeaderMap_.get()).get();
     if (!status.ok() || hostLeaderMap_->empty()) {
       inLeaderBalance_ = false;
+      LOG(INFO) << "Get leader distribution: " << status;
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
 
