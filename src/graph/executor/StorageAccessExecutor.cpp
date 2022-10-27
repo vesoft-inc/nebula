@@ -85,6 +85,38 @@ DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
   return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup);
 }
 
+DataSet StorageAccessExecutor::buildValRequestDataSetByVidType(Iterator *iter,
+                                                               Expression *expr,
+                                                               Value& value) {
+  DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
+  const auto &space = qctx()->rctx()->session()->space();
+  QueryExpressionContext exprCtx(qctx()->ectx());
+  nebula::DataSet vertices({kVid});
+  if(value.isDataSet()){
+    auto& ds = const_cast<DataSet&>(value.getDataSet());
+    for(auto & colName : ds.colNames){
+      vertices.colNames.push_back(colName);
+    }
+    vertices.rows.reserve(iter->size());
+    const auto &vidType = *(space.spaceDesc.vid_type_ref());
+    for (; iter->valid(); iter->next()) {
+      auto vid = expr->eval(exprCtx(iter));
+      if (!SchemaUtil::isValidVid(vid, vidType)) {
+        LOG(WARNING) << "Mismatched vid type: " << vid.type()
+                     << ", space vid type: " << SchemaUtil::typeToString(vidType);
+        continue;
+      }
+      std::vector<Value> row;
+      row.push_back(std::move(vid));
+      for(size_t col = 1; col<vertices.colNames.size(); col++){
+        row.push_back(iter->getColumn(vertices.colNames[col]));
+      }
+      vertices.emplace_back(Row(row));
+    }
+  }
+  return vertices;
+}
+
 std::string StorageAccessExecutor::getStorageDetail(
     optional_field_ref<const std::map<std::string, int32_t> &> ref) const {
   if (ref.has_value()) {

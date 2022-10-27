@@ -79,6 +79,7 @@ class GetNeighborsProcessor
       RuntimeContext* context,
       StorageExpressionContext* expCtx,
       nebula::DataSet* result,
+      cpp2::GetNeighborsRequest& req,
       PartitionID partId,
       const std::vector<nebula::Row>& rows,
       int64_t limit,
