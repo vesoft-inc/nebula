@@ -145,7 +145,15 @@ struct DocIDTraits {
   }
 
   static std::string val(const std::string& v) {
-    return ((v.size() > MAX_INDEX_TYPE_LENGTH) ? v.substr(0, MAX_INDEX_TYPE_LENGTH) : v);
+    if (v.size() <= MAX_INDEX_TYPE_LENGTH) {
+      return v;
+    }
+    size_t len = MAX_INDEX_TYPE_LENGTH;
+    const int utf8Mask = 1 << 7;  // 10000000
+    while (len < v.size() && (v[len - 1] & utf8Mask)) {
+      len++;
+    }
+    return v.substr(0, len);
   }
 
   static std::string normalizedJson(const std::string& v) {
