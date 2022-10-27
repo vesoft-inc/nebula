@@ -12,18 +12,20 @@ namespace graph {
 folly::Future<Status> SampleExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto* sample = asNode<Sample>(node());
+  Sample* sample = const_cast<Sample*>(asNode<Sample>(node()));
   Result result = ectx_->getResult(sample->inputVar());
   auto* iter = result.iterRef();
   DCHECK_NE(iter->kind(), Iterator::Kind::kDefault);
   ResultBuilder builder;
   builder.value(result.valuePtr());
   QueryExpressionContext qec(ectx_);
-  auto count = sample->count(qec);
-  if (iter->kind() == Iterator::Kind::kGetNeighbors ||
-      iter->size() > static_cast<std::size_t>(count)) {
-    // Sampling
-    iter->sample(count);
+  if (!sample->flatSample()) {
+    auto count = sample->count(qec);
+    if (iter->kind() == Iterator::Kind::kGetNeighbors ||
+        iter->size() > static_cast<std::size_t>(count)) {
+      // Sampling
+      iter->sample(count);
+    }
   }
   builder.iter(std::move(result).iter());
   return finish(builder.build());

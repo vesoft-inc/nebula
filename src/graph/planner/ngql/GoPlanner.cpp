@@ -347,11 +347,13 @@ PlanNode* GoPlanner::buildOneStepJoinPlan(PlanNode* gn) {
 }
 
 template <typename T>
-PlanNode* GoPlanner::buildSampleLimitImpl(PlanNode* input, T sampleLimit) {
+PlanNode* GoPlanner::buildSampleLimitImpl(PlanNode* input, T sampleLimit, bool flatSample) {
   DCHECK(!goCtx_->limits.empty());
   PlanNode* node = nullptr;
   if (goCtx_->random) {
-    node = Sample::make(goCtx_->qctx, input, sampleLimit);
+    Sample* sp = Sample::make(goCtx_->qctx, input, sampleLimit);
+    sp->setFlatSample(flatSample);
+    node = sp;
   } else {
     node = Limit::make(goCtx_->qctx, input, 0, sampleLimit);
   }
@@ -391,7 +393,7 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   gn->setSrc(goCtx_->from.src);
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
+  auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */, goCtx_->flat_sample);
 
   SubPlan subPlan;
   subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : gn;

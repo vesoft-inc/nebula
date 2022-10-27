@@ -68,14 +68,14 @@ class GoPlanner final : public Planner {
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
   template <typename T>
-  PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
+  PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit, bool flatSample = false);
   // build step sample limit plan
-  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep) {
+  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep, bool flatSample = false) {
     if (goCtx_->limits.empty()) {
       // No sample/limit
       return input;
     }
-    return buildSampleLimitImpl(input, goCtx_->limits[currentStep - 1]);
+    return buildSampleLimitImpl(input, goCtx_->limits[currentStep - 1], flatSample);
   }
   // build step sample in loop
   PlanNode* buildSampleLimit(PlanNode* input) {

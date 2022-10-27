@@ -187,7 +187,7 @@ using namespace nebula;
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
-%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
+%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_FLAT_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP KW_SHORTESTPATH KW_ALLSHORTESTPATHS
@@ -568,6 +568,7 @@ unreserved_keyword
     | KW_SESSIONS           { $$ = new std::string("sessions"); }
     | KW_LOCAL              { $$ = new std::string("local"); }
     | KW_SAMPLE             { $$ = new std::string("sample"); }
+    | KW_FLAT_SAMPLE        { $$ = new std::string("flat_sample"); }
     | KW_QUERIES            { $$ = new std::string("queries"); }
     | KW_QUERY              { $$ = new std::string("query"); }
     | KW_KILL               { $$ = new std::string("kill"); }
@@ -1384,6 +1385,9 @@ truncate_clause
             throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in sample clause");
         }
         $$ = new TruncateClause($2, true);
+    }
+    | KW_FLAT_SAMPLE expression {
+        $$ = new TruncateClause($2, true, true);
     }
     | KW_LIMIT expression {
         $$ = new TruncateClause($2, false);
