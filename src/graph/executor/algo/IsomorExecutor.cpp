@@ -29,12 +29,28 @@ folly::Future<Status> IsomorExecutor::execute() {
   unsigned int v_count = iterDV->size();
   unsigned int l_count = iterDV->size();
   unsigned int e_count = iterDE->size();
-  // To store the prefix sum of the degree of each vertex.
-  unsigned int* offset = new unsigned int[v_count + 2];
+  // Example:
+  // Vetices 3: 0, 1, 2, 3
+  // Edges:
+  // 0 1
+  //
+  // To store the degree of each vertex
+  unsigned int* degree = new unsigned int[v_count];
+
+  // To store the starting position of each vertex in neighborhood array.
+
+  unsigned int* offset = new unsigned int[v_count + 1];
+
   // Array of the neighborhood can be initialized by 2 dimension of the matrix,
   // However, here we use 2*edge count as we have in edge and out edges.
   unsigned int* neighbors = new unsigned int[e_count * 2];
   unsigned int* labels = new unsigned int[l_count];
+
+  // Initialize the degree for data graph
+  for (unsigned int i = 0; i < v_count; i++) {
+    degree[i] = 0;
+  }
+
   // load data vertices id and tags
   while (iterDV->valid()) {
     const auto vertex = iterDV->getColumn(nebula::kVid);  // check if v is a vertex
@@ -50,13 +66,13 @@ folly::Future<Status> IsomorExecutor::execute() {
   while (iterDE->valid()) {
     auto s = iterDE->getEdgeProp("*", kSrc);
     unsigned int src = s.getInt();
-    offset[src]++;
+    degree[src]++;
     iterDE->next();
   }
 
   // caldulate the start position of each vertex in the neighborhood array
   for (unsigned int i = 0; i < v_count; i++) {
-    offset[i + 1] += offset[i];
+    offset[i + 1] += degree[i] + offset[i];
   }
 
   // load data edges
@@ -86,6 +102,11 @@ folly::Future<Status> IsomorExecutor::execute() {
     // unsigned int v_id = (unsigned int)v.getInt(0);
     labels[v_id] = l_id;  // Tag Id
     iterQV->next();
+  }
+
+  // Initialize the degree for query graph
+  for (unsigned int i = 0; i < v_count; i++) {
+    degree[i] = 0;
   }
 
   // load query edges degree
