@@ -8,6 +8,7 @@
 #include <folly/json.h>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
@@ -41,6 +42,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
     {"coalesce", Value::Type::__EMPTY__},
+    {"_any", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -2818,6 +2820,21 @@ FunctionManager::FunctionManager() {
       } catch (const std::exception &e) {
         return Value::kNullBadData;
       }
+    };
+  }
+  // Get any argument which is not empty/null
+  {
+    auto &attr = functions_["_any"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      for (const auto &arg : args) {
+        if (!arg.get().isNull() && !arg.get().empty()) {
+          return arg.get();
+        }
+      }
+      return Value::kNullBadData;
     };
   }
 }  // NOLINT
