@@ -40,7 +40,7 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
                                                path.collectVariable);
     }
     if (subPlan.root != nullptr) {
-      wherePlan = SegmentsConnector::addInput(wherePlan, subPlan);
+      wherePlan = SegmentsConnector::addInput(wherePlan, subPlan, true);
     }
 
     return wherePlan;
