@@ -5,6 +5,7 @@
 #include "graph/executor/StorageAccessExecutor.h"
 
 #include <folly/Format.h>
+#include <folly/dynamic.h>
 
 #include "graph/context/Iterator.h"
 #include "graph/context/QueryExpressionContext.h"
@@ -152,7 +153,7 @@ std::string StorageAccessExecutor::getStorageDetail(
     optional_field_ref<const std::map<std::string, int32_t> &> ref) const {
   if (ref.has_value()) {
     auto content = util::join(*ref, [](auto &iter) -> std::string {
-      return folly::sformat("{}:{}(us)", iter.first, iter.second);
+      return folly::sformat("\n  {}:{}(us)", iter.first, iter.second);
     });
     return "{" + content + "}";
   }
