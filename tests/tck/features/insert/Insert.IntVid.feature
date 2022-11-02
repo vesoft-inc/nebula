@@ -6,7 +6,7 @@ Feature: Insert int vid of vertex and edge
   Background: Prepare space
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9   |
+      | partition_num  | 1   |
       | replica_factor | 1   |
       | vid_type       | int |
     And having executed:
@@ -506,7 +506,7 @@ Feature: Insert int vid of vertex and edge
   Scenario: int id ignore existed index
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9   |
+      | partition_num  | 1   |
       | replica_factor | 1   |
       | vid_type       | int |
     And having executed:

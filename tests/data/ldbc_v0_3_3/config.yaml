@@ -1,6 +1,6 @@
 space:
   name: ldbc_v0_3_3
-  partitionNum: 8
+  partitionNum: 1
   replicaFactor: 1
   vidType: FIXED_STRING(32)
   charset: utf8

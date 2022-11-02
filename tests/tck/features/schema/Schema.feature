@@ -6,7 +6,7 @@ Feature: Insert string vid of vertex and edge
   Scenario: insert vertex and edge test
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     # empty prop
@@ -396,7 +396,7 @@ Feature: Insert string vid of vertex and edge
     # test same tag in different space
     When executing query:
       """
-      CREATE SPACE my_space(partition_num=9, replica_factor=1, vid_type=FIXED_STRING(8));
+      CREATE SPACE my_space(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8));
       USE my_space;
       CREATE TAG animal(name string, kind string);
       """
@@ -485,7 +485,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with default
     When executing query:
       """
-      CREATE SPACE tag_space(partition_num=9, vid_type=FIXED_STRING(8));
+      CREATE SPACE tag_space(partition_num=1, vid_type=FIXED_STRING(8));
       USE tag_space;
       CREATE TAG t(name string DEFAULT "N/A", age int DEFAULT -1);
       """
@@ -854,7 +854,7 @@ Feature: Insert string vid of vertex and edge
   Scenario: Don't allow DOT in schema name
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     When executing query:

@@ -8,7 +8,7 @@ Feature: Clear space test
     Given an empty graph
     And create a space with following options:
       | name           | clear_space      |
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And wait 6 seconds
@@ -38,7 +38,7 @@ Feature: Clear space test
     Given an empty graph
     And create a space with following options:
       | name           | clear_space2     |
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And wait 6 seconds
