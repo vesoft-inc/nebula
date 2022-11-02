@@ -5,7 +5,6 @@
 #include "graph/executor/StorageAccessExecutor.h"
 
 #include <folly/Format.h>
-#include <folly/dynamic.h>
 
 #include "graph/context/Iterator.h"
 #include "graph/context/QueryExpressionContext.h"
