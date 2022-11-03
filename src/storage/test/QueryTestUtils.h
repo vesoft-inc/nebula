@@ -349,6 +349,66 @@ class QueryTestUtils {
     return req;
   }
 
+  static cpp2::GetNeighborsRequest buildRequestWithInput(
+      int32_t totalParts,
+      const std::vector<VertexID> vertices,
+      const std::vector<EdgeType>& over,
+      const std::vector<std::pair<TagID, std::vector<std::string>>>& tags,
+      const std::vector<std::pair<EdgeType, std::vector<std::string>>>& edges,
+      bool returnNoneProps = false) {
+    std::hash<std::string> hash;
+    cpp2::GetNeighborsRequest req;
+    nebula::storage::cpp2::TraverseSpec traverseSpec;
+    req.space_id_ref() = 1;
+    (*req.column_names_ref()).emplace_back(kVid);
+    (*req.column_names_ref()).emplace_back("iAge");
+    for (const auto& vertex : vertices) {
+      PartitionID partId = (hash(vertex) % totalParts) + 1;
+      std::vector<Value> row;
+      row.emplace_back(vertex);
+      row.emplace_back(40);
+      (*req.parts_ref())[partId].emplace_back(Row(row));
+    }
+    for (const auto& edge : over) {
+      (*traverseSpec.edge_types_ref()).emplace_back(edge);
+    }
+
+    std::vector<cpp2::VertexProp> vertexProps;
+    if (tags.empty() && !returnNoneProps) {
+      traverseSpec.vertex_props_ref() = std::move(vertexProps);
+    } else if (!returnNoneProps) {
+      for (const auto& tag : tags) {
+        TagID tagId = tag.first;
+        cpp2::VertexProp tagProp;
+        tagProp.tag_ref() = tagId;
+        for (const auto& prop : tag.second) {
+          (*tagProp.props_ref()).emplace_back(std::move(prop));
+        }
+        vertexProps.emplace_back(std::move(tagProp));
+      }
+      traverseSpec.vertex_props_ref() = std::move(vertexProps);
+    }
+
+    std::vector<cpp2::EdgeProp> edgeProps;
+    if (edges.empty() && !returnNoneProps) {
+      traverseSpec.edge_props_ref() = std::move(edgeProps);
+    } else if (!returnNoneProps) {
+      for (const auto& edge : edges) {
+        EdgeType edgeType = edge.first;
+        cpp2::EdgeProp edgeProp;
+        edgeProp.type_ref() = edgeType;
+        for (const auto& prop : edge.second) {
+          (*edgeProp.props_ref()).emplace_back(std::move(prop));
+        }
+        edgeProps.emplace_back(std::move(edgeProp));
+      }
+      traverseSpec.edge_props_ref() = std::move(edgeProps);
+    }
+
+    req.traverse_spec_ref() = std::move(traverseSpec);
+    return req;
+  }
+
   // | vId | stat |     tag       |   ...   |      edge      | ...
   //              | prop ... prop |   ...   | prop .... prop |
   // check response when tags or edges is specified

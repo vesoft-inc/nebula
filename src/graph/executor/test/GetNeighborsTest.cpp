@@ -27,7 +27,9 @@ class GetNeighborsTest : public testing::Test {
       ResultBuilder builder;
       builder.value(Value(std::move(ds)));
       qctx_->symTable()->newVariable("input_gn");
+      qctx_->symTable()->newVariable("input_col2");
       qctx_->ectx()->setResult("input_gn", builder.build());
+      qctx_->ectx()->setResult("input_col2", builder.build());
     }
 
     meta::cpp2::Session session;
@@ -77,6 +79,43 @@ TEST_F(GetNeighborsTest, BuildRequestDataSet) {
     expectedVids.emplace_back(folly::to<std::string>(i));
   }
   EXPECT_EQ(reqVids, expectedVids);
+}
+
+TEST_F(GetNeighborsTest, BuildRequestDataSetWithVal) {
+  auto* pool = qctx_->objPool();
+  std::vector<EdgeType> edgeTypes;
+  auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+  auto edgeProps = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
+  auto statProps = std::make_unique<std::vector<storage::cpp2::StatProp>>();
+  auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
+  auto* vids = InputPropertyExpression::make(pool, "id");
+  auto* gn = GetNeighbors::make(qctx_.get(),
+                                nullptr,
+                                0,
+                                vids,
+                                std::move(edgeTypes),
+                                storage::cpp2::EdgeDirection::BOTH,
+                                std::move(vertexProps),
+                                std::move(edgeProps),
+                                std::move(statProps),
+                                std::move(exprs));
+  gn->setInputVar("input_gn");
+  gn->setInputVar("input_col2");
+  gn->setPushDown(true);
+
+  auto gnExe = std::make_unique<GetNeighborsExecutor>(gn, qctx_.get());
+  auto res = gnExe->buildRequestVids();
+  auto gnData = std::move(res).value();
+
+  DataSet ds;
+  ds.colNames = {"id", "col2"};
+  for (auto i = 0; i < 10; ++i) {
+    Row row;
+    row.values.emplace_back(folly::to<std::string>(i));
+    row.values.emplace_back(i + 1);
+    ds.rows.emplace_back(std::move(row));
+  }
+  EXPECT_EQ(gnData, ds);
 }
 }  // namespace graph
 }  // namespace nebula
