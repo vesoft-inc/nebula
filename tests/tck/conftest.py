@@ -265,13 +265,16 @@ def import_csv_data(request, data, exec_ctx, pytestconfig):
     exec_ctx["drop_space"] = True
 
 
-def exec_query(request, ngql, exec_ctx, sess=None, need_try: bool = False):
+def exec_query(request, ngql, exec_ctx, sess=None, need_try: bool = False, times: int = 1):
+    assert times > 0
     if not ngql:
         return
     ngql = normalize_outline_scenario(request, ngql)
     if sess is None:
         sess = exec_ctx.get('current_session')
-    exec_ctx['result_set'] = response(sess, ngql, need_try)
+    exec_ctx['result_set'] = []
+    for _ in range(times):
+        exec_ctx['result_set'].append(response(sess, ngql, need_try))
     exec_ctx['ngql'] = ngql
 
 
@@ -405,6 +408,12 @@ def executing_query(query, exec_ctx, request):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
 
+# execute query multiple times
+@when(parse("executing query {times:d} times:\n{query}"))
+def executing_query_multiple_times(times, query, exec_ctx, request):
+    ngql = combine_query(query)
+    exec_query(request, ngql, exec_ctx, times = times)
+
 
 @when(
     parse(
@@ -414,13 +423,13 @@ def executing_query(query, exec_ctx, request):
 def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx)
-    res = exec_ctx["result_set"]
+    res = exec_ctx["result_set"][0]
     if not res.is_succeeded():
         retryCounter = 0
         while retryCounter < retryTimes:
             time.sleep(secs)
             exec_query(request, ngql, exec_ctx)
-            resRetry = exec_ctx["result_set"]
+            resRetry = exec_ctx["result_set"][0]
             if not resRetry.is_succeeded():
                 retryCounter = retryCounter + 1
             else:
@@ -487,7 +496,7 @@ def submit_job(query, exec_ctx, request):
 
 @then("wait the job to finish")
 def wait_job_to_finish(exec_ctx):
-    resp = exec_ctx['result_set']
+    resp = exec_ctx['result_set'][0]
     jid = job_id(resp)
     session = exec_ctx.get('current_session')
     is_finished = wait_all_jobs_finished(session, [jid])
@@ -536,58 +545,58 @@ def cmp_dataset(
     first_n_records=-1,
     hashed_columns=[],
 ):
-    rs = exec_ctx['result_set']
-    ngql = exec_ctx['ngql']
-    check_resp(rs, ngql)
-    space_desc = exec_ctx.get('space_desc', None)
-    vid_fn = murmurhash2 if space_desc and space_desc.is_int_vid() else None
-    ds = dataset(
-        table(result, lambda x: normalize_outline_scenario(request, x)),
-        exec_ctx.get("variables", {}),
-    )
-    ds = hash_columns(ds, hashed_columns)
-    dscmp = DataSetComparator(
-        strict=strict,
-        order=order,
-        contains=contains,
-        first_n_records=first_n_records,
-        decode_type=rs._decode_type,
-        vid_fn=vid_fn,
-    )
+    for rs in exec_ctx['result_set']:
+        ngql = exec_ctx['ngql']
+        check_resp(rs, ngql)
+        space_desc = exec_ctx.get('space_desc', None)
+        vid_fn = murmurhash2 if space_desc and space_desc.is_int_vid() else None
+        ds = dataset(
+            table(result, lambda x: normalize_outline_scenario(request, x)),
+            exec_ctx.get("variables", {}),
+        )
+        ds = hash_columns(ds, hashed_columns)
+        dscmp = DataSetComparator(
+            strict=strict,
+            order=order,
+            contains=contains,
+            first_n_records=first_n_records,
+            decode_type=rs._decode_type,
+            vid_fn=vid_fn,
+        )
 
-    def dsp(ds):
-        printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)
-        return printer.ds_to_string(ds)
+        def dsp(ds):
+            printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)
+            return printer.ds_to_string(ds)
 
-    def rowp(ds, i):
-        if i is None or i < 0:
-            return "" if i != -2 else "Invalid column names"
-        assert i < len(ds.rows), f"{i} out of range {len(ds.rows)}"
-        row = ds.rows[i].values
-        printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)
-        ss = printer.list_to_string(row, delimiter='|')
-        return f'{i}: |' + ss + '|'
+        def rowp(ds, i):
+            if i is None or i < 0:
+                return "" if i != -2 else "Invalid column names"
+            assert i < len(ds.rows), f"{i} out of range {len(ds.rows)}"
+            row = ds.rows[i].values
+            printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)
+            ss = printer.list_to_string(row, delimiter='|')
+            return f'{i}: |' + ss + '|'
 
-    if rs._data_set_wrapper is None:
-        assert (
-            not ds.column_names and not ds.rows
-        ), f"Expected result must be empty table: ||"
+        if rs._data_set_wrapper is None:
+            assert (
+                not ds.column_names and not ds.rows
+            ), f"Expected result must be empty table: ||"
 
-    rds = rs._data_set_wrapper._data_set
-    res, i = dscmp(rds, ds)
-    if not res:
-        scen = request.function.__scenario__
-        feature = scen.feature.rel_filename
-        msg = [
-            f"Fail to exec: {ngql}",
-            f"Response: {dsp(rds)}",
-            f"Expected: {dsp(ds)}",
-            f"NotFoundRow: {rowp(ds, i)}",
-            f"Space: {str(space_desc)}",
-            f"vid_fn: {vid_fn}",
-        ]
-        assert res, "\n".join(msg)
-    return rds
+        rds = rs._data_set_wrapper._data_set
+        res, i = dscmp(rds, ds)
+        if not res:
+            scen = request.function.__scenario__
+            feature = scen.feature.rel_filename
+            msg = [
+                f"Fail to exec: {ngql}",
+                f"Response: {dsp(rds)}",
+                f"Expected: {dsp(ds)}",
+                f"NotFoundRow: {rowp(ds, i)}",
+                f"Space: {str(space_desc)}",
+                f"vid_fn: {vid_fn}",
+            ]
+            assert res, "\n".join(msg)
+    return exec_ctx['result_set'][0]._data_set_wrapper._data_set
 
 
 @then(parse("define some list variables:\n{text}"))
@@ -750,9 +759,9 @@ def no_side_effects():
 
 @then("the execution should be successful")
 def execution_should_be_succ(exec_ctx):
-    rs = exec_ctx["result_set"]
     stmt = exec_ctx["ngql"]
-    check_resp(rs, stmt)
+    for rs in exec_ctx['result_set']:
+        check_resp(rs, stmt)
 
 
 @then(
@@ -761,7 +770,7 @@ def execution_should_be_succ(exec_ctx):
     )
 )
 def raised_type_error(unit, err_type, time, sym, msg, exec_ctx):
-    res = exec_ctx["result_set"]
+    res = exec_ctx["result_set"][0]
     ngql = exec_ctx['ngql']
     assert not res.is_succeeded(), f"Response should be failed: nGQL:{ngql}"
     err_type = err_type.strip()
@@ -793,28 +802,28 @@ def drop_used_space(exec_ctx):
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(request, plan, exec_ctx):
     ngql = exec_ctx["ngql"]
-    resp = exec_ctx["result_set"]
-    expect = table(plan)
-    column_names = expect.get('column_names', [])
-    idx = column_names.index('dependencies')
-    rows = expect.get("rows", [])
-    for i, row in enumerate(rows):
-        row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
-        rows[i] = row
-    differ = PlanDiffer(resp.plan_desc(), expect)
+    for resp in exec_ctx["result_set"]:
+        expect = table(plan)
+        column_names = expect.get('column_names', [])
+        idx = column_names.index('dependencies')
+        rows = expect.get("rows", [])
+        for i, row in enumerate(rows):
+            row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
+            rows[i] = row
+        differ = PlanDiffer(resp.plan_desc(), expect)
 
-    res = differ.diff()
-    if not res:
-        scen = request.function.__scenario__
-        feature = scen.feature.rel_filename
-        location = f"{feature}:{line_number(scen._steps, plan)}"
-        msg = [
-            f"Fail to exec: {ngql}",
-            f"Location: {location}",
-            differ.err_msg(),
-        ]
+        res = differ.diff()
+        if not res:
+            scen = request.function.__scenario__
+            feature = scen.feature.rel_filename
+            location = f"{feature}:{line_number(scen._steps, plan)}"
+            msg = [
+                f"Fail to exec: {ngql}",
+                f"Location: {location}",
+                differ.err_msg(),
+            ]
     
-    assert res, "\n".join(msg)
+        assert res, "\n".join(msg)
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
