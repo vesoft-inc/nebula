@@ -97,7 +97,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -109,7 +109,7 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             esac
             ;;
@@ -123,7 +123,7 @@ jobs:
                 -DENABLE_TESTING=on \
                 -GNinja \
                 -B build
-            echo "::set-output name=j::6"
+            echo "::set-output name=j::4"
             ;;
           esac
       - name: Make
@@ -246,7 +246,7 @@ jobs:
                   -DENABLE_STANDALONE_VERSION=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             esac
             ;;

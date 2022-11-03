@@ -1021,7 +1021,7 @@ Feature: subgraph
   Scenario: Get subgraph in a space which doesn't have edge schema
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:

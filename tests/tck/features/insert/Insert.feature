@@ -6,7 +6,7 @@ Feature: Insert string vid of vertex and edge
   Scenario: insert vertex and edge test
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
@@ -458,7 +458,7 @@ Feature: Insert string vid of vertex and edge
   Scenario: insert vertex and edge test by the 2.0 new type
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     And having executed:
@@ -535,7 +535,7 @@ Feature: Insert string vid of vertex and edge
   Scenario: string id ignore existed index
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     And having executed:

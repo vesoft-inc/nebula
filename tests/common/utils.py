@@ -417,7 +417,7 @@ def load_csv_data(
         space_desc = SpaceDesc(
             name=space_name,
             vid_type=space.get('vidType', 'FIXED_STRING(32)'),
-            partition_num=space.get('partitionNum', 7),
+            partition_num=space.get('partitionNum', 1),
             replica_factor=space.get('replicaFactor', 1),
             charset=space.get('charset', 'utf8'),
             collate=space.get('collate', 'utf8_bin'),
@@ -431,7 +431,7 @@ def load_csv_data(
             resp_ok(sess, line.strip(), True)
 
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization
-        time.sleep(2)
+        time.sleep(3)
 
         if config["files"] is not None:
             for fd in config["files"]:
