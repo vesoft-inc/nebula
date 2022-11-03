@@ -53,7 +53,7 @@ class ProjectTest : public QueryTestBase {
 
 TEST_F(ProjectTest, Project1Col) {
   std::string input = "input_project";
-  auto yieldColumns = new YieldColumns();
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
   yieldColumns->addColumn(new YieldColumn(
       VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
 
@@ -80,7 +80,7 @@ TEST_F(ProjectTest, Project1Col) {
 
 TEST_F(ProjectTest, Project2Col) {
   std::string input = "input_project";
-  auto yieldColumns = new YieldColumns();
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
   yieldColumns->addColumn(new YieldColumn(
       VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
   yieldColumns->addColumn(new YieldColumn(
@@ -109,7 +109,7 @@ TEST_F(ProjectTest, Project2Col) {
 
 TEST_F(ProjectTest, EmptyInput) {
   std::string input = "empty";
-  auto yieldColumns = new YieldColumns();
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
   yieldColumns->addColumn(new YieldColumn(
       VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
   auto* project = Project::make(qctx_.get(), start_, std::move(yieldColumns));
