@@ -224,7 +224,7 @@ def new_space(request, options, exec_ctx):
     name = "EmptyGraph_" + space_generator()
     space_desc = SpaceDesc(
         name=opts.get("name", name),
-        partition_num=int(opts.get("partition_num", 7)),
+        partition_num=int(opts.get("partition_num", 1)),
         replica_factor=int(opts.get("replica_factor", 1)),
         vid_type=opts.get("vid_type", "FIXED_STRING(30)"),
         charset=opts.get("charset", "utf8"),
@@ -241,7 +241,7 @@ def new_space(request, exec_ctx):
     name = "EmptyGraph_" + space_generator()
     space_desc = SpaceDesc(
         name=name,
-        partition_num=9,
+        partition_num=1,
         replica_factor=1,
         vid_type="FIXED_STRING(30)",
         charset="utf8",

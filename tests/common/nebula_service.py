@@ -303,6 +303,8 @@ class NebulaService(object):
 
         # params for meta only
         self.metad_param = copy.copy(_params)
+        self.metad_param["default_parts_num"] = 1
+
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)
 
@@ -338,6 +340,7 @@ class NebulaService(object):
         self.graphd_param['add_local_host'] = 'false'
         if self.query_concurrently:
             self.graphd_param['max_job_size'] = '4'
+        self.graphd_param["default_parts_num"] = 1
 
         for p in [self.metad_param, self.storaged_param, self.graphd_param]:
             p.update(kwargs)

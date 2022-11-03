@@ -6,7 +6,7 @@ Feature: Insert vertex and edge with if not exists
   Scenario: insert vertex and edge if not exists test
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
@@ -172,7 +172,7 @@ Feature: Insert vertex and edge with if not exists
   Scenario: insert vertex and edge with default propNames
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
@@ -280,7 +280,7 @@ Feature: Insert vertex and edge with if not exists
   Scenario: vertices index and data consistency check
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
@@ -408,7 +408,7 @@ Feature: Insert vertex and edge with if not exists
   Scenario: edge index and data consistency check
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
