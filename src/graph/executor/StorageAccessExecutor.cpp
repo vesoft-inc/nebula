@@ -149,15 +149,15 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
 }
 
 StatusOr<DataSet> StorageAccessExecutor::buildValRequestDataSetByVidType(Iterator *iter,
-                                                               Expression *expr,
-                                                               Value& value) {
+                                                                         Expression *expr,
+                                                                         Value &value) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
   nebula::DataSet vertices({kVid});
-  if(value.isDataSet()){
-    auto& ds = const_cast<DataSet&>(value.getDataSet());
-    for(auto & colName : ds.colNames){
+  if (value.isDataSet()) {
+    auto &ds = const_cast<DataSet &>(value.getDataSet());
+    for (auto &colName : ds.colNames) {
       vertices.colNames.push_back(colName);
     }
     vertices.rows.reserve(iter->size());
@@ -171,7 +171,7 @@ StatusOr<DataSet> StorageAccessExecutor::buildValRequestDataSetByVidType(Iterato
       }
       std::vector<Value> row;
       row.push_back(std::move(vid));
-      for(size_t col = 1; col<vertices.colNames.size(); col++){
+      for (size_t col = 1; col < vertices.colNames.size(); col++) {
         row.push_back(iter->getColumn(vertices.colNames[col]));
       }
       vertices.emplace_back(Row(row));

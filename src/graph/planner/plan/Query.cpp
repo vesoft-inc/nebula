@@ -77,7 +77,7 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
   setEdgeTypes(g.edgeTypes_);
   setEdgeDirection(g.edgeDirection_);
   setRandom(g.random_);
-  setIsPush(g.isPush_);
+  setPushDown(g.pushDown_);
   if (g.vertexProps_) {
     auto vertexProps = *g.vertexProps_;
     auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);

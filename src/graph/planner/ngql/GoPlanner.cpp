@@ -459,16 +459,14 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan, AstContext* astCtx) {
       auto* gc = static_cast<GoSentence*>(astCtx->sentence);
       if (gc->whereClause() != nullptr) {
         bool hasInput = false;
-        // filter剪枝
         auto* newFilter =
             checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
-        //判断是否需要变量下推
         if (hasInput) {
           hasInput = false;
           checkFilterExpressionIsPush(gn, gc->whereClause()->filter()->clone(), &hasInput);
         }
         gn->setFilter(newFilter);
-        gn->setIsPush(hasInput);
+        gn->setPushDown(hasInput);
       }
       cur = Filter::make(qctx, cur, goCtx_->filter);
     }

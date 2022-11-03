@@ -31,7 +31,6 @@ namespace storage {
  */
 class StorageExpressionContext final : public ExpressionContext {
  public:
-  nebula::DataSet reqDataSet;
   StorageExpressionContext(size_t vIdLen,
                            bool isIntId,
                            const std::string& name = "",
@@ -102,7 +101,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @return const Value&
    */
   const Value& getInputProp(const std::string& name) const override {
-    auto vals = reqDataSet.colValues(name);
+    auto vals = reqDataSet_.colValues(name);
     if (vals.empty()) {
       return Value::kEmpty;
     }
@@ -112,8 +111,8 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // Get index of property in input tuple
   StatusOr<std::size_t> getInputPropIndex(const std::string& name) const override {
-    for (size_t i = 0; i < reqDataSet.colSize(); i++) {
-      std::string col = reqDataSet.colNames[i];
+    for (size_t i = 0; i < reqDataSet_.colSize(); i++) {
+      std::string col = reqDataSet_.colNames[i];
       if (col == name) {
         return i;
       }
@@ -129,9 +128,9 @@ class StorageExpressionContext final : public ExpressionContext {
    * @return Value
    */
   const Value& getColumn(int32_t index) const override {
-    if (reqDataSet.rowSize() > 0) {
-      if ((int)reqDataSet.rowValues(0).size() >= index) {
-        return reqDataSet.rowValues(0)[index];
+    if (reqDataSet_.rowSize() > 0) {
+      if (static_cast<int>(reqDataSet_.rowValues(0).size()) >= index) {
+        return reqDataSet_.rowValues(0)[index];
       }
     }
     return Value::kNullValue;
@@ -306,6 +305,8 @@ class StorageExpressionContext final : public ExpressionContext {
    */
   Value getIndexValue(const std::string& prop, bool isEdge) const;
 
+  void setReqDataSet(const DataSet& reqDataSet);
+
  private:
   size_t vIdLen_;
   bool isIntId_;
@@ -332,6 +333,8 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // name -> Value with multiple versions
   std::unordered_map<std::string, std::vector<Value>> valueMap_;
+
+  nebula::DataSet reqDataSet_;
 };
 
 }  // namespace storage

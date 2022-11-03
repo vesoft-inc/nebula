@@ -18,9 +18,9 @@ StatusOr<DataSet> GetNeighborsExecutor::buildRequestVids() {
   auto inputVar = gn_->inputVar();
   auto iter = ectx_->getResult(inputVar).iter();
   StatusOr<DataSet> reqDs;
-  if(gn_->isPush()){
+  if (gn_->pushDown()) {
     const Value& val = ectx_->getResult(inputVar).value();
-    reqDs = buildValRequestDataSetByVidType(iter.get(), gn_->src(), const_cast<Value &>(val));
+    reqDs = buildValRequestDataSetByVidType(iter.get(), gn_->src(), const_cast<Value&>(val));
   } else {
     reqDs = buildRequestDataSetByVidType(iter.get(), gn_->src(), gn_->dedup());
   }

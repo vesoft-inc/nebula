@@ -35,7 +35,6 @@ template <typename T>
 class FilterNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
-  nebula::DataSet reqDataSet;
 
   FilterNode(RuntimeContext* context,
              IterateNode<T>* upstream,
@@ -101,7 +100,7 @@ class FilterNode : public IterateNode<T> {
   // return true when the value iter points to a value which can filter
   bool checkTagAndEdge() {
     expCtx_->reset(this->reader(), this->key().str());
-    expCtx_ ->reqDataSet = reqDataSet;
+    expCtx_ ->setReqDataSet(reqDataSet_);
     if (tagFilterExp_ != nullptr) {
       auto res = tagFilterExp_->eval(*expCtx_);
       if (!res.isBool() || !res.getBool()) {
@@ -123,6 +122,13 @@ class FilterNode : public IterateNode<T> {
   Expression* tagFilterExp_{nullptr};
   FilterMode mode_{FilterMode::TAG_AND_EDGE};
   int32_t callCheck{0};
+  nebula::DataSet reqDataSet_;
+
+ public:
+  void setReqDataSet(const DataSet& reqDataSet) {
+    reqDataSet_ = reqDataSet;
+  }
+
 };
 
 }  // namespace storage

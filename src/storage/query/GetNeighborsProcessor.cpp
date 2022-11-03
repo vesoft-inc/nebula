@@ -96,13 +96,12 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
       nebula::DataSet ds(*req.column_names_ref());
       ds.rows.emplace_back(row);
       size_t len = plan.getNodes().size();
-      for (size_t i =0; i < len; i ++)
-      {
+      for (size_t i = 0; i < len; i++) {
         RelNode<VertexID>* rn = plan.getNode(i);
         std::string& na = const_cast<std::string&>(rn->name());
-        if(na == "FilterNode"){
+        if (na == "FilterNode") {
           FilterNode<VertexID>* der = dynamic_cast<FilterNode<VertexID>*>(rn);
-          der->reqDataSet = ds;
+          der->setReqDataSet(ds);
           break;
         }
       }
@@ -136,8 +135,14 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
   for (const auto& [partId, rows] : req.get_parts()) {
-    futures.emplace_back(
-        runInExecutor(&contexts_[i], &expCtxs_[i], &results_[i], const_cast<cpp2::GetNeighborsRequest &>(req), partId, rows, limit, random));
+    futures.emplace_back(runInExecutor(&contexts_[i],
+                                       &expCtxs_[i],
+                                       &results_[i],
+                                       const_cast<cpp2::GetNeighborsRequest&>(req),
+                                       partId,
+                                       rows,
+                                       limit,
+                                       random));
     i++;
   }
 
@@ -173,7 +178,8 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     int64_t limit,
     bool random) {
   return folly::via(
-      executor_, [this, context, expCtx, result, req, partId, input = std::move(rows), limit, random]() {
+      executor_,
+      [this, context, expCtx, result, req, partId, input = std::move(rows), limit, random]() {
         auto plan = buildPlan(context, expCtx, result, limit, random);
         for (const auto& row : input) {
           CHECK_GE(row.values.size(), 1);
@@ -188,13 +194,12 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
           nebula::DataSet ds(*req.column_names_ref());
           ds.rows.emplace_back(row);
           size_t len = plan.getNodes().size();
-          for (size_t i =0; i < len; i ++)
-          {
+          for (size_t i = 0; i < len; i++) {
             RelNode<VertexID>* rn = plan.getNode(i);
             std::string& na = const_cast<std::string&>(rn->name_);
-            if(na == "FilterNode"){
+            if (na == "FilterNode") {
               FilterNode<VertexID>* der = dynamic_cast<FilterNode<VertexID>*>(rn);
-              der->reqDataSet = ds;
+              der->setReqDataSet(ds);
               break;
             }
           }

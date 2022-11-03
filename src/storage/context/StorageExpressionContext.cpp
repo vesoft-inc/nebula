@@ -120,5 +120,9 @@ Value StorageExpressionContext::getIndexValue(const std::string& prop, bool isEd
   return IndexKeyUtils::getValueFromIndexKey(vIdLen_, key_, prop, fields_, isEdge, hasNullableCol_);
 }
 
+void StorageExpressionContext::setReqDataSet(const DataSet& reqDataSet) {
+  reqDataSet_ = reqDataSet;
+}
+
 }  // namespace storage
 }  // namespace nebula
