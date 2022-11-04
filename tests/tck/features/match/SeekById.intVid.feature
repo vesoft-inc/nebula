@@ -371,7 +371,7 @@ Feature: Match seek by id
   Scenario: [v2ga bug] Negative start vid
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |

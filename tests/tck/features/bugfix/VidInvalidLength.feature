@@ -6,7 +6,7 @@ Feature: Invalid vid length
   # issue https://github.com/vesoft-inc/nebula/issues/4397
   Scenario: With vertex operate overlength vid with no index
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     When executing query:
@@ -41,7 +41,7 @@ Feature: Invalid vid length
 
   Scenario: With vertex operate overlength vid with index
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     When executing query:
@@ -77,7 +77,7 @@ Feature: Invalid vid length
 
   Scenario: With edge operate overlength vid with no index
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     When executing query:
@@ -114,7 +114,7 @@ Feature: Invalid vid length
 
   Scenario: With edge operate overlength vid with index
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(10) |
     When executing query:

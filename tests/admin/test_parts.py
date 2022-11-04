@@ -18,7 +18,7 @@ class TestParts(NebulaTestSuite):
 
     @classmethod
     def prepare(self):
-        resp = self.client.execute('CREATE SPACE space_show_parts(partition_num=5, vid_type=FIXED_STRING(8));'
+        resp = self.client.execute('CREATE SPACE space_show_parts(partition_num=1, vid_type=FIXED_STRING(8));'
                                    'USE space_show_parts;')
         self.check_resp_succeeded(resp)
 
@@ -41,17 +41,17 @@ class TestParts(NebulaTestSuite):
              leader_pattern,
              peers_pattern,
              losts_pattern]
-            for i in range(1, 6)
+            for i in range(1, 2)
         ]
         self.check_result(resp, expected_result, is_regex=True)
 
 
         # Specify the part id
-        resp = self.client.execute('SHOW PART 3')
+        resp = self.client.execute('SHOW PART 1')
         self.check_resp_succeeded(resp)
         expected_col_names = ["Partition ID", "Leader", "Peers", "Losts"]
         self.check_column_names(resp, expected_col_names)
-        expected_result = [[re.compile(r'3'),
+        expected_result = [[re.compile(r'1'),
                             leader_pattern,
                             peers_pattern,
                             losts_pattern]]
