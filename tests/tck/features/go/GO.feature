@@ -1948,10 +1948,10 @@ Feature: Go Sentence
 
   Scenario: only dependency on id, remove innerjoin
     When profiling query:
-        """
-        GO FROM 'player101' OVER follow YIELD follow._dst as fid |
-        GO FROM $-.fid OVER serve YIELD serve._dst as tid;
-        """
+      """
+      GO FROM 'player101' OVER follow YIELD follow._dst as fid |
+      GO FROM $-.fid OVER serve YIELD serve._dst as tid;
+      """
     Then the result should be, in any order:
       | tid       |
       | "team203" |
@@ -1962,13 +1962,12 @@ Feature: Go Sentence
       | 1  | GetNeighbors | 0            |                |               |
       | 0  | Start        |              |                |               |
 
-
   Scenario: constant filter with innerjoin
     When profiling query:
-        """
-        GO FROM 'player101' OVER follow YIELD follow._dst as fid |
-        GO FROM $-.fid OVER follow WHERE follow.degree>70  YIELD follow._dst as tid;
-        """
+      """
+      GO FROM 'player101' OVER follow YIELD follow._dst as fid |
+      GO FROM $-.fid OVER follow WHERE follow.degree>70  YIELD follow._dst as tid;
+      """
     Then the result should be, in any order:
       | tid         |
       | "player100" |
@@ -1981,10 +1980,10 @@ Feature: Go Sentence
 
   Scenario: variable filter with innerjoin
     When profiling query:
-        """
-        GO FROM 'player101' OVER follow YIELD follow._dst as fid, follow.degree as num |
-        GO FROM $-.fid OVER follow WHERE follow.degree < $-.num AND follow.degree > 70 YIELD follow._dst as tid;
-        """
+      """
+      GO FROM 'player101' OVER follow YIELD follow._dst as fid, follow.degree as num |
+      GO FROM $-.fid OVER follow WHERE follow.degree < $-.num AND follow.degree > 70 YIELD follow._dst as tid;
+      """
     Then the result should be, in any order:
       | tid         |
       | "player100" |
@@ -2001,9 +2000,9 @@ Feature: Go Sentence
 
   Scenario: filter with leftjoin
     When profiling query:
-        """
-        GO FROM 'player101' OVER follow WHERE follow.degree>90 and $$.player.age>35 YIELD follow._dst as fid, follow.degree;
-        """
+      """
+      GO FROM 'player101' OVER follow WHERE follow.degree>90 and $$.player.age>35 YIELD follow._dst as fid, follow.degree;
+      """
     Then the result should be, in any order:
       | fid         | follow.degree |
       | "player100" | 95            |
