@@ -276,13 +276,11 @@ bool ExtractFilterExprVisitor::visitLogicalOr(LogicalExpression *expr) {
         if (canNotPushedIndex != -1 || !canBeSplit) {
           return false;
         }
+        canBePushed_ = true;  // reset when the LogicalAnd can be split
         canNotPushedIndex = i;
         flags = std::move(flag);
       }
     } else {
-      if (!canBePushed_) {
-        return false;
-      }
       operands[i]->accept(this);
       if (!canBePushed_) {
         return false;
