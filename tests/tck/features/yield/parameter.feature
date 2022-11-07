@@ -5,7 +5,7 @@ Feature: Parameter
 
   Background:
     Given a graph with space named "nba"
-    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili"}
+    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili", "p9":["Tim Duncan","Tony Parker"]}
 
   Scenario: return parameters
     When executing query:
@@ -96,6 +96,23 @@ Feature: Parameter
     Then the result should be, in order:
       | v            |
       | "Tim Duncan" |
+    When profiling query:
+      """
+      MATCH (v) WHERE id(v) IN $p9
+      RETURN v.player.name AS v
+      """
+    Then the result should be, in any order:
+      | v             |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 9  | Project        | 7            |               |
+      | 7  | Filter         | 2            |               |
+      | 2  | AppendVertices | 6            |               |
+      | 6  | Dedup          | 6            |               |
+      | 6  | PassThrough    | 0            |               |
+      | 0  | Start          |              |               |
 
   Scenario: ngql with parameters
     When executing query:
