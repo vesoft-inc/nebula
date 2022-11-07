@@ -6,7 +6,7 @@ Feature: insert vertex without tag
   Background: Background name
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9     |
+      | partition_num  | 1     |
       | replica_factor | 1     |
       | vid_type       | int64 |
 

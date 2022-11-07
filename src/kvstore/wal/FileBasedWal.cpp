@@ -389,7 +389,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (id != curLogId) {
-      LOG(WARNING) << "LogId is not consistent" << id << " " << curLogId;
+      LOG(WARNING) << "LogId is not consistent " << id << " " << curLogId;
       break;
     }
 

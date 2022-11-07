@@ -44,6 +44,7 @@ Feature: Yield
       | ((!(false) OR (false AND false)) XOR false) |
       | true                                        |
 
+  @skip
   Scenario: nested
     When executing query:
       """

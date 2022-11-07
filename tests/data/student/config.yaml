@@ -1,6 +1,6 @@
 space:
   name: student
-  partitionNum: 7
+  partitionNum: 1
   replicaFactor: 1
   vidType: FIXED_STRING(32)
   charset: utf8
