@@ -431,6 +431,8 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
     LOG(INFO) << "GetVertexProp";
     std::vector<VertexID> vertices = {"Tim Duncan"};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    TagID player = 1;
+    tags.emplace_back(std::make_pair(player, std::vector<std::string>()));
     auto req = buildVertexRequest(totalParts, vertices, tags);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
@@ -445,14 +447,10 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
       // The first one is kVid, and player 11 properties in value
       std::vector<Value> values{
           "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
-      // team: 1 property, tag3: 11 property, in total 12
-      for (size_t i = 0; i < 12; i++) {
-        values.emplace_back(Value());
-      }
       row.values = std::move(values);
       expected.emplace_back(std::move(row));
-      // kVid, player: 11, team: 1, tag3: 11
-      ASSERT_EQ(1 + 11 + 1 + 11, (*resp.props_ref()).colNames.size());
+      // kVid, player: 11
+      ASSERT_EQ(1 + 11, (*resp.props_ref()).colNames.size());
       verifyResult(expected, *resp.props_ref());
     }
   }
@@ -468,6 +466,34 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
       edgeKeys.emplace_back(std::move(edgeKey));
     }
     std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    EdgeType serve = 101;
+    EdgeType teammate = 102;
+    edges.emplace_back(
+        -teammate,
+        std::vector<std::string>{"player1", "player2", "teamName", "startYear", "endYear"});
+    edges.emplace_back(-serve,
+                       std::vector<std::string>{"playerName",
+                                                "teamName",
+                                                "startYear",
+                                                "endYear",
+                                                "teamCareer",
+                                                "teamGames",
+                                                "teamAvgScore",
+                                                "type",
+                                                "champions"});
+    edges.emplace_back(serve,
+                       std::vector<std::string>{"playerName",
+                                                "teamName",
+                                                "startYear",
+                                                "endYear",
+                                                "teamCareer",
+                                                "teamGames",
+                                                "teamAvgScore",
+                                                "type",
+                                                "champions"});
+    edges.emplace_back(
+        -teammate,
+        std::vector<std::string>{"player1", "player2", "teamName", "startYear", "endYear"});
     auto req = buildEdgeRequest(totalParts, edgeKeys, edges);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
@@ -531,6 +557,10 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
     LOG(INFO) << "GetNotExisted";
     std::vector<VertexID> vertices = {"Not existed", "Tim Duncan"};
     std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    TagID player = 1;
+    tags.emplace_back(std::make_pair(player, std::vector<std::string>()));
+    TagID team = 2;
+    tags.emplace_back(std::make_pair(team, std::vector<std::string>()));
     auto req = buildVertexRequest(totalParts, vertices, tags);
 
     auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
@@ -545,14 +575,12 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
       // The first one is kVid, and player have 11 properties in key and value
       std::vector<Value> values{
           "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
-      // team: 1 property, tag3: 11 property, in total 12
-      for (size_t i = 0; i < 12; i++) {
-        values.emplace_back(Value());
-      }
+      // team: 1 property
+      values.emplace_back(Value());
       row.values = std::move(values);
       expected.emplace_back(std::move(row));
-      // kVid, player: 11, team: 1, tag3: 11
-      ASSERT_EQ(1 + 11 + 1 + 11, (*resp.props_ref()).colNames.size());
+      // kVid, player: 11, team: 1
+      ASSERT_EQ(1 + 11 + 1, (*resp.props_ref()).colNames.size());
       verifyResult(expected, *resp.props_ref());
     }
   }
@@ -572,30 +600,20 @@ TEST(GetPropTest, AllPropertyInAllSchemaTest) {
       std::vector<nebula::Row> expected;
       {
         nebula::Row row;
-        // The first one is kVid, and player have 11 properties in key and value
-        std::vector<Value> values{
-            "Tony Parker", "Tony Parker", 38, false, 18, 2001, 2019, 1254, 15.5, 2, "France", 4};
-        // team: 1 property, tag3: 11 property, in total 12
-        for (size_t i = 0; i < 12; i++) {
-          values.emplace_back(Value());
-        }
+        // The first one is kVid
+        std::vector<Value> values{"Tony Parker"};
         row.values = std::move(values);
         expected.emplace_back(std::move(row));
       }
       {
         nebula::Row row;
-        // The first one is kVid, and player have 11 properties in key and value
-        std::vector<Value> values{
-            "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
-        // team: 1 property, tag3: 11 property, in total 12
-        for (size_t i = 0; i < 12; i++) {
-          values.emplace_back(Value());
-        }
+        // The first one is kVid
+        std::vector<Value> values{"Tim Duncan"};
         row.values = std::move(values);
         expected.emplace_back(std::move(row));
       }
-      // kVid, player: 11, team: 1, tag3: 11
-      ASSERT_EQ(1 + 11 + 1 + 11, (*resp.props_ref()).colNames.size());
+      // Only return kVid bcz tags is empty
+      ASSERT_EQ(1, (*resp.props_ref()).colNames.size());
       verifyResult(expected, *resp.props_ref());
     }
   }
@@ -628,30 +646,20 @@ TEST(GetPropTest, ConcurrencyTest) {
       std::vector<nebula::Row> expected;
       {
         nebula::Row row;
-        // The first one is kVid, and player have 11 properties in key and value
-        std::vector<Value> values{
-            "Tony Parker", "Tony Parker", 38, false, 18, 2001, 2019, 1254, 15.5, 2, "France", 4};
-        // team: 1 property, tag3: 11 property, in total 12
-        for (size_t i = 0; i < 12; i++) {
-          values.emplace_back(Value());
-        }
+        // Only return kVid bcz tags is empty
+        std::vector<Value> values{"Tony Parker"};
         row.values = std::move(values);
         expected.emplace_back(std::move(row));
       }
       {
         nebula::Row row;
-        // The first one is kVid, and player have 11 properties in key and value
-        std::vector<Value> values{
-            "Tim Duncan", "Tim Duncan", 44, false, 19, 1997, 2016, 1392, 19.0, 1, "America", 5};
-        // team: 1 property, tag3: 11 property, in total 12
-        for (size_t i = 0; i < 12; i++) {
-          values.emplace_back(Value());
-        }
+        // Only return kVid bcz tags is empty
+        std::vector<Value> values{"Tim Duncan"};
         row.values = std::move(values);
         expected.emplace_back(std::move(row));
       }
-      // kVid, player: 11, team: 1, tag3: 11
-      ASSERT_EQ(1 + 11 + 1 + 11, (*resp.props_ref()).colNames.size());
+      // kVid
+      ASSERT_EQ(1, (*resp.props_ref()).colNames.size());
       verifyResult(expected, *resp.props_ref());
     }
   }
