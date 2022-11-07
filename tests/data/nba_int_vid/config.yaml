@@ -1,6 +1,6 @@
 space:
   name: nba_int_vid
-  partitionNum: 7
+  partitionNum: 1
   replicaFactor: 1
   vidType: int
   charset: utf8

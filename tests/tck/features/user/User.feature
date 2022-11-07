@@ -281,6 +281,7 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
 
+  @skip
   Scenario: Describe User
     When executing query:
       """

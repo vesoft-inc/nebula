@@ -3,7 +3,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid TagIndex
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -141,7 +141,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid EdgeIndex
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -274,7 +274,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid TagIndexTTL
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -399,7 +399,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid EdgeIndexTTL
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -513,7 +513,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid AlterTag
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -568,7 +568,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid RebuildTagIndexStatusInfo
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -616,7 +616,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid RebuildEdgeIndexStatusInfo
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |
@@ -664,7 +664,7 @@ Feature: IndexTest_Vid_Int
   Scenario: IndexTest IntVid AlterSchemaTest
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9        |
+      | partition_num  | 1        |
       | replica_factor | 1        |
       | vid_type       | int64    |
       | charset        | utf8     |

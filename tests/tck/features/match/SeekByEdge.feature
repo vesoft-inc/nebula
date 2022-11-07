@@ -1474,7 +1474,7 @@ Feature: Match seek by edge
   Scenario Outline: seek by edge in a single edge type space
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
