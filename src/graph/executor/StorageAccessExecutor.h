@@ -168,7 +168,7 @@ class StorageAccessExecutor : public Executor {
                                                          bool dedup,
                                                          bool isCypher = false);
 
-  StatusOr<DataSet> buildValRequestDataSetByVidType(Iterator *iter, Expression *expr, Value& value);
+  StatusOr<DataSet> buildValRequestDataSetByVidType(Iterator *iter, Expression *expr, Value &value);
 };
 
 }  // namespace graph

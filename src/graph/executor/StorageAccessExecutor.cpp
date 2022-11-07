@@ -150,7 +150,7 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
 
 StatusOr<DataSet> StorageAccessExecutor::buildValRequestDataSetByVidType(Iterator *iter,
                                                                          Expression *expr,
-                                                                         Value& value) {
+                                                                         Value &value) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
