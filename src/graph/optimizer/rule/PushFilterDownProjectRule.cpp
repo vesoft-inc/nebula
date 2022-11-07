@@ -110,6 +110,8 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   auto* newBelowFilterNode = graph::Filter::make(
       octx->qctx(), const_cast<graph::PlanNode*>(oldProjNode->dep()), newFilterPicked);
   newBelowFilterNode->setInputVar(oldProjNode->inputVar());
+  // Filter should keep column names
+  newBelowFilterNode->setColNames(oldProjNode->inputVars()[0]->colNames);
   auto newBelowFilterGroup = OptGroup::create(octx);
   auto newFilterGroupNode = newBelowFilterGroup->makeGroupNode(newBelowFilterNode);
   for (auto dep : projGroupNode->dependencies()) {
