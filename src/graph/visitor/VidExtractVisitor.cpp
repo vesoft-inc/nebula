@@ -167,7 +167,9 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
     }
 
     auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
-    DCHECK(rightListValue.isList());
+    if (!rightListValue.isList()) {
+      return;
+    }
     vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                              {{fCallExpr->args()->args().front()->toString(),
                                {VidPattern::Vids::Kind::kIn, rightListValue.getList()}}}};
