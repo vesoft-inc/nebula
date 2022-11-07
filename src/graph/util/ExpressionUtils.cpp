@@ -210,7 +210,12 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
       return false;
     }
     auto rhs = static_cast<const RelationalExpression *>(e)->right();
-    if (rhs->kind() != Expression::Kind::kList && rhs->kind() != Expression::Kind::kSet) {
+    auto kind = rhs->kind();
+    if (kind == Expression::Kind::kConstant) {
+      auto v = static_cast<const ConstantExpression *>(rhs)->value();
+      return v.isList() || v.isSet();
+    }
+    if (kind != Expression::Kind::kList && kind != Expression::Kind::kSet) {
       return false;
     }
     auto items = static_cast<const ContainerExpression *>(rhs)->getKeys();
@@ -226,20 +231,45 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
     const auto re = static_cast<const RelationalExpression *>(e);
     auto lhs = re->left();
     auto rhs = re->right();
-    DCHECK(rhs->kind() == Expression::Kind::kList || rhs->kind() == Expression::Kind::kSet);
-    auto ce = static_cast<const ContainerExpression *>(rhs);
+    auto kind = rhs->kind();
     auto pool = e->getObjPool();
     auto *rewrittenExpr = LogicalExpression::makeOr(pool);
     // Pointer to a single-level expression
     Expression *singleExpr = nullptr;
-    auto items = ce->getKeys();
-    for (auto i = 0u; i < items.size(); ++i) {
-      auto *ee = RelationalExpression::makeEQ(pool, lhs->clone(), items[i]->clone());
-      rewrittenExpr->addOperand(ee);
-      if (i == 0) {
-        singleExpr = ee;
+    if (kind == Expression::Kind::kConstant) {
+      auto ce = static_cast<const ConstantExpression *>(rhs);
+      auto v = ce->value();
+      DCHECK(v.isList() || v.isSet());
+      std::vector<Value> values;
+      if (v.isList()) {
+        values = v.getList().values;
       } else {
-        singleExpr = nullptr;
+        auto setItems = v.getSet().values;
+        values.insert(values.end(), setItems.begin(), setItems.end());
+      }
+      for (auto i = 0u; i < values.size(); ++i) {
+        auto *ee = RelationalExpression::makeEQ(
+            pool, lhs->clone(), ConstantExpression::make(pool, values[i]));
+        rewrittenExpr->addOperand(ee);
+        if (i == 0) {
+          singleExpr = ee;
+        } else {
+          singleExpr = nullptr;
+        }
+      }
+
+    } else {
+      DCHECK(kind == Expression::Kind::kList || kind == Expression::Kind::kSet);
+      auto ce = static_cast<const ContainerExpression *>(rhs);
+      auto items = ce->getKeys();
+      for (auto i = 0u; i < items.size(); ++i) {
+        auto *ee = RelationalExpression::makeEQ(pool, lhs->clone(), items[i]->clone());
+        rewrittenExpr->addOperand(ee);
+        if (i == 0) {
+          singleExpr = ee;
+        } else {
+          singleExpr = nullptr;
+        }
       }
     }
     return singleExpr ? singleExpr : rewrittenExpr;
