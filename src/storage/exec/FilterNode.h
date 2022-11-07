@@ -128,7 +128,6 @@ class FilterNode : public IterateNode<T> {
   void setReqDataSet(const DataSet& reqDataSet) {
     reqDataSet_ = reqDataSet;
   }
-
 };
 
 }  // namespace storage
