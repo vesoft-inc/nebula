@@ -1972,11 +1972,11 @@ Feature: Go Sentence
       | tid         |
       | "player100" |
     And the execution plan should be:
-      | id | name         | dependencies | profiling data                                            | operator info |
-      | 15 | Project      | 14           |                                                           |               |
-      | 14 | GetNeighbors | 1            | {"filter": "((follow.degree>70) AND (follow.degree>70))"} |               |
-      | 1  | GetNeighbors | 0            |                                                           |               |
-      | 0  | Start        |              |                                                           |               |
+      | id | name         | dependencies | profiling data | operator info                                             |
+      | 15 | Project      | 14           |                |                                                           |
+      | 14 | GetNeighbors | 1            |                | {"filter": "((follow.degree>70) AND (follow.degree>70))"} |
+      | 1  | GetNeighbors | 0            |                |                                                           |
+      | 0  | Start        |              |                |                                                           |
 
   Scenario: variable filter with innerjoin
     When profiling query:
