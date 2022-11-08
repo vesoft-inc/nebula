@@ -463,9 +463,9 @@ void Value::setVertex(Vertex&& v) {
   setV(std::move(v));
 }
 
-void Value::setVertex(std::unique_ptr<Vertex>&& v) {
+void Value::setVertex(Vertex* v) {
   clear();
-  setV(std::move(v));
+  setV(v);
 }
 
 void Value::setEdge(const Edge& v) {
@@ -478,9 +478,9 @@ void Value::setEdge(Edge&& v) {
   setE(std::move(v));
 }
 
-void Value::setEdge(std::unique_ptr<Edge>&& v) {
+void Value::setEdge(Edge* v) {
   clear();
-  setE(std::move(v));
+  setE(v);
 }
 
 void Value::setPath(const Path& v) {
@@ -620,7 +620,7 @@ const Vertex& Value::getVertex() const {
 
 const Vertex* Value::getVertexPtr() const {
   CHECK_EQ(type_, Type::VERTEX);
-  return value_.vVal.get();
+  return value_.vVal;
 }
 
 const Edge& Value::getEdge() const {
@@ -630,7 +630,7 @@ const Edge& Value::getEdge() const {
 
 const Edge* Value::getEdgePtr() const {
   CHECK_EQ(type_, Type::EDGE);
-  return value_.eVal.get();
+  return value_.eVal;
 }
 
 const Path& Value::getPath() const {
@@ -945,11 +945,23 @@ void Value::clearSlow() {
       break;
     }
     case Type::VERTEX: {
-      destruct(value_.vVal);
+      if (value_.vVal) {
+        if (value_.vVal->unref() == 0) {
+          delete value_.vVal;
+        }
+        value_.vVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::EDGE: {
-      destruct(value_.eVal);
+      if (value_.eVal) {
+        if (value_.eVal->unref() == 0) {
+          delete value_.eVal;
+        }
+        value_.eVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::PATH: {
@@ -1026,12 +1038,18 @@ Value& Value::operator=(Value&& rhs) noexcept {
       break;
     }
     case Type::VERTEX: {
-      setV(std::move(rhs.value_.vVal));
-      break;
+      value_.vVal = rhs.value_.vVal;
+      type_ = Type::VERTEX;
+      rhs.value_.vVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::EDGE: {
-      setE(std::move(rhs.value_.eVal));
-      break;
+      value_.eVal = rhs.value_.eVal;
+      type_ = Type::EDGE;
+      rhs.value_.eVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::PATH: {
       setP(std::move(rhs.value_.pVal));
@@ -1246,44 +1264,36 @@ void Value::setDT(DateTime&& v) {
   new (std::addressof(value_.dtVal)) DateTime(std::move(v));
 }
 
-void Value::setV(const std::unique_ptr<Vertex>& v) {
+void Value::setV(Vertex* v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(*v));
-}
-
-void Value::setV(std::unique_ptr<Vertex>&& v) {
-  type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(std::move(v));
+  value_.vVal = v;
+  value_.vVal->ref();
 }
 
 void Value::setV(const Vertex& v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(v));
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(v));
 }
 
 void Value::setV(Vertex&& v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(std::move(v)));
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(std::move(v)));
 }
 
-void Value::setE(const std::unique_ptr<Edge>& v) {
+void Value::setE(Edge* v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(*v));
-}
-
-void Value::setE(std::unique_ptr<Edge>&& v) {
-  type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(std::move(v));
+  value_.eVal = v;
+  value_.eVal->ref();
 }
 
 void Value::setE(const Edge& v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(v));
+  new (std::addressof(value_.eVal)) Edge*(new Edge(v));
 }
 
 void Value::setE(Edge&& v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(std::move(v)));
+  new (std::addressof(value_.eVal)) Edge*(new Edge(std::move(v)));
 }
 
 void Value::setP(const std::unique_ptr<Path>& v) {
@@ -1902,9 +1912,15 @@ Value Value::equal(const Value& v) const {
       return getDateTime() == v.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == v.value_.vVal) {
+        return true;
+      }
       return getVertex() == v.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == v.value_.eVal) {
+        return true;
+      }
       return getEdge() == v.getEdge();
     }
     case Value::Type::PATH: {
@@ -2737,9 +2753,15 @@ bool Value::equals(const Value& rhs) const {
       return getDateTime() == rhs.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == rhs.value_.vVal) {
+        return true;
+      }
       return getVertex() == rhs.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == rhs.value_.eVal) {
+        return true;
+      }
       return getEdge() == rhs.getEdge();
     }
     case Value::Type::PATH: {
