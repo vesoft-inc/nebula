@@ -527,7 +527,8 @@ Expression* GoPlanner::checkFilterExpressionIsPush(GetNeighbors* gn,
     if (left == nullptr || right == nullptr) {
       return nullptr;
     }
-  } else if (filter->kind() == Expression::Kind::kDstProperty) {
+  } else if (filter->kind() == Expression::Kind::kDstProperty ||
+             filter->kind() == Expression::Kind::kFunctionCall) {
     return nullptr;
   } else if (filter->kind() == Expression::Kind::kInputProperty) {
     *hasInput = true;
