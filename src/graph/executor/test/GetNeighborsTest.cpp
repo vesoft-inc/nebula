@@ -107,15 +107,17 @@ TEST_F(GetNeighborsTest, BuildRequestDataSetWithVal) {
   auto res = gnExe->buildRequestVids();
   auto gnData = std::move(res).value();
 
-  DataSet ds;
-  ds.colNames = {"id", "col2"};
+  std::vector<Value> expectedVids;
   for (auto i = 0; i < 10; ++i) {
+    DataSet ds;
+    ds.colNames = {"id", "col2"};
     Row row;
     row.values.emplace_back(folly::to<std::string>(i));
     row.values.emplace_back(i + 1);
     ds.rows.emplace_back(std::move(row));
+    expectedVids.emplace_back(ds);
   }
-  EXPECT_EQ(gnData, ds);
+  EXPECT_EQ(gnData, expectedVids);
 }
 }  // namespace graph
 }  // namespace nebula
