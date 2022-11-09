@@ -169,6 +169,8 @@ class StorageAccessExecutor : public Executor {
                                                          bool isCypher = false);
 
   StatusOr<std::vector<Value>> buildValRequestDataSetByVidType(Iterator *iter,
+                                                               Expression *expr,
+                                                               Value &value);
 };
 
 }  // namespace graph
