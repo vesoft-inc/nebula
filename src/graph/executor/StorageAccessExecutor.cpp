@@ -148,12 +148,12 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
   return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
-StatusOr<DataSet> StorageAccessExecutor::buildValRequestDataSetByVidType(Iterator *iter,
-                                                                         Expression *expr,
-                                                                         Value &value) {
+StatusOr<std::vector<Value>> StorageAccessExecutor::buildValRequestDataSetByVidType(
+    Iterator *iter, Expression *expr, Value &value) {
   DCHECK(iter && expr) << "iter=" << iter << ", expr=" << expr;
   const auto &space = qctx()->rctx()->session()->space();
   QueryExpressionContext exprCtx(qctx()->ectx());
+  std::vector<Value> res;
   nebula::DataSet vertices({kVid});
   if (value.isDataSet()) {
     auto &ds = const_cast<DataSet &>(value.getDataSet());
@@ -169,15 +169,17 @@ StatusOr<DataSet> StorageAccessExecutor::buildValRequestDataSetByVidType(Iterato
                      << ", space vid type: " << SchemaUtil::typeToString(vidType);
         continue;
       }
+      nebula::DataSet vertex(vertices.colNames);
       std::vector<Value> row;
       row.push_back(std::move(vid));
       for (size_t col = 1; col < vertices.colNames.size(); col++) {
         row.push_back(iter->getColumn(vertices.colNames[col]));
       }
-      vertices.emplace_back(Row(row));
+      vertex.emplace_back(Row(row));
+      res.emplace_back(vertex);
     }
   }
-  return vertices;
+  return res;
 }
 
 std::string StorageAccessExecutor::getStorageDetail(

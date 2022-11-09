@@ -878,15 +878,24 @@ StatusOr<std::function<const VertexID&(const Value&)>> StorageClient::getIdFromV
   std::function<const VertexID&(const Value&)> cb;
   if (vidType == PropertyType::INT64) {
     cb = [](const Value& v) -> const VertexID& {
-      DCHECK_EQ(Value::Type::INT, v.type());
-      auto& mutableV = const_cast<Value&>(v);
+      Value mutableV;
+      if (v.isDataSet()) {
+        mutableV = const_cast<Value&>(v.getDataSet().rows[0][0]);
+      } else {
+        DCHECK_EQ(Value::Type::INT, v.type());
+        mutableV = const_cast<Value&>(v);
+      }
       mutableV = Value(std::string(reinterpret_cast<const char*>(&v.getInt()), 8));
       return mutableV.getStr();
     };
   } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Value& v) -> const VertexID& {
-      DCHECK_EQ(Value::Type::STRING, v.type());
-      return v.getStr();
+      if (v.isDataSet()) {
+        return (v.getDataSet().rows[0][0]).getStr();
+      } else {
+        DCHECK_EQ(Value::Type::STRING, v.type());
+        return v.getStr();
+      }
     };
   } else {
     return Status::Error("Only support integer/string type vid.");

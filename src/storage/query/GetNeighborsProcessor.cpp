@@ -82,9 +82,15 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
   for (const auto& partEntry : req.get_parts()) {
     contexts_.front().resultStat_ = ResultStatus::NORMAL;
     auto partId = partEntry.first;
-    for (const auto& row : partEntry.second) {
-      CHECK_GE(row.values.size(), 1);
-      auto vId = row.values[0].getStr();
+    for (const auto& vid : partEntry.second) {
+      DataSet row;
+      std::string vId;
+      if (vid.isDataSet()) {
+        row = vid.getDataSet();
+        vId = row.rowValues(0).data()->getStr();
+      } else {
+        vId = vid.getStr();
+      }
 
       if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
         LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
@@ -93,15 +99,13 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
         onFinished();
         return;
       }
-      nebula::DataSet ds(*req.column_names_ref());
-      ds.rows.emplace_back(row);
       size_t len = plan.getNodes().size();
       for (size_t i = 0; i < len; i++) {
         RelNode<VertexID>* rn = plan.getNode(i);
         std::string& na = const_cast<std::string&>(rn->name());
         if (na == "FilterNode") {
           FilterNode<VertexID>* der = dynamic_cast<FilterNode<VertexID>*>(rn);
-          der->setReqDataSet(ds);
+          der->setReqDataSet(row);
           break;
         }
       }
@@ -174,16 +178,22 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     nebula::DataSet* result,
     cpp2::GetNeighborsRequest& req,
     PartitionID partId,
-    const std::vector<nebula::Row>& rows,
+    const std::vector<nebula::Value>& rows,
     int64_t limit,
     bool random) {
   return folly::via(
       executor_,
       [this, context, expCtx, result, req, partId, input = std::move(rows), limit, random]() {
         auto plan = buildPlan(context, expCtx, result, limit, random);
-        for (const auto& row : input) {
-          CHECK_GE(row.values.size(), 1);
-          auto vId = row.values[0].getStr();
+        for (const auto& vid : input) {
+          DataSet row;
+          std::string vId;
+          if (vid.isDataSet()) {
+            row = vid.getDataSet();
+            vId = row.rowValues(0).data()->getStr();
+          } else {
+            vId = vid.getStr();
+          }
 
           if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
             LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
@@ -191,15 +201,13 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
             return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
           }
 
-          nebula::DataSet ds(*req.column_names_ref());
-          ds.rows.emplace_back(row);
           size_t len = plan.getNodes().size();
           for (size_t i = 0; i < len; i++) {
             RelNode<VertexID>* rn = plan.getNode(i);
             std::string& na = const_cast<std::string&>(rn->name_);
             if (na == "FilterNode") {
               FilterNode<VertexID>* der = dynamic_cast<FilterNode<VertexID>*>(rn);
-              der->setReqDataSet(ds);
+              der->setReqDataSet(row);
               break;
             }
           }
