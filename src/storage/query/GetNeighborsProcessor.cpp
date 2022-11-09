@@ -87,7 +87,7 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
       std::string vId;
       if (vid.isDataSet()) {
         row = vid.getDataSet();
-        vId = row.rowValues(0).data()->getStr();
+        vId = row.rows[0][0].getStr();
       } else {
         vId = vid.getStr();
       }
@@ -190,7 +190,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
           std::string vId;
           if (vid.isDataSet()) {
             row = vid.getDataSet();
-            vId = row.rowValues(0).data()->getStr();
+            vId = row.rows[0][0].getStr();
           } else {
             vId = vid.getStr();
           }
