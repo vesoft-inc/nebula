@@ -20,7 +20,7 @@ Feature: Example
       """
       GRANT ROLE god on s1 to user1
       """
-    Then the execution should be successful
+    Then an PermissionError should be raised at runtime: No permission to grant/revoke god user.
 
   Scenario: test with enable authorize
     Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
