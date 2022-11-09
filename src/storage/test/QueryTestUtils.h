@@ -364,10 +364,13 @@ class QueryTestUtils {
     (*req.column_names_ref()).emplace_back("iAge");
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex) % totalParts) + 1;
-      std::vector<Value> row;
-      row.emplace_back(vertex);
-      row.emplace_back(40);
-      (*req.parts_ref())[partId].emplace_back(Row(row));
+      DataSet ds;
+      ds.colNames = {kVid, "iAge"};
+      Row row;
+      row.values.emplace_back(vertex);
+      row.values.emplace_back(40);
+      ds.rows.emplace_back(std::move(row));
+      (*req.parts_ref())[partId].emplace_back(ds);
     }
     for (const auto& edge : over) {
       (*traverseSpec.edge_types_ref()).emplace_back(edge);

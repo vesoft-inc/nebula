@@ -27,9 +27,7 @@ class GetNeighborsTest : public testing::Test {
       ResultBuilder builder;
       builder.value(Value(std::move(ds)));
       qctx_->symTable()->newVariable("input_gn");
-      qctx_->symTable()->newVariable("input_col2");
       qctx_->ectx()->setResult("input_gn", builder.build());
-      qctx_->ectx()->setResult("input_col2", builder.build());
     }
 
     meta::cpp2::Session session;
@@ -100,7 +98,6 @@ TEST_F(GetNeighborsTest, BuildRequestDataSetWithVal) {
                                 std::move(statProps),
                                 std::move(exprs));
   gn->setInputVar("input_gn");
-  gn->setInputVar("input_col2");
   gn->setPushDown(true);
 
   auto gnExe = std::make_unique<GetNeighborsExecutor>(gn, qctx_.get());
@@ -110,8 +107,9 @@ TEST_F(GetNeighborsTest, BuildRequestDataSetWithVal) {
   std::vector<Value> expectedVids;
   for (auto i = 0; i < 10; ++i) {
     DataSet ds;
-    ds.colNames = {"id", "col2"};
+    ds.colNames = {"_vid", "id", "col2"};
     Row row;
+    row.values.emplace_back(folly::to<std::string>(i));
     row.values.emplace_back(folly::to<std::string>(i));
     row.values.emplace_back(i + 1);
     ds.rows.emplace_back(std::move(row));
