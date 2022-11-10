@@ -136,8 +136,10 @@ class QueryContext {
     return killed_.load();
   }
 
+  // This is only valid in building stage!
+  // TODO remove parameter from variables map
   bool existParameter(const std::string& param) const {
-    return ectx_->exist(param) && (ectx_->getValue(param).type() != Value::Type::DATASET);
+    return !ectx_->getValue(param).empty();  // Really fill value for parameter
   }
 
  private:
