@@ -24,13 +24,19 @@ namespace graph {
 
 bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
   return isKindOf(expr,
-                  {Expression::Kind::kTagProperty,
-                   Expression::Kind::kLabelTagProperty,
-                   Expression::Kind::kEdgeProperty,
-                   Expression::Kind::kInputProperty,
-                   Expression::Kind::kVarProperty,
-                   Expression::Kind::kDstProperty,
-                   Expression::Kind::kSrcProperty});
+                  {
+                      Expression::Kind::kTagProperty,
+                      Expression::Kind::kLabelTagProperty,
+                      Expression::Kind::kEdgeProperty,
+                      Expression::Kind::kEdgeSrc,
+                      Expression::Kind::kEdgeType,
+                      Expression::Kind::kEdgeRank,
+                      Expression::Kind::kEdgeDst,
+                      Expression::Kind::kInputProperty,
+                      Expression::Kind::kVarProperty,
+                      Expression::Kind::kDstProperty,
+                      Expression::Kind::kSrcProperty,
+                  });
 }
 
 const Expression *ExpressionUtils::findAny(const Expression *self,

@@ -5,11 +5,13 @@
 
 #include <gtest/gtest.h>
 
+#include "common/expression/PropertyExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/test/QueryTestBase.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
+#include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
@@ -51,7 +53,9 @@ class ProjectTest : public QueryTestBase {
 
 TEST_F(ProjectTest, Project1Col) {
   std::string input = "input_project";
-  auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid", qctx_.get());
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
+  yieldColumns->addColumn(new YieldColumn(
+      VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
 
   auto* project = Project::make(qctx_.get(), start_, yieldColumns);
   project->setInputVar(input);
@@ -76,8 +80,11 @@ TEST_F(ProjectTest, Project1Col) {
 
 TEST_F(ProjectTest, Project2Col) {
   std::string input = "input_project";
-  auto yieldColumns =
-      getYieldColumns("YIELD $input_project.vid AS vid, $input_project.col2 AS num", qctx_.get());
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
+  yieldColumns->addColumn(new YieldColumn(
+      VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
+  yieldColumns->addColumn(new YieldColumn(
+      VariablePropertyExpression::make(qctx_->objPool(), "input_project", "col2"), "num"));
   auto* project = Project::make(qctx_.get(), start_, yieldColumns);
   project->setInputVar(input);
   project->setColNames(std::vector<std::string>{"vid", "num"});
@@ -102,7 +109,9 @@ TEST_F(ProjectTest, Project2Col) {
 
 TEST_F(ProjectTest, EmptyInput) {
   std::string input = "empty";
-  auto yieldColumns = getYieldColumns("YIELD $input_project.vid AS vid", qctx_.get());
+  auto yieldColumns = qctx_->objPool()->makeAndAdd<YieldColumns>();
+  yieldColumns->addColumn(new YieldColumn(
+      VariablePropertyExpression::make(qctx_->objPool(), "input_project", "vid"), "vid"));
   auto* project = Project::make(qctx_.get(), start_, std::move(yieldColumns));
   project->setInputVar(input);
   project->setColNames(std::vector<std::string>{"vid"});
