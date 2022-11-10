@@ -35,7 +35,7 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   DCHECK_EQ(hashKeys.size(), probeKeys.size());
   DataSet result;
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
-    std::unordered_map<Value, std::vector<const Row*>> hashTable;
+    RhFlatMap<Value, std::vector<const Row*>> hashTable;
     hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildSingleKeyHashTable(probeKeys.front(), rhsIter_.get(), hashTable);
@@ -43,7 +43,7 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
       result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
-    std::unordered_map<List, std::vector<const Row*>> hashTable;
+    RhFlatMap<List, std::vector<const Row*>> hashTable;
     hashTable.reserve(rhsIter_->empty() ? 1 : rhsIter_->size());
     if (!lhsIter_->empty()) {
       buildHashTable(probeKeys, rhsIter_.get(), hashTable);
@@ -56,10 +56,9 @@ folly::Future<Status> LeftJoinExecutor::join(const std::vector<Expression*>& has
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
-DataSet LeftJoinExecutor::probe(
-    const std::vector<Expression*>& probeKeys,
-    Iterator* probeIter,
-    const std::unordered_map<List, std::vector<const Row*>>& hashTable) const {
+DataSet LeftJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                                Iterator* probeIter,
+                                const RhFlatMap<List, std::vector<const Row*>>& hashTable) const {
   DataSet ds;
   ds.rows.reserve(probeIter->size());
   QueryExpressionContext ctx(ectx_);
@@ -85,7 +84,7 @@ DataSet LeftJoinExecutor::probe(
 DataSet LeftJoinExecutor::singleKeyProbe(
     Expression* probeKey,
     Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
+    const RhFlatMap<Value, std::vector<const Row*>>& hashTable) const {
   DataSet ds;
   ds.rows.reserve(probeIter->size());
   QueryExpressionContext ctx(ectx_);
@@ -197,7 +196,7 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Ite
 }
 
 template <class T>
-void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
+void LeftJoinExecutor::buildNewRow(const RhFlatMap<T, std::vector<const Row*>>& hashTable,
                                    const T& val,
                                    Row lRow,
                                    DataSet& ds) const {

@@ -5,10 +5,18 @@
 #ifndef GRAPH_EXECUTOR_QUERY_JOINEXECUTOR_H_
 #define GRAPH_EXECUTOR_QUERY_JOINEXECUTOR_H_
 
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
 
 namespace nebula {
 namespace graph {
+
+template <typename K, typename V>
+using RhFlatMap = robin_hood::unordered_flat_map<K, V, std::hash<K>>;
+
+template <typename K>
+using RhFlatSet = robin_hood::unordered_flat_set<K, std::hash<K>>;
 
 class JoinExecutor : public Executor {
  public:
@@ -22,11 +30,11 @@ class JoinExecutor : public Executor {
 
   void buildHashTable(const std::vector<Expression*>& hashKeys,
                       Iterator* iter,
-                      std::unordered_map<List, std::vector<const Row*>>& hashTable);
+                      RhFlatMap<List, std::vector<const Row*>>& hashTable);
 
   void buildSingleKeyHashTable(Expression* hashKey,
                                Iterator* iter,
-                               std::unordered_map<Value, std::vector<const Row*>>& hashTable);
+                               RhFlatMap<Value, std::vector<const Row*>>& hashTable);
 
   // concat rows
   Row newRow(Row left, Row right) const;
@@ -34,8 +42,8 @@ class JoinExecutor : public Executor {
   std::unique_ptr<Iterator> lhsIter_;
   std::unique_ptr<Iterator> rhsIter_;
   size_t colSize_{0};
-  std::unordered_map<Value, std::vector<const Row*>> hashTable_;
-  std::unordered_map<List, std::vector<const Row*>> listHashTable_;
+  RhFlatMap<Value, std::vector<const Row*>> hashTable_;
+  RhFlatMap<List, std::vector<const Row*>> listHashTable_;
 };
 }  // namespace graph
 }  // namespace nebula

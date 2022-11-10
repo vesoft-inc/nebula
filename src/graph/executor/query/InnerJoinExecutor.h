@@ -26,11 +26,11 @@ class InnerJoinExecutor : public JoinExecutor {
 
   DataSet probe(const std::vector<Expression*>& probeKeys,
                 Iterator* probeIter,
-                const std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+                const RhFlatMap<List, std::vector<const Row*>>& hashTable) const;
 
   DataSet singleKeyProbe(Expression* probeKey,
                          Iterator* probeIter,
-                         const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+                         const RhFlatMap<Value, std::vector<const Row*>>& hashTable) const;
 
   // joinMultiJobs/probe/singleKeyProbe implemented for multi jobs.
   // For now, the InnerJoin implementation only implement the parallel processing on probe side.
@@ -43,7 +43,7 @@ class InnerJoinExecutor : public JoinExecutor {
   folly::Future<Status> singleKeyProbe(Expression* probeKey, Iterator* probeIter);
 
   template <class T>
-  void buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
+  void buildNewRow(const RhFlatMap<T, std::vector<const Row*>>& hashTable,
                    const T& val,
                    Row rRow,
                    DataSet& ds) const;

@@ -5,10 +5,15 @@
 
 #pragma once
 
+#include <robin_hood.h>
+
 #include "graph/executor/Executor.h"
 
 namespace nebula {
 namespace graph {
+
+template <typename K, typename V>
+using RhFlatMap = robin_hood::unordered_flat_map<K, V, std::hash<K>>;
 
 class RollUpApplyExecutor : public Executor {
  public:
@@ -25,12 +30,12 @@ class RollUpApplyExecutor : public Executor {
   void buildHashTable(const std::vector<Expression*>& compareCols,
                       const InputPropertyExpression* collectCol,
                       Iterator* iter,
-                      std::unordered_map<List, List>& hashTable) const;
+                      RhFlatMap<List, List>& hashTable) const;
 
   void buildSingleKeyHashTable(Expression* compareCol,
                                const InputPropertyExpression* collectCol,
                                Iterator* iter,
-                               std::unordered_map<Value, List>& hashTable) const;
+                               RhFlatMap<Value, List>& hashTable) const;
 
   void buildZeroKeyHashTable(const InputPropertyExpression* collectCol,
                              Iterator* iter,
@@ -40,11 +45,11 @@ class RollUpApplyExecutor : public Executor {
 
   DataSet probeSingleKey(Expression* probeKey,
                          Iterator* probeIter,
-                         const std::unordered_map<Value, List>& hashTable);
+                         const RhFlatMap<Value, List>& hashTable);
 
   DataSet probe(std::vector<Expression*> probeKeys,
                 Iterator* probeIter,
-                const std::unordered_map<List, List>& hashTable);
+                const RhFlatMap<List, List>& hashTable);
 
   folly::Future<Status> rollUpApply();
 

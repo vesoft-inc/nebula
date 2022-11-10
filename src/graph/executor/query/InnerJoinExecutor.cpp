@@ -39,7 +39,7 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
   }
 
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
-    std::unordered_map<Value, std::vector<const Row*>> hashTable;
+    RhFlatMap<Value, std::vector<const Row*>> hashTable;
     hashTable.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
       buildSingleKeyHashTable(hashKeys.front(), lhsIter_.get(), hashTable);
@@ -52,7 +52,7 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
       result = singleKeyProbe(hashKeys.front(), lhsIter_.get(), hashTable);
     }
   } else {
-    std::unordered_map<List, std::vector<const Row*>> hashTable;
+    RhFlatMap<List, std::vector<const Row*>> hashTable;
     hashTable.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
       buildHashTable(hashKeys, lhsIter_.get(), hashTable);
@@ -69,10 +69,9 @@ folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& ha
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
-DataSet InnerJoinExecutor::probe(
-    const std::vector<Expression*>& probeKeys,
-    Iterator* probeIter,
-    const std::unordered_map<List, std::vector<const Row*>>& hashTable) const {
+DataSet InnerJoinExecutor::probe(const std::vector<Expression*>& probeKeys,
+                                 Iterator* probeIter,
+                                 const RhFlatMap<List, std::vector<const Row*>>& hashTable) const {
   DataSet ds;
   QueryExpressionContext ctx(ectx_);
   ds.rows.reserve(probeIter->size());
@@ -97,7 +96,7 @@ DataSet InnerJoinExecutor::probe(
 DataSet InnerJoinExecutor::singleKeyProbe(
     Expression* probeKey,
     Iterator* probeIter,
-    const std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
+    const RhFlatMap<Value, std::vector<const Row*>>& hashTable) const {
   DataSet ds;
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
@@ -221,7 +220,7 @@ folly::Future<Status> InnerJoinExecutor::singleKeyProbe(Expression* probeKey, It
 }
 
 template <class T>
-void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const Row*>>& hashTable,
+void InnerJoinExecutor::buildNewRow(const RhFlatMap<T, std::vector<const Row*>>& hashTable,
                                     const T& val,
                                     Row rRow,
                                     DataSet& ds) const {

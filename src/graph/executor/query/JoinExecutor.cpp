@@ -54,7 +54,7 @@ Status JoinExecutor::checkBiInputDataSets() {
 
 void JoinExecutor::buildHashTable(const std::vector<Expression*>& hashKeys,
                                   Iterator* iter,
-                                  std::unordered_map<List, std::vector<const Row*>>& hashTable) {
+                                  RhFlatMap<List, std::vector<const Row*>>& hashTable) {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     List list;
@@ -69,10 +69,9 @@ void JoinExecutor::buildHashTable(const std::vector<Expression*>& hashKeys,
   }
 }
 
-void JoinExecutor::buildSingleKeyHashTable(
-    Expression* hashKey,
-    Iterator* iter,
-    std::unordered_map<Value, std::vector<const Row*>>& hashTable) {
+void JoinExecutor::buildSingleKeyHashTable(Expression* hashKey,
+                                           Iterator* iter,
+                                           RhFlatMap<Value, std::vector<const Row*>>& hashTable) {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     auto& val = hashKey->eval(ctx(iter));

@@ -4,6 +4,8 @@
 
 #include "graph/executor/query/GetEdgesExecutor.h"
 
+#include <robin_hood.h>
+
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -24,7 +26,8 @@ StatusOr<DataSet> GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
 
   nebula::DataSet edges({kSrc, kType, kRank, kDst});
   edges.rows.reserve(valueIter->size());
-  std::unordered_set<std::tuple<Value, Value, Value, Value>> uniqueEdges;
+  using ValueTupleType = std::tuple<Value, Value, Value, Value>;
+  robin_hood::unordered_flat_set<ValueTupleType, std::hash<ValueTupleType>> uniqueEdges;
   uniqueEdges.reserve(valueIter->size());
 
   const auto &space = qctx()->rctx()->session()->space();
