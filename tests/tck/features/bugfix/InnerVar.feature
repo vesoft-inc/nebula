@@ -7,8 +7,9 @@ Feature: Inner Var Conflict
     Given a graph with space named "nba"
 
   # The edge range will use same hard code innner variable name for list comprehension
+  # It's not stable to reproduce, so run multiple times
   Scenario: Conflict hard code edge inner variable
-    When executing query:
+    When executing query 100 times:
       """
       MATCH (v)-[:like*1..2]->(v2) WHERE id(v) == 'Tim Duncan'
       MATCH (v)-[:serve*1..2]->(t)
