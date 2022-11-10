@@ -39,3 +39,21 @@ Feature: Example
       GRANT ROLE god on s1 to user1
       """
     Then an PermissionError should be raised at runtime: No permission to grant/revoke god user.
+
+  Scenario: test with auth type is cloud
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+      """
+      graphd:auth_type=cloud
+      """
+    When executing query:
+      """
+      CREATE USER user1 WITH PASSWORD 'nebula';
+      CREATE SPACE s1(vid_type=int)
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE god on s1 to user1
+      """
+    Then an PermissionError should be raised at runtime: Cloud authenticate user can't write role.
