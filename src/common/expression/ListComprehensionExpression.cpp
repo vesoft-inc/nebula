@@ -34,10 +34,10 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
     ctx.setVar(innerVar_, v);
     if (filter_ != nullptr) {
       auto& filterVal = filter_->eval(ctx);
-      if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
+      if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
         return Value::kNullBadType;
       }
-      if (filterVal.empty() || filterVal.isNull() || !filterVal.getBool()) {
+      if (filterVal.empty() || filterVal.isNull() || !filterVal.implicitBool()) {
         continue;
       }
     }

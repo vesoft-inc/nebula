@@ -90,10 +90,10 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
+        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         }
-        if (filterVal.empty() || filterVal.isNull() || !filterVal.getBool()) {
+        if (filterVal.empty() || filterVal.isNull() || !filterVal.implicitBool()) {
           result_ = false;
           return result_;
         }
@@ -106,10 +106,10 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
+        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         }
-        if (filterVal.isBool() && filterVal.getBool()) {
+        if (filterVal.isBool() && filterVal.implicitBool()) {
           result_ = true;
           return result_;
         }
@@ -122,10 +122,10 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
+        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         }
-        if (filterVal.isBool() && filterVal.getBool()) {
+        if (filterVal.isBool() && filterVal.implicitBool()) {
           if (result_ == false) {
             result_ = true;
           } else {
@@ -142,10 +142,10 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isBool()) {
+        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
         }
-        if (filterVal.isBool() && filterVal.getBool()) {
+        if (filterVal.isBool() && filterVal.implicitBool()) {
           result_ = false;
           return result_;
         }
