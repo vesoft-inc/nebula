@@ -396,6 +396,12 @@ SingleInputNode::SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* 
   }
 }
 
+void SingleInputNode::copyInputColNames(const PlanNode* input) {
+  if (input != nullptr) {
+    setColNames(input->colNames());
+  }
+}
+
 std::unique_ptr<PlanNodeDescription> SingleDependencyNode::explain() const {
   auto desc = PlanNode::explain();
   DCHECK(desc->dependencies == nullptr);

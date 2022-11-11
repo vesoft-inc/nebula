@@ -1169,11 +1169,7 @@ class Aggregate final : public SingleInputNode {
   Aggregate(QueryContext* qctx,
             PlanNode* input,
             std::vector<Expression*>&& groupKeys,
-            std::vector<Expression*>&& groupItems)
-      : SingleInputNode(qctx, Kind::kAggregate, input) {
-    groupKeys_ = std::move(groupKeys);
-    groupItems_ = std::move(groupItems);
-  }
+            std::vector<Expression*>&& groupItems);
 
   void cloneMembers(const Aggregate&);
 
