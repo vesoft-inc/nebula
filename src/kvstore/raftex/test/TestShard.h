@@ -82,7 +82,7 @@ class TestShard : public RaftPart {
                                                                 bool wait,
                                                                 bool needLock) override;
 
-  bool preProcessLog(LogID, TermID, ClusterID, const std::string& log) override {
+  bool preProcessLog(LogID, TermID, ClusterID, folly::StringPiece log) override {
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::ADD_LEARNER: {
