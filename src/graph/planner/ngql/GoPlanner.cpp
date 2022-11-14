@@ -241,31 +241,28 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 }
 
 PlanNode* GoPlanner::buildJoinInputPlan(PlanNode* dep) {
-  if (!goCtx_->exprProps.inputProps().empty()) {
-    auto qctx = goCtx_->qctx;
-    const auto& from = goCtx_->from;
-    const auto& steps = goCtx_->steps;
-    auto* pool = qctx->objPool();
+  auto qctx = goCtx_->qctx;
+  const auto& from = goCtx_->from;
+  const auto& steps = goCtx_->steps;
+  auto* pool = qctx->objPool();
 
-    const auto& vidName = (!steps.isMToN() && steps.steps() == 1) ? kVid : from.runtimeVidName;
-    auto* hashKey = VariablePropertyExpression::make(pool, dep->outputVar(), vidName);
-    auto* probeKey = from.originalSrc;
-    std::string probeName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
+  const auto& vidName = (!steps.isMToN() && steps.steps() == 1) ? kVid : from.runtimeVidName;
+  auto* hashKey = VariablePropertyExpression::make(pool, dep->outputVar(), vidName);
+  auto* probeKey = from.originalSrc;
+  std::string probeName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
 
-    auto* join = InnerJoin::make(qctx,
-                                 dep,
-                                 {dep->outputVar(), ExecutionContext::kLatestVersion},
-                                 {probeName, ExecutionContext::kLatestVersion},
-                                 {hashKey},
-                                 {probeKey});
-    std::vector<std::string> colNames = dep->colNames();
-    auto* varPtr = qctx->symTable()->getVar(probeName);
-    DCHECK(varPtr != nullptr);
-    colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
-    join->setColNames(std::move(colNames));
-    return join;
-  }
-  return dep;
+  auto* join = InnerJoin::make(qctx,
+                               dep,
+                               {dep->outputVar(), ExecutionContext::kLatestVersion},
+                               {probeName, ExecutionContext::kLatestVersion},
+                               {hashKey},
+                               {probeKey});
+  std::vector<std::string> colNames = dep->colNames();
+  auto* varPtr = qctx->symTable()->getVar(probeName);
+  DCHECK(varPtr != nullptr);
+  colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
+  join->setColNames(std::move(colNames));
+  return join;
 }
 
 // The column named as dstVidColName of the left plan node join on the column named as kVid of the

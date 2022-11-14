@@ -77,7 +77,7 @@ TEST_F(SymbolsTest, Variables) {
       EXPECT_EQ(variable->name, varName);
       EXPECT_EQ(variable->type, Value::Type::DATASET);
       EXPECT_EQ(variable->colNames, std::vector<std::string>({"id"}));
-      EXPECT_TRUE(checkNodes(variable->readBy, {3, 9}));
+      EXPECT_TRUE(checkNodes(variable->readBy, {3, 9, 20}));
       EXPECT_TRUE(checkNodes(variable->writtenBy, {2}));
     }
     {
@@ -231,7 +231,7 @@ TEST_F(SymbolsTest, Variables) {
       EXPECT_TRUE(checkNodes(variable->readBy, {20}));
       EXPECT_TRUE(checkNodes(variable->writtenBy, {19}));
     }
-    /*{
+    {
       auto varName = "__InnerJoin_20";
       auto* variable = symTable->getVar(varName);
       EXPECT_NE(variable, nullptr);
@@ -251,7 +251,7 @@ TEST_F(SymbolsTest, Variables) {
       EXPECT_EQ(variable->colNames, std::vector<std::string>({"like._dst"}));
       EXPECT_TRUE(checkNodes(variable->readBy, {}));
       EXPECT_TRUE(checkNodes(variable->writtenBy, {21}));
-    }*/
+    }
   }
 }
 }  // namespace graph
