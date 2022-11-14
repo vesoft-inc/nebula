@@ -27,6 +27,15 @@ StatusOr<SubPlan> ReturnClausePlanner::transform(CypherClauseContextBase* clause
 
 Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan) {
   rctx->yield->inputColNames = rctx->inputColNames;
+  // prune redudant aliases
+  std::sort(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end());
+  rctx->yield->inputColNames.erase(
+      std::unique(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end()),
+      rctx->yield->inputColNames.end());
+  std::sort(rctx->yield->projOutputColumnNames_.begin(), rctx->yield->projOutputColumnNames_.end());
+  rctx->yield->projOutputColumnNames_.erase(std::unique(rctx->yield->projOutputColumnNames_.begin(),
+                                                        rctx->yield->projOutputColumnNames_.end()),
+                                            rctx->yield->projOutputColumnNames_.end());
   auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(rctx->yield.get());
   NG_RETURN_IF_ERROR(yieldPlan);
   auto yieldplan = std::move(yieldPlan).value();
