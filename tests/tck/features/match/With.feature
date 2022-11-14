@@ -320,3 +320,25 @@ Feature: With clause
       RETURN a
       """
     Then a SemanticError should be raised at runtime:  Alias `b` not defined
+
+  Scenario: with aggregate
+    When executing query:
+      """
+      match (v:player)-[e]->(v)
+      where id(v) == 100
+      with MIN(87) as a0
+      return *
+      """
+    Then the result should be, in any order:
+      | a0 |
+      | 87 |
+    When executing query:
+      """
+      match (v:player)-[e]->(v)
+      where id(v) == 100
+      with MIN(87) as a0, MAX(78) as a1
+      return *
+      """
+    Then the result should be, in any order:
+      | a0 | a1 |
+      | 87 | 78 |
