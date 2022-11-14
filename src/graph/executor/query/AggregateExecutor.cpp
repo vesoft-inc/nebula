@@ -56,7 +56,7 @@ folly::Future<Status> AggregateExecutor::execute() {
     }
   }
 
-  for (; iter->valid(); iter->next()) {
+  do {
     List list;
     for (auto* key : groupKeys) {
       list.values.emplace_back(key->eval(ctx(iter.get())));
@@ -82,7 +82,10 @@ folly::Future<Status> AggregateExecutor::execute() {
         result[list][i]->setResult(item->eval(ctx(iter.get())));
       }
     }
-  }
+    if (iter->valid()) {
+      iter->next();
+    }
+  } while (iter->valid());
 
   DataSet ds;
   ds.colNames = agg->colNames();
