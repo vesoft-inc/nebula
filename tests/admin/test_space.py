@@ -230,23 +230,23 @@ class TestSpace(NebulaTestSuite):
         resp = self.client.execute('DROP SPACE space_int_vid')
         self.check_resp_succeeded(resp)
 
-    # def test_reset_space_after_drop_space(self):
-    #     resp = self.client.execute('CREATE SPACE space_int_vid (partition_num=1, '
-    #                         'replica_factor=1, charset=utf8, collate=utf8_bin, '
-    #                         'vid_type = int64)')
-    #     self.check_resp_succeeded(resp)
+    def test_reset_space_after_drop_space(self):
+        resp = self.client.execute('CREATE SPACE space_int_vid (partition_num=1, '
+                            'replica_factor=1, charset=utf8, collate=utf8_bin, '
+                            'vid_type = int64)')
+        self.check_resp_succeeded(resp)
 
-    #     # session 1 use space
-    #     resp = self.client.execute('USE space_int_vid')
-    #     self.check_resp_succeeded(resp)
+        # session 1 use space
+        resp = self.client.execute('USE space_int_vid')
+        self.check_resp_succeeded(resp)
 
-    #     # session 2 drop space
-    #     newSession = self.spawn_nebula_client("user", "password")
-    #     resp = newSession.execute('DROP space space_int_vid')
-    #     self.check_resp_succeeded(resp)
+        # session 2 drop space
+        newSession = self.spawn_nebula_client("user", "password")
+        resp = newSession.execute('DROP space space_int_vid')
+        self.check_resp_succeeded(resp)
 
-    #     # session 1 create tag, expect to fail
-    #     resp = self.client.execute('CREATE TAG tag1 (col1 int)')
-    #     self.check_resp_failed(resp)
-    #     # the space name of the session bonding to should be reset
-    #     assert(resp.space_name() == '')
+        # session 1 create tag, expect to fail
+        resp = self.client.execute('CREATE TAG tag1 (col1 int)')
+        self.check_resp_failed(resp)
+        # the space name of the session bonding to should be reset
+        assert(resp.space_name() == '')
