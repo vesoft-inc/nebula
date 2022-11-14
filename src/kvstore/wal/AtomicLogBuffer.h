@@ -26,8 +26,8 @@ struct Record {
   Record(Record&& record) noexcept = default;
   Record& operator=(Record&& record) noexcept = default;
 
-  Record(ClusterID clusterId, TermID termId, std::string msg)
-      : clusterId_(clusterId), termId_(termId), msg_(std::move(msg)) {}
+  Record(ClusterID clusterId, TermID termId, folly::StringPiece msg)
+      : clusterId_(clusterId), termId_(termId), msg_(msg.toString()) {}
 
   int32_t size() const {
     return sizeof(ClusterID) + sizeof(TermID) + msg_.size();
@@ -52,7 +52,7 @@ struct Node {
   }
 
   /**
-   * @brief Add a record to current not
+   * @brief Add a record to current node
    *
    * @param rec Record to add
    * @return Whether operation succeed or not
@@ -267,8 +267,8 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
    * @param clusterId Cluster id of log
    * @param msg Log message
    */
-  void push(LogID logId, TermID termId, ClusterID clusterId, std::string&& msg) {
-    push(logId, Record(clusterId, termId, std::move(msg)));
+  void push(LogID logId, TermID termId, ClusterID clusterId, folly::StringPiece msg) {
+    push(logId, Record(clusterId, termId, msg));
   }
 
   /**
@@ -327,7 +327,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
   explicit AtomicLogBuffer(int32_t capacity) : capacity_(capacity) {}
 
   /**
-   * @brief Find the noe which contains the log with given id
+   * @brief Find the node which contains the log with given id
    *
    * @param logId Log it to seek
    * @return Node* Return the node contains the log, return nullptr if not found
