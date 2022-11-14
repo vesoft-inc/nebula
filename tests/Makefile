@@ -104,7 +104,7 @@ sess: currdir
 jobs: currdir
 	$(test_without_skip) tck/steps/test_jobs.py
 
-test: sess
+test:
 	$(test_j) --dist=loadfile -k "not tck" $(TEST_DIR)
 
 slow-query: currdir

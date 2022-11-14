@@ -4,6 +4,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
+import logging
 import time
 
 from tests.common.nebula_test_suite import NebulaTestSuite, T_EMPTY
@@ -235,18 +236,22 @@ class TestSpace(NebulaTestSuite):
                             'replica_factor=1, charset=utf8, collate=utf8_bin, '
                             'vid_type = int64)')
         self.check_resp_succeeded(resp)
+        time.sleep(self.delay)
 
         # session 1 use space
         resp = self.client.execute('USE space_int_vid')
         self.check_resp_succeeded(resp)
 
         # session 2 drop space
-        newSession = self.spawn_nebula_client("user", "password")
+        newSession = self.spawn_nebula_client("root", "nebula")
         resp = newSession.execute('DROP space space_int_vid')
         self.check_resp_succeeded(resp)
+        time.sleep(self.delay)
 
         # session 1 create tag, expect to fail
         resp = self.client.execute('CREATE TAG tag1 (col1 int)')
         self.check_resp_failed(resp)
         # the space name of the session bonding to should be reset
+        
+        logging.info(resp.space_name())
         assert(resp.space_name() == '')

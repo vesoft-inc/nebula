@@ -153,13 +153,21 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kPermissionError:
       rctx->resp().errorCode = ErrorCode::E_BAD_PERMISSION;
       break;
-    case Status::Code::kLeaderChanged:
+    case Status::Code::kLeaderChanged: {
       stats::StatsManager::addValue(kNumQueryErrorsLeaderChanges);
       if (FLAGS_enable_space_level_metrics && spaceName != "") {
         stats::StatsManager::addValue(stats::StatsManager::counterWithLabels(
             kNumQueryErrorsLeaderChanges, {{"space", spaceName}}));
       }
+      rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
+      break;
+    }
+    case Status::Code::kSpaceNotFound: {
+      // Detach the space info from the session
+      rctx->session()->setSpace(SpaceInfo());
+      spaceName = rctx->session()->spaceName();
       [[fallthrough]];
+    }
     case Status::Code::kBalanced:
     case Status::Code::kEdgeNotFound:
     case Status::Code::kError:
@@ -171,12 +179,6 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kNoSuchFile:
     case Status::Code::kNotSupported:
     case Status::Code::kPartNotFound:
-    case Status::Code::kSpaceNotFound: {
-      // Detach the space info from the session
-      rctx->session()->setSpace(SpaceInfo());
-      spaceName = rctx->session()->spaceName();
-      [[fallthrough]];
-    }
     case Status::Code::kGroupNotFound:
     case Status::Code::kZoneNotFound:
     case Status::Code::kTagNotFound:
