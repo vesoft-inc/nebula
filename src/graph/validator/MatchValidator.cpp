@@ -555,13 +555,15 @@ Status MatchValidator::validateWith(const WithClause *with,
       auto label = static_cast<const LabelExpression *>(col->expr())->name();
       auto found = withClauseCtx.yield->aliasesAvailable.find(label);
       DCHECK(found != withClauseCtx.yield->aliasesAvailable.end());
-      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second).second) {
+      /*if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second).second) {
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
-      }
+      }*/
+      withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second);
     } else {
-      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
+      /*if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
-      }
+      }*/
+      withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType);
     }
 
     if (!withClauseCtx.yield->hasAgg_ &&
