@@ -136,7 +136,7 @@ void QueryInstance::onFinish() {
 void QueryInstance::onError(Status status) {
   LOG(ERROR) << status;
   auto *rctx = qctx()->rctx();
-  auto &spaceName = rctx->session()->space().name;
+  std::string spaceName = rctx->session()->space().name;
   switch (status.code()) {
     case Status::Code::kOk:
       rctx->resp().errorCode = ErrorCode::SUCCEEDED;
@@ -171,7 +171,12 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kNoSuchFile:
     case Status::Code::kNotSupported:
     case Status::Code::kPartNotFound:
-    case Status::Code::kSpaceNotFound:
+    case Status::Code::kSpaceNotFound: {
+      // Detach the space info from the session
+      rctx->session()->setSpace(SpaceInfo());
+      spaceName = rctx->session()->spaceName();
+      [[fallthrough]];
+    }
     case Status::Code::kGroupNotFound:
     case Status::Code::kZoneNotFound:
     case Status::Code::kTagNotFound:

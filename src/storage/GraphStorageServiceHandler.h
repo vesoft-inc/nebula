@@ -21,7 +21,7 @@ class StorageEnv;
 class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
  public:
   explicit GraphStorageServiceHandler(StorageEnv* env);
-  // Vertice section
+  // Vertices section
   folly::Future<cpp2::ExecResponse> future_addVertices(
       const cpp2::AddVerticesRequest& req) override;
 
