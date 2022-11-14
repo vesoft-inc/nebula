@@ -274,7 +274,7 @@ class Part : public raftex::RaftPart {
   bool preProcessLog(LogID logId,
                      TermID termId,
                      ClusterID clusterId,
-                     const std::string& log) override;
+                     folly::StringPiece log) override;
 
   /**
    * @brief If a raft peer falls behind way to much than leader, the leader will send all its data

@@ -571,9 +571,7 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
   // Initialize the position in ExecutionContext for each executor before
   // execution plan starting to run. This will avoid lock something for thread
   // safety in real execution
-  if (!ectx_->exist(node->outputVar())) {
-    ectx_->initVar(node->outputVar());
-  }
+  DCHECK(ectx_->exist(node->outputVar()));
 }
 
 Executor::~Executor() {}

@@ -41,7 +41,7 @@ TEST(FileBasedWal, AppendLogs) {
   TempDir walDir("/tmp/testWal.XXXXXX");
 
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -56,7 +56,7 @@ TEST(FileBasedWal, AppendLogs) {
 
   // Now let's open it to read
   wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(10, wal->lastLogId());
@@ -82,7 +82,7 @@ TEST(FileBasedWal, CacheOverflow) {
 
   TempDir walDir("/tmp/testWal.XXXXXX");
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -103,7 +103,7 @@ TEST(FileBasedWal, CacheOverflow) {
 
   // Now let's open it to read
   wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
 
@@ -130,7 +130,7 @@ TEST(FileBasedWal, Rollback) {
 
   TempDir walDir("/tmp/testWal.XXXXXX");
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -204,7 +204,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
   TempDir walDir("/tmp/testWal.XXXXXX");
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -228,7 +228,7 @@ TEST(FileBasedWal, RollbackThenReopen) {
 
   // Now let's open it to read
   wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(800, wal->lastLogId());
@@ -255,7 +255,7 @@ TEST(FileBasedWal, RollbackToZero) {
 
   TempDir walDir("/tmp/testWal.XXXXXX");
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   ASSERT_EQ(0, wal->lastLogId());
@@ -294,7 +294,7 @@ TEST(FileBasedWal, BackAndForth) {
 
   TempDir walDir("/tmp/testWal.XXXXXX");
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   ASSERT_EQ(0, wal->lastLogId());
@@ -333,7 +333,7 @@ TEST(FileBasedWal, TTLTest) {
   policy.bufferSize = 128;
   policy.fileSize = 1024;
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -357,7 +357,7 @@ TEST(FileBasedWal, TTLTest) {
   {
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(200, wal->lastLogId());
@@ -384,7 +384,7 @@ TEST(FileBasedWal, TTLTest) {
   {
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(200, wal->lastLogId());
@@ -408,7 +408,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
   TempDir walDir("/tmp/testWal.XXXXXX");
 
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   {
@@ -436,7 +436,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(999, wal->lastLogId());
@@ -461,7 +461,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(expected, wal->lastLogId());
@@ -478,7 +478,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(expected, wal->lastLogId());
@@ -496,7 +496,7 @@ TEST(FileBasedWal, CheckLastWalTest) {
 
     // Now let's open it to read
     wal = FileBasedWal::getWal(
-        walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
           return true;
         });
     EXPECT_EQ(1000, wal->lastLogId());
@@ -509,7 +509,7 @@ TEST(FileBasedWal, LinkTest) {
   FileBasedWalPolicy policy;
   policy.fileSize = 1024 * 512;
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -540,7 +540,7 @@ TEST(FileBasedWal, CleanWalBeforeIdTest) {
   FileBasedWalPolicy policy;
   policy.fileSize = 1024 * 10;
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   for (LogID i = 1; i <= 1000; i++) {
@@ -576,7 +576,7 @@ TEST(FileBasedWal, getLogTermTest) {
   policy.bufferSize = 1024L * 1024L;
 
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
 
@@ -596,7 +596,7 @@ TEST(FileBasedWal, getLogTermTest) {
 
   // Now let's open it to read
   wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(10, wal->getLogTerm(10));

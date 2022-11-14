@@ -12,6 +12,7 @@
 #include "common/base/ObjectPool.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Value.h"
+#include "graph/context/ExecutionContext.h"
 
 namespace nebula {
 namespace graph {
@@ -52,11 +53,10 @@ struct Variable {
 
 class SymbolTable final {
  public:
-  explicit SymbolTable(ObjectPool* objPool);
+  explicit SymbolTable(ObjectPool* objPool, ExecutionContext* ectx)
+      : objPool_(DCHECK_NOTNULL(objPool)), ectx_(DCHECK_NOTNULL(ectx)) {}
 
-  Variable* newVariable(std::string name);
-
-  void addVar(std::string varName, Variable* variable);
+  Variable* newVariable(const std::string& name);
 
   bool readBy(const std::string& varName, PlanNode* node);
 
@@ -79,7 +79,10 @@ class SymbolTable final {
   std::string toString() const;
 
  private:
+  void addVar(std::string varName, Variable* variable);
+
   ObjectPool* objPool_{nullptr};
+  ExecutionContext* ectx_{nullptr};
   // var name -> variable
   std::unordered_map<std::string, Variable*> vars_;
   // alias -> first variable that generate the alias

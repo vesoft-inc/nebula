@@ -38,7 +38,7 @@ void QueryContext::init() {
     }
   }
   idGen_ = std::make_unique<IdGenerator>(0);
-  symTable_ = std::make_unique<SymbolTable>(objPool_.get());
+  symTable_ = std::make_unique<SymbolTable>(objPool_.get(), ectx_.get());
   vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));
 }
 

@@ -49,7 +49,6 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
     auto varProps = graph::ExpressionUtils::collectAll(e,
                                                        {Expression::Kind::kTagProperty,
-                                                        Expression::Kind::kLabelTagProperty,
                                                         Expression::Kind::kEdgeProperty,
                                                         Expression::Kind::kInputProperty,
                                                         Expression::Kind::kVarProperty,
@@ -71,9 +70,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
       });
       if (iter == propNames.end()) continue;
       if (graph::ExpressionUtils::isPropertyExpr(column->expr())) {
-        if (!column->alias().empty()) {
-          rewriteMap[colName] = column->expr();
-        }
+        rewriteMap[colName] = column->expr();
         continue;
       } else {
         return false;
