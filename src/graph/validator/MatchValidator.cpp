@@ -389,18 +389,28 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
     }
   }
 
+  std::set<std::string> visitedAliases;
   for (auto &match : currQueryPart.matchs) {
     for (auto &path : match->paths) {
       for (size_t i = 0; i < path.edgeInfos.size(); ++i) {
         if (!path.nodeInfos[i].anonymous) {
-          columns->addColumn(makeColumn(path.nodeInfos[i].alias));
+          if (visitedAliases.find(path.nodeInfos[i].alias) == visitedAliases.end()) {
+            columns->addColumn(makeColumn(path.nodeInfos[i].alias));
+            visitedAliases.emplace(path.nodeInfos[i].alias);
+          }
         }
         if (!path.edgeInfos[i].anonymous) {
-          columns->addColumn(makeColumn(path.edgeInfos[i].alias));
+          if (visitedAliases.find(path.edgeInfos[i].alias) == visitedAliases.end()) {
+            columns->addColumn(makeColumn(path.edgeInfos[i].alias));
+            visitedAliases.emplace(path.edgeInfos[i].alias);
+          }
         }
       }
       if (!path.nodeInfos.back().anonymous) {
-        columns->addColumn(makeColumn(path.nodeInfos.back().alias));
+        if (visitedAliases.find(path.nodeInfos.back().alias) == visitedAliases.end()) {
+          columns->addColumn(makeColumn(path.nodeInfos.back().alias));
+          visitedAliases.emplace(path.nodeInfos.back().alias);
+        }
       }
     }
 
