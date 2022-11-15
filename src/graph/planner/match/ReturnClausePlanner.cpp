@@ -5,6 +5,8 @@
 
 #include "graph/planner/match/ReturnClausePlanner.h"
 
+#include <set>
+
 #include "graph/planner/match/MatchPathPlanner.h"
 #include "graph/planner/match/OrderByClausePlanner.h"
 #include "graph/planner/match/PaginationPlanner.h"
@@ -28,14 +30,12 @@ StatusOr<SubPlan> ReturnClausePlanner::transform(CypherClauseContextBase* clause
 Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan) {
   rctx->yield->inputColNames = rctx->inputColNames;
   // prune redudant aliases
-  std::sort(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end());
-  rctx->yield->inputColNames.erase(
-      std::unique(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end()),
-      rctx->yield->inputColNames.end());
-  std::sort(rctx->yield->projOutputColumnNames_.begin(), rctx->yield->projOutputColumnNames_.end());
-  rctx->yield->projOutputColumnNames_.erase(std::unique(rctx->yield->projOutputColumnNames_.begin(),
-                                                        rctx->yield->projOutputColumnNames_.end()),
-                                            rctx->yield->projOutputColumnNames_.end());
+  std::set<std::string> temp(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end());
+  rctx->yield->inputColNames.assign(temp.rbegin(), temp.rend());
+  std::set<std::string> temp2(rctx->yield->projOutputColumnNames_.begin(),
+                              rctx->yield->projOutputColumnNames_.end());
+  rctx->yield->projOutputColumnNames_.assign(temp2.rbegin(), temp2.rend());
+
   auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(rctx->yield.get());
   NG_RETURN_IF_ERROR(yieldPlan);
   auto yieldplan = std::move(yieldPlan).value();
