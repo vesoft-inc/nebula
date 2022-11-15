@@ -31,7 +31,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   NG_RETURN_IF_ERROR(reqDs);
   auto vids = std::move(reqDs).value();
   std::vector<std::string> colNames;
-  if (vids.begin()->isDataSet()) {
+  if (!vids.empty() && vids.begin()->isDataSet()) {
     colNames = vids.begin()->getDataSet().colNames;
   } else {
     colNames = {nebula::kVid};

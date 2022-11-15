@@ -524,6 +524,12 @@ Expression* GoPlanner::checkFilterExpressionIsPush(GetNeighbors* gn,
     if (left == nullptr || right == nullptr) {
       return nullptr;
     }
+  } else if (filter->kind() == Expression::Kind::kIsNotEmpty ||
+             filter->kind() == Expression::Kind::kIsEmpty ||
+             filter->kind() == Expression::Kind::kIsNotNull ||
+             filter->kind() == Expression::Kind::kIsNull) {
+    auto* unaryExpr = static_cast<UnaryExpression*>(filter);
+    return checkFilterExpressionIsPush(gn, unaryExpr->operand(), hasInput);
   } else if (filter->kind() == Expression::Kind::kDstProperty ||
              filter->kind() == Expression::Kind::kFunctionCall) {
     return nullptr;

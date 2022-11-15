@@ -1946,66 +1946,53 @@ Feature: Go Sentence
       | "Vince Carter"       | "Vince Carter"       |
       | "Yao Ming"           | "Yao Ming"           |
 
-  Scenario: only dependency on id, remove innerjoin
-    When profiling query:
-      """
-      GO FROM 'player101' OVER follow YIELD follow._dst as fid |
-      GO FROM $-.fid OVER serve YIELD serve._dst as tid;
-      """
-    Then the result should be, in any order:
-      | tid       |
-      | "team203" |
-    And the execution plan should be:
-      | id | name         | dependencies | profiling data | operator info |
-      | 9  | Project      | 11           |                |               |
-      | 11 | GetNeighbors | 1            |                |               |
-      | 1  | GetNeighbors | 0            |                |               |
-      | 0  | Start        |              |                |               |
-
   Scenario: constant filter with innerjoin
     When profiling query:
       """
-      GO FROM 'player101' OVER follow YIELD follow._dst as fid |
-      GO FROM $-.fid OVER follow WHERE follow.degree>70  YIELD follow._dst as tid;
+      GO FROM 'Russell Westbrook' OVER like YIELD like._dst as id |
+      GO FROM $-.id OVER serve WHERE serve.start_year==2012 YIELD serve._dst
       """
     Then the result should be, in any order:
-      | tid         |
-      | "player100" |
+      | serve._dst |
+      | "Rockets"  |
     And the execution plan should be:
-      | id | name         | dependencies | profiling data | operator info                                             |
-      | 15 | Project      | 14           |                |                                                           |
-      | 14 | GetNeighbors | 1            |                | {"filter": "((follow.degree>70) AND (follow.degree>70))"} |
-      | 1  | GetNeighbors | 0            |                |                                                           |
-      | 0  | Start        |              |                |                                                           |
+      | id | name         | dependencies | profiling data | operator info                                                         |
+      | 9  | Project      | 13           |                |                                                                       |
+      | 13 | InnerJoin    | 15           |                |                                                                       |
+      | 15 | Project      | 16           |                |                                                                       |
+      | 16 | GetNeighbors | 2            |                | {"filter": "((serve.start_year==2012) AND (serve.start_year==2012))"} |
+      | 2  | Project      | 1            |                |                                                                       |
+      | 1  | GetNeighbors | 0            |                |                                                                       |
+      | 0  | Start        |              |                |                                                                       |
 
   Scenario: variable filter with innerjoin
     When profiling query:
       """
-      GO FROM 'player101' OVER follow YIELD follow._dst as fid, follow.degree as num |
-      GO FROM $-.fid OVER follow WHERE follow.degree < $-.num AND follow.degree > 70 YIELD follow._dst as tid;
+      GO FROM 'Russell Westbrook' OVER like YIELD like._dst as id , like.likeness as num |
+      GO FROM $-.id OVER like WHERE like.likeness >= $-.num YIELD like._dst
       """
     Then the result should be, in any order:
-      | tid         |
-      | "player100" |
+      | like._dst           |
+      | "Russell Westbrook" |
     And the execution plan should be:
-      | id | name         | dependencies | profiling data | operator info                                                 |
-      | 9  | Project      | 8            |                |                                                               |
-      | 8  | Filter       | 7            |                |                                                               |
-      | 7  | InnerJoin    | 6            |                |                                                               |
-      | 6  | Project      | 11           |                |                                                               |
-      | 11 | GetNeighbors | 2            |                | {"filter": "((follow.degree<$-.num) AND (follow.degree>70))"} |
-      | 2  | Project      | 1            |                |                                                               |
-      | 1  | GetNeighbors | 0            |                |                                                               |
-      | 0  | Start        |              |                |                                                               |
+      | id | name         | dependencies | profiling data | operator info                         |
+      | 9  | Project      | 8            |                |                                       |
+      | 8  | Filter       | 7            |                |                                       |
+      | 7  | InnerJoin    | 6            |                |                                       |
+      | 6  | Project      | 11           |                |                                       |
+      | 11 | GetNeighbors | 2            |                | {"filter": "(like.likeness>=$-.num)"} |
+      | 2  | Project      | 1            |                |                                       |
+      | 1  | GetNeighbors | 0            |                |                                       |
+      | 0  | Start        |              |                |                                       |
 
   Scenario: filter with leftjoin
     When profiling query:
       """
-      GO FROM 'player101' OVER follow WHERE follow.degree>90 and $$.player.age>35 YIELD follow._dst as fid, follow.degree;
+      GO FROM 'Russell Westbrook' OVER like where like.likeness > 80 and $$.player.age>=29 YIELD like._dst as id;
       """
     Then the result should be, in any order:
-      | fid         | follow.degree |
-      | "player100" | 95            |
+      | id             |
+      | "James Harden" |
     And the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                    |
       | 7  | Project      | 10           |                |                                  |
@@ -2015,5 +2002,5 @@ Feature: Go Sentence
       | 4  | Project      | 3            |                |                                  |
       | 3  | GetVertices  | 2            |                |                                  |
       | 2  | Project      | 1            |                |                                  |
-      | 1  | GetNeighbors | 0            |                | {"filter": "(follow.degree>90)"} |
+      | 1  | GetNeighbors | 0            |                | {"filter": "(like.likeness>80)"} |
       | 0  | Start        |              |                |                                  |
