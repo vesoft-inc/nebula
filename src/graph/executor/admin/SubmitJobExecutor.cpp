@@ -131,8 +131,8 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     v.emplace_back(Row({jd.get_job_id(),
                         apache::thrift::util::enumNameSafe(meta::cpp2::JobType::DATA_BALANCE),
                         apache::thrift::util::enumNameSafe(jd.get_status()),
-                        convertJobTimestampToDateTime(jd.get_start_time()).toString(),
-                        convertJobTimestampToDateTime(jd.get_stop_time()).toString(),
+                        convertJobTimestampToDateTime(jd.get_start_time()),
+                        convertJobTimestampToDateTime(jd.get_stop_time()),
                         apache::thrift::util::enumNameSafe(jd.get_code())}));
     for (size_t i = index; i < paras.size() - 1; i++) {
       meta::cpp2::BalanceTask tsk;
