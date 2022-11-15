@@ -29,12 +29,27 @@ StatusOr<SubPlan> ReturnClausePlanner::transform(CypherClauseContextBase* clause
 
 Status ReturnClausePlanner::buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan) {
   rctx->yield->inputColNames = rctx->inputColNames;
-  // prune redudant aliases
-  std::set<std::string> temp(rctx->yield->inputColNames.begin(), rctx->yield->inputColNames.end());
-  rctx->yield->inputColNames.assign(temp.rbegin(), temp.rend());
-  std::set<std::string> temp2(rctx->yield->projOutputColumnNames_.begin(),
-                              rctx->yield->projOutputColumnNames_.end());
-  rctx->yield->projOutputColumnNames_.assign(temp2.rbegin(), temp2.rend());
+
+  // prune redudant aliases while preserving their order
+  std::set<std::string> temp;
+  for (auto iter = rctx->yield->inputColNames.begin(); iter != rctx->yield->inputColNames.end();) {
+    if (temp.find(*iter) == temp.end()) {
+      temp.emplace(*iter);
+      iter++;
+    } else {
+      iter = rctx->yield->inputColNames.erase(iter);
+    }
+  }
+  temp.clear();
+  for (auto iter = rctx->yield->projOutputColumnNames_.begin();
+       iter != rctx->yield->projOutputColumnNames_.end();) {
+    if (temp.find(*iter) == temp.end()) {
+      temp.emplace(*iter);
+      iter++;
+    } else {
+      iter = rctx->yield->projOutputColumnNames_.erase(iter);
+    }
+  }
 
   auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(rctx->yield.get());
   NG_RETURN_IF_ERROR(yieldPlan);
