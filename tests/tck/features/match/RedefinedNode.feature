@@ -192,3 +192,11 @@ Feature: Redefined symbols
       MATCH (v:player{name:"abc"})-[e:like]->(v1)-[e:like]->(v2) RETURN *
       """
     Then a SemanticError should be raised at runtime: `e': Redefined alias
+
+  Scenario: Redefined alias in with
+    When executing query:
+      """
+      MATCH (n0)-[e0]->(n0) WHERE (id(n0) IN [7,10]) with * RETURN *
+      """
+    Then the result should be, in any order:
+      | n0 | e0 |
