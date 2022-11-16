@@ -74,8 +74,7 @@ class ShortestPathBase {
     return Result::State::kSuccess;
   }
 
-  std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t>&> ref) const;
+  folly::dynamic getStorageDetail(const std::map<std::string, int32_t>& profileDetail) const;
 
  protected:
   const ShortestPath* pathNode_{nullptr};

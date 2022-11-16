@@ -70,15 +70,13 @@ std::vector<Value> ShortestPathBase::handlePropResp(PropRpcResponse&& resps) {
   return vertices;
 }
 
-std::string ShortestPathBase::getStorageDetail(
-    optional_field_ref<const std::map<std::string, int32_t>&> ref) const {
-  if (ref.has_value()) {
-    auto content = util::join(*ref, [](auto& iter) -> std::string {
-      return folly::sformat("{}:{}(us)", iter.first, iter.second);
-    });
-    return "{" + content + "}";
+folly::dynamic ShortestPathBase::getStorageDetail(
+    const std::map<std::string, int32_t>& profileDetail) const {
+  folly::dynamic info = folly::dynamic::object();
+  for (auto& p : profileDetail) {
+    info.insert(p.first, folly::sformat("{}(us)", p.second));
   }
-  return "";
+  return info;
 }
 
 Status ShortestPathBase::handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
@@ -171,9 +169,8 @@ void ShortestPathBase::addStats(RpcResponse& resp,
                                 size_t stepNum,
                                 int64_t timeInUSec,
                                 bool reverse) const {
+  folly::dynamic stats = folly::dynamic::array();
   auto& hostLatency = resp.hostLatency();
-  std::stringstream ss;
-  ss << "{\n";
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     size_t size = 0u;
     auto& result = resp.responses()[i];
@@ -181,45 +178,43 @@ void ShortestPathBase::addStats(RpcResponse& resp,
       size = (*result.vertices_ref()).size();
     }
     auto& info = hostLatency[i];
-    ss << "{" << folly::sformat("{} exec/total/vertices: ", std::get<0>(info).toString())
-       << folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size) << "\n"
-       << folly::sformat("total_rpc_time: {}(us)", timeInUSec) << "\n";
-    auto detail = getStorageDetail(result.result.latency_detail_us_ref());
-    if (!detail.empty()) {
-      ss << folly::sformat("storage_detail: {}", detail);
+    folly::dynamic stat = folly::dynamic::object();
+    stat.insert("address", std::get<0>(info).toString());
+    stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
+    stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
+    stat.insert("vertices", size);
+    stat.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
+    if (result.result.latency_detail_us_ref().has_value()) {
+      stat.insert("storage_detail", getStorageDetail(*result.result.get_latency_detail_us()));
     }
-    ss << "\n}";
+    stats.push_back(folly::dynamic::object(folly::sformat("resp[{}]", i), stat));
   }
-  ss << "\n}";
-  if (reverse) {
-    statsLock_.lock();
-    stats_->emplace(folly::sformat("reverse step {}", stepNum), ss.str());
-    statsLock_.unlock();
-  } else {
-    statsLock_.lock();
-    stats_->emplace(folly::sformat("step {}", stepNum), ss.str());
-    statsLock_.unlock();
-  }
+
+  auto key = folly::sformat("{}step[{}]", reverse ? "reverse " : "", stepNum);
+  statsLock_.lock();
+  stats_->emplace(key, folly::toPrettyJson(stats));
+  statsLock_.unlock();
 }
 
 void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const {
+  folly::dynamic stats = folly::dynamic::array();
   auto& hostLatency = resp.hostLatency();
-  std::stringstream ss;
-  ss << "{\n";
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     auto& info = hostLatency[i];
-    ss << "{" << folly::sformat("{} exec/total: ", std::get<0>(info).toString())
-       << folly::sformat("{}(us)/{}(us),", std::get<1>(info), std::get<2>(info)) << "\n"
-       << folly::sformat("total_rpc_time: {}(us)", timeInUSec) << "\n";
-    auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
-    if (!detail.empty()) {
-      ss << folly::sformat("storage_detail: {}", detail);
+    folly::dynamic stat = folly::dynamic::object();
+    stat.insert("address", std::get<0>(info).toString());
+    stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
+    stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
+    stat.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
+    const auto& result = resp.responses()[i].get_result();
+    if (result.latency_detail_us_ref().has_value()) {
+      stat.insert("storage_detail", getStorageDetail(*result.get_latency_detail_us()));
     }
-    ss << "\n}";
+    stats.push_back(std::move(stat));
   }
-  ss << "\n}";
+
   statsLock_.lock();
-  stats_->emplace(folly::sformat("get_prop "), ss.str());
+  stats_->emplace("get_prop", folly::toPrettyJson(stats));
   statsLock_.unlock();
 }
 

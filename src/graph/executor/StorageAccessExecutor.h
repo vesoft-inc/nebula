@@ -139,22 +139,37 @@ class StorageAccessExecutor : public Executor {
     return Status::OK();
   }
 
+  folly::dynamic collectRespProfileData(const storage::cpp2::ResponseCommon &resp,
+                                        const std::tuple<HostAddr, int32_t, int32_t> &info,
+                                        size_t numVertices = 0UL,
+                                        size_t totalRpcTime = 0UL) const {
+    folly::dynamic stat = folly::dynamic::object();
+    stat.insert("address", std::get<0>(info).toString());
+    stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
+    stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
+    if (numVertices > 0) {
+      stat.insert("vertices", numVertices);
+    }
+    if (totalRpcTime > 0) {
+      stat.insert("total_rpc_time", folly::sformat("{}(us)", totalRpcTime));
+    }
+    if (resp.latency_detail_us_ref().has_value()) {
+      stat.insert("storage_detail", getStorageDetail(*resp.get_latency_detail_us()));
+    }
+    return stat;
+  }
+
   template <typename RESP>
-  void addStats(RESP &resp, std::unordered_map<std::string, std::string> &stats) const {
+  void addStats(storage::StorageRpcResponse<RESP> &resp,
+                std::unordered_map<std::string, std::string> &stats) const {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
-      auto &info = hostLatency[i];
-      stats.emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
-                    folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
-      auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
-      if (!detail.empty()) {
-        stats.emplace("storage_detail", detail);
-      }
+      auto info = collectRespProfileData(resp.responses()[i].get_result(), hostLatency[i]);
+      stats.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
     }
   }
 
-  std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t> &> ref) const;
+  folly::dynamic getStorageDetail(const std::map<std::string, int32_t> &profileDetail) const;
 
   bool isIntVidType(const SpaceInfo &space) const;
 

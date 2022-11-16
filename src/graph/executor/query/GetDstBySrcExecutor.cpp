@@ -55,14 +55,8 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
           if (result.dsts_ref().has_value()) {
             size = (*result.dsts_ref()).size();
           }
-          auto& info = hostLatency[i];
-          otherStats_.emplace(
-              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
-              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
-          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
-          if (!detail.empty()) {
-            otherStats_.emplace("storage_detail", detail);
-          }
+          auto info = collectRespProfileData(result.result, hostLatency[i], size);
+          otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         return handleResponse(resp, this->gd_->colNames());
       });

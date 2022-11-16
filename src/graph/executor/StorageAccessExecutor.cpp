@@ -148,15 +148,13 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
   return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
-std::string StorageAccessExecutor::getStorageDetail(
-    optional_field_ref<const std::map<std::string, int32_t> &> ref) const {
-  if (ref.has_value()) {
-    auto content = util::join(*ref, [](auto &iter) -> std::string {
-      return folly::sformat("\n  {}:{}(us)", iter.first, iter.second);
-    });
-    return "{" + content + "}";
+folly::dynamic StorageAccessExecutor::getStorageDetail(
+    const std::map<std::string, int32_t> &profileDetail) const {
+  folly::dynamic profileData = folly::dynamic::object();
+  for (auto &p : profileDetail) {
+    profileData.insert(p.first, folly::sformat("{}(us)", p.second));
   }
-  return "";
+  return profileData;
 }
 
 }  // namespace graph
