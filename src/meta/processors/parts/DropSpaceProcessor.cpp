@@ -134,7 +134,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto jobRet = doPrefix(jobPrefix);
   if (!nebula::ok(jobRet)) {
     auto retCode = nebula::error(jobRet);
-    LOG(INFO) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(jobRet);
+    LOG(INFO) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;

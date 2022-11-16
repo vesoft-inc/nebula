@@ -305,15 +305,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    *
    * @return
    */
-  bool spaceExist(GraphSpaceID spaceId) {
-    auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
-    std::string val;
-    auto retCode = kvStore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &val);
-    if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      return false;
-    }
-    return true;
-  }
+  bool spaceExist(GraphSpaceID spaceId);
 
  private:
   using PriorityQueue = folly::PriorityUMPSCQueueSet<std::tuple<JbOp, JobID, GraphSpaceID>, true>;

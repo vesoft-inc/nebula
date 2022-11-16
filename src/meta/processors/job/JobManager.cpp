@@ -66,6 +66,16 @@ JobManager::~JobManager() {
   shutDown();
 }
 
+bool JobManager::spaceExist(GraphSpaceID spaceId) {
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
+  std::string val;
+  auto retCode = kvStore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &val);
+  if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    return false;
+  }
+  return true;
+}
+
 nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode =
