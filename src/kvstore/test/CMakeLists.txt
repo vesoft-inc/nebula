@@ -61,6 +61,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -76,6 +77,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -91,6 +93,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -106,6 +109,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -121,6 +125,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -136,6 +141,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -151,6 +157,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -166,6 +173,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -181,6 +189,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_executable(
@@ -197,6 +206,7 @@ nebula_add_executable(
         wangle
         follybenchmark
         boost_regex
+        curl
 )
 
 nebula_add_executable(
@@ -214,6 +224,7 @@ nebula_add_executable(
         follybenchmark
         gtest
         boost_regex
+        curl
 )
 
 nebula_add_test(
@@ -229,4 +240,5 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )

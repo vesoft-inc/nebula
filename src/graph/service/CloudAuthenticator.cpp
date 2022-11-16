@@ -31,17 +31,19 @@ Status CloudAuthenticator::auth(const std::string& user, const std::string& pass
   std::string userAndPasswd = user + ":" + password;
   std::string base64Str = proxygen::base64Encode(folly::StringPiece(userAndPasswd));
 
-  std::string header = "-H \"Content-Type: application/json\"  -H \"Authorization:Nebula ";
-  header = header + base64Str + "\"";
-  auto result = http::HttpClient::post(FLAGS_cloud_http_url, header);
+  std::vector<std::string> hearder = {"Content-Type: application/json",
+                                      "Authorization:Nebula " + base64Str};
+  auto httpResponse = HttpClient::post(FLAGS_cloud_http_url, hearder, "");
 
-  if (!result.ok()) {
-    LOG(ERROR) << result.status();
-    return result.status();
+  if (httpResponse.curlCode != 0) {
+    std::string msg =
+        fmt::format("curl error({}):{}", httpResponse.curlCode, httpResponse.curlMessage);
+    LOG(ERROR) << msg;
+    return Status::Error(msg);
   }
 
   try {
-    auto json = folly::parseJson(result.value());
+    auto json = folly::parseJson(httpResponse.body);
     if (json["code"].asString().compare("0") != 0) {
       LOG(ERROR) << "Cloud authentication failed, user: " << user;
       return Status::Error("Cloud authentication failed, user: %s", user.c_str());

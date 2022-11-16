@@ -39,6 +39,7 @@ nebula_add_executable(
       boost_regex
       ${PROXYGEN_LIBRARIES}
       ${THRIFT_LIBRARIES}
+      curl
 )
 
 
@@ -79,6 +80,7 @@ nebula_add_test(
     gtest_main
     ${PROXYGEN_LIBRARIES}
     ${THRIFT_LIBRARIES}
+    curl
 )
 
 nebula_add_test(

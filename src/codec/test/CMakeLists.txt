@@ -54,6 +54,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -66,6 +67,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -78,6 +80,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -94,6 +97,7 @@ nebula_add_test(
         wangle
         boost_regex
         gtest
+        curl
 )
 
 
@@ -109,6 +113,7 @@ nebula_add_executable(
         follybenchmark
         wangle
         boost_regex
+        curl
 )
 
 #nebula_add_test(

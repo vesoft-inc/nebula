@@ -62,7 +62,7 @@ nebula_add_test(
     SOURCES ParserTest.cpp
     OBJECTS
       ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} curl
 )
 
 nebula_add_test(
@@ -70,21 +70,21 @@ nebula_add_test(
     SOURCES ScannerTest.cpp
     OBJECTS
       ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} curl
 )
 
 nebula_add_executable(
     NAME parser_bm
     SOURCES ParserBenchmark.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES follybenchmark boost_regex ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} curl
 )
 
 nebula_add_test(
     NAME expression_parsing_test
     SOURCES ExpressionParsingTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} curl
 )
 
 if(ENABLE_FUZZ_TEST)

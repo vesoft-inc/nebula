@@ -70,6 +70,7 @@ nebula_add_test(
         gtest
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -85,6 +86,7 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -100,4 +102,5 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )

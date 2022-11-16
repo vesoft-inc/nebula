@@ -8,6 +8,7 @@ nebula_add_test(
     SOURCES
         HttpClientTest.cpp
     OBJECTS
+        $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
@@ -22,5 +23,6 @@ nebula_add_test(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
-        gtest_main
+        curl
+
 )

@@ -80,4 +80,5 @@ nebula_add_test(
         ${Boost_Thread_LIBRARY}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        curl
 )
