@@ -409,7 +409,7 @@ nebula::cpp2::ErrorCode Part::putCommitMsg(WriteBatch* batch,
   return batch->put(NebulaKeyUtils::systemCommitKey(partId_), commitMsg);
 }
 
-bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const std::string& log) {
+bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, folly::StringPiece log) {
   // We should apply any membership change which happens before start time. Because when we start
   // up, the peers comes from meta, has already contains all previous changes.
   VLOG(4) << idStr_ << "logId " << logId << ", termId " << termId << ", clusterId " << clusterId;
