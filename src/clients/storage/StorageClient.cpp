@@ -885,8 +885,9 @@ StatusOr<std::function<const VertexID&(const Value&)>> StorageClient::getIdFromV
         DCHECK_EQ(Value::Type::INT, v.type());
         mutableV = const_cast<Value&>(v);
       }
-      mutableV = Value(std::string(reinterpret_cast<const char*>(&v.getInt()), 8));
-      return mutableV.getStr();
+      auto& val = const_cast<Value&>(v);
+      val = Value(std::string(reinterpret_cast<const char*>(&mutableV.getInt()), 8));
+      return val.getStr();
     };
   } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Value& v) -> const VertexID& {
