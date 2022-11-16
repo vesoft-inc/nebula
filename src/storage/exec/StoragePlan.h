@@ -80,7 +80,8 @@ class StoragePlan {
     CHECK_LT(idx, nodes_.size());
     return nodes_[idx].get();
   }
-  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() {
+
+  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() const {
     return nodes_;
   }
 
