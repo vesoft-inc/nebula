@@ -129,6 +129,23 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto localIdkey = MetaKeyUtils::localIdKey(spaceId);
   batchHolder->remove(std::move(localIdkey));
 
+  // 8. Delete all job data
+  auto jobPrefix = MetaKeyUtils::jobPrefix(spaceId);
+  auto jobRet = doPrefix(jobPrefix);
+  if (!nebula::ok(jobRet)) {
+    auto retCode = nebula::error(jobRet);
+    LOG(INFO) << "Loading Job Failed" << apache::thrift::util::enumNameSafe(jobRet);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  auto jobIter = nebula::value(jobRet).get();
+  while (jobIter->valid()) {
+    batchHolder->remove(jobIter->key().str());
+    jobIter->next();
+  }
+
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
   LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
   auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
