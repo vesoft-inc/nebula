@@ -20,11 +20,11 @@ Feature: Test predication push down in go
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                   |
-      | 10 | Project      | 15           |                                                 |
-      | 15 | InnerJoin    | 17           |                                                 |
-      | 17 | Project      | 18           |                                                 |
-      | 18 | GetNeighbors | 3            | { "filter": "(like._dst IN [\"Tim Duncan\"])" } |
-      | 3  | Project      | 11           |                                                 |
-      | 11 | GetNeighbors | 0            |                                                 |
-      | 0  | Start        |              |                                                 |
+      | id | name         | dependencies | operator info                                                                     |
+      | 10 | Project      | 15           |                                                                                   |
+      | 15 | InnerJoin    | 17           |                                                                                   |
+      | 17 | Project      | 18           |                                                                                   |
+      | 18 | GetNeighbors | 3            | { "filter": "((like._dst IN ["Tim Duncan"]) AND (like._dst IN ["Tim Duncan"]))" } |
+      | 3  | Project      | 11           |                                                                                   |
+      | 11 | GetNeighbors | 0            | { "filter": "((like._dst NOT IN ["xxx"]) AND (like._dst NOT IN ["xxx"]))" }       |
+      | 0  | Start        |              |                                                                                   |

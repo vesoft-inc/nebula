@@ -21,10 +21,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                    |
-      | 0  | Project      | 1            |                                  |
-      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
-      | 2  | Start        |              |                                  |
+      | id | name         | dependencies | operator info                                             |
+      | 0  | Project      | 1            |                                                           |
+      | 1  | GetNeighbors | 2            | {"filter": "(($^.player.age>18) AND ($^.player.age>18))"} |
+      | 2  | Start        |              |                                                           |
 
   Scenario: push start vertex filter down when reversely
     When profiling query:
@@ -39,10 +39,10 @@ Feature: Push Filter down GetNeighbors rule
       | 90       |
       | 99       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                    |
-      | 0  | Project      | 1            |                                  |
-      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
-      | 2  | Start        |              |                                  |
+      | id | name         | dependencies | operator info                                             |
+      | 0  | Project      | 1            |                                                           |
+      | 1  | GetNeighbors | 2            | {"filter": "(($^.player.age>18) AND ($^.player.age>18))"} |
+      | 2  | Start        |              |                                                           |
 
   Scenario: push edge props filter down
     When profiling query:
@@ -57,10 +57,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                         |
-      | 0  | Project      | 1            |                                       |
-      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year>2005)"} |
-      | 2  | Start        |              |                                       |
+      | id | name         | dependencies | operator info                                                       |
+      | 0  | Project      | 1            |                                                                     |
+      | 1  | GetNeighbors | 2            | {"filter": "((serve.start_year>2005) AND (serve.start_year>2005))"} |
+      | 2  | Start        |              |                                                                     |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -106,10 +106,10 @@ Feature: Push Filter down GetNeighbors rule
       | 2008       |
       | 2012       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                         |
-      | 0  | Project      | 1            |                                       |
-      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year<2017)"} |
-      | 2  | Start        |              |                                       |
+      | id | name         | dependencies | operator info                                                       |
+      | 0  | Project      | 1            |                                                                     |
+      | 1  | GetNeighbors | 2            | {"filter": "((serve.start_year<2017) AND (serve.start_year<2017))"} |
+      | 2  | Start        |              |                                                                     |
 
   @skip
   Scenario: Only push source vertex filter down
