@@ -83,7 +83,6 @@ class GetNeighborsProcessor
       const std::vector<nebula::Value>& vids,
       int64_t limit,
       bool random);
-  void profilePlan(StoragePlan<VertexID>& plan);
 
  private:
   std::vector<RuntimeContext> contexts_;
