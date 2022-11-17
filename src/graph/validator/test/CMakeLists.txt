@@ -96,4 +96,5 @@ nebula_add_test(
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        curl
 )

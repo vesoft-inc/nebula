@@ -15,6 +15,7 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         glog
         gflags
+        curl
 )
 
 install(
