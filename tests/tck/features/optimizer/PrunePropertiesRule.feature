@@ -845,10 +845,10 @@ Feature: Prune Properties rule
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree1,properties(e).degree1,e2.a,dst_v.p.name,dst_v.player.sex1,properties(src_v).name2 limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(e).degree1 | properties(e).degree1 | e2.a         | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | UNKNOWN_PROP | NULL         | NULL              | UNKNOWN_PROP            |
+      | properties(e).degree1 | properties(e).degree1 | e2.a | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
     Then drop the used space
