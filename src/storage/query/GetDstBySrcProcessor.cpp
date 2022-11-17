@@ -31,7 +31,7 @@ void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
   if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
     profileDetailFlag_ = true;
     profileDetail("GetDstBySrcProcessorTotal", 0);
-    profileDetail("Dedup", 0);
+    profileDetail("GetDstBySrcProcessorDedup", 0);
   }
 
   spaceId_ = req.get_space_id();
@@ -320,7 +320,7 @@ void GetDstBySrcProcessor::onProcessFinished() {
   resp_.dsts_ref() = std::move(resultDataSet_);
 
   if (profileDetailFlag_) {
-    profileDetail("Dedup", dedupDuration_.elapsedInUSec());
+    profileDetail("GetDstBySrcProcessorDedup", dedupDuration_.elapsedInUSec());
     profileDetail("GetDstBySrcProcessorTotal", totalDuration_.elapsedInUSec());
   }
 }
