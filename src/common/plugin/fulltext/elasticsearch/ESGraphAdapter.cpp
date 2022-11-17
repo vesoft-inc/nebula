@@ -71,7 +71,7 @@ StatusOr<bool> ESGraphAdapter::fuzzy(const HttpClient& client,
 
 std::string ESGraphAdapter::header() const noexcept {
   std::stringstream os;
-  os << CURL << CURL_CONTENT_JSON;
+  os << CURL_COMMAND << CURL_CONTENT_JSON;
   return os.str();
 }
 
@@ -81,7 +81,7 @@ std::string ESGraphAdapter::header(const HttpClient& client,
   //    curl -H "Content-Type: application/json; charset=utf-8"
   //    -XGET http://127.0.0.1:9200/my_temp_index_3/_search?timeout=10ms
   std::stringstream os;
-  os << CURL << CURL_CONTENT_JSON << XGET;
+  os << CURL_COMMAND << CURL_CONTENT_JSON << XGET;
   os << client.toString() << item.index << "/_search?timeout=" << limit.timeout_ << "ms"
      << "\"";
   return os.str();

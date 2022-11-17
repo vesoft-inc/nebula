@@ -15,7 +15,7 @@
 #include "common/base/CommonMacro.h"
 #include "common/datatypes/HostAddr.h"
 
-#define CURL "/usr/bin/curl"
+#define CURL_COMMAND "/usr/bin/curl"
 #define XPUT " -XPUT"
 #define XPOST " -XPOST"
 #define XGET " -XGET"
