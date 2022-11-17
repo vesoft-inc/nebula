@@ -21,7 +21,7 @@ folly::dynamic collectRespProfileData(const storage::cpp2::ResponseCommon& resp,
                                       size_t numVertices,
                                       size_t totalRpcTime) {
   folly::dynamic stat = folly::dynamic::object();
-  stat.insert("address", std::get<0>(info).toString());
+  stat.insert("host", std::get<0>(info).toRawString());
   stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
   stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
   if (numVertices > 0) {
