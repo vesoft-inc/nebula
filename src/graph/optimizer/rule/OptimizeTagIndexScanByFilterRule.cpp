@@ -72,9 +72,15 @@ bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResul
     // If the container in the IN expr has only 1 element, it will be converted to an relEQ
     // expr. If more than 1 element found in the container, UnionAllIndexScanBaseRule will be
     // applied.
-    if (relExpr->kind() == ExprKind::kRelIn && relExpr->right()->isContainerExpr()) {
-      auto ContainerOperands = graph::ExpressionUtils::getContainerExprOperands(relExpr->right());
-      return ContainerOperands.size() == 1;
+    auto* rhs = relExpr->right();
+    if (relExpr->kind() == ExprKind::kRelIn) {
+      if (rhs->isContainerExpr()) {
+        return graph::ExpressionUtils::getContainerExprOperands(relExpr->right()).size() == 1;
+      } else if (rhs->kind() == Expression::Kind::kConstant) {
+        auto constExprValue = static_cast<const ConstantExpression*>(rhs)->value();
+        return (constExprValue.isList() && constExprValue.getList().size() == 1) ||
+               (constExprValue.isSet() && constExprValue.getSet().size() == 1);
+      }
     }
     return relExpr->left()->kind() == ExprKind::kTagProperty &&
            relExpr->right()->kind() == ExprKind::kConstant;
@@ -115,11 +121,10 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
   // Stand alone IN expr with only 1 element in the list, no need to check index
   if (conditionType == ExprKind::kRelIn) {
     transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
-    DCHECK(transformedExpr->kind() == ExprKind::kRelEQ);
+
   } else if (conditionType == ExprKind::kStartsWith) {
     // StartsWith expr is converted to a RelAnd expr with a constant value
     transformedExpr = graph::ExpressionUtils::rewriteStartsWithExpr(condition);
-    DCHECK(transformedExpr->kind() == ExprKind::kLogicalAnd);
   }
 
   // case2: logical AND expr
@@ -130,15 +135,23 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
         auto inExpr = static_cast<RelationalExpression*>(operand);
         // Do not apply this rule if the IN expr has a valid index or it has more than 1 element in
         // the list
-        if (static_cast<ListExpression*>(inExpr->right())->size() > 1) {
+        auto* rhs = inExpr->right();
+        if (rhs->isContainerExpr() &&
+            graph::ExpressionUtils::getContainerExprOperands(rhs).size() > 1) {
           return TransformResult::noTransform();
-        } else {
-          // If the inner IN expr has only 1 element, rewrite it to an relEQ expression and there is
-          // no need to check whether it has a index
-          auto relEqExpr = graph::ExpressionUtils::rewriteInExpr(inExpr);
-          static_cast<LogicalExpression*>(transformedExpr)->setOperand(operandIndex, relEqExpr);
-          continue;
+        } else if (rhs->kind() == Expression::Kind::kConstant) {
+          auto constExprValue = static_cast<const ConstantExpression*>(rhs)->value();
+          if ((constExprValue.isList() && constExprValue.getList().size() > 1) ||
+              (constExprValue.isSet() && constExprValue.getSet().size() > 1)) {
+            return TransformResult::noTransform();
+          }
         }
+        // If the inner IN expr has only 1 element, rewrite it to an relEQ expression and there is
+        // no need to check whether it has a index
+        auto relEqExpr = graph::ExpressionUtils::rewriteInExpr(inExpr);
+        static_cast<LogicalExpression*>(transformedExpr)->setOperand(operandIndex, relEqExpr);
+        continue;
+
         if (OptimizerUtils::relExprHasIndex(inExpr, indexItems)) {
           return TransformResult::noTransform();
         }
