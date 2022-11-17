@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: Nebula service termination test
 
-  # All nebula services shold exit as expected after termination
+  # All nebula services should exit as expected after termination
   Scenario: Basic termination test
     Given a nebulacluster with 1 graphd and 1 metad and 1 storaged
     When the cluster was terminated

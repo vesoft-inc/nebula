@@ -327,7 +327,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
   auto type = typeStatus.value();
-  // Allow implcit convertion from LIST to BOOL
+  // Allow implicit conversion from LIST to BOOL
   if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
       type != Value::Type::__EMPTY__ && type != Value::Type::LIST) {
     std::stringstream ss;

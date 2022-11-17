@@ -685,7 +685,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  // Check if any overflow happen before filter tranform
+  // Check if any overflow happen before filter transform
   auto initialConstFold = foldConstantExpr(filter);
   NG_RETURN_IF_ERROR(initialConstFold);
   auto newFilter = initialConstFold.value();

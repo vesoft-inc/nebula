@@ -361,9 +361,9 @@ enum ErrorCode {
     E_WRONGCLUSTER                    = -2010,  // Wrong cluster
     E_ZONE_NOT_ENOUGH                 = -2011,  // Listener conflicts
     E_ZONE_IS_EMPTY                   = -2012,  // Host not exist
-    E_SCHEMA_NAME_EXISTS              = -2013,  // Schema name alreay exists
-    E_RELATED_INDEX_EXISTS            = -2014,  // There are stil indexes related to tag or edge, cannot drop it
-    E_RELATED_SPACE_EXISTS            = -2015,  // There are still some spaec on the host, cannot drop it
+    E_SCHEMA_NAME_EXISTS              = -2013,  // Schema name already exists
+    E_RELATED_INDEX_EXISTS            = -2014,  // There are still indexes related to tag or edge, cannot drop it
+    E_RELATED_SPACE_EXISTS            = -2015,  // There are still some space on the host, cannot drop it
 
     E_STORE_FAILURE                   = -2021,  // Failed to store data
     E_STORE_SEGMENT_ILLEGAL           = -2022,  // Illegal storage segment

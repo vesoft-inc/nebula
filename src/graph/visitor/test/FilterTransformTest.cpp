@@ -23,7 +23,7 @@ TEST_F(FilterTransformTest, TestComplexExprRewrite) {
   ASSERT_EQ(*res.value(), *expected) << res.value()->toString() << " vs. " << expected->toString();
 }
 
-// If the expression tranformation causes an overflow, it should not be done.
+// If the expression transformation causes an overflow, it should not be done.
 TEST_F(FilterTransformTest, TestCalculationOverflow) {
   // (v.age - 1 < 9223372036854775807)  =>  unchanged
   {
