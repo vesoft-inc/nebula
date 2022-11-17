@@ -672,5 +672,15 @@ void QueryBaseProcessor<REQ, RESP>::addPropContextIfNotExists(
   }
 }
 
+template <typename REQ, typename RESP>
+template <typename IdType>
+void QueryBaseProcessor<REQ, RESP>::profilePlan(const StoragePlan<IdType>& plan) {
+  auto& nodes = plan.getNodes();
+  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profileMut_);
+  for (auto& node : nodes) {
+    BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
+  }
+}
+
 }  // namespace storage
 }  // namespace nebula
