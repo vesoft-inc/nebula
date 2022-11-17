@@ -13,7 +13,6 @@
 
 #include <boost/stacktrace.hpp>
 
-#include "common/http/HttpClient.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"

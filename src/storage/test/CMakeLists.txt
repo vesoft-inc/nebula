@@ -26,7 +26,6 @@ set(storage_test_deps
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
@@ -428,6 +427,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -472,12 +472,14 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:ws_obj>
         ${storage_test_deps}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -489,12 +491,14 @@ nebula_add_test(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:ws_obj>
         ${storage_test_deps}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(

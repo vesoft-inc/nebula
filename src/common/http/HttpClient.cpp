@@ -1,99 +1,121 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2022 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/http/HttpClient.h"
 
-#include "common/process/ProcessUtils.h"
-
+#include "curl/curl.h"
 namespace nebula {
-namespace http {
 
-StatusOr<std::string> HttpClient::get(const std::string& path, const std::string& options) {
-  auto command = folly::stringPrintf("/usr/bin/curl %s \"%s\"", options.c_str(), path.c_str());
-  LOG(INFO) << "HTTP Get Command: " << command;
-  auto result = nebula::ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Http Get Failed: %s", path.c_str()));
+CurlHandle::CurlHandle() {
+  curl_global_init(CURL_GLOBAL_ALL);
+}
+
+CurlHandle::~CurlHandle() {
+  curl_global_cleanup();
+}
+
+CurlHandle* CurlHandle::instance() {
+  static CurlHandle handle;
+  return &handle;
+}
+
+HttpResponse HttpClient::get(const std::string& url) {
+  return HttpClient::get(url, {});
+}
+
+HttpResponse HttpClient::get(const std::string& url, const std::vector<std::string>& header) {
+  return sendRequest(url, "GET", header, "");
+}
+
+HttpResponse HttpClient::post(const std::string& url,
+                              const std::vector<std::string>& header,
+                              const std::string& body) {
+  return sendRequest(url, "POST", header, body);
+}
+
+HttpResponse HttpClient::delete_(const std::string& url, const std::vector<std::string>& header) {
+  return sendRequest(url, "DELETE", header, "");
+}
+
+HttpResponse HttpClient::put(const std::string& url,
+                             const std::vector<std::string>& header,
+                             const std::string& body) {
+  return sendRequest(url, "PUT", header, body);
+}
+
+HttpResponse HttpClient::sendRequest(const std::string& url,
+                                     const std::string& method,
+                                     const std::vector<std::string>& header,
+                                     const std::string& body) {
+  CurlHandle::instance();
+  HttpResponse resp;
+  CURL* curl = curl_easy_init();
+  CHECK(curl);
+  setUrl(curl, url);
+  setMethod(curl, method);
+  curl_slist* h = setHeaders(curl, header);
+  if (!body.empty()) {
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
   }
-}
-
-StatusOr<std::string> HttpClient::post(const std::string& path, const std::string& header) {
-  auto command =
-      folly::stringPrintf("/usr/bin/curl -X POST %s \"%s\"", header.c_str(), path.c_str());
-  LOG(INFO) << "HTTP POST Command: " << command;
-  auto result = nebula::ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Http Post Failed: %s", path.c_str()));
+  setRespHeader(curl, resp.header);
+  setRespBody(curl, resp.body);
+  setTimeout(curl);
+  resp.curlCode = curl_easy_perform(curl);
+  if (resp.curlCode != 0) {
+    resp.curlMessage = std::string(curl_easy_strerror(resp.curlCode));
   }
-}
-
-StatusOr<std::string> HttpClient::post(const std::string& path,
-                                       const std::unordered_map<std::string, std::string>& header) {
-  folly::dynamic mapData = folly::dynamic::object;
-  // Build a dynamic object from map
-  for (auto const& it : header) {
-    mapData[it.first] = it.second;
+  if (h) {
+    curl_slist_free_all(h);
   }
-  return post(path, mapData);
+  curl_easy_cleanup(curl);
+  return resp;
 }
 
-StatusOr<std::string> HttpClient::post(const std::string& path, const folly::dynamic& data) {
-  return sendRequest(path, data, "POST");
+void HttpClient::setUrl(CURL* curl, const std::string& url) {
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 }
 
-StatusOr<std::string> HttpClient::put(const std::string& path,
-                                      const std::unordered_map<std::string, std::string>& header) {
-  folly::dynamic mapData = folly::dynamic::object;
-  // Build a dynamic object from map
-  for (auto const& it : header) {
-    mapData[it.first] = it.second;
+void HttpClient::setMethod(CURL* curl, const std::string& method) {
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
+}
+curl_slist* HttpClient::setHeaders(CURL* curl, const std::vector<std::string>& headers) {
+  curl_slist* h = nullptr;
+  for (auto& header : headers) {
+    h = curl_slist_append(h, header.c_str());
   }
-  return put(path, mapData);
-}
-
-StatusOr<std::string> HttpClient::put(const std::string& path, const std::string& header) {
-  auto command =
-      folly::stringPrintf("/usr/bin/curl -X PUT %s \"%s\"", header.c_str(), path.c_str());
-  LOG(INFO) << "HTTP PUT Command: " << command;
-  auto result = nebula::ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Http Put Failed: %s", path.c_str()));
+  if (h) {
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, h);
   }
+  return h;
 }
 
-StatusOr<std::string> HttpClient::put(const std::string& path, const folly::dynamic& data) {
-  return sendRequest(path, data, "PUT");
+void HttpClient::setRespHeader(CURL* curl, const std::string& header) {
+  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, onWriteData);
+  curl_easy_setopt(curl, CURLOPT_HEADERDATA, &header);
 }
 
-StatusOr<std::string> HttpClient::sendRequest(const std::string& path,
-                                              const folly::dynamic& data,
-                                              const std::string& reqType) {
-  std::string command;
-  if (data.empty()) {
-    command = folly::stringPrintf("curl -X %s -s \"%s\"", reqType.c_str(), path.c_str());
-  } else {
-    command =
-        folly::stringPrintf("curl -X %s -H \"Content-Type: application/json\" -d'%s' -s \"%s\"",
-                            reqType.c_str(),
-                            folly::toJson(data).c_str(),
-                            path.c_str());
+void HttpClient::setRespBody(CURL* curl, const std::string& body) {
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, onWriteData);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
+}
+
+void HttpClient::setTimeout(CURL* curl) {
+  curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+  curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
+}
+
+size_t HttpClient::onWriteData(void* ptr, size_t size, size_t nmemb, void* stream) {
+  if (ptr == nullptr || size == 0) {
+    return 0;
   }
-  LOG(INFO) << folly::stringPrintf("HTTP %s Command: %s", reqType.c_str(), command.c_str());
-  auto result = nebula::ProcessUtils::runCommand(command.c_str());
-  if (result.ok()) {
-    return result.value();
-  } else {
-    return Status::Error(folly::stringPrintf("Http %s Failed: %s", reqType.c_str(), path.c_str()));
-  }
+  CHECK(stream);
+  size_t realsize = size * nmemb;
+  std::string* buffer = static_cast<std::string*>(stream);
+  CHECK(buffer);
+  buffer->append(static_cast<char*>(ptr), realsize);
+  return realsize;
 }
-
-}  // namespace http
 }  // namespace nebula
