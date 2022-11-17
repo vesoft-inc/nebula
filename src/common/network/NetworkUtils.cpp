@@ -37,7 +37,9 @@ StatusOr<std::string> NetworkUtils::getIPv4FromDevice(const std::string& device)
   if (!result.ok()) {
     return std::move(result).status();
   }
-  auto iter = result.value().find(device);
+  auto iter = std::find_if(result.value().begin(),
+                           result.value().end(),
+                           [&](const auto& deviceAndIp) { return deviceAndIp.first == device; });
   if (iter == result.value().end()) {
     return Status::Error("No IPv4 address found for `%s'", device.c_str());
   }
@@ -56,9 +58,9 @@ StatusOr<std::vector<std::string>> NetworkUtils::listIPv4s() {
   return ipv4s;
 }
 
-StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceAndIPv4s() {
+StatusOr<std::vector<std::pair<std::string, std::string>>> NetworkUtils::listDeviceAndIPv4s() {
   struct ifaddrs* iflist;
-  std::unordered_map<std::string, std::string> dev2ipv4s;
+  std::vector<std::pair<std::string, std::string>> dev2ipv4s;
   if (::getifaddrs(&iflist) != 0) {
     return Status::Error("%s", ::strerror(errno));
   }
@@ -70,7 +72,7 @@ StatusOr<std::unordered_map<std::string, std::string>> NetworkUtils::listDeviceA
     auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
     // inet_ntoa is thread safe but not re-entrant,
     // we could use inet_ntop instead when we need support for IPv6
-    dev2ipv4s[ifa->ifa_name] = ::inet_ntoa(addr->sin_addr);
+    dev2ipv4s.emplace_back(ifa->ifa_name, ::inet_ntoa(addr->sin_addr));
   }
   ::freeifaddrs(iflist);
   if (dev2ipv4s.empty()) {
