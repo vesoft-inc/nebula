@@ -69,16 +69,16 @@ TEST(HttpClient, get) {
   {
     auto url =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, "/path");
-    auto result = HttpClient::get(url);
-    ASSERT_TRUE(result.ok());
-    ASSERT_EQ("HttpClientHandler successfully", result.value());
+    auto httpResp = HttpClient::get(url);
+    ASSERT_EQ(httpResp.curlCode, 0);
+    ASSERT_EQ("HttpClientHandler successfully", httpResp.body);
   }
   {
     auto url = folly::stringPrintf(
         "http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, "/not_exist");
-    auto result = HttpClient::get(url);
-    ASSERT_TRUE(result.ok());
-    ASSERT_TRUE(result.value().empty());
+    auto httpResp = HttpClient::get(url);
+    ASSERT_EQ(httpResp.curlCode, 0);
+    ASSERT_TRUE(httpResp.body.empty());
   }
 }
 

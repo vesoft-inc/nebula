@@ -40,8 +40,13 @@ struct HostAddr {
 
   std::string toString() const {
     std::stringstream os;
-    os << "\"" << host << "\""
-       << ":" << port;
+    os << "\"" << host << "\":" << port;
+    return os.str();
+  }
+
+  std::string toRawString() const {
+    std::stringstream os;
+    os << host << ":" << port;
     return os.str();
   }
 

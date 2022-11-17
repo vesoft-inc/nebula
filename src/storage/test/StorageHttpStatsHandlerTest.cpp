@@ -57,27 +57,27 @@ TEST(StorageHttpStatsHandlerTest, GetStatsTest) {
     auto url = "/rocksdb_stats";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
+    auto resp = HttpClient::get(request);
+    ASSERT_EQ(resp.curlCode, 0);
   }
   {
     auto url = "/rocksdb_stats?stats=rocksdb.bytes.read";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
+    auto resp = HttpClient::get(request);
+    ASSERT_EQ(resp.curlCode, 0);
     const std::string expect = "rocksdb.bytes.read=0\n";
-    ASSERT_STREQ(expect.c_str(), resp.value().c_str());
+    ASSERT_STREQ(expect.c_str(), resp.body.c_str());
   }
   // Get multiple stats
   {
     auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
+    auto resp = HttpClient::get(request);
+    ASSERT_EQ(resp.curlCode, 0);
     const std::string expect = "rocksdb.block.cache.add=0\nrocksdb.bytes.read=0\n";
-    ASSERT_STREQ(expect.c_str(), resp.value().c_str());
+    ASSERT_STREQ(expect.c_str(), resp.body.c_str());
   }
   // Get multiple stats and return json
   {
@@ -86,12 +86,12 @@ TEST(StorageHttpStatsHandlerTest, GetStatsTest) {
         "format=json";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
+    auto resp = HttpClient::get(request);
+    ASSERT_EQ(resp.curlCode, 0);
     const std::string expect =
         "[\n  {\n    \"rocksdb.block.cache.add\": 0\n  },"
         "\n  {\n    \"rocksdb.bytes.read\": 0\n  }\n]";
-    ASSERT_STREQ(expect.c_str(), resp.value().c_str());
+    ASSERT_STREQ(expect.c_str(), resp.body.c_str());
   }
 }
 

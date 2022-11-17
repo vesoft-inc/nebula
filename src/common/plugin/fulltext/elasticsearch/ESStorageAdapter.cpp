@@ -151,7 +151,7 @@ std::string ESStorageAdapter::putHeader(const HttpClient& client,
   //    curl -H "Content-Type: application/json; charset=utf-8"
   //    -XPUT "http://127.0.0.1:9200/my_temp_index_3/_doc/part1|tag4|col4|hello"
   std::stringstream os;
-  os << CURL << CURL_CONTENT_JSON << XPUT;
+  os << CURL_COMMAND << CURL_CONTENT_JSON << XPUT;
   os << client.toString() << item.index << "/_doc/" << DocIDTraits::docId(item) << "\"";
   return os.str();
 }
@@ -175,7 +175,7 @@ std::string ESStorageAdapter::bulkHeader(const HttpClient& client) const noexcep
   // curl  -H "Content-Type: application/x-ndjson; charset=utf-8"
   // http://127.0.0.1:9200/_bulk
   std::stringstream os;
-  os << CURL << CURL_CONTENT_NDJSON << XPOST;
+  os << CURL_COMMAND << CURL_CONTENT_NDJSON << XPOST;
   os << client.toString() << "_bulk\"";
   return os.str();
 }

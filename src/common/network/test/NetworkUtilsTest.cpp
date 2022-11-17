@@ -56,7 +56,10 @@ TEST(NetworkUtils, listDeviceAndIPv4s) {
   auto result = NetworkUtils::listDeviceAndIPv4s();
   ASSERT_TRUE(result.ok()) << result.status();
   ASSERT_FALSE(result.value().empty());
-  ASSERT_NE(result.value().end(), result.value().find("lo"));
+  ASSERT_NE(result.value().end(),
+            std::find_if(result.value().begin(), result.value().end(), [](const auto& deviceAndIp) {
+              return deviceAndIp.first == "lo";
+            }));
 }
 
 TEST(NetworkUtils, getDynamicPortRange) {
