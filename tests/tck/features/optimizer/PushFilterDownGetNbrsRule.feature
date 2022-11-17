@@ -72,10 +72,10 @@ Feature: Push Filter down GetNeighbors rule
       | "Manu Ginobili" | 95            |
       | "Tim Duncan"    | 95            |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                                            |
-      | 0  | Project      | 1            |                                                                          |
-      | 1  | GetNeighbors | 2            | {"filter": "(like.likeness IN [__VAR_0 IN [95,99] WHERE ($__VAR_0>0)])"} |
-      | 2  | Start        |              |                                                                          |
+      | id | name         | dependencies | operator info                                                                                                                             |
+      | 0  | Project      | 1            |                                                                                                                                           |
+      | 1  | GetNeighbors | 2            | {"filter": "((like.likeness IN [__VAR_0 IN [95,99] WHERE ($__VAR_0>0)]) AND (like.likeness IN [__VAR_0 IN [95,99] WHERE ($__VAR_0>0)]))"} |
+      | 2  | Start        |              |                                                                                                                                           |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
