@@ -17,5 +17,4 @@ nebula_add_test(
        ${PROXYGEN_LIBRARIES}
        wangle
        gtest
-       curl
 )

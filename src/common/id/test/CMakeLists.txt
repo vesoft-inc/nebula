@@ -9,7 +9,6 @@ nebula_add_executable(
       $<TARGET_OBJECTS:base_obj>
       $<TARGET_OBJECTS:snowflake_obj>
       $<TARGET_OBJECTS:meta_client_obj>
-      $<TARGET_OBJECTS:http_client_obj>
       $<TARGET_OBJECTS:thrift_obj>
       $<TARGET_OBJECTS:meta_obj>
       $<TARGET_OBJECTS:ssl_obj>
@@ -39,7 +38,6 @@ nebula_add_executable(
       boost_regex
       ${PROXYGEN_LIBRARIES}
       ${THRIFT_LIBRARIES}
-      curl
 )
 
 
@@ -50,7 +48,6 @@ nebula_add_test(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:snowflake_obj>
     $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:ssl_obj>
@@ -80,7 +77,6 @@ nebula_add_test(
     gtest_main
     ${PROXYGEN_LIBRARIES}
     ${THRIFT_LIBRARIES}
-    curl
 )
 
 nebula_add_test(

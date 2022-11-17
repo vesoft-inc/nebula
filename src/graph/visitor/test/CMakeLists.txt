@@ -39,6 +39,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
@@ -65,7 +66,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>

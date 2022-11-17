@@ -15,7 +15,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -31,7 +30,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -47,7 +45,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -63,7 +60,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -79,7 +75,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -95,7 +90,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 
@@ -113,7 +107,6 @@ nebula_add_test(
         wangle
         gtest
         gmock
-        curl
 )
 
 
@@ -152,7 +145,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 
@@ -169,7 +161,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -185,7 +176,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -202,7 +192,6 @@ nebula_add_test(
         wangle
         gtest
         gmock
-        curl
 )
 
 nebula_add_test(
@@ -219,7 +208,6 @@ nebula_add_test(
         wangle
         gtest
         gmock
-        curl
 )
 
 nebula_add_test(
@@ -235,7 +223,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -251,7 +238,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -267,7 +253,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -283,7 +268,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -299,5 +283,4 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )

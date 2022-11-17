@@ -15,7 +15,6 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
@@ -61,7 +60,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -77,7 +75,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -93,7 +90,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -109,7 +105,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -125,7 +120,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -141,7 +135,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -157,7 +150,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -173,7 +165,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_test(
@@ -189,7 +180,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 nebula_add_executable(
@@ -206,7 +196,6 @@ nebula_add_executable(
         wangle
         follybenchmark
         boost_regex
-        curl
 )
 
 nebula_add_executable(
@@ -224,7 +213,6 @@ nebula_add_executable(
         follybenchmark
         gtest
         boost_regex
-        curl
 )
 
 nebula_add_test(
@@ -240,5 +228,4 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )

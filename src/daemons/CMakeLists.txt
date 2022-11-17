@@ -257,6 +257,7 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
+        curl
 )
 
 install(

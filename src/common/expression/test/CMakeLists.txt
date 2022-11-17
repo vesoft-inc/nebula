@@ -25,7 +25,6 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:meta_client_obj>
@@ -96,7 +95,6 @@ nebula_add_test(
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
-        curl
 )
 
 nebula_add_executable(
@@ -112,7 +110,6 @@ nebula_add_executable(
         boost_regex
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
-        curl
 )
 
 nebula_add_executable(

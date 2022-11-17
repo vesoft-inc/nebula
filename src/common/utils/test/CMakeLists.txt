@@ -101,10 +101,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
-        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         gtest
-        curl
 )

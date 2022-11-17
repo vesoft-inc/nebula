@@ -19,7 +19,6 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -54,7 +53,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 
@@ -67,7 +65,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 
@@ -80,7 +77,6 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
-        curl
 )
 
 
@@ -97,7 +93,6 @@ nebula_add_test(
         wangle
         boost_regex
         gtest
-        curl
 )
 
 
@@ -113,7 +108,6 @@ nebula_add_executable(
         follybenchmark
         wangle
         boost_regex
-        curl
 )
 
 #nebula_add_test(
