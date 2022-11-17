@@ -516,7 +516,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   virtual bool preProcessLog(LogID logId,
                              TermID termId,
                              ClusterID clusterId,
-                             const std::string& log) = 0;
+                             folly::StringPiece log) = 0;
 
   /**
    * @brief If raft node falls behind way to much than leader, the leader will send all its data in

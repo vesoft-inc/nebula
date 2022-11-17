@@ -126,7 +126,7 @@ TEST(DiskManagerTest, WalNoSpaceTest) {
       walPath,
       info,
       policy,
-      [](LogID, TermID, ClusterID, const std::string&) { return true; },
+      [](LogID, TermID, ClusterID, folly::StringPiece) { return true; },
       diskMan);
 
   diskMan->freeBytes_[0] = FLAGS_minimum_reserved_bytes + 10000;
