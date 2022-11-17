@@ -5,6 +5,7 @@
 #include "graph/executor/algo/SubgraphExecutor.h"
 
 #include "graph/service/GraphFlags.h"
+#include "graph/util/Utils.h"
 
 using nebula::storage::StorageClient;
 namespace nebula {
@@ -59,7 +60,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
           if (result.vertices_ref().has_value()) {
             size = (*result.vertices_ref()).size();
           }
-          auto info = collectRespProfileData(result.result, hostLatency[i], size);
+          auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
           otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         vids_.clear();

@@ -5,6 +5,7 @@
 #include "graph/executor/query/GetDstBySrcExecutor.h"
 
 #include "graph/service/GraphFlags.h"
+#include "graph/util/Utils.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -55,7 +56,7 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
           if (result.dsts_ref().has_value()) {
             size = (*result.dsts_ref()).size();
           }
-          auto info = collectRespProfileData(result.result, hostLatency[i], size);
+          auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
           otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         return handleResponse(resp, this->gd_->colNames());

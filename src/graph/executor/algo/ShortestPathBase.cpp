@@ -8,6 +8,7 @@
 #include "graph/util/Utils.h"
 
 using apache::thrift::optional_field_ref;
+using nebula::graph::util::collectRespProfileData;
 using nebula::storage::StorageClient;
 
 namespace nebula {
@@ -68,15 +69,6 @@ std::vector<Value> ShortestPathBase::handlePropResp(PropRpcResponse&& resps) {
     vertices.emplace_back(iter->getVertex());
   }
   return vertices;
-}
-
-folly::dynamic ShortestPathBase::getStorageDetail(
-    const std::map<std::string, int32_t>& profileDetail) const {
-  folly::dynamic info = folly::dynamic::object();
-  for (auto& p : profileDetail) {
-    info.insert(p.first, folly::sformat("{}(us)", p.second));
-  }
-  return info;
 }
 
 Status ShortestPathBase::handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
@@ -177,17 +169,8 @@ void ShortestPathBase::addStats(RpcResponse& resp,
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto& info = hostLatency[i];
-    folly::dynamic stat = folly::dynamic::object();
-    stat.insert("address", std::get<0>(info).toString());
-    stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
-    stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
-    stat.insert("vertices", size);
-    stat.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
-    if (result.result.latency_detail_us_ref().has_value()) {
-      stat.insert("storage_detail", getStorageDetail(*result.result.get_latency_detail_us()));
-    }
-    stats.push_back(folly::dynamic::object(folly::sformat("resp[{}]", i), stat));
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, timeInUSec);
+    stats.push_back(std::move(info));
   }
 
   auto key = folly::sformat("{}step[{}]", reverse ? "reverse " : "", stepNum);
@@ -200,17 +183,9 @@ void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const
   folly::dynamic stats = folly::dynamic::array();
   auto& hostLatency = resp.hostLatency();
   for (size_t i = 0; i < hostLatency.size(); ++i) {
-    auto& info = hostLatency[i];
-    folly::dynamic stat = folly::dynamic::object();
-    stat.insert("address", std::get<0>(info).toString());
-    stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
-    stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
-    stat.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
     const auto& result = resp.responses()[i].get_result();
-    if (result.latency_detail_us_ref().has_value()) {
-      stat.insert("storage_detail", getStorageDetail(*result.get_latency_detail_us()));
-    }
-    stats.push_back(std::move(stat));
+    auto info = util::collectRespProfileData(result, hostLatency[i], 0, timeInUSec);
+    stats.push_back(std::move(info));
   }
 
   statsLock_.lock();

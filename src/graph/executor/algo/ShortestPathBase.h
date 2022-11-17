@@ -74,8 +74,6 @@ class ShortestPathBase {
     return Result::State::kSuccess;
   }
 
-  folly::dynamic getStorageDetail(const std::map<std::string, int32_t>& profileDetail) const;
-
  protected:
   const ShortestPath* pathNode_{nullptr};
   QueryContext* qctx_{nullptr};

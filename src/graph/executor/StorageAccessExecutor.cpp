@@ -148,14 +148,5 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
   return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
 }
 
-folly::dynamic StorageAccessExecutor::getStorageDetail(
-    const std::map<std::string, int32_t> &profileDetail) const {
-  folly::dynamic profileData = folly::dynamic::object();
-  for (auto &p : profileDetail) {
-    profileData.insert(p.first, folly::sformat("{}(us)", p.second));
-  }
-  return profileData;
-}
-
 }  // namespace graph
 }  // namespace nebula

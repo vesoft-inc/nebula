@@ -7,6 +7,7 @@
 #include "clients/storage/StorageClient.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/Utils.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -128,8 +129,8 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto info = collectRespProfileData(result.result, hostLatency[i], size, getNbrTimeInUSec);
-    stepInfo.push_back(folly::dynamic::object(folly::sformat("resp[{}]", i), info));
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, getNbrTimeInUSec);
+    stepInfo.push_back(std::move(info));
   }
   otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepInfo));
 }
