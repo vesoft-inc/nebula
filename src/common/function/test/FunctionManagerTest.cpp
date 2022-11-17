@@ -255,6 +255,8 @@ TEST_F(FunctionManagerTest, functionCall) {
   {
     TEST_FUNCTION(sqrt, args_["int"], 2.0);
     TEST_FUNCTION(sqrt, args_["float"], std::sqrt(1.1));
+    TEST_FUNCTION(sqrt, {Value(-1)}, std::sqrt(-1));
+    TEST_FUNCTION(sqrt, {Value(0)}, std::sqrt(0));
   }
   {
     TEST_FUNCTION(cbrt, args_["int"], std::cbrt(4));
