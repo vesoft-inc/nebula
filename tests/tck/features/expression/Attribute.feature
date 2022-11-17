@@ -90,9 +90,9 @@ Feature: Attribute
       MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.Likeness
       """
     Then the result should be, in any order:
-      | e.Likeness   |
-      | UNKNOWN_PROP |
-      | UNKNOWN_PROP |
+      | e.Likeness |
+      | NULL       |
+      | NULL       |
 
   Scenario: Not exists attribute
     When executing query:
@@ -136,8 +136,8 @@ Feature: Attribute
       """
     Then the result should be, in any order:
       | e.not_exists_attr |
-      | UNKNOWN_PROP      |
-      | UNKNOWN_PROP      |
+      | NULL              |
+      | NULL              |
 
   Scenario: Invalid type
     When executing query:
