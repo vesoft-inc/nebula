@@ -469,12 +469,5 @@ void GetNeighborsProcessor::onProcessFinished() {
   resp_.vertices_ref() = std::move(resultDataSet_);
 }
 
-void GetNeighborsProcessor::profilePlan(StoragePlan<VertexID>& plan) {
-  auto& nodes = plan.getNodes();
-  std::lock_guard<std::mutex> lck(BaseProcessor<cpp2::GetNeighborsResponse>::profileMut_);
-  for (auto& node : nodes) {
-    profileDetail(node->name_, node->duration_.elapsedInUSec());
-  }
-}
 }  // namespace storage
 }  // namespace nebula

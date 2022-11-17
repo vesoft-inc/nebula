@@ -185,6 +185,7 @@ class StorageExpressionContext final : public ExpressionContext {
   Value getVertex(const std::string& name = "") const override {
     UNUSED(name);
     LOG(FATAL) << "Unimplemented";
+    return Value::kNullBadData;
   }
 
   /**
@@ -194,6 +195,7 @@ class StorageExpressionContext final : public ExpressionContext {
    */
   Value getEdge() const override {
     LOG(FATAL) << "Unimplemented";
+    return Value::kNullBadData;
   }
 
   /**

@@ -18,7 +18,7 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
   GetDstBySrcNode(RuntimeContext* context,
                   const std::vector<SingleEdgeNode*>& edgeNodes,
                   EdgeContext* edgeContext,
-                  nebula::List* result)
+                  std::deque<Value>* result)
       : context_(context), edgeNodes_(edgeNodes), edgeContext_(edgeContext), result_(result) {
     name_ = "GetDstBySrcNode";
   }
@@ -32,6 +32,7 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
     }
 
     std::vector<SingleEdgeIterator*> iters;
+    iters.reserve(edgeNodes_.size());
     for (auto* edgeNode : edgeNodes_) {
       iters.emplace_back(edgeNode->iter());
     }
@@ -62,7 +63,7 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
                .ok()) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
-      result_->values.emplace_back(std::move(list.values[0]));
+      result_->emplace_back(std::move(list.values[0]));
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -85,7 +86,7 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
   RuntimeContext* context_;
   std::vector<SingleEdgeNode*> edgeNodes_;
   EdgeContext* edgeContext_;
-  nebula::List* result_;
+  std::deque<Value>* result_;
   std::unique_ptr<MultiEdgeIterator> iter_;
 };
 
