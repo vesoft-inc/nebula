@@ -14,6 +14,7 @@ nebula_add_library(
     ParserUtil.cpp
     PlannerUtil.cpp
     ValidateUtil.cpp
+    Utils.cpp
 )
 
 nebula_add_library(

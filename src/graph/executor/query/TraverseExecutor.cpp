@@ -7,6 +7,7 @@
 #include "clients/storage/StorageClient.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/Utils.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -120,27 +121,18 @@ Expression* TraverseExecutor::selectFilter() {
 }
 
 void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
+  folly::dynamic stepInfo = folly::dynamic::array();
   auto& hostLatency = resp.hostLatency();
-  std::stringstream ss;
-  ss << "{\n";
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     size_t size = 0u;
     auto& result = resp.responses()[i];
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto& info = hostLatency[i];
-    ss << "{" << folly::sformat("{} exec/total/vertices: ", std::get<0>(info).toString())
-       << folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size) << "\n"
-       << folly::sformat("total_rpc_time: {}(us)", getNbrTimeInUSec) << "\n";
-    auto detail = getStorageDetail(result.result.latency_detail_us_ref());
-    if (!detail.empty()) {
-      ss << folly::sformat("storage_detail: {}", detail);
-    }
-    ss << "\n}";
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, getNbrTimeInUSec);
+    stepInfo.push_back(std::move(info));
   }
-  ss << "\n}";
-  otherStats_.emplace(folly::sformat("step {}", currentStep_), ss.str());
+  otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepInfo));
 }
 
 folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
