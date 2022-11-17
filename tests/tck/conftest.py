@@ -822,7 +822,6 @@ def check_plan(request, plan, exec_ctx):
                 f"Location: {location}",
                 differ.err_msg(),
             ]
-    
         assert res, "\n".join(msg)
 
 
