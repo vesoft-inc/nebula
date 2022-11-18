@@ -95,7 +95,7 @@ Feature: With clause
       """
     Then the result should be, in any order:
       | x.c          |
-      | UNKNOWN_PROP |
+      | __NULL__ |
 
   Scenario: match with return
     When executing query:

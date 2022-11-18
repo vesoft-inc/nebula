@@ -79,7 +79,7 @@ class QueryUtils final {
       // read null value
       auto nullType = value.getNull();
 
-      if (nullType == NullType::UNKNOWN_PROP) {
+      if (nullType == NullType::__NULL__) {
         VLOG(1) << "Fail to read prop " << propName;
         if (!field) {
           return value;

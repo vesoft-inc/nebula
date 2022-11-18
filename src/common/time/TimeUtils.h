@@ -124,7 +124,7 @@ class TimeUtils {
     } else if (lowerProp == "microsecond") {
       return static_cast<int>(dt.microsec);
     } else {
-      return Value::kNullUnknownProp;
+      return Value::kNullValue;
     }
   }
 
@@ -160,7 +160,7 @@ class TimeUtils {
     } else if (lowerProp == "day") {
       return d.day;
     } else {
-      return Value::kNullUnknownProp;
+      return Value::kNullValue;
     }
   }
 
@@ -203,7 +203,7 @@ class TimeUtils {
     } else if (lowerProp == "microsecond") {
       return t.microsec;
     } else {
-      return Value::kNullUnknownProp;
+      return Value::kNullValue;
     }
   }
 
