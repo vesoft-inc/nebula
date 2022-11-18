@@ -592,16 +592,10 @@ FunctionManager::FunctionManager() {
         }
         case Value::Type::INT: {
           auto val = args[0].get().getInt();
-          if (val < 0) {
-            return Value::kNullValue;
-          }
           return std::sqrt(val);
         }
         case Value::Type::FLOAT: {
           auto val = args[0].get().getFloat();
-          if (val < 0) {
-            return Value::kNullValue;
-          }
           return std::sqrt(val);
         }
         default: {

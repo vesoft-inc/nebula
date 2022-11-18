@@ -2487,12 +2487,7 @@ Value operator/(const Value& lhs, const Value& rhs) {
           return lVal / denom;
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return lhs.getInt() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getInt() / rhs.getFloat();
         }
         default: {
           return Value::kNullBadType;
@@ -2502,20 +2497,10 @@ Value operator/(const Value& lhs, const Value& rhs) {
     case Value::Type::FLOAT: {
       switch (rhs.type()) {
         case Value::Type::INT: {
-          int64_t denom = rhs.getInt();
-          if (denom != 0) {
-            return lhs.getFloat() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getFloat() / rhs.getInt();
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return lhs.getFloat() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getFloat() / rhs.getFloat();
         }
         default: {
           return Value::kNullBadType;
@@ -2548,12 +2533,7 @@ Value operator%(const Value& lhs, const Value& rhs) {
           }
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return std::fmod(lhs.getInt(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getInt(), rhs.getFloat());
         }
         default: {
           return Value::kNullBadType;
@@ -2563,20 +2543,10 @@ Value operator%(const Value& lhs, const Value& rhs) {
     case Value::Type::FLOAT: {
       switch (rhs.type()) {
         case Value::Type::INT: {
-          int64_t denom = rhs.getInt();
-          if (denom != 0) {
-            return std::fmod(lhs.getFloat(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getFloat(), rhs.getInt());
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return std::fmod(lhs.getFloat(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getFloat(), rhs.getFloat());
         }
         default: {
           return Value::kNullBadType;
@@ -2877,11 +2847,11 @@ bool operator>(const Value& lhs, const Value& rhs) {
 }
 
 bool operator<=(const Value& lhs, const Value& rhs) {
-  return !(rhs < lhs);
+  return lhs < rhs || lhs == rhs;
 }
 
 bool operator>=(const Value& lhs, const Value& rhs) {
-  return !(lhs < rhs);
+  return lhs > rhs || lhs == rhs;
 }
 
 Value operator&&(const Value& lhs, const Value& rhs) {

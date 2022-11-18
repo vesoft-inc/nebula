@@ -23,7 +23,6 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:meta_client_obj>
@@ -38,7 +37,6 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:graph_session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
-    $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_context_obj>
@@ -70,7 +68,7 @@ nebula_add_test(
     SOURCES ScannerTest.cpp
     OBJECTS
       ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} 
 )
 
 nebula_add_executable(
@@ -84,7 +82,7 @@ nebula_add_test(
     NAME expression_parsing_test
     SOURCES ExpressionParsingTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} 
 )
 
 if(ENABLE_FUZZ_TEST)
