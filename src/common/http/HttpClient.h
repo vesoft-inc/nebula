@@ -1,47 +1,63 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2022 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef COMMON_HTTPCLIENT_H
-#define COMMON_HTTPCLIENT_H
+#ifndef COMMON_HTTP_HTTPCLIENT_H_
+#define COMMON_HTTP_HTTPCLIENT_H_
+#include <memory>
+#include <mutex>
+#include <string>
 
-#include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "curl/curl.h"
 
 namespace nebula {
-namespace http {
+
+class CurlHandle {
+ public:
+  static CurlHandle* instance();
+
+ private:
+  CurlHandle();
+  ~CurlHandle();
+};
+
+struct HttpResponse {
+  CURLcode curlCode;
+  std::string curlMessage;
+  std::string header;
+  std::string body;
+};
 
 class HttpClient {
  public:
-  HttpClient() = delete;
+  static HttpResponse get(const std::string& url);
+  static HttpResponse get(const std::string& url, const std::vector<std::string>& headers);
 
-  ~HttpClient() = default;
-  // Send a http GET request
-  static StatusOr<std::string> get(const std::string& path, const std::string& options = "-G");
+  static HttpResponse post(const std::string& url,
+                           const std::vector<std::string>& headers,
+                           const std::string& body);
+  static HttpResponse delete_(const std::string& url, const std::vector<std::string>& headers);
+  static HttpResponse put(const std::string& url,
+                          const std::vector<std::string>& headers,
+                          const std::string& body);
 
-  // Send a http POST request
-  static StatusOr<std::string> post(const std::string& path, const std::string& header);
-  // Send a http POST request with a different function signature
-  static StatusOr<std::string> post(const std::string& path,
-                                    const std::unordered_map<std::string, std::string>& header);
-  static StatusOr<std::string> post(const std::string& path,
-                                    const folly::dynamic& data = folly::dynamic::object());
+ private:
+  static HttpResponse sendRequest(const std::string& url,
+                                  const std::string& method,
+                                  const std::vector<std::string>& headers,
+                                  const std::string& body);
+  static void setUrl(CURL* curl, const std::string& url);
+  static void setMethod(CURL* curl, const std::string& method);
+  static curl_slist* setHeaders(CURL* curl, const std::vector<std::string>& headers);
 
-  // Send a http PUT request
-  static StatusOr<std::string> put(const std::string& path, const std::string& header);
-  static StatusOr<std::string> put(const std::string& path,
-                                   const std::unordered_map<std::string, std::string>& header);
-  static StatusOr<std::string> put(const std::string& path,
-                                   const folly::dynamic& data = folly::dynamic::object());
-
- protected:
-  static StatusOr<std::string> sendRequest(const std::string& path,
-                                           const folly::dynamic& data,
-                                           const std::string& reqType);
+  static void setRespBody(CURL* curl, const std::string& body);
+  static void setRespHeader(CURL* curl, const std::string& header);
+  static void setTimeout(CURL* curl);
+  static size_t onWriteData(void* ptr, size_t size, size_t nmemb, void* stream);
 };
 
-}  // namespace http
 }  // namespace nebula
 
-#endif  // COMMON_HTTPCLIENT_H
+#endif

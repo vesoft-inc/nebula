@@ -40,7 +40,8 @@ class EdgeNode : public IterateNode<T> {
            EdgeType edgeType,
            const std::vector<PropContext>* props,
            StorageExpressionContext* expCtx,
-           Expression* exp)
+           Expression* exp,
+           bool maySkipDecode = false)
       : context_(context),
         edgeContext_(edgeContext),
         edgeType_(edgeType),
@@ -55,6 +56,9 @@ class EdgeNode : public IterateNode<T> {
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
+    if (!ttl_.has_value() && maySkipDecode) {
+      skipDecode_ = true;
+    }
     IterateNode<T>::name_ = "EdgeNode";
   }
 
@@ -72,6 +76,8 @@ class EdgeNode : public IterateNode<T> {
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
   std::optional<std::pair<std::string, int64_t>> ttl_;
   std::string edgeName_;
+  // when no ttl exists and we don't need to read property in value, skip build RowReader
+  bool skipDecode_{false};
 };
 
 // FetchEdgeNode is used to fetch a single edge
@@ -180,8 +186,9 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
                  EdgeType edgeType,
                  const std::vector<PropContext>* props,
                  StorageExpressionContext* expCtx = nullptr,
-                 Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
+                 Expression* exp = nullptr,
+                 bool maySkipDecode = false)
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp, maySkipDecode) {
     name_ = "SingleEdgeNode";
   }
 
@@ -221,7 +228,11 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
     prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(), partId, vId, edgeType_);
     ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-      iter_.reset(new SingleEdgeIterator(context_, std::move(iter), edgeType_, schemas_, &ttl_));
+      if (!skipDecode_) {
+        iter_.reset(new SingleEdgeIterator(context_, std::move(iter), edgeType_, schemas_, &ttl_));
+      } else {
+        iter_.reset(new SingleEdgeKeyIterator(std::move(iter), edgeType_));
+      }
     } else {
       iter_.reset();
     }

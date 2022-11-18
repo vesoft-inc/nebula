@@ -79,6 +79,7 @@ SET(EXEC_QUERY_TEST_LIBS
     gtest
     wangle
     ${PROXYGEN_LIBRARIES}
+    curl
 )
 
 nebula_add_test(

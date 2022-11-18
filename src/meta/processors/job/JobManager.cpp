@@ -13,7 +13,6 @@
 
 #include <boost/stacktrace.hpp>
 
-#include "common/http/HttpClient.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
@@ -64,6 +63,16 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
 
 JobManager::~JobManager() {
   shutDown();
+}
+
+bool JobManager::spaceExist(GraphSpaceID spaceId) {
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
+  std::string val;
+  auto retCode = kvStore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &val);
+  if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    return false;
+  }
+  return true;
 }
 
 nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
@@ -972,6 +981,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
     return retCode;
   }
 
+  std::unordered_map<GraphSpaceID, bool> spaceExistCache;
   for (; iter->valid(); iter->next()) {
     auto jobKey = iter->key();
     if (MetaKeyUtils::isJobKey(jobKey)) {
@@ -983,6 +993,21 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
       auto jType = jobDesc.getJobType();
       if (jobTypes.find(jType) == jobTypes.end()) {
         continue;
+      }
+
+      // In some corner cases, there maybe job entry exist but the space has been dropped
+      auto spaceId = jobDesc.getSpace();
+      if (spaceExistCache.find(spaceId) != spaceExistCache.end()) {
+        if (!spaceExistCache[spaceId]) {
+          continue;
+        }
+      } else {
+        if (!spaceExist(spaceId)) {
+          spaceExistCache[spaceId] = false;
+          continue;
+        } else {
+          spaceExistCache[spaceId] = true;
+        }
       }
 
       auto status = jobDesc.getStatus();

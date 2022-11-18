@@ -29,10 +29,10 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
       result_ = lhs.lessThan(rhs) || lhs.equal(rhs);
       break;
     case Kind::kRelGT:
-      result_ = !lhs.lessThan(rhs) && !lhs.equal(rhs);
+      result_ = rhs.lessThan(lhs);
       break;
     case Kind::kRelGE:
-      result_ = !lhs.lessThan(rhs) || lhs.equal(rhs);
+      result_ = rhs.lessThan(lhs) || lhs.equal(rhs);
       break;
     case Kind::kRelREG: {
       if (lhs.isBadNull() || rhs.isBadNull()) {

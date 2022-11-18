@@ -85,6 +85,7 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        curl
 )
 
 nebula_add_executable(
@@ -108,6 +109,7 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        curl
 )
 
 nebula_add_executable(
@@ -152,6 +154,7 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
+        curl
 )
 
 install(
@@ -254,6 +257,7 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
+        curl
 )
 
 install(

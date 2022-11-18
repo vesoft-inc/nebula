@@ -300,6 +300,13 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    */
   void resetSpaceRunning(GraphSpaceID spaceId);
 
+  /**
+   * @brief check if the space exist
+   *
+   * @return
+   */
+  bool spaceExist(GraphSpaceID spaceId);
+
  private:
   using PriorityQueue = folly::PriorityUMPSCQueueSet<std::tuple<JbOp, JobID, GraphSpaceID>, true>;
   // Each PriorityQueue contains high and low priority queues.
