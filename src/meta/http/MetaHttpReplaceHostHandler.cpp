@@ -9,7 +9,6 @@
 #include <proxygen/httpserver/ResponseBuilder.h>
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 
-#include "common/http/HttpClient.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/thread/GenericThreadPool.h"

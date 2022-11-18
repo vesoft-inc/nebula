@@ -48,7 +48,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:charset_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
@@ -60,7 +59,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:graph_session_obj>
-        $<TARGET_OBJECTS:graph_auth_obj>
         ${UTIL_TEST_FLAG_DEPS}
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:plan_obj>
@@ -80,4 +78,5 @@ nebula_add_test(
         ${Boost_Thread_LIBRARY}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        # curl
 )
