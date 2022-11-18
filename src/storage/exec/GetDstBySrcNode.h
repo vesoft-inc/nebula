@@ -52,18 +52,12 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
         setCurrentEdgeInfo(type);
       }
       auto key = iter_->key();
-      auto reader = iter_->reader();
-      auto props = context_->props_;
-      DCHECK_EQ(props->size(), 1);
-
-      nebula::List list;
-      // collect props need to return
-      if (!QueryUtils::collectEdgeProps(
-               key, context_->vIdLen(), context_->isIntId(), reader, props, list)
-               .ok()) {
-        return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+      auto dstId = NebulaKeyUtils::getDstId(context_->vIdLen(), key);
+      if (context_->isIntId()) {
+        result_->emplace_back(*reinterpret_cast<const int64_t*>(dstId.data()));
+      } else {
+        result_->emplace_back(dstId.subpiece(0, dstId.find_first_of('\0')).toString());
       }
-      result_->emplace_back(std::move(list.values[0]));
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -80,6 +74,8 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
     context_->edgeType_ = type;
     context_->edgeName_ = edgeNodes_[iter_->getIdx()]->getEdgeName();
     context_->props_ = &(edgeContext_->propContexts_[idx].second);
+    DCHECK_EQ(context_->props_->size(), 1);
+    DCHECK_EQ((*context_->props_)[0].name_, kDst);
   }
 
  private:

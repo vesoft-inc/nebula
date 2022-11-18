@@ -33,6 +33,8 @@ class DropUserValidator final : public Validator {
  private:
   Status validateImpl() override;
 
+  Status checkPermission() override;
+
   Status toPlan() override;
 };
 
