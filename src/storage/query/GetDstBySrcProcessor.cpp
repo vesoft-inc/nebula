@@ -186,7 +186,10 @@ StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
   StoragePlan<VertexID> plan;
   std::vector<SingleEdgeNode*> edges;
   for (const auto& ec : edgeContext_.propContexts_) {
-    auto edge = std::make_unique<SingleEdgeNode>(context, &edgeContext_, ec.first, &ec.second);
+    // Since we only return dst in this processor, some steps would be skipped when iterating
+    // key-values if possible, for example, decoding value
+    auto edge = std::make_unique<SingleEdgeNode>(
+        context, &edgeContext_, ec.first, &ec.second, nullptr, nullptr, true);
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }

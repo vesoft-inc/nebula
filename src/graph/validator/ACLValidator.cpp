@@ -5,8 +5,10 @@
 
 #include "graph/validator/ACLValidator.h"
 
+#include "common/base/Status.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
@@ -40,6 +42,16 @@ Status DropUserValidator::validateImpl() {
   if (sentence->getAccount()->size() > kUsernameMaxLength) {
     return Status::SemanticError("Username exceed maximum length %ld characters.",
                                  kUsernameMaxLength);
+  }
+  return Status::OK();
+}
+
+Status DropUserValidator::checkPermission() {
+  auto r = Validator::checkPermission();
+  NG_RETURN_IF_ERROR(r);
+  const auto *sentence = static_cast<const DropUserSentence *>(sentence_);
+  if (*sentence->getAccount() == "root") {
+    return Status::SemanticError("Can't drop root user.");
   }
   return Status::OK();
 }
