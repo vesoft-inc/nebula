@@ -2834,7 +2834,7 @@ FunctionManager::FunctionManager() {
           return arg.get();
         }
       }
-      return Value::kNullBadData;
+      return Value::kNullValue;
     };
   }
 }  // NOLINT
