@@ -320,22 +320,45 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kRelIn);
   auto pool = expr->getObjPool();
   auto inExpr = static_cast<RelationalExpression *>(expr->clone());
-  auto containerOperands = getContainerExprOperands(inExpr->right());
-
-  auto operandSize = containerOperands.size();
-  // container has only 1 element, no need to transform to logical expression
-  if (operandSize == 1) {
-    return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
-  }
-
-  std::vector<Expression *> orExprOperands;
-  orExprOperands.reserve(operandSize);
-  // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
-  for (auto *operand : containerOperands) {
-    orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
-  }
   auto orExpr = LogicalExpression::makeOr(pool);
-  orExpr->setOperands(orExprOperands);
+  if (inExpr->right()->isContainerExpr()) {
+    auto containerOperands = getContainerExprOperands(inExpr->right());
+
+    auto operandSize = containerOperands.size();
+    // container has only 1 element, no need to transform to logical expression
+    if (operandSize == 1) {
+      return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
+    }
+
+    std::vector<Expression *> orExprOperands;
+    orExprOperands.reserve(operandSize);
+    // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
+    for (auto *operand : containerOperands) {
+      orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
+    }
+    orExpr->setOperands(orExprOperands);
+  } else if (inExpr->right()->kind() == Expression::Kind::kConstant) {
+    auto constExprValue = static_cast<ConstantExpression *>(inExpr->right())->value();
+    std::vector<Value> values;
+    if (constExprValue.isList()) {
+      values = constExprValue.getList().values;
+    } else if (constExprValue.isSet()) {
+      auto setValues = constExprValue.getSet().values;
+      values = std::vector<Value>{std::make_move_iterator(setValues.begin()),
+                                  std::make_move_iterator(setValues.end())};
+    } else {
+      return const_cast<Expression *>(expr);
+    }
+    std::vector<Expression *> operands;
+    for (const auto &v : values) {
+      operands.emplace_back(
+          RelationalExpression::makeEQ(pool, inExpr->left(), ConstantExpression::make(pool, v)));
+    }
+    if (operands.size() == 1) {
+      return operands[0];
+    }
+    orExpr->setOperands(operands);
+  }
 
   return orExpr;
 }

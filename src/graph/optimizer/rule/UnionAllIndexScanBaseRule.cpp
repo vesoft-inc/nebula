@@ -70,9 +70,15 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
   // relEQ expr by the OptimizeTagIndexScanByFilterRule.
   if (condition->isRelExpr()) {
     auto relExpr = static_cast<const RelationalExpression*>(condition);
-    if (relExpr->kind() == ExprKind::kRelIn && relExpr->right()->isContainerExpr()) {
-      auto operandsVec = graph::ExpressionUtils::getContainerExprOperands(relExpr->right());
-      return operandsVec.size() > 1;
+    auto* rhs = relExpr->right();
+    if (relExpr->kind() == ExprKind::kRelIn) {
+      if (rhs->isContainerExpr()) {
+        return graph::ExpressionUtils::getContainerExprOperands(rhs).size() > 1;
+      } else if (rhs->kind() == Expression::Kind::kConstant) {
+        auto constExprValue = static_cast<const ConstantExpression*>(rhs)->value();
+        return (constExprValue.isList() && constExprValue.getList().size() > 1) ||
+               (constExprValue.isSet() && constExprValue.getSet().size() > 1);
+      }
     }
   }
 
