@@ -1103,7 +1103,8 @@ Status MatchValidator::validateMatchPathExpr(
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
   DCHECK(!DCHECK_NOTNULL(path->alias())->empty());
   for (const auto &node : path->nodes()) {
-    if (!node->alias().empty()) {
+    // The inner variable of expression will be replaced by anno variable
+    if (!node->alias().empty() && node->alias()[0] != '_') {
       pathInfo.compareVariables.emplace_back(node->alias());
     }
   }

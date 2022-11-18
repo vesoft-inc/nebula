@@ -6,6 +6,8 @@
 #ifndef STORAGE_QUERY_GETDSTBYSRCPROCESSOR_H_
 #define STORAGE_QUERY_GETDSTBYSRCPROCESSOR_H_
 
+#include <deque>
+
 #include "common/base/Base.h"
 #include "storage/BaseProcessor.h"
 #include "storage/exec/StoragePlan.h"
@@ -48,17 +50,20 @@ class GetDstBySrcProcessor
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       RuntimeContext* context,
-      nebula::List* result,
+      std::deque<Value>* result,
       PartitionID partId,
       const std::vector<Value>& srcIds);
 
-  StoragePlan<VertexID> buildPlan(RuntimeContext* context, nebula::List* result);
+  StoragePlan<VertexID> buildPlan(RuntimeContext* context, std::deque<Value>* result);
 
  private:
   std::vector<RuntimeContext> contexts_;
   // The process result of each part if run concurrently, then merge into resultDataSet_ at last
-  std::vector<nebula::List> partResults_;
-  nebula::List flatResult_;
+  std::vector<std::deque<Value>> partResults_;
+  std::deque<Value> flatResult_;
+
+  time::Duration totalDuration_;
+  time::Duration dedupDuration_;
 };
 
 }  // namespace storage

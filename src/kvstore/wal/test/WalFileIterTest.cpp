@@ -22,7 +22,7 @@ TEST(WalFileIter, SimpleReadTest) {
   TempDir walDir("/tmp/testWal.XXXXXX");
 
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());
@@ -53,7 +53,7 @@ TEST(WalFileIter, MultiFilesReadTest) {
   TempDir walDir("/tmp/testWal.XXXXXX");
 
   auto wal = FileBasedWal::getWal(
-      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, folly::StringPiece) {
         return true;
       });
   EXPECT_EQ(0, wal->lastLogId());

@@ -23,7 +23,6 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
@@ -65,11 +64,13 @@ nebula_add_test(
         ExecutionContextTest.cpp
     OBJECTS
         ${CONTEXT_TEST_LIBS}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         gtest
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -79,12 +80,14 @@ nebula_add_executable(
         IteratorBenchmark.cpp
     OBJECTS
         ${CONTEXT_TEST_LIBS}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -94,10 +97,12 @@ nebula_add_executable(
         InputVarPropBenchmark.cpp
     OBJECTS
         ${CONTEXT_TEST_LIBS}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
         wangle
         ${PROXYGEN_LIBRARIES}
+        curl
 )

@@ -51,7 +51,7 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
       }
       auto iter = lvalue.getEdge().props.find(rvalue.getStr());
       if (iter == lvalue.getEdge().props.end()) {
-        return Value::kNullUnknownProp;
+        return Value::kNullValue;
       }
       return iter->second;
     }

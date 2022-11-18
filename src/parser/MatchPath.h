@@ -225,6 +225,10 @@ class MatchNode final {
   }
   MatchNode() = default;
 
+  void setAlias(const std::string& alias) {
+    alias_ = alias;
+  }
+
   const std::string& alias() const {
     return alias_;
   }
@@ -295,6 +299,10 @@ class MatchPath final {
 
   const std::string* alias() const {
     return alias_.get();
+  }
+
+  auto& nodes() {
+    return nodes_;
   }
 
   const auto& nodes() const {

@@ -133,24 +133,25 @@ Status PermissionManager::canWriteRole(ClientSession *session,
                                        meta::cpp2::RoleType targetRole,
                                        GraphSpaceID spaceId,
                                        const std::string &targetUser) {
-  if (!FLAGS_enable_authorize) {
-    return Status::OK();
+  // Some check should be done no matter FLAGS_enable_authorize is true or false
+  // Check 1. Reject any user grant or revoke role to GOD,
+  if (targetRole == meta::cpp2::RoleType::GOD) {
+    return Status::PermissionError("No permission to grant/revoke god user.");
   }
-  // Cloud auth user cannot grant role
+
+  // Check 2. Cloud auth user cannot grant role
   if (FLAGS_auth_type == "cloud") {
     return Status::PermissionError("Cloud authenticate user can't write role.");
+  }
+
+  if (!FLAGS_enable_authorize) {
+    return Status::OK();
   }
   /**
    * Reject grant or revoke to himself.
    */
   if (session->user() == targetUser) {
     return Status::PermissionError("No permission to grant/revoke yourself.");
-  }
-  /*
-   * Reject any user grant or revoke role to GOD
-   */
-  if (targetRole == meta::cpp2::RoleType::GOD) {
-    return Status::PermissionError("No permission to grant/revoke god user.");
   }
   /*
    * God user can be grant or revoke any one.

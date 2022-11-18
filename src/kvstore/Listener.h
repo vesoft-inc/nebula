@@ -68,6 +68,10 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *        TermID committedLogTerm,
  *        bool finished) override;
  *
+ *   // extra cleanup work, will be invoked when listener is about to be removed,
+ *   // or raft is reset
+ *   void cleanup()；
+ *
  * * Must implement in derived class
  *   // extra initialize work could do here
  *   void init()
@@ -83,10 +87,6 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *
  *   // persist last commit log id/term and lastApplyId
  *   bool persist(LogID, TermID, LogID)
- *
- *   // extra cleanup work, will be invoked when listener is about to be removed,
- *   // or raft is reset
- *   nebula::cpp2::ErrorCode cleanup() = 0
  */
 class Listener : public raftex::RaftPart {
  public:
@@ -270,7 +270,7 @@ class Listener : public raftex::RaftPart {
   bool preProcessLog(LogID logId,
                      TermID termId,
                      ClusterID clusterId,
-                     const std::string& log) override;
+                     folly::StringPiece log) override;
 
   /**
    * @brief If the listener falls behind way to much than leader, the leader will send all its data
@@ -294,6 +294,9 @@ class Listener : public raftex::RaftPart {
    * @brief Background job thread will trigger doApply to apply data into state machine periodically
    */
   void doApply();
+
+  // Process logs and then call apply to execute
+  virtual void processLogs();
 
  protected:
   LogID leaderCommitId_ = 0;
