@@ -139,14 +139,8 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
   for (const auto& [partId, rows] : req.get_parts()) {
-    futures.emplace_back(runInExecutor(&contexts_[i],
-                                       &expCtxs_[i],
-                                       &results_[i],
-                                       const_cast<cpp2::GetNeighborsRequest&>(req),
-                                       partId,
-                                       rows,
-                                       limit,
-                                       random));
+    futures.emplace_back(
+        runInExecutor(&contexts_[i], &expCtxs_[i], &results_[i], partId, rows, limit, random));
     i++;
   }
 
@@ -176,14 +170,12 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     RuntimeContext* context,
     StorageExpressionContext* expCtx,
     nebula::DataSet* result,
-    cpp2::GetNeighborsRequest& req,
     PartitionID partId,
     const std::vector<nebula::Value>& rows,
     int64_t limit,
     bool random) {
   return folly::via(
-      executor_,
-      [this, context, expCtx, result, req, partId, input = std::move(rows), limit, random]() {
+      executor_, [this, context, expCtx, result, partId, input = std::move(rows), limit, random]() {
         auto plan = buildPlan(context, expCtx, result, limit, random);
         for (const auto& vid : input) {
           DataSet row;
