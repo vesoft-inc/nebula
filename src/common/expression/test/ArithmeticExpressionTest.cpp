@@ -22,13 +22,13 @@ TEST_F(ArithmeticExpressionTest, TestArithmeticExpression) {
     TEST_EXPR(11 * 2, 22);
     TEST_EXPR(11 * 2.2, 24.2);
     TEST_EXPR(100.4 / 4, 25.1);
-    TEST_EXPR(10.4 % 0, NullType::DIV_BY_ZERO);
-    TEST_EXPR(10 % 0.0, NullType::DIV_BY_ZERO);
-    TEST_EXPR(10.4 % 0.0, NullType::DIV_BY_ZERO);
+    TEST_EXPR(10.4 % 0, Value(std::numeric_limits<double>::quiet_NaN()));
+    TEST_EXPR(10 % 0.0, Value(std::numeric_limits<double>::quiet_NaN()));
+    TEST_EXPR(10.4 % 0.0, Value(std::numeric_limits<double>::quiet_NaN()));
     TEST_EXPR(10 / 0, NullType::DIV_BY_ZERO);
-    TEST_EXPR(12 / 0.0, NullType::DIV_BY_ZERO);
-    TEST_EXPR(187. / 0.0, NullType::DIV_BY_ZERO);
-    TEST_EXPR(17. / 0, NullType::DIV_BY_ZERO);
+    TEST_EXPR(12 / 0.0, std::numeric_limits<double>::infinity());
+    TEST_EXPR(187. / 0.0, std::numeric_limits<double>::infinity());
+    TEST_EXPR(17. / 0, std::numeric_limits<double>::infinity());
   }
   {
     TEST_EXPR(1 + 2 + 3.2, 6.2);

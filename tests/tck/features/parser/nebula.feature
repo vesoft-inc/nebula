@@ -12,7 +12,8 @@ Feature: Value parsing
       | format                                               | _type        |
       | EMPTY                                                | EMPTY        |
       | NULL                                                 | NULL         |
-      | NaN                                                  | NaN          |
+      | NaN                                                  | fVal         |
+      | Inf                                                  | fVal         |
       | BAD_DATA                                             | BAD_DATA     |
       | BAD_TYPE                                             | BAD_TYPE     |
       | OVERFLOW                                             | ERR_OVERFLOW |

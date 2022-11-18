@@ -56,9 +56,9 @@ class StorageHttpStatsHandlerTestEnv : public ::testing::Environment {
 static std::string request(const std::string& url) {
   auto request =
       folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url.c_str());
-  auto resp = http::HttpClient::get(request);
-  EXPECT_TRUE(resp.ok());
-  return resp.value();
+  auto resp = HttpClient::get(request);
+  EXPECT_EQ(resp.curlCode, 0);
+  return resp.body;
 }
 
 static void checkInvalidRequest(const std::string& url, const std::string& errMsg) {
