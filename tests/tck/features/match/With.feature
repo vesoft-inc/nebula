@@ -94,7 +94,7 @@ Feature: With clause
       RETURN x.c
       """
     Then the result should be, in any order:
-      | x.c          |
+      | x.c      |
       | __NULL__ |
 
   Scenario: match with return

@@ -17,7 +17,7 @@ Feature: Value parsing
       | BAD_DATA                                             | BAD_DATA     |
       | BAD_TYPE                                             | BAD_TYPE     |
       | OVERFLOW                                             | ERR_OVERFLOW |
-      | __NULL__                                         | __NULL__ |
+      | __NULL__                                             | __NULL__     |
       | DIV_BY_ZERO                                          | DIV_BY_ZERO  |
       | OUT_OF_RANGE                                         | OUT_OF_RANGE |
       | 123                                                  | iVal         |
