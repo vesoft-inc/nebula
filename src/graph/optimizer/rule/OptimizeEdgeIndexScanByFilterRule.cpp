@@ -105,7 +105,6 @@ StatusOr<TransformResult> OptimizeEdgeIndexScanByFilterRule::transform(
   // Stand alone IN expr with only 1 element in the list, no need to check index
   if (conditionType == ExprKind::kRelIn) {
     transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
-    DCHECK(transformedExpr->kind() == ExprKind::kRelEQ);
   }
 
   // case2: logical AND expr

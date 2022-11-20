@@ -157,7 +157,7 @@ function stop_by_pid_file {
         [[ ${VERBOSE} -ne 0 ]] && INFO "Send SIG${signame} to $(cat ${pid_file})"
         kill -s ${signame} $(cat ${pid_file})
     else
-        [[ ${VERBOSE} -ne 0 ]] && INFO "No such process"
+        [[ ${VERBOSE} -ne 0 ]] && INFO "No such process" || code=$?
     fi
 }
 

@@ -272,8 +272,8 @@ std::vector<const Expression*> collectUnusedExpr(
   return unusedOperands;
 }
 
-StatusOr<IndexResult> selectLogicalExprIndex(const LogicalExpression* expr,
-                                             const IndexItem& index) {
+StatusOr<IndexResult> selectLogicalAndExprIndex(const LogicalExpression* expr,
+                                                const IndexItem& index) {
   if (expr->kind() != Expression::Kind::kLogicalAnd) {
     return Status::Error("Invalid expression kind.");
   }
@@ -304,8 +304,8 @@ StatusOr<IndexResult> selectIndex(const Expression* expr, const IndexItem& index
     return selectRelExprIndex(static_cast<const RelationalExpression*>(expr), index);
   }
 
-  if (expr->isLogicalExpr()) {
-    return selectLogicalExprIndex(static_cast<const LogicalExpression*>(expr), index);
+  if (expr->kind() == Expression::Kind::kLogicalAnd) {
+    return selectLogicalAndExprIndex(static_cast<const LogicalExpression*>(expr), index);
   }
 
   return Status::Error("Invalid expression kind.");

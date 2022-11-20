@@ -279,8 +279,10 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
+  // length function support `STRING` input too, so we can't ignore it directly
+  // TODO add type info to variable to help optimize it.
   static const std::unordered_set<std::string> ignoreFuncs = {
-      "src", "dst", "type", "typeid", "id", "rank", "length"};
+      "src", "dst", "type", "typeid", "id", "rank" /*, "length"*/};
 
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
