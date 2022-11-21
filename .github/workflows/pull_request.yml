@@ -140,9 +140,30 @@ jobs:
           esac
       - name: Make
         run: |
-          ccache -z
-          ninja -j $(nproc)
-          ccache -s
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              ccache -z
+              ninja -j $(nproc)
+              ccache -s
+              ;;
+            ubuntu2004)
+              # build with Debug type
+              ccache -z
+              ninja -j $(($(nproc)/2+1))
+              ccache -s
+              ;;
+            esac
+            ;;
+          clang-*)
+            # build with Sanitizer
+            ccache -z
+            ninja -j $(nproc)
+            ccache -s
+            ;;
+          esac
         working-directory: build/
       - name: CTest
         env:
