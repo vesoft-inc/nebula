@@ -72,6 +72,18 @@ jobs:
       volumes:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -128,30 +140,9 @@ jobs:
           esac
       - name: Make
         run: |
-          case ${{ matrix.compiler }} in
-          gcc-*)
-            case ${{ matrix.os }} in
-            centos7)
-              # build with Release type
-              ccache -z
-              ninja -j $(nproc)
-              ccache -s
-              ;;
-            ubuntu2004)
-              # build with Debug type
-              ccache -z
-              ninja -j $(($(nproc)/2+1))
-              ccache -s
-              ;;
-            esac
-            ;;
-          clang-*)
-            # build with Sanitizer
-            ccache -z
-            ninja -j $(nproc)
-            ccache -s
-            ;;
-          esac
+          ccache -z
+          ninja -j $(nproc)
+          ccache -s
         working-directory: build/
       - name: CTest
         env:
