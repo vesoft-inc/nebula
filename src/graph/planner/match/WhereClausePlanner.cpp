@@ -19,27 +19,37 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
   }
 
   auto* wctx = static_cast<WhereClauseContext*>(ctx);
-  SubPlan wherePlan;
-  if (wctx->filter) {
-    auto* newFilter = MatchSolver::doRewrite(wctx->qctx, wctx->aliasesAvailable, wctx->filter);
-    wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
-    wherePlan.tail = wherePlan.root;
-
-    SubPlan subPlan;
-    // Build plan for pattern from expression
+  SubPlan plan;
+  if (!wctx->paths.empty()) {
+    SubPlan pathsPlan;
+    // Build plan for pattern expression
     for (auto& path : wctx->paths) {
       auto status = MatchPathPlanner(wctx, path).transform(nullptr, {});
       NG_RETURN_IF_ERROR(status);
-      subPlan = SegmentsConnector::rollUpApply(wctx, subPlan, std::move(status).value(), path);
-    }
-    if (subPlan.root != nullptr) {
-      wherePlan = SegmentsConnector::addInput(wherePlan, subPlan, true);
-    }
+      auto pathPlan = std::move(status).value();
 
-    return wherePlan;
+      if (path.isPred) {
+        // Build plan for pattern predicates
+        pathsPlan = SegmentsConnector::patternApply(wctx, pathsPlan, pathPlan, path);
+      } else {
+        pathsPlan = SegmentsConnector::rollUpApply(wctx, pathsPlan, pathPlan, path);
+      }
+    }
+    plan = pathsPlan;
   }
 
-  return wherePlan;
+  if (wctx->filter) {
+    SubPlan wherePlan;
+    auto* newFilter = MatchSolver::doRewrite(wctx->qctx, wctx->aliasesAvailable, wctx->filter);
+    wherePlan.root = Filter::make(wctx->qctx, nullptr, newFilter, needStableFilter_);
+    wherePlan.tail = wherePlan.root;
+    if (plan.root == nullptr) {
+      return wherePlan;
+    }
+    plan = SegmentsConnector::addInput(wherePlan, plan, true);
+  }
+
+  return plan;
 }
 }  // namespace graph
 }  // namespace nebula

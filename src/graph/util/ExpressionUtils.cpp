@@ -390,6 +390,32 @@ Expression *ExpressionUtils::rewriteStartsWithExpr(const Expression *expr) {
   return LogicalExpression::makeAnd(pool, resultLeft, resultRight);
 }
 
+Expression *ExpressionUtils::foldInnerLogicalExpr(const Expression *originExpr) {
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kLogicalAnd || e->kind() == Expression::Kind::kLogicalOr;
+  };
+  auto rewriter = [](const Expression *e) -> Expression * {
+    auto expr = e->clone();
+    auto &operands = static_cast<LogicalExpression *>(expr)->operands();
+    for (auto iter = operands.begin(); iter != operands.end();) {
+      if (*iter == nullptr) {
+        operands.erase(iter);
+      } else {
+        iter++;
+      }
+    }
+    auto n = operands.size();
+    if (n == 0) {
+      return nullptr;
+    } else if (n == 1) {
+      return operands[0];
+    }
+    return expr;
+  };
+
+  return RewriteVisitor::transform(originExpr, std::move(matcher), std::move(rewriter));
+}
+
 Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
 

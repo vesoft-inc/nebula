@@ -83,6 +83,10 @@ struct Path final {
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
 
+  // Flag for pattern predicate
+  bool isPred{false};
+  bool isAntiPred{false};
+
   enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};
 };

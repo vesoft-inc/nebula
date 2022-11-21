@@ -93,12 +93,34 @@ SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
   return newPlan;
 }
 
+/*static*/ SubPlan SegmentsConnector::patternApply(CypherClauseContextBase* ctx,
+                                                   const SubPlan& left,
+                                                   const SubPlan& right,
+                                                   const graph::Path& path) {
+  SubPlan newPlan = left;
+  auto qctx = ctx->qctx;
+  std::vector<Expression*> keyProps;
+  for (const auto& col : path.compareVariables) {
+    keyProps.emplace_back(FunctionCallExpression::make(
+        qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
+  }
+  auto* patternApply = PatternApply::make(
+      qctx, left.root, DCHECK_NOTNULL(right.root), std::move(keyProps), path.isAntiPred);
+  // Left side input may be nullptr, which will be filled later
+  std::vector<std::string> colNames =
+      left.root != nullptr ? left.root->colNames() : ctx->inputColNames;
+  patternApply->setColNames(std::move(colNames));
+  newPlan.root = patternApply;
+  newPlan.tail = (newPlan.tail == nullptr ? patternApply : newPlan.tail);
+  return newPlan;
+}
+
 SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, bool copyColNames) {
   if (left.root == nullptr) {
     return right;
   }
   SubPlan newPlan = left;
-  DCHECK(left.root->isSingleInput());
+
   if (left.tail->isSingleInput()) {
     auto* mutableLeft = const_cast<PlanNode*>(left.tail);
     auto* siLeft = static_cast<SingleInputNode*>(mutableLeft);

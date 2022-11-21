@@ -1789,6 +1789,48 @@ class RollUpApply : public BinaryInputNode {
   InputPropertyExpression* collectCol_;
 };
 
+// PatternApply only used by pattern predicate for now
+class PatternApply : public BinaryInputNode {
+ public:
+  static PatternApply* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            std::vector<Expression*> keyCols,
+                            bool isAntiPred = false) {
+    return qctx->objPool()->makeAndAdd<PatternApply>(
+        qctx, Kind::kPatternApply, left, right, std::move(keyCols), isAntiPred);
+  }
+
+  const std::vector<Expression*>& keyCols() const {
+    return keyCols_;
+  }
+
+  bool isAntiPredicate() const {
+    return isAntiPred_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ protected:
+  friend ObjectPool;
+  PatternApply(QueryContext* qctx,
+               Kind kind,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> keyCols,
+               bool isAntiPred);
+
+  void cloneMembers(const PatternApply&);
+
+ protected:
+  // Common columns of subplans on both sides
+  std::vector<Expression*> keyCols_;
+  bool isAntiPred_{false};
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

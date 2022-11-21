@@ -61,6 +61,7 @@ namespace opt {
     PlanNode::Kind::kHashInnerJoin,
     PlanNode::Kind::kCrossJoin,
     PlanNode::Kind::kRollUpApply,
+    PlanNode::Kind::kPatternApply,
     PlanNode::Kind::kArgument};
 
 std::unique_ptr<OptRule> RemoveNoopProjectRule::kInstance =
