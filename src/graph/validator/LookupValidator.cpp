@@ -446,10 +446,11 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   // TODO(Aiee) extract the type cast logic as a method if we decide to support
   // more cross-type comparisons.
 
+  auto propType = SchemaUtil::propTypeToValueType(type);
   // Allow different numeric type to compare
-  if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::FLOAT && v.isInt()) {
+  if (propType == Value::Type::FLOAT && v.isInt()) {
     return ConstantExpression::make(pool, v.toFloat());
-  } else if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::INT && v.isFloat()) {
+  } else if (propType == Value::Type::INT && v.isFloat()) {
     // col1 < 10.5 range: [min, 11), col1 < 10 range: [min, 10)
     double f = v.getFloat();
     int iCeil = ceil(f);
@@ -462,10 +463,34 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
       return ConstantExpression::make(pool, iCeil);
     }
     return ConstantExpression::make(pool, iFloor);
+  } else if (kind == ExprKind::kRelIn || kind == ExprKind::kRelNotIn) {
+    if (v.isList()) {
+      auto items = v.getList().values;
+      for (const auto& item : items) {
+        if (item.type() != propType) {
+          std::stringstream ss;
+          ss << "Column type of " << prop.c_str() << " mismatched. Expected " << propType
+             << " but was " << item.type();
+          return Status::SemanticError(ss.str());
+        }
+      }
+      return ConstantExpression::make(pool, std::move(v));
+    } else if (v.isSet()) {
+      auto items = v.getSet().values;
+      for (const auto& item : items) {
+        if (item.type() != propType) {
+          std::stringstream ss;
+          ss << "Column type of " << prop.c_str() << " mismatched. Expected " << propType
+             << " but was " << item.type();
+          return Status::SemanticError(ss.str());
+        }
+      }
+      return ConstantExpression::make(pool, std::move(v));
+    }
   }
 
   // Check prop type
-  if (v.type() != SchemaUtil::propTypeToValueType(type)) {
+  if (v.type() != propType) {
     // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
