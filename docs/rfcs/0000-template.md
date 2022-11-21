@@ -49,7 +49,7 @@ A few examples of what this can include are:
 - For practical proposals: Does this feature exist in other database and what experience have their community had?
 - Papers: Are there any published papers or great posts that discuss this? If you have some relevant papers to refer to, this can serve as a more detailed theoretical background.
 
-The proposal won't accepted for they are in other projects, but this will show we more productive meaning.
+The proposal won't be accepted for they are in other projects, but this will show us more productive meaning.
 
 # Unresolved questions
 

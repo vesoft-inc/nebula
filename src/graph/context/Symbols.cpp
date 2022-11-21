@@ -39,7 +39,7 @@ Variable* SymbolTable::newVariable(const std::string& name) {
   DCHECK(vars_.find(name) == vars_.end());
   auto* variable = objPool_->makeAndAdd<Variable>(name);
   addVar(name, variable);
-  // Initialize all variable in variable map (ouput of node, inner variable etc.)
+  // Initialize all variable in variable map (output of node, inner variable etc.)
   // Some variable will be useless after optimizer, maybe we could remove it.
   ectx_->initVar(name);
   return variable;

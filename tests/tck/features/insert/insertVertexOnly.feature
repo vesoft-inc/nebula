@@ -20,7 +20,7 @@ Feature: insert vertex without tag
       """
       INSERT VERTEX VALUES 1:(),2:(),3:();
       """
-    Then a SemanticError should be raised at runtime: Insert vertex is forbidden, please speicify the tag
+    Then a SemanticError should be raised at runtime: Insert vertex is forbidden, please specify the tag
     When executing query:
       """
       INSERT EDGE e() VALUES 1->2:(),2->3:();
