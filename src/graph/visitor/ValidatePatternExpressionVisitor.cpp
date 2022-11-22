@@ -34,13 +34,16 @@ void ValidatePatternExpressionVisitor::visit(MatchPathPatternExpression *expr) {
         // TODO we should check variable is Node type
         // from local variable
         node->setVariableDefinedSource(MatchNode::VariableDefinedSource::kExpression);
-        auto *listElement = VariableExpression::make(pool_, listElementVar);
+        auto *listElement = VariableExpression::makeInner(pool_, listElementVar);
         // Note: this require build path by node pattern order
         auto *listElementId = FunctionCallExpression::make(
             pool_,
             "_nodeid",
             {listElement, ConstantExpression::make(pool_, static_cast<int64_t>(i))});
-        auto *nodeValue = VariableExpression::make(pool_, node->alias());
+        // The alias of node is converted to a inner variable.
+        // e.g. MATCH (v:player) WHERE [t in [v] | (v)-[:like]->(t)] RETURN v
+        // More cases could be found in PathExprRefLocalVariable.feature
+        auto *nodeValue = VariableExpression::makeInner(pool_, node->alias());
         auto *nodeId = FunctionCallExpression::make(pool_, "id", {nodeValue});
         auto *equal = RelationalExpression::makeEQ(pool_, listElementId, nodeId);
         nodeFilters.emplace_back(equal);

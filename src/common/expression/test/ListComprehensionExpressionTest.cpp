@@ -23,9 +23,9 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
         "n",
         ListExpression::make(&pool, listItems),
         RelationalExpression::makeGE(
-            &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 2)),
+            &pool, VariableExpression::makeInner(&pool, "n"), ConstantExpression::make(&pool, 2)),
         ArithmeticExpression::makeAdd(
-            &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 10)));
+            &pool, VariableExpression::makeInner(&pool, "n"), ConstantExpression::make(&pool, 10)));
 
     auto value = Expression::eval(expr, gExpCtxt);
     List expected;
@@ -57,7 +57,7 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
         ArithmeticExpression::makeAdd(
             &pool,
             AttributeExpression::make(&pool,
-                                      VariableExpression::make(&pool, "n"),
+                                      VariableExpression::makeInner(&pool, "n"),
                                       ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 5)));
 

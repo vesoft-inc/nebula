@@ -24,6 +24,13 @@ class QueryExpressionContext final : public ExpressionContext {
   // Get the latest version value for the given variable name, such as $a, $b
   const Value& getVar(const std::string& var) const override;
 
+  // Set the value of innerVar. The innerVar is a variable defined in an expression.
+  // e.g. ListComprehension
+  void setInnerVar(const std::string& var, Value val) override;
+
+  // Get the value of innerVar
+  const Value& getInnerVar(const std::string& var) const override;
+
   // Get the given version value for the given variable name, such as $a, $b
   const Value& getVersionedVar(const std::string& var, int64_t version) const override;
 
@@ -75,6 +82,9 @@ class QueryExpressionContext final : public ExpressionContext {
   // could be evaluated as constant value.
   ExecutionContext* ectx_{nullptr};
   Iterator* iter_{nullptr};
+
+  // Expression value map that stores the value of innerVar
+  std::unordered_map<std::string, Value> exprValueMap_;
 };
 
 }  // namespace graph

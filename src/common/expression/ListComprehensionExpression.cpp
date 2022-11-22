@@ -31,7 +31,7 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
 
   for (size_t i = 0; i < list.size(); ++i) {
     auto& v = list[i];
-    ctx.setVar(innerVar_, v);
+    ctx.setInnerVar(innerVar_, v);
     if (filter_ != nullptr) {
       auto& filterVal = filter_->eval(ctx);
       if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
