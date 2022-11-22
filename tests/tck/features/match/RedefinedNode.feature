@@ -194,7 +194,8 @@ Feature: Redefined symbols
     Then a SemanticError should be raised at runtime: `e': Redefined alias
 
   Scenario: Redefined alias in with
-    Given a graph with space named "nba"
+    Given an empty graph
+    And load "nba" csv data to a new space
     And having executed:
       """
       insert edge like (likeness) values "Tim Duncan"->"Tim Duncan":(100);
