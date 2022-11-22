@@ -376,11 +376,7 @@ class SingleInputNode : public SingleDependencyNode {
     SingleDependencyNode::cloneMembers(node);
   }
 
-  void copyInputColNames(const PlanNode* input) {
-    if (input != nullptr) {
-      setColNames(input->colNames());
-    }
-  }
+  void copyInputColNames(const PlanNode* input);
 
   SingleInputNode(QueryContext* qctx, Kind kind, const PlanNode* dep);
 };
