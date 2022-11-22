@@ -136,13 +136,18 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
     newAboveFilterNode->setInputVar(newProjNode->outputVar());
     result.newGroupNodes.emplace_back(newAboveFilterGroupNode);
   } else {
+    // newProjNode shall inherit the output from oldFilterNode
+    // which is the output of the opt group
     newProjNode->setOutputVar(oldFilterNode->outputVar());
+    // newProjNode's col names, on the hand, should inherit those of the oldProjNode
+    // since they are the same project.
+    newProjNode->setColNames(oldProjNode->outputVarPtr()->colNames);
     auto newProjGroupNode = OptGroupNode::create(octx, newProjNode, filterGroupNode->group());
     newProjGroupNode->setDeps({newBelowFilterGroup});
     newProjNode->setInputVar(newBelowFilterNode->outputVar());
     result.newGroupNodes.emplace_back(newProjGroupNode);
   }
-
+  DCHECK_EQ(newProjNode->colNames().size(), newProjNode->columns()->columns().size());
   return result;
 }
 
