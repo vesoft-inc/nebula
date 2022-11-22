@@ -23,6 +23,16 @@ class ExpressionContextMock final : public ExpressionContext {
     }
   }
 
+  void setInnerVar(const std::string& var, Value val) override {
+    exprValueMap_[var] = std::move(val);
+  }
+
+  const Value& getInnerVar(const std::string& var) const override {
+    auto it = exprValueMap_.find(var);
+    DCHECK(it != exprValueMap_.end());
+    return it->second;
+  }
+
   const Value& getVersionedVar(const std::string& var, int64_t version) const override {
     auto found = indices_.find(var);
     if (found == indices_.end()) {
@@ -143,5 +153,7 @@ class ExpressionContextMock final : public ExpressionContext {
   static std::unordered_map<std::string, std::size_t> indices_;
   static std::vector<Value> vals_;
   std::unordered_map<std::string, std::regex> regex_;
+  // Expression value map that stores the value of innerVar
+  std::unordered_map<std::string, Value> exprValueMap_;
 };
 }  // namespace nebula

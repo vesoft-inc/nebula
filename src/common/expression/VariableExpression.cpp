@@ -10,6 +10,9 @@
 
 namespace nebula {
 const Value& VariableExpression::eval(ExpressionContext& ctx) {
+  if (isInner_) {
+    return ctx.getInnerVar(var_);
+  }
   return ctx.getVar(var_);
 }
 
