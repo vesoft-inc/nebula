@@ -132,7 +132,7 @@ class VisitorTestBase : public ::testing::Test {
 
   MapExpression *mapExpr(std::initializer_list<std::pair<std::string, Expression *>> exprs) {
     auto mapItemList = MapItemList::make(pool);
-    for (auto expr : exprs) {
+    for (const auto &expr : exprs) {
       mapItemList->add(expr.first, expr.second);
     }
     return MapExpression::make(pool, mapItemList);
@@ -151,7 +151,10 @@ class VisitorTestBase : public ::testing::Test {
   }
 
   VariableExpression *varExpr(const std::string &name, bool isInner = false) {
-    return VariableExpression::make(pool, name, isInner);
+    if (isInner) {
+      return VariableExpression::makeInner(pool, name);
+    }
+    return VariableExpression::make(pool, name);
   }
 
   CaseExpression *caseExpr(Expression *cond,

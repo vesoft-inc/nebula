@@ -29,6 +29,13 @@ class ExpressionContext {
   // Get the latest version value for the given variable name, such as $a, $b
   virtual const Value& getVar(const std::string& var) const = 0;
 
+  // Set the value of innerVar. The innerVar is a variable defined in an expression.
+  // e.g. ListComprehension
+  virtual void setInnerVar(const std::string& var, Value val) = 0;
+
+  // Get the value of innerVar.
+  virtual const Value& getInnerVar(const std::string& var) const = 0;
+
   // Get the given version value for the given variable name, such as $a, $b
   virtual const Value& getVersionedVar(const std::string& var, int64_t version) const = 0;
 

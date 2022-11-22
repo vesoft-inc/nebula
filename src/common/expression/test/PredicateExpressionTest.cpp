@@ -24,7 +24,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         "n",
         ListExpression::make(&pool, listItems),
         RelationalExpression::makeGE(
-            &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 2)));
+            &pool, VariableExpression::makeInner(&pool, "n"), ConstantExpression::make(&pool, 2)));
 
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_TRUE(value.isBool());
@@ -51,7 +51,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         RelationalExpression::makeGE(
             &pool,
             AttributeExpression::make(&pool,
-                                      VariableExpression::make(&pool, "n"),
+                                      VariableExpression::makeInner(&pool, "n"),
                                       ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
@@ -74,7 +74,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         "n",
         ListExpression::make(&pool, listItems),
         RelationalExpression::makeEQ(
-            &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 2)));
+            &pool, VariableExpression::makeInner(&pool, "n"), ConstantExpression::make(&pool, 2)));
 
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_TRUE(value.isBool());
@@ -101,7 +101,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         RelationalExpression::makeGE(
             &pool,
             AttributeExpression::make(&pool,
-                                      VariableExpression::make(&pool, "n"),
+                                      VariableExpression::makeInner(&pool, "n"),
                                       ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
@@ -117,7 +117,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         "n",
         ConstantExpression::make(&pool, Value(NullType::__NULL__)),
         RelationalExpression::makeEQ(
-            &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 1)));
+            &pool, VariableExpression::makeInner(&pool, "n"), ConstantExpression::make(&pool, 1)));
 
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_EQ(Value::kNullValue, value.getNull());

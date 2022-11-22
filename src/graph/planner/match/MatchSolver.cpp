@@ -240,7 +240,7 @@ static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
   } else {
     auto innerVar = qctx->vctx()->anonVarGen()->getVar();
     auto* args = ArgumentList::make(pool);
-    args->addArgument(VariableExpression::make(pool, innerVar));
+    args->addArgument(VariableExpression::makeInner(pool, innerVar));
     auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
     expr = ListComprehensionExpression::make(
         pool, innerVar, InputPropertyExpression::make(pool, edge.alias), filter);
