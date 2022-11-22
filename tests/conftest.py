@@ -234,7 +234,7 @@ def load_student_data():
 
 # TODO(yee): Delete this when we migrate all test cases
 @pytest.fixture(scope="class")
-def workarround_for_class(
+def workaround_for_class(
     request, pytestconfig, conn_pool, session, load_nba_data, load_student_data
 ):
     if request.cls is None:

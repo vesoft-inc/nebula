@@ -12,7 +12,7 @@ Feature: Prune Properties rule
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
       RETURN v2.player.age
       """
-    # Since in distributed system and scatter gather model, the order is not guarrented.
+    # Since in distributed system and scatter gather model, the order is not guaranteed.
     Then the result should be, in any order:
       | v2.player.age |
       | 42            |

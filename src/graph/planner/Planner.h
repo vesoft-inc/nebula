@@ -46,7 +46,7 @@ class Planner {
   virtual ~Planner() = default;
 
   // Each statement might have many planners that match different situations.
-  // Each planner should provide two funtions:
+  // Each planner should provide two functions:
   // 1. MatchFunc that matchs the proper situation
   // 2. PlannerInstantiateFunc that instantiates the planner
   static auto& plannersMap() {

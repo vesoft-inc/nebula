@@ -16,7 +16,7 @@ class IndexUtil final {
  public:
   IndexUtil() = delete;
 
-  // Checks wether the parameter in the geo s2 index is valid
+  // Checks whether the parameter in the geo s2 index is valid
   static Status validateIndexParams(const std::vector<IndexParamItem *> &params,
                                     meta::cpp2::IndexParams &indexParams);
 
@@ -25,7 +25,7 @@ class IndexUtil final {
   static StatusOr<DataSet> toDescIndex(const meta::cpp2::IndexItem &indexItem);
 
   // TODO(Aiee) no status will be returned. Change the interface
-  // Returns the infomation of the given index
+  // Returns the information of the given index
   static StatusOr<DataSet> toShowCreateIndex(bool isTagIndex,
                                              const std::string &indexName,
                                              const meta::cpp2::IndexItem &indexItem);

@@ -114,7 +114,7 @@ nebula::DataSet SubmitJobExecutor::buildShowResultData(
     const nebula::meta::cpp2::JobDesc &jd, const std::vector<nebula::meta::cpp2::TaskDesc> &td) {
   if (jd.get_type() == meta::cpp2::JobType::DATA_BALANCE ||
       jd.get_type() == meta::cpp2::JobType::ZONE_BALANCE) {
-    // The job which executed on meta, aka balance data, is a litte different from others. In order
+    // The job which executed on meta, aka balance data, is a little different from others. In order
     // to be consistent with other jobs, the task result is set in paras in JobDesc serialized by
     // thrift. The reason that we can't use the list of TaskDesc is that the state of balance task
     // is saved in BalanceTask, which is different from TaskDesc.

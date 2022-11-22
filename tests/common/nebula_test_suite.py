@@ -40,7 +40,7 @@ T_NULL_UNKNOWN_DIV_BY_ZERO = CommonTtypes.Value()
 T_NULL_UNKNOWN_DIV_BY_ZERO.set_nVal(CommonTtypes.NullType.DIV_BY_ZERO)
 
 
-@pytest.mark.usefixtures("workarround_for_class")
+@pytest.mark.usefixtures("workaround_for_class")
 class NebulaTestSuite(object):
     @classmethod
     def set_delay(self):
