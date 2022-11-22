@@ -37,6 +37,7 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 * OpenCypher-compatible query language
 * Role-based access control for higher-level security
 
+<!--
 ## Notice of Release
 
 NebulaGraph used to be split into three repositories: [Nebula-Graph](https://github.com/vesoft-inc/nebula-graph), [Nebula-Storage,](https://github.com/vesoft-inc/nebula-storage) and [Nebula-Common](https://github.com/vesoft-inc/nebula-common) for versions between v2.0.0 and v2.5.x, which will be archived.
@@ -45,7 +46,6 @@ The one and only codebase of NebulaGraph is now [github.com/vesoft-inc/nebula](h
 
 Please check the latest release via the documentation: https://docs.nebula-graph.io/.
 
-<!--
 
 NebulaGraph 1.x is not actively maintained. Please move to NebulaGraph 2.x.  <br/>
 The data format, rpc protocols, clients, etc. are not compatible between NebulaGraph v1.x and v2.x,  but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
