@@ -288,6 +288,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
     if (stepRange != nullptr) {
       NG_RETURN_IF_ERROR(validateStepRange(stepRange));
       edgeInfos[i].range = stepRange;
+      // if step range is more than 1, then the typ of e binding to is edge list
       if (stepRange->max() > stepRange->min()) {
         aliasType = AliasType::kEdgeList;
       }
