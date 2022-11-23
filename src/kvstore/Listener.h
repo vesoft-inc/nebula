@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/Common.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -181,14 +182,6 @@ class Listener : public raftex::RaftPart {
   virtual LogID lastApplyLogId() = 0;
 
   /**
-   * @brief Apply data into listener's state machine
-   *
-   * @param data Key/value to apply
-   * @return True if succeed. False if failed.
-   */
-  virtual bool apply(const std::vector<KV>& data) = 0;
-
-  /**
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
    */
   virtual bool persist(LogID commitLogId, TermID commitLogTerm, LogID lastApplyLogId) = 0;
@@ -273,30 +266,12 @@ class Listener : public raftex::RaftPart {
                      folly::StringPiece log) override;
 
   /**
-   * @brief If the listener falls behind way to much than leader, the leader will send all its data
-   * in snapshot by batch, listener need to implement this method to apply the batch to state
-   * machine. The return value is a pair of <logs count, logs size> of this batch.
-   *
-   * @param data Data to apply
-   * @param committedLogId Commit log id of snapshot
-   * @param committedLogTerm Commit log term of snapshot
-   * @param finished Whether spapshot is finished
-   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
-   * succeed, else return {errorcode, -1, -1}
-   */
-  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
-      const std::vector<std::string>& data,
-      LogID committedLogId,
-      TermID committedLogTerm,
-      bool finished) override;
-
-  /**
    * @brief Background job thread will trigger doApply to apply data into state machine periodically
    */
   void doApply();
 
   // Process logs and then call apply to execute
-  virtual void processLogs();
+  virtual void processLogs() = 0;
 
  protected:
   LogID leaderCommitId_ = 0;
