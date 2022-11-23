@@ -71,7 +71,7 @@ class ESListener : public Listener {
    * @param data Key/value to apply
    * @return True if succeed. False if failed.
    */
-  bool apply(const std::vector<KV>& data) override;
+  bool apply(const std::vector<KV>& data);
 
   /**
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
@@ -91,6 +91,14 @@ class ESListener : public Listener {
    * @return LogID Last apply log id
    */
   LogID lastApplyLogId() override;
+
+  void processLogs() override;
+
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
  private:
   /**
