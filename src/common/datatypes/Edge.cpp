@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <common/base/Logging.h>
 #include <common/datatypes/Edge.h>
 #include <folly/String.h>
 #include <folly/hash/Hash.h>
@@ -142,11 +143,28 @@ bool Edge::keyEqual(const Edge& rhs) const {
 }
 
 std::string Edge::id() const {
-  if (type > 0) {
-    return src.toString() + dst.toString() + std::to_string(type) + std::to_string(ranking);
+  std::string s;
+  if (src.type() == Value::Type::INT) {
+    EdgeType t = type > 0 ? type : -type;
+    const int64_t& srcId = type > 0 ? src.getInt() : dst.getInt();
+    const int64_t& dstId = type > 0 ? dst.getInt() : src.getInt();
+    s.reserve(sizeof(srcId) + sizeof(dstId) + sizeof(type) + sizeof(ranking));
+    s.append(reinterpret_cast<const char*>(&srcId), sizeof(srcId));
+    s.append(reinterpret_cast<const char*>(&dstId), sizeof(dstId));
+    s.append(reinterpret_cast<const char*>(&t), sizeof(t));
+    s.append(reinterpret_cast<const char*>(&ranking), sizeof(ranking));
   } else {
-    return dst.toString() + src.toString() + std::to_string(-type) + std::to_string(ranking);
+    DCHECK(src.type() == Value::Type::STRING);
+    EdgeType t = type > 0 ? type : -type;
+    const std::string& srcId = type > 0 ? src.getStr() : dst.getStr();
+    const std::string& dstId = type > 0 ? dst.getStr() : src.getStr();
+    s.reserve(srcId.size() + dstId.size() + sizeof(t) + sizeof(ranking));
+    s.append(srcId.data(), srcId.size());
+    s.append(dstId.data(), dstId.size());
+    s.append(reinterpret_cast<const char*>(&t), sizeof(t));
+    s.append(reinterpret_cast<const char*>(&ranking), sizeof(ranking));
   }
+  return s;
 }
 
 }  // namespace nebula
