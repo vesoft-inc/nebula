@@ -57,8 +57,6 @@ struct EdgeInfo {
 
 enum class AliasType : int8_t { kNode, kEdge, kPath, kEdgeList, kDefault };
 
-static constexpr std::array AliasTypeName = {"Node", "Edge", "Path", "EdgeList", "Default"};
-
 struct ScanInfo {
   Expression* filter{nullptr};
   std::vector<int32_t> schemaIds;
