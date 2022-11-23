@@ -141,6 +141,14 @@ bool Edge::keyEqual(const Edge& rhs) const {
   return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking;
 }
 
+std::string Edge::id() const {
+  if (type > 0) {
+    return src.toString() + dst.toString() + std::to_string(type) + std::to_string(ranking);
+  } else {
+    return dst.toString() + src.toString() + std::to_string(-type) + std::to_string(ranking);
+  }
+}
+
 }  // namespace nebula
 
 namespace std {

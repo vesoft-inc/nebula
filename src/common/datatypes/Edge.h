@@ -72,6 +72,8 @@ struct Edge {
   const Value& value(const std::string& key) const;
 
   bool keyEqual(const Edge& rhs) const;
+
+  std::string id() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Edge& v) {

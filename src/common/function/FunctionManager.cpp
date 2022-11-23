@@ -1828,12 +1828,16 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
+      const Value &value = args[0].get();
+      switch (value.type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
         case Value::Type::VERTEX: {
-          return args[0].get().getVertex().vid;
+          return value.getVertex().vid;
+        }
+        case Value::Type::EDGE: {
+          return value.getEdge().id();
         }
         default: {
           return Value::kNullBadType;

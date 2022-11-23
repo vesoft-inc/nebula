@@ -283,16 +283,20 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
         edgeInfos[i].types.emplace_back(typeName.value());
       }
     }
+    AliasType aliasType = AliasType::kEdge;
     auto *stepRange = edge->range();
     if (stepRange != nullptr) {
       NG_RETURN_IF_ERROR(validateStepRange(stepRange));
       edgeInfos[i].range = stepRange;
+      if (stepRange->max() > stepRange->min()) {
+        aliasType = AliasType::kEdgeList;
+      }
     }
     if (alias.empty()) {
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
-      if (!aliases.emplace(alias, AliasType::kEdge).second) {
+      if (!aliases.emplace(alias, aliasType).second) {
         return Status::SemanticError("`%s': Redefined alias", alias.c_str());
       }
     }
