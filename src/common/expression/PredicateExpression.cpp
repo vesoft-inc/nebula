@@ -88,7 +88,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       result_ = true;
       for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
-        ctx.setVar(innerVar_, v);
+        ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
         if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
@@ -104,7 +104,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       result_ = false;
       for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
-        ctx.setVar(innerVar_, v);
+        ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
         if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
@@ -120,7 +120,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       result_ = false;
       for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
-        ctx.setVar(innerVar_, v);
+        ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
         if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;
@@ -140,7 +140,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       result_ = true;
       for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
-        ctx.setVar(innerVar_, v);
+        ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
         if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
           return Value::kNullBadType;

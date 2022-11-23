@@ -14,6 +14,16 @@ const Value& QueryExpressionContext::getVar(const std::string& var) const {
   return ectx_->getValue(var);
 }
 
+void QueryExpressionContext::setInnerVar(const std::string& var, Value val) {
+  exprValueMap_[var] = std::move(val);
+}
+
+const Value& QueryExpressionContext::getInnerVar(const std::string& var) const {
+  auto it = exprValueMap_.find(var);
+  if (it == exprValueMap_.end()) return Value::kEmpty;
+  return it->second;
+}
+
 const Value& QueryExpressionContext::getVersionedVar(const std::string& var,
                                                      int64_t version) const {
   if (ectx_ == nullptr) {
