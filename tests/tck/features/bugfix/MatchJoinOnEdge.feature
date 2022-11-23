@@ -30,4 +30,3 @@ Feature: Test match used in pipe
     Then the result should be, in any order:
       | v                                                                                                           | u                                                     |
       | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
-
