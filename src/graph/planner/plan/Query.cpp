@@ -519,6 +519,15 @@ void Sample::cloneMembers(const Sample& l) {
   count_ = l.count_->clone();
 }
 
+Aggregate::Aggregate(QueryContext* qctx,
+                     PlanNode* input,
+                     std::vector<Expression*>&& groupKeys,
+                     std::vector<Expression*>&& groupItems)
+    : SingleInputNode(qctx, Kind::kAggregate, input) {
+  groupKeys_ = std::move(groupKeys);
+  groupItems_ = std::move(groupItems);
+}
+
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("groupKeys", folly::toJson(util::toJson(groupKeys_)), desc.get());

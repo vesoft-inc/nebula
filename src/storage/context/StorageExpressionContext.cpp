@@ -13,6 +13,18 @@
 namespace nebula {
 namespace storage {
 
+void StorageExpressionContext::setInnerVar(const std::string& var, Value val) {
+  exprValueMap_[var] = std::move(val);
+}
+
+const Value& StorageExpressionContext::getInnerVar(const std::string& var) const {
+  auto it = exprValueMap_.find(var);
+  if (it == exprValueMap_.end()) {
+    return Value::kEmpty;
+  }
+  return it->second;
+}
+
 Value StorageExpressionContext::readValue(const std::string& propName) const {
   if (!schema_) {
     return Value::kNullValue;

@@ -20,7 +20,6 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
   // So to avoid conflict, we create a global unique anonymous variable name for it
   // TODO store inner variable in inner
   const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -35,7 +34,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
       case Expression::Kind::kLabel: {
         auto *label = static_cast<const LabelExpression *>(expr);
         if (label->name() == oldVarName) {
-          ret = VariableExpression::make(pool, newVarName, true);
+          ret = VariableExpression::makeInner(pool, newVarName);
         } else {
           ret = label->clone();
         }
@@ -46,7 +45,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
         if (la->left()->name() == oldVarName) {
           const auto &value = la->right()->value();
           ret = AttributeExpression::make(pool,
-                                          VariableExpression::make(pool, newVarName, true),
+                                          VariableExpression::makeInner(pool, newVarName),
                                           ConstantExpression::make(pool, value));
         } else {
           ret = la->clone();
@@ -87,7 +86,6 @@ void ParserUtil::rewritePred(QueryContext *qctx,
                              PredicateExpression *pred,
                              const std::string &oldVarName) {
   const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -100,7 +98,7 @@ void ParserUtil::rewritePred(QueryContext *qctx,
     if (expr->kind() == Expression::Kind::kLabel) {
       auto *label = static_cast<const LabelExpression *>(expr);
       if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, newVarName, true);
+        ret = VariableExpression::makeInner(pool, newVarName);
       } else {
         ret = label->clone();
       }
@@ -110,7 +108,7 @@ void ParserUtil::rewritePred(QueryContext *qctx,
       if (la->left()->name() == oldVarName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newVarName, true),
+                                        VariableExpression::makeInner(pool, newVarName),
                                         ConstantExpression::make(pool, value));
       } else {
         ret = la->clone();
@@ -133,9 +131,7 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
                                const std::string &oldAccName,
                                const std::string &oldVarName) {
   const auto &newAccName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newAccName, Value());
   const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -147,9 +143,9 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
     if (expr->kind() == Expression::Kind::kLabel) {
       auto *label = static_cast<const LabelExpression *>(expr);
       if (label->name() == oldAccName) {
-        ret = VariableExpression::make(pool, newAccName, true);
+        ret = VariableExpression::makeInner(pool, newAccName);
       } else if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, newVarName, true);
+        ret = VariableExpression::makeInner(pool, newVarName);
       } else {
         ret = label->clone();
       }
@@ -159,12 +155,12 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
       if (la->left()->name() == oldAccName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newAccName, true),
+                                        VariableExpression::makeInner(pool, newAccName),
                                         ConstantExpression::make(pool, value));
       } else if (la->left()->name() == oldVarName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newVarName, true),
+                                        VariableExpression::makeInner(pool, newVarName),
                                         ConstantExpression::make(pool, value));
       } else {
         ret = la->clone();

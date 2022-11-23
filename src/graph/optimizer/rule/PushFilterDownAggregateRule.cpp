@@ -59,6 +59,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   }
   std::unordered_map<std::string, Expression*> rewriteMap;
   auto colNames = newAggNode->colNames();
+  DCHECK_EQ(newAggNode->colNames().size(), newAggNode->groupItems().size());
   for (size_t i = 0; i < colNames.size(); ++i) {
     auto& colName = colNames[i];
     auto iter = std::find_if(propNames.begin(), propNames.end(), [&colName](const auto& name) {
@@ -89,11 +90,17 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   newFilterNode->setCondition(newCondition);
 
   // Exchange planNode
+  // newAggNode shall inherit the output of the oldFilterNode
   newAggNode->setOutputVar(oldFilterNode->outputVar());
+  // as the new agg node now inherits the output var ptr from a filter node, the action of
+  // which alters its own colNames, its colNames need to be explicitly preserved.
+  newAggNode->setColNames(oldAggNode->colNames());
+  // newFilterNode shall inherit the input of the oldAggNode
   newFilterNode->setInputVar(oldAggNode->inputVar());
   DCHECK_EQ(oldAggNode->outputVar(), oldFilterNode->inputVar());
-  newAggNode->setInputVar(oldAggNode->outputVar());
-  newFilterNode->setOutputVar(oldAggNode->outputVar());
+  // newAggNode shall inherit oldFilterNode's inputs
+  newAggNode->setInputVar(oldFilterNode->inputVar());
+  newFilterNode->setOutputVar(newAggNode->inputVar());
 
   // Push down filter's optGroup and embed newAggGroupNode into old filter's
   // Group

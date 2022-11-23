@@ -23,15 +23,15 @@ const Value& ReduceExpression::eval(ExpressionContext& ctx) {
   }
   auto& list = listVal.getList();
 
-  ctx.setVar(accumulator_, initVal);
+  ctx.setInnerVar(accumulator_, initVal);
   for (size_t i = 0; i < list.size(); ++i) {
     auto& v = list[i];
-    ctx.setVar(innerVar_, v);
+    ctx.setInnerVar(innerVar_, v);
     auto& mappingVal = mapping_->eval(ctx);
-    ctx.setVar(accumulator_, mappingVal);
+    ctx.setInnerVar(accumulator_, mappingVal);
   }
 
-  result_ = ctx.getVar(accumulator_);
+  result_ = ctx.getInnerVar(accumulator_);
   return result_;
 }
 

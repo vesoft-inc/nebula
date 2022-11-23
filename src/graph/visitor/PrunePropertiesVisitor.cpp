@@ -57,7 +57,8 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
     rootNode_ = false;
     return;
   }
-  for (auto i = 0u; i < columns.size(); ++i) {
+  DCHECK_EQ(columns.size(), colNames.size());
+  for (auto i = 0u; i < columns.size() && i < colNames.size(); ++i) {
     auto *col = DCHECK_NOTNULL(columns[i]);
     auto *expr = col->expr();
     auto &alias = colNames[i];

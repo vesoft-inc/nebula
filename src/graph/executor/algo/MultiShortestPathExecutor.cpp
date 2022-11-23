@@ -30,7 +30,7 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
         return conjunctPath(true);
       })
       .thenValue([this](auto&& termination) {
-        // termination is ture, all paths has found
+        // termination is true, all paths has found
         if (termination || step_ * 2 > pathNode_->steps()) {
           return folly::makeFuture<bool>(true);
         }

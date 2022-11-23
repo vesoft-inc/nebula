@@ -7,7 +7,6 @@ Feature: Push Filter down Project rule
     Given a graph with space named "nba"
 
   # TODO(yee):
-  @skip
   Scenario: push filter down Project
     When profiling query:
       """
@@ -23,25 +22,14 @@ Feature: Push Filter down Project rule
       | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"})               |
       | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"})               |
     And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 23 | Project      | 40           |               |
-      | 40 | Project      | 39           |               |
-      | 39 | Filter       | 20           |               |
-      | 20 | Filter       | 19           |               |
-      | 19 | Project      | 18           |               |
-      | 18 | InnerJoin    | 17           |               |
-      | 17 | Project      | 28           |               |
-      | 28 | GetVertices  | 13           |               |
-      | 13 | InnerJoin    | 12           |               |
-      | 12 | Filter       | 11           |               |
-      | 11 | Project      | 32           |               |
-      | 32 | GetNeighbors | 7            |               |
-      | 7  | Filter       | 6            |               |
-      | 6  | Project      | 5            |               |
-      | 5  | Filter       | 31           |               |
-      | 31 | GetNeighbors | 24           |               |
-      | 24 | IndexScan    | 0            |               |
-      | 0  | Start        |              |               |
+      | id | name           | dependencies | operator info |
+      | 14 | Project        | 11           |               |
+      | 11 | Filter         | 5            |               |
+      | 5  | AppendVertices | 4            |               |
+      | 4  | Traverse       | 13           |               |
+      | 13 | Traverse       | 1            |               |
+      | 1  | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
     When profiling query:
       """
       MATCH (a:player)--(b)--(c)
@@ -60,22 +48,12 @@ Feature: Push Filter down Project rule
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})       | 35   |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})       | 30   |
     And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 24 | Dedup        | 41           |               |
-      | 41 | Project      | 40           |               |
-      | 40 | Filter       | 20           |               |
-      | 20 | Filter       | 19           |               |
-      | 19 | Project      | 18           |               |
-      | 18 | InnerJoin    | 17           |               |
-      | 17 | Project      | 29           |               |
-      | 29 | GetVertices  | 13           |               |
-      | 13 | InnerJoin    | 12           |               |
-      | 12 | Filter       | 11           |               |
-      | 11 | Project      | 33           |               |
-      | 33 | GetNeighbors | 7            |               |
-      | 7  | Filter       | 6            |               |
-      | 6  | Project      | 5            |               |
-      | 5  | Filter       | 32           |               |
-      | 32 | GetNeighbors | 26           |               |
-      | 26 | IndexScan    | 0            |               |
-      | 0  | Start        |              |               |
+      | id | name           | dependencies | operator info |
+      | 10 | Dedup          | 15           |               |
+      | 15 | Project        | 12           |               |
+      | 12 | Filter         | 5            |               |
+      | 5  | AppendVertices | 4            |               |
+      | 4  | Traverse       | 14           |               |
+      | 14 | Traverse       | 1            |               |
+      | 1  | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |

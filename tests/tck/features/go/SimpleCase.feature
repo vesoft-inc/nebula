@@ -268,7 +268,7 @@ Feature: Simple case
       | 3  | Dedup       | 15           |                   |
       | 15 | Project     | 0            |                   |
       | 0  | Start       |              |                   |
-    # Because GetDstBySrc doesn't support limit push down, so degenrate to GetNeighbors when the query contains limit/simple clause
+    # Because GetDstBySrc doesn't support limit push down, so degenerate to GetNeighbors when the query contains limit/simple clause
     When profiling query:
       """
       GO 3 STEPS FROM "Tony Parker" OVER * YIELD DISTINCT id($$) LIMIT [100, 100, 100] | YIELD count(*)
