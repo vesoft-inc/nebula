@@ -91,7 +91,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
 
   // Exchange planNode
   // newAggNode shall inherit the output of the oldFilterNode
-  newAggNode->setOutputVar(oldFilterNode->outputVar());
+  newAggNode->setOutputVar(oldFilterNode->outputVar(), oldFilterNode->colNames());
   // as the new agg node now inherits the output var ptr from a filter node, the action of
   // which alters its own colNames, its colNames need to be explicitly preserved.
   newAggNode->setColNames(oldAggNode->colNames());
@@ -100,7 +100,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   DCHECK_EQ(oldAggNode->outputVar(), oldFilterNode->inputVar());
   // newAggNode shall inherit oldFilterNode's inputs
   newAggNode->setInputVar(oldFilterNode->inputVar());
-  newFilterNode->setOutputVar(newAggNode->inputVar());
+  newFilterNode->setOutputVar(newAggNode->inputVar(), newAggNode->colNames());
 
   // Push down filter's optGroup and embed newAggGroupNode into old filter's
   // Group

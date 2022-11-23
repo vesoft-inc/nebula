@@ -334,11 +334,16 @@ void PlanNode::calcCost() {
   VLOG(1) << "unimplemented cost calculation.";
 }
 
-void PlanNode::setOutputVar(const std::string& var) {
+void PlanNode::setOutputVar(const std::string& var, const std::vector<std::string>& colNames) {
   auto* outputVarPtr = qctx_->symTable()->getVar(var);
   DCHECK(outputVarPtr != nullptr);
   auto oldVar = outputVar_->name;
   outputVar_ = outputVarPtr;
+  if (colNames.empty() && !outputVar_->colNames.empty()) {
+    setColNames(outputVar_->colNames);
+  } else {
+    setColNames(colNames);
+  }
   qctx_->symTable()->updateWrittenBy(oldVar, var, this);
 }
 

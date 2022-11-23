@@ -23,7 +23,7 @@ class TopNTest : public QueryTestBase {};
     auto start = StartNode::make(qctx_.get());                                             \
     auto* topnNode = TopN::make(qctx_.get(), start, factors, offset, count);               \
     topnNode->setInputVar(input_name);                                                     \
-    topnNode->setOutputVar(outputName);                                                    \
+    topnNode->setOutputVar(outputName, expected.colNames);                                 \
     auto topnExec = Executor::create(topnNode, qctx_.get());                               \
     EXPECT_TRUE(topnExec->execute().get().ok());                                           \
     auto& topnResult = qctx_->ectx()->getResult(topnNode->outputVar());                    \

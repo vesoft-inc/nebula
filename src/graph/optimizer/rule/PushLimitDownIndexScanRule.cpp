@@ -58,7 +58,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownIndexScanRule::transform(
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
-  newLimit->setOutputVar(limit->outputVar());
+  newLimit->setOutputVar(limit->outputVar(), limit->colNames());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto newIndexScan = static_cast<IndexScan *>(indexScan->clone());

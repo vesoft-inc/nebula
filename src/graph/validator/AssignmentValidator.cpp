@@ -28,7 +28,7 @@ Status AssignmentValidator::toPlan() {
   for (const auto &outputCol : validator_->outputCols()) {
     var->colNames.emplace_back(outputCol.name);
   }
-  root_->setOutputVar(var_);
+  root_->setOutputVar(var_, var->colNames);
   tail_ = validator_->tail();
   return Status::OK();
 }

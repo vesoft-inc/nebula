@@ -124,7 +124,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   if (filterUnpicked) {
     // produce new Filter node above
     auto* newAboveFilterNode = graph::Filter::make(octx->qctx(), newProjNode, filterUnpicked);
-    newAboveFilterNode->setOutputVar(oldFilterNode->outputVar());
+    newAboveFilterNode->setOutputVar(oldFilterNode->outputVar(), oldFilterNode->colNames());
     auto newAboveFilterGroupNode =
         OptGroupNode::create(octx, newAboveFilterNode, filterGroupNode->group());
 
@@ -138,7 +138,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   } else {
     // newProjNode shall inherit the output from oldFilterNode
     // which is the output of the opt group
-    newProjNode->setOutputVar(oldFilterNode->outputVar());
+    newProjNode->setOutputVar(oldFilterNode->outputVar(), oldFilterNode->colNames());
     // newProjNode's col names, on the hand, should inherit those of the oldProjNode
     // since they are the same project.
     newProjNode->setColNames(oldProjNode->outputVarPtr()->colNames);

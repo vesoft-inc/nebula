@@ -49,7 +49,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanEdgesRule::transform(
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
-  newLimit->setOutputVar(limit->outputVar());
+  newLimit->setOutputVar(limit->outputVar(), limit->colNames());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto newSe = static_cast<ScanEdges *>(se->clone());

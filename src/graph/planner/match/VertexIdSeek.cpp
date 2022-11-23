@@ -78,8 +78,7 @@ StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext *nodeCtx) {
   std::string inputVar = listToAnnoVarVid(qctx, nodeCtx->ids);
 
   auto *passThrough = PassThroughNode::make(qctx, nullptr);
-  passThrough->setOutputVar(inputVar);
-  passThrough->setColNames({kVid});
+  passThrough->setOutputVar(inputVar, {kVid});
 
   auto *dedup = Dedup::make(qctx, passThrough);
   dedup->setColNames({kVid});

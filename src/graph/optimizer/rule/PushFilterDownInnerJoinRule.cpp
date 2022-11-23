@@ -105,7 +105,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownInnerJoinRule::transform(
   result.eraseAll = true;
   if (filterUnpicked) {
     auto* newAboveFilterNode = graph::Filter::make(octx->qctx(), newInnerJoinNode);
-    newAboveFilterNode->setOutputVar(oldFilterNode->outputVar());
+    newAboveFilterNode->setOutputVar(oldFilterNode->outputVar(), oldFilterNode->colNames());
     newAboveFilterNode->setCondition(filterUnpicked);
     auto newAboveFilterGroupNode =
         OptGroupNode::create(octx, newAboveFilterNode, filterGroupNode->group());
@@ -116,7 +116,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownInnerJoinRule::transform(
     newInnerJoinGroupNode->setDeps({newFilterGroup});
     result.newGroupNodes.emplace_back(newAboveFilterGroupNode);
   } else {
-    newInnerJoinNode->setOutputVar(oldFilterNode->outputVar());
+    newInnerJoinNode->setOutputVar(oldFilterNode->outputVar(), oldFilterNode->colNames());
     newInnerJoinNode->setColNames(oldInnerJoinNode->colNames());
     auto newInnerJoinGroupNode =
         OptGroupNode::create(octx, newInnerJoinNode, filterGroupNode->group());

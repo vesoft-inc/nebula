@@ -23,7 +23,7 @@ class SampleTest : public QueryTestBase {};
     auto start = StartNode::make(qctx_.get());                                              \
     auto* sampleNode = Sample::make(qctx_.get(), start, count);                             \
     sampleNode->setInputVar("input_sequential");                                            \
-    sampleNode->setOutputVar(outputName);                                                   \
+    sampleNode->setOutputVar(outputName, {});                                               \
     auto sampleExec = Executor::create(sampleNode, qctx_.get());                            \
     EXPECT_TRUE(sampleExec->execute().get().ok());                                          \
     auto& sampleResult = qctx_->ectx()->getResult(sampleNode->outputVar());                 \
@@ -59,7 +59,7 @@ TEST_F(SampleTest, SequentialOutRange2) {
     auto start = StartNode::make(qctx_.get());                                             \
     auto* sampleNode = Sample::make(qctx_.get(), start, count);                            \
     sampleNode->setInputVar("input_neighbor");                                             \
-    sampleNode->setOutputVar(outputName);                                                  \
+    sampleNode->setOutputVar(outputName, {});                                              \
     auto sampleExec = Executor::create(sampleNode, qctx_.get());                           \
     EXPECT_TRUE(sampleExec->execute().get().ok());                                         \
     auto& sampleResult = qctx_->ectx()->getResult(sampleNode->outputVar());                \

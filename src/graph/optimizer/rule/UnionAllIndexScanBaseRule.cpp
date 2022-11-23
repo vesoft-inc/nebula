@@ -185,7 +185,7 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   auto scanNode = IndexScan::make(qctx, nullptr);
   OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
-  scanNode->setOutputVar(filter->outputVar());
+  scanNode->setOutputVar(filter->outputVar(), filter->colNames());
   scanNode->setColNames(filter->colNames());
   auto filterGroup = matched.node->group();
   auto optScanNode = OptGroupNode::create(ctx, scanNode, filterGroup);

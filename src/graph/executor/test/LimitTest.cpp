@@ -23,7 +23,7 @@ class LimitTest : public QueryTestBase {};
     auto start = StartNode::make(qctx_.get());                                              \
     auto* limitNode = Limit::make(qctx_.get(), start, offset, count);                       \
     limitNode->setInputVar("input_sequential");                                             \
-    limitNode->setOutputVar(outputName);                                                    \
+    limitNode->setOutputVar(outputName, expected.colNames);                                 \
     auto limitExec = Executor::create(limitNode, qctx_.get());                              \
     EXPECT_TRUE(limitExec->execute().get().ok());                                           \
     auto& limitResult = qctx_->ectx()->getResult(limitNode->outputVar());                   \

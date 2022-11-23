@@ -77,7 +77,7 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
 
   auto newProject = project->clone();
   auto newProjectGroupNode = OptGroupNode::create(ctx, newProject, projectGroupNode->group());
-  newProject->setOutputVar(project->outputVar());
+  newProject->setOutputVar(project->outputVar(), project->colNames());
 
   auto limitGroupNode = matched.dependencies.front().node;
   auto limit = static_cast<const Limit *>(limitGroupNode->node());

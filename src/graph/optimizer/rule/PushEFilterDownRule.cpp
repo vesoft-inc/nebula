@@ -66,7 +66,7 @@ StatusOr<OptRule::TransformResult> PushEFilterDownRule::transform(
 
   auto remainedExpr = std::move(visitor).remainedExpr();
   auto newTraverse = traverse->clone();
-  newTraverse->setOutputVar(traverse->outputVar());
+  newTraverse->setOutputVar(traverse->outputVar(), traverse->colNames());
   newTraverse->setEdgeFilter(remainedExpr);
   if (newTraverse->filter() != nullptr) {
     newTraverse->setFilter(

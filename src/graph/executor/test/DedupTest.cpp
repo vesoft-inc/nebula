@@ -26,7 +26,7 @@ class DedupTest : public QueryTestBase {
     auto yieldSentence = getYieldSentence(sentence, qctx_.get());                       \
     auto* dedupNode = Dedup::make(qctx_.get(), nullptr);                                \
     dedupNode->setInputVar(inputName);                                                  \
-    dedupNode->setOutputVar(outputName);                                                \
+    dedupNode->setOutputVar(outputName, expected.colNames);                             \
     auto dedupExec = std::make_unique<DedupExecutor>(dedupNode, qctx_.get());           \
     if (!expected.colNames.empty()) {                                                   \
       EXPECT_TRUE(dedupExec->execute().get().ok());                                     \

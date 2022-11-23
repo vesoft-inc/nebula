@@ -169,7 +169,7 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
   std::vector<IndexQueryContext> idxCtxs = {ictx};
   auto scanNode = makeTagIndexScan(ctx->qctx(), scan, isPrefixScan);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
-  scanNode->setOutputVar(filter->outputVar());
+  scanNode->setOutputVar(filter->outputVar(), filter->colNames());
   scanNode->setColNames(filter->colNames());
   auto filterGroup = matched.node->group();
   auto optScanNode = OptGroupNode::create(ctx, scanNode, filterGroup);

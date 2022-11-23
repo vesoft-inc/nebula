@@ -56,7 +56,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
   PlanNode *newFilter = nullptr;
   if (remainedExpr != nullptr) {
     newFilter = Filter::make(qctx, nullptr, remainedExpr);
-    newFilter->setOutputVar(filter->outputVar());
+    newFilter->setOutputVar(filter->outputVar(), filter->colNames());
     newFilter->setInputVar(filter->inputVar());
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
@@ -81,7 +81,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
   } else {
     // Filter(A)<-ScanVertices(C) => ScanVertices(A&&C)
     newSvGroupNode = OptGroupNode::create(ctx, newSV, filterGroupNode->group());
-    newSV->setOutputVar(filter->outputVar());
+    newSV->setOutputVar(filter->outputVar(), filter->colNames());
   }
 
   for (auto dep : svGroupNode->dependencies()) {

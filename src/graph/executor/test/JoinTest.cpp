@@ -237,11 +237,9 @@ TEST_F(JoinTest, HashInnerJoin) {
   std::vector<Expression*> probeKeys = {probe1, probe2};
 
   auto lhs = Project::make(qctx_.get(), nullptr, nullptr);
-  lhs->setOutputVar("var4");
-  lhs->setColNames({"v1", "e1", "v2", "v3"});
+  lhs->setOutputVar("var4", {"v1", "e1", "v2", "v3"});
   auto rhs = Project::make(qctx_.get(), nullptr, nullptr);
-  rhs->setOutputVar("var5");
-  rhs->setColNames({"v2", "e2", "v3"});
+  rhs->setOutputVar("var5", {"v2", "e2", "v3"});
 
   auto* join =
       HashInnerJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
@@ -417,11 +415,9 @@ TEST_F(JoinTest, HashLeftJoin) {
   std::vector<Expression*> probeKeys = {probe1, probe2};
 
   auto lhs = Project::make(qctx_.get(), nullptr, nullptr);
-  lhs->setOutputVar("var5");
-  lhs->setColNames({"v2", "e2", "v3"});
+  lhs->setOutputVar("var5", {"v2", "e2", "v3"});
   auto rhs = Project::make(qctx_.get(), nullptr, nullptr);
-  rhs->setOutputVar("var4");
-  rhs->setColNames({"v1", "e1", "v2", "v3"});
+  rhs->setOutputVar("var4", {"v1", "e1", "v2", "v3"});
 
   auto* join = HashLeftJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
 

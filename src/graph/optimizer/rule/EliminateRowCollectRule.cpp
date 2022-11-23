@@ -52,7 +52,7 @@ StatusOr<OptRule::TransformResult> EliminateRowCollectRule::transform(
   const auto proj = static_cast<const Project*>(projGroupNode->node());
 
   auto newProj = static_cast<Project*>(proj->clone());
-  newProj->setOutputVar(dataCollect->outputVar());
+  newProj->setOutputVar(dataCollect->outputVar(), dataCollect->colNames());
   auto newProjGroupNode = OptGroupNode::create(octx, newProj, dataCollectGroupNode->group());
 
   for (auto dep : projGroupNode->dependencies()) {

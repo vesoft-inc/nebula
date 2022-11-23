@@ -84,7 +84,7 @@ StatusOr<OptRule::TransformResult> RemoveNoopProjectRule::transform(
   DCHECK_EQ(oldProjNode->kind(), PlanNode::Kind::kProject);
   const auto* depGroupNode = matched.dependencies.front().node;
   auto* newNode = depGroupNode->node()->clone();
-  newNode->setOutputVar(oldProjNode->outputVar());
+  newNode->setOutputVar(oldProjNode->outputVar(), oldProjNode->colNames());
   auto* newGroupNode = OptGroupNode::create(octx, newNode, projGroup);
   newGroupNode->setDeps(depGroupNode->dependencies());
   TransformResult result;

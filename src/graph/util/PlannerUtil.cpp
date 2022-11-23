@@ -72,7 +72,7 @@ PlanNode* PlannerUtil::extractDstFromGN(QueryContext* qctx,
   auto* project = Project::make(qctx, gn, columns);
 
   auto* dedup = Dedup::make(qctx, project);
-  dedup->setOutputVar(output);
+  dedup->setOutputVar(output, {kVid});
   return dedup;
 }
 

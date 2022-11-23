@@ -65,7 +65,7 @@ StatusOr<OptRule::TransformResult> MergeGetVerticesAndProjectRule::transform(
   auto srcExpr = column->expr()->clone();
   newGV->setSrc(srcExpr);
   newGV->setInputVar(project->inputVar());
-  newGV->setOutputVar(gv->outputVar());
+  newGV->setOutputVar(gv->outputVar(), gv->colNames());
   auto newOptGV = OptGroupNode::create(ctx, newGV, optGV->group());
   for (auto dep : optProj->dependencies()) {
     newOptGV->dependsOn(dep);

@@ -133,7 +133,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage
-  scanNode->setOutputVar(filter->outputVar());
+  scanNode->setOutputVar(filter->outputVar(), filter->colNames());
   scanNode->setColNames(filter->colNames());
   auto filterGroup = matched.node->group();
   auto optScanNode = OptGroupNode::create(ctx, scanNode, filterGroup);

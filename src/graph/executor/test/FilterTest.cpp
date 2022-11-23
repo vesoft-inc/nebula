@@ -33,7 +33,7 @@ class FilterTest : public QueryTestBase {
     whereSentence->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(whereSentence->filter())); \
     auto* filterNode = Filter::make(qctx_.get(), nullptr, yieldSentence->where()->filter());       \
     filterNode->setInputVar(inputName);                                                            \
-    filterNode->setOutputVar(outputName);                                                          \
+    filterNode->setOutputVar(outputName, expected.colNames);                                       \
     auto filterExec = std::make_unique<FilterExecutor>(filterNode, qctx_.get());                   \
     EXPECT_TRUE(filterExec->execute().get().ok());                                                 \
     auto& filterResult = qctx_->ectx()->getResult(filterNode->outputVar());                        \

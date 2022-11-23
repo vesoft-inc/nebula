@@ -23,7 +23,7 @@ class SortTest : public QueryTestBase {};
     auto start = StartNode::make(qctx_.get());                                        \
     auto* sortNode = Sort::make(qctx_.get(), start, factors);                         \
     sortNode->setInputVar(input_name);                                                \
-    sortNode->setOutputVar(outputName);                                               \
+    sortNode->setOutputVar(outputName, expected.colNames);                            \
     auto sortExec = Executor::create(sortNode, qctx_.get());                          \
     EXPECT_TRUE(sortExec->execute().get().ok());                                      \
     auto& sortResult = qctx_->ectx()->getResult(sortNode->outputVar());               \

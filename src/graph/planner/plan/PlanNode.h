@@ -221,7 +221,7 @@ class PlanNode {
     return numDeps() == 2U;
   }
 
-  void setOutputVar(const std::string& var);
+  void setOutputVar(const std::string& var, const std::vector<std::string>& colNames);
 
   const std::string& outputVar() const {
     return outputVarPtr()->name;

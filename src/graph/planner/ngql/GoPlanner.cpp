@@ -191,7 +191,7 @@ PlanNode* GoPlanner::trackStartVid(PlanNode* left, PlanNode* right) {
 
   auto* project = Project::make(qctx, join, columns);
   auto* dedup = Dedup::make(qctx, project);
-  dedup->setOutputVar(left->outputVar());
+  dedup->setOutputVar(left->outputVar(), left->colNames());
 
   return dedup;
 }
@@ -486,8 +486,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
     gd->setInputVar(goCtx_->vidsVar);
     gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
-    dedup->setOutputVar(goCtx_->vidsVar);
-    dedup->setColNames(gd->colNames());
+    dedup->setOutputVar(goCtx_->vidsVar, gd->colNames());
     getDst = dedup;
 
     loopBody = getDst;
@@ -544,8 +543,7 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     // The outputVar of `Dedup` is the same as the inputVar of `GetDstBySrc`.
     // So the output of `Dedup` of current iteration feeds into the input of `GetDstBySrc` of next
     // iteration.
-    dedup->setOutputVar(goCtx_->vidsVar);
-    dedup->setColNames(gd->colNames());
+    dedup->setOutputVar(goCtx_->vidsVar, gd->colNames());
     getDst = dedup;
     loopBody = getDst;
 

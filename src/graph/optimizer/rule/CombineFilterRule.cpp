@@ -51,7 +51,7 @@ StatusOr<OptRule::TransformResult> CombineFilterRule::transform(
     auto* conditionCombine =
         LogicalExpression::makeAnd(pool, conditionAbove->clone(), conditionBelow->clone());
     newFilter->setCondition(conditionCombine);
-    newFilter->setOutputVar(filterAbove->outputVar());
+    newFilter->setOutputVar(filterAbove->outputVar(), filterAbove->colNames());
     auto* newGroupNode = OptGroupNode::create(octx, newFilter, filterGroup);
     newGroupNode->setDeps(groupNode->dependencies());
     result.newGroupNodes.emplace_back(newGroupNode);

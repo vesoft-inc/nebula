@@ -43,7 +43,7 @@ StatusOr<OptRule::TransformResult> MergeGetVerticesAndDedupRule::transform(
     newGV->setDedup();
   }
   newGV->setInputVar(dedup->inputVar());
-  newGV->setOutputVar(gv->outputVar());
+  newGV->setOutputVar(gv->outputVar(), gv->colNames());
   auto newOptGV = OptGroupNode::create(ctx, newGV, optGV->group());
   for (auto dep : optDedup->dependencies()) {
     newOptGV->dependsOn(dep);

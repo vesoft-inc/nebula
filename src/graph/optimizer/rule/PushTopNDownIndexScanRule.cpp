@@ -92,7 +92,7 @@ StatusOr<OptRule::TransformResult> PushTopNDownIndexScanRule::transform(
   }
 
   auto newTopN = static_cast<TopN *>(topN->clone());
-  newTopN->setOutputVar(topN->outputVar());
+  newTopN->setOutputVar(topN->outputVar(), topN->colNames());
   auto newtopNGroupNode = OptGroupNode::create(octx, newTopN, topNGroupNode->group());
 
   auto newProject = static_cast<Project *>(project->clone());

@@ -66,7 +66,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   PlanNode *newFilter = nullptr;
   if (remainedExpr != nullptr) {
     newFilter = Filter::make(qctx, nullptr, remainedExpr);
-    newFilter->setOutputVar(filter->outputVar());
+    newFilter->setOutputVar(filter->outputVar(), filter->colNames());
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
 
@@ -89,7 +89,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   } else {
     // Filter(A)<-GetNeighbors(C) => GetNeighbors(A&&C)
     newGnGroupNode = OptGroupNode::create(ctx, newGN, filterGroupNode->group());
-    newGN->setOutputVar(filter->outputVar());
+    newGN->setOutputVar(filter->outputVar(), filter->colNames());
   }
 
   for (auto dep : gnGroupNode->dependencies()) {

@@ -65,7 +65,7 @@ StatusOr<OptRule::TransformResult> EliminateAppendVerticesRule::transform(
   const auto appendVertices = static_cast<const AppendVertices*>(appendVerticesGroupNode->node());
 
   auto newProj = static_cast<Project*>(project->clone());
-  newProj->setOutputVar(project->outputVar());
+  newProj->setOutputVar(project->outputVar(), project->colNames());
   newProj->setInputVar(appendVertices->inputVar());
   auto newProjGroupNode = OptGroupNode::create(octx, newProj, projectGroupNode->group());
   newProjGroupNode->setDeps(appendVerticesGroupNode->dependencies());

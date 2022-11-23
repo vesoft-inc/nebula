@@ -46,7 +46,7 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(OptContext *ctx,
 
   auto qctx = ctx->qctx();
   auto topn = TopN::make(qctx, nullptr, sort->factors(), limit->offset(), limit->count(qctx));
-  topn->setOutputVar(limit->outputVar());
+  topn->setOutputVar(limit->outputVar(), limit->colNames());
   topn->setInputVar(sort->inputVar());
   topn->setColNames(sort->colNames());
   auto topnNode = OptGroupNode::create(ctx, topn, limitGroupNode->group());

@@ -44,7 +44,7 @@ StatusOr<OptRule::TransformResult> RemoveProjectDedupBeforeGetDstBySrcRule::tran
   auto* newGetDstBySrc = static_cast<graph::GetDstBySrc*>(getDstBySrc->clone());
   // Replace `$-._vid` with `COLUMN[0]`
   newGetDstBySrc->setSrc(ColumnExpression::make(getDstBySrc->src()->getObjPool(), 0));
-  newGetDstBySrc->setOutputVar(getDstBySrc->outputVar());
+  newGetDstBySrc->setOutputVar(getDstBySrc->outputVar(), getDstBySrc->colNames());
   newGetDstBySrc->setInputVar(project->inputVar());
   newGetDstBySrc->setColNames(newGetDstBySrc->colNames());
 

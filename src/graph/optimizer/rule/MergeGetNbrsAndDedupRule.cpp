@@ -44,7 +44,7 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndDedupRule::transform(
     newGN->setDedup();
   }
   newGN->setInputVar(dedup->inputVar());
-  newGN->setOutputVar(gn->outputVar());
+  newGN->setOutputVar(gn->outputVar(), gn->colNames());
   auto newOptGV = OptGroupNode::create(octx, newGN, optGN->group());
   for (auto dep : optDedup->dependencies()) {
     newOptGV->dependsOn(dep);

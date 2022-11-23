@@ -72,7 +72,7 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   auto project = static_cast<const Project *>(projectGroupNode->node());
 
   auto newProject = project->clone();
-  newProject->setOutputVar(project->outputVar());
+  newProject->setOutputVar(project->outputVar(), project->colNames());
   auto newProjectGroupNode = OptGroupNode::create(ctx, newProject, projectGroupNode->group());
 
   auto limitGroupNode = matched.dependencies.front().node;

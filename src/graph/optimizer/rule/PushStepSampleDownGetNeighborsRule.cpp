@@ -49,7 +49,7 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
   }
 
   auto newSample = static_cast<Sample *>(sample->clone());
-  newSample->setOutputVar(sample->outputVar());
+  newSample->setOutputVar(sample->outputVar(), sample->colNames());
   auto newSampleGroupNode = OptGroupNode::create(octx, newSample, sampleGroupNode->group());
 
   auto newGn = static_cast<GetNeighbors *>(gn->clone());

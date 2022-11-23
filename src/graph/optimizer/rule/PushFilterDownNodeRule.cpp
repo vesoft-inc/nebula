@@ -66,7 +66,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownNodeRule::transform(
   auto remainedExpr = std::move(visitor).remainedExpr();
   auto *explore = static_cast<const Explore *>(node);
   auto *newExplore = static_cast<Explore *>(node->clone());
-  newExplore->setOutputVar(explore->outputVar());
+  newExplore->setOutputVar(explore->outputVar(), explore->colNames());
   auto newExploreGroupNode = OptGroupNode::create(ctx, newExplore, groupNode->group());
   if (explore->filter() != nullptr) {
     vFilter = LogicalExpression::makeAnd(pool, vFilter, newExplore->filter());

@@ -135,7 +135,7 @@ StatusOr<TransformResult> OptimizeEdgeIndexScanByFilterRule::transform(
   std::vector<IndexQueryContext> idxCtxs = {ictx};
   auto scanNode = makeEdgeIndexScan(ctx->qctx(), scan, isPrefixScan);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
-  scanNode->setOutputVar(filter->outputVar());
+  scanNode->setOutputVar(filter->outputVar(), filter->colNames());
   scanNode->setColNames(filter->colNames());
   auto filterGroup = matched.node->group();
   auto optScanNode = OptGroupNode::create(ctx, scanNode, filterGroup);
