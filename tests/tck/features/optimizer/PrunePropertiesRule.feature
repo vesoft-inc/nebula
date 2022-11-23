@@ -744,74 +744,74 @@ Feature: Prune Properties rule
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
-        return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
-        order by age limit 5;
+        return properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
+        order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | 88                      | "Danny Green"          | 41  | 2010            | 31               |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | 88                      | "Cory Joseph"          | 41  | 2011            | 27               |
-      | "男"                  | __NULL__                | "76ers"                | 41  | 2017            | NULL             |
+      | properties(src_v).sex | degree | name          | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | 88     | "Aron Baynes" | 41  | 2013            | 32               |
+      | "男"                  | 88     | "Boris Diaw"  | 41  | 2012            | 36               |
+      | "男"                  | 88     | "Cory Joseph" | 41  | 2011            | 27               |
+      | "男"                  | 88     | "Danny Green" | 41  | 2010            | 31               |
+      | "男"                  | 88     | "David West"  | 41  | 2015            | 38               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v)
-        return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
-        order by age limit 5;
+        return properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
+        order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "Kyle Anderson"        | 41  | 2022            | 25               |
-      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | __NULL__                | "Kevin Durant"         | 41  | 2022            | 30               |
+      | properties(src_v).sex | degree       | name          | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
-        return properties(v1).name,properties(v2).age AS age,properties(v3).name
-        order by age limit 1;
+        return properties(v1).name,properties(v2).age AS age,properties(v3).name as name
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | age | properties(v3).name |
-      | "Manu Ginobili"     | 36  | "Spurs"             |
+      | properties(v1).name | age | name      |
+      | "Manu Ginobili"     | 36  | "Hornets" |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
-        return properties(v1).name,properties(v2).age AS age,properties(v3).name,v1.player.sex,v2.player.sex,id(v3)
-        order by age limit 1;
+        return properties(v1).name,properties(v2).age AS age,properties(v3).name as name,v1.player.sex,v2.player.sex,id(v3)
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)  |
-      | "Manu Ginobili"     | 36  | "Spurs"             | "男"          | "男"          | "Spurs" |
+      | properties(v1).name | age | name      | v1.player.sex | v2.player.sex | id(v3)    |
+      | "Manu Ginobili"     | 36  | "Hornets" | "男"          | "男"          | "Hornets" |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name,v2.player.sex,v1.player.age
-        order by name limit 1;
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name,v2.player.sex,v1.player.age
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name        | v2.player.sex | v1.player.age |
-      | "Yao Ming"          | 47                 | "Cavaliers" | "男"          | 38            |
+      | properties(v1).name | age | name        | v2.player.sex | v1.player.age |
+      | "Yao Ming"          | 47  | "Cavaliers" | "男"          | 38            |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name
         order by name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name        |
-      | "Yao Ming"          | 47                 | "Cavaliers" |
+      | properties(v1).name | age | name        |
+      | "Yao Ming"          | 47  | "Cavaliers" |
     When executing query:
       """
       match (v1)-->(v2)-->(v3:team{name:"Celtics"})
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name
-        order by name limit 1;
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name
+        order by name, age limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name      |
-      | "Yao Ming"          | 47                 | "Celtics" |
+      | properties(v1).name | age | name      |
+      | "Ray Allen"         | 33  | "Celtics" |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v) where  id(src_v)=="Rajon Rondo"
@@ -826,16 +826,16 @@ Feature: Prune Properties rule
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo"
-        return properties(e).degree,properties(e2).degree AS degree
-        order by degree limit 5;
+        return properties(e).degree as degree,properties(e2).degree AS degree1
+        order by degree, degree1 limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(e).degree | degree |
-      | 88                   | 88     |
-      | __NULL__             | 88     |
-      | 88                   | 88     |
-      | __NULL__             | 88     |
-      | 88                   | 88     |
+      | degree | degree1 |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree1,properties(e).degree1,e2.a,dst_v.p.name,dst_v.player.sex1,properties(src_v).name2 limit 5;

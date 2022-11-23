@@ -15,7 +15,6 @@ folly::Future<Status> ProjectExecutor::execute() {
   auto *project = asNode<Project>(node());
   auto iter = ectx_->getResult(project->inputVar()).iter();
   DCHECK(!!iter);
-  QueryExpressionContext ctx(ectx_);
 
   if (FLAGS_max_job_size <= 1) {
     auto ds = handleJob(0, iter->size(), iter.get());
