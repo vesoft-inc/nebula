@@ -263,10 +263,6 @@ class NebulaKeyUtils final {
     return rawKey.subpiece(0, rawKey.size() - sizeof(EdgeVerPlaceHolder));
   }
 
-  static std::string updatePartIdTagKey(PartitionID newPartId, const std::string& rawKey);
-
-  static std::string updatePartIdEdgeKey(PartitionID newPartId, const std::string& rawKey);
-
   /**
    * @brief gen edge key from lock, this will used at resume
    *        if enableMvcc ver of edge and lock will be same,

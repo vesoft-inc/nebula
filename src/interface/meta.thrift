@@ -898,9 +898,8 @@ struct ListZonesResp {
 }
 
 enum ListenerType {
-    UNKNOWN        = 0x00,
-    ELASTICSEARCH  = 0x01,
-    GRAPH_TOPOLOGY = 0x02,
+    UNKNOWN       = 0x00,
+    ELASTICSEARCH = 0x01,
 } (cpp.enum_strict)
 
 struct AddListenerReq {

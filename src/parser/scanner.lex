@@ -277,7 +277,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "HTTP"                      { return TokenType::KW_HTTP; }
 "HTTPS"                     { return TokenType::KW_HTTPS; }
 "FULLTEXT"                  { return TokenType::KW_FULLTEXT; }
-"GRAPH_TOPOLOGY"            { return TokenType::KW_GRAPH_TOPOLOGY; }
 "AUTO"                      { return TokenType::KW_AUTO; }
 "FUZZY"                     { return TokenType::KW_FUZZY; }
 "PREFIX"                    { return TokenType::KW_PREFIX; }

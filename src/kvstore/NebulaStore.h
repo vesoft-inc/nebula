@@ -40,7 +40,6 @@ struct SpacePartInfo {
 
 struct SpaceListenerInfo {
   std::unordered_map<PartitionID, ListenerMap> listeners_;
-  std::unique_ptr<KVEngine> engine_;
 };
 
 /**
@@ -57,7 +56,6 @@ class NebulaStore : public KVStore, public Handler {
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
   FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
   friend class ListenerBasicTest;
-  friend class TopoListenerTest;
 
  public:
   /**

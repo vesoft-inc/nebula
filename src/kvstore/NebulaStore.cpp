@@ -18,7 +18,6 @@
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
 #include "kvstore/plugins/elasticsearch/ESListener.h"
-#include "kvstore/plugins/topology/TopoListener.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs,
@@ -373,9 +372,8 @@ void NebulaStore::addSpace(GraphSpaceID spaceId) {
       bool engineExist = false;
       auto dataPath = folly::stringPrintf("%s/nebula/%d", path.c_str(), spaceId);
       // Check if given data path contain a kv engine of specified spaceId
-      for (auto iter = spaces_[spaceId]->engines_.begin();
-            iter != spaces_[spaceId]->engines_.end();
-            iter++) {
+      for (auto iter = spaces_[spaceId]->engines_.begin(); iter != spaces_[spaceId]->engines_.end();
+           iter++) {
         auto dPath = (*iter)->getDataRoot();
         if (dataPath.compare(dPath) == 0) {
           engineExist = true;
@@ -568,7 +566,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, bool need
 }
 
 void NebulaStore::addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
-  // doodle: SpaceListenerInfo need to be a map of <ListenerType -> pair of <partId, peers>> as well
+  UNUSED(type);
   folly::RWSpinLock::WriteHolder wh(&lock_);
   // listener don't need engine for now
   if (this->spaceListeners_.find(spaceId) != this->spaceListeners_.end()) {
@@ -577,17 +575,10 @@ void NebulaStore::addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerTyp
   }
   LOG(INFO) << "Create listener space " << spaceId;
   this->spaceListeners_[spaceId] = std::make_unique<SpaceListenerInfo>();
-  // doodle: open a rocksdb here
-  if (type == meta::cpp2::ListenerType::GRAPH_TOPOLOGY) {
-    this->spaceListeners_[spaceId]->engine_ =
-        newEngine(spaceId, options_.listenerPath_, options_.walPath_);
-  }
 }
 
 void NebulaStore::removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
-  // doodle: SpaceListenerInfo need to be a map of <ListenerType -> pair of <partId, peers>> as well
   UNUSED(type);
-
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = this->spaceListeners_.find(spaceId);
   if (spaceIt != this->spaceListeners_.end()) {
@@ -636,17 +627,6 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
   if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
     listener = std::make_shared<ESListener>(
         spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
-  } else if (type == meta::cpp2::ListenerType::GRAPH_TOPOLOGY) {
-    auto engine = spaceListeners_[spaceId]->engine_.get();
-    listener = std::make_shared<TopoListener>(spaceId,
-                                              partId,
-                                              raftAddr_,
-                                              walPath,
-                                              ioPool_,
-                                              bgWorkers_,
-                                              workers_,
-                                              engine,
-                                              getSpaceVidLen(spaceId));
   } else {
     LOG(FATAL) << "Should not reach here";
     return nullptr;
@@ -825,26 +805,15 @@ nebula::cpp2::ErrorCode NebulaStore::prefix(GraphSpaceID spaceId,
                                             std::unique_ptr<KVIterator>* iter,
                                             bool canReadFromFollower,
                                             const void* snapshot) {
-  if (!isListener()) {
-    auto ret = part(spaceId, partId);
-    if (!ok(ret)) {
-      return error(ret);
-    }
-    auto part = nebula::value(ret);
-    if (!checkLeader(part, canReadFromFollower)) {
-      return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
-    }
-    return part->engine()->prefix(prefix, iter, snapshot);
-  } else {
-    // doodle: for simplicity, we just use the engine in spaceListeners_, and we don't check whether
-    // part exists or type of listener is topo or not
-    auto spaceIt = spaceListeners_.find(spaceId);
-    if (spaceIt == spaceListeners_.end()) {
-      return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-    }
-    auto engine = spaceIt->second->engine_.get();
-    return engine->prefix(prefix, iter, snapshot);
+  auto ret = part(spaceId, partId);
+  if (!ok(ret)) {
+    return error(ret);
   }
+  auto part = nebula::value(ret);
+  if (!checkLeader(part, canReadFromFollower)) {
+    return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
+  }
+  return part->engine()->prefix(prefix, iter, snapshot);
 }
 
 nebula::cpp2::ErrorCode NebulaStore::rangeWithPrefix(GraphSpaceID spaceId,

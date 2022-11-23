@@ -204,7 +204,7 @@ using namespace nebula;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO KW_NEW
-%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP KW_GRAPH_TOPOLOGY
+%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
@@ -544,7 +544,6 @@ unreserved_keyword
     | KW_LISTENER           { $$ = new std::string("listener"); }
     | KW_ELASTICSEARCH      { $$ = new std::string("elasticsearch"); }
     | KW_FULLTEXT           { $$ = new std::string("fulltext"); }
-    | KW_GRAPH_TOPOLOGY     { $$ = new std::string("graph_topology"); }
     | KW_STATS              { $$ = new std::string("stats"); }
     | KW_STATUS             { $$ = new std::string("status"); }
     | KW_AUTO               { $$ = new std::string("auto"); }
@@ -3819,17 +3818,11 @@ add_listener_sentence
     : KW_ADD KW_LISTENER KW_ELASTICSEARCH host_list {
         $$ = new AddListenerSentence(meta::cpp2::ListenerType::ELASTICSEARCH, $4);
     }
-    | KW_ADD KW_LISTENER KW_GRAPH_TOPOLOGY host_list {
-        $$ = new AddListenerSentence(meta::cpp2::ListenerType::GRAPH_TOPOLOGY, $4);
-    }
     ;
 
 remove_listener_sentence
     : KW_REMOVE KW_LISTENER KW_ELASTICSEARCH {
         $$ = new RemoveListenerSentence(meta::cpp2::ListenerType::ELASTICSEARCH);
-    }
-    | KW_REMOVE KW_LISTENER KW_GRAPH_TOPOLOGY {
-        $$ = new RemoveListenerSentence(meta::cpp2::ListenerType::GRAPH_TOPOLOGY);
     }
     ;
 

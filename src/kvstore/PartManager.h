@@ -77,7 +77,6 @@ class Handler {
    */
   virtual void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) = 0;
 
-
   /**
    * @brief Add a space to listener
    *
@@ -242,7 +241,6 @@ class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
   FRIEND_TEST(NebulaStoreTest, BackupRestoreTest);
   friend class ListenerBasicTest;
-  friend class TopoListenerTest;
 
  public:
   MemPartManager() = default;

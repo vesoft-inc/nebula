@@ -33,14 +33,6 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     return;
   }
 
-  if (type == cpp2::ListenerType::GRAPH_TOPOLOGY && hosts.size() != 1) {
-    LOG(ERROR) << "Graph topology should have exactly one listener";
-    ret = nebula::cpp2::ErrorCode::E_INVALID_HOST;
-    handleErrorCode(ret);
-    onFinished();
-    return;
-  }
-
   // TODO : (sky) if type is elasticsearch, need check text search service.
   const auto& prefix = MetaKeyUtils::partPrefix(space);
   auto iterRet = doPrefix(prefix);
