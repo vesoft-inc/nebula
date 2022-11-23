@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/Common.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
