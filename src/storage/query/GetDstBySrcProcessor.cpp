@@ -28,6 +28,12 @@ void GetDstBySrcProcessor::process(const cpp2::GetDstBySrcRequest& req) {
 }
 
 void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+    profileDetail("GetDstBySrcProcessorTotal", 0);
+    profileDetail("GetDstBySrcProcessorDedup", 0);
+  }
+
   spaceId_ = req.get_space_id();
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -84,6 +90,10 @@ void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req
       }
     }
   }
+
+  if (UNLIKELY(profileDetailFlag_)) {
+    profilePlan(plan);
+  }
   onProcessFinished();
   onFinished();
 }
@@ -104,14 +114,14 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
     CHECK(!t.hasException());
     const auto& tries = t.value();
 
-    size_t sum = 0;
-    for (size_t j = 0; j < tries.size(); j++) {
-      const auto& [code, partId] = tries[j].value();
-      if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-        sum += partResults_[j].values.size();
-      }
-    }
-    flatResult_.values.reserve(sum);
+    // size_t sum = 0;
+    // for (size_t j = 0; j < tries.size(); j++) {
+    //   const auto& [code, partId] = tries[j].value();
+    //   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    //     sum += partResults_[j].size();
+    //   }
+    // }
+    // flatResult_.reserve(sum);
 
     for (size_t j = 0; j < tries.size(); j++) {
       DCHECK(!tries[j].hasException());
@@ -119,10 +129,10 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
       } else {
-        for (auto& v : partResults_[j].values) {
-          flatResult_.values.emplace_back(std::move(v));
+        for (auto& v : partResults_[j]) {
+          flatResult_.emplace_back(std::move(v));
         }
-        std::vector<Value>().swap(partResults_[j].values);
+        std::deque<Value>().swap(partResults_[j]);
       }
     }
 
@@ -133,7 +143,7 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProcessor::runInExecutor(
     RuntimeContext* context,
-    nebula::List* result,
+    std::deque<Value>* result,
     PartitionID partId,
     const std::vector<Value>& srcIds) {
   return folly::via(executor_,
@@ -150,6 +160,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
 
                         // the first column of each row would be the vertex id
                         auto ret = plan.go(partId, vId);
+                        // if (UNLIKELY(profileDetailFlag_)) {
+                        //   profilePlan(plan);
+                        // }
                         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
                           return std::make_pair(ret, partId);
                         }
@@ -159,7 +172,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
 }
 
 StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
-                                                      nebula::List* result) {
+                                                      std::deque<Value>* result) {
   /*
     The StoragePlan looks like this:
         +------------------+
@@ -173,7 +186,10 @@ StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
   StoragePlan<VertexID> plan;
   std::vector<SingleEdgeNode*> edges;
   for (const auto& ec : edgeContext_.propContexts_) {
-    auto edge = std::make_unique<SingleEdgeNode>(context, &edgeContext_, ec.first, &ec.second);
+    // Since we only return dst in this processor, some steps would be skipped when iterating
+    // key-values if possible, for example, decoding value
+    auto edge = std::make_unique<SingleEdgeNode>(
+        context, &edgeContext_, ec.first, &ec.second, nullptr, nullptr, true);
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
@@ -230,16 +246,19 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
 }
 
 void GetDstBySrcProcessor::onProcessFinished() {
+  if (profileDetailFlag_) {
+    dedupDuration_.reset();
+  }
   // dedup the dsts before we return
   static const auto kConcurrentThreshold = FLAGS_concurrent_dedup_threshold;
   static const auto kMaxThreads = FLAGS_max_dedup_threads;
-  auto nRows = flatResult_.values.size();
+  auto nRows = flatResult_.size();
   std::vector<Row> deduped;
   using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
   if (nRows < kConcurrentThreshold * 2) {
     HashSet unique;
     unique.reserve(nRows);
-    for (const auto& val : flatResult_.values) {
+    for (const auto& val : flatResult_) {
       unique.emplace(val);
     }
     deduped.reserve(unique.size());
@@ -271,7 +290,7 @@ void GetDstBySrcProcessor::onProcessFinished() {
       auto start = ranges[idx].first;
       auto end = ranges[idx].second;
       for (auto j = start; j < end; j++) {
-        sets[idx].emplace(std::move(flatResult_.values[j]));
+        sets[idx].emplace(std::move(flatResult_[j]));
       }
     };
 
@@ -302,6 +321,11 @@ void GetDstBySrcProcessor::onProcessFinished() {
   }
   resultDataSet_.rows = std::move(deduped);
   resp_.dsts_ref() = std::move(resultDataSet_);
+
+  if (profileDetailFlag_) {
+    profileDetail("GetDstBySrcProcessorDedup", dedupDuration_.elapsedInUSec());
+    profileDetail("GetDstBySrcProcessorTotal", totalDuration_.elapsedInUSec());
+  }
 }
 
 }  // namespace storage

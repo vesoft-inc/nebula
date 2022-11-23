@@ -44,9 +44,9 @@ TEST(StatusHandlerTest, SimpleTest) {
     auto url = "/status";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
-    auto json = folly::parseJson(resp.value());
+    auto httpResp = HttpClient::get(request);
+    ASSERT_EQ(httpResp.curlCode, 0);
+    auto json = folly::parseJson(httpResp.body);
     LOG(INFO) << folly::toPrettyJson(json);
     ASSERT_EQ("running", json["status"].asString());
     ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
@@ -56,9 +56,9 @@ TEST(StatusHandlerTest, SimpleTest) {
     auto url = "";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto resp = http::HttpClient::get(request);
-    ASSERT_TRUE(resp.ok());
-    auto json = folly::parseJson(resp.value());
+    auto httpResp = HttpClient::get(request);
+    ASSERT_EQ(httpResp.curlCode, 0);
+    auto json = folly::parseJson(httpResp.body);
     ASSERT_EQ("running", json["status"].asString());
     ASSERT_EQ(gitInfoShaValue, json["git_info_sha"].asString());
     ASSERT_TRUE(std::regex_match(json["git_info_sha"].asString(), gitInfoShaRegex));

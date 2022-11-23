@@ -51,7 +51,7 @@ Feature: Submit job space requirements
 
   Scenario: Not exist job
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And wait 6 seconds
@@ -68,7 +68,7 @@ Feature: Submit job space requirements
 
   Scenario: Submit and show jobs
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And wait 6 seconds
@@ -122,7 +122,7 @@ Feature: Submit job space requirements
 
   Scenario: Submit and show jobs in other space
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And wait 6 seconds
@@ -160,7 +160,7 @@ Feature: Submit job space requirements
       | /\d+/  | "FLUSH"   | "FINISHED" | /\w+/      | /\w+/     |
       | /\d+/  | "COMPACT" | "FINISHED" | /\w+/      | /\w+/     |
     Given create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     When executing query:

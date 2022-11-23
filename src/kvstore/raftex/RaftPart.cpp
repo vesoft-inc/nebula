@@ -368,7 +368,7 @@ RaftPart::RaftPart(
       walRoot,
       std::move(info),
       std::move(policy),
-      [this](LogID logId, TermID logTermId, ClusterID logClusterId, const std::string& log) {
+      [this](LogID logId, TermID logTermId, ClusterID logClusterId, folly::StringPiece log) {
         return this->preProcessLog(logId, logTermId, logClusterId, log);
       },
       diskMan);

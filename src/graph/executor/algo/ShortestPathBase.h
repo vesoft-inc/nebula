@@ -74,9 +74,6 @@ class ShortestPathBase {
     return Result::State::kSuccess;
   }
 
-  std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t>&> ref) const;
-
  protected:
   const ShortestPath* pathNode_{nullptr};
   QueryContext* qctx_{nullptr};

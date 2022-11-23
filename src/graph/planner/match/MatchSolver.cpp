@@ -6,6 +6,7 @@
 #include "graph/planner/match/MatchSolver.h"
 
 #include "common/expression/UnaryExpression.h"
+#include "graph/context/QueryContext.h"
 #include "graph/context/ast/AstContext.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/Planner.h"
@@ -230,17 +231,19 @@ static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias
   return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
 }
 
-static YieldColumn* buildEdgeColumn(ObjectPool* pool, const EdgeInfo& edge) {
+static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
   Expression* expr = nullptr;
+  auto pool = qctx->objPool();
   if (edge.range == nullptr) {
     expr = SubscriptExpression::make(
         pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
   } else {
+    auto innerVar = qctx->vctx()->anonVarGen()->getVar();
     auto* args = ArgumentList::make(pool);
-    args->addArgument(VariableExpression::make(pool, "e"));
+    args->addArgument(VariableExpression::makeInner(pool, innerVar));
     auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
     expr = ListComprehensionExpression::make(
-        pool, "e", InputPropertyExpression::make(pool, edge.alias), filter);
+        pool, innerVar, InputPropertyExpression::make(pool, edge.alias), filter);
   }
   return new YieldColumn(expr, edge.alias);
 }
@@ -261,7 +264,7 @@ void MatchSolver::buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& p
 
   auto addEdge = [columns, &colNames, qctx](auto& edgeInfo) {
     if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      columns->addColumn(buildEdgeColumn(qctx->objPool(), edgeInfo));
+      columns->addColumn(buildEdgeColumn(qctx, edgeInfo));
       colNames.emplace_back(edgeInfo.alias);
     }
   };

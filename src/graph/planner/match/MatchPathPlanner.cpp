@@ -272,7 +272,7 @@ Status MatchPathPlanner::leftExpandFromNode(
     traverse->setStepRange(edge.range);
     traverse->setDedup();
     // If start from end of the path pattern, the first traverse would not
-    // track the previos path, otherwise, it should.
+    // track the previous path, otherwise, it should.
     traverse->setTrackPrevPath(startIndex + 1 == nodeInfos.size() ? i != startIndex : true);
     traverse->setColNames(
         genTraverseColNames(subplan.root->colNames(),

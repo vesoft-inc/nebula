@@ -158,7 +158,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          ninja -j $(nproc)
+          ninja -j $(($(nproc)/2+1))
           ccache -s
         working-directory: build/
       - name: CTest
@@ -189,7 +189,7 @@ jobs:
         timeout-minutes: 2
       - name: coverage
         run: |
-          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
       - uses: codecov/codecov-action@v2
         with:
           files: fastcov.info

@@ -6,6 +6,8 @@
 #include <robin_hood.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
+#include <cmath>
+
 #include "common/base/Base.h"
 #include "common/datatypes/CommonCpp2Ops.h"
 #include "common/datatypes/DataSet.h"
@@ -598,7 +600,8 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ((vFloat1.getFloat() / vFloat2.getFloat()), v.getFloat());
 
     v = vFloat1 / vZero;
-    EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+    EXPECT_EQ(Value::Type::FLOAT, v.type());
+    EXPECT_EQ(std::numeric_limits<double>::infinity(), v.getFloat());
     v = vInt1 / vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
@@ -629,7 +632,8 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ(std::fmod(vFloat1.getFloat(), vFloat2.getFloat()), v.getFloat());
 
     v = vFloat1 % vZero;
-    EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+    EXPECT_EQ(Value::Type::FLOAT, v.type());
+    EXPECT_TRUE(std::isnan(v.getFloat()));
     v = vInt1 % vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
@@ -682,6 +686,11 @@ TEST(Value, Comparison) {
   Value vInt2(2);
   Value vFloat1(3.14);
   Value vFloat2(2.67);
+  Value vFloat3(-2.67);
+  Value vFloatNaN(0 / 0.0);
+  Value vFloatPositiveInfinity(1 / 0.0);
+  Value vFloatNegativeInfinity(-1 / 0.0);
+
   Value vStr1("Hello ");
   Value vStr2("World");
   Value vBool1(false);
@@ -809,6 +818,99 @@ TEST(Value, Comparison) {
     EXPECT_EQ(true, v.getBool());
 
     v = vFloat1 <= vFloat2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN comparison
+    // https://en.wikipedia.org/wiki/NaN#Comparison_with_NaN
+    // Comparison between NaN and any floating-point value x (including NaN and ±Inf)
+    // Comparison NaN ≥ x  NaN ≤ x  NaN > x  NaN < x  NaN = x  NaN ≠ x
+    //     Result False    False    False    False    False    True
+    v = vFloatNaN >= vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN > vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN < vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN <= vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN >= vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN > vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN < vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN <= vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN != any Value
+    v = vFloatNaN != vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+    v = vFloatNaN == vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+    v = vFloatNaN.equal(vFloat3);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN.equal(Value(0 / 0.0));
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+  }
+
+  {
+    // -Inf
+    Value v = vFloatPositiveInfinity.lessThan(vFloatNegativeInfinity);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vFloatPositiveInfinity);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vInt1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    // +Inf
+    v = vFloatPositiveInfinity.lessThan(vInt1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatPositiveInfinity.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN comparison always false
+    v = vFloatNegativeInfinity.lessThan(vFloatNaN);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatPositiveInfinity.lessThan(vFloatNaN);
     EXPECT_EQ(Value::Type::BOOL, v.type());
     EXPECT_EQ(false, v.getBool());
   }

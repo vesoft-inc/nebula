@@ -37,7 +37,8 @@ states = (
 tokens = (
     'EMPTY',
     'NULL',
-    'NaN',
+    'nan',
+    'inf',
     'BAD_DATA',
     'BAD_TYPE',
     'OVERFLOW',
@@ -72,17 +73,20 @@ def t_NULL(t):
     return t
 
 
-def t_NaN(t):
-    r'NaN'
-    t.value = Value(nVal=NullType.NaN)
+def t_nan(t):
+    r'nan'
+    t.value = Value(fVal=float('nan'))
     return t
 
+def t_inf(t):
+    r'inf'
+    t.value = Value(fVal=float('inf'))
+    return t
 
 def t_BAD_DATA(t):
     r'BAD_DATA'
     t.value = Value(nVal=NullType.BAD_DATA)
     return t
-
 
 def t_BAD_TYPE(t):
     r'BAD_TYPE'
@@ -230,7 +234,8 @@ def p_expr(p):
     '''
         expr : EMPTY
              | NULL
-             | NaN
+             | nan
+             | inf
              | BAD_DATA
              | BAD_TYPE
              | OVERFLOW
@@ -577,7 +582,8 @@ if __name__ == '__main__':
     expected = {}
     expected['EMPTY'] = Value()
     expected['NULL'] = Value(nVal=NullType.__NULL__)
-    expected['NaN'] = Value(nVal=NullType.NaN)
+    expected['nan'] = Value(fVal=float('nan'))
+    expected['inf'] = Value(fVal=float('inf'))
     expected['BAD_DATA'] = Value(nVal=NullType.BAD_DATA)
     expected['BAD_TYPE'] = Value(nVal=NullType.BAD_TYPE)
     expected['OVERFLOW'] = Value(nVal=NullType.ERR_OVERFLOW)

@@ -367,8 +367,12 @@ struct Value {
   Value toInt() const;
   Value toSet() const;
 
+  // Expr use this function instead of operator<, because a Value compare to a Null
+  // return null instead of true or false
   Value lessThan(const Value& v) const;
 
+  // Expr use this function instead of operator==, because a Value compare to a Null
+  // return null instead of true or false
   Value equal(const Value& v) const;
 
   // Whether the value can be converted to bool implicitly

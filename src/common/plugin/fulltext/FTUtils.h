@@ -15,7 +15,7 @@
 #include "common/base/CommonMacro.h"
 #include "common/datatypes/HostAddr.h"
 
-#define CURL "/usr/bin/curl"
+#define CURL_COMMAND "/usr/bin/curl"
 #define XPUT " -XPUT"
 #define XPOST " -XPOST"
 #define XGET " -XGET"
@@ -145,7 +145,7 @@ struct DocIDTraits {
   }
 
   static std::string val(const std::string& v) {
-    return ((v.size() > MAX_INDEX_TYPE_LENGTH) ? v.substr(0, MAX_INDEX_TYPE_LENGTH) : v);
+    return v;
   }
 
   static std::string normalizedJson(const std::string& v) {

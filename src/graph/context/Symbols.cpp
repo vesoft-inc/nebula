@@ -34,16 +34,14 @@ std::string SymbolTable::toString() const {
   return ss.str();
 }
 
-SymbolTable::SymbolTable(ObjectPool* objPool) {
-  DCHECK(objPool != nullptr);
-  objPool_ = objPool;
-}
-
-Variable* SymbolTable::newVariable(std::string name) {
+Variable* SymbolTable::newVariable(const std::string& name) {
   VLOG(1) << "New variable for: " << name;
   DCHECK(vars_.find(name) == vars_.end());
   auto* variable = objPool_->makeAndAdd<Variable>(name);
-  addVar(std::move(name), variable);
+  addVar(name, variable);
+  // Initialize all variable in variable map (output of node, inner variable etc.)
+  // Some variable will be useless after optimizer, maybe we could remove it.
+  ectx_->initVar(name);
   return variable;
 }
 

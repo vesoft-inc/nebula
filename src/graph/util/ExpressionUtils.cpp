@@ -24,13 +24,19 @@ namespace graph {
 
 bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
   return isKindOf(expr,
-                  {Expression::Kind::kTagProperty,
-                   Expression::Kind::kLabelTagProperty,
-                   Expression::Kind::kEdgeProperty,
-                   Expression::Kind::kInputProperty,
-                   Expression::Kind::kVarProperty,
-                   Expression::Kind::kDstProperty,
-                   Expression::Kind::kSrcProperty});
+                  {
+                      Expression::Kind::kTagProperty,
+                      Expression::Kind::kLabelTagProperty,
+                      Expression::Kind::kEdgeProperty,
+                      Expression::Kind::kEdgeSrc,
+                      Expression::Kind::kEdgeType,
+                      Expression::Kind::kEdgeRank,
+                      Expression::Kind::kEdgeDst,
+                      Expression::Kind::kInputProperty,
+                      Expression::Kind::kVarProperty,
+                      Expression::Kind::kDstProperty,
+                      Expression::Kind::kSrcProperty,
+                  });
 }
 
 const Expression *ExpressionUtils::findAny(const Expression *self,
@@ -210,7 +216,12 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
       return false;
     }
     auto rhs = static_cast<const RelationalExpression *>(e)->right();
-    if (rhs->kind() != Expression::Kind::kList && rhs->kind() != Expression::Kind::kSet) {
+    auto kind = rhs->kind();
+    if (kind == Expression::Kind::kConstant) {
+      auto v = static_cast<const ConstantExpression *>(rhs)->value();
+      return v.isList() || v.isSet();
+    }
+    if (kind != Expression::Kind::kList && kind != Expression::Kind::kSet) {
       return false;
     }
     auto items = static_cast<const ContainerExpression *>(rhs)->getKeys();
@@ -226,20 +237,45 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
     const auto re = static_cast<const RelationalExpression *>(e);
     auto lhs = re->left();
     auto rhs = re->right();
-    DCHECK(rhs->kind() == Expression::Kind::kList || rhs->kind() == Expression::Kind::kSet);
-    auto ce = static_cast<const ContainerExpression *>(rhs);
+    auto kind = rhs->kind();
     auto pool = e->getObjPool();
     auto *rewrittenExpr = LogicalExpression::makeOr(pool);
     // Pointer to a single-level expression
     Expression *singleExpr = nullptr;
-    auto items = ce->getKeys();
-    for (auto i = 0u; i < items.size(); ++i) {
-      auto *ee = RelationalExpression::makeEQ(pool, lhs->clone(), items[i]->clone());
-      rewrittenExpr->addOperand(ee);
-      if (i == 0) {
-        singleExpr = ee;
+    if (kind == Expression::Kind::kConstant) {
+      auto ce = static_cast<const ConstantExpression *>(rhs);
+      auto v = ce->value();
+      DCHECK(v.isList() || v.isSet());
+      std::vector<Value> values;
+      if (v.isList()) {
+        values = v.getList().values;
       } else {
-        singleExpr = nullptr;
+        auto setItems = v.getSet().values;
+        values.insert(values.end(), setItems.begin(), setItems.end());
+      }
+      for (auto i = 0u; i < values.size(); ++i) {
+        auto *ee = RelationalExpression::makeEQ(
+            pool, lhs->clone(), ConstantExpression::make(pool, values[i]));
+        rewrittenExpr->addOperand(ee);
+        if (i == 0) {
+          singleExpr = ee;
+        } else {
+          singleExpr = nullptr;
+        }
+      }
+
+    } else {
+      DCHECK(kind == Expression::Kind::kList || kind == Expression::Kind::kSet);
+      auto ce = static_cast<const ContainerExpression *>(rhs);
+      auto items = ce->getKeys();
+      for (auto i = 0u; i < items.size(); ++i) {
+        auto *ee = RelationalExpression::makeEQ(pool, lhs->clone(), items[i]->clone());
+        rewrittenExpr->addOperand(ee);
+        if (i == 0) {
+          singleExpr = ee;
+        } else {
+          singleExpr = nullptr;
+        }
       }
     }
     return singleExpr ? singleExpr : rewrittenExpr;
@@ -284,22 +320,45 @@ Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
   DCHECK(expr->kind() == Expression::Kind::kRelIn);
   auto pool = expr->getObjPool();
   auto inExpr = static_cast<RelationalExpression *>(expr->clone());
-  auto containerOperands = getContainerExprOperands(inExpr->right());
-
-  auto operandSize = containerOperands.size();
-  // container has only 1 element, no need to transform to logical expression
-  if (operandSize == 1) {
-    return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
-  }
-
-  std::vector<Expression *> orExprOperands;
-  orExprOperands.reserve(operandSize);
-  // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
-  for (auto *operand : containerOperands) {
-    orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
-  }
   auto orExpr = LogicalExpression::makeOr(pool);
-  orExpr->setOperands(orExprOperands);
+  if (inExpr->right()->isContainerExpr()) {
+    auto containerOperands = getContainerExprOperands(inExpr->right());
+
+    auto operandSize = containerOperands.size();
+    // container has only 1 element, no need to transform to logical expression
+    if (operandSize == 1) {
+      return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
+    }
+
+    std::vector<Expression *> orExprOperands;
+    orExprOperands.reserve(operandSize);
+    // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
+    for (auto *operand : containerOperands) {
+      orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
+    }
+    orExpr->setOperands(orExprOperands);
+  } else if (inExpr->right()->kind() == Expression::Kind::kConstant) {
+    auto constExprValue = static_cast<ConstantExpression *>(inExpr->right())->value();
+    std::vector<Value> values;
+    if (constExprValue.isList()) {
+      values = constExprValue.getList().values;
+    } else if (constExprValue.isSet()) {
+      auto setValues = constExprValue.getSet().values;
+      values = std::vector<Value>{std::make_move_iterator(setValues.begin()),
+                                  std::make_move_iterator(setValues.end())};
+    } else {
+      return const_cast<Expression *>(expr);
+    }
+    std::vector<Expression *> operands;
+    for (const auto &v : values) {
+      operands.emplace_back(
+          RelationalExpression::makeEQ(pool, inExpr->left(), ConstantExpression::make(pool, v)));
+    }
+    if (operands.size() == 1) {
+      return operands[0];
+    }
+    orExpr->setOperands(operands);
+  }
 
   return orExpr;
 }
@@ -649,7 +708,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
 }
 
 StatusOr<Expression *> ExpressionUtils::filterTransform(const Expression *filter) {
-  // Check if any overflow happen before filter tranform
+  // Check if any overflow happen before filter transform
   auto initialConstFold = foldConstantExpr(filter);
   NG_RETURN_IF_ERROR(initialConstFold);
   auto newFilter = initialConstFold.value();

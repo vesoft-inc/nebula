@@ -10,6 +10,7 @@
 #include "common/time/TimeUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/job/JobDescription.h"
 
 DEFINE_string(path, "", "rocksdb instance path");
 
@@ -270,6 +271,26 @@ class MetaDumper {
           ss << host << " ";
         }
         LOG(INFO) << folly::sformat("zone name: {}, contain hosts: {}", zone, ss.str());
+        iter->Next();
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Job info:";
+      prefix = MetaKeyUtils::jobPrefix();
+      iter->Seek(rocksdb::Slice(prefix));
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
+        if (MetaKeyUtils::isJobKey(key)) {
+          auto jobRet = JobDescription::makeJobDescription(key, val);
+          auto job = nebula::value(jobRet);
+          LOG(INFO) << folly::sformat("space id: {}, job id: {}, status: {}",
+                                      job.getSpace(),
+                                      job.getJobId(),
+                                      JobStatus::toString(job.getStatus()));
+        }
+
         iter->Next();
       }
     }

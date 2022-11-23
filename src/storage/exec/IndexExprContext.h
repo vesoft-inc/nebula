@@ -43,6 +43,15 @@ class IndexExprContext : public ExpressionContext {
     UNUSED(var);
     return fatal(__FILE__, __LINE__);
   }
+  void setInnerVar(const std::string &var, Value val) override {
+    UNUSED(var);
+    UNUSED(val);
+    fatal(__FILE__, __LINE__);
+  }
+  const Value &getInnerVar(const std::string &var) const override {
+    UNUSED(var);
+    return fatal(__FILE__, __LINE__);
+  }
   const Value &getVersionedVar(const std::string &var, int64_t version) const override {
     UNUSED(var), UNUSED(version);
     return fatal(__FILE__, __LINE__);

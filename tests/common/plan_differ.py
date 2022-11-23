@@ -11,6 +11,7 @@ class PlanDiffer:
     NAME = "name"
     DEPENDS = "dependencies"
     OP_INFO = "operator info"
+    PROFILING_DATA = "profiling data"
     PATTERN = re.compile(r"\{\"loopBody\": \"(\d+)\"\}")
 
     def __init__(self, resp, expect):
@@ -48,6 +49,7 @@ class PlanDiffer:
             op = expect_node[column_names.index(self.OP_INFO)]
             res = self.PATTERN.match(op)
             if not res:
+                self._err_msg = "Could not find 'loopBody' info in operator info of the Loop"
                 return False
             body_id = int(res.group(1))
             loop_body_idx = self._loop_body(plan_desc,
@@ -60,14 +62,21 @@ class PlanDiffer:
         elif self._is_same_node(name, "Select"):
             # TODO(yee): check select node
             pass
-        elif self.OP_INFO in column_names:
+
+        if self.OP_INFO in column_names:
             op = expect_node[column_names.index(self.OP_INFO)]
             # Parse expected operator info jsonStr to dict
-            expect_op_dict = {}
-            if op:
-                expect_op_dict = json.loads(op)
+            expect_op_dict = json.loads(op) if op else {}
             self._err_msg = self._check_op_info(
                 expect_op_dict, plan_node_desc.description)
+            if self._err_msg:
+                return False
+
+        if self.PROFILING_DATA in column_names:
+            profiling_data = expect_node[column_names.index(self.PROFILING_DATA)]
+            expect_profiling_data = json.loads(profiling_data) if profiling_data else {}
+            self._err_msg = self._check_profiling_data(
+                expect_profiling_data, plan_node_desc.profiles)
             if self._err_msg:
                 return False
 
@@ -89,8 +98,7 @@ class PlanDiffer:
 
     def _check_op_info(self, exp, resp):
         if resp is None:
-            if exp:
-                return f"expect: {exp} but resp plan node is None"
+            return f"expect: {exp} but resp plan node is None" if exp else None
         if exp:
             resp_dict = {
                 f"{bytes.decode(pair.key)}": f"{bytes.decode(pair.value)}"
@@ -99,6 +107,56 @@ class PlanDiffer:
             if not self._is_subdict_nested(exp, resp_dict):
                 return "Invalid descriptions, expect: {} vs. resp: {}".format(
                     json.dumps(exp), json.dumps(resp_dict))
+        return None
+
+    def _check_profiling_other_stats(self, exp, resp):
+        if type(exp) != type(resp):
+            return False
+        if isinstance(exp, dict):
+            return self._is_subdict_nested(exp, resp)
+        return exp == resp
+
+    def _check_profiling_stats(self, exp, resp, version):
+        if not isinstance(exp, dict):
+            return False
+        other_stats = resp.other_stats if resp.other_stats else {}
+        for k,v in exp.items():
+            if k == "version":
+                if int(v) != version :
+                    return False
+            elif hasattr(resp, k):
+                if getattr(resp, k) != v:
+                    return False
+            else:
+                if isinstance(k, str):
+                    k = k.encode()
+                if k not in other_stats:
+                    return False
+                val = other_stats[k]
+                try:
+                    val = json.loads(val)
+                except:
+                    try:
+                        val = val.decode()
+                    except:
+                        pass
+                if not self._check_profiling_other_stats(v, val):
+                    return False
+        return True
+
+    def _check_profiling_data(self, exp, resp):
+        if resp is None:
+            return f"expect: {exp} but resp profiling data is None" if exp else None
+        if not exp:
+            return None
+        if isinstance(resp, list) and len(resp) > 1:
+            if (not isinstance(exp, list)) or len(exp) != len(resp):
+                return f"Expected profiling data has invalid length: {len(exp)} vs. {len(resp)}"
+            for i, r in enumerate(resp):
+                if not self._check_profiling_stats(exp[i], r, i):
+                    return f"Fail to diff {json.dumps(exp[i])} and {r}, i: {i}"
+        elif not self._check_profiling_stats(exp, resp[0], 0):
+            return f"Fail to diff {json.dumps(exp)} and {resp[0]}"
         return None
 
     def _is_same_node(self, lhs: str, rhs: str) -> bool:
@@ -142,7 +200,7 @@ class PlanDiffer:
                 extracted_resp_dict[k] = _try_convert_json(resp[k])
         else:
             extracted_resp_dict = self._convert_jsonStr_to_dict(resp, key_list)
-        
+
         for k in extracted_expected_dict:
             extracted_expected_dict[k] = _try_convert_json(extracted_expected_dict[k])
 
@@ -156,7 +214,7 @@ class PlanDiffer:
             return not bool(diff)
 
         return _is_subdict(extracted_expected_dict, extracted_resp_dict)
-    
+
     # resp: pair(key, jsonStr)
     def _convert_jsonStr_to_dict(self, resp, key_list):
         resp_json_str = ''

@@ -22,6 +22,7 @@ nebula_add_test(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        curl
 )
 
 
@@ -45,6 +46,7 @@ nebula_add_test(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        curl
 )
 
 
@@ -68,6 +70,7 @@ nebula_add_test(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -90,4 +93,5 @@ nebula_add_test(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
+        curl
 )

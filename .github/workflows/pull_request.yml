@@ -97,7 +97,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -109,7 +109,7 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             esac
             ;;
@@ -123,14 +123,35 @@ jobs:
                 -DENABLE_TESTING=on \
                 -GNinja \
                 -B build
-            echo "::set-output name=j::6"
+            echo "::set-output name=j::4"
             ;;
           esac
       - name: Make
         run: |
-          ccache -z
-          ninja -j $(nproc)
-          ccache -s
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              ccache -z
+              ninja -j $(nproc)
+              ccache -s
+              ;;
+            ubuntu2004)
+              # build with Debug type
+              ccache -z
+              ninja -j $(($(nproc)/2+1))
+              ccache -s
+              ;;
+            esac
+            ;;
+          clang-*)
+            # build with Sanitizer
+            ccache -z
+            ninja -j $(nproc)
+            ccache -s
+            ;;
+          esac
         working-directory: build/
       - name: CTest
         env:
@@ -185,7 +206,7 @@ jobs:
       - name: coverage
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
-            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
       - uses: codecov/codecov-action@v2
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
@@ -246,7 +267,7 @@ jobs:
                   -DENABLE_STANDALONE_VERSION=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::10"
+              echo "::set-output name=j::8"
               ;;
             esac
             ;;

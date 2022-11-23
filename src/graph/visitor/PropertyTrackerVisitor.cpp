@@ -256,7 +256,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
             auto &aliasName = propExpr->prop();
             propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
           } else if (leftKind == Expression::Kind::kListComprehension) {
-            //  match (v)-[c*2]->(b) retrun properties(c[0]).start_year
+            //  match (v)-[c*2]->(b) return properties(c[0]).start_year
             //  properties([e IN $-.c WHERE is_edge($e)][0]).start_year
             auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
             auto *collectExpr = listExpr->collection();
@@ -279,8 +279,10 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
+  // length function support `STRING` input too, so we can't ignore it directly
+  // TODO add type info to variable to help optimize it.
   static const std::unordered_set<std::string> ignoreFuncs = {
-      "src", "dst", "type", "typeid", "id", "rank", "length"};
+      "src", "dst", "type", "typeid", "id", "rank" /*, "length"*/};
 
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);

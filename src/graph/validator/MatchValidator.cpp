@@ -316,7 +316,8 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
-  auto *newFilter = graph::ExpressionUtils::rewriteInnerInExpr(filter);
+  auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
+  newFilter = graph::ExpressionUtils::rewriteInnerInExpr(filter);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
@@ -326,7 +327,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
   auto type = typeStatus.value();
-  // Allow implcit convertion from LIST to BOOL
+  // Allow implicit conversion from LIST to BOOL
   if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
       type != Value::Type::__EMPTY__ && type != Value::Type::LIST) {
     std::stringstream ss;
@@ -1102,7 +1103,8 @@ Status MatchValidator::validateMatchPathExpr(
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
   DCHECK(!DCHECK_NOTNULL(path->alias())->empty());
   for (const auto &node : path->nodes()) {
-    if (!node->alias().empty()) {
+    // The inner variable of expression will be replaced by anno variable
+    if (!node->alias().empty() && node->alias()[0] != '_') {
       pathInfo.compareVariables.emplace_back(node->alias());
     }
   }

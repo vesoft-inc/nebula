@@ -18,6 +18,15 @@ class DefaultValueContext final : public ExpressionContext {
     return Value::kEmpty;
   }
 
+  void setInnerVar(const std::string&, Value) override {
+    LOG(FATAL) << "Not allowed to call";
+  }
+
+  const Value& getInnerVar(const std::string&) const override {
+    LOG(FATAL) << "Not allowed to call";
+    return Value::kEmpty;
+  }
+
   const Value& getVersionedVar(const std::string&, int64_t) const override {
     LOG(FATAL) << "Not allowed to call";
     return Value::kEmpty;

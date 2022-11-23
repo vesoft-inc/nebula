@@ -3,7 +3,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest TagIndex
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -146,7 +146,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest EdgeIndex
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -284,7 +284,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest TagIndexTTL
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -409,7 +409,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest EdgeIndexTTL
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -523,7 +523,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest AlterTag
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -584,7 +584,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest RebuildTagIndexStatusInfo
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -632,7 +632,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest RebuildEdgeIndexStatusInfo
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -680,7 +680,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest AlterSchemaTest
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -957,7 +957,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest existence check
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -1000,7 +1000,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest rebuild tag index with old schema version value
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -1151,7 +1151,7 @@ Feature: IndexTest_Vid_String
   Scenario: IndexTest NullableIndex
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |

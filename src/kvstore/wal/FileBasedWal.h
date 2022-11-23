@@ -37,7 +37,7 @@ struct FileBasedWalInfo {
   PartitionID partId_;
 };
 
-using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, const std::string& log)>;
+using PreProcessor = folly::Function<bool(LogID, TermID, ClusterID, folly::StringPiece)>;
 
 class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileBasedWal> {
   FRIEND_TEST(FileBasedWal, TTLTest);
@@ -247,7 +247,7 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * @param msg Log messgage to append
    * @return Wheter append succeed
    */
-  bool appendLogInternal(LogID id, TermID term, ClusterID cluster, std::string msg);
+  bool appendLogInternal(LogID id, TermID term, ClusterID cluster, folly::StringPiece msg);
 
  private:
   using WalFiles = std::map<LogID, WalFileInfoPtr>;

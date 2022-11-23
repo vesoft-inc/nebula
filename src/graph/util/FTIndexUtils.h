@@ -32,7 +32,7 @@ class FTIndexUtils final {
   static StatusOr<bool> clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
                                      const std::string& index);
 
-  // Converts TextSearchExpression into a relational expresion that could be pushed down
+  // Converts TextSearchExpression into a relational expression that could be pushed down
   static StatusOr<Expression*> rewriteTSFilter(
       ObjectPool* pool,
       bool isEdge,
@@ -41,7 +41,7 @@ class FTIndexUtils final {
       const std::vector<nebula::plugin::HttpClient>& tsClients);
 
   // Performs full-text search using elastic search adapter
-  // Search type is defiend by the expression kind
+  // Search type is defined by the expression kind
   static StatusOr<std::vector<std::string>> textSearch(
       Expression* expr,
       const std::string& index,
