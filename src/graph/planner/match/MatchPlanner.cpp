@@ -72,10 +72,12 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   for (auto& alias : matchCtx->aliasesGenerated) {
     auto it = matchCtx->aliasesAvailable.find(alias.first);
     if (it != matchCtx->aliasesAvailable.end()) {
+      // Joined type should be same
       if (it->second != alias.second) {
         return Status::SemanticError(fmt::format(
             "{} binding to different type: {} vs {}", alias.first, alias.second, it->second));
       }
+      // Joined On EdgeList is not supported
       if (alias.second == AliasType::kEdgeList) {
         return Status::SemanticError(alias.first +
                                      " defined with type EdgeList, which cannot be joined on");

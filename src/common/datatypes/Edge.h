@@ -73,6 +73,7 @@ struct Edge {
 
   bool keyEqual(const Edge& rhs) const;
 
+  // Return an encoded edge id with string
   std::string id() const;
 };
 
