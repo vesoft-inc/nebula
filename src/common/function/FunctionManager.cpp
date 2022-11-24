@@ -1836,6 +1836,26 @@ FunctionManager::FunctionManager() {
         case Value::Type::VERTEX: {
           return value.getVertex().vid;
         }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["_joinkey"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      const Value &value = args[0].get();
+      switch (value.type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          return value.getVertex().vid;
+        }
         // NOTE:
         // id() on Edge is designed to be used get a Join key when
         // Join operator performed on edge, the returned id is a

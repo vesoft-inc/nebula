@@ -23,7 +23,7 @@ SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
   for (auto& alias : intersectedAliases) {
     auto* args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, alias));
-    auto* expr = FunctionCallExpression::make(pool, "id", args);
+    auto* expr = FunctionCallExpression::make(pool, "_joinkey", args);
     hashKeys.emplace_back(expr);
     probeKeys.emplace_back(expr->clone());
   }
@@ -46,7 +46,7 @@ SubPlan SegmentsConnector::leftJoin(QueryContext* qctx,
   for (auto& alias : intersectedAliases) {
     auto* args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, alias));
-    auto* expr = FunctionCallExpression::make(pool, "id", args);
+    auto* expr = FunctionCallExpression::make(pool, "_joinkey", args);
     hashKeys.emplace_back(expr);
     probeKeys.emplace_back(expr->clone());
   }

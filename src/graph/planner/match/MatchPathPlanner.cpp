@@ -249,7 +249,7 @@ Status MatchPathPlanner::leftExpandFromNode(
     auto* pool = qctx->objPool();
     auto args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, nodeInfos[startIndex].alias));
-    nextTraverseStart = FunctionCallExpression::make(pool, "id", args);
+    nextTraverseStart = FunctionCallExpression::make(pool, "_joinkey", args);
   }
   bool reversely = true;
   for (size_t i = startIndex; i > 0; --i) {
