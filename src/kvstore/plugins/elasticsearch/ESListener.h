@@ -40,16 +40,7 @@ class ESListener : public Listener {
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> handlers,
              meta::SchemaManager* schemaMan)
-      : Listener(spaceId,
-                 partId,
-                 std::move(localAddr),
-                 walPath,
-                 ioPool,
-                 workers,
-                 handlers,
-                 nullptr,
-                 nullptr,
-                 nullptr),
+      : Listener(spaceId, partId, std::move(localAddr), walPath, ioPool, workers, handlers),
         schemaMan_(schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(

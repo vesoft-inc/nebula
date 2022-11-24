@@ -621,7 +621,8 @@ class NebulaStore : public KVStore, public Handler {
                                            const std::vector<std::string>& files) override;
 
   /**
-   * @brief Add a space as listener
+   * @brief Add a specified type listener to space. Perform extra initialization of given type
+   * listener if necessary. User should call addListenerSpace first then addListenerPart.
    *
    * @param spaceId
    * @param type Listener type
@@ -629,7 +630,8 @@ class NebulaStore : public KVStore, public Handler {
   void addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
 
   /**
-   * @brief Remove a listener space
+   * @brief Remove a specified type listener from space. Perform extra destruction of given type
+   * listener if necessary. User should call removeListenerPart first then removeListenerSpace.
    *
    * @param spaceId
    * @param type Listener type
