@@ -27,9 +27,6 @@ class ESListener : public Listener {
    * @param ioPool IOThreadPool for listener
    * @param workers Background thread for listener
    * @param handlers Worker thread for listener
-   * @param snapshotMan Snapshot manager
-   * @param clientMan Client manager
-   * @param diskMan Disk manager
    * @param schemaMan Schema manager
    */
   ESListener(GraphSpaceID spaceId,
