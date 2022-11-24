@@ -66,8 +66,7 @@ class UpdateResNode : public RelNode<T> {
       auto exp = static_cast<PropertyExpression*>(retExp);
       auto& val = exp->eval(*expCtx_);
       if (exp) {
-        result_->colNames.emplace_back(
-            folly::stringPrintf("%s.%s", exp->sym().c_str(), exp->prop().c_str()));
+        result_->colNames.emplace_back(exp->toString());
       } else {
         VLOG(1) << "Can't get expression name";
         result_->colNames.emplace_back("NULL");
