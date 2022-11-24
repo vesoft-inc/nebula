@@ -39,9 +39,6 @@ class ESListener : public Listener {
              std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> handlers,
-             std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-             std::shared_ptr<RaftClient> clientMan,
-             std::shared_ptr<DiskManager> diskMan,
              meta::SchemaManager* schemaMan)
       : Listener(spaceId,
                  partId,
@@ -50,10 +47,10 @@ class ESListener : public Listener {
                  ioPool,
                  workers,
                  handlers,
-                 snapshotMan,
-                 clientMan,
-                 diskMan,
-                 schemaMan) {
+                 nullptr,
+                 nullptr,
+                 nullptr),
+        schemaMan_(schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(
         folly::stringPrintf("%s/last_apply_log_%d", walPath.c_str(), partId));
@@ -177,6 +174,7 @@ class ESListener : public Listener {
   bool writeDatum(const std::vector<nebula::plugin::DocItem>& items) const;
 
  private:
+  meta::SchemaManager* schemaMan_{nullptr};
   std::unique_ptr<std::string> lastApplyLogFile_{nullptr};
   std::unique_ptr<std::string> spaceName_{nullptr};
   std::vector<nebula::plugin::HttpClient> esClients_;

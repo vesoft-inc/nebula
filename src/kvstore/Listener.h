@@ -115,8 +115,7 @@ class Listener : public raftex::RaftPart {
            std::shared_ptr<folly::Executor> handlers,
            std::shared_ptr<raftex::SnapshotManager> snapshotMan,
            std::shared_ptr<RaftClient> clientMan,
-           std::shared_ptr<DiskManager> diskMan,
-           meta::SchemaManager* schemaMan);
+           std::shared_ptr<DiskManager> diskMan);
 
   /**
    * @brief Initialize listener, all Listener must call this method
@@ -278,7 +277,6 @@ class Listener : public raftex::RaftPart {
   LogID lastApplyLogId_ = 0;
   int64_t lastApplyTime_ = 0;
   std::set<HostAddr> peers_;
-  meta::SchemaManager* schemaMan_{nullptr};
 };
 
 }  // namespace kvstore
