@@ -1836,6 +1836,10 @@ FunctionManager::FunctionManager() {
         case Value::Type::VERTEX: {
           return value.getVertex().vid;
         }
+        // NOTE:
+        // id() on Edge is designed to be used get a Join key when
+        // Join operator performed on edge, the returned id is a
+        // string encoded the {src, dst, type, ranking} tuple
         case Value::Type::EDGE: {
           return value.getEdge().id();
         }
