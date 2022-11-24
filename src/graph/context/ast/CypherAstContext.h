@@ -55,7 +55,7 @@ struct EdgeInfo {
   Expression* filter{nullptr};
 };
 
-enum class AliasType : int8_t { kNode, kEdge, kPath, kDefault };
+enum class AliasType : int8_t { kNode, kEdge, kPath, kEdgeList, kDefault };
 
 struct ScanInfo {
   Expression* filter{nullptr};
