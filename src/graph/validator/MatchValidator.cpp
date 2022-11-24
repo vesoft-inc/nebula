@@ -606,14 +606,28 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   }
 
   auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
+  std::vector<AliasType> types;
   for (auto *labelExpr : labelExprs) {
     DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
     auto label = static_cast<const LabelExpression *>(labelExpr)->name();
-    if (!unwindCtx.aliasesAvailable.count(label)) {
+    auto it = unwindCtx.aliasesAvailable.find(label);
+    if (it == unwindCtx.aliasesAvailable.end()) {
       return Status::SemanticError("Variable `%s` not defined", label.c_str());
     }
+    types.push_back(it->second);
   }
-  unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, AliasType::kDefault);
+  // UNWIND Type Inference:
+  //   Example: UNWIND x,y AS z
+  //   if x,y have same type
+  //      set z to the same type
+  //   else
+  //      set z to default
+  AliasType aliasType = AliasType::kDefault;
+  if (types.size() > 0 &&
+      std::adjacent_find(types.begin(), types.end(), std::not_equal_to<>()) == types.end()) {
+    aliasType = types[0];
+  }
+  unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, aliasType);
   if (unwindCtx.aliasesAvailable.count(unwindCtx.alias) > 0) {
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
