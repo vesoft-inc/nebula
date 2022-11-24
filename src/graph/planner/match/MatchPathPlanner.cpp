@@ -118,9 +118,9 @@ Status MatchPathPlanner::findStarts(
   allNodeAliasesAvailable.merge(nodeAliasesSeen);
   std::for_each(
       aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
-        if (kv.second == AliasType::kNode) {
-          allNodeAliasesAvailable.emplace(kv.first);
-        }
+        // if (kv.second == AliasType::kNode) {
+        allNodeAliasesAvailable.emplace(kv.first);
+        // }
       });
 
   // Find the start plan node
