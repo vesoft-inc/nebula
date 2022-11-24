@@ -40,8 +40,7 @@ class DummyListener : public Listener {
                 const std::string& walPath,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 std::shared_ptr<thread::GenericThreadPool> workers,
-                std::shared_ptr<folly::Executor> handlers,
-                meta::SchemaManager* schemaMan)
+                std::shared_ptr<folly::Executor> handlers)
       : Listener(spaceId,
                  partId,
                  localAddr,
@@ -51,8 +50,7 @@ class DummyListener : public Listener {
                  handlers,
                  nullptr,
                  nullptr,
-                 nullptr,
-                 schemaMan) {}
+                 nullptr) {}
 
   std::vector<KV> data() {
     return data_;
@@ -338,8 +336,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
                                                    walPath,
                                                    listeners_[index]->ioPool_,
                                                    listeners_[index]->bgWorkers_,
-                                                   listeners_[index]->workers_,
-                                                   nullptr);
+                                                   listeners_[index]->workers_);
       listeners_[index]->raftService_->addPartition(dummy);
       std::vector<HostAddr> raftPeers;
       std::transform(

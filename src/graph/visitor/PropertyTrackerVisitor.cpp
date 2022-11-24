@@ -210,6 +210,10 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
           auto &aliasName = inputPropExpr->prop();
           propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
         }
+      } else {
+        // normal path
+        lhs->accept(this);
+        rhs->accept(this);
       }
       break;
     }
@@ -218,6 +222,9 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       auto funName = funCallExpr->name();
       std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
       if (funName != "properties") {
+        // normal path
+        lhs->accept(this);
+        rhs->accept(this);
         break;
       }
       auto *argExpr = funCallExpr->args()->args().front();
@@ -265,6 +272,10 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
               auto &aliasName = inputPropExpr->prop();
               propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
             }
+          } else {
+            // normal path
+            lhs->accept(this);
+            rhs->accept(this);
           }
           break;
         }
@@ -274,6 +285,9 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       break;
     }
     default:
+      // normal path
+      lhs->accept(this);
+      rhs->accept(this);
       break;
   }
 }

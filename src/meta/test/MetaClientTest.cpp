@@ -1051,22 +1051,14 @@ TEST(MetaClientTest, FTServiceTest) {
 class TestListener : public MetaChangedListener {
  public:
   virtual ~TestListener() = default;
-  void onSpaceAdded(GraphSpaceID spaceId, bool isListener) override {
+  void onSpaceAdded(GraphSpaceID spaceId) override {
     LOG(INFO) << "Space " << spaceId << " added";
-    if (!isListener) {
-      spaceNum++;
-    } else {
-      listenerSpaceNum++;
-    }
+    spaceNum++;
   }
 
-  void onSpaceRemoved(GraphSpaceID spaceId, bool isListener) override {
+  void onSpaceRemoved(GraphSpaceID spaceId) override {
     LOG(INFO) << "Space " << spaceId << " removed";
-    if (!isListener) {
-      spaceNum--;
-    } else {
-      listenerSpaceNum--;
-    }
+    spaceNum--;
   }
 
   void onPartAdded(const PartHosts& partMeta) override {
@@ -1095,18 +1087,32 @@ class TestListener : public MetaChangedListener {
     LOG(INFO) << "Get leader distribution!";
   }
 
-  void onListenerAdded(GraphSpaceID spaceId,
-                       PartitionID partId,
-                       const ListenerHosts& listenerHosts) override {
+  void onListenerSpaceAdded(GraphSpaceID spaceId, cpp2::ListenerType type) override {
+    UNUSED(spaceId);
+    UNUSED(type);
+    listenerSpaceNum++;
+  }
+
+  void onListenerSpaceRemoved(GraphSpaceID spaceId, cpp2::ListenerType type) override {
+    UNUSED(spaceId);
+    UNUSED(type);
+    listenerSpaceNum--;
+  }
+
+  void onListenerPartAdded(GraphSpaceID spaceId,
+                           PartitionID partId,
+                           cpp2::ListenerType type,
+                           const std::vector<HostAddr>& peers) override {
     UNUSED(spaceId);
     UNUSED(partId);
-    UNUSED(listenerHosts);
+    UNUSED(type);
+    UNUSED(peers);
     listenerPartNum++;
   }
 
-  void onListenerRemoved(GraphSpaceID spaceId,
-                         PartitionID partId,
-                         cpp2::ListenerType type) override {
+  void onListenerPartRemoved(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             cpp2::ListenerType type) override {
     UNUSED(spaceId);
     UNUSED(partId);
     UNUSED(type);
