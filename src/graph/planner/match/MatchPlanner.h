@@ -23,6 +23,7 @@ class MatchPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
+  static constexpr std::array AliasTypeName = {"Node", "Edge", "Path", "EdgeList", "Default"};
   bool tailConnected_{false};
   StatusOr<SubPlan> genPlan(CypherClauseContextBase* clauseCtx);
   Status connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* matchCtx);
