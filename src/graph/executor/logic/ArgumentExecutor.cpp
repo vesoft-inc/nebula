@@ -25,7 +25,9 @@ folly::Future<Status> ArgumentExecutor::execute() {
   for (; iter->valid(); iter->next()) {
     auto val = iter->getColumn(alias);
     if (!val.isVertex()) {
-      continue;
+      return Status::Error("Argument only support vertex, but got %s, which is type %s, ",
+                           val.toString().c_str(),
+                           val.typeName().c_str());
     }
     if (unique.emplace(val.getVertex().vid).second) {
       Row row;

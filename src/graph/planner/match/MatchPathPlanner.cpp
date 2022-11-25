@@ -118,9 +118,9 @@ Status MatchPathPlanner::findStarts(
   allNodeAliasesAvailable.merge(nodeAliasesSeen);
   std::for_each(
       aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
-        if (kv.second == AliasType::kNode) {
-          allNodeAliasesAvailable.emplace(kv.first);
-        }
+        // if (kv.second == AliasType::kNode) {
+        allNodeAliasesAvailable.emplace(kv.first);
+        // }
       });
 
   // Find the start plan node
@@ -249,7 +249,7 @@ Status MatchPathPlanner::leftExpandFromNode(
     auto* pool = qctx->objPool();
     auto args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, nodeInfos[startIndex].alias));
-    nextTraverseStart = FunctionCallExpression::make(pool, "id", args);
+    nextTraverseStart = FunctionCallExpression::make(pool, "_joinkey", args);
   }
   bool reversely = true;
   for (size_t i = startIndex; i > 0; --i) {
