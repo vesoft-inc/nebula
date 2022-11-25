@@ -13,6 +13,7 @@ Nebula Test framework depends on python3(>=3.7) and some thirdparty libraries, s
 So you should install all these dependencies before running test cases by:
 
 ```shell
+$ cd tests
 $ make init-all
 ```
 
@@ -51,6 +52,9 @@ $ make RM_DIR=false tck  # default value of RM_DIR is true
 And if you want to debug only one test case, you should check the usage of `pytest` itself by `pytest --help`. For example, run the test cases related to `MATCH`, you can do it like:
 
 ```shell
+# pytest will use keyword 'match' to match the Scenario name. All the Scenario whose name contains
+# the key word will be select. 
+# You can also use '@keyword' to annotate a scenario and using pytest -k 'keyword' to run only the one.
 $ pytest -k 'match' -m 'not skip' .
 ```
 
