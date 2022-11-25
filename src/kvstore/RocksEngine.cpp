@@ -97,7 +97,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     extractorLen_ = sizeof(PartitionID) + vIdLen;
   } else if (factoryName == rocksdb::TableFactory::kPlainTableName()) {
     // PlainTable only support prefix-based seek, which means if the prefix is not inserted into
-    // rocksdb, we can't read them from "prefix" api anymore. For simplarity, we just set the length
+    // rocksdb, we can't read them from "prefix" api anymore. For simplicity, we just set the length
     // of prefix extractor to the minimum length we used in "prefix" api, which is 4 when we seek by
     // tagPrefix(partId) or edgePrefix(partId).
     isPlainTable_ = true;
