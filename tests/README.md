@@ -53,8 +53,8 @@ And if you want to debug only one test case, you should check the usage of `pyte
 
 ```shell
 # pytest will use keyword 'match' to match the Scenario name. All the Scenario whose name contains
-# the key word will be select. 
-# You can also use '@keyword' to annotate a scenario and using pytest -k 'keyword' to run only the one.
+# the keyword 'match' will be selected. 
+# You can also use '@keyword' to annotate a scenario and using `pytest -k 'keyword'` to run only the one scenario.
 $ pytest -k 'match' -m 'not skip' .
 ```
 
