@@ -1,9 +1,9 @@
-Feature: Fix #4938
+Feature: Fix Argument plan node dependency
 
   Background:
     Given a graph with space named "nba"
 
-  Scenario: fix #4938
+  Scenario: fix argument plan node dependency in issue 4938
     When profiling query:
       """
       MATCH (a:player)
