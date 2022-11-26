@@ -283,16 +283,21 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
         edgeInfos[i].types.emplace_back(typeName.value());
       }
     }
+    AliasType aliasType = AliasType::kEdge;
     auto *stepRange = edge->range();
     if (stepRange != nullptr) {
       NG_RETURN_IF_ERROR(validateStepRange(stepRange));
       edgeInfos[i].range = stepRange;
+      // Type of [e*1..2], [e*2] should be inference to EdgeList
+      if (stepRange->max() > stepRange->min() || stepRange->min() > 1) {
+        aliasType = AliasType::kEdgeList;
+      }
     }
     if (alias.empty()) {
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
-      if (!aliases.emplace(alias, AliasType::kEdge).second) {
+      if (!aliases.emplace(alias, aliasType).second) {
         return Status::SemanticError("`%s': Redefined alias", alias.c_str());
       }
     }
@@ -601,14 +606,28 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   }
 
   auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
+  std::vector<AliasType> types;
   for (auto *labelExpr : labelExprs) {
     DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
     auto label = static_cast<const LabelExpression *>(labelExpr)->name();
-    if (!unwindCtx.aliasesAvailable.count(label)) {
+    auto it = unwindCtx.aliasesAvailable.find(label);
+    if (it == unwindCtx.aliasesAvailable.end()) {
       return Status::SemanticError("Variable `%s` not defined", label.c_str());
     }
+    types.push_back(it->second);
   }
-  unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, AliasType::kDefault);
+  // UNWIND Type Inference:
+  //   Example: UNWIND x,y AS z
+  //   if x,y have same type
+  //      set z to the same type
+  //   else
+  //      set z to default
+  AliasType aliasType = AliasType::kDefault;
+  if (types.size() > 0 &&
+      std::adjacent_find(types.begin(), types.end(), std::not_equal_to<>()) == types.end()) {
+    aliasType = types[0];
+  }
+  unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, aliasType);
   if (unwindCtx.aliasesAvailable.count(unwindCtx.alias) > 0) {
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
