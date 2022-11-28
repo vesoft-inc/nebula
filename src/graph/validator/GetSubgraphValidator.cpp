@@ -94,7 +94,7 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
       }
       std::string edgeName = *e->edge();
-      auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
+      auto et = qctx_->schemaMng()->toEdgeType(space.id, edgeName);
       NG_RETURN_IF_ERROR(et);
       edgeNames.emplace(edgeName);
       auto v = et.value();
