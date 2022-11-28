@@ -23,10 +23,7 @@ Listener::Listener(GraphSpaceID spaceId,
                    const std::string& walPath,
                    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                    std::shared_ptr<thread::GenericThreadPool> workers,
-                   std::shared_ptr<folly::Executor> handlers,
-                   std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-                   std::shared_ptr<RaftClient> clientMan,
-                   std::shared_ptr<DiskManager> diskMan)
+                   std::shared_ptr<folly::Executor> handlers)
     : RaftPart(FLAGS_cluster_id,
                spaceId,
                partId,
@@ -35,9 +32,9 @@ Listener::Listener(GraphSpaceID spaceId,
                ioPool,
                workers,
                handlers,
-               snapshotMan,
-               clientMan,
-               diskMan) {}
+               nullptr,
+               nullptr,
+               nullptr) {}
 
 void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
