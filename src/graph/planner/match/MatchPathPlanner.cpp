@@ -307,6 +307,17 @@ Status MatchPathPlanner::leftExpandFromNode(
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
 
+  auto& lastNode = nodeInfos.front();
+  bool expandInto = nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end();
+  if (expandInto) {
+    auto* startVid = nodeId(qctx->objPool(), lastNode);
+    auto* endVid = nextTraverseStart;
+    auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
+    auto* filter = Filter::make(qctx, appendV, filterExpr, false);
+    subplan.root = filter;
+    inputVar = filter->outputVar();
+  }
+
   return Status::OK();
 }
 
@@ -369,6 +380,17 @@ Status MatchPathPlanner::rightExpandFromNode(
   appendV->setTrackPrevPath(!edgeInfos.empty());
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   subplan.root = appendV;
+
+  auto& lastNode = nodeInfos.back();
+  bool expandInto = nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end();
+  if (expandInto) {
+    auto* startVid = nodeId(qctx->objPool(), lastNode);
+    auto* endVid = nextTraverseStart;
+    auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
+    auto* filter = Filter::make(qctx, appendV, filterExpr, false);
+    subplan.root = filter;
+    inputVar = filter->outputVar();
+  }
 
   return Status::OK();
 }
