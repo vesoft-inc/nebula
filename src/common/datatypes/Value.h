@@ -40,7 +40,6 @@ enum class NullType {
   BAD_DATA = 2,
   BAD_TYPE = 3,
   ERR_OVERFLOW = 4,
-  UNKNOWN_PROP = 5,
   DIV_BY_ZERO = 6,
   OUT_OF_RANGE = 7,
 };
@@ -52,7 +51,6 @@ struct Value {
   static const Value kNullBadData;
   static const Value kNullBadType;
   static const Value kNullOverflow;
-  static const Value kNullUnknownProp;
   static const Value kNullDivByZero;
   static const Value kNullOutOfRange;
 
@@ -157,8 +155,8 @@ struct Value {
     }
     auto& null = value_.nVal;
     return null == NullType::NaN || null == NullType::BAD_DATA || null == NullType::BAD_TYPE ||
-           null == NullType::ERR_OVERFLOW || null == NullType::UNKNOWN_PROP ||
-           null == NullType::DIV_BY_ZERO || null == NullType::OUT_OF_RANGE;
+           null == NullType::ERR_OVERFLOW || null == NullType::DIV_BY_ZERO ||
+           null == NullType::OUT_OF_RANGE;
   }
   bool isNumeric() const {
     return type_ == Type::INT || type_ == Type::FLOAT;

@@ -747,9 +747,9 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | UNKNOWN_PROP         | "Dejounte Murray" | "男"             | 2022         | 29               |
+      | 41                    | __NULL__             | "Dejounte Murray" | "男"             | 2022         | 29               |
       | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
-      | 41                    | UNKNOWN_PROP         | "Tiago Splitter"  | "男"             | 2022         | 34               |
+      | 41                    | __NULL__             | "Tiago Splitter"  | "男"             | 2022         | 34               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
@@ -759,10 +759,10 @@ Feature: Prune Properties rule
     Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
       | "男"                  | 88                      | "Danny Green"          | 41  | 2010            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41  | 2022            | 34               |
+      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
       | "男"                  | 88                      | "Cory Joseph"          | 41  | 2011            | 27               |
-      | "男"                  | UNKNOWN_PROP            | "76ers"                | 41  | 2017            | NULL             |
+      | "男"                  | __NULL__                | "76ers"                | 41  | 2017            | NULL             |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v)
@@ -771,11 +771,11 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Kyle Anderson"        | 41  | 2022            | 25               |
-      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | UNKNOWN_PROP            | "Kevin Durant"         | 41  | 2022            | 30               |
+      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                  | __NULL__                | "Kyle Anderson"        | 41  | 2022            | 25               |
+      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
+      | "男"                  | __NULL__                | "Kevin Durant"         | 41  | 2022            | 30               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
@@ -841,9 +841,9 @@ Feature: Prune Properties rule
     Then the result should be, in order, with relax comparison:
       | properties(e).degree | degree |
       | 88                   | 88     |
-      | UNKNOWN_PROP         | 88     |
+      | __NULL__             | 88     |
       | 88                   | 88     |
-      | UNKNOWN_PROP         | 88     |
+      | __NULL__             | 88     |
       | 88                   | 88     |
     When executing query:
       """
@@ -851,9 +851,9 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
+      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
+      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
+      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
+      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
     Then drop the used space

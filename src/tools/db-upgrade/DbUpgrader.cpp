@@ -867,7 +867,7 @@ std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
           LOG(ERROR) << "Write rowWriterV2 failed";
           return "";
         }
-      } else if (nullType != NullType::UNKNOWN_PROP) {
+      } else if (nullType != NullType::__NULL__) {
         // nullType == NullType::kNullUnknownProp, indicates that the field is
         // only in the latest schema, maybe use default value or null value.
         LOG(ERROR) << "Data is illegal in " << name << " field";
