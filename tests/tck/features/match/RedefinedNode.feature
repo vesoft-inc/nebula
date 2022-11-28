@@ -192,3 +192,20 @@ Feature: Redefined symbols
       MATCH (v:player{name:"abc"})-[e:like]->(v1)-[e:like]->(v2) RETURN *
       """
     Then a SemanticError should be raised at runtime: `e': Redefined alias
+
+  Scenario: Redefined alias in with
+    Given an empty graph
+    And load "nba" csv data to a new space
+    And having executed:
+      """
+      insert edge like (likeness) values "Tim Duncan"->"Tim Duncan":(100);
+      insert edge like (likeness) values "Carmelo Anthony"->"Carmelo Anthony":(100);
+      """
+    When executing query:
+      """
+      MATCH (n0)-[e0]->(n0) WHERE (id(n0) IN ["Tim Duncan", "Carmelo Anthony" ]) with * RETURN *
+      """
+    Then the result should be, in any order:
+      | n0                                                                                                          | e0                                                              |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tim Duncan" @0 {likeness: 100}]           |
+      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               | [:like "Carmelo Anthony"->"Carmelo Anthony" @0 {likeness: 100}] |
