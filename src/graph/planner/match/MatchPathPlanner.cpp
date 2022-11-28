@@ -11,6 +11,7 @@
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -165,7 +166,9 @@ Status MatchPathPlanner::findStarts(
     return Status::SemanticError("Can't solve the start vids from the sentence.");
   }
 
-  if (matchClausePlan.tail->isSingleInput()) {
+  // Both StartNode and Argument are leaf plannodes
+  if (matchClausePlan.tail->isSingleInput() &&
+      matchClausePlan.tail->kind() != PlanNode::Kind::kArgument) {
     auto start = StartNode::make(qctx);
     matchClausePlan.tail->setDep(0, start);
     matchClausePlan.tail = start;
