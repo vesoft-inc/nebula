@@ -154,15 +154,17 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
   // check EdgeFilter's edge type is in the edge type list
   // e.g. "like" is not in the edge list ["serve"]
   // GET SUBGRAPH FROM 'xxx' both serve WHERE like.likeness < 90 YIELD vertices as v, edges as e
-  for (auto edgeProp : subgraphCtx_->exprProps.edgeProps()) {
-    auto filterEdgeName = qctx_->schemaMng()->toEdgeName(vctx_->whichSpace().id, edgeProp.first);
-    NG_RETURN_IF_ERROR(filterEdgeName);
-    if (subgraphCtx_->edgeNames.find(filterEdgeName.value()) == subgraphCtx_->edgeNames.end()) {
-      return Status::SemanticError(
-          fmt::format("Edge type \"{}\" in filter \"{}\" is not in the edge types [{}]",
-                      filterEdgeName.value(),
-                      filter->toString(),
-                      folly::join(",", subgraphCtx_->edgeNames)));
+  if (!subgraphCtx_->edgeNames.empty()) {
+    for (auto edgeProp : subgraphCtx_->exprProps.edgeProps()) {
+      auto filterEdgeName = qctx_->schemaMng()->toEdgeName(vctx_->whichSpace().id, edgeProp.first);
+      NG_RETURN_IF_ERROR(filterEdgeName);
+      if (subgraphCtx_->edgeNames.find(filterEdgeName.value()) == subgraphCtx_->edgeNames.end()) {
+        return Status::SemanticError(
+            fmt::format("Edge type \"{}\" in filter \"{}\" is not in the edge types [{}]",
+                        filterEdgeName.value(),
+                        filter->toString(),
+                        folly::join(",", subgraphCtx_->edgeNames)));
+      }
     }
   }
 

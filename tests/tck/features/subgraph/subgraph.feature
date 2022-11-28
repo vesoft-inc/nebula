@@ -1018,28 +1018,7 @@ Feature: subgraph
       | <[vertex4]>      | <[edge4]> |
       | <[vertex5]>      | []        |
 
-  Scenario: Get subgraph in a space which doesn't have edge schema
-    Given an empty graph
-    And create a space with following options:
-      | partition_num  | 1                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(20) |
-    And having executed:
-      """
-      CREATE TAG IF NOT EXISTS person(name string);
-      """
-    When try to execute query:
-      """
-      INSERT VERTEX person VALUES "Tom":("Tom")
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      GET SUBGRAPH 1 STEPS FROM "Tom" YIELD vertices as nodes, edges as relationships
-      """
-    Then the result should be, in any order, with relax comparison:
-      | nodes     | relationships |
-      | [("Tom")] | []            |
+  Scenario: Filter on edge type
     When executing query:
       """
       GET SUBGRAPH FROM 'Tim Duncan' BOTH serve WHERE like.likeness < 90 YIELD vertices as v, edges as e
@@ -1065,3 +1044,27 @@ Feature: subgraph
       | v                                      | e                                                      |
       | [("Tim Duncan" :player{} :bachelor{})] | [[:serve "Tim Duncan"->"Spurs" @0 {start_year: 1997}]] |
       | [("Spurs" :team{})]                    | []                                                     |
+
+
+  Scenario: Get subgraph in a space which doesn't have edge schema
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS person(name string);
+      """
+    When try to execute query:
+      """
+      INSERT VERTEX person VALUES "Tom":("Tom")
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GET SUBGRAPH 1 STEPS FROM "Tom" YIELD vertices as nodes, edges as relationships
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nodes     | relationships |
+      | [("Tom")] | []            |
