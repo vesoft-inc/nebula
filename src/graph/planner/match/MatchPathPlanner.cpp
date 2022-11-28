@@ -131,9 +131,7 @@ Status MatchPathPlanner::findStarts(
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);
-        if (!plan.ok()) {
-          return plan.status();
-        }
+        NG_RETURN_IF_ERROR(plan);
         matchClausePlan = std::move(plan).value();
         startIndex = i;
         foundStart = true;
@@ -149,9 +147,7 @@ Status MatchPathPlanner::findStarts(
         auto edgeFinder = finder();
         if (edgeFinder->match(&edgeCtx)) {
           auto plan = edgeFinder->transform(&edgeCtx);
-          if (!plan.ok()) {
-            return plan.status();
-          }
+          NG_RETURN_IF_ERROR(plan);
           matchClausePlan = std::move(plan).value();
           startFromEdge = true;
           startIndex = i;

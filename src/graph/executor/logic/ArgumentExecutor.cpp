@@ -23,7 +23,7 @@ folly::Future<Status> ArgumentExecutor::execute() {
   ds.rows.reserve(iter->size());
   std::unordered_set<Value> unique;
   for (; iter->valid(); iter->next()) {
-    auto val = iter->getColumn(alias);
+    auto &val = iter->getColumn(alias);
     if (!val.isVertex()) {
       return Status::Error("Argument only support vertex, but got %s, which is type %s, ",
                            val.toString().c_str(),
@@ -31,7 +31,7 @@ folly::Future<Status> ArgumentExecutor::execute() {
     }
     if (unique.emplace(val.getVertex().vid).second) {
       Row row;
-      row.values.emplace_back(std::move(val));
+      row.values.emplace_back(val);
       ds.rows.emplace_back(std::move(row));
     }
   }
