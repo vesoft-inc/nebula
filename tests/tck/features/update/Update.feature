@@ -6,9 +6,9 @@ Feature: Update string vid of vertex and edge
   Background: Prepare space
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 1                |
-      | replica_factor | 1                |
-      | vid_type       | FIXED_STRING(20) |
+      | partition_num  | 1                 |
+      | replica_factor | 1                 |
+      | vid_type       | FIXED_STRING(200) |
     And having executed:
       """
       CREATE TAG IF NOT EXISTS course(name string, credits int);
@@ -731,12 +731,21 @@ Feature: Update string vid of vertex and edge
       """
       UPDATE VERTEX ON course "101"
       SET credits = credits + 1
+      YIELD "101" AS courseId, credits AS Credits
+      """
+    Then the result should be, in any order:
+      | courseId | Credits |
+      | '101'    | 7       |
+    When executing query:
+      """
+      UPDATE VERTEX ON course "101"
+      SET credits = credits + 1
       WHEN name == "Math" AND credits > 2
       YIELD name AS Name, credits AS Credits
       """
     Then the result should be, in any order:
       | Name   | Credits |
-      | 'Math' | 7       |
+      | 'Math' | 8       |
     When executing query:
       """
       UPDATE VERTEX ON course "101"
@@ -746,7 +755,7 @@ Feature: Update string vid of vertex and edge
       """
     Then the result should be, in any order:
       | Name   | Credits |
-      | 'Math' | 7       |
+      | 'Math' | 8       |
     When executing query:
       """
       FETCH PROP ON select "200"->"101"@0 YIELD select.grade, select.year

@@ -4,7 +4,7 @@
 Feature: Test Authentication
 
   Background:
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:failed_login_attempts=5
       graphd:password_lock_time_in_secs=5

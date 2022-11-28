@@ -87,7 +87,7 @@ void Argument::cloneMembers(const Argument& arg) {
 }
 
 std::unique_ptr<PlanNodeDescription> Argument::explain() const {
-  auto desc = PlanNode::explain();
+  auto desc = SingleInputNode::explain();
   addDescription("inputVar", inputVar(), desc.get());
   return desc;
 }

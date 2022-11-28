@@ -40,30 +40,52 @@ class DummyListener : public Listener {
                 const std::string& walPath,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 std::shared_ptr<thread::GenericThreadPool> workers,
-                std::shared_ptr<folly::Executor> handlers,
-                meta::SchemaManager* schemaMan)
-      : Listener(spaceId,
-                 partId,
-                 localAddr,
-                 walPath,
-                 ioPool,
-                 workers,
-                 handlers,
-                 nullptr,
-                 nullptr,
-                 nullptr,
-                 schemaMan) {}
+                std::shared_ptr<folly::Executor> handlers)
+      : Listener(spaceId, partId, localAddr, walPath, ioPool, workers, handlers) {}
 
   std::vector<KV> data() {
     return data_;
   }
 
-  std::tuple<cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+  std::tuple<cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(const std::vector<std::string>& rows,
                                                                LogID committedLogId,
                                                                TermID committedLogTerm,
                                                                bool finished) override {
     bool unl = raftLock_.try_lock();
-    auto result = Listener::commitSnapshot(data, committedLogId, committedLogTerm, finished);
+    VLOG(2) << idStr_ << "Listener is committing snapshot.";
+    int64_t count = 0;
+    int64_t size = 0;
+    std::tuple<nebula::cpp2::ErrorCode, nebula::LogID, nebula::TermID> result{
+        nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
+    std::vector<KV> data;
+    data.reserve(rows.size());
+    for (const auto& row : rows) {
+      count++;
+      size += row.size();
+      auto kv = decodeKV(row);
+      data.emplace_back(kv.first, kv.second);
+    }
+    if (!apply(data)) {
+      LOG(INFO) << idStr_ << "Failed to apply data while committing snapshot.";
+      result = {nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED,
+                kNoSnapshotCount,
+                kNoSnapshotSize};
+    } else {
+      if (finished) {
+        CHECK(!raftLock_.try_lock());
+        leaderCommitId_ = committedLogId;
+        lastApplyLogId_ = committedLogId;
+        persist(committedLogId, committedLogTerm, lastApplyLogId_);
+        lastApplyTime_ = time::WallClock::fastNowInMilliSec();
+        LOG(INFO) << folly::sformat(
+            "Commit snapshot to : committedLogId={},"
+            "committedLogTerm={}, lastApplyLogId_={}",
+            committedLogId,
+            committedLogTerm,
+            lastApplyLogId_);
+      }
+      result = {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
+    }
     if (unl) {
       raftLock_.unlock();
     }
@@ -85,10 +107,86 @@ class DummyListener : public Listener {
     return snapshotBatchCount_;
   }
 
+  void processLogs() override {
+    std::unique_ptr<LogIterator> iter;
+    {
+      std::lock_guard<std::mutex> guard(raftLock_);
+      if (lastApplyLogId_ >= committedLogId_) {
+        return;
+      }
+      iter = wal_->iterator(lastApplyLogId_ + 1, committedLogId_);
+    }
+
+    LogID lastApplyId = -1;
+    // the kv pair which can sync to remote safely
+    std::vector<KV> data;
+    while (iter->valid()) {
+      lastApplyId = iter->logId();
+
+      auto log = iter->logMsg();
+      if (log.empty()) {
+        // skip the heartbeat
+        ++(*iter);
+        continue;
+      }
+
+      DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
+      switch (log[sizeof(int64_t)]) {
+        case OP_PUT: {
+          auto pieces = decodeMultiValues(log);
+          DCHECK_EQ(2, pieces.size());
+          data.emplace_back(pieces[0], pieces[1]);
+          break;
+        }
+        case OP_MULTI_PUT: {
+          auto kvs = decodeMultiValues(log);
+          DCHECK_EQ(0, kvs.size() % 2);
+          for (size_t i = 0; i < kvs.size(); i += 2) {
+            data.emplace_back(kvs[i], kvs[i + 1]);
+          }
+          break;
+        }
+        case OP_REMOVE:
+        case OP_REMOVE_RANGE:
+        case OP_MULTI_REMOVE: {
+          break;
+        }
+        case OP_BATCH_WRITE: {
+          auto batch = decodeBatchValue(log);
+          for (auto& op : batch) {
+            // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
+            if (op.first == BatchLogType::OP_BATCH_PUT) {
+              data.emplace_back(op.second.first, op.second.second);
+            }
+          }
+          break;
+        }
+        case OP_TRANS_LEADER:
+        case OP_ADD_LEARNER:
+        case OP_ADD_PEER:
+        case OP_REMOVE_PEER: {
+          break;
+        }
+        default: {
+          VLOG(2) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
+        }
+      }
+      ++(*iter);
+    }
+    // apply to state machine
+    if (lastApplyId != -1 && apply(data)) {
+      std::lock_guard<std::mutex> guard(raftLock_);
+      lastApplyLogId_ = lastApplyId;
+      persist(committedLogId_, term_, lastApplyLogId_);
+      VLOG(2) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
+      lastApplyTime_ = time::WallClock::fastNowInMilliSec();
+    }
+  }
+
  protected:
   void init() override {}
 
-  bool apply(const std::vector<KV>& kvs) override {
+  bool apply(const std::vector<KV>& kvs) {
     for (const auto& kv : kvs) {
       data_.emplace_back(kv);
     }
@@ -229,8 +327,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
                                                    walPath,
                                                    listeners_[index]->ioPool_,
                                                    listeners_[index]->bgWorkers_,
-                                                   listeners_[index]->workers_,
-                                                   nullptr);
+                                                   listeners_[index]->workers_);
       listeners_[index]->raftService_->addPartition(dummy);
       std::vector<HostAddr> raftPeers;
       std::transform(

@@ -196,11 +196,14 @@ std::string GflagsManager::ValueToGflagString(const Value& val) {
       std::transform(kvs.begin(), kvs.end(), values.begin(), [](const auto& iter) -> std::string {
         std::stringstream out;
         out << "\"" << iter.first << "\""
-            << ":"
-            << "\"" << iter.second << "\"";
+            << ":";
+        if (iter.second.isStr() || iter.second.isBool()) {
+          out << iter.second;
+        } else {
+          out << "\"" << iter.second << "\"";
+        }
         return out.str();
       });
-
       std::stringstream os;
       os << "{" << folly::join(",", values) << "}";
       return os.str();

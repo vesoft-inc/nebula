@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/Common.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -76,14 +77,16 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *   // extra initialize work could do here
  *   void init()
  *
+ *   // Main interface to process logs, listener need to apply the committed log entry to their
+ *   // state machine. Once apply succeeded, user should call persist() to make their progress
+ *   // persisted.
+ *   virtual void processLogs() = 0;
+ *
  *   // read last commit log id and term from external storage, used in initialization
  *   std::pair<LogID, TermID> lastCommittedLogId()
  *
  *   // read last apply id from external storage, used in initialization
  *   LogID lastApplyLogId()
- *
- *   // apply the kv to state machine
- *   bool apply(const std::vector<KV>& data)
  *
  *   // persist last commit log id/term and lastApplyId
  *   bool persist(LogID, TermID, LogID)
@@ -100,10 +103,6 @@ class Listener : public raftex::RaftPart {
    * @param ioPool IOThreadPool for listener
    * @param workers Background thread for listener
    * @param handlers Worker thread for listener
-   * @param snapshotMan Snapshot manager
-   * @param clientMan Client manager
-   * @param diskMan Disk manager
-   * @param schemaMan Schema manager
    */
   Listener(GraphSpaceID spaceId,
            PartitionID partId,
@@ -111,11 +110,7 @@ class Listener : public raftex::RaftPart {
            const std::string& walPath,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           std::shared_ptr<folly::Executor> handlers,
-           std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-           std::shared_ptr<RaftClient> clientMan,
-           std::shared_ptr<DiskManager> diskMan,
-           meta::SchemaManager* schemaMan);
+           std::shared_ptr<folly::Executor> handlers);
 
   /**
    * @brief Initialize listener, all Listener must call this method
@@ -181,17 +176,16 @@ class Listener : public raftex::RaftPart {
   virtual LogID lastApplyLogId() = 0;
 
   /**
-   * @brief Apply data into listener's state machine
-   *
-   * @param data Key/value to apply
-   * @return True if succeed. False if failed.
-   */
-  virtual bool apply(const std::vector<KV>& data) = 0;
-
-  /**
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
    */
   virtual bool persist(LogID commitLogId, TermID commitLogTerm, LogID lastApplyLogId) = 0;
+
+  /**
+   * @brief Main interface to process logs, listener need to apply the committed log entry to their
+   * state machine. Once apply succeeded, user should call persist() to make their progress
+   * persisted.
+   */
+  virtual void processLogs() = 0;
 
   /**
    * @brief Callback when a raft node lost leadership on term, should not happen in listener
@@ -273,37 +267,15 @@ class Listener : public raftex::RaftPart {
                      folly::StringPiece log) override;
 
   /**
-   * @brief If the listener falls behind way to much than leader, the leader will send all its data
-   * in snapshot by batch, listener need to implement this method to apply the batch to state
-   * machine. The return value is a pair of <logs count, logs size> of this batch.
-   *
-   * @param data Data to apply
-   * @param committedLogId Commit log id of snapshot
-   * @param committedLogTerm Commit log term of snapshot
-   * @param finished Whether spapshot is finished
-   * @return std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> Return {ok, count, size} if
-   * succeed, else return {errorcode, -1, -1}
-   */
-  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
-      const std::vector<std::string>& data,
-      LogID committedLogId,
-      TermID committedLogTerm,
-      bool finished) override;
-
-  /**
    * @brief Background job thread will trigger doApply to apply data into state machine periodically
    */
   void doApply();
-
-  // Process logs and then call apply to execute
-  virtual void processLogs();
 
  protected:
   LogID leaderCommitId_ = 0;
   LogID lastApplyLogId_ = 0;
   int64_t lastApplyTime_ = 0;
   std::set<HostAddr> peers_;
-  meta::SchemaManager* schemaMan_{nullptr};
 };
 
 }  // namespace kvstore
