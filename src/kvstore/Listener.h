@@ -77,14 +77,16 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *   // extra initialize work could do here
  *   void init()
  *
+ *   // Main interface to process logs, listener need to apply the committed log entry to their
+ *   // state machine. Once apply succeeded, user should call persist() to make their progress
+ *   // persisted.
+ *   virtual void processLogs() = 0;
+ *
  *   // read last commit log id and term from external storage, used in initialization
  *   std::pair<LogID, TermID> lastCommittedLogId()
  *
  *   // read last apply id from external storage, used in initialization
  *   LogID lastApplyLogId()
- *
- *   // apply the kv to state machine
- *   bool apply(const std::vector<KV>& data)
  *
  *   // persist last commit log id/term and lastApplyId
  *   bool persist(LogID, TermID, LogID)
@@ -101,10 +103,6 @@ class Listener : public raftex::RaftPart {
    * @param ioPool IOThreadPool for listener
    * @param workers Background thread for listener
    * @param handlers Worker thread for listener
-   * @param snapshotMan Snapshot manager
-   * @param clientMan Client manager
-   * @param diskMan Disk manager
-   * @param schemaMan Schema manager
    */
   Listener(GraphSpaceID spaceId,
            PartitionID partId,
@@ -112,10 +110,7 @@ class Listener : public raftex::RaftPart {
            const std::string& walPath,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
-           std::shared_ptr<folly::Executor> handlers,
-           std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-           std::shared_ptr<RaftClient> clientMan,
-           std::shared_ptr<DiskManager> diskMan);
+           std::shared_ptr<folly::Executor> handlers);
 
   /**
    * @brief Initialize listener, all Listener must call this method
@@ -184,6 +179,13 @@ class Listener : public raftex::RaftPart {
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
    */
   virtual bool persist(LogID commitLogId, TermID commitLogTerm, LogID lastApplyLogId) = 0;
+
+  /**
+   * @brief Main interface to process logs, listener need to apply the committed log entry to their
+   * state machine. Once apply succeeded, user should call persist() to make their progress
+   * persisted.
+   */
+  virtual void processLogs() = 0;
 
   /**
    * @brief Callback when a raft node lost leadership on term, should not happen in listener
@@ -268,9 +270,6 @@ class Listener : public raftex::RaftPart {
    * @brief Background job thread will trigger doApply to apply data into state machine periodically
    */
   void doApply();
-
-  // Process logs and then call apply to execute
-  virtual void processLogs() = 0;
 
  protected:
   LogID leaderCommitId_ = 0;

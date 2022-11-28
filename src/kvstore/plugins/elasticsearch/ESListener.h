@@ -27,9 +27,6 @@ class ESListener : public Listener {
    * @param ioPool IOThreadPool for listener
    * @param workers Background thread for listener
    * @param handlers Worker thread for listener
-   * @param snapshotMan Snapshot manager
-   * @param clientMan Client manager
-   * @param diskMan Disk manager
    * @param schemaMan Schema manager
    */
   ESListener(GraphSpaceID spaceId,
@@ -40,16 +37,7 @@ class ESListener : public Listener {
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> handlers,
              meta::SchemaManager* schemaMan)
-      : Listener(spaceId,
-                 partId,
-                 std::move(localAddr),
-                 walPath,
-                 ioPool,
-                 workers,
-                 handlers,
-                 nullptr,
-                 nullptr,
-                 nullptr),
+      : Listener(spaceId, partId, std::move(localAddr), walPath, ioPool, workers, handlers),
         schemaMan_(schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(

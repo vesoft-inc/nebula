@@ -41,16 +41,7 @@ class DummyListener : public Listener {
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 std::shared_ptr<thread::GenericThreadPool> workers,
                 std::shared_ptr<folly::Executor> handlers)
-      : Listener(spaceId,
-                 partId,
-                 localAddr,
-                 walPath,
-                 ioPool,
-                 workers,
-                 handlers,
-                 nullptr,
-                 nullptr,
-                 nullptr) {}
+      : Listener(spaceId, partId, localAddr, walPath, ioPool, workers, handlers) {}
 
   std::vector<KV> data() {
     return data_;

@@ -582,10 +582,7 @@ void NebulaStore::removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::Listener
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = this->spaceListeners_.find(spaceId);
   if (spaceIt != this->spaceListeners_.end()) {
-    for (const auto& partEntry : spaceIt->second->listeners_) {
-      CHECK(partEntry.second.empty());
-    }
-    this->spaceListeners_.erase(spaceIt);
+    // Perform extra destruction of given type of listener here;
   }
   LOG(INFO) << "Listener space " << spaceId << " has been removed!";
 }
@@ -609,7 +606,7 @@ void NebulaStore::addListenerPart(GraphSpaceID spaceId,
               << " of [Space: " << spaceId << ", Part: " << partId << "] has existed!";
     return;
   }
-  partIt->second.emplace(type, newListener(spaceId, partId, std::move(type), peers));
+  partIt->second.emplace(type, newListener(spaceId, partId, type, peers));
   LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
             << " of [Space: " << spaceId << ", Part: " << partId << "] is added";
   return;
@@ -619,10 +616,12 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                    PartitionID partId,
                                                    meta::cpp2::ListenerType type,
                                                    const std::vector<HostAddr>& peers) {
+  // Lock has been acquired in addListenerPart.
+  // todo(doodle): we don't support start multiple type of listener in same process for now. If we
+  // suppport it later, the wal path may or may not need to be separated depending on how we
+  // implement it.
   auto walPath =
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
-  // snapshot manager and client manager is set to nullptr, listener should
-  // never use them
   std::shared_ptr<Listener> listener;
   if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
     listener = std::make_shared<ESListener>(

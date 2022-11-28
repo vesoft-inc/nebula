@@ -179,7 +179,7 @@ e.g.
 ```gherkin
 Feature: Nebula service termination test
   Scenario: Basic termination test
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener
     When the cluster was terminated
     Then no service should still running after 4s
 ```
@@ -187,7 +187,7 @@ Feature: Nebula service termination test
 ```gherkin
 Feature: Example
   Scenario: test with disable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=false
       """
@@ -205,7 +205,7 @@ Feature: Example
     Then the execution should be successful
 
   Scenario: test with enable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=true
       """
