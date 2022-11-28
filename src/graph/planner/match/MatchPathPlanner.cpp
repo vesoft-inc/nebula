@@ -292,24 +292,28 @@ Status MatchPathPlanner::leftExpandFromNode(
     }
   }
 
-  auto& node = nodeInfos.front();
-  if (!node.anonymous) {
-    nodeAliasesSeenInPattern.emplace(node.alias);
+  auto& lastNode = nodeInfos.front();
+
+  bool duppedLastAlias =
+      nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end() &&
+      nodeAliasesSeenInPattern.size() > 1;
+
+  if (!lastNode.anonymous) {
+    nodeAliasesSeenInPattern.emplace(lastNode.alias);
   }
+
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProps);
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
-  appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setVertexFilter(genVertexFilter(lastNode));
   appendV->setDedup();
   appendV->setTrackPrevPath(!edgeInfos.empty());
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
 
-  auto& lastNode = nodeInfos.front();
-  bool expandInto = nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end();
-  if (expandInto) {
+  if (duppedLastAlias) {
     auto* startVid = nodeId(qctx->objPool(), lastNode);
     auto* endVid = nextTraverseStart;
     auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
@@ -366,24 +370,28 @@ Status MatchPathPlanner::rightExpandFromNode(
     }
   }
 
-  auto& node = nodeInfos.back();
-  if (!node.anonymous) {
-    nodeAliasesSeenInPattern.emplace(node.alias);
+  auto& lastNode = nodeInfos.back();
+
+  bool duppedLastAlias =
+      nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end() &&
+      nodeAliasesSeenInPattern.size() > 1;
+
+  if (!lastNode.anonymous) {
+    nodeAliasesSeenInPattern.emplace(lastNode.alias);
   }
+
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProps);
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
-  appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setVertexFilter(genVertexFilter(lastNode));
   appendV->setDedup();
   appendV->setTrackPrevPath(!edgeInfos.empty());
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
 
-  auto& lastNode = nodeInfos.back();
-  bool expandInto = nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end();
-  if (expandInto) {
+  if (duppedLastAlias) {
     auto* startVid = nodeId(qctx->objPool(), lastNode);
     auto* endVid = nextTraverseStart;
     auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
