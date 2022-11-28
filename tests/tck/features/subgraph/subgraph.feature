@@ -1045,7 +1045,6 @@ Feature: subgraph
       | [("Tim Duncan" :player{} :bachelor{})] | [[:serve "Tim Duncan"->"Spurs" @0 {start_year: 1997}]] |
       | [("Spurs" :team{})]                    | []                                                     |
 
-
   Scenario: Get subgraph in a space which doesn't have edge schema
     Given an empty graph
     And create a space with following options:
