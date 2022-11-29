@@ -568,13 +568,13 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, bool need
 void NebulaStore::addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
   UNUSED(type);
   folly::RWSpinLock::WriteHolder wh(&lock_);
-  // listener don't need engine for now
   if (this->spaceListeners_.find(spaceId) != this->spaceListeners_.end()) {
     LOG(INFO) << "Listener space " << spaceId << " has existed!";
-    return;
+  } else {
+    LOG(INFO) << "Create listener space " << spaceId;
+    this->spaceListeners_[spaceId] = std::make_unique<SpaceListenerInfo>();
   }
-  LOG(INFO) << "Create listener space " << spaceId;
-  this->spaceListeners_[spaceId] = std::make_unique<SpaceListenerInfo>();
+  // Perform extra initialization of given type of listener here
 }
 
 void NebulaStore::removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
