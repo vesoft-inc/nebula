@@ -863,9 +863,9 @@ Feature: Prune Properties rule
     Given a graph with space named "nba"
     When executing query:
       """
-      match (v:player)-[e:like]->(t) where v.player.name=='Tim Duncan'  return v.player.name, v.x.y, v.player.age
+      MATCH (v:player)-[e:like]->(t) WHERE v.player.name=='Tim Duncan'  RETURN v.player.name, v.x.y, v.player.age
       """
-    Then the result should be, in order, with relax comparison:+---------------+----------+--------------+
+    Then the result should be, in order, with relax comparison:
       | v.player.name | v.x.y    | v.player.age |
       | "Tim Duncan"  | __NULL__ | 42           |
       | "Tim Duncan"  | __NULL__ | 42           |
