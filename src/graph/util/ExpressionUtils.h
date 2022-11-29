@@ -153,7 +153,7 @@ class ExpressionUtils {
   static void pullOrs(Expression* expr);
   static void pullOrsImpl(LogicalExpression* expr, std::vector<Expression*>& operands);
 
-  // For a logical XOR expression, extracts all non-logicalOrExpr from its operands and set them as
+  // For a logical XOR expression, extracts all non-logicalXorExpr from its operands and set them as
   // the new operands
   static void pullXors(Expression* expr);
   static void pullXorsImpl(LogicalExpression* expr, std::vector<Expression*>& operands);
