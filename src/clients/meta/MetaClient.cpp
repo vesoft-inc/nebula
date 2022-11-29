@@ -1389,7 +1389,7 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (it != metadata.spaceIndexByName_.end()) {
     return it->second;
   }
-  return Status::SpaceNotFound("Space %s not found", name.data());
+  return Status::SpaceNotFound(fmt::format("Space {} not found", name));
 }
 
 StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId) {
@@ -1470,7 +1470,7 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceAllEdgeMap_.find(space);
   if (it == metadata.spaceAllEdgeMap_.end()) {
-    return Status::SpaceNotFound(fmt::format("SpaceId `{}` is nonexistent", space));
+    return Status::SpaceNotFound(fmt::format("Space {} not found", space));
   }
   return it->second;
 }
