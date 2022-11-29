@@ -858,7 +858,6 @@ Feature: Prune Properties rule
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
     Then drop the used space
 
-
   Scenario: Project on not exist tag
     Given a graph with space named "nba"
     When executing query:
