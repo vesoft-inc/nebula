@@ -17,7 +17,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
-#include "kvstore/plugins/elasticsearch/ESListener.h"
+#include "kvstore/listener/elasticsearch/ESListener.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs,

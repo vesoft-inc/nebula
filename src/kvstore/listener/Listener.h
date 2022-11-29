@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef KVSTORE_LISTENER_H_
-#define KVSTORE_LISTENER_H_
+#ifndef KVSTORE_LISTENER_LISTENER_H_
+#define KVSTORE_LISTENER_LISTENER_H_
 
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
@@ -274,10 +274,9 @@ class Listener : public raftex::RaftPart {
  protected:
   LogID leaderCommitId_ = 0;
   LogID lastApplyLogId_ = 0;
-  int64_t lastApplyTime_ = 0;
   std::set<HostAddr> peers_;
 };
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_LISTENER_H_
+#endif
