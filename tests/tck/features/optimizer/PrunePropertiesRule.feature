@@ -851,3 +851,30 @@ Feature: Prune Properties rule
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
     Then drop the used space
+
+  Scenario: Project on not exist tag
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(t) WHERE v.player.name=='Tim Duncan'  RETURN v.player.name, v.x.y, v.player.age
+      """
+    Then the result should be, in order, with relax comparison:
+      | v.player.name | v.x.y    | v.player.age |
+      | "Tim Duncan"  | __NULL__ | 42           |
+      | "Tim Duncan"  | __NULL__ | 42           |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, properties(v), t
+      """
+    Then the result should be, in order, with relax comparison:
+      | v.player.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, t.errortag.name, properties(v), t
+      """
+    Then the result should be, in order, with relax comparison:
+      | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |

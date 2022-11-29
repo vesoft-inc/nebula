@@ -298,12 +298,12 @@ Feature: Yield Sentence
       """
       $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team;YIELD $$.a.team
       """
-    Then a ExecutionError should be raised at runtime: TagName `a'  is nonexistent
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `a`
     When executing query:
       """
       $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team;YIELD $^.a.team
       """
-    Then a ExecutionError should be raised at runtime: TagName `a'  is nonexistent
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `a`
     When executing query:
       """
       $var = GO FROM hash("Boris Diaw") OVER serve YIELD $^.player.name AS name, serve.start_year AS start, $$.team.name AS team;YIELD a.team

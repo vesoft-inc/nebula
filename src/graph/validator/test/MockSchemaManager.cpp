@@ -99,7 +99,7 @@ StatusOr<GraphSpaceID> MockSchemaManager::toGraphSpaceID(folly::StringPiece spac
   if (findIt != spaceNameIds_.end()) {
     return findIt->second;
   }
-  return Status::Error("Space `%s' not found", spaceName.str().c_str());
+  return Status::SpaceNotFound("Space `%s' not found", spaceName.str().c_str());
 }
 
 StatusOr<std::string> MockSchemaManager::toGraphSpaceName(GraphSpaceID space) {
@@ -108,7 +108,7 @@ StatusOr<std::string> MockSchemaManager::toGraphSpaceName(GraphSpaceID space) {
       return s.first;
     }
   }
-  return Status::Error("Space `%d' not found", space);
+  return Status::SpaceNotFound("Space `%d' not found", space);
 }
 
 StatusOr<TagID> MockSchemaManager::toTagID(GraphSpaceID space, const folly::StringPiece tagName) {
@@ -120,7 +120,7 @@ StatusOr<TagID> MockSchemaManager::toTagID(GraphSpaceID space, const folly::Stri
   if (tagFindIt != tagNameIds_.end()) {
     return tagFindIt->second;
   }
-  return Status::Error("TagName `%s' not found", tagName.str().c_str());
+  return Status::TagNotFound("TagName `%s' not found", tagName.str().c_str());
 }
 
 StatusOr<std::string> MockSchemaManager::toTagName(GraphSpaceID space, TagID tagId) {
@@ -132,7 +132,7 @@ StatusOr<std::string> MockSchemaManager::toTagName(GraphSpaceID space, TagID tag
   if (tagFindIt != tagIdNames_.end()) {
     return tagFindIt->second;
   }
-  return Status::Error("TagID `%d' not found", tagId);
+  return Status::TagNotFound("TagID `%d' not found", tagId);
 }
 
 StatusOr<EdgeType> MockSchemaManager::toEdgeType(GraphSpaceID space, folly::StringPiece typeName) {
@@ -144,7 +144,7 @@ StatusOr<EdgeType> MockSchemaManager::toEdgeType(GraphSpaceID space, folly::Stri
   if (edgeFindIt != edgeNameIds_.end()) {
     return edgeFindIt->second;
   }
-  return Status::Error("EdgeName `%s' not found", typeName.str().c_str());
+  return Status::EdgeNotFound("EdgeName `%s' not found", typeName.str().c_str());
 }
 
 StatusOr<std::string> MockSchemaManager::toEdgeName(GraphSpaceID space, EdgeType edgeType) {
@@ -156,7 +156,7 @@ StatusOr<std::string> MockSchemaManager::toEdgeName(GraphSpaceID space, EdgeType
   if (edgeFindIt != edgeIdNames_.end()) {
     return edgeFindIt->second;
   }
-  return Status::Error("EdgeType `%d' not found", edgeType);
+  return Status::EdgeNotFound("EdgeType `%d' not found", edgeType);
 }
 
 StatusOr<std::vector<std::string>> MockSchemaManager::getAllEdge(GraphSpaceID) {
