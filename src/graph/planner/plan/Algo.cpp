@@ -27,12 +27,16 @@ std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
+std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   auto desc = BinaryInputNode::explain();
-  addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
-  addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("noloop ", folly::toJson(util::toJson(noLoop_)), desc.get());
+  addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
   return desc;
 }
 

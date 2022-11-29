@@ -9,6 +9,9 @@
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNode.h"
 
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using EdgeProp = nebula::storage::cpp2::EdgeProp;
+using Direction = nebula::storage::cpp2::EdgeDirection;
 namespace nebula {
 namespace graph {
 class MultiShortestPath : public BinaryInputNode {
@@ -110,11 +113,15 @@ class BFSShortestPath : public BinaryInputNode {
   size_t steps_{0};
 };
 
-class ProduceAllPaths final : public BinaryInputNode {
+class AllPaths final : public BinaryInputNode {
  public:
-  static ProduceAllPaths* make(
-      QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop) {
-    return qctx->objPool()->makeAndAdd<ProduceAllPaths>(qctx, left, right, steps, noLoop);
+  static AllPaths* make(QueryContext* qctx,
+                        PlanNode* left,
+                        PlanNode* right,
+                        size_t steps,
+                        bool noLoop,
+                        bool withProp) {
+    return qctx->objPool()->makeAndAdd<AllPaths>(qctx, left, right, steps, noLoop, withProp);
   }
 
   size_t steps() const {
@@ -125,41 +132,72 @@ class ProduceAllPaths final : public BinaryInputNode {
     return noLoop_;
   }
 
-  std::string leftVidVar() const {
-    return leftVidVar_;
+  bool withProp() const {
+    return withProp_;
   }
 
-  std::string rightVidVar() const {
-    return rightVidVar_;
+  storage::cpp2::EdgeDirection edgeDirection() const {
+    return edgeDirection_;
   }
 
-  void setLeftVidVar(const std::string& var) {
-    leftVidVar_ = var;
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
   }
 
-  void setRightVidVar(const std::string& var) {
-    rightVidVar_ = var;
+  const std::vector<EdgeProp>* reverseEdgeProps() const {
+    return reverseEdgeProps_.get();
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
+  void setLimit(Expression* limit) {
+    limit_ = limit;
+  }
+
+  void setFilter(Expression* filter) {
+    filter_ = filter;
+  }
+
+  void setEdgeDirection(Direction direction) {
+    edgeDirection_ = direction;
+  }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  void setReverseEdgeProps(std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps) {
+    reverseEdgeProps_ = std::move(reverseEdgeProps);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
   friend ObjectPool;
-  ProduceAllPaths(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop)
-      : BinaryInputNode(qctx, Kind::kProduceAllPaths, left, right),
+  AllPaths(
+      QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop, bool withProp)
+      : BinaryInputNode(qctx, Kind::kAllPaths, left, right),
         steps_(steps),
-        noLoop_(noLoop) {}
+        noLoop_(noLoop),
+        withProp_(withProp) {}
 
  private:
   size_t steps_{0};
   bool noLoop_{false};
-  std::string leftVidVar_;
-  std::string rightVidVar_;
+  bool withProp_{false};
+  Expression* limit_{nullptr};
+  Expression* filter_{nullptr};
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_;
+  storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
 };
-
-using VertexProp = nebula::storage::cpp2::VertexProp;
-using EdgeProp = nebula::storage::cpp2::EdgeProp;
-using Direction = nebula::storage::cpp2::EdgeDirection;
 
 class ShortestPath final : public SingleInputNode {
  public:
