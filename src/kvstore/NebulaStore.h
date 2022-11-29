@@ -17,9 +17,9 @@
 #include "kvstore/DiskManager.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
-#include "kvstore/Listener.h"
 #include "kvstore/Part.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/listener/Listener.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
