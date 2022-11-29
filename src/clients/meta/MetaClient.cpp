@@ -829,7 +829,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_EXISTED:
       return Status::Error("Existed!");
     case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
-      return Status::Error("Space not existed!");
+      return Status::SpaceNotFound("Space not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
       return Status::TagNotFound("Tag not existed!");
     case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
