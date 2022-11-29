@@ -76,7 +76,6 @@ class DummyListener : public Listener {
         leaderCommitId_ = committedLogId;
         lastApplyLogId_ = committedLogId;
         persist(committedLogId, committedLogTerm, lastApplyLogId_);
-        lastApplyTime_ = time::WallClock::fastNowInMilliSec();
         LOG(INFO) << folly::sformat(
             "Commit snapshot to : committedLogId={},"
             "committedLogTerm={}, lastApplyLogId_={}",
@@ -179,7 +178,6 @@ class DummyListener : public Listener {
       lastApplyLogId_ = lastApplyId;
       persist(committedLogId_, term_, lastApplyLogId_);
       VLOG(2) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
-      lastApplyTime_ = time::WallClock::fastNowInMilliSec();
     }
   }
 
