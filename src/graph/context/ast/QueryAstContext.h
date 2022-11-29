@@ -132,6 +132,7 @@ struct SubgraphContext final : public AstContext {
   Expression* tagFilter{nullptr};
   Expression* edgeFilter{nullptr};
   std::vector<std::string> colNames;
+  std::unordered_set<std::string> edgeNames;
   std::unordered_set<EdgeType> edgeTypes;
   std::unordered_set<EdgeType> biDirectEdgeTypes;
   std::vector<Value::Type> colType;

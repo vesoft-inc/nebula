@@ -33,6 +33,7 @@ Status GetSubgraphValidator::validateImpl() {
 // Validate in-bound edge types
 Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
+  auto& edgeNames = subgraphCtx_->edgeNames;
   if (in != nullptr) {
     auto space = vctx_->whichSpace();
     auto edges = in->edges();
@@ -42,8 +43,10 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
       }
 
-      auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
+      std::string edgeName = *e->edge();
+      auto et = qctx_->schemaMng()->toEdgeType(space.id, edgeName);
       NG_RETURN_IF_ERROR(et);
+      edgeNames.emplace(edgeName);
 
       auto v = -et.value();
       edgeTypes.emplace(v);
@@ -56,6 +59,7 @@ Status GetSubgraphValidator::validateInBound(InBoundClause* in) {
 // Validate out-bound edge types
 Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
+  auto& edgeNames = subgraphCtx_->edgeNames;
   if (out != nullptr) {
     auto space = vctx_->whichSpace();
     auto edges = out->edges();
@@ -64,10 +68,10 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
       if (e->alias() != nullptr) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
       }
-
-      auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
+      std::string edgeName = *e->edge();
+      auto et = qctx_->schemaMng()->toEdgeType(space.id, edgeName);
       NG_RETURN_IF_ERROR(et);
-
+      edgeNames.emplace(edgeName);
       edgeTypes.emplace(et.value());
     }
   }
@@ -79,8 +83,9 @@ Status GetSubgraphValidator::validateOutBound(OutBoundClause* out) {
 Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
   auto& edgeTypes = subgraphCtx_->edgeTypes;
   auto& biEdgeTypes = subgraphCtx_->biDirectEdgeTypes;
+  auto& edgeNames = subgraphCtx_->edgeNames;
   if (out != nullptr) {
-    auto space = vctx_->whichSpace();
+    auto& space = vctx_->whichSpace();
     auto edges = out->edges();
     edgeTypes.reserve(edgeTypes.size() + edges.size() * 2);
     biEdgeTypes.reserve(edges.size() * 2);
@@ -88,10 +93,10 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
       if (e->alias() != nullptr) {
         return Status::SemanticError("Get Subgraph not support rename edge name.");
       }
-
-      auto et = qctx_->schemaMng()->toEdgeType(space.id, *e->edge());
+      std::string edgeName = *e->edge();
+      auto et = qctx_->schemaMng()->toEdgeType(space.id, edgeName);
       NG_RETURN_IF_ERROR(et);
-
+      edgeNames.emplace(edgeName);
       auto v = et.value();
       edgeTypes.emplace(v);
       edgeTypes.emplace(-v);
@@ -146,12 +151,29 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
 
   NG_RETURN_IF_ERROR(deduceProps(filter, subgraphCtx_->exprProps));
 
+  // check EdgeFilter's edge type is in the edge type list
+  // e.g. "like" is not in the edge list ["serve"]
+  // GET SUBGRAPH FROM 'xxx' both serve WHERE like.likeness < 90 YIELD vertices as v, edges as e
+  if (!subgraphCtx_->edgeNames.empty()) {
+    for (auto edgeProp : subgraphCtx_->exprProps.edgeProps()) {
+      auto filterEdgeName = qctx_->schemaMng()->toEdgeName(vctx_->whichSpace().id, edgeProp.first);
+      NG_RETURN_IF_ERROR(filterEdgeName);
+      if (subgraphCtx_->edgeNames.find(filterEdgeName.value()) == subgraphCtx_->edgeNames.end()) {
+        return Status::SemanticError(
+            fmt::format("Edge type \"{}\" in filter \"{}\" is not in the edge types [{}]",
+                        filterEdgeName.value(),
+                        filter->toString(),
+                        folly::join(",", subgraphCtx_->edgeNames)));
+      }
+    }
+  }
+
   auto condition = filter->clone();
   if (ExpressionUtils::findAny(expr, {Expression::Kind::kDstProperty})) {
     auto visitor = ExtractFilterExprVisitor::makePushGetVertices(qctx_->objPool());
     filter->accept(&visitor);
     if (!visitor.ok()) {
-      return Status::SemanticError("filter error");
+      return Status::SemanticError("Push target vertices filter error: " + expr->toString());
     }
     subgraphCtx_->edgeFilter = visitor.remainedExpr();
     auto tagFilter = visitor.extractedExpr() ? visitor.extractedExpr() : filter;
