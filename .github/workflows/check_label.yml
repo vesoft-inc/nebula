@@ -1,0 +1,22 @@
+name: Auto label
+
+on:
+  issues:
+    types:
+      - reopened
+      - opened
+      - labeled
+      - unlabeled
+      - closed
+    
+env:
+  GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+  EVENT: ${{ toJSON(github.event)}}
+  EVENT_NAME: ${{ github.event_name}}
+
+jobs:
+  sync:
+    name: auto label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: HarrisChu/auto_label@v1
