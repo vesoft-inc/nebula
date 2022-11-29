@@ -608,7 +608,7 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | v.player.sex | properties(v).age |
-      | "男"         | 33                |
+      | "男"          | 33                |
     When executing query:
       """
       match (v:player) where id(v)=="Carmelo Anthony" return v.player.age;
@@ -629,7 +629,7 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(v).age | v.player.sex |
-      | 34                | "男"         |
+      | 34                | "男"          |
     When executing query:
       """
       match (v:player{name:"LaMarcus Aldridge"}) return v.player.age;
@@ -650,7 +650,7 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(v).age | v.player.sex |
-      | 33                | "男"         |
+      | 33                | "男"          |
     When executing query:
       """
       match (v:player) return id(v) AS id, properties(v).name AS name, v.player.age AS age order by name limit 2;
@@ -747,9 +747,9 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | __NULL__             | "Dejounte Murray" | "男"             | 2022         | 29               |
-      | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
-      | 41                    | __NULL__             | "Tiago Splitter"  | "男"             | 2022         | 34               |
+      | 41                    | __NULL__             | "Dejounte Murray" | "男"              | 2022         | 29               |
+      | 41                    | 88                   | "Spurs"           | "男"              | 2002         | NULL             |
+      | 41                    | __NULL__             | "Tiago Splitter"  | "男"              | 2022         | 34               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
@@ -758,11 +758,11 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | 88                      | "Danny Green"          | 41  | 2010            | 31               |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | 88                      | "Cory Joseph"          | 41  | 2011            | 27               |
-      | "男"                  | __NULL__                | "76ers"                | 41  | 2017            | NULL             |
+      | "男"                   | 88                      | "Danny Green"          | 41  | 2010            | 31               |
+      | "男"                   | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                   | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
+      | "男"                   | 88                      | "Cory Joseph"          | 41  | 2011            | 27               |
+      | "男"                   | __NULL__                | "76ers"                | 41  | 2017            | NULL             |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v)
@@ -771,11 +771,11 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | __NULL__                | "Kyle Anderson"        | 41  | 2022            | 25               |
-      | "男"                  | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | __NULL__                | "Kevin Durant"         | 41  | 2022            | 30               |
+      | "男"                   | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                   | __NULL__                | "Danny Green"          | 41  | 2022            | 31               |
+      | "男"                   | __NULL__                | "Kyle Anderson"        | 41  | 2022            | 25               |
+      | "男"                   | __NULL__                | "LeBron James"         | 41  | 2022            | 34               |
+      | "男"                   | __NULL__                | "Kevin Durant"         | 41  | 2022            | 30               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
@@ -793,7 +793,7 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(v1).name | age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)  |
-      | "Manu Ginobili"     | 36  | "Spurs"             | "男"          | "男"          | "Spurs" |
+      | "Manu Ginobili"     | 36  | "Spurs"             | "男"           | "男"           | "Spurs" |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
@@ -802,7 +802,7 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(v1).name | properties(v2).age | name        | v2.player.sex | v1.player.age |
-      | "Yao Ming"          | 47                 | "Cavaliers" | "男"          | 38            |
+      | "Yao Ming"          | 47                 | "Cavaliers" | "男"           | 38            |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
@@ -857,3 +857,31 @@ Feature: Prune Properties rule
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
     Then drop the used space
+
+
+  Scenario: Project on not exist tag
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      match (v:player)-[e:like]->(t) where v.player.name=='Tim Duncan'  return v.player.name, v.x.y, v.player.age
+      """
+    Then the result should be, in order, with relax comparison:+---------------+----------+--------------+
+      | v.player.name | v.x.y    | v.player.age |
+      | "Tim Duncan"  | __NULL__ | 42           |
+      | "Tim Duncan"  | __NULL__ | 42           |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, properties(v), t
+      """
+    Then the result should be, in order, with relax comparison:
+      | v.player.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, t.errortag.name, properties(v), t
+      """
+    Then the result should be, in order, with relax comparison:
+      | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |

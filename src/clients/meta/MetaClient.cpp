@@ -829,13 +829,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_EXISTED:
       return Status::Error("Existed!");
     case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
-      return Status::Error("Space not existed!");
+      return Status::SpaceNotFound("Space not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
-      return Status::Error("Tag not existed!");
+      return Status::TagNotFound("Tag not existed!");
     case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
-      return Status::Error("Edge not existed!");
+      return Status::EdgeNotFound("Edge not existed!");
     case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
-      return Status::Error("Index not existed!");
+      return Status::IndexNotFound("Index not existed!");
     case nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND:
       return Status::Error(
           "There is no any stats info to show, please execute "
@@ -1389,7 +1389,7 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (it != metadata.spaceIndexByName_.end()) {
     return it->second;
   }
-  return Status::SpaceNotFound();
+  return Status::SpaceNotFound("Space %s not found", name.data());
 }
 
 StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId) {
@@ -1401,7 +1401,7 @@ StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   return spaceIt->second->spaceDesc_.get_space_name();
 }
@@ -1415,7 +1415,7 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceTagIndexByName_.find(std::make_pair(space, name));
   if (it == metadata.spaceTagIndexByName_.end()) {
-    return Status::Error("TagName `%s'  is nonexistent", name.c_str());
+    return Status::TagNotFound(fmt::format("TagName `{}` is nonexistent", name));
   }
   return it->second;
 }
@@ -1429,7 +1429,7 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceTagIndexById_.find(std::make_pair(space, tagId));
   if (it == metadata.spaceTagIndexById_.end()) {
-    return Status::Error("TagID `%d'  is nonexistent", tagId);
+    return Status::TagNotFound(fmt::format("TagID `{}` is nonexistent", tagId));
   }
   return it->second;
 }
@@ -1443,7 +1443,7 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceEdgeIndexByName_.find(std::make_pair(space, name));
   if (it == metadata.spaceEdgeIndexByName_.end()) {
-    return Status::Error("EdgeName `%s'  is nonexistent", name.c_str());
+    return Status::EdgeNotFound(fmt::format("EdgeName `{}` is nonexistent", name));
   }
   return it->second;
 }
@@ -1457,7 +1457,7 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
   if (it == metadata.spaceEdgeIndexByType_.end()) {
-    return Status::Error("EdgeType `%d'  is nonexistent", edgeType);
+    return Status::EdgeNotFound(fmt::format("EdgeType `{}` is nonexistent", edgeType));
   }
   return it->second;
 }
@@ -1470,7 +1470,7 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceAllEdgeMap_.find(space);
   if (it == metadata.spaceAllEdgeMap_.end()) {
-    return Status::Error("SpaceId `%d'  is nonexistent", space);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}` is nonexistent", space));
   }
   return it->second;
 }
@@ -1542,7 +1542,7 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
   if (it == metadata.localCache_.end()) {
-    return Status::Error("Space not found, spaceid: %d", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   return it->second->partsAlloc_.size();
 }
@@ -1937,7 +1937,7 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   auto& vidType = spaceIt->second->spaceDesc_.get_vid_type();
   auto vIdLen = vidType.type_length_ref().has_value() ? *vidType.get_type_length() : 0;
@@ -1956,7 +1956,7 @@ StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpac
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   auto vIdType = spaceIt->second->spaceDesc_.get_vid_type().get_type();
   if (vIdType != nebula::cpp2::PropertyType::INT64 &&
@@ -1978,7 +1978,7 @@ StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& space) {
   auto spaceIt = metadata.localCache_.find(space);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << space << " not found!";
-    return Status::Error("Space %d not found", space);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", space));
   }
   return spaceIt->second->spaceDesc_;
 }
@@ -2042,7 +2042,7 @@ StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound("Space %d not found", spaceId);
   }
   return iter->second->tagSchemas_;
 }
@@ -2055,7 +2055,7 @@ StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spa
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   TagSchema tagsSchema;
   tagsSchema.reserve(iter->second->tagSchemas_.size());
@@ -2074,7 +2074,7 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   return iter->second->edgeSchemas_;
 }
@@ -2087,7 +2087,7 @@ StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphS
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   }
   EdgeSchema edgesSchema;
   edgesSchema.reserve(iter->second->edgeSchemas_.size());
@@ -2140,7 +2140,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexByNameFromCach
   std::pair<GraphSpaceID, std::string> key(space, name);
   auto iter = tagNameIndexMap_.find(key);
   if (iter == tagNameIndexMap_.end()) {
-    return Status::IndexNotFound();
+    return Status::IndexNotFound(fmt::format("Index {}:{} not found", space, name));
   }
   auto indexID = iter->second;
   auto itemStatus = getTagIndexFromCache(space, indexID);
@@ -2158,7 +2158,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexByNameFromCac
   std::pair<GraphSpaceID, std::string> key(space, name);
   auto iter = edgeNameIndexMap_.find(key);
   if (iter == edgeNameIndexMap_.end()) {
-    return Status::IndexNotFound();
+    return Status::IndexNotFound(fmt::format("Index {}:{} not found", space, name));
   }
   auto indexID = iter->second;
   auto itemStatus = getEdgeIndexFromCache(space, indexID);
@@ -2179,7 +2179,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexFromCache(Grap
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   } else {
     auto iter = spaceIt->second->tagIndexes_.find(indexID);
     if (iter == spaceIt->second->tagIndexes_.end()) {
@@ -2207,7 +2207,7 @@ StatusOr<TagID> MetaClient::getRelatedTagIDByIndexNameFromCache(const GraphSpace
 }
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId,
-                                                                             IndexID indexID) {
+                                                                             IndexID indexId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2217,12 +2217,12 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(Gra
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   } else {
-    auto iter = spaceIt->second->edgeIndexes_.find(indexID);
+    auto iter = spaceIt->second->edgeIndexes_.find(indexId);
     if (iter == spaceIt->second->edgeIndexes_.end()) {
-      VLOG(3) << "Space " << spaceId << ", Edge Index " << indexID << " not found!";
-      return Status::IndexNotFound();
+      VLOG(3) << "Space " << spaceId << ", Edge Index " << indexId << " not found!";
+      return Status::IndexNotFound(fmt::format("Index {}:{} not found", spaceId, indexId));
     } else {
       return iter->second;
     }
@@ -2255,7 +2255,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getTagIndexe
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   } else {
     auto tagIndexes = spaceIt->second->tagIndexes_;
     auto iter = tagIndexes.begin();
@@ -2279,7 +2279,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndex
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("Space {} not found", spaceId));
   } else {
     auto edgeIndexes = spaceIt->second->edgeIndexes_;
     auto iter = edgeIndexes.begin();
@@ -2490,7 +2490,7 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
   if (it == metadata.spaceNewestEdgeVerMap_.end()) {
-    return Status::EdgeNotFound();
+    return Status::EdgeNotFound(fmt::format("EdgeType `{}` not found", edgeType));
   }
   return it->second;
 }
