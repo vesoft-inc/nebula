@@ -15,7 +15,7 @@ Feature: Matches on self-reflective edges
       """
     When executing query:
       """
-      MATCH x =  (n0)-[e1]->(n1)-[e2]-(n0) WHERE id(n0) == "Hades" and id(n1) == "Hades" return e1, e2
+      MATCH x = (n0)-[e1]->(n1)-[e2]-(n0) WHERE id(n0) == "Hades" and id(n1) == "Hades" return e1, e2
       """
     Then the result should be, in any order:
       | e1                                                                 | e2                                                                 |
@@ -23,9 +23,18 @@ Feature: Matches on self-reflective edges
       | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] |
     When executing query:
       """
-      MATCH x =  (n0)-[e1]->(n1)-[e2]-(n0) WHERE id(n0) == "Hades" and id(n1) == "Hades" return e1, e2
+      MATCH x = (n0)-[e1]->(n1)-[e2]-(n0) WHERE id(n0) == "Hades" and id(n1) == "Hades" return e1, e2
       """
     Then the result should be, in any order:
       | e1                                                                 | e2                                                                 |
       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       |
       | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] |
+    When executing query:
+      """
+      DELETE EDGE serve "Hades"->"Underworld";
+      DELETE EDGE teammate "Hades"->"Hades";
+      DELETE EDGE like "Hades"->"Hades";
+      DELETE VERTEX "Underworld";
+      DELETE VERTEX "Hades";
+      """
+    Then the execution should be successful
