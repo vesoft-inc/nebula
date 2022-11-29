@@ -86,10 +86,5 @@ void Argument::cloneMembers(const Argument& arg) {
   PlanNode::cloneMembers(arg);
 }
 
-std::unique_ptr<PlanNodeDescription> Argument::explain() const {
-  auto desc = SingleInputNode::explain();
-  addDescription("inputVar", inputVar(), desc.get());
-  return desc;
-}
 }  // namespace graph
 }  // namespace nebula

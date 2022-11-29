@@ -159,8 +159,6 @@ class Argument final : public SingleInputNode {
     return alias_;
   }
 
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
  private:
   friend ObjectPool;
   Argument(QueryContext* qctx, std::string alias, const PlanNode* dep = nullptr);
