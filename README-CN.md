@@ -32,8 +32,7 @@
 
 NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图技术场景实践知识的活跃开源社区。你可以在其中与大家共同交流 NebulaGraph [周边生态项目](https://docs.nebula-graph.com.cn/master/20.appendix/6.eco-tool-version/)的应用心得，或者社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等[大规模生产场景](https://nebula-graph.com.cn/cases)的实践经验。
 
-
-与其他图数据库产品相比，**NebulaGraph** 具有如下优势：
+**NebulaGraph** 部分功能如下：
 
 * 全对称分布式架构
 * 存储与计算分离
@@ -41,14 +40,23 @@ NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图�
 * RAFT 协议下的数据强一致
 * 支持 openCypher
 * 用户鉴权
+* 支持多种类型的图计算算法
+
+**NebulaGraph** 内核架构图如下：
+
+![image](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+
+点击 [NebulaGraph 官网](https://www.nebula-graph.com.cn/) 了解更多信息。
 
 ## 发布通告
 
-NebulaGraph 的 GitHub 仓库经历过拆分和合并的过程，所以其 v2.0.0 到 v2.5.x 的代码分布在另外几个仓库中：[Nebula-Graph](https://github.com/vesoft-inc/nebula-graph)、[Nebula-Storage](https://github.com/vesoft-inc/nebula-storage)、[Nebula-Common](https://github.com/vesoft-inc/nebula-common)，这几个仓库将被归档。
+**NebulaGraph** 的 GitHub 仓库经历过拆分和合并的过程。
 
-从 v2.6.0 开始，包括现在的 v3.x，NebulaGraph 内核代码集中在 [github.com/vesoft-inc/nebula](https://github.com/vesoft-inc/nebula) 下。
+- 从 v2.6.0 开始，**NebulaGraph** 内核代码集中在 [nebula](https://github.com/vesoft-inc/nebula) 仓库下。
 
-请访问 NebulaGraph 文档：https://docs.nebula-graph.com.cn/ 了解、获取 NebulaGraph 的最新的正式版本。
+- 从 v2.0.0 到 v2.5.x 的代码分布在 [nebula-graph](https://github.com/vesoft-inc/nebula-graph)、[nebula-storage](https://github.com/vesoft-inc/nebula-storage)、[nebula-common](https://github.com/vesoft-inc/nebula-common) 这几个仓库中，这几个仓库将被归档。
+
+请访问 [NebulaGraph 文档](https://docs.nebula-graph.com.cn/)了解、获取 **NebulaGraph** 的最新的正式版本。
 
 <!--
 
@@ -65,35 +73,38 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 
 ## 快速使用
 
-请查看[快速使用手册](https://docs.nebula-graph.com.cn/3.2.0/2.quick-start/1.quick-start-workflow/)，开始使用 **NebulaGraph**。
+您可以在[云上](https://docs.nebula-graph.com.cn/3.3.0/2.quick-start/1.quick-start-overview/#_2)或[本地](https://docs.nebula-graph.com.cn/3.3.0/2.quick-start/1.quick-start-overview/#_6)快速体验 **NebulaGraph**。
 
 <!--
 在开始使用 **NebulaGraph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)或者 [docker compose](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/2.build-by-docker/) 方式安装 **NebulaGraph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **NebulaGraph**。
 -->
 
+## 安装方式
+
+您可以通过[下载](https://www.nebula-graph.com.cn/download)安装包或者通过以下方式安装 **NebulaGraph**：
+
+- [源码编译](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)
+
+- [Docker Compose](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/3.deploy-nebula-graph-with-docker-compose/)
+
+- [NebulaGraph Dashboard 企业版](https://docs.nebula-graph.com.cn/3.3.0/nebula-dashboard-ent/1.what-is-dashboard-ent/) 
+
+- [NebulaGraph Operator](https://docs.nebula-graph.com.cn/3.3.0/nebula-operator/1.introduction-to-nebula-operator/)
+
 ## 获取帮助
 
 在使用 **NebulaGraph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
 
-* [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
-* 访问[论坛](https://discuss.nebula-graph.com.cn/)
-
-## 文档
-
-* [简体中文](https://docs.nebula-graph.com.cn/)
-* [English](https://docs.nebula-graph.io/)
-
-## NebulaGraph 产品架构图
-
-![image](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
-
-
+* [FAQ](https://docs.nebula-graph.com.cn/3.3.0/20.appendix/0.FAQ/)
+* [访问论坛](https://discuss.nebula-graph.com.cn/)
+* [查看文档](https://docs.nebula-graph.com.cn/)
+  
 ## 如何贡献
 
 **NebulaGraph** 是一个完全开源的项目，欢迎开源爱好者通过以下方式参与到 **NebulaGraph** 社区：
 
-* 直接在GitHub上提 [Issue](https://github.com/vesoft-inc/nebula/issues)
-* 贡献代码，详情请参见 [如何贡献](https://docs.nebula-graph.com.cn/master/15.contribution/how-to-contribute/)
+* 在 GitHub 上提 [Issue](https://github.com/vesoft-inc/nebula/issues)。
+* 贡献代码，详情请参见[如何贡献](https://docs.nebula-graph.com.cn/master/15.contribution/how-to-contribute/)。
 
 ## 许可证
 
@@ -115,5 +126,5 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 
 <br />
 
-#### 如果你喜欢这个项目，或者对你有用，可以点右上角 ⭐️ Star 来支持/收藏下~
-https://github.com/vesoft-inc/nebula
+#### 如果你喜欢这个项目，或者对你有用，请[点击](https://github.com/vesoft-inc/nebula)右上角 ⭐️ Star 收藏吧~
+

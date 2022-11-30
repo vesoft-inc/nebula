@@ -20,15 +20,13 @@
 </p>
 
 
-# What is NebulaGraph?
+# NebulaGraph
 
-**NebulaGraph** is an open-source graph database capable of hosting super large-scale graphs with dozens of billions of vertices (nodes) and trillions of edges, with milliseconds of latency.
+## Introduction
 
+**NebulaGraph** is a popular open-source graph database that can handle large volumes of data with milliseconds of latency, scale up quickly, and have the ability to perform fast graph analytics. NebulaGraph has been widely used for social media, recommendation systems, knowledge graphs, security, capital flows, AI, etc. See [our users](https://nebula-graph.io/cases).
 
-Trusted and contributed by users, the [NebulaGraph community](https://github.com/vesoft-inc/nebula-community/) comes with a rich [open-source ecosystem](https://docs.nebula-graph.io/master/20.appendix/6.eco-tool-version/). And it has been widely used for social media, recommendation systems, knowledge graphs, security, capital flows, AI, etc, see [our users](https://nebula-graph.io/cases).
-
-
-Compared with other graph database solutions, **NebulaGraph** has the following advantages:
+The following lists some of **NebulaGraph** features:
 
 * Symmetrically distributed
 * Storage and computing separation
@@ -36,7 +34,12 @@ Compared with other graph database solutions, **NebulaGraph** has the following 
 * Strong data consistency by RAFT protocol
 * OpenCypher-compatible query language
 * Role-based access control for higher-level security
+* Different types of graph analytics algorithms
 
+The following figure shows the architecture of the **NebulaGraph** core.
+![NebulaGraph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+
+Learn more on [NebulaGraph website](https://nebula-graph.io/).
 <!--
 ## Notice of Release
 
@@ -60,23 +63,29 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 
 ## Quick start
 
-Read the [Getting started](https://docs.nebula-graph.io/3.2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
+Read the [getting started](https://docs.nebula-graph.io/3.2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
 
-<!--
-Please note that you need to install **NebulaGraph**, either by [installing source code](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/1.build-source-code/) or by [docker compose](https://docs.nebula-graph.io/manual-EN/3.build-develop-and-administration/1.build/2.build-by-docker/), before you can actually start using it. If you prefer a video tutorial, visit our [YouTube channel](https://www.youtube.com/channel/UC73V8q795eSEMxDX4Pvdwmw/videos).
--->
+## Using NebulaGraph
+
+NebulaGraph is a distributed graph database with multiple components. You can [download](https://www.nebula-graph.io/download) or try in following ways:
+
+- [Build from source](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)
+
+- [With Docker Compose](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/3.deploy-nebula-graph-with-docker-compose/)
+
+- In the cloud: [AWS](https://docs.nebula-graph.io/3.1.0/nebula-cloud/nebula-cloud-on-aws/1.aws-overview/) and [Azure](https://docs.nebula-graph.io/3.1.0/nebula-cloud/nebula-cloud-on-azure/azure-self-managed/1.azure-overview/)
+- With ecosys: [NebulaGraph Dashboard](https://docs.nebula-graph.com.cn/3.3.0/nebula-dashboard-ent/1.what-is-dashboard-ent/) and [NebulaGraph Operator](https://docs.nebula-graph.com.cn/3.3.0/nebula-operator/1.introduction-to-nebula-operator/)
 
 ## Getting help
+
 In case you encounter any problems playing around **NebulaGraph**, please reach out for help:
-* [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
+* [FAQ](https://docs.nebula-graph.io/3.3.0/20.appendix/0.FAQ/)
 * [Discussions](https://github.com/vesoft-inc/nebula/discussions)
+* [Documentation](https://docs.nebula-graph.io/)
 
-## Documentation
+## Ecosystem
 
-* [English](https://docs.nebula-graph.io/)
-
-## Architecture
-![NebulaGraph Architecture](https://docs-cdn.nebula-graph.com.cn/figures/nebula-graph-architecture_3.png)
+NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.3.0/20.appendix/6.eco-tool-version/).
 
 ## Contributing
 
@@ -91,8 +100,7 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 <img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
 <br />
 
-[NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the <a href="https://landscape.cncf.io/card-mode?category=database&grouping=category">
-CNCF Database Landscape.</a>
+[NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/card-mode?category=database&grouping=category).
 </p>
 
 ## Licensing
@@ -114,5 +122,5 @@ You can also freely deploy **NebulaGraph** as a back-end service to support your
 
 <br />
 
-#### If you find NebulaGraph interesting, please ⭐️ Star it on GitHub at the top of the page.
-https://github.com/vesoft-inc/nebula
+#### If you find NebulaGraph interesting, please ⭐️ [Star](https://github.com/vesoft-inc/nebula) it at the top of the GitHub page.
+
