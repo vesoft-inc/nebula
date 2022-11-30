@@ -142,15 +142,15 @@ class GetNeighborsNode : public QueryNode<VertexID> {
   }
 
   bool isDuplicatedSelfReflectiveEdge(const folly::StringPiece& key) {
-    std::string srcID = NebulaKeyUtils::getSrcId(context_->vIdLen(), key).str();
-    std::string dstID = NebulaKeyUtils::getDstId(context_->vIdLen(), key).str();
-    if (srcID.compare(dstID) == 0) {
+    folly::StringPiece srcID = NebulaKeyUtils::getSrcId(context_->vIdLen(), key);
+    folly::StringPiece dstID = NebulaKeyUtils::getDstId(context_->vIdLen(), key);
+    if (srcID == dstID) {
       // self-reflective edge
       std::string rank = std::to_string(NebulaKeyUtils::getRank(context_->vIdLen(), key));
       auto edgeType = NebulaKeyUtils::getEdgeType(context_->vIdLen(), key);
       edgeType = edgeType > 0 ? edgeType : -edgeType;
       std::string type = std::to_string(edgeType);
-      std::string localKey = type + rank + srcID;
+      std::string localKey = type + rank + srcID.str();
       if (!visitedSelfReflectiveEdges_.insert(localKey).second) {
         return true;
       }
