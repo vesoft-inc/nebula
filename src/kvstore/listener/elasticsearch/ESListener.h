@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef KVSTORE_PLUGINS_ES_LISTENER_H_
-#define KVSTORE_PLUGINS_ES_LISTENER_H_
+#ifndef KVSTORE_LISTENER_ES_LISTENER_H_
+#define KVSTORE_LISTENER_ES_LISTENER_H_
 
 #include "codec/RowReaderWrapper.h"
 #include "common/plugin/fulltext/FTStorageAdapter.h"
-#include "kvstore/Listener.h"
+#include "kvstore/listener/Listener.h"
 
 namespace nebula {
 namespace kvstore {
@@ -171,4 +171,4 @@ class ESListener : public Listener {
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_PLUGINS_ES_LISTENER_H_
+#endif

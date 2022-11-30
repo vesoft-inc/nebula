@@ -45,6 +45,7 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:listener_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
