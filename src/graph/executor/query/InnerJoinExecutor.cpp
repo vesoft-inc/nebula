@@ -244,18 +244,6 @@ void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<cons
   }
 }
 
-Row InnerJoinExecutor::newRow(Row left, Row right) const {
-  Row r;
-  r.reserve(left.size() + right.size());
-  r.values.insert(r.values.end(),
-                  std::make_move_iterator(left.values.begin()),
-                  std::make_move_iterator(left.values.end()));
-  r.values.insert(r.values.end(),
-                  std::make_move_iterator(right.values.begin()),
-                  std::make_move_iterator(right.values.end()));
-  return r;
-}
-
 const std::string& InnerJoinExecutor::leftVar() const {
   if (node_->kind() == PlanNode::Kind::kBiInnerJoin) {
     return node_->asNode<BiJoin>()->leftInputVar();

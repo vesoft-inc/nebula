@@ -48,9 +48,6 @@ class InnerJoinExecutor : public JoinExecutor {
                    Row rRow,
                    DataSet& ds) const;
 
-  // concat rows
-  Row newRow(Row left, Row right) const;
-
   const std::string& leftVar() const;
 
   const std::string& rightVar() const;
