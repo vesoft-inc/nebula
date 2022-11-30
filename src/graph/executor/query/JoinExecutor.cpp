@@ -60,11 +60,10 @@ Status JoinExecutor::checkBiInputDataSets() {
 
   DCHECK_LE(colSize_, lhsColSize + rhsColSize);
   if (colSize_ < lhsColSize + rhsColSize) {
-    rhsOutputColIdxs_ = std::make_unique<std::vector<size_t>>();
     for (size_t i = 0; i < rhsColSize; ++i) {
       auto it = std::find(lhsColNames.begin(), lhsColNames.end(), rhsColNames[i]);
       if (it == lhsColNames.end()) {
-        rhsOutputColIdxs_->push_back(i);
+        rhsOutputColIdxs_.push_back(i);
       }
     }
   }
@@ -108,8 +107,8 @@ Row JoinExecutor::newRow(Row left, Row right) const {
   row.values.insert(row.values.end(),
                     std::make_move_iterator(left.values.begin()),
                     std::make_move_iterator(left.values.end()));
-  if (rhsOutputColIdxs_) {
-    for (auto idx : *rhsOutputColIdxs_) {
+  if (!rhsOutputColIdxs_.empty()) {
+    for (auto idx : rhsOutputColIdxs_) {
       row.values.emplace_back(std::move(right.values[idx]));
     }
   } else {
