@@ -4,6 +4,7 @@
  */
 #include "mock/FakeHttpServer.h"
 
+#include "folly/synchronization/Baton.h"
 #include "glog/logging.h"
 #include "proxygen/httpserver/HTTPServer.h"
 #include "proxygen/httpserver/HTTPServerOptions.h"
@@ -83,7 +84,9 @@ void FakeHttpServer::start() {
       {folly::SocketAddress("127.0.0.1", port_, true), ::proxygen::HTTPServer::Protocol::HTTP}};
 
   server_->bind(ipconfig);
-  t_ = std::thread([this]() { this->server_->start(); });
+  folly::Baton baton;
+  t_ = std::thread([this, &baton]() { this->server_->start([&baton]() { baton.post(); }); });
+  baton.wait();
 }
 
 void FakeHttpServer::stop() {
