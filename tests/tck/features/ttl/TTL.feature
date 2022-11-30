@@ -490,3 +490,38 @@ Feature: TTLTest
     Then the result should be, in any order:
       | age |
     And drop the used space
+
+  @wtf
+  Scenario: TTLTest ttl column has default
+    Given having executed:
+      """
+      CREATE TAG t1(name string, age int)
+      """
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(name, age) VALUES "1":("tom", 18)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG t1 ADD(n int default 1669726461)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG t1 TTL_DURATION = 30, TTL_COL = "n";
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(name, age) VALUES "2":("jerry", 18)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      match (v) return v limit 10
+      """
+    Then the result should be, in any order:
+      | v |
