@@ -16,6 +16,7 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                                          int64_t ttlDuration) {
   auto v = QueryUtils::readValue(reader, ttlCol, schema);
   if (!v.ok()) {
+    VLOG(3) << "failed to read ttl property";
     return false;
   }
   return checkDataExpiredForTTL(schema, v.value(), ttlCol, ttlDuration);

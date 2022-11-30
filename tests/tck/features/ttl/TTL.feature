@@ -491,7 +491,6 @@ Feature: TTLTest
       | age |
     And drop the used space
 
-  @wtf
   Scenario: TTLTest ttl column has default
     Given having executed:
       """
