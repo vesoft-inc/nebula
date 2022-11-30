@@ -29,7 +29,6 @@ const Value Value::kNullNaN(NullType::NaN);
 const Value Value::kNullBadData(NullType::BAD_DATA);
 const Value Value::kNullBadType(NullType::BAD_TYPE);
 const Value Value::kNullOverflow(NullType::ERR_OVERFLOW);
-const Value Value::kNullUnknownProp(NullType::UNKNOWN_PROP);
 const Value Value::kNullDivByZero(NullType::DIV_BY_ZERO);
 const Value Value::kNullOutOfRange(NullType::OUT_OF_RANGE);
 
@@ -320,7 +319,6 @@ const std::string& Value::typeName() const {
       {NullType::BAD_DATA, "BAD_DATA"},
       {NullType::BAD_TYPE, "BAD_TYPE"},
       {NullType::ERR_OVERFLOW, "ERR_OVERFLOW"},
-      {NullType::UNKNOWN_PROP, "UNKNOWN_PROP"},
       {NullType::DIV_BY_ZERO, "DIV_BY_ZERO"},
   };
 
@@ -1564,8 +1562,6 @@ std::string Value::toString() const {
           return "__NULL_OVERFLOW__";
         case NullType::NaN:
           return "__NULL_NaN__";
-        case NullType::UNKNOWN_PROP:
-          return "__NULL_UNKNOWN_PROP__";
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
       }

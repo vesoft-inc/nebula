@@ -3,13 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "kvstore/plugins/elasticsearch/ESListener.h"
+#include "kvstore/listener/elasticsearch/ESListener.h"
 
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
 DECLARE_int32(ft_bulk_batch_size);
+DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener commit");
 
 namespace nebula {
 namespace kvstore {
@@ -242,6 +243,121 @@ bool ESListener::writeDatum(const std::vector<nebula::plugin::DocItem>& items) c
     }
   }
   return true;
+}
+
+void ESListener::processLogs() {
+  std::unique_ptr<LogIterator> iter;
+  {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    if (lastApplyLogId_ >= committedLogId_) {
+      return;
+    }
+    iter = wal_->iterator(lastApplyLogId_ + 1, committedLogId_);
+  }
+
+  LogID lastApplyId = -1;
+  // the kv pair which can sync to remote safely
+  std::vector<KV> data;
+  while (iter->valid()) {
+    lastApplyId = iter->logId();
+
+    auto log = iter->logMsg();
+    if (log.empty()) {
+      // skip the heartbeat
+      ++(*iter);
+      continue;
+    }
+
+    DCHECK_GE(log.size(), sizeof(int64_t) + 1 + sizeof(uint32_t));
+    switch (log[sizeof(int64_t)]) {
+      case OP_PUT: {
+        auto pieces = decodeMultiValues(log);
+        DCHECK_EQ(2, pieces.size());
+        data.emplace_back(pieces[0], pieces[1]);
+        break;
+      }
+      case OP_MULTI_PUT: {
+        auto kvs = decodeMultiValues(log);
+        DCHECK_EQ(0, kvs.size() % 2);
+        for (size_t i = 0; i < kvs.size(); i += 2) {
+          data.emplace_back(kvs[i], kvs[i + 1]);
+        }
+        break;
+      }
+      case OP_REMOVE:
+      case OP_REMOVE_RANGE:
+      case OP_MULTI_REMOVE: {
+        break;
+      }
+      case OP_BATCH_WRITE: {
+        auto batch = decodeBatchValue(log);
+        for (auto& op : batch) {
+          // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
+          if (op.first == BatchLogType::OP_BATCH_PUT) {
+            data.emplace_back(op.second.first, op.second.second);
+          }
+        }
+        break;
+      }
+      case OP_TRANS_LEADER:
+      case OP_ADD_LEARNER:
+      case OP_ADD_PEER:
+      case OP_REMOVE_PEER: {
+        break;
+      }
+      default: {
+        VLOG(2) << idStr_ << "Unknown operation: " << static_cast<int32_t>(log[0]);
+      }
+    }
+
+    if (static_cast<int32_t>(data.size()) > FLAGS_listener_commit_batch_size) {
+      break;
+    }
+    ++(*iter);
+  }
+  // apply to state machine
+  if (lastApplyId != -1 && apply(data)) {
+    std::lock_guard<std::mutex> guard(raftLock_);
+    lastApplyLogId_ = lastApplyId;
+    persist(committedLogId_, term_, lastApplyLogId_);
+    VLOG(2) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
+  }
+}
+
+std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot(
+    const std::vector<std::string>& rows,
+    LogID committedLogId,
+    TermID committedLogTerm,
+    bool finished) {
+  VLOG(2) << idStr_ << "Listener is committing snapshot.";
+  int64_t count = 0;
+  int64_t size = 0;
+  std::vector<KV> data;
+  data.reserve(rows.size());
+  for (const auto& row : rows) {
+    count++;
+    size += row.size();
+    auto kv = decodeKV(row);
+    data.emplace_back(kv.first, kv.second);
+  }
+  if (!apply(data)) {
+    LOG(INFO) << idStr_ << "Failed to apply data while committing snapshot.";
+    return {
+        nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED, kNoSnapshotCount, kNoSnapshotSize};
+  }
+  if (finished) {
+    CHECK(!raftLock_.try_lock());
+    leaderCommitId_ = committedLogId;
+    lastApplyLogId_ = committedLogId;
+    persist(committedLogId, committedLogTerm, lastApplyLogId_);
+    LOG(INFO) << folly::sformat(
+        "Commit snapshot to : committedLogId={},"
+        "committedLogTerm={}, lastApplyLogId_={}",
+        committedLogId,
+        committedLogTerm,
+        lastApplyLogId_);
+  }
+  return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
 }
 
 }  // namespace kvstore

@@ -11,6 +11,7 @@
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -118,9 +119,9 @@ Status MatchPathPlanner::findStarts(
   allNodeAliasesAvailable.merge(nodeAliasesSeen);
   std::for_each(
       aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
-        if (kv.second == AliasType::kNode) {
-          allNodeAliasesAvailable.emplace(kv.first);
-        }
+        // if (kv.second == AliasType::kNode) {
+        allNodeAliasesAvailable.emplace(kv.first);
+        // }
       });
 
   // Find the start plan node
@@ -131,9 +132,7 @@ Status MatchPathPlanner::findStarts(
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);
-        if (!plan.ok()) {
-          return plan.status();
-        }
+        NG_RETURN_IF_ERROR(plan);
         matchClausePlan = std::move(plan).value();
         startIndex = i;
         foundStart = true;
@@ -149,9 +148,7 @@ Status MatchPathPlanner::findStarts(
         auto edgeFinder = finder();
         if (edgeFinder->match(&edgeCtx)) {
           auto plan = edgeFinder->transform(&edgeCtx);
-          if (!plan.ok()) {
-            return plan.status();
-          }
+          NG_RETURN_IF_ERROR(plan);
           matchClausePlan = std::move(plan).value();
           startFromEdge = true;
           startIndex = i;
@@ -169,7 +166,9 @@ Status MatchPathPlanner::findStarts(
     return Status::SemanticError("Can't solve the start vids from the sentence.");
   }
 
-  if (matchClausePlan.tail->isSingleInput()) {
+  // Both StartNode and Argument are leaf plannodes
+  if (matchClausePlan.tail->isSingleInput() &&
+      matchClausePlan.tail->kind() != PlanNode::Kind::kArgument) {
     auto start = StartNode::make(qctx);
     matchClausePlan.tail->setDep(0, start);
     matchClausePlan.tail = start;
@@ -249,7 +248,7 @@ Status MatchPathPlanner::leftExpandFromNode(
     auto* pool = qctx->objPool();
     auto args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, nodeInfos[startIndex].alias));
-    nextTraverseStart = FunctionCallExpression::make(pool, "id", args);
+    nextTraverseStart = FunctionCallExpression::make(pool, "_joinkey", args);
   }
   bool reversely = true;
   for (size_t i = startIndex; i > 0; --i) {

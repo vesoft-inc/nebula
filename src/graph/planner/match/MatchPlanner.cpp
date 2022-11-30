@@ -70,11 +70,29 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   }
   std::unordered_set<std::string> intersectedAliases;
   for (auto& alias : matchCtx->aliasesGenerated) {
-    if (matchCtx->aliasesAvailable.find(alias.first) != matchCtx->aliasesAvailable.end()) {
+    auto it = matchCtx->aliasesAvailable.find(alias.first);
+    if (it != matchCtx->aliasesAvailable.end()) {
+      // Joined type should be same
+      if (it->second != alias.second) {
+        return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
+                                                 alias.first,
+                                                 AliasTypeName[static_cast<int>(alias.second)],
+                                                 AliasTypeName[static_cast<int>(it->second)]));
+      }
+      // Joined On EdgeList is not supported
+      if (alias.second == AliasType::kEdgeList) {
+        return Status::SemanticError(alias.first +
+                                     " defined with type EdgeList, which cannot be joined on");
+      }
       intersectedAliases.insert(alias.first);
     }
   }
   if (!intersectedAliases.empty()) {
+    if (matchPlan.tail->kind() == PlanNode::Kind::kArgument) {
+      // The input of the argument operator is always the output of the plan on the other side of
+      // the join
+      matchPlan.tail->setInputVar(queryPlan.root->outputVar());
+    }
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;

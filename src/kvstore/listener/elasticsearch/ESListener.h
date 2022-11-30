@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef KVSTORE_PLUGINS_ES_LISTENER_H_
-#define KVSTORE_PLUGINS_ES_LISTENER_H_
+#ifndef KVSTORE_LISTENER_ES_LISTENER_H_
+#define KVSTORE_LISTENER_ES_LISTENER_H_
 
 #include "codec/RowReaderWrapper.h"
 #include "common/plugin/fulltext/FTStorageAdapter.h"
-#include "kvstore/Listener.h"
+#include "kvstore/listener/Listener.h"
 
 namespace nebula {
 namespace kvstore {
@@ -27,9 +27,6 @@ class ESListener : public Listener {
    * @param ioPool IOThreadPool for listener
    * @param workers Background thread for listener
    * @param handlers Worker thread for listener
-   * @param snapshotMan Snapshot manager
-   * @param clientMan Client manager
-   * @param diskMan Disk manager
    * @param schemaMan Schema manager
    */
   ESListener(GraphSpaceID spaceId,
@@ -39,21 +36,9 @@ class ESListener : public Listener {
              std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> handlers,
-             std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-             std::shared_ptr<RaftClient> clientMan,
-             std::shared_ptr<DiskManager> diskMan,
              meta::SchemaManager* schemaMan)
-      : Listener(spaceId,
-                 partId,
-                 std::move(localAddr),
-                 walPath,
-                 ioPool,
-                 workers,
-                 handlers,
-                 snapshotMan,
-                 clientMan,
-                 diskMan,
-                 schemaMan) {
+      : Listener(spaceId, partId, std::move(localAddr), walPath, ioPool, workers, handlers),
+        schemaMan_(schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(
         folly::stringPrintf("%s/last_apply_log_%d", walPath.c_str(), partId));
@@ -71,7 +56,7 @@ class ESListener : public Listener {
    * @param data Key/value to apply
    * @return True if succeed. False if failed.
    */
-  bool apply(const std::vector<KV>& data) override;
+  bool apply(const std::vector<KV>& data);
 
   /**
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
@@ -91,6 +76,14 @@ class ESListener : public Listener {
    * @return LogID Last apply log id
    */
   LogID lastApplyLogId() override;
+
+  void processLogs() override;
+
+  std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(
+      const std::vector<std::string>& data,
+      LogID committedLogId,
+      TermID committedLogTerm,
+      bool finished) override;
 
  private:
   /**
@@ -169,6 +162,7 @@ class ESListener : public Listener {
   bool writeDatum(const std::vector<nebula::plugin::DocItem>& items) const;
 
  private:
+  meta::SchemaManager* schemaMan_{nullptr};
   std::unique_ptr<std::string> lastApplyLogFile_{nullptr};
   std::unique_ptr<std::string> spaceName_{nullptr};
   std::vector<nebula::plugin::HttpClient> esClients_;
@@ -177,4 +171,4 @@ class ESListener : public Listener {
 
 }  // namespace kvstore
 }  // namespace nebula
-#endif  // KVSTORE_PLUGINS_ES_LISTENER_H_
+#endif

@@ -51,13 +51,21 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
       auto *expr = col->expr();
       status_ = extractPropsFromExpr(expr);
       if (!status_.ok()) {
+        // Project a not exit tag, should not break other columns
+        // e.g. Vertex tage {{"name", "string"}, {"age", "int64"}}
+        //      Project "... RETURN v.name, v.xxx.yyy, v.player.age"
+        //      v.xxx.yyy should not break v.player.age
+        if (status_.isTagNotFound()) {
+          continue;
+        }
         return;
       }
     }
     rootNode_ = false;
     return;
   }
-  for (auto i = 0u; i < columns.size(); ++i) {
+  DCHECK_EQ(columns.size(), colNames.size());
+  for (auto i = 0u; i < columns.size() && i < colNames.size(); ++i) {
     auto *col = DCHECK_NOTNULL(columns[i]);
     auto *expr = col->expr();
     auto &alias = colNames[i];

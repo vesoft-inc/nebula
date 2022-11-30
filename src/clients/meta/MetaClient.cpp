@@ -829,13 +829,13 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_EXISTED:
       return Status::Error("Existed!");
     case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
-      return Status::Error("Space not existed!");
+      return Status::SpaceNotFound("Space not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
-      return Status::Error("Tag not existed!");
+      return Status::TagNotFound("Tag not existed!");
     case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
-      return Status::Error("Edge not existed!");
+      return Status::EdgeNotFound("Edge not existed!");
     case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
-      return Status::Error("Index not existed!");
+      return Status::IndexNotFound("Index not existed!");
     case nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND:
       return Status::Error(
           "There is no any stats info to show, please execute "
@@ -1063,86 +1063,96 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
     return;
   }
 
-  VLOG(1) << "Let's check if any listeners parts added for " << options_.localHost_;
-  for (auto& spaceEntry : newMap) {
-    auto spaceId = spaceEntry.first;
+  VLOG(1) << "Let's check if any listeners is updated for " << options_.localHost_;
+  for (auto& [spaceId, typeMap] : newMap) {
     auto oldSpaceIter = oldMap.find(spaceId);
     if (oldSpaceIter == oldMap.end()) {
-      // new space is added
-      VLOG(1) << "[Listener] SpaceId " << spaceId << " was added!";
-      listener_->onSpaceAdded(spaceId, true);
-      for (const auto& partEntry : spaceEntry.second) {
-        auto partId = partEntry.first;
-        for (const auto& info : partEntry.second) {
-          VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << partId << " was added!";
-          listener_->onListenerAdded(spaceId, partId, info);
+      // create all type of listener when new space listener added
+      for (const auto& [type, listenerParts] : typeMap) {
+        VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
+                << apache::thrift::util::enumNameSafe(type);
+        listener_->onListenerSpaceAdded(spaceId, type);
+        for (const auto& newListener : listenerParts) {
+          VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                  << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+          listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
         }
       }
     } else {
-      // check if new part listener is added
-      for (auto& partEntry : spaceEntry.second) {
-        auto partId = partEntry.first;
-        auto oldPartIter = oldSpaceIter->second.find(partId);
-        if (oldPartIter == oldSpaceIter->second.end()) {
-          for (const auto& info : partEntry.second) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << partId << " was added!";
-            listener_->onListenerAdded(spaceId, partId, info);
+      for (auto& [type, listenerParts] : typeMap) {
+        auto oldTypeIter = oldSpaceIter->second.find(type);
+        // create missing type of listener when new type of listener added
+        if (oldTypeIter == oldSpaceIter->second.end()) {
+          VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
+                  << apache::thrift::util::enumNameSafe(type);
+          listener_->onListenerSpaceAdded(spaceId, type);
+          for (const auto& newListener : listenerParts) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+            listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
           }
         } else {
-          std::sort(partEntry.second.begin(), partEntry.second.end());
-          std::sort(oldPartIter->second.begin(), oldPartIter->second.end());
+          // create missing part of listener of specified type
+          std::sort(listenerParts.begin(), listenerParts.end());
+          std::sort(oldTypeIter->second.begin(), oldTypeIter->second.end());
           std::vector<ListenerHosts> diff;
-          std::set_difference(partEntry.second.begin(),
-                              partEntry.second.end(),
-                              oldPartIter->second.begin(),
-                              oldPartIter->second.end(),
+          std::set_difference(listenerParts.begin(),
+                              listenerParts.end(),
+                              oldTypeIter->second.begin(),
+                              oldTypeIter->second.end(),
                               std::back_inserter(diff));
-          for (const auto& info : diff) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << partId << " was added!";
-            listener_->onListenerAdded(spaceId, partId, info);
+          for (const auto& newListener : diff) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+            listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
           }
         }
       }
     }
   }
 
-  VLOG(1) << "Let's check if any old listeners removed....";
-  for (auto& spaceEntry : oldMap) {
-    auto spaceId = spaceEntry.first;
+  VLOG(1) << "Let's check if any listeners is removed from " << options_.localHost_;
+  for (auto& [spaceId, typeMap] : oldMap) {
     auto newSpaceIter = newMap.find(spaceId);
     if (newSpaceIter == newMap.end()) {
-      // remove old space
-      for (const auto& partEntry : spaceEntry.second) {
-        auto partId = partEntry.first;
-        for (const auto& info : partEntry.second) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << partId << " was removed!";
-          listener_->onListenerRemoved(spaceId, partId, info.type_);
+      // remove all type of listener when space listener removed
+      for (const auto& [type, listenerParts] : typeMap) {
+        for (const auto& outdateListener : listenerParts) {
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << outdateListener.partId_
+                  << " was removed, type is " << apache::thrift::util::enumNameSafe(type);
+          listener_->onListenerPartRemoved(spaceId, outdateListener.partId_, type);
         }
+        listener_->onListenerSpaceRemoved(spaceId, type);
+        VLOG(1) << "[Listener] SpaceId " << spaceId << " was removed, type is "
+                << apache::thrift::util::enumNameSafe(type);
       }
-      listener_->onSpaceRemoved(spaceId, true);
-      VLOG(1) << "[Listener] SpaceId " << spaceId << " was removed!";
     } else {
-      // check if part listener is removed
-      for (auto& partEntry : spaceEntry.second) {
-        auto partId = partEntry.first;
-        auto newPartIter = newSpaceIter->second.find(partId);
-        if (newPartIter == newSpaceIter->second.end()) {
-          for (const auto& info : partEntry.second) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << partId << " was removed!";
-            listener_->onListenerRemoved(spaceId, partId, info.type_);
+      for (auto& [type, listenerParts] : typeMap) {
+        auto newTypeIter = newSpaceIter->second.find(type);
+        // remove specified type of listener
+        if (newTypeIter == newSpaceIter->second.end()) {
+          for (const auto& outdateListener : listenerParts) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << outdateListener.partId_
+                    << " was removed!";
+            listener_->onListenerPartRemoved(spaceId, outdateListener.partId_, type);
           }
+          listener_->onListenerSpaceRemoved(spaceId, type);
+          VLOG(1) << "[Listener] SpaceId " << spaceId << " was removed, type is "
+                  << apache::thrift::util::enumNameSafe(type);
         } else {
-          std::sort(partEntry.second.begin(), partEntry.second.end());
-          std::sort(newPartIter->second.begin(), newPartIter->second.end());
+          // remove outdate part of listener of specified type
+          std::sort(listenerParts.begin(), listenerParts.end());
+          std::sort(newTypeIter->second.begin(), newTypeIter->second.end());
           std::vector<ListenerHosts> diff;
-          std::set_difference(partEntry.second.begin(),
-                              partEntry.second.end(),
-                              newPartIter->second.begin(),
-                              newPartIter->second.end(),
+          std::set_difference(listenerParts.begin(),
+                              listenerParts.end(),
+                              newTypeIter->second.begin(),
+                              newTypeIter->second.end(),
                               std::back_inserter(diff));
-          for (const auto& info : diff) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << partId << " was removed!";
-            listener_->onListenerRemoved(spaceId, partId, info.type_);
+          for (const auto& outdateListener : diff) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << outdateListener.partId_
+                    << " was removed!";
+            listener_->onListenerPartRemoved(spaceId, outdateListener.partId_, type);
           }
         }
       }
@@ -1379,7 +1389,7 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (it != metadata.spaceIndexByName_.end()) {
     return it->second;
   }
-  return Status::SpaceNotFound();
+  return Status::SpaceNotFound(fmt::format("SpaceName `{}`", name));
 }
 
 StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId) {
@@ -1391,7 +1401,7 @@ StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   return spaceIt->second->spaceDesc_.get_space_name();
 }
@@ -1405,7 +1415,7 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceTagIndexByName_.find(std::make_pair(space, name));
   if (it == metadata.spaceTagIndexByName_.end()) {
-    return Status::Error("TagName `%s'  is nonexistent", name.c_str());
+    return Status::TagNotFound(fmt::format("TagName `{}`", name));
   }
   return it->second;
 }
@@ -1419,7 +1429,7 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceTagIndexById_.find(std::make_pair(space, tagId));
   if (it == metadata.spaceTagIndexById_.end()) {
-    return Status::Error("TagID `%d'  is nonexistent", tagId);
+    return Status::TagNotFound(fmt::format("TagID `{}`", tagId));
   }
   return it->second;
 }
@@ -1433,7 +1443,7 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceEdgeIndexByName_.find(std::make_pair(space, name));
   if (it == metadata.spaceEdgeIndexByName_.end()) {
-    return Status::Error("EdgeName `%s'  is nonexistent", name.c_str());
+    return Status::EdgeNotFound(fmt::format("EdgeName `{}`", name));
   }
   return it->second;
 }
@@ -1447,7 +1457,7 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
   if (it == metadata.spaceEdgeIndexByType_.end()) {
-    return Status::Error("EdgeType `%d'  is nonexistent", edgeType);
+    return Status::EdgeNotFound(fmt::format("EdgeType `{}`", edgeType));
   }
   return it->second;
 }
@@ -1460,7 +1470,7 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceAllEdgeMap_.find(space);
   if (it == metadata.spaceAllEdgeMap_.end()) {
-    return Status::Error("SpaceId `%d'  is nonexistent", space);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", space));
   }
   return it->second;
 }
@@ -1532,7 +1542,7 @@ StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
   if (it == metadata.localCache_.end()) {
-    return Status::Error("Space not found, spaceid: %d", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   return it->second->partsAlloc_.size();
 }
@@ -1927,7 +1937,7 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   auto& vidType = spaceIt->second->spaceDesc_.get_vid_type();
   auto vIdLen = vidType.type_length_ref().has_value() ? *vidType.get_type_length() : 0;
@@ -1946,7 +1956,7 @@ StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpac
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   auto vIdType = spaceIt->second->spaceDesc_.get_vid_type().get_type();
   if (vIdType != nebula::cpp2::PropertyType::INT64 &&
@@ -1959,16 +1969,16 @@ StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpac
   return vIdType;
 }
 
-StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& space) {
+StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& spaceId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
-  auto spaceIt = metadata.localCache_.find(space);
+  auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
-    LOG(ERROR) << "Space " << space << " not found!";
-    return Status::Error("Space %d not found", space);
+    LOG(ERROR) << "Space " << spaceId << " not found!";
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   return spaceIt->second->spaceDesc_;
 }
@@ -2032,7 +2042,7 @@ StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   return iter->second->tagSchemas_;
 }
@@ -2045,7 +2055,7 @@ StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spa
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   TagSchema tagsSchema;
   tagsSchema.reserve(iter->second->tagSchemas_.size());
@@ -2064,7 +2074,7 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   return iter->second->edgeSchemas_;
 }
@@ -2077,7 +2087,7 @@ StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphS
   const auto& metadata = *metadata_.load();
   auto iter = metadata.localCache_.find(spaceId);
   if (iter == metadata.localCache_.end()) {
-    return Status::Error("Space %d not found", spaceId);
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   }
   EdgeSchema edgesSchema;
   edgesSchema.reserve(iter->second->edgeSchemas_.size());
@@ -2130,7 +2140,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexByNameFromCach
   std::pair<GraphSpaceID, std::string> key(space, name);
   auto iter = tagNameIndexMap_.find(key);
   if (iter == tagNameIndexMap_.end()) {
-    return Status::IndexNotFound();
+    return Status::IndexNotFound(fmt::format("Index: {}:{}", space, name));
   }
   auto indexID = iter->second;
   auto itemStatus = getTagIndexFromCache(space, indexID);
@@ -2148,7 +2158,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexByNameFromCac
   std::pair<GraphSpaceID, std::string> key(space, name);
   auto iter = edgeNameIndexMap_.find(key);
   if (iter == edgeNameIndexMap_.end()) {
-    return Status::IndexNotFound();
+    return Status::IndexNotFound(fmt::format("Index: {}:{}", space, name));
   }
   auto indexID = iter->second;
   auto itemStatus = getEdgeIndexFromCache(space, indexID);
@@ -2169,7 +2179,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexFromCache(Grap
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   } else {
     auto iter = spaceIt->second->tagIndexes_.find(indexID);
     if (iter == spaceIt->second->tagIndexes_.end()) {
@@ -2197,7 +2207,7 @@ StatusOr<TagID> MetaClient::getRelatedTagIDByIndexNameFromCache(const GraphSpace
 }
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId,
-                                                                             IndexID indexID) {
+                                                                             IndexID indexId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2207,12 +2217,12 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(Gra
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   } else {
-    auto iter = spaceIt->second->edgeIndexes_.find(indexID);
+    auto iter = spaceIt->second->edgeIndexes_.find(indexId);
     if (iter == spaceIt->second->edgeIndexes_.end()) {
-      VLOG(3) << "Space " << spaceId << ", Edge Index " << indexID << " not found!";
-      return Status::IndexNotFound();
+      VLOG(3) << "Space " << spaceId << ", Edge Index " << indexId << " not found!";
+      return Status::IndexNotFound(fmt::format("Index: {}:{}", spaceId, indexId));
     } else {
       return iter->second;
     }
@@ -2245,7 +2255,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getTagIndexe
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   } else {
     auto tagIndexes = spaceIt->second->tagIndexes_;
     auto iter = tagIndexes.begin();
@@ -2269,7 +2279,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndex
   auto spaceIt = metadata.localCache_.find(spaceId);
   if (spaceIt == metadata.localCache_.end()) {
     VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
+    return Status::SpaceNotFound(fmt::format("SpaceId `{}`", spaceId));
   } else {
     auto edgeIndexes = spaceIt->second->edgeIndexes_;
     auto iter = edgeIndexes.begin();
@@ -2480,7 +2490,7 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
   const auto& metadata = *metadata_.load();
   auto it = metadata.spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
   if (it == metadata.spaceNewestEdgeVerMap_.end()) {
-    return Status::EdgeNotFound();
+    return Status::EdgeNotFound(fmt::format("EdgeType `{}`", edgeType));
   }
   return it->second;
 }
@@ -2929,7 +2939,7 @@ ListenersMap MetaClient::doGetListenersMap(const HostAddr& host, const LocalCach
         auto partIter = space.second->partsAlloc_.find(partId);
         if (partIter != space.second->partsAlloc_.end()) {
           auto peers = partIter->second;
-          listenersMap[spaceId][partId].emplace_back(std::move(type), std::move(peers));
+          listenersMap[spaceId][type].emplace_back(partId, std::move(peers));
         } else {
           FLOG_WARN("%s has listener of [%d, %d], but can't find part peers",
                     host.toString().c_str(),

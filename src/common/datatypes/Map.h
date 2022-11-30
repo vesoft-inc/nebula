@@ -69,7 +69,7 @@ struct Map {
   const Value& at(const std::string& key) const {
     auto iter = kvs.find(key);
     if (iter == kvs.end()) {
-      return Value::kNullUnknownProp;
+      return Value::kNullValue;
     }
     return iter->second;
   }

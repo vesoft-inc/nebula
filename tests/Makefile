@@ -142,3 +142,6 @@ clean:
 
 kill:
 	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9
+
+ps:
+	@ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)"

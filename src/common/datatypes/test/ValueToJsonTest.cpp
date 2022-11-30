@@ -225,7 +225,7 @@ TEST(ValueToJson, DecodeEncode) {
       Value(NullType::BAD_DATA),
       Value(NullType::ERR_OVERFLOW),
       Value(NullType::OUT_OF_RANGE),
-      Value(NullType::UNKNOWN_PROP),
+      Value(NullType::__NULL__),
 
       // int
       Value(0),

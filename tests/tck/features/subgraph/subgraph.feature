@@ -1018,6 +1018,33 @@ Feature: subgraph
       | <[vertex4]>      | <[edge4]> |
       | <[vertex5]>      | []        |
 
+  Scenario: Filter on edge type
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' BOTH serve WHERE like.likeness < 90 YIELD vertices as v, edges as e
+      """
+    Then a SemanticError should be raised at runtime: Edge type "like" in filter "(like.likeness<90)" is not in the edge types [serve]
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' BOTH serve,teammate WHERE like.likeness >= 90 YIELD vertices as v, edges as e
+      """
+    Then a SemanticError should be raised at runtime: Edge type "like" in filter "(like.likeness>=90)" is not in the edge types [teammate,serve]
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' BOTH serve WHERE serve.start_year < 1997 YIELD vertices as v, edges as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                      | e  |
+      | [("Tim Duncan" :player{} :bachelor{})] | [] |
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' BOTH serve WHERE serve.start_year >= 1997 YIELD vertices as v, edges as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                      | e                                                      |
+      | [("Tim Duncan" :player{} :bachelor{})] | [[:serve "Tim Duncan"->"Spurs" @0 {start_year: 1997}]] |
+      | [("Spurs" :team{})]                    | []                                                     |
+
   Scenario: Get subgraph in a space which doesn't have edge schema
     Given an empty graph
     And create a space with following options:

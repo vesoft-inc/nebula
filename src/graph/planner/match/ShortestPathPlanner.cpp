@@ -79,9 +79,12 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
         auto status = nodeFinder->transform(&nodeCtx);
         NG_RETURN_IF_ERROR(status);
         auto plan = status.value();
-        auto start = StartNode::make(qctx);
-        plan.tail->setDep(0, start);
-        plan.tail = start;
+        if (plan.tail->kind() != PlanNode::Kind::kStart &&
+            plan.tail->kind() != PlanNode::Kind::kArgument) {
+          auto start = StartNode::make(qctx);
+          plan.tail->setDep(0, start);
+          plan.tail = start;
+        }
 
         auto initExpr = nodeCtx.initialExpr->clone();
         auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();

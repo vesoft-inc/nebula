@@ -94,8 +94,8 @@ Feature: With clause
       RETURN x.c
       """
     Then the result should be, in any order:
-      | x.c          |
-      | UNKNOWN_PROP |
+      | x.c      |
+      | __NULL__ |
 
   Scenario: match with return
     When executing query:
