@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "kvstore/plugins/elasticsearch/ESListener.h"
+#include "kvstore/listener/elasticsearch/ESListener.h"
 
 #include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
@@ -321,7 +321,6 @@ void ESListener::processLogs() {
     lastApplyLogId_ = lastApplyId;
     persist(committedLogId_, term_, lastApplyLogId_);
     VLOG(2) << idStr_ << "Listener succeeded apply log to " << lastApplyLogId_;
-    lastApplyTime_ = time::WallClock::fastNowInMilliSec();
   }
 }
 
@@ -351,7 +350,6 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
     leaderCommitId_ = committedLogId;
     lastApplyLogId_ = committedLogId;
     persist(committedLogId, committedLogTerm, lastApplyLogId_);
-    lastApplyTime_ = time::WallClock::fastNowInMilliSec();
     LOG(INFO) << folly::sformat(
         "Commit snapshot to : committedLogId={},"
         "committedLogTerm={}, lastApplyLogId_={}",

@@ -86,6 +86,18 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
+      MATCH (v:player{name:"Tim Duncan"})-[:like*1..3]->(n)
+      WITH DISTINCT v, n
+      MATCH (v)-[:serve]->(nn) return id(v) AS vid, id(nn) AS nnid
+      """
+    Then the result should be, in any order:
+      | vid          | nnid    |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
+    When executing query:
+      """
       MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
       MATCH (n)-[]-(l) where n.player.age<m.player.age
       RETURN count(*) AS count

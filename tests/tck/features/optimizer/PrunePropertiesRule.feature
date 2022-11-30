@@ -218,8 +218,7 @@ Feature: Prune Properties rule
       | 29 | Project        | 8            |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
       | 8  | AppendVertices | 7            | {  "props": "[{\"tagId\":10,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                   |
       | 7  | Traverse       | 6            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" }   |
-      | 6  | Argument       | 31           |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 31 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+      | 6  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
       | 30 | Project        | 12           |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
       | 12 | AppendVertices | 11           | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                                    |
       | 11 | Traverse       | 10           | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":10}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" } |
@@ -264,8 +263,7 @@ Feature: Prune Properties rule
       | 11 | Project        | 10           |                                                                                           |
       | 10 | AppendVertices | 9            | {  "props": "[{\"tagId\":9,\"props\":[\"name\"]}, {\"tagId\":10,\"props\":[\"name\"]}]" } |
       | 9  | Traverse       | 8            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                 |
-      | 8  | Argument       | 33           |                                                                                           |
-      | 33 | Start          |              |                                                                                           |
+      | 8  | Argument       |              |                                                                                           |
     When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -300,13 +298,11 @@ Feature: Prune Properties rule
       | 33 | Project        | 10           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
       | 10 | AppendVertices | 9            | {  "props": "[{\"tagId\":10,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                  |
       | 9  | Traverse       | 8            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                              |
-      | 8  | Argument       | 35           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 35 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+      | 8  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
       | 34 | Project        | 13           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
       | 13 | AppendVertices | 12           | {  "props": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                   |
       | 12 | Traverse       | 11           | { "vertexProps": "[{\"tagId\":10,\"props\":[\"name\"]}]", "edgeProps": "[{\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -5}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 5}, {\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -4}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" } |
-      | 11 | Argument       | 36           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 36 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+      | 11 | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
     When profiling query:
       """
       MATCH (v:player{name:"Tony Parker"})
@@ -483,8 +479,7 @@ Feature: Prune Properties rule
       | 12 | Project        | 18           |                                                                                                                                                                                                                                                                                                |
       | 18 | AppendVertices | 10           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":10}]" }                                                                                                                                                                                                                                          |
       | 10 | Traverse       | 8            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                         |
-      | 8  | Argument       | 9            |                                                                                                                                                                                                                                                                                                |
-      | 9  | Start          |              |                                                                                                                                                                                                                                                                                                |
+      | 8  | Argument       |              |                                                                                                                                                                                                                                                                                                |
 
   @distonly
   Scenario: union match
@@ -558,8 +553,7 @@ Feature: Prune Properties rule
       | 15 | Traverse       | 14           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                           |
       | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                             |
       | 13 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
-      | 11 | Argument       | 12           |                                                                                                                                                                 |
-      | 12 | Start          |              |                                                                                                                                                                 |
+      | 11 | Argument       |              |                                                                                                                                                                 |
 
   @distonly
   Scenario: test properties:
@@ -857,3 +851,30 @@ Feature: Prune Properties rule
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
       | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
     Then drop the used space
+
+  Scenario: Project on not exist tag
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(t) WHERE v.player.name=='Tim Duncan'  RETURN v.player.name, v.x.y, v.player.age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | v.x.y    | v.player.age |
+      | "Tim Duncan"  | __NULL__ | 42           |
+      | "Tim Duncan"  | __NULL__ | 42           |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, properties(v), t
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, t.errortag.name, properties(v), t
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |

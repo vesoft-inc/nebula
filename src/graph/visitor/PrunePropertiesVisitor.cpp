@@ -51,6 +51,13 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
       auto *expr = col->expr();
       status_ = extractPropsFromExpr(expr);
       if (!status_.ok()) {
+        // Project a not exit tag, should not break other columns
+        // e.g. Vertex tage {{"name", "string"}, {"age", "int64"}}
+        //      Project "... RETURN v.name, v.xxx.yyy, v.player.age"
+        //      v.xxx.yyy should not break v.player.age
+        if (status_.isTagNotFound()) {
+          continue;
+        }
         return;
       }
     }

@@ -758,6 +758,14 @@ void ExpressionUtils::pullOrs(Expression *expr) {
   logic->setOperands(std::move(operands));
 }
 
+void ExpressionUtils::pullXors(Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kLogicalXor);
+  auto *logic = static_cast<LogicalExpression *>(expr);
+  std::vector<Expression *> operands;
+  pullXorsImpl(logic, operands);
+  logic->setOperands(std::move(operands));
+}
+
 void ExpressionUtils::pullAndsImpl(LogicalExpression *expr, std::vector<Expression *> &operands) {
   for (auto &operand : expr->operands()) {
     if (operand->kind() != Expression::Kind::kLogicalAnd) {
@@ -775,6 +783,16 @@ void ExpressionUtils::pullOrsImpl(LogicalExpression *expr, std::vector<Expressio
       continue;
     }
     pullOrsImpl(static_cast<LogicalExpression *>(operand), operands);
+  }
+}
+
+void ExpressionUtils::pullXorsImpl(LogicalExpression *expr, std::vector<Expression *> &operands) {
+  for (auto &operand : expr->operands()) {
+    if (operand->kind() != Expression::Kind::kLogicalXor) {
+      operands.emplace_back(std::move(operand));
+      continue;
+    }
+    pullXorsImpl(static_cast<LogicalExpression *>(operand), operands);
   }
 }
 
@@ -1094,8 +1112,12 @@ LogicalExpression *ExpressionUtils::reverseLogicalExpr(LogicalExpression *expr) 
   std::vector<Expression *> operands;
   if (expr->kind() == Expression::Kind::kLogicalAnd) {
     pullAnds(expr);
-  } else {
+  } else if (expr->kind() == Expression::Kind::kLogicalOr) {
     pullOrs(expr);
+  } else if (expr->kind() == Expression::Kind::kLogicalXor) {
+    pullXors(expr);
+  } else {
+    LOG(FATAL) << "Invalid logical expression kind: " << static_cast<uint8_t>(expr->kind());
   }
 
   auto &flattenOperands = static_cast<LogicalExpression *>(expr)->operands();
@@ -1118,8 +1140,7 @@ Expression::Kind ExpressionUtils::getNegatedLogicalExprKind(const Expression::Ki
     case Expression::Kind::kLogicalOr:
       return Expression::Kind::kLogicalAnd;
     case Expression::Kind::kLogicalXor:
-      LOG(FATAL) << "Unsupported logical expression kind: " << static_cast<uint8_t>(kind);
-      break;
+      return Expression::Kind::kLogicalXor;
     default:
       LOG(FATAL) << "Invalid logical expression kind: " << static_cast<uint8_t>(kind);
       break;

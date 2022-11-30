@@ -88,6 +88,11 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
     }
   }
   if (!intersectedAliases.empty()) {
+    if (matchPlan.tail->kind() == PlanNode::Kind::kArgument) {
+      // The input of the argument operator is always the output of the plan on the other side of
+      // the join
+      matchPlan.tail->setInputVar(queryPlan.root->outputVar());
+    }
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;

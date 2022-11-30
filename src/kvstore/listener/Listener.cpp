@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "kvstore/Listener.h"
+#include "kvstore/listener/Listener.h"
 
 #include "codec/RowReaderWrapper.h"
 #include "common/time/WallClock.h"
@@ -154,8 +154,6 @@ void Listener::doApply() {
     processLogs();
   });
 }
-
-
 
 void Listener::resetListener() {
   std::lock_guard<std::mutex> g(raftLock_);
