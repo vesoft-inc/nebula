@@ -5,6 +5,7 @@
 set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:listener_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
@@ -97,21 +98,6 @@ nebula_add_test(
         nebula_store_test
     SOURCES
         NebulaStoreTest.cpp
-    OBJECTS
-        ${KVSTORE_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${ROCKSDB_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        nebula_listener_test
-    SOURCES
-        NebulaListenerTest.cpp
     OBJECTS
         ${KVSTORE_TEST_LIBS}
     LIBRARIES

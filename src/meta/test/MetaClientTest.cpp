@@ -725,7 +725,7 @@ TEST(MetaClientTest, TagIndexTest) {
         client->createTagIndex(space, "tag_not_exist_index", "tag_not_exist", std::move(fields))
             .get();
     ASSERT_FALSE(result.ok());
-    ASSERT_EQ(Status::Error("not existed!"), result.status());
+    ASSERT_EQ(Status::TagNotFound("not existed!"), result.status());
   }
   {
     std::vector<cpp2::IndexFieldDef> fields;
