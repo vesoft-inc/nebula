@@ -35,8 +35,8 @@ static constexpr size_t MAX_STRING = 4096;
 %x LB_STR
 %x COMMENT
 
-black_without_newline       ([ \t\r\xa0])
-blank                       ({black_without_newline}|[\n])
+blank_without_newline       ([ \t\r\xa0])
+blank                       ({blank_without_newline}|[\n])
 
 blanks                      ({blank}+)
 
@@ -517,7 +517,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 throw GraphParser::syntax_error(*yylloc, "Don't allow DOT in label:");
                             }
 
-{black_without_newline}     { }
+{blank_without_newline}     { }
 \n                          {
                                 yylineno++;
                                 yylloc->lines(yyleng);
