@@ -32,7 +32,7 @@
 
 NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图技术场景实践知识的活跃开源社区。你可以在其中与大家共同交流 NebulaGraph [周边生态项目](https://docs.nebula-graph.com.cn/master/20.appendix/6.eco-tool-version/)的应用心得，或者社交媒体、实时推荐、网络安全、金融风控、知识图谱、人工智能等[大规模生产场景](https://nebula-graph.com.cn/cases)的实践经验。
 
-**NebulaGraph** 部分功能如下：
+**NebulaGraph** 特点如下：
 
 * 全对称分布式架构
 * 存储与计算分离
