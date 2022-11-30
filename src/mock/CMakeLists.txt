@@ -11,3 +11,15 @@ nebula_add_library(
 )
 
 
+nebula_add_library(
+    fake_http_server_obj OBJECT
+    FakeHttpServer.cpp
+)
+
+# nebula_add_executable(
+#     NAME fake_http_server 
+#     SOURCES main.cpp
+#     OBJECTS $<TARGET_OBJECTS:fake_http_server_obj>
+#     LIBRARIES ${PROXYGEN_LIBRARIES}
+# )
+
