@@ -139,6 +139,7 @@ PlanNode* PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
     PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
     auto* dedup = Dedup::make(qctx, dep);
     dedup->setInputVar(vidsVar);
+    dedup->setColNames({kVid});
     return dedup;
   }
   auto pool = qctx->objPool();
@@ -151,10 +152,11 @@ PlanNode* PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
     project->setInputVar(starts.userDefinedVarName);
   }
   auto* dedup = Dedup::make(qctx, project);
+  dedup->setColNames({kVid});
   return dedup;
 }
 
-SubPlan PathPlanner::allPathPlan() {
+StatusOr<SubPlan> PathPlanner::allPathPlan() {
   auto qctx = pathCtx_->qctx;
   auto* pt = PassThroughNode::make(qctx, nullptr);
   auto* left = pathInputPlan(pt, pathCtx_->from);
@@ -168,7 +170,7 @@ SubPlan PathPlanner::allPathPlan() {
   path->setVertexProps(std::move(vertexProp).value());
   path->setEdgeProps(buildEdgeProps(false, withProp));
   path->setReverseEdgeProps(buildEdgeProps(true, withProp));
-  path->setColNames(pathCtx_->colNames);
+  path->setColNames({"src", "edge", "dst"});
 
   SubPlan subPlan;
   subPlan.root = path;
@@ -448,7 +450,10 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
     } else {
       ep.type_ref() = -e;
     }
-    std::unordered_set<folly::StringPiece> props({kDst, kType, kRank});
+    std::set<folly::StringPiece> props;
+    props.emplace(kDst);
+    props.emplace(kType);
+    props.emplace(kRank);
     const auto& found = exprProps.edgeProps().find(e);
     if (found != exprProps.edgeProps().end()) {
       props.insert(found->second.begin(), found->second.end());

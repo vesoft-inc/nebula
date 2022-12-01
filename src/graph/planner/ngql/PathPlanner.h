@@ -35,7 +35,7 @@ class PathPlanner final : public Planner {
 
   SubPlan multiPairPlan(PlanNode* left, PlanNode* right);
 
-  SubPlan allPathPlan();
+  StatusOr<SubPlan> allPathPlan();
 
   PlanNode* pathInputPlan(PlanNode* dep, Starts& starts);
 

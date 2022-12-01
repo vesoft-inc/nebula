@@ -17,10 +17,10 @@ folly::Future<Status> AllPathsExecutor::execute() {
   noLoop_ = pathNode_->noLoop();
   steps_ = pathNode_->steps();
   withProp_ = pathNode_->withProp();
+  result_.colNames = pathNode_->colNames();
   init();
   if (leftVids_.empty() || rightVids_.empty()) {
-    DataSet emptyDs;
-    return finish(ResultBuilder().value(Value(std::move(emptyDs))).build());
+    return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
   return doAllPaths();
 }
@@ -108,7 +108,7 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
 folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
   StorageClient* storageClient = qctx_->getStorageClient();
   time::Duration getNbrTime;
-  storage::StorageClient::CommonRequestParam param(qctx_->spaceId,
+  storage::StorageClient::CommonRequestParam param(qctx_->spaceId(),
                                                    qctx_->rctx()->session()->id(),
                                                    qctx_->plan()->id(),
                                                    qctx_->plan()->isProfileEnabled());
@@ -165,12 +165,13 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
   std::unordered_set<Value> uniqueVids;
   Value curVertex;
   for (; iter->valid(); iter->next()) {
-    const auto& edge = iter->getEdge();
-    if (edge.empty()) {
+    const auto& edgeVal = iter->getEdge();
+    if (edgeVal.empty()) {
       continue;
     }
+    auto edge = edgeVal.getEdge();
     edge.reverse();
-    const auto& src = edge.getEdge().src;
+    const auto& src = edge.src;
     auto srcIter = rightAdjList_.find(src);
     if (srcIter == rightAdjList_.end()) {
       if (uniqueVids.emplace(src).second) {
@@ -188,7 +189,7 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
       if (dstIter == rightAdjList_.end()) {
         rightInitVids_.emplace(vertex);
       } else {
-        dstIter->first = vertex;
+        rightAdjList_[vertex] = dstIter->second;
       }
     }
   }
@@ -231,19 +232,19 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
       if (!src.isVertex()) {
         Value val(Vertex(src, {}));
         leftAdjList_.emplace(val, std::move(rAdj.second));
-        emptyPropVids_.emplace_back(val);
+        emptyPropVids_.emplace_back(src);
       } else {
         leftAdjList_.emplace(src, std::move(rAdj.second));
       }
     }
   }
   if (rightSteps_ == 0) {
-    std::unordered_set<Value> rightVids;
+    std::unordered_set<Value, VertexHash, VertexEqual> rightVids;
     rightVids.reserve(rightInitVids_.size());
     for (auto& vid : rightInitVids_) {
       Value val = Vertex(vid, {});
       rightVids.emplace(val);
-      emptyPropVids_.emplace_back(val);
+      emptyPropVids_.emplace_back(vid);
     }
     rightInitVids_.swap(rightVids);
   }
@@ -251,7 +252,7 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
     for (auto& vid : leftInitVids_) {
       auto iter = leftAdjList_.find(vid);
       if (iter != leftAdjList_.end()) {
-        emptyPropVids_.emplace_back(iter->first);
+        emptyPropVids_.emplace_back(vid);
       }
     }
   }
@@ -263,10 +264,14 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
   auto future = getProps(emptyPropVids_);
   return future.via(runner()).thenValue([this](auto&& vertices) {
     for (auto& vertex : vertices) {
+      if (vertex.empty()) {
+        continue;
+      }
       auto iter = leftAdjList_.find(vertex);
       if (iter != leftAdjList_.end()) {
-        auto& val = iter->first.mutableVertex();
-        val = std::move(vertex);
+        auto val = iter->first;
+        auto& mutableVertex = val.mutableVertex();
+        mutableVertex.tags.swap(vertex.mutableVertex().tags);
       }
     }
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
@@ -378,7 +383,7 @@ folly::Future<std::vector<Value>> AllPathsExecutor::getProps(const std::vector<V
 
   time::Duration getPropsTime;
   StorageClient* storageClient = qctx_->getStorageClient();
-  StorageClient::CommonRequestParam param(qctx_->spaceId,
+  StorageClient::CommonRequestParam param(qctx_->spaceId(),
                                           qctx_->rctx()->session()->id(),
                                           qctx_->plan()->id(),
                                           qctx_->plan()->isProfileEnabled());
@@ -425,6 +430,92 @@ std::vector<Value> AllPathsExecutor::handlePropResp(PropRpcResponse&& resps) {
     vertices.emplace_back(iter->getVertex());
   }
   return vertices;
+}
+
+Status AllPathsExecutor::handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
+  switch (code) {
+    case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
+      return Status::Error("Storage Error: Vertex or edge not found.");
+    case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
+      std::string error =
+          "Storage Error: The data type does not meet the requirements. "
+          "Use the correct type of data.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_INVALID_VID: {
+      std::string error =
+          "Storage Error: The VID must be a 64-bit integer"
+          " or a string fitting space vertex id length limit.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_INVALID_FIELD_VALUE: {
+      std::string error =
+          "Storage Error: Invalid field value: "
+          "may be the filed is not NULL "
+          "or without default value or wrong schema.";
+      return Status::Error(std::move(error));
+    }
+    case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
+      return Status::Error(
+          folly::sformat("Storage Error: Not the leader of {}. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_INVALID_FILTER:
+      return Status::Error("Storage Error: Invalid filter.");
+    case nebula::cpp2::ErrorCode::E_INVALID_UPDATER:
+      return Status::Error("Storage Error: Invalid Update col or yield col.");
+    case nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN:
+      return Status::Error("Storage Error: Invalid space vid len.");
+    case nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND:
+      return Status::Error("Storage Error: Space not found.");
+    case nebula::cpp2::ErrorCode::E_PART_NOT_FOUND:
+      return Status::Error(folly::sformat("Storage Error: Part {} not found.", partId));
+    case nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND:
+      return Status::Error("Storage Error: Tag not found.");
+    case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
+      return Status::Error("Storage Error: Tag prop not found.");
+    case nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND:
+      return Status::Error("Storage Error: Edge not found.");
+    case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
+      return Status::Error("Storage Error: Edge prop not found.");
+    case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
+      return Status::Error("Storage Error: Index not found.");
+    case nebula::cpp2::ErrorCode::E_INVALID_DATA:
+      return Status::Error("Storage Error: Invalid data, may be wrong value type.");
+    case nebula::cpp2::ErrorCode::E_NOT_NULLABLE:
+      return Status::Error("Storage Error: The not null field cannot be null.");
+    case nebula::cpp2::ErrorCode::E_FIELD_UNSET:
+      return Status::Error(
+          "Storage Error: "
+          "The not null field doesn't have a default value.");
+    case nebula::cpp2::ErrorCode::E_OUT_OF_RANGE:
+      return Status::Error("Storage Error: Out of range value.");
+    case nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR:
+      return Status::Error(
+          "Storage Error: More than one request trying to "
+          "add/update/delete one edge/vertex at the same time.");
+    case nebula::cpp2::ErrorCode::E_FILTER_OUT:
+      return Status::OK();
+    case nebula::cpp2::ErrorCode::E_RAFT_TERM_OUT_OF_DATE:
+      return Status::Error(folly::sformat(
+          "Storage Error: Term of part {} is out of date. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL:
+      return Status::Error("Storage Error: Write wal failed. Probably disk is almost full.");
+    case nebula::cpp2::ErrorCode::E_RAFT_WRITE_BLOCKED:
+      return Status::Error(
+          "Storage Error: Write is blocked when creating snapshot. Please retry later.");
+    case nebula::cpp2::ErrorCode::E_RAFT_BUFFER_OVERFLOW:
+      return Status::Error(folly::sformat(
+          "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
+    case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
+      return Status::Error("Storage Error: Atomic operation failed.");
+    default:
+      auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
+                                  partId,
+                                  apache::thrift::util::enumNameSafe(code).c_str(),
+                                  static_cast<int32_t>(code));
+      LOG(ERROR) << status;
+      return status;
+  }
+  return Status::OK();
 }
 
 }  // namespace graph

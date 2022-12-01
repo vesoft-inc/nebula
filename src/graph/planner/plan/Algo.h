@@ -136,6 +136,22 @@ class AllPaths final : public BinaryInputNode {
     return withProp_;
   }
 
+  const Expression* filter() const {
+    return filter_;
+  }
+
+  Expression* filter() {
+    return filter_;
+  }
+
+  // Get the constant limit value
+  int64_t limit(QueryContext* qctx = nullptr) const;
+
+  // Get the limit value in runtime
+  int64_t limit(QueryExpressionContext& ctx) const {
+    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+  }
+
   storage::cpp2::EdgeDirection edgeDirection() const {
     return edgeDirection_;
   }
@@ -158,6 +174,10 @@ class AllPaths final : public BinaryInputNode {
 
   void setFilter(Expression* filter) {
     filter_ = filter;
+  }
+
+  void setLimit(int64_t limit) {
+    limit_ = ConstantExpression::make(qctx_->objPool(), limit);
   }
 
   void setEdgeDirection(Direction direction) {

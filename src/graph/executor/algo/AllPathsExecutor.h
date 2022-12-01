@@ -53,6 +53,8 @@ class AllPathsExecutor final : public Executor {
 
   folly::Future<std::vector<Value>> getProps(const std::vector<Value>& vids);
 
+  Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const;
+
   struct VertexHash {
     std::size_t operator()(const Value& v) const {
       switch (v.type()) {

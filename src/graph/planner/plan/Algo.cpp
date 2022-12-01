@@ -7,9 +7,17 @@
 
 #include "PlanNode.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
+
+int64_t AllPaths::limit(QueryContext* qctx) const {
+  DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
+  return DCHECK_NOTNULL(limit_)
+      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
+      .getInt();
+}
 
 std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
