@@ -134,15 +134,16 @@ folly::Future<Status> DropSpaceExecutor::execute() {
           qctx()->rctx()->session()->setSpace(std::move(spaceInfo));
         }
         if (!ftIndexes.empty()) {
-          auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-          if (!tsRet.ok()) {
-            LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
+          auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+          if (!esAdapterRet.ok()) {
+            LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
             return Status::OK();
           }
+          auto esAdapter = std::move(esAdapterRet).value();
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::dropTSIndex(tsRet.value(), ftindex);
+            auto ftRet = esAdapter.dropIndex(ftindex);
             if (!ftRet.ok()) {
-              LOG(WARNING) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet.status();
+              LOG(ERROR) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet;
             }
           }
         }
@@ -189,15 +190,16 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
           return resp.status();
         }
         if (!ftIndexes.empty()) {
-          auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-          if (!tsRet.ok()) {
+          auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+          if (!esAdapterRet.ok()) {
             LOG(WARNING) << "Get text search clients failed";
             return Status::OK();
           }
+          auto esAdapter = std::move(esAdapterRet).value();
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::clearTSIndex(tsRet.value(), ftindex);
+            auto ftRet = esAdapter.clearIndex(ftindex);
             if (!ftRet.ok()) {
-              LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet.status();
+              LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet;
             }
           }
         }

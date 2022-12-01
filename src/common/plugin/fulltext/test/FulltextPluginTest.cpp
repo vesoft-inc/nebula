@@ -8,8 +8,6 @@
 #include "common/base/Base.h"
 #include "common/network/NetworkUtils.h"
 #include "common/plugin/fulltext/FTUtils.h"
-#include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
 
 namespace nebula {
 namespace plugin {

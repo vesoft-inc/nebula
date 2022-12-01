@@ -5,7 +5,7 @@
 
 #include "kvstore/listener/elasticsearch/ESListener.h"
 
-#include "common/plugin/fulltext/elasticsearch/ESStorageAdapter.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
@@ -25,17 +25,18 @@ void ESListener::init() {
   if (!cRet.ok() || cRet.value().empty()) {
     LOG(FATAL) << "elasticsearch clients error";
   }
+  std::vector<nebula::plugin::ESClient> esClients;
   for (const auto& c : cRet.value()) {
-    nebula::plugin::HttpClient hc;
-    hc.host = c.host;
+    auto host = c.host;
+    std::string user, password;
     if (c.user_ref().has_value()) {
-      hc.user = *c.user_ref();
-      hc.password = *c.pwd_ref();
+      user = *c.user_ref();
+      password = *c.pwd_ref();
     }
-    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    esClients_.emplace_back(std::move(hc));
+    std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
+    esClients.emplace_back(HttpClient::instance(), protocol, host.toString(), user, password);
   }
-
+  esAdapter_.setClients(std::move(esClients));
   auto sRet = schemaMan_->toGraphSpaceName(spaceId_);
   if (!sRet.ok()) {
     LOG(FATAL) << "space name error";
@@ -43,28 +44,91 @@ void ESListener::init() {
   spaceName_ = std::make_unique<std::string>(sRet.value());
 }
 
-bool ESListener::apply(const std::vector<KV>& data) {
-  std::vector<nebula::plugin::DocItem> docItems;
-  for (const auto& kv : data) {
-    if (!nebula::NebulaKeyUtils::isTag(vIdLen_, kv.first) &&
-        !nebula::NebulaKeyUtils::isEdge(vIdLen_, kv.first)) {
-      continue;
+bool ESListener::apply(const BatchHolder& batch) {
+  nebula::plugin::ESBulk bulk;
+  auto callback = [&bulk](BatchLogType type,
+                          const std::string& index,
+                          const std::string& vid,
+                          const std::string& src,
+                          const std::string& dst,
+                          int64_t rank,
+                          const std::string& text) {
+    if (type == BatchLogType::OP_BATCH_PUT) {
+      bulk.put(index, vid, src, dst, rank, text);
+    } else if (type == BatchLogType::OP_BATCH_REMOVE) {
+      bulk.delete_(index, vid, src, dst, rank);
+    } else {
+      LOG(FATAL) << "Unexpect";
     }
-    if (!appendDocItem(docItems, kv)) {
+  };
+  for (const auto& log : batch.getBatch()) {
+    pickTagAndEdgeData(std::get<0>(log), std::get<1>(log), std::get<2>(log), callback);
+  }
+  if (!bulk.empty()) {
+    auto status = esAdapter_.bulk(bulk);
+    if (!status.ok()) {
+      LOG(ERROR) << status;
       return false;
     }
-    if (docItems.size() >= static_cast<size_t>(FLAGS_ft_bulk_batch_size)) {
-      auto suc = writeData(docItems);
-      if (!suc) {
-        return suc;
-      }
-      docItems.clear();
-    }
-  }
-  if (!docItems.empty()) {
-    return writeData(docItems);
   }
   return true;
+}
+
+void ESListener::pickTagAndEdgeData(BatchLogType type,
+                                    const std::string& key,
+                                    const std::string& value,
+                                    const PickFunc& callback) {
+  if (nebula::NebulaKeyUtils::isTag(vIdLen_, key)) {
+    auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
+    auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, tagId);
+    if (!ftIndexRes.ok()) {
+      return;
+    }
+    auto ftIndex = std::move(ftIndexRes).value();
+    auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, value);
+    if (reader == nullptr) {
+      LOG(ERROR) << "get tag reader failed, tagID " << tagId;
+      return;
+    }
+    if (ftIndex.second.get_fields().size() > 1) {
+      LOG(ERROR) << "Only one field will create fulltext index";
+    }
+    auto field = ftIndex.second.get_fields().front();
+    auto v = reader->getValueByName(field);
+    if (v.type() != Value::Type::STRING) {
+      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+    }
+    std::string indexName = ftIndex.first;
+    std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
+    std::string text = std::move(v).getStr();
+    callback(type, indexName, vid, "", "", 0, text);
+  } else if (nebula::NebulaKeyUtils::isEdge(vIdLen_, key)) {
+    auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
+    auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, edgeType);
+    if (!ftIndexRes.ok()) {
+      return;
+    }
+    auto ftIndex = std::move(ftIndexRes).value();
+    auto reader = RowReaderWrapper::getEdgePropReader(schemaMan_, spaceId_, edgeType, value);
+    if (reader == nullptr) {
+      LOG(ERROR) << "get edge reader failed, schema ID " << edgeType;
+      return;
+    }
+    if (ftIndex.second.get_fields().size() > 1) {
+      LOG(ERROR) << "Only one field will create fulltext index";
+    }
+    auto field = ftIndex.second.get_fields().front();
+    auto v = reader->getValueByName(field);
+    if (v.type() != Value::Type::STRING) {
+      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+    }
+    std::string indexName = ftIndex.first;
+    std::string src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
+    std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
+    int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
+    std::string text = std::move(v).getStr();
+    callback(type, indexName, "", src, dst, rank, text);
+  }
 }
 
 bool ESListener::persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) {
@@ -146,105 +210,6 @@ std::string ESListener::encodeAppliedId(LogID lastId,
   return val;
 }
 
-bool ESListener::appendDocItem(std::vector<DocItem>& items, const KV& kv) const {
-  auto isEdge = NebulaKeyUtils::isEdge(vIdLen_, kv.first);
-  return isEdge ? appendEdgeDocItem(items, kv) : appendTagDocItem(items, kv);
-}
-
-bool ESListener::appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) const {
-  auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, kv.first);
-  auto ftIndex = schemaMan_->getFTIndex(spaceId_, edgeType);
-  if (!ftIndex.ok()) {
-    VLOG(3) << "get text search index failed";
-    return (ftIndex.status() == nebula::Status::IndexNotFound()) ? true : false;
-  }
-  auto reader = RowReaderWrapper::getEdgePropReader(schemaMan_, spaceId_, edgeType, kv.second);
-  if (reader == nullptr) {
-    VLOG(3) << "get edge reader failed, schema ID " << edgeType;
-    return false;
-  }
-  return appendDocs(items, reader.get(), std::move(ftIndex).value());
-}
-
-bool ESListener::appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const {
-  auto tagId = NebulaKeyUtils::getTagId(vIdLen_, kv.first);
-  auto ftIndex = schemaMan_->getFTIndex(spaceId_, tagId);
-  if (!ftIndex.ok()) {
-    VLOG(3) << "get text search index failed";
-    return (ftIndex.status() == nebula::Status::IndexNotFound()) ? true : false;
-  }
-  auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, kv.second);
-  if (reader == nullptr) {
-    VLOG(3) << "get tag reader failed, tagID " << tagId;
-    return false;
-  }
-  return appendDocs(items, reader.get(), std::move(ftIndex).value());
-}
-
-bool ESListener::appendDocs(std::vector<DocItem>& items,
-                            RowReader* reader,
-                            const std::pair<std::string, nebula::meta::cpp2::FTIndex>& fti) const {
-  for (const auto& field : fti.second.get_fields()) {
-    auto v = reader->getValueByName(field);
-    if (v.type() != Value::Type::STRING) {
-      continue;
-    }
-    items.emplace_back(DocItem(fti.first, field, partId_, std::move(v).getStr()));
-  }
-  return true;
-}
-
-bool ESListener::writeData(const std::vector<nebula::plugin::DocItem>& items) const {
-  bool isNeedWriteOneByOne = false;
-  auto retryCnt = FLAGS_ft_request_retry_times;
-  while (--retryCnt > 0) {
-    auto index = folly::Random::rand32(esClients_.size() - 1);
-    auto suc = nebula::plugin::ESStorageAdapter::kAdapter->bulk(esClients_[index], items);
-    if (!suc.ok()) {
-      VLOG(3) << "bulk failed. retry : " << retryCnt;
-      continue;
-    }
-    if (!suc.value()) {
-      isNeedWriteOneByOne = true;
-      break;
-    }
-    return true;
-  }
-  if (isNeedWriteOneByOne) {
-    return writeDatum(items);
-  }
-  LOG(WARNING) << idStr_ << "Failed to bulk into es.";
-  return false;
-}
-
-bool ESListener::writeDatum(const std::vector<nebula::plugin::DocItem>& items) const {
-  bool done = false;
-  for (const auto& item : items) {
-    done = false;
-    auto retryCnt = FLAGS_ft_request_retry_times;
-    while (--retryCnt > 0) {
-      auto index = folly::Random::rand32(esClients_.size() - 1);
-      auto suc = nebula::plugin::ESStorageAdapter::kAdapter->put(esClients_[index], item);
-      if (!suc.ok()) {
-        VLOG(3) << "put failed. retry : " << retryCnt;
-        continue;
-      }
-      if (!suc.value()) {
-        // TODO (sky) : Record failed data
-        break;
-      }
-      done = true;
-      break;
-    }
-    if (!done) {
-      // means CURL fails, and no need to take the next step
-      LOG(INFO) << idStr_ << "Failed to put into es.";
-      return false;
-    }
-  }
-  return true;
-}
-
 void ESListener::processLogs() {
   std::unique_ptr<LogIterator> iter;
   {
@@ -256,8 +221,9 @@ void ESListener::processLogs() {
   }
 
   LogID lastApplyId = -1;
-  // the kv pair which can sync to remote safely
-  std::vector<KV> data;
+  // // the kv pair which can sync to remote safely
+  // std::vector<KV> data;
+  BatchHolder batch;
   while (iter->valid()) {
     lastApplyId = iter->logId();
 
@@ -273,28 +239,52 @@ void ESListener::processLogs() {
       case OP_PUT: {
         auto pieces = decodeMultiValues(log);
         DCHECK_EQ(2, pieces.size());
-        data.emplace_back(pieces[0], pieces[1]);
+        batch.put(pieces[0].toString(), pieces[1].toString());
         break;
       }
       case OP_MULTI_PUT: {
         auto kvs = decodeMultiValues(log);
         DCHECK_EQ(0, kvs.size() % 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
-          data.emplace_back(kvs[i], kvs[i + 1]);
+          batch.put(kvs[i].toString(), kvs[i + 1].toString());
         }
         break;
       }
-      case OP_REMOVE:
-      case OP_REMOVE_RANGE:
+      case OP_REMOVE: {
+        auto key = decodeSingleValue(log);
+        batch.remove(key.toString());
+        break;
+      }
+      case OP_REMOVE_RANGE: {
+        auto kvs = decodeMultiValues(log);
+        DCHECK_EQ(2, kvs.size());
+        batch.rangeRemove(kvs[0].toString(), kvs[1].toString());
+        break;
+      }
       case OP_MULTI_REMOVE: {
+        auto keys = decodeMultiValues(log);
+        for (auto key : keys) {
+          batch.remove(key.toString());
+        }
         break;
       }
       case OP_BATCH_WRITE: {
-        auto batch = decodeBatchValue(log);
-        for (auto& op : batch) {
+        auto batchData = decodeBatchValue(log);
+        for (auto& op : batchData) {
           // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
-          if (op.first == BatchLogType::OP_BATCH_PUT) {
-            data.emplace_back(op.second.first, op.second.second);
+          switch (op.first) {
+            case BatchLogType::OP_BATCH_PUT: {
+              batch.put(op.second.first.toString(), op.second.second.toString());
+              break;
+            }
+            case BatchLogType::OP_BATCH_REMOVE: {
+              batch.remove(op.second.first.toString());
+              break;
+            }
+            case BatchLogType::OP_BATCH_REMOVE_RANGE: {
+              batch.rangeRemove(op.second.first.toString(), op.second.second.toString());
+              break;
+            }
           }
         }
         break;
@@ -310,13 +300,14 @@ void ESListener::processLogs() {
       }
     }
 
-    if (static_cast<int32_t>(data.size()) > FLAGS_listener_commit_batch_size) {
+    if (static_cast<int32_t>(batch.size()) > FLAGS_listener_commit_batch_size) {
       break;
     }
     ++(*iter);
   }
+
   // apply to state machine
-  if (lastApplyId != -1 && apply(data)) {
+  if (lastApplyId != -1 && apply(batch)) {
     std::lock_guard<std::mutex> guard(raftLock_);
     lastApplyLogId_ = lastApplyId;
     persist(committedLogId_, term_, lastApplyLogId_);
@@ -332,15 +323,14 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
   VLOG(2) << idStr_ << "Listener is committing snapshot.";
   int64_t count = 0;
   int64_t size = 0;
-  std::vector<KV> data;
-  data.reserve(rows.size());
+  BatchHolder batch;
   for (const auto& row : rows) {
     count++;
     size += row.size();
     auto kv = decodeKV(row);
-    data.emplace_back(kv.first, kv.second);
+    batch.put(kv.first.toString(), kv.second.toString());
   }
-  if (!apply(data)) {
+  if (!apply(batch)) {
     LOG(INFO) << idStr_ << "Failed to apply data while committing snapshot.";
     return {
         nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED, kNoSnapshotCount, kNoSnapshotSize};

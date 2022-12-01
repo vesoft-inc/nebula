@@ -505,11 +505,7 @@ StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
   auto tsi = metaClient->getFTIndexBySpaceSchemaFromCache(spaceId(), schemaId());
   NG_RETURN_IF_ERROR(tsi);
   auto tsName = tsi.value().first;
-  auto ret = FTIndexUtils::checkTSIndex(tsClients_, tsName);
-  NG_RETURN_IF_ERROR(ret);
-  if (!ret.value()) {
-    return Status::SemanticError("text search index not found : %s", tsName.c_str());
-  }
+
   auto ftFields = tsi.value().second.get_fields();
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
   auto prop = tsExpr->arg()->prop();
@@ -606,13 +602,13 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
 
 // Generate text search filter, check validity and rewrite
 StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
-  tsClients_ = std::move(tsRet).value();
+  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
+  NG_RETURN_IF_ERROR(esAdapterRet);
+  auto esAdapter = std::move(esAdapterRet).value();
   auto tsIndex = checkTSExpr(filter);
   NG_RETURN_IF_ERROR(tsIndex);
   return FTIndexUtils::rewriteTSFilter(
-      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), tsClients_);
+      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), esAdapter);
 }
 
 }  // namespace graph
