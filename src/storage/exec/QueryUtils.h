@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "common/utils/DefaultValueContext.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/context/StorageExpressionContext.h"
 #include "storage/query/QueryBaseProcessor.h"
@@ -119,7 +120,7 @@ class QueryUtils final {
    */
   static StatusOr<nebula::Value> readValue(RowReader* reader,
                                            const std::string& propName,
-                                           const meta::NebulaSchemaProvider* schema) {
+                                           const meta::SchemaProviderIf* schema) {
     auto field = schema->field(propName);
     if (!field) {
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
