@@ -32,16 +32,21 @@ struct HttpResponse {
 
 class HttpClient {
  public:
-  static HttpResponse get(const std::string& url);
-  static HttpResponse get(const std::string& url, const std::vector<std::string>& headers);
+  static HttpClient& instance();
+  virtual ~HttpClient() = default;
+  virtual HttpResponse get(const std::string& url);
+  virtual HttpResponse get(const std::string& url, const std::vector<std::string>& headers);
 
-  static HttpResponse post(const std::string& url,
+  virtual HttpResponse post(const std::string& url,
+                            const std::vector<std::string>& headers,
+                            const std::string& body);
+  virtual HttpResponse delete_(const std::string& url, const std::vector<std::string>& headers);
+  virtual HttpResponse put(const std::string& url,
                            const std::vector<std::string>& headers,
                            const std::string& body);
-  static HttpResponse delete_(const std::string& url, const std::vector<std::string>& headers);
-  static HttpResponse put(const std::string& url,
-                          const std::vector<std::string>& headers,
-                          const std::string& body);
+
+ protected:
+  HttpClient() = default;
 
  private:
   static HttpResponse sendRequest(const std::string& url,

@@ -21,6 +21,11 @@ CurlHandle* CurlHandle::instance() {
   return &handle;
 }
 
+HttpClient& HttpClient::instance() {
+  static HttpClient instance_;
+  return instance_;
+}
+
 HttpResponse HttpClient::get(const std::string& url) {
   return HttpClient::get(url, {});
 }

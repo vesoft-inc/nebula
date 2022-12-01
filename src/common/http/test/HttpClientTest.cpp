@@ -14,7 +14,7 @@ class HTTPClientTest : public ::testing::Test {};
 TEST_F(HTTPClientTest, GET) {
   FakeHttpServer server(3659);
   server.start();
-  auto resp = HttpClient::get("http://localhost:3659");
+  auto resp = HttpClient::instance().get("http://localhost:3659");
   ASSERT_EQ(resp.curlCode, 0) << resp.curlMessage;
   ASSERT_EQ(resp.body, "GET");
   server.stop();
@@ -24,7 +24,7 @@ TEST_F(HTTPClientTest, GET) {
 TEST_F(HTTPClientTest, POST) {
   FakeHttpServer server(3660);
   server.start();
-  auto resp = HttpClient::post("http://localhost:3660", {}, "");
+  auto resp = HttpClient::instance().post("http://localhost:3660", {}, "");
   ASSERT_EQ(resp.curlCode, 0) << resp.curlMessage;
   ASSERT_EQ(resp.body, "POST");
   server.stop();
@@ -34,7 +34,7 @@ TEST_F(HTTPClientTest, POST) {
 TEST_F(HTTPClientTest, DELETE) {
   FakeHttpServer server(3661);
   server.start();
-  auto resp = HttpClient::delete_("http://localhost:3661", {});
+  auto resp = HttpClient::instance().delete_("http://localhost:3661", {});
   ASSERT_EQ(resp.curlCode, 0) << resp.curlMessage;
   ASSERT_EQ(resp.body, "DELETE");
   server.stop();
@@ -44,7 +44,7 @@ TEST_F(HTTPClientTest, DELETE) {
 TEST_F(HTTPClientTest, PUT) {
   FakeHttpServer server(3662);
   server.start();
-  auto resp = HttpClient::put("http://localhost:3662", {}, "");
+  auto resp = HttpClient::instance().put("http://localhost:3662", {}, "");
   ASSERT_EQ(resp.curlCode, 0) << resp.curlMessage;
   ASSERT_EQ(resp.body, "PUT");
   server.stop();
