@@ -269,7 +269,7 @@ std::string ESAdapter::genDocID(const std::string& vid,
     hex[i * 2] = 'A' + mdStr[i] / 16;
     hex[i * 2 + 1] = 'A' + mdStr[i] % 16;
   }
-  return std::string(hex, 0, 64);
+  return std::string(hex, 64);
 }
 
 ESClient& ESAdapter::randomClient() {
