@@ -442,12 +442,16 @@ class MetaClient : public BaseMetaClient {
   StatusOr<std::vector<std::pair<PartitionID, cpp2::ListenerType>>>
   getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAddr& host);
 
+  // Given host, get the all peers info. This function is used for listener to start up related
+  // listener part
   StatusOr<ListenersMap> getListenersByHostFromCache(const HostAddr& host);
 
+  // Get listener address of given (spaceId + partId + type)
   StatusOr<HostAddr> getListenerHostsBySpacePartType(GraphSpaceID spaceId,
                                                      PartitionID partId,
                                                      cpp2::ListenerType type);
 
+  // Get all listener type + address of given (spaceId + partId)
   StatusOr<std::vector<RemoteListenerInfo>> getListenerHostTypeBySpacePartType(GraphSpaceID spaceId,
                                                                                PartitionID partId);
 
