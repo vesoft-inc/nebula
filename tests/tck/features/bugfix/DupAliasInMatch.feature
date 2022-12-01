@@ -36,7 +36,7 @@ Feature: Duplicate alias in MATCH
       | n1 |
 
   Scenario: Duplicate node alias expand both direction
-    # expand from left to right
+    # expand from middle to both sides
     When executing query:
       """
       MATCH (n1)-[]->(n0)-[]->(n1)-[]->(n1)-[]->(n1) WHERE (id(n0) == "Tim Duncan") RETURN n1

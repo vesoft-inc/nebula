@@ -541,7 +541,6 @@ TEST_F(MatchValidatorTest, validateAlias) {
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,

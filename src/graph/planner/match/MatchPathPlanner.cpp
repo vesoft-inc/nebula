@@ -254,10 +254,12 @@ Status MatchPathPlanner::leftExpandFromNode(
   for (size_t i = startIndex; i > 0; --i) {
     auto& node = nodeInfos[i];
     auto& dst = nodeInfos[i - 1];
-    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
+
     if (!node.anonymous) {
       nodeAliasesSeenInPattern.emplace(node.alias);
     }
+    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
+
     auto& edge = edgeInfos[i - 1];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
@@ -297,9 +299,10 @@ Status MatchPathPlanner::leftExpandFromNode(
   bool duppedLastAlias =
       nodeAliasesSeenInPattern.find(lastNode.alias) != nodeAliasesSeenInPattern.end() &&
       nodeAliasesSeenInPattern.size() > 1;
-
-  if (!lastNode.anonymous) {
-    nodeAliasesSeenInPattern.emplace(lastNode.alias);
+  // If the the last alias has been presented in the pattern, we could emit the AppendVertices node
+  // because the same alias always presents in the same entity.
+  if (duppedLastAlias) {
+    return Status::OK();
   }
 
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
@@ -312,15 +315,6 @@ Status MatchPathPlanner::leftExpandFromNode(
   appendV->setTrackPrevPath(!edgeInfos.empty());
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
-
-  if (duppedLastAlias) {
-    auto* startVid = nodeId(qctx->objPool(), lastNode);
-    auto* endVid = nextTraverseStart;
-    auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
-    auto* filter = Filter::make(qctx, appendV, filterExpr, false);
-    subplan.root = filter;
-    inputVar = filter->outputVar();
-  }
 
   return Status::OK();
 }
@@ -339,10 +333,12 @@ Status MatchPathPlanner::rightExpandFromNode(
   for (size_t i = startIndex; i < edgeInfos.size(); ++i) {
     auto& node = nodeInfos[i];
     auto& dst = nodeInfos[i + 1];
-    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
+
     if (!node.anonymous) {
       nodeAliasesSeenInPattern.emplace(node.alias);
     }
+    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
+
     auto& edge = edgeInfos[i];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
@@ -380,6 +376,12 @@ Status MatchPathPlanner::rightExpandFromNode(
     nodeAliasesSeenInPattern.emplace(lastNode.alias);
   }
 
+  // If the the last alias has been presented in the pattern, we could emit the AppendVertices node
+  // because the same alias always presents in the same entity.
+  if (duppedLastAlias) {
+    return Status::OK();
+  }
+
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProps);
@@ -390,15 +392,6 @@ Status MatchPathPlanner::rightExpandFromNode(
   appendV->setTrackPrevPath(!edgeInfos.empty());
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
-
-  if (duppedLastAlias) {
-    auto* startVid = nodeId(qctx->objPool(), lastNode);
-    auto* endVid = nextTraverseStart;
-    auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
-    auto* filter = Filter::make(qctx, appendV, filterExpr, false);
-    subplan.root = filter;
-    inputVar = filter->outputVar();
-  }
 
   return Status::OK();
 }
