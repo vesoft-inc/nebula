@@ -48,7 +48,7 @@ NebulaGraph 社区已成长为一个荟聚了众多用户、融合了各类图�
 
 点击 [NebulaGraph 官网](https://www.nebula-graph.com.cn/) 了解更多信息。
 
-## 发布通告
+<!-- ## 发布通告 deprecated
 
 **NebulaGraph** 的 GitHub 仓库经历过拆分和合并的过程。
 
@@ -69,7 +69,7 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 ## 产品路线图
 
 **NebulaGraph** 产品规划路线图请参见 [roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap-2020)。
--->
+--> 
 
 ## 快速使用
 
@@ -81,15 +81,7 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 
 ## 安装方式
 
-您可以通过[下载](https://www.nebula-graph.com.cn/download)安装包或者通过以下方式安装 **NebulaGraph**：
-
-- [源码编译](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)
-
-- [Docker Compose](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/3.deploy-nebula-graph-with-docker-compose/)
-
-- [NebulaGraph Dashboard 企业版](https://docs.nebula-graph.com.cn/3.3.0/nebula-dashboard-ent/1.what-is-dashboard-ent/) 
-
-- [NebulaGraph Operator](https://docs.nebula-graph.com.cn/3.3.0/nebula-operator/1.introduction-to-nebula-operator/)
+您可以通过[下载](https://www.nebula-graph.com.cn/download)安装包或者[源码编译](https://docs.nebula-graph.com.cn/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)安装 **NebulaGraph**：
 
 ## 获取帮助
 

@@ -71,11 +71,8 @@ NebulaGraph is a distributed graph database with multiple components. You can [d
 
 - [Build from source](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)
 
-- [With Docker Compose](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/3.deploy-nebula-graph-with-docker-compose/)
-
-- In the cloud: [AWS](https://docs.nebula-graph.io/3.1.0/nebula-cloud/nebula-cloud-on-aws/1.aws-overview/) and [Azure](https://docs.nebula-graph.io/3.1.0/nebula-cloud/nebula-cloud-on-azure/azure-self-managed/1.azure-overview/)
-- With ecosys: [NebulaGraph Dashboard](https://docs.nebula-graph.com.cn/3.3.0/nebula-dashboard-ent/1.what-is-dashboard-ent/) and [NebulaGraph Operator](https://docs.nebula-graph.com.cn/3.3.0/nebula-operator/1.introduction-to-nebula-operator/)
-
+- In the cloud: [AWS](https://docs.nebula-graph.io/3.1.3/nebula-cloud/nebula-cloud-on-aws/1.aws-overview/) and [Azure](https://docs.nebula-graph.io/3.1.3/nebula-cloud/nebula-cloud-on-azure/azure-self-managed/1.azure-overview/)
+  
 ## Getting help
 
 In case you encounter any problems playing around **NebulaGraph**, please reach out for help:
@@ -83,7 +80,7 @@ In case you encounter any problems playing around **NebulaGraph**, please reach 
 * [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 * [Documentation](https://docs.nebula-graph.io/)
 
-## Ecosystem
+## DevTools
 
 NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.3.0/20.appendix/6.eco-tool-version/).
 
