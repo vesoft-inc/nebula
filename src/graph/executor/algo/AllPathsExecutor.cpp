@@ -173,14 +173,17 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
     edge.reverse();
     const auto& src = edge.src;
     auto srcIter = rightAdjList_.find(src);
+    DLOG(INFO) << "src is : " << src.toString();
     if (srcIter == rightAdjList_.end()) {
-      if (uniqueVids.emplace(src).second) {
+      if (uniqueVids.emplace(src).second && rightInitVids_.find(src) == rightInitVids_.end()) {
         rightVids_.emplace_back(src);
       }
       std::vector<Value> adjEdges({edge});
       rightAdjList_.emplace(src, std::move(adjEdges));
+      DLOG(INFO) << "fist edge " << edge.toString();
     } else {
       srcIter->second.emplace_back(edge);
+      DLOG(INFO) << edge.toString();
     }
     const auto& vertex = iter->getVertex();
     if (curVertex != vertex) {
@@ -189,9 +192,15 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
       if (dstIter == rightAdjList_.end()) {
         rightInitVids_.emplace(vertex);
       } else {
-        rightAdjList_[vertex] = dstIter->second;
+        // auto adjEdges = std::move(dstIter->second);
+        // rightAdjList_.erase(dstIter);
+        // rightAdjList_[vertex] = std::move(adjEdges);
       }
     }
+  }
+
+  for (auto vid : rightVids_) {
+    DLOG(ERROR) << "right vid is " << vid.toString();
   }
 }
 
@@ -225,6 +234,22 @@ void AllPathsExecutor::expandFromLeft(GetNeighborsIter* iter) {
 }
 
 folly::Future<Status> AllPathsExecutor::buildResult() {
+  DLOG(ERROR) << "lefe step : " << leftSteps_ << " rightstep " << rightSteps_;
+  for (auto& pair : leftAdjList_) {
+    DLOG(ERROR) << "src : " << pair.first.toString();
+    for (auto& edge : pair.second) {
+      DLOG(ERROR) << edge.toString();
+    }
+  }
+  DLOG(ERROR) << "before left over";
+  for (auto& pair : rightAdjList_) {
+    DLOG(ERROR) << "src : " << pair.first.toString();
+    for (auto& edge : pair.second) {
+      DLOG(ERROR) << edge.toString();
+    }
+  }
+  DLOG(ERROR) << "before right over";
+
   for (auto& rAdj : rightAdjList_) {
     auto& src = rAdj.first;
     auto iter = leftAdjList_.find(src);
@@ -256,6 +281,14 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
       }
     }
   }
+  for (auto& pair : leftAdjList_) {
+    DLOG(ERROR) << "src : " << pair.first.toString();
+    for (auto& edge : pair.second) {
+      DLOG(ERROR) << edge.toString();
+    }
+  }
+  DLOG(ERROR) << "over";
+
   buildPath();
   if (!withProp_ || emptyPropVids_.empty()) {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
