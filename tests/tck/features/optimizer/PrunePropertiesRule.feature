@@ -878,3 +878,13 @@ Feature: Prune Properties rule
       | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
       | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
       | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+
+  Scenario: no pruning on agg after unwind
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return count(a)
+      """
+    Then the result should be, in any order:
+      | count(a) |
+      | 5        |
