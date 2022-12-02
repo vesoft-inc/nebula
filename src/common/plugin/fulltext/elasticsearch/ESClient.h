@@ -31,7 +31,6 @@ class ESClient {
                                          const folly::dynamic& query,
                                          bool refresh = false);
   StatusOr<folly::dynamic> search(const std::string& index, const folly::dynamic& query);
-  //  StatusOr<folly::dynamic> put(const std::string& index, const folly::dynamic& object);
   StatusOr<folly::dynamic> bulk(const std::vector<folly::dynamic>& bulk, bool refresh = false);
 
  private:
