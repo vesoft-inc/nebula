@@ -7,6 +7,7 @@
 
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/DeduceAliasTypeVisitor.h"
 #include "graph/visitor/ExtractGroupSuiteVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 #include "graph/visitor/ValidatePatternExpressionVisitor.h"
@@ -546,13 +547,19 @@ Status MatchValidator::validateWith(const WithClause *with,
   exprs.reserve(withClauseCtx.yield->yieldColumns->size());
   for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
-    auto aliasType = AliasType::kDefault;
+    auto aliasType = AliasType::kRuntime;
     for (auto *labelExpr : labelExprs) {
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
-      aliasType = withClauseCtx.yield->aliasesAvailable.at(label);
+      AliasType inputType = withClauseCtx.yield->aliasesAvailable.at(label);
+      DeduceAliasTypeVisitor visitor(qctx_, vctx_, space_.id, inputType);
+      const_cast<Expression *>(col->expr())->accept(&visitor);
+      if (!visitor.ok()) {
+        return std::move(visitor).status();
+      }
+      aliasType = visitor.outputType();
     }
     if (col->alias().empty()) {
       if (col->expr()->kind() == Expression::Kind::kLabel) {
@@ -632,7 +639,7 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   //      set z to the same type
   //   else
   //      set z to default
-  AliasType aliasType = AliasType::kDefault;
+  AliasType aliasType = AliasType::kRuntime;
   if (types.size() > 0 &&
       std::adjacent_find(types.begin(), types.end(), std::not_equal_to<>()) == types.end()) {
     aliasType = types[0];
@@ -922,7 +929,7 @@ Status MatchValidator::checkAlias(
     const Expression *refExpr,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   auto kind = refExpr->kind();
-  AliasType aliasType = AliasType::kDefault;
+  AliasType aliasType = AliasType::kRuntime;
 
   switch (kind) {
     case Expression::Kind::kLabel: {

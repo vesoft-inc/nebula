@@ -20,6 +20,7 @@ nebula_add_test(
         TestMain.cpp
         FoldConstantExprVisitorTest.cpp
         DeduceTypeVisitorTest.cpp
+        DeduceAliasTypeVisitorTest.cpp
         RewriteUnaryNotExprVisitorTest.cpp
         RewriteRelExprVisitorTest.cpp
         FilterTransformTest.cpp

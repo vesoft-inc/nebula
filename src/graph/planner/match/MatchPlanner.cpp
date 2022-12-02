@@ -72,8 +72,12 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   for (auto& alias : matchCtx->aliasesGenerated) {
     auto it = matchCtx->aliasesAvailable.find(alias.first);
     if (it != matchCtx->aliasesAvailable.end()) {
-      // Joined type should be same
-      if (it->second != alias.second) {
+      // Joined type should be same,
+      // If any type is kRuntime, leave the type check to runtime  to check the type,
+      // Primitive types (Integer, String, etc.) or composite types(List, Map etc.)
+      // are deduced to kRuntime when cannot be deduced during planning.
+      if (it->second != alias.second && it->second != AliasType::kRuntime &&
+          alias.second != AliasType::kRuntime) {
         return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
                                                  alias.first,
                                                  AliasTypeName[static_cast<int>(alias.second)],
