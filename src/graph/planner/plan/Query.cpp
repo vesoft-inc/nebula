@@ -867,8 +867,12 @@ BiJoin::BiJoin(QueryContext* qctx,
       hashKeys_(std::move(hashKeys)),
       probeKeys_(std::move(probeKeys)) {
   auto lColNames = left->colNames();
-  auto rColNames = right->colNames();
-  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
+  auto& rColNames = right->colNames();
+  for (auto& rColName : rColNames) {
+    if (std::find(lColNames.begin(), lColNames.end(), rColName) == lColNames.end()) {
+      lColNames.emplace_back(rColName);
+    }
+  }
   setColNames(lColNames);
 }
 
