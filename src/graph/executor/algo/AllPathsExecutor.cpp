@@ -55,6 +55,15 @@ void AllPathsExecutor::init() {
 AllPathsExecutor::Direction AllPathsExecutor::direction() {
   auto leftSize = leftVids_.size();
   auto rightSize = rightVids_.size();
+  if (leftSteps_ + rightSteps_ + 1 == steps_) {
+    if (leftSize > rightSize) {
+      ++rightSteps_;
+      return Direction::kRight;
+    } else {
+      ++leftSteps_;
+      return Direction::kLeft;
+    }
+  }
   if (leftSize > FLAGS_path_threshold_size && rightSize > FLAGS_path_threshold_size) {
     if (leftSize > rightSize && leftSize / rightSize > FLAGS_path_threshold_ratio) {
       ++rightSteps_;
@@ -126,8 +135,8 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                      false,
                      false,
                      {},
-                     -1,       //  limit
-                     nullptr,  //  filter
+                     -1,       //  (TODO jmq)limit
+                     nullptr,  //  (TODO jmq)filter
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime, reverse](auto&& resps) {
@@ -173,34 +182,27 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
     edge.reverse();
     const auto& src = edge.src;
     auto srcIter = rightAdjList_.find(src);
-    DLOG(INFO) << "src is : " << src.toString();
     if (srcIter == rightAdjList_.end()) {
       if (uniqueVids.emplace(src).second && rightInitVids_.find(src) == rightInitVids_.end()) {
         rightVids_.emplace_back(src);
       }
       std::vector<Value> adjEdges({edge});
       rightAdjList_.emplace(src, std::move(adjEdges));
-      DLOG(INFO) << "fist edge " << edge.toString();
     } else {
       srcIter->second.emplace_back(edge);
-      DLOG(INFO) << edge.toString();
     }
     const auto& vertex = iter->getVertex();
     if (curVertex != vertex) {
       curVertex = vertex;
-      auto dstIter = rightAdjList_.find(vertex);
-      if (dstIter == rightAdjList_.end()) {
+      if (rightSteps_ == 1) {
+        rightInitVids_.erase(vertex);
         rightInitVids_.emplace(vertex);
-      } else {
-        // auto adjEdges = std::move(dstIter->second);
-        // rightAdjList_.erase(dstIter);
-        // rightAdjList_[vertex] = std::move(adjEdges);
+      }
+      auto dstIter = rightAdjList_.find(vertex);
+      if (dstIter != rightAdjList_.end()) {
+        rightAdjList_[vertex] = dstIter->second;
       }
     }
-  }
-
-  for (auto vid : rightVids_) {
-    DLOG(ERROR) << "right vid is " << vid.toString();
   }
 }
 
@@ -234,22 +236,6 @@ void AllPathsExecutor::expandFromLeft(GetNeighborsIter* iter) {
 }
 
 folly::Future<Status> AllPathsExecutor::buildResult() {
-  DLOG(ERROR) << "lefe step : " << leftSteps_ << " rightstep " << rightSteps_;
-  for (auto& pair : leftAdjList_) {
-    DLOG(ERROR) << "src : " << pair.first.toString();
-    for (auto& edge : pair.second) {
-      DLOG(ERROR) << edge.toString();
-    }
-  }
-  DLOG(ERROR) << "before left over";
-  for (auto& pair : rightAdjList_) {
-    DLOG(ERROR) << "src : " << pair.first.toString();
-    for (auto& edge : pair.second) {
-      DLOG(ERROR) << edge.toString();
-    }
-  }
-  DLOG(ERROR) << "before right over";
-
   for (auto& rAdj : rightAdjList_) {
     auto& src = rAdj.first;
     auto iter = leftAdjList_.find(src);
@@ -281,13 +267,6 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
       }
     }
   }
-  for (auto& pair : leftAdjList_) {
-    DLOG(ERROR) << "src : " << pair.first.toString();
-    for (auto& edge : pair.second) {
-      DLOG(ERROR) << edge.toString();
-    }
-  }
-  DLOG(ERROR) << "over";
 
   buildPath();
   if (!withProp_ || emptyPropVids_.empty()) {
