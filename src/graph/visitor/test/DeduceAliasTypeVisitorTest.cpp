@@ -10,8 +10,7 @@
 
 namespace nebula {
 namespace graph {
-class DeduceAliasTypeVisitorTest : public VisitorTestBase {
-};
+class DeduceAliasTypeVisitorTest : public VisitorTestBase {};
 
 TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
   {
