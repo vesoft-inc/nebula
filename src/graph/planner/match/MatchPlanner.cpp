@@ -73,7 +73,7 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
     auto it = matchCtx->aliasesAvailable.find(alias.first);
     if (it != matchCtx->aliasesAvailable.end()) {
       // Joined type should be same,
-      // If any type is kRuntime, leave the type check to runtime  to check the type,
+      // If any type is kRuntime, leave the type check to runtime,
       // Primitive types (Integer, String, etc.) or composite types(List, Map etc.)
       // are deduced to kRuntime when cannot be deduced during planning.
       if (it->second != alias.second && it->second != AliasType::kRuntime &&
