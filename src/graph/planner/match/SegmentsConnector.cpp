@@ -11,10 +11,11 @@
 namespace nebula {
 namespace graph {
 
-SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
-                                     const SubPlan& left,
-                                     const SubPlan& right,
-                                     const std::unordered_set<std::string>& intersectedAliases) {
+StatusOr<SubPlan> SegmentsConnector::innerJoin(
+    QueryContext* qctx,
+    const SubPlan& left,
+    const SubPlan& right,
+    const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
   auto innerJoin = BiInnerJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
@@ -34,10 +35,11 @@ SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
   return newPlan;
 }
 
-SubPlan SegmentsConnector::leftJoin(QueryContext* qctx,
-                                    const SubPlan& left,
-                                    const SubPlan& right,
-                                    const std::unordered_set<std::string>& intersectedAliases) {
+StatusOr<SubPlan> SegmentsConnector::leftJoin(
+    QueryContext* qctx,
+    const SubPlan& left,
+    const SubPlan& right,
+    const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
   auto leftJoin = BiLeftJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
@@ -57,31 +59,35 @@ SubPlan SegmentsConnector::leftJoin(QueryContext* qctx,
   return newPlan;
 }
 
-SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
-                                            const SubPlan& left,
-                                            const SubPlan& right) {
+StatusOr<SubPlan> SegmentsConnector::cartesianProduct(QueryContext* qctx,
+                                                      const SubPlan& left,
+                                                      const SubPlan& right) {
   SubPlan newPlan = left;
-  newPlan.root = BiCartesianProduct::make(qctx, left.root, right.root);
+  auto* prod = BiCartesianProduct::make(qctx, left.root, right.root);
+  newPlan.root = prod;
   return newPlan;
 }
 
-/*static*/ SubPlan SegmentsConnector::rollUpApply(QueryContext* qctx,
-                                                  const SubPlan& left,
-                                                  const std::vector<std::string>& inputColNames,
-                                                  const SubPlan& right,
-                                                  const std::vector<std::string>& compareCols,
-                                                  const std::string& collectCol) {
+/*static*/
+StatusOr<SubPlan> SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
+                                                 const SubPlan& left,
+                                                 const SubPlan& right,
+                                                 const graph::Path& path) {
+  const std::string& collectCol = path.collectVariable;
+  auto* qctx = ctx->qctx;
+
   SubPlan newPlan = left;
   std::vector<Expression*> compareProps;
-  for (const auto& col : compareCols) {
+  for (const auto& col : path.compareVariables) {
     compareProps.emplace_back(FunctionCallExpression::make(
         qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
   }
   InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
   auto* rollUpApply = RollUpApply::make(
       qctx, left.root, DCHECK_NOTNULL(right.root), std::move(compareProps), collectProp);
+
   // Left side input may be nullptr, which will be filled in later
-  std::vector<std::string> colNames = left.root != nullptr ? left.root->colNames() : inputColNames;
+  std::vector<std::string> colNames = left.root ? left.root->colNames() : ctx->inputColNames;
   colNames.emplace_back(collectCol);
   rollUpApply->setColNames(std::move(colNames));
   newPlan.root = rollUpApply;

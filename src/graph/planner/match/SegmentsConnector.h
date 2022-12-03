@@ -21,30 +21,30 @@ class SegmentsConnector final {
   /**
    * InnerJoin two plan on node id
    */
-  static SubPlan innerJoin(QueryContext* qctx,
-                           const SubPlan& left,
-                           const SubPlan& right,
-                           const std::unordered_set<std::string>& intersectedAliases);
+  static StatusOr<SubPlan> innerJoin(QueryContext* qctx,
+                                     const SubPlan& left,
+                                     const SubPlan& right,
+                                     const std::unordered_set<std::string>& intersectedAliases);
 
   /**
    * LeftJoin two plan on node id
    */
-  static SubPlan leftJoin(QueryContext* qctx,
-                          const SubPlan& left,
-                          const SubPlan& right,
-                          const std::unordered_set<std::string>& intersectedAliases);
+  static StatusOr<SubPlan> leftJoin(QueryContext* qctx,
+                                    const SubPlan& left,
+                                    const SubPlan& right,
+                                    const std::unordered_set<std::string>& intersectedAliases);
 
   /**
    * Simply do a CartesianProduct of two plan root.
    */
-  static SubPlan cartesianProduct(QueryContext* qctx, const SubPlan& left, const SubPlan& right);
+  static StatusOr<SubPlan> cartesianProduct(QueryContext* qctx,
+                                            const SubPlan& left,
+                                            const SubPlan& right);
 
-  static SubPlan rollUpApply(QueryContext* qctx,
-                             const SubPlan& left,
-                             const std::vector<std::string>& inputColNames,
-                             const SubPlan& right,
-                             const std::vector<std::string>& compareCols,
-                             const std::string& collectCol);
+  static StatusOr<SubPlan> rollUpApply(CypherClauseContextBase* ctx,
+                                       const SubPlan& left,
+                                       const SubPlan& right,
+                                       const graph::Path& path);
 
   /*
    * left->right

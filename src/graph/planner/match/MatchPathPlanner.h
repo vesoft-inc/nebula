@@ -8,74 +8,45 @@
 
 namespace nebula {
 namespace graph {
+
 // The MatchPathPlanner generates plan for match clause;
 class MatchPathPlanner final {
  public:
-  MatchPathPlanner() = default;
+  MatchPathPlanner(CypherClauseContextBase* ctx, const Path& path);
 
-  StatusOr<SubPlan> transform(QueryContext* qctx,
-                              GraphSpaceID spaceId,
-                              WhereClauseContext* bindWhereClause,
-                              const std::unordered_map<std::string, AliasType>& aliasesAvailable,
-                              std::unordered_set<std::string> nodeAliasesSeen,
-                              Path& path);
+  StatusOr<SubPlan> transform(WhereClauseContext* bindWhereClause,
+                              std::unordered_set<std::string> nodeAliasesSeen = {});
 
  private:
-  Status findStarts(std::vector<NodeInfo>& nodeInfos,
-                    std::vector<EdgeInfo>& edgeInfos,
-                    QueryContext* qctx,
-                    GraphSpaceID spaceId,
-                    WhereClauseContext* bindWhereClause,
-                    const std::unordered_map<std::string, AliasType>& aliasesAvailable,
+  Status findStarts(WhereClauseContext* bindWhereClause,
                     std::unordered_set<std::string> nodeAliases,
                     bool& startFromEdge,
                     size_t& startIndex,
                     SubPlan& matchClausePlan);
 
-  Status expand(const std::vector<NodeInfo>& nodeInfos,
-                const std::vector<EdgeInfo>& edgeInfos,
-                QueryContext* qctx,
-                GraphSpaceID spaceId,
-                bool startFromEdge,
-                size_t startIndex,
-                SubPlan& subplan,
-                std::unordered_set<std::string>& nodeAliasesSeenInPattern);
+  Status expand(bool startFromEdge, size_t startIndex, SubPlan& subplan);
+  Status expandFromNode(size_t startIndex, SubPlan& subplan);
+  Status leftExpandFromNode(size_t startIndex, SubPlan& subplan);
+  Status rightExpandFromNode(size_t startIndex, SubPlan& subplan);
+  Status expandFromEdge(size_t startIndex, SubPlan& subplan);
 
-  Status expandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                        const std::vector<EdgeInfo>& edgeInfos,
-                        QueryContext* qctx,
-                        GraphSpaceID spaceId,
-                        size_t startIndex,
-                        SubPlan& subplan,
-                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
+  void addNodeAlias(const NodeInfo& n) {
+    if (!n.anonymous) {
+      nodeAliasesSeenInPattern_.emplace(n.alias);
+    }
+  }
 
-  Status leftExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                            const std::vector<EdgeInfo>& edgeInfos,
-                            QueryContext* qctx,
-                            GraphSpaceID spaceId,
-                            size_t startIndex,
-                            std::string inputVar,
-                            SubPlan& subplan,
-                            std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  Status rightExpandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                             const std::vector<EdgeInfo>& edgeInfos,
-                             QueryContext* qctx,
-                             GraphSpaceID spaceId,
-                             size_t startIndex,
-                             SubPlan& subplan,
-                             std::unordered_set<std::string>& nodeAliasesSeenInPattern);
-
-  Status expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
-                        const std::vector<EdgeInfo>& edgeInfos,
-                        QueryContext* qctx,
-                        GraphSpaceID spaceId,
-                        size_t startIndex,
-                        SubPlan& subplan,
-                        std::unordered_set<std::string>& nodeAliasesSeenInPattern);
+  bool isExpandInto(const std::string& alias) const {
+    return nodeAliasesSeenInPattern_.find(alias) != nodeAliasesSeenInPattern_.end();
+  }
 
  private:
+  CypherClauseContextBase* ctx_{nullptr};
   Expression* initialExpr_{nullptr};
+  const Path& path_;
+
+  // The node alias seen in current pattern only
+  std::unordered_set<std::string> nodeAliasesSeenInPattern_;
 };
 }  // namespace graph
 }  // namespace nebula
