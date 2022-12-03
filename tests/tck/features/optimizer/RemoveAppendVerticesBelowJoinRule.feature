@@ -1,12 +1,13 @@
 # Copyright (c) 2022 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: Optimize left join predicate
+@jie
+Feature: Remove AppendVertices Below Join
 
   Background:
     Given a graph with space named "nba"
 
-  Scenario: optimize left join predicate
+  Scenario: Remove AppendVertices below left join
     When profiling query:
       """
       MATCH (person:player)-[:like*1..2]-(friend:player)-[:serve]->(friendTeam:team)
@@ -62,3 +63,32 @@ Feature: Optimize left join predicate
       | 14 | Traverse       | 12           |                                                                                                                         |
       | 12 | Traverse       | 11           |                                                                                                                         |
       | 11 | Argument       |              |                                                                                                                         |
+
+  Scenario: Remove AppendVertices below inner join
+    When profiling query:
+      """
+      MATCH (me:player)-[:like]->(both)
+      WHERE id(me) == "Tony Parker"
+      MATCH (he:player)-[:like]->(both)
+      WHERE id(he) == "Tim Duncan"
+      RETURN *
+      """
+    Then the result should be, in order, with relax comparison:
+      | me              | both              | he             |
+      | ("Tony Parker") | ("Manu Ginobili") | ("Tim Duncan") |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                    |
+      | 16 | HashInnerJoin  | 10,15        | {"hashKeys": ["_joinkey($-.both)"], "probeKeys": ["$-.both"]}    |
+      | 10 | Dedup          | 28           |                                                                  |
+      | 28 | Project        | 22           |                                                                  |
+      | 22 | Filter         | 26           |                                                                  |
+      | 26 | AppendVertices | 25           |                                                                  |
+      | 25 | Traverse       | 24           |                                                                  |
+      | 24 | Traverse       | 2            |                                                                  |
+      | 2  | Dedup          | 1            |                                                                  |
+      | 1  | PassThrough    | 3            |                                                                  |
+      | 3  | Start          |              |                                                                  |
+      | 15 | Project        | 14           | {"columns": ["$-.he AS he", "none_direct_dst($-.__VAR_1) AS v"]} |
+      | 14 | Traverse       | 12           |                                                                  |
+      | 12 | Traverse       | 11           |                                                                  |
+      | 11 | Argument       |              |                                                                  |
