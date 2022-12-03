@@ -30,7 +30,7 @@ class FTIndexUtils final {
                                                ::nebula::plugin::ESAdapter& esAdapter);
 
   // Performs full-text search using elastic search adapter
-  // Search type is defiend by the expression kind
+  // Search type is defined by the expression kind
   static StatusOr<nebula::plugin::ESQueryResult> textSearch(Expression* expr,
                                                             const std::string& index,
                                                             ::nebula::plugin::ESAdapter& esAdapter);

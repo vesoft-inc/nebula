@@ -27,6 +27,7 @@ nebula_add_test(
     SOURCES
         ExpressionUtilsTest.cpp
         IdGeneratorTest.cpp
+        FTindexUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
@@ -75,6 +76,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         gtest
+        gmock
         gtest_main
         ${Boost_Thread_LIBRARY}
         ${THRIFT_LIBRARIES}
