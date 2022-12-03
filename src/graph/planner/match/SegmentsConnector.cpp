@@ -11,11 +11,10 @@
 namespace nebula {
 namespace graph {
 
-StatusOr<SubPlan> SegmentsConnector::innerJoin(
-    QueryContext* qctx,
-    const SubPlan& left,
-    const SubPlan& right,
-    const std::unordered_set<std::string>& intersectedAliases) {
+SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
+                                     const SubPlan& left,
+                                     const SubPlan& right,
+                                     const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
   auto innerJoin = BiInnerJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
@@ -35,11 +34,10 @@ StatusOr<SubPlan> SegmentsConnector::innerJoin(
   return newPlan;
 }
 
-StatusOr<SubPlan> SegmentsConnector::leftJoin(
-    QueryContext* qctx,
-    const SubPlan& left,
-    const SubPlan& right,
-    const std::unordered_set<std::string>& intersectedAliases) {
+SubPlan SegmentsConnector::leftJoin(QueryContext* qctx,
+                                    const SubPlan& left,
+                                    const SubPlan& right,
+                                    const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
   auto leftJoin = BiLeftJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
@@ -59,20 +57,19 @@ StatusOr<SubPlan> SegmentsConnector::leftJoin(
   return newPlan;
 }
 
-StatusOr<SubPlan> SegmentsConnector::cartesianProduct(QueryContext* qctx,
-                                                      const SubPlan& left,
-                                                      const SubPlan& right) {
+SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
+                                            const SubPlan& left,
+                                            const SubPlan& right) {
   SubPlan newPlan = left;
-  auto* prod = BiCartesianProduct::make(qctx, left.root, right.root);
-  newPlan.root = prod;
+  newPlan.root = BiCartesianProduct::make(qctx, left.root, right.root);
   return newPlan;
 }
 
 /*static*/
-StatusOr<SubPlan> SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
-                                                 const SubPlan& left,
-                                                 const SubPlan& right,
-                                                 const graph::Path& path) {
+SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
+                                       const SubPlan& left,
+                                       const SubPlan& right,
+                                       const graph::Path& path) {
   const std::string& collectCol = path.collectVariable;
   auto* qctx = ctx->qctx;
 

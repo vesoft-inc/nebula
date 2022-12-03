@@ -65,16 +65,14 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
     return Status::OK();
   }
 
-  StatusOr<SubPlan> status;
   if (intersectedAliases.empty()) {
-    status = SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
+    matchClausePlan =
+        SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
   } else {
     // TODO: Actually a natural join would be much easy use.
-    status = SegmentsConnector::innerJoin(
+    matchClausePlan = SegmentsConnector::innerJoin(
         matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
   }
-  NG_RETURN_IF_ERROR(status);
-  matchClausePlan = std::move(status).value();
   return Status::OK();
 }
 

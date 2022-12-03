@@ -93,7 +93,6 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
       // the join
       matchPlan.tail->setInputVar(queryPlan.root->outputVar());
     }
-    StatusOr<SubPlan> status;
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;
@@ -125,12 +124,10 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
         auto wherePlan = std::move(wherePlanStatus).value();
         matchPlan = SegmentsConnector::addInput(wherePlan, matchPlan, true);
       }
-      status = SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
+      queryPlan = SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
     } else {
-      status = SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
+      queryPlan = SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
     }
-    NG_RETURN_IF_ERROR(status);
-    queryPlan = std::move(status).value();
   } else {
     queryPlan.root = BiCartesianProduct::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
   }

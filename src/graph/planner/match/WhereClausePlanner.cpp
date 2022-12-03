@@ -26,14 +26,11 @@ StatusOr<SubPlan> WhereClausePlanner::transform(CypherClauseContextBase* ctx) {
     wherePlan.tail = wherePlan.root;
 
     SubPlan subPlan;
-    StatusOr<SubPlan> status;
     // Build plan for pattern from expression
     for (auto& path : wctx->paths) {
-      status = MatchPathPlanner(wctx, path).transform(nullptr, {});
+      auto status = MatchPathPlanner(wctx, path).transform(nullptr, {});
       NG_RETURN_IF_ERROR(status);
-      status = SegmentsConnector::rollUpApply(wctx, subPlan, std::move(status).value(), path);
-      NG_RETURN_IF_ERROR(status);
-      subPlan = std::move(status).value();
+      subPlan = SegmentsConnector::rollUpApply(wctx, subPlan, std::move(status).value(), path);
     }
     if (subPlan.root != nullptr) {
       wherePlan = SegmentsConnector::addInput(wherePlan, subPlan, true);

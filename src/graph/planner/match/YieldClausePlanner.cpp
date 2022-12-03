@@ -76,14 +76,12 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
     subplan.root = Dedup::make(yctx->qctx, subplan.root);
   }
   SubPlan patternPlan;
-  StatusOr<SubPlan> status;
   // Build plan for pattern from expression
   for (auto& path : yctx->paths) {
-    status = MatchPathPlanner(yctx, path).transform(nullptr, {});
+    auto status = MatchPathPlanner(yctx, path).transform(nullptr, {});
     NG_RETURN_IF_ERROR(status);
-    status = SegmentsConnector::rollUpApply(yctx, patternPlan, std::move(status).value(), path);
-    NG_RETURN_IF_ERROR(status);
-    patternPlan = std::move(status).value();
+    patternPlan =
+        SegmentsConnector::rollUpApply(yctx, patternPlan, std::move(status).value(), path);
   }
   if (patternPlan.root != nullptr) {
     subplan = SegmentsConnector::addInput(subplan, patternPlan);

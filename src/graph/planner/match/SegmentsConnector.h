@@ -21,30 +21,28 @@ class SegmentsConnector final {
   /**
    * InnerJoin two plan on node id
    */
-  static StatusOr<SubPlan> innerJoin(QueryContext* qctx,
-                                     const SubPlan& left,
-                                     const SubPlan& right,
-                                     const std::unordered_set<std::string>& intersectedAliases);
+  static SubPlan innerJoin(QueryContext* qctx,
+                           const SubPlan& left,
+                           const SubPlan& right,
+                           const std::unordered_set<std::string>& intersectedAliases);
 
   /**
    * LeftJoin two plan on node id
    */
-  static StatusOr<SubPlan> leftJoin(QueryContext* qctx,
-                                    const SubPlan& left,
-                                    const SubPlan& right,
-                                    const std::unordered_set<std::string>& intersectedAliases);
+  static SubPlan leftJoin(QueryContext* qctx,
+                          const SubPlan& left,
+                          const SubPlan& right,
+                          const std::unordered_set<std::string>& intersectedAliases);
 
   /**
    * Simply do a CartesianProduct of two plan root.
    */
-  static StatusOr<SubPlan> cartesianProduct(QueryContext* qctx,
-                                            const SubPlan& left,
-                                            const SubPlan& right);
+  static SubPlan cartesianProduct(QueryContext* qctx, const SubPlan& left, const SubPlan& right);
 
-  static StatusOr<SubPlan> rollUpApply(CypherClauseContextBase* ctx,
-                                       const SubPlan& left,
-                                       const SubPlan& right,
-                                       const graph::Path& path);
+  static SubPlan rollUpApply(CypherClauseContextBase* ctx,
+                             const SubPlan& left,
+                             const SubPlan& right,
+                             const graph::Path& path);
 
   /*
    * left->right
