@@ -95,6 +95,8 @@ struct CypherClauseContextBase : AstContext {
   // Input column names of current clause
   // Now used by unwind clause planner
   std::vector<std::string> inputColNames;
+
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct WhereClauseContext final : CypherClauseContextBase {
@@ -104,7 +106,6 @@ struct WhereClauseContext final : CypherClauseContextBase {
   std::vector<Path> paths;
 
   Expression* filter{nullptr};
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct OrderByClauseContext final : CypherClauseContextBase {
@@ -134,7 +135,6 @@ struct YieldClauseContext final : CypherClauseContextBase {
 
   bool distinct{false};
   const YieldColumns* yieldColumns{nullptr};
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
 
   bool hasAgg_{false};
   bool needGenProject_{false};
@@ -169,7 +169,6 @@ struct MatchClauseContext final : CypherClauseContextBase {
   bool isOptional{false};
   std::vector<Path> paths;
   std::unique_ptr<WhereClauseContext> where;
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -182,7 +181,6 @@ struct UnwindClauseContext final : CypherClauseContextBase {
   Expression* unwindExpr{nullptr};
   std::string alias;
 
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -209,13 +207,13 @@ struct PatternContext {
 };
 
 struct NodeContext final : PatternContext {
-  NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, NodeInfo* i)
+  NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const NodeInfo* i)
       : PatternContext(PatternKind::kNode), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  NodeInfo* info;
+  const NodeInfo* info;
   std::unordered_set<std::string>* nodeAliasesAvailable{nullptr};
 
   // Output fields
@@ -226,13 +224,13 @@ struct NodeContext final : PatternContext {
 };
 
 struct EdgeContext final : PatternContext {
-  EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, EdgeInfo* i)
+  EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const EdgeInfo* i)
       : PatternContext(PatternKind::kEdge), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  EdgeInfo* info;
+  const EdgeInfo* info;
 
   // Output fields
   ScanInfo scanInfo;
