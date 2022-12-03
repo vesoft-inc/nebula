@@ -65,23 +65,26 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
   return newPlan;
 }
 
-/*static*/ SubPlan SegmentsConnector::rollUpApply(QueryContext* qctx,
-                                                  const SubPlan& left,
-                                                  const std::vector<std::string>& inputColNames,
-                                                  const SubPlan& right,
-                                                  const std::vector<std::string>& compareCols,
-                                                  const std::string& collectCol) {
+/*static*/
+SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
+                                       const SubPlan& left,
+                                       const SubPlan& right,
+                                       const graph::Path& path) {
+  const std::string& collectCol = path.collectVariable;
+  auto* qctx = ctx->qctx;
+
   SubPlan newPlan = left;
   std::vector<Expression*> compareProps;
-  for (const auto& col : compareCols) {
+  for (const auto& col : path.compareVariables) {
     compareProps.emplace_back(FunctionCallExpression::make(
         qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
   }
   InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
   auto* rollUpApply = RollUpApply::make(
       qctx, left.root, DCHECK_NOTNULL(right.root), std::move(compareProps), collectProp);
+
   // Left side input may be nullptr, which will be filled in later
-  std::vector<std::string> colNames = left.root != nullptr ? left.root->colNames() : inputColNames;
+  std::vector<std::string> colNames = left.root ? left.root->colNames() : ctx->inputColNames;
   colNames.emplace_back(collectCol);
   rollUpApply->setColNames(std::move(colNames));
   newPlan.root = rollUpApply;
