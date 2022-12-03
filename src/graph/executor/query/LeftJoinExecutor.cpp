@@ -228,7 +228,7 @@ HashLeftJoinExecutor::HashLeftJoinExecutor(const PlanNode* node, QueryContext* q
 
 folly::Future<Status> HashLeftJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* joinNode = asNode<BiJoin>(node());
+  auto* joinNode = asNode<HashJoin>(node());
   auto& rhsResult = ectx_->getResult(joinNode->rightInputVar());
   rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
   NG_RETURN_IF_ERROR(checkBiInputDataSets());

@@ -66,7 +66,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   // prune properties in AppendVertices according to the used properties collected previous
   void pruneCurrent(AppendVertices *node);
 
-  void visit(BiJoin *node) override;
+  void visit(HashJoin *node) override;
 
   void visit(Union *node) override;
   void visit(CrossJoin *node) override;

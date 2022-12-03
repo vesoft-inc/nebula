@@ -427,7 +427,7 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
   node->setVertexProps(std::move(prunedVertexProps));
 }
 
-void PrunePropertiesVisitor::visit(BiJoin *node) {
+void PrunePropertiesVisitor::visit(HashJoin *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
