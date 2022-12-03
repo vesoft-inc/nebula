@@ -128,6 +128,9 @@ void Optimizer::addBodyToGroupNode(OptContext *ctx,
 
 namespace {
 
+// The plan node referenced by argument always is in the left side of plan tree. So we only need to
+// check whether the left root child of binary input plan node contains what the argument needs in
+// its output columns
 bool findArgumentRefPlanNodeInPath(const std::vector<const PlanNode *> &path, PlanNode *argument) {
   DCHECK_EQ(argument->kind(), PlanNode::Kind::kArgument);
   for (int i = path.size() - 1; i >= 0; i--) {

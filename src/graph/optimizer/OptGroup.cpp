@@ -161,6 +161,8 @@ const PlanNode *OptGroup::getPlan() const {
 
 void OptGroup::deleteRefGroupNode(const OptGroupNode *node) {
   groupNodesReferenced_.erase(node);
+#if 0
+  // FIXME(yee): This cleanup will crash the optimizer for LDBC queries, try to fix it next PR
   if (groupNodesReferenced_.empty()) {
     // Cleanup all opt group nodes in current opt group if it's NOT referenced by any other opt
     // group nodes
@@ -168,6 +170,7 @@ void OptGroup::deleteRefGroupNode(const OptGroupNode *node) {
       n->release();
     }
   }
+#endif
 }
 
 OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
