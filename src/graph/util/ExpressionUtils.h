@@ -32,7 +32,7 @@ class ExpressionUtils {
   // Checks if the kind of the given expression is one of the expected kind
   static inline bool isKindOf(const Expression* expr,
                               const std::unordered_set<Expression::Kind>& expected) {
-    return expected.find(expr->kind()) != expected.end();
+    return expected.find(DCHECK_NOTNULL(expr)->kind()) != expected.end();
   }
 
   // Checks if the expression is a property expression (TagProperty or LabelTagProperty or
@@ -182,9 +182,12 @@ class ExpressionUtils {
   // calls flattenInnerLogicalAndExpr() first then executes flattenInnerLogicalOrExpr()
   static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
+  // Check whether there exists the property of variable expression in `columns'
+  static bool checkVarPropIfExist(const std::vector<std::string>& columns, const Expression* e);
+
   // Uses the picker to split the given experssion expr into two parts: filterPicked and
   // filterUnpicked If expr is a non-LogicalAnd expression, applies the picker to expr directly If
-  // expr is a logicalAnd expression,  applies the picker to all its operands
+  // expr is a logicalAnd expression, applies the picker to all its operands
   static void splitFilter(const Expression* expr,
                           std::function<bool(const Expression*)> picker,
                           Expression** filterPicked,

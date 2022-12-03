@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "PlanNode.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -353,6 +352,20 @@ void PlanNode::setInputVar(const std::string& varname, size_t idx) {
   } else {
     symTable->readBy(varname, this);
   }
+}
+
+Status PlanNode::isColumnsIncluded(const std::string& varname) const {
+  auto* refVar = qctx()->symTable()->getVar(varname);
+  // The referenced variable should have all columns used in current node
+  for (auto& colName : colNames()) {
+    auto iter = std::find(refVar->colNames.begin(), refVar->colNames.end(), colName);
+    if (iter == refVar->colNames.end()) {
+      return Status::Error("the column referenced by Argument is not included in variable `%s': %s",
+                           varname.c_str(),
+                           colName.c_str());
+    }
+  }
+  return Status::OK();
 }
 
 std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {

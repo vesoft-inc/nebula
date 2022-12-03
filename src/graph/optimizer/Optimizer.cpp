@@ -125,5 +125,10 @@ void Optimizer::addBodyToGroupNode(OptContext *ctx,
   gnode->addBody(body);
 }
 
+// static
+Status rewriteArgumentInputVar(PlanNode *root) {
+  return Status::OK();
+}
+
 }  // namespace opt
 }  // namespace nebula

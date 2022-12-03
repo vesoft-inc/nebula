@@ -96,7 +96,7 @@ Status OptGroup::explore(const OptRule *rule) {
     // inconsistent. For now, let the optimization rules themselves guarantee correctness.
     if (result.eraseAll) {
       for (auto gnode : groupNodes_) {
-        gnode->node()->releaseSymbols();
+        gnode->release();
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
@@ -114,7 +114,7 @@ Status OptGroup::explore(const OptRule *rule) {
     }
 
     if (result.eraseCurr) {
-      (*iter)->node()->releaseSymbols();
+      (*iter)->release();
       iter = groupNodes_.erase(iter);
     } else {
       ++iter;
@@ -157,6 +157,17 @@ const PlanNode *OptGroup::getPlan() const {
   const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
   DCHECK(minGroupNode != nullptr);
   return minGroupNode->getPlan();
+}
+
+void OptGroup::deleteRefGroupNode(const OptGroupNode *node) {
+  groupNodesReferenced_.erase(node);
+  if (groupNodesReferenced_.empty()) {
+    // Cleanup all opt group nodes in current opt group if it's NOT referenced by any other opt
+    // group nodes
+    for (auto *n : groupNodes_) {
+      n->release();
+    }
+  }
 }
 
 OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {
@@ -222,6 +233,13 @@ const PlanNode *OptGroupNode::getPlan() const {
     node_->setDep(i, dependencies_[i]->getPlan());
   }
   return node_;
+}
+
+void OptGroupNode::release() {
+  node_->releaseSymbols();
+  for (auto *dep : dependencies_) {
+    dep->deleteRefGroupNode(this);
+  }
 }
 
 }  // namespace opt

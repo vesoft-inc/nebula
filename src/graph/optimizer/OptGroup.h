@@ -48,6 +48,12 @@ class OptGroup final {
     return outputVar_;
   }
 
+  void addRefGroupNode(const OptGroupNode *node) {
+    groupNodesReferenced_.insert(node);
+  }
+
+  void deleteRefGroupNode(const OptGroupNode *node);
+
  private:
   friend ObjectPool;
   explicit OptGroup(OptContext *ctx) noexcept;
@@ -61,6 +67,9 @@ class OptGroup final {
   std::vector<const OptRule *> exploredRules_;
   // The output variable should be same across the whole group.
   std::string outputVar_;
+
+  // Save the OptGroupNode which references this OptGroup
+  std::unordered_set<const OptGroupNode *> groupNodesReferenced_;
 };
 
 class OptGroupNode final {
@@ -69,6 +78,7 @@ class OptGroupNode final {
 
   void dependsOn(OptGroup *dep) {
     dependencies_.emplace_back(dep);
+    dep->addRefGroupNode(this);
   }
 
   const std::vector<OptGroup *> &dependencies() const {
@@ -77,6 +87,9 @@ class OptGroupNode final {
 
   void setDeps(std::vector<OptGroup *> deps) {
     dependencies_ = deps;
+    for (auto *dep : deps) {
+      dep->addRefGroupNode(this);
+    }
   }
 
   void addBody(OptGroup *body) {
@@ -108,6 +121,9 @@ class OptGroupNode final {
   Status explore(const OptRule *rule);
   double getCost() const;
   const graph::PlanNode *getPlan() const;
+
+  // Release the opt group node from its opt group
+  void release();
 
  private:
   friend ObjectPool;
