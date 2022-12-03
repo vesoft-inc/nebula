@@ -431,7 +431,7 @@ void PrunePropertiesVisitor::visit(BiJoin *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
-void PrunePropertiesVisitor::visit(BiCartesianProduct *node) {
+void PrunePropertiesVisitor::visit(CrossJoin *node) {
   status_ = pruneMultiBranch(node->dependencies());
 }
 

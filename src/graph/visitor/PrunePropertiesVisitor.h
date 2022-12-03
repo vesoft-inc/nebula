@@ -69,7 +69,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   void visit(BiJoin *node) override;
 
   void visit(Union *node) override;
-  void visit(BiCartesianProduct *node) override;
+  void visit(CrossJoin *node) override;
 
   void visit(Unwind *node) override;
   void visitCurrent(Unwind *node);

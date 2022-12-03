@@ -61,7 +61,7 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
                                             const SubPlan& left,
                                             const SubPlan& right) {
   SubPlan newPlan = left;
-  newPlan.root = BiCartesianProduct::make(qctx, left.root, right.root);
+  newPlan.root = CrossJoin::make(qctx, left.root, right.root);
   return newPlan;
 }
 

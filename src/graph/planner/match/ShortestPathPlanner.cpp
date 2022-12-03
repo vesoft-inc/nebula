@@ -30,7 +30,7 @@ namespace graph {
 //             +------------+---------------+
 //                          |
 //                 +--------+---------+
-//                 |BiCartesianProduct|
+//                 |CrossJoin|
 //                 +--------+---------+
 //                          |
 //                 +--------+---------+
@@ -103,7 +103,7 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   auto& leftPlan = plans.front();
   auto& rightPlan = plans.back();
 
-  auto cp = BiCartesianProduct::make(qctx, leftPlan.root, rightPlan.root);
+  auto cp = CrossJoin::make(qctx, leftPlan.root, rightPlan.root);
 
   auto shortestPath = ShortestPath::make(qctx, cp, spaceId, singleShortest);
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, spaceId, true);

@@ -132,7 +132,7 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
           SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
     }
   } else {
-    queryPlan.root = BiCartesianProduct::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
+    queryPlan.root = CrossJoin::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
   }
 
   return Status::OK();

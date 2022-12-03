@@ -292,8 +292,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "HashLeftJoin";
     case Kind::kHashInnerJoin:
       return "HashInnerJoin";
-    case Kind::kBiCartesianProduct:
-      return "BiCartesianProduct";
+    case Kind::kCrossJoin:
+      return "CrossJoin";
     case Kind::kShortestPath:
       return "ShortestPath";
     case Kind::kArgument:

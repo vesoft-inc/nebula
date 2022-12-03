@@ -50,20 +50,20 @@ void CartesianProductExecutor::doCartesianProduct(const DataSet& lds,
   }
 }
 
-BiCartesianProductExecutor::BiCartesianProductExecutor(const PlanNode* node, QueryContext* qctx)
+CrossJoinExecutor::CrossJoinExecutor(const PlanNode* node, QueryContext* qctx)
     : CartesianProductExecutor(node, qctx) {
-  name_ = "BiCartesianProductExecutor";
+  name_ = "CrossJoinExecutor";
 }
 
-folly::Future<Status> BiCartesianProductExecutor::execute() {
+folly::Future<Status> CrossJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  auto* BiCP = asNode<BiCartesianProduct>(node());
-  const auto& lds = ectx_->getResult(BiCP->leftInputVar()).value().getDataSet();
-  const auto& rds = ectx_->getResult(BiCP->rightInputVar()).value().getDataSet();
+  auto* cj = asNode<CrossJoin>(node());
+  const auto& lds = ectx_->getResult(cj->leftInputVar()).value().getDataSet();
+  const auto& rds = ectx_->getResult(cj->rightInputVar()).value().getDataSet();
   DataSet result;
   doCartesianProduct(lds, rds, result);
-  result.colNames = BiCP->colNames();
+  result.colNames = cj->colNames();
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 }  // namespace graph
