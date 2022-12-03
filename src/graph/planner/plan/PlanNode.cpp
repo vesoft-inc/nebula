@@ -354,18 +354,15 @@ void PlanNode::setInputVar(const std::string& varname, size_t idx) {
   }
 }
 
-Status PlanNode::isColumnsIncluded(const std::string& varname) const {
-  auto* refVar = qctx()->symTable()->getVar(varname);
-  // The referenced variable should have all columns used in current node
+bool PlanNode::isColumnsIncludedIn(const PlanNode* other) const {
+  const auto& otherColNames = other->colNames();
   for (auto& colName : colNames()) {
-    auto iter = std::find(refVar->colNames.begin(), refVar->colNames.end(), colName);
-    if (iter == refVar->colNames.end()) {
-      return Status::Error("the column referenced by Argument is not included in variable `%s': %s",
-                           varname.c_str(),
-                           colName.c_str());
+    auto iter = std::find(otherColNames.begin(), otherColNames.end(), colName);
+    if (iter == otherColNames.end()) {
+      return false;
     }
   }
-  return Status::OK();
+  return true;
 }
 
 std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {

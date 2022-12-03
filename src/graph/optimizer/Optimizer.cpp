@@ -126,6 +126,32 @@ void Optimizer::addBodyToGroupNode(OptContext *ctx,
   gnode->addBody(body);
 }
 
+namespace {
+
+bool findArgumentRefPlanNodeInPath(const std::vector<const PlanNode *> &path, PlanNode *argument) {
+  DCHECK_EQ(argument->kind(), PlanNode::Kind::kArgument);
+  for (int i = path.size() - 1; i >= 0; i--) {
+    const auto *pn = path[i];
+    if (pn->isBiInput()) {
+      DCHECK_LT(i, path.size() - 1);
+      const auto *bpn = static_cast<const BinaryInputNode *>(pn);
+      if (bpn->right() == path[i + 1]) {
+        // Argument is in the right side dependency of binary plan node, check the left child
+        // output columns
+        if (argument->isColumnsIncludedIn(bpn->left())) {
+          argument->setInputVar(bpn->left()->outputVar());
+          return true;
+        }
+      } else {
+        // Argument is in the left side dependency of binary plan node, continue to find
+        // next parent plan node
+        DCHECK_EQ(bpn->left(), path[i + 1]);
+      }
+    }
+  }
+  return false;
+}
+
 Status rewriteArgumentInputVarInternal(PlanNode *root,
                                        uint16_t stackDepth,
                                        bool &hasArgument,
@@ -143,34 +169,7 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
     case 0: {
       if (root->kind() == PlanNode::Kind::kArgument) {
         hasArgument = true;
-        for (int i = path.size() - 1; i >= 0; i--) {
-          const auto *pn = path[i];
-          if (pn->isBiInput()) {
-            DCHECK_LT(i, path.size() - 1);
-            const auto *bpn = static_cast<const BinaryInputNode *>(pn);
-            if (bpn->right() == path[i + 1]) {
-              // Argument is in the right side dependency of binary plan node, check the left child
-              // output columns
-              const auto &colNames = bpn->left()->colNames();
-              bool found = true;
-              for (const auto &col : root->colNames()) {
-                if (std::find(colNames.begin(), colNames.end(), col) == colNames.end()) {
-                  found = false;
-                  break;
-                }
-              }
-              if (found) {
-                root->setInputVar(bpn->left()->outputVar());
-                break;
-              }
-            } else {
-              // Argument is in the left side dependency of binary plan node, continue to find
-              // next parent plan node
-              DCHECK_EQ(bpn->left(), path[i + 1]);
-            }
-          }
-        }
-        if (root->inputVar().empty()) {
+        if (!findArgumentRefPlanNodeInPath(path, root) || root->inputVar().empty()) {
           return Status::Error("Could not find the right input variable for argument plan node");
         }
       }
@@ -206,6 +205,8 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
 
   return Status::OK();
 }
+
+}  // namespace
 
 // static
 Status Optimizer::rewriteArgumentInputVar(PlanNode *root) {

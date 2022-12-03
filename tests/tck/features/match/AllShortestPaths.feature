@@ -476,16 +476,64 @@ Feature: allShortestPaths
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-# Scenario: allShortestPaths for argument issue
-# When executing query:
-# """
-# MATCH (a:player), (b:player)
-# MATCH p= allShortestPaths((a:player {name:"Tim Duncan"})-[*..15]-(b:player {age:33}))
-# WITH nodes(p) AS pathNodes
-# UNWIND pathNodes AS node
-# RETURN DISTINCT node
-# """
-# Then the result should be, in any order, with relax comparison:
-# | node                                                                                                        |
-# | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-# | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+  Scenario: allShortestPaths for argument issue
+    When profiling query:
+      """
+      MATCH (a:player{name:'Tim Duncan'}), (b:player{name:'Tony Parker'})
+      WITH a AS b, b AS a
+      MATCH allShortestPaths((a)-[:like*1..3]-(b))
+      RETURN a, b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                                     | b                                          |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info |
+      | 19 | Project            | 18           |               |
+      | 18 | BiInnerJoin        | 10,17        |               |
+      | 10 | Project            | 9            |               |
+      | 9  | BiCartesianProduct | 24,25        |               |
+      | 24 | AppendVertices     | 20           |               |
+      | 20 | IndexScan          | 2            |               |
+      | 2  | Start              |              |               |
+      | 25 | AppendVertices     | 21           |               |
+      | 21 | IndexScan          | 6            |               |
+      | 6  | Start              |              |               |
+      | 17 | Project            | 16           |               |
+      | 16 | ShortestPath       | 15           |               |
+      | 15 | BiCartesianProduct | 12,14        |               |
+      | 12 | Project            | 11           |               |
+      | 11 | Argument           |              |               |
+      | 14 | Project            | 13           |               |
+      | 13 | Argument           |              |               |
+    When profiling query:
+      """
+      MATCH (a:player{name:'Tim Duncan'}), (b:player{name:'Tony Parker'})
+      WITH a AS b, b AS a
+      OPTIONAL MATCH allShortestPaths((a)-[:like*1..3]-(b))
+      RETURN a, b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                                     | b                                          |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info |
+      | 19 | Project            | 18           |               |
+      | 18 | BiLeftJoin         | 10,17        |               |
+      | 10 | Project            | 9            |               |
+      | 9  | BiCartesianProduct | 24,25        |               |
+      | 24 | AppendVertices     | 20           |               |
+      | 20 | IndexScan          | 2            |               |
+      | 2  | Start              |              |               |
+      | 25 | AppendVertices     | 21           |               |
+      | 21 | IndexScan          | 6            |               |
+      | 6  | Start              |              |               |
+      | 17 | Project            | 16           |               |
+      | 16 | ShortestPath       | 15           |               |
+      | 15 | BiCartesianProduct | 12,14        |               |
+      | 12 | Project            | 11           |               |
+      | 11 | Argument           |              |               |
+      | 14 | Project            | 13           |               |
+      | 13 | Argument           |              |               |
