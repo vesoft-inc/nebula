@@ -288,10 +288,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Traverse";
     case Kind::kAppendVertices:
       return "AppendVertices";
-    case Kind::kBiLeftJoin:
-      return "BiLeftJoin";
-    case Kind::kBiInnerJoin:
-      return "BiInnerJoin";
+    case Kind::kHashLeftJoin:
+      return "HashLeftJoin";
+    case Kind::kHashInnerJoin:
+      return "HashInnerJoin";
     case Kind::kBiCartesianProduct:
       return "BiCartesianProduct";
     case Kind::kShortestPath:

@@ -60,9 +60,9 @@ class InnerJoinExecutor : public JoinExecutor {
 
 // No diffrence with inner join in processing data, but the dependencies would be executed in
 // paralell.
-class BiInnerJoinExecutor final : public InnerJoinExecutor {
+class HashInnerJoinExecutor final : public InnerJoinExecutor {
  public:
-  BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);
+  HashInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);
 
   folly::Future<Status> execute() override;
 };

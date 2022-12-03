@@ -253,7 +253,7 @@ Feature: Prune Properties rule
       | id | name           | dependencies | operator info                                                                             |
       | 17 | TopN           | 13           |                                                                                           |
       | 13 | Project        | 12           |                                                                                           |
-      | 12 | BiInnerJoin    | 19, 11       |                                                                                           |
+      | 12 | HashInnerJoin  | 19, 11       |                                                                                           |
       | 19 | Project        | 5            |                                                                                           |
       | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                      |
       | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                |
@@ -354,7 +354,7 @@ Feature: Prune Properties rule
       | id | name           | dependencies | operator info                                                                                                                                                                        |
       | 17 | TopN           | 13           |                                                                                                                                                                                      |
       | 13 | Project        | 12           |                                                                                                                                                                                      |
-      | 12 | BiLeftJoin     | 19, 11       |                                                                                                                                                                                      |
+      | 12 | HashLeftJoin   | 19, 11       |                                                                                                                                                                                      |
       | 19 | Project        | 5            |                                                                                                                                                                                      |
       | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                 |
       | 4  | Traverse       | 2            |                                                                                                                                                                                      |
@@ -379,7 +379,7 @@ Feature: Prune Properties rule
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                                                                 |
       | 12 | Aggregate      | 13           |                                                                                                                               |
-      | 13 | BiInnerJoin    | 15, 11       |                                                                                                                               |
+      | 13 | HashInnerJoin  | 15, 11       |                                                                                                                               |
       | 15 | Project        | 4            |                                                                                                                               |
       | 4  | Traverse       | 3            | { "vertexProps": "" }                                                                                                         |
       | 3  | Traverse       | 14           | {  "vertexProps": "" }                                                                                                        |
@@ -536,7 +536,7 @@ Feature: Prune Properties rule
       | id | name           | dependencies | operator info                                                                                                                                                   |
       | 21 | Aggregate      | 20           |                                                                                                                                                                 |
       | 20 | Aggregate      | 19           |                                                                                                                                                                 |
-      | 19 | BiLeftJoin     | 10, 25       |                                                                                                                                                                 |
+      | 19 | HashLeftJoin   | 10, 25       |                                                                                                                                                                 |
       | 10 | Aggregate      | 23           |                                                                                                                                                                 |
       | 23 | Project        | 22           |                                                                                                                                                                 |
       | 22 | Filter         | 29           |                                                                                                                                                                 |

@@ -17,7 +17,7 @@ Feature: Fix Argument plan node dependency
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 11 | Aggregate      | 10           |               |
-      | 10 | BiInnerJoin    | 8,4          |               |
+      | 10 | HashInnerJoin  | 8,4          |               |
       | 8  | AppendVertices | 7            |               |
       | 7  | Dedup          | 6            |               |
       | 6  | PassThrough    | 5            |               |

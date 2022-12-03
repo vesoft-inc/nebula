@@ -830,18 +830,18 @@ void AppendVertices::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
+std::unique_ptr<PlanNodeDescription> HashJoin::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
   return desc;
 }
 
-void BiJoin::accept(PlanNodeVisitor* visitor) {
+void HashJoin::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-void BiJoin::cloneMembers(const BiJoin& j) {
+void HashJoin::cloneMembers(const HashJoin& j) {
   BinaryInputNode::cloneMembers(j);
 
   std::vector<Expression*> hKeys;
@@ -857,12 +857,12 @@ void BiJoin::cloneMembers(const BiJoin& j) {
   probeKeys_ = std::move(pKeys);
 }
 
-BiJoin::BiJoin(QueryContext* qctx,
-               Kind kind,
-               PlanNode* left,
-               PlanNode* right,
-               std::vector<Expression*> hashKeys,
-               std::vector<Expression*> probeKeys)
+HashJoin::HashJoin(QueryContext* qctx,
+                   Kind kind,
+                   PlanNode* left,
+                   PlanNode* right,
+                   std::vector<Expression*> hashKeys,
+                   std::vector<Expression*> probeKeys)
     : BinaryInputNode(qctx, kind, left, right),
       hashKeys_(std::move(hashKeys)),
       probeKeys_(std::move(probeKeys)) {
@@ -876,40 +876,40 @@ BiJoin::BiJoin(QueryContext* qctx,
   setColNames(lColNames);
 }
 
-std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
-  auto desc = BiJoin::explain();
+std::unique_ptr<PlanNodeDescription> HashLeftJoin::explain() const {
+  auto desc = HashJoin::explain();
   addDescription("kind", "LeftJoin", desc.get());
   return desc;
 }
 
-PlanNode* BiLeftJoin::clone() const {
+PlanNode* HashLeftJoin::clone() const {
   auto* lnode = left() ? left()->clone() : nullptr;
   auto* rnode = right() ? right()->clone() : nullptr;
-  auto* newLeftJoin = BiLeftJoin::make(qctx_, lnode, rnode);
+  auto* newLeftJoin = HashLeftJoin::make(qctx_, lnode, rnode);
   newLeftJoin->cloneMembers(*this);
   return newLeftJoin;
 }
 
-void BiLeftJoin::cloneMembers(const BiLeftJoin& l) {
-  BiJoin::cloneMembers(l);
+void HashLeftJoin::cloneMembers(const HashLeftJoin& l) {
+  HashJoin::cloneMembers(l);
 }
 
-std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
-  auto desc = BiJoin::explain();
+std::unique_ptr<PlanNodeDescription> HashInnerJoin::explain() const {
+  auto desc = HashJoin::explain();
   addDescription("kind", "InnerJoin", desc.get());
   return desc;
 }
 
-PlanNode* BiInnerJoin::clone() const {
+PlanNode* HashInnerJoin::clone() const {
   auto* lnode = left() ? left()->clone() : nullptr;
   auto* rnode = right() ? right()->clone() : nullptr;
-  auto* newInnerJoin = BiInnerJoin::make(qctx_, lnode, rnode);
+  auto* newInnerJoin = HashInnerJoin::make(qctx_, lnode, rnode);
   newInnerJoin->cloneMembers(*this);
   return newInnerJoin;
 }
 
-void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
-  BiJoin::cloneMembers(l);
+void HashInnerJoin::cloneMembers(const HashInnerJoin& l) {
+  HashJoin::cloneMembers(l);
 }
 
 std::unique_ptr<PlanNodeDescription> RollUpApply::explain() const {
