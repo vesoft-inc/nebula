@@ -209,7 +209,7 @@ TEST_F(JoinTest, InnerJoin) {
   testInnerJoin("var2", "var1", expected, __LINE__);
 }
 
-TEST_F(JoinTest, BiInnerJoin) {
+TEST_F(JoinTest, HashInnerJoin) {
   DataSet expected;
   expected.colNames = {"v1", "e1", "v2", "v3", "e2"};
   Row row1;
@@ -243,9 +243,10 @@ TEST_F(JoinTest, BiInnerJoin) {
   rhs->setOutputVar("var5");
   rhs->setColNames({"v2", "e2", "v3"});
 
-  auto* join = BiInnerJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
+  auto* join =
+      HashInnerJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
 
-  auto joinExe = std::make_unique<BiInnerJoinExecutor>(join, qctx_.get());
+  auto joinExe = std::make_unique<HashInnerJoinExecutor>(join, qctx_.get());
   auto future = joinExe->execute();
   auto status = std::move(future).get();
   EXPECT_TRUE(status.ok());
@@ -380,7 +381,7 @@ TEST_F(JoinTest, LeftJoin) {
   testLeftJoin("var1", "var2", expected, __LINE__);
 }
 
-TEST_F(JoinTest, BiLeftJoin) {
+TEST_F(JoinTest, HashLeftJoin) {
   DataSet expected;
   expected.colNames = {"v2", "e2", "v3", "v1", "e1"};
   Row row1;
@@ -422,9 +423,9 @@ TEST_F(JoinTest, BiLeftJoin) {
   rhs->setOutputVar("var4");
   rhs->setColNames({"v1", "e1", "v2", "v3"});
 
-  auto* join = BiLeftJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
+  auto* join = HashLeftJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
 
-  auto joinExe = std::make_unique<BiLeftJoinExecutor>(join, qctx_.get());
+  auto joinExe = std::make_unique<HashLeftJoinExecutor>(join, qctx_.get());
   auto future = joinExe->execute();
   auto status = std::move(future).get();
   EXPECT_TRUE(status.ok());

@@ -530,14 +530,14 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kAppendVertices: {
       return pool->makeAndAdd<AppendVerticesExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiLeftJoin: {
-      return pool->makeAndAdd<BiLeftJoinExecutor>(node, qctx);
+    case PlanNode::Kind::kHashLeftJoin: {
+      return pool->makeAndAdd<HashLeftJoinExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiInnerJoin: {
-      return pool->makeAndAdd<BiInnerJoinExecutor>(node, qctx);
+    case PlanNode::Kind::kHashInnerJoin: {
+      return pool->makeAndAdd<HashInnerJoinExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiCartesianProduct: {
-      return pool->makeAndAdd<BiCartesianProductExecutor>(node, qctx);
+    case PlanNode::Kind::kCrossJoin: {
+      return pool->makeAndAdd<CrossJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRollUpApply: {
       return pool->makeAndAdd<RollUpApplyExecutor>(node, qctx);

@@ -155,10 +155,10 @@ Feature: Multi Query Parts
       | ("Tony Parker") | ("Tim Duncan" )   | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 {}] |
       | ("Tony Parker") | ("Tim Duncan" )   | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 {}] |
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] | ("LaMarcus Aldridge") | ("Tim Duncan") | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {}] |
-    # The redudant Project after BiInnerJoin is removed now
+    # The redudant Project after HashInnerJoin is removed now
     And the execution plan should be:
       | id | name           | dependencies | profiling data | operator info |
-      | 19 | BiInnerJoin    | 7,14         |                |               |
+      | 19 | HashInnerJoin  | 7,14         |                |               |
       | 7  | Project        | 6            |                |               |
       | 6  | AppendVertices | 5            |                |               |
       | 5  | Traverse       | 20           |                |               |
@@ -191,10 +191,10 @@ Feature: Multi Query Parts
       | ("Tony Parker") | ("Tony Parker")                                           | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 {}] |
       | ("Tony Parker") | ("Tim Duncan")                                            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 {}] |
       | ("Tony Parker") | ("Tim Duncan")                                            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 {}] |
-    # The redudant Project after BiLeftJoin is removed now
+    # The redudant Project after HashLeftJoin is removed now
     And the execution plan should be:
       | id | name           | dependencies | profiling data | operator info |
-      | 19 | BiLeftJoin     | 7,14         |                |               |
+      | 19 | HashLeftJoin   | 7,14         |                |               |
       | 7  | Project        | 6            |                |               |
       | 6  | AppendVertices | 5            |                |               |
       | 5  | Traverse       | 20           |                |               |
