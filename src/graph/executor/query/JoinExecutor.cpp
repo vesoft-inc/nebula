@@ -33,7 +33,7 @@ Status JoinExecutor::checkInputDataSets() {
 }
 
 Status JoinExecutor::checkBiInputDataSets() {
-  auto* join = asNode<BiJoin>(node());
+  auto* join = asNode<HashJoin>(node());
   lhsIter_ = ectx_->getResult(join->leftInputVar()).iter();
   DCHECK(!!lhsIter_);
   if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {

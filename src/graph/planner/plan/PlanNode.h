@@ -65,9 +65,9 @@ class PlanNode {
     kDataCollect,
     kLeftJoin,
     kInnerJoin,
-    kBiLeftJoin,
-    kBiInnerJoin,
-    kBiCartesianProduct,
+    kHashLeftJoin,
+    kHashInnerJoin,
+    kCrossJoin,
     kRollUpApply,
     kArgument,
 

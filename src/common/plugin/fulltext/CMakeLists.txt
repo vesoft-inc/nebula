@@ -12,4 +12,10 @@ nebula_add_library(
     elasticsearch/ESStorageAdapter.cpp
 )
 
+nebula_add_library(
+    es_adapter_obj OBJECT
+    elasticsearch/ESAdapter.cpp
+    elasticsearch/ESClient.cpp
+)
+
 nebula_add_subdirectory(test)
