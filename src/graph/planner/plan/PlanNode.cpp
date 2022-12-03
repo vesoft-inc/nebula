@@ -477,7 +477,6 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
 }
 
 void PlanNode::setColNames(std::vector<std::string> cols) {
-  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr()->name);
   outputVarPtr()->colNames = std::move(cols);
 }
 }  // namespace graph
