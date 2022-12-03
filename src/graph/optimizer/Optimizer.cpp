@@ -138,12 +138,12 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
 
   if (!root) return Status::OK();
 
+  path.push_back(root);
   switch (root->numDeps()) {
     case 0: {
       if (root->kind() == PlanNode::Kind::kArgument) {
         hasArgument = true;
-        path.push_back(root);
-        for (size_t i = path.size() - 1; i >= 0; i--) {
+        for (int i = path.size() - 1; i >= 0; i--) {
           const auto *pn = path[i];
           if (pn->isBiInput()) {
             DCHECK_LT(i, path.size() - 1);
@@ -173,28 +173,20 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
         if (root->inputVar().empty()) {
           return Status::Error("Could not find the right input variable for argument plan node");
         }
-        path.pop_back();
       }
       break;
     }
     case 1: {
-      path.push_back(root);
       auto *dep = const_cast<PlanNode *>(root->dep());
       NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, stackDepth, hasArgument, path));
-      path.pop_back();
       break;
     }
     case 2: {
       auto *bpn = static_cast<BinaryInputNode *>(root);
       auto *left = const_cast<PlanNode *>(bpn->left());
-      path.push_back(left);
       NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, stackDepth, hasArgument, path));
-      path.pop_back();
-
       auto *right = const_cast<PlanNode *>(bpn->right());
-      path.push_back(right);
       NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, stackDepth, hasArgument, path));
-      path.pop_back();
       break;
     }
     default: {
@@ -202,6 +194,7 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
           "Invalid dependencies of plan node `%s': %lu", root->toString().c_str(), root->numDeps());
     }
   }
+  path.pop_back();
 
   // Ensure that there's no argument plan node if loop/select plan nodes exist in execution plan
   if (root->kind() == PlanNode::Kind::kLoop || root->kind() == PlanNode::Kind::kSelect) {

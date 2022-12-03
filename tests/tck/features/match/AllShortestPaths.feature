@@ -476,16 +476,16 @@ Feature: allShortestPaths
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  # Scenario: allShortestPaths for argument issue
-  #   When executing query:
-  #     """
-  #     MATCH (a:player), (b:player)
-  #     MATCH p= allShortestPaths((a:player {name:"Tim Duncan"})-[*..15]-(b:player {age:33}))
-  #       WITH nodes(p) AS pathNodes
-  #       UNWIND pathNodes AS node
-  #       RETURN DISTINCT node
-  #     """
-  #   Then the result should be, in any order, with relax comparison:
-  #     | node                                                                                                        |
-  #     | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-  #     | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+# Scenario: allShortestPaths for argument issue
+# When executing query:
+# """
+# MATCH (a:player), (b:player)
+# MATCH p= allShortestPaths((a:player {name:"Tim Duncan"})-[*..15]-(b:player {age:33}))
+# WITH nodes(p) AS pathNodes
+# UNWIND pathNodes AS node
+# RETURN DISTINCT node
+# """
+# Then the result should be, in any order, with relax comparison:
+# | node                                                                                                        |
+# | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+# | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
