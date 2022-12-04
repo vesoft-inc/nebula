@@ -172,6 +172,9 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
     case 0: {
       if (root->kind() == PlanNode::Kind::kArgument) {
         hasArgument = true;
+        DCHECK(root->inputVar().empty())
+            << "Should keep the input empty for argument when plan generation";
+
         if (!findArgumentRefPlanNodeInPath(path, root) || root->inputVar().empty()) {
           return Status::Error("Could not find the right input variable for argument plan node");
         }

@@ -42,8 +42,7 @@ OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
 }
 
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
-  DCHECK(groupNode != nullptr);
-  DCHECK(groupNode->group() == this);
+  DCHECK_EQ(this, DCHECK_NOTNULL(groupNode)->group());
   if (outputVar_.empty()) {
     outputVar_ = groupNode->node()->outputVar();
   } else {
@@ -68,6 +67,9 @@ Status OptGroup::explore(const OptRule *rule) {
     return Status::OK();
   }
   setExplored(rule);
+
+  DCHECK(!groupNodesReferenced_.empty())
+      << "Current group should be referenced by other group nodes before optimization";
 
   for (auto iter = groupNodes_.begin(); iter != groupNodes_.end();) {
     auto groupNode = *iter;
@@ -121,6 +123,9 @@ Status OptGroup::explore(const OptRule *rule) {
     }
   }
 
+  DCHECK(!groupNodes_.empty())
+      << "Should have at least one group node after optimizing the current group";
+
   return Status::OK();
 }
 
@@ -137,6 +142,7 @@ Status OptGroup::exploreUntilMaxRound(const OptRule *rule) {
 }
 
 std::pair<double, const OptGroupNode *> OptGroup::findMinCostGroupNode() const {
+  DCHECK(!groupNodes_.empty()) << "There is no any group nodes in opt group";
   double minCost = std::numeric_limits<double>::max();
   const OptGroupNode *minGroupNode = nullptr;
   for (auto &groupNode : groupNodes_) {
@@ -155,22 +161,19 @@ double OptGroup::getCost() const {
 
 const PlanNode *OptGroup::getPlan() const {
   const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
-  DCHECK(minGroupNode != nullptr);
-  return minGroupNode->getPlan();
+  return DCHECK_NOTNULL(minGroupNode)->getPlan();
 }
 
 void OptGroup::deleteRefGroupNode(const OptGroupNode *node) {
   groupNodesReferenced_.erase(node);
-#if 0
-  // FIXME(yee): This cleanup will crash the optimizer for LDBC queries, try to fix it next PR
   if (groupNodesReferenced_.empty()) {
     // Cleanup all opt group nodes in current opt group if it's NOT referenced by any other opt
     // group nodes
     for (auto *n : groupNodes_) {
       n->release();
     }
+    groupNodes_.clear();
   }
-#endif
 }
 
 OptGroupNode *OptGroupNode::create(OptContext *ctx, PlanNode *node, const OptGroup *group) {

@@ -162,7 +162,9 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
 
   // TBD: need generate var for all queryPlan.tail?
   if (queryPlan.tail->isSingleInput()) {
-    queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    if (queryPlan.tail->kind() != PlanNode::Kind::kArgument) {
+      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    }
     if (!tailConnected_) {
       tailConnected_ = true;
       queryPlan.appendStartNode(qctx);
