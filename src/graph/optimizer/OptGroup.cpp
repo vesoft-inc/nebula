@@ -48,25 +48,22 @@ Status OptGroup::validateSubPlan(const OptGroupNode *gn,
 
   auto checkDepGroup = [this, gn, rule, &patternLeaves](const OptGroup *depGroup) -> Status {
     auto iter = std::find(patternLeaves.begin(), patternLeaves.end(), depGroup);
-    if (iter == patternLeaves.end()) {
-      if (!depGroup) {
-        return Status::Error("Could not find the dependent group in pattern leaves");
-      } else {
-        if (depGroup->groupNodes_.size() != 1U || depGroup->groupNodesReferenced_.size() != 1U) {
-          return Status::Error(
-              "Invalid sub-plan generated when applying the rule: %s, "
-              "planNode: %s, numGroupNodes: %lu, numGroupNodesRef: %lu",
-              rule->toString().c_str(),
-              PlanNode::toString(gn->node()->kind()),
-              depGroup->groupNodes_.size(),
-              depGroup->groupNodesReferenced_.size());
-        } else {
-          return validateSubPlan(depGroup->groupNodes_.front(), rule, patternLeaves);
-        }
-      }
-    } else {
+    if (iter != patternLeaves.end()) {
       return Status::OK();
     }
+    if (!depGroup) {
+      return Status::Error("Could not find the dependent group in pattern leaves");
+    }
+    if (depGroup->groupNodes_.size() != 1U || depGroup->groupNodesReferenced_.size() != 1U) {
+      return Status::Error(
+          "Invalid sub-plan generated when applying the rule: %s, "
+          "planNode: %s, numGroupNodes: %lu, numGroupNodesRef: %lu",
+          rule->toString().c_str(),
+          PlanNode::toString(gn->node()->kind()),
+          depGroup->groupNodes_.size(),
+          depGroup->groupNodesReferenced_.size());
+    }
+    return validateSubPlan(depGroup->groupNodes_.front(), rule, patternLeaves);
   };
 
   switch (deps.size()) {
