@@ -42,7 +42,7 @@ struct MatchedResult {
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
   const MatchedResult &result(const std::vector<int32_t> &pos = {}) const;
 
-  void collectLeaves(std::vector<OptGroup *> &leaves) const;
+  void collectPatternLeaves(std::vector<OptGroup *> &leaves) const;
 };
 
 // Match plan node by trait or kind of plan node.

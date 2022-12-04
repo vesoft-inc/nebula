@@ -34,7 +34,7 @@ class OptGroup final {
 
   void setUnexplored(const OptRule *rule);
 
-  Status addGroupNode(OptGroupNode *groupNode, const std::vector<OptGroup *> &patternLeaves);
+  void addGroupNode(OptGroupNode *groupNode);
   OptGroupNode *makeGroupNode(graph::PlanNode *node);
   const std::list<OptGroupNode *> &groupNodes() const {
     return groupNodes_;
@@ -66,6 +66,7 @@ class OptGroup final {
 
   std::pair<double, const OptGroupNode *> findMinCostGroupNode() const;
   Status validateSubPlan(const OptGroupNode *gn,
+                         const OptRule *rule,
                          const std::vector<OptGroup *> &patternLeaves) const;
 
   OptContext *ctx_{nullptr};

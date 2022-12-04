@@ -36,12 +36,17 @@ const MatchedResult &MatchedResult::result(const std::vector<int32_t> &pos) cons
   return *DCHECK_NOTNULL(result);
 }
 
-void MatchedResult::collectLeaves(std::vector<OptGroup *> &leaves) const {
+void MatchedResult::collectPatternLeaves(std::vector<OptGroup *> &leaves) const {
   if (dependencies.empty()) {
-    leaves.insert(leaves.end(), node->dependencies().begin(), node->dependencies().end());
+    if (node->dependencies().empty()) {
+      // nullptr means this node in matched pattern is a leaf node
+      leaves.push_back(nullptr);
+    } else {
+      leaves.insert(leaves.end(), node->dependencies().begin(), node->dependencies().end());
+    }
   } else {
     for (const auto &dep : dependencies) {
-      dep.collectLeaves(leaves);
+      dep.collectPatternLeaves(leaves);
     }
   }
 }
