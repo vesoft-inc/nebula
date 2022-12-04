@@ -28,7 +28,7 @@ const Pattern& PushFilterDownHashInnerJoinRule::pattern() const {
   static Pattern pattern = Pattern::create(
       PlanNode::Kind::kFilter,
       {Pattern::create(
-          PlanNode::Kind::kBiInnerJoin,
+          PlanNode::Kind::kHashInnerJoin,
           {Pattern::create(PlanNode::Kind::kUnknown), Pattern::create(PlanNode::Kind::kUnknown)})});
   return pattern;
 }
@@ -40,8 +40,8 @@ StatusOr<OptRule::TransformResult> PushFilterDownHashInnerJoinRule::transform(
   DCHECK_EQ(oldFilterNode->kind(), PlanNode::Kind::kFilter);
 
   auto* innerJoinNode = matched.planNode({0, 0});
-  DCHECK_EQ(innerJoinNode->kind(), PlanNode::Kind::kBiInnerJoin);
-  auto* oldInnerJoinNode = static_cast<const graph::BiInnerJoin*>(innerJoinNode);
+  DCHECK_EQ(innerJoinNode->kind(), PlanNode::Kind::kHashInnerJoin);
+  auto* oldInnerJoinNode = static_cast<const graph::HashInnerJoin*>(innerJoinNode);
 
   const auto* condition = static_cast<graph::Filter*>(oldFilterNode)->condition();
   DCHECK(condition);
@@ -62,7 +62,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownHashInnerJoinRule::transform(
   rightGroup = rightGroup ? rightGroup : const_cast<OptGroup*>(rightResult.node->group());
 
   // produce new InnerJoin node
-  auto* newInnerJoinNode = static_cast<graph::BiInnerJoin*>(oldInnerJoinNode->clone());
+  auto* newInnerJoinNode = static_cast<graph::HashInnerJoin*>(oldInnerJoinNode->clone());
   auto newJoinGroup = rightFilterUnpicked ? OptGroup::create(octx) : filterGroupNode->group();
   auto newGroupNode = OptGroupNode::create(octx, newInnerJoinNode, newJoinGroup);
   newGroupNode->dependsOn(leftGroup);

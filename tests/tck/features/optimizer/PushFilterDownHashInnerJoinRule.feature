@@ -6,7 +6,7 @@ Feature: Push Filter down HashInnerJoin rule
   Background:
     Given a graph with space named "nba"
 
-  Scenario: push filter down BiInnerJoin
+  Scenario: push filter down HashInnerJoin
     When profiling query:
       """
       MATCH (v:player)
@@ -35,7 +35,7 @@ Feature: Push Filter down HashInnerJoin rule
       | id | name           | dependencies | operator info                           |
       | 30 | Sort           | 14           |                                         |
       | 14 | Project        | 19           |                                         |
-      | 19 | BiInnerJoin    | 6,22         |                                         |
+      | 19 | HashInnerJoin  | 6,22         |                                         |
       | 6  | Project        | 20           |                                         |
       | 20 | AppendVertices | 2            |                                         |
       | 2  | Dedup          | 1            |                                         |
@@ -75,7 +75,7 @@ Feature: Push Filter down HashInnerJoin rule
       | id | name           | dependencies | operator info                       |
       | 30 | Sort           | 14           |                                     |
       | 14 | Project        | 19           |                                     |
-      | 19 | BiInnerJoin    | 6,11         |                                     |
+      | 19 | HashInnerJoin  | 6,11         |                                     |
       | 6  | Project        | 16           |                                     |
       | 16 | Filter         | 20           | { "condition": "(v.player.age>0)" } |
       | 20 | AppendVertices | 2            |                                     |
@@ -115,7 +115,7 @@ Feature: Push Filter down HashInnerJoin rule
       | id | name           | dependencies | operator info                         |
       | 30 | Sort           | 14           |                                       |
       | 14 | Project        | 20           |                                       |
-      | 20 | BiInnerJoin    | 23,25        |                                       |
+      | 20 | HashInnerJoin  | 23,25        |                                       |
       | 23 | Project        | 22           |                                       |
       | 22 | Filter         | 21           | {"condition": "(v.player.age>0)"}     |
       | 21 | AppendVertices | 2            |                                       |
@@ -156,7 +156,7 @@ Feature: Push Filter down HashInnerJoin rule
       | id | name           | dependencies | operator info                                                    |
       | 30 | Sort           | 14           |                                                                  |
       | 14 | Project        | 19           |                                                                  |
-      | 19 | BiInnerJoin    | 6,22         |                                                                  |
+      | 19 | HashInnerJoin  | 6,22         |                                                                  |
       | 6  | Project        | 20           |                                                                  |
       | 20 | AppendVertices | 2            |                                                                  |
       | 2  | Dedup          | 1            |                                                                  |
@@ -169,7 +169,7 @@ Feature: Push Filter down HashInnerJoin rule
       | 7  | Argument       | 8            |                                                                  |
       | 8  | Start          |              |                                                                  |
 
-  Scenario: NOT push filter down BiInnerJoin
+  Scenario: NOT push filter down HashInnerJoin
     When profiling query:
       """
       MATCH (v:player)-[]-(vv)
@@ -191,7 +191,7 @@ Feature: Push Filter down HashInnerJoin rule
       | 20 | TopN           | 15           |                                                                    |
       | 15 | Project        | 14           |                                                                    |
       | 14 | Filter         | 13           | { "condition": "(($e.likeness>90) OR (vv.team.start_year>2000))" } |
-      | 13 | BiInnerJoin    | 16,12        |                                                                    |
+      | 13 | HashInnerJoin  | 16,12        |                                                                    |
       | 16 | Project        | 5            |                                                                    |
       | 5  | AppendVertices | 17           |                                                                    |
       | 17 | Traverse       | 2            |                                                                    |

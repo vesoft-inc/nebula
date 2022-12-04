@@ -11,7 +11,7 @@
 namespace nebula {
 namespace opt {
 
-//  Push down the filter items from the left subplan of [[BiInnerJoin]]
+//  Push down the filter items from the left subplan of [[HashInnerJoin]]
 class PushFilterDownHashInnerJoinRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

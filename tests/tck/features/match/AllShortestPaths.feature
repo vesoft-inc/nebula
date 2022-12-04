@@ -491,7 +491,7 @@ Feature: allShortestPaths
     And the execution plan should be:
       | id | name               | dependencies | operator info |
       | 19 | Project            | 18           |               |
-      | 18 | BiInnerJoin        | 10,17        |               |
+      | 18 | HashInnerJoin      | 10,17        |               |
       | 10 | Project            | 9            |               |
       | 9  | BiCartesianProduct | 24,25        |               |
       | 24 | AppendVertices     | 20           |               |
