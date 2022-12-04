@@ -36,12 +36,12 @@ const MatchedResult &MatchedResult::result(const std::vector<int32_t> &pos) cons
   return *DCHECK_NOTNULL(result);
 }
 
-void MatchedResult::collectBoundary(std::vector<OptGroup *> &boundary) const {
+void MatchedResult::collectLeaves(std::vector<OptGroup *> &leaves) const {
   if (dependencies.empty()) {
-    boundary.insert(boundary.end(), node->dependencies().begin(), node->dependencies().end());
+    leaves.insert(leaves.end(), node->dependencies().begin(), node->dependencies().end());
   } else {
     for (const auto &dep : dependencies) {
-      dep.collectBoundary(boundary);
+      dep.collectLeaves(leaves);
     }
   }
 }

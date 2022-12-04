@@ -39,6 +39,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
   auto rootGroup = std::move(ret).value();
+  rootGroup->setRootGroup();
 
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
   auto *newRoot = rootGroup->getPlan();

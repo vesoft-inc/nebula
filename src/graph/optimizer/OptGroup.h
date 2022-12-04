@@ -34,7 +34,7 @@ class OptGroup final {
 
   void setUnexplored(const OptRule *rule);
 
-  void addGroupNode(OptGroupNode *groupNode);
+  Status addGroupNode(OptGroupNode *groupNode, const std::vector<OptGroup *> &patternLeaves);
   OptGroupNode *makeGroupNode(graph::PlanNode *node);
   const std::list<OptGroupNode *> &groupNodes() const {
     return groupNodes_;
@@ -54,6 +54,10 @@ class OptGroup final {
 
   void deleteRefGroupNode(const OptGroupNode *node);
 
+  void setRootGroup() {
+    isRootGroup_ = true;
+  }
+
  private:
   friend ObjectPool;
   explicit OptGroup(OptContext *ctx) noexcept;
@@ -61,6 +65,8 @@ class OptGroup final {
   static constexpr int16_t kMaxExplorationRound = 128;
 
   std::pair<double, const OptGroupNode *> findMinCostGroupNode() const;
+  Status validateSubPlan(const OptGroupNode *gn,
+                         const std::vector<OptGroup *> &patternLeaves) const;
 
   OptContext *ctx_{nullptr};
   std::list<OptGroupNode *> groupNodes_;
@@ -68,6 +74,7 @@ class OptGroup final {
   // The output variable should be same across the whole group.
   std::string outputVar_;
 
+  bool isRootGroup_{false};
   // Save the OptGroupNode which references this OptGroup
   std::unordered_set<const OptGroupNode *> groupNodesReferenced_;
 };

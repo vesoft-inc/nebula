@@ -41,15 +41,59 @@ OptGroup::OptGroup(OptContext *ctx) noexcept : ctx_(ctx) {
   DCHECK(ctx != nullptr);
 }
 
-void OptGroup::addGroupNode(OptGroupNode *groupNode) {
+Status OptGroup::validateSubPlan(const OptGroupNode *gn,
+                                 const std::vector<OptGroup *> &patternLeaves) const {
+  auto &deps = DCHECK_NOTNULL(gn)->dependencies();
+
+  auto checkDepGroup = [this, gn, &patternLeaves](const OptGroup *depGroup) -> Status {
+    auto iter = std::find(patternLeaves.begin(), patternLeaves.end(), depGroup);
+    if (iter == patternLeaves.end()) {
+      if (depGroup->groupNodes_.size() != 1U || depGroup->groupNodesReferenced_.size() != 1U) {
+        return Status::Error(
+            "Invalid sub-plan generated for plan node: %s, "
+            "numGroupNodes: %lu, numGroupNodesRef: %lu",
+            PlanNode::toString(gn->node()->kind()),
+            depGroup->groupNodes_.size(),
+            depGroup->groupNodesReferenced_.size());
+      }
+      return validateSubPlan(depGroup->groupNodes_.front(), patternLeaves);
+    }
+    return Status::OK();
+  };
+
+  switch (deps.size()) {
+    case 0: {
+      DLOG(INFO) << "there is no any dependencies for new generated group node";
+      break;
+    }
+    case 1: {
+      NG_RETURN_IF_ERROR(checkDepGroup(deps[0]));
+      break;
+    }
+    case 2: {
+      NG_RETURN_IF_ERROR(checkDepGroup(deps[0]));
+      NG_RETURN_IF_ERROR(checkDepGroup(deps[1]));
+      break;
+    }
+    default: {
+      return Status::Error("Invalid dependencies of opt group node: %lu", deps.size());
+    }
+  }
+  return Status::OK();
+}
+
+Status OptGroup::addGroupNode(OptGroupNode *groupNode,
+                              const std::vector<OptGroup *> &patternLeaves) {
   DCHECK_EQ(this, DCHECK_NOTNULL(groupNode)->group());
   if (outputVar_.empty()) {
     outputVar_ = groupNode->node()->outputVar();
   } else {
     DCHECK_EQ(outputVar_, groupNode->node()->outputVar());
   }
+  NG_RETURN_IF_ERROR(validateSubPlan(groupNode, patternLeaves));
   groupNodes_.emplace_back(groupNode);
   groupNode->node()->updateSymbols();
+  return Status::OK();
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
@@ -68,12 +112,11 @@ Status OptGroup::explore(const OptRule *rule) {
   }
   setExplored(rule);
 
-  DCHECK(!groupNodesReferenced_.empty())
+  DCHECK(isRootGroup_ || !groupNodesReferenced_.empty())
       << "Current group should be referenced by other group nodes before optimization";
 
   for (auto iter = groupNodes_.begin(); iter != groupNodes_.end();) {
-    auto groupNode = *iter;
-    DCHECK(groupNode != nullptr);
+    auto *groupNode = DCHECK_NOTNULL(*iter);
     if (groupNode->isExplored(rule)) {
       ++iter;
       continue;
@@ -82,7 +125,7 @@ Status OptGroup::explore(const OptRule *rule) {
     NG_RETURN_IF_ERROR(groupNode->explore(rule));
 
     // Find more equivalents
-    std::vector<OptGroup *> boundary;
+    std::vector<OptGroup *> leaves;
     auto status = rule->match(ctx_, groupNode);
     if (!status.ok()) {
       ++iter;
@@ -90,7 +133,7 @@ Status OptGroup::explore(const OptRule *rule) {
     }
     ctx_->setChanged(true);
     auto matched = std::move(status).value();
-    matched.collectBoundary(boundary);
+    matched.collectLeaves(leaves);
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
@@ -102,14 +145,14 @@ Status OptGroup::explore(const OptRule *rule) {
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
-        addGroupNode(ngn);
+        NG_RETURN_IF_ERROR(addGroupNode(ngn, leaves));
       }
       break;
     }
 
     if (!result.newGroupNodes.empty()) {
       for (auto ngn : result.newGroupNodes) {
-        addGroupNode(ngn);
+        NG_RETURN_IF_ERROR(addGroupNode(ngn, leaves));
       }
 
       setUnexplored(rule);
