@@ -15,21 +15,21 @@ class DeduceAliasTypeVisitorTest : public VisitorTestBase {};
 TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
   {
     auto* expr = VertexExpression::make(pool);
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNode);
   }
   {
     auto* expr = EdgeExpression::make(pool);
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdge);
   }
   {
     auto* expr = PathBuildExpression::make(pool);
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kPath);
@@ -37,35 +37,35 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
   // FunctionCallExpression
   {
     auto* expr = FunctionCallExpression::make(pool, "nodes");
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNodeList);
   }
   {
     auto* expr = FunctionCallExpression::make(pool, "relationships");
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdgeList);
   }
   {
     auto* expr = FunctionCallExpression::make(pool, "reversepath");
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kPath);
   }
   {
     auto* expr = FunctionCallExpression::make(pool, "startnode");
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNode);
   }
   {
     auto* expr = FunctionCallExpression::make(pool, "endnode");
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNode);
@@ -76,7 +76,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kRuntime);
@@ -85,7 +85,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kEdgeList);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kEdgeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdge);
@@ -94,7 +94,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kNodeList);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kNodeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNode);
@@ -105,7 +105,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptRangeExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kRuntime);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kRuntime);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kRuntime);
@@ -114,7 +114,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptRangeExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kEdgeList);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kEdgeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdgeList);
@@ -123,7 +123,7 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     auto* items = ExpressionList::make(pool);
     auto expr = SubscriptRangeExpression::make(
         pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
-    DeduceAliasTypeVisitor visitor(AliasType::kNodeList);
+    DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kNodeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kNodeList);

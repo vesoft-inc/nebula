@@ -20,7 +20,10 @@ class QueryContext;
 // An expression visitor enable deducing AliasType when possible.
 class DeduceAliasTypeVisitor final : public ExprVisitor {
  public:
-  explicit DeduceAliasTypeVisitor(AliasType inputType);
+  DeduceAliasTypeVisitor(QueryContext *qctx,
+                         ValidateContext *vctx,
+                         GraphSpaceID space,
+                         AliasType inputType);
 
   ~DeduceAliasTypeVisitor() = default;
 

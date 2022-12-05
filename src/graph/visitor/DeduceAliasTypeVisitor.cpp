@@ -23,7 +23,15 @@
 namespace nebula {
 namespace graph {
 
-DeduceAliasTypeVisitor::DeduceAliasTypeVisitor(AliasType inputType) : inputType_(inputType) {}
+DeduceAliasTypeVisitor::DeduceAliasTypeVisitor(QueryContext *qctx,
+                                               ValidateContext *vctx,
+                                               GraphSpaceID space,
+                                               AliasType inputType)
+    : qctx_(qctx), vctx_(vctx), space_(space), inputType_(inputType) {
+  UNUSED(qctx_);
+  UNUSED(vctx_);
+  UNUSED(space_);
+}
 
 void DeduceAliasTypeVisitor::visit(VertexExpression *expr) {
   UNUSED(expr);
