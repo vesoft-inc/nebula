@@ -1514,6 +1514,11 @@ TEST_F(ParserTest, AdminOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "SHOW HOSTS storage listener";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "SHOW SPACES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
