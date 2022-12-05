@@ -164,7 +164,7 @@ bool StorageServer::start() {
   options.role_ = nebula::meta::cpp2::HostRole::STORAGE;
   // If listener path is specified, it will start as a listener
   if (!listenerPath_.empty()) {
-    options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
+    options.role_ = nebula::meta::cpp2::HostRole::STORAGE_LISTENER;
   }
   options.gitInfoSHA_ = gitInfoSha();
   options.rootPath_ = boost::filesystem::current_path().string();
