@@ -100,7 +100,7 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 [NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/card-mode?category=database&grouping=category).
 </p>
 
-## Licensing
+## License
 
 **NebulaGraph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs.  <br/>
 You can also freely deploy **NebulaGraph** as a back-end service to support your SaaS deployment.
