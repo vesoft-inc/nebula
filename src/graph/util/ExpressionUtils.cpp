@@ -1431,5 +1431,63 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   return true;
 }
 
+// Transform expression `$-.e[0].likeness` to EdgePropertyExpression `like.likeness`
+// for more friendly to push down
+// \param pool object pool to hold ownership of objects alloacted
+// \param edgeAlias the name of edge. e.g. e in pattern -[e]->
+// \param expr the filter expression
+/*static*/ Expression *ExpressionUtils::rewriteEdgePropertyFilter(ObjectPool *pool,
+                                                                  const std::string &edgeAlias,
+                                                                  Expression *expr) {
+  graph::RewriteVisitor::Matcher matcher = [&edgeAlias](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kAttribute) {
+      return false;
+    }
+    auto attributeExpr = static_cast<const AttributeExpression *>(e);
+    auto *left = attributeExpr->left();
+    auto *right = attributeExpr->right();
+
+    if (left->kind() != Expression::Kind::kSubscript) return false;
+    if (right->kind() != Expression::Kind::kConstant ||
+        !static_cast<const ConstantExpression *>(right)->value().isStr())
+      return false;
+
+    auto subscriptExpr = static_cast<const SubscriptExpression *>(left);
+    auto *listExpr = subscriptExpr->left();
+    auto *idxExpr = subscriptExpr->right();
+    if (listExpr->kind() != Expression::Kind::kInputProperty &&
+        listExpr->kind() != Expression::Kind::kVarProperty) {
+      return false;
+    }
+    if (static_cast<const PropertyExpression *>(listExpr)->prop() != edgeAlias) {
+      return false;
+    }
+
+    // NOTE(jie): Just handled `$-.e[0].likeness` for now, whileas the traverse is single length
+    // expand.
+    // TODO(jie): Handle `ALL(i IN e WHERE i.likeness > 78)`, whileas the traverse is var len
+    // expand.
+    if (idxExpr->kind() != Expression::Kind::kConstant ||
+        static_cast<const ConstantExpression *>(idxExpr)->value() != 0) {
+      return false;
+    }
+
+    return true;
+  };
+  graph::RewriteVisitor::Rewriter rewriter = [pool](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kAttribute);
+    auto attributeExpr = static_cast<const AttributeExpression *>(e);
+    auto *right = attributeExpr->right();
+    DCHECK_EQ(right->kind(), Expression::Kind::kConstant);
+
+    auto &prop = static_cast<const ConstantExpression *>(right)->value().getStr();
+
+    auto *edgePropExpr = EdgePropertyExpression::make(pool, "*", prop);
+    return edgePropExpr;
+  };
+
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
 }  // namespace graph
 }  // namespace nebula

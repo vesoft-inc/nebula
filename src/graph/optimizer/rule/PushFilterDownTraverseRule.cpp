@@ -37,6 +37,19 @@ const Pattern& PushFilterDownTraverseRule::pattern() const {
   return pattern;
 }
 
+bool PushFilterDownTraverseRule::match(OptContext* ctx, const MatchedResult& matched) const {
+  if (!OptRule::match(ctx, matched)) {
+    return false;
+  }
+  DCHECK_EQ(matched.dependencies[0].dependencies[0].node->node()->kind(),
+            PlanNode::Kind::kTraverse);
+  auto traverse =
+      static_cast<const Traverse*>(matched.dependencies[0].dependencies[0].node->node());
+  auto step = traverse->stepRange();
+  // step == nullptr means one step.
+  return step == nullptr;
+}
+
 StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
     OptContext* ctx, const MatchedResult& matched) const {
   auto* filterGroupNode = matched.node;
@@ -83,38 +96,42 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
   if (!filterPicked) {
     return TransformResult::noTransform();
   }
+  auto* newfilterPicked =
+      graph::ExpressionUtils::rewriteEdgePropertyFilter(pool, edgeAlias, filterPicked->clone());
 
   Filter* newFilter = nullptr;
   OptGroupNode* newFilterGroupNode = nullptr;
   if (filterUnpicked) {
     newFilter = Filter::make(qctx, nullptr, filterUnpicked);
-    // newFilter->setOutputVar(filter->outputVar());
-    // newFilter->setInputVar(filter->inputVar());
+    newFilter->setOutputVar(filter->outputVar());
+    newFilter->setColNames(filter->colNames());
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroup);
   }
 
   auto* newAv = static_cast<graph::AppendVertices*>(av->clone());
-  // newFilter->setInputVar(newAv->outputVar());
 
   OptGroupNode* newAvGroupNode = nullptr;
   if (newFilterGroupNode) {
     auto* newAvGroup = OptGroup::create(ctx);
     newAvGroupNode = newAvGroup->makeGroupNode(newAv);
     newFilterGroupNode->dependsOn(newAvGroup);
+    newFilter->setInputVar(newAv->outputVar());
   } else {
     newAvGroupNode = OptGroupNode::create(ctx, newAv, filterGroup);
+    newAv->setOutputVar(filter->outputVar());
   }
 
   auto* eFilter = tv->eFilter();
   Expression* newEFilter = nullptr;
   if (eFilter) {
-    auto logicExpr = LogicalExpression::makeAnd(pool, filterPicked, eFilter->clone());
+    auto logicExpr = LogicalExpression::makeAnd(pool, newfilterPicked, eFilter->clone());
     newEFilter = logicExpr;
   } else {
-    newEFilter = filterPicked;
+    newEFilter = newfilterPicked;
   }
 
   auto* newTv = static_cast<graph::Traverse*>(tv->clone());
+  newAv->setInputVar(newTv->outputVar());
   newTv->setEdgeFilter(newEFilter);
 
   auto* newTvGroup = OptGroup::create(ctx);

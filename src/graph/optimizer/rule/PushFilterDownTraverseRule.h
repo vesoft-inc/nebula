@@ -14,6 +14,8 @@ class PushFilterDownTraverseRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+
   StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 
   std::string toString() const override;

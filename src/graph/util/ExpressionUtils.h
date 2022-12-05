@@ -228,6 +228,10 @@ class ExpressionUtils {
   // Whether the whole expression is vertex id predication
   // e.g. id(v) == 1, id(v) IN [...]
   static bool isVidPredication(const Expression* expr);
+
+  static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
+                                               const std::string& edgeAlias,
+                                               Expression* expr);
 };
 
 }  // namespace graph
