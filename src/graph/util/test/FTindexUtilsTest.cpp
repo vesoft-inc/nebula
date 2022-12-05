@@ -20,19 +20,19 @@ class MockESAdapter : public plugin::ESAdapter {
  public:
   MOCK_METHOD(StatusOr<plugin::ESQueryResult>,
               fuzzy,
-              (const std::string&, const std::string&, const std::string&),
+              (const std::string&, const std::string&, const std::string&, int64_t, int64_t),
               (override));
   MOCK_METHOD(StatusOr<plugin::ESQueryResult>,
               prefix,
-              (const std::string&, const std::string&),
+              (const std::string&, const std::string&, int64_t, int64_t),
               (override));
   MOCK_METHOD(StatusOr<plugin::ESQueryResult>,
               regexp,
-              (const std::string&, const std::string&),
+              (const std::string&, const std::string&, int64_t, int64_t),
               (override));
   MOCK_METHOD(StatusOr<plugin::ESQueryResult>,
               wildcard,
-              (const std::string&, const std::string&),
+              (const std::string&, const std::string&, int64_t, int64_t),
               (override));
 };
 
@@ -70,7 +70,8 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   esResult.items = items;
   {
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern")).WillOnce(Return(esResult));
+    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern", -1, -1))
+        .WillOnce(Return(esResult));
     auto argument = TextSearchArgument::make(&pool, tagName, propName, "prefix_pattern");
     auto expr = TextSearchExpression::makePrefix(&pool, argument);
     auto expect = or_({eq(tagProp(tagName, propName), constant("abc")),
@@ -83,7 +84,8 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   {
     plugin::ESQueryResult emptyEsResult;
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern")).WillOnce(Return(emptyEsResult));
+    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern", -1, -1))
+        .WillOnce(Return(emptyEsResult));
     auto argument = TextSearchArgument::make(&pool, tagName, propName, "prefix_pattern");
     auto expr = TextSearchExpression::makePrefix(&pool, argument);
     auto result = FTIndexUtils::rewriteTSFilter(&pool, false, expr, indexName, mockESAdapter);
@@ -93,7 +95,7 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   {
     Status status = Status::Error("mock error");
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern"))
+    EXPECT_CALL(mockESAdapter, prefix(indexName, "prefix_pattern", -1, -1))
         .Times(FLAGS_ft_request_retry_times)
         .WillRepeatedly(Return(status));
     auto argument = TextSearchArgument::make(&pool, tagName, propName, "prefix_pattern");
@@ -104,7 +106,8 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   }
   {
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, wildcard(indexName, "wildcard_pattern")).WillOnce(Return(esResult));
+    EXPECT_CALL(mockESAdapter, wildcard(indexName, "wildcard_pattern", -1, -1))
+        .WillOnce(Return(esResult));
     auto argument = TextSearchArgument::make(&pool, edgeName, propName, "wildcard_pattern");
     auto expr = TextSearchExpression::makeWildcard(&pool, argument);
     auto expect = or_({eq(edgeProp(edgeName, propName), constant("abc")),
@@ -118,7 +121,7 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
     plugin::ESQueryResult singleEsResult;
     singleEsResult.items = {Item("a", "b", 1, "edge text")};
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, wildcard(indexName, "wildcard_pattern"))
+    EXPECT_CALL(mockESAdapter, wildcard(indexName, "wildcard_pattern", -1, -1))
         .WillOnce(Return(singleEsResult));
     auto argument = TextSearchArgument::make(&pool, edgeName, propName, "wildcard_pattern");
     auto expr = TextSearchExpression::makeWildcard(&pool, argument);
@@ -129,7 +132,8 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   }
   {
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, regexp(indexName, "regexp_pattern")).WillOnce(Return(esResult));
+    EXPECT_CALL(mockESAdapter, regexp(indexName, "regexp_pattern", -1, -1))
+        .WillOnce(Return(esResult));
     auto argument = TextSearchArgument::make(&pool, edgeName, propName, "regexp_pattern");
     auto expr = TextSearchExpression::makeRegexp(&pool, argument);
     auto expect = or_({eq(edgeProp(edgeName, propName), constant("abc")),
@@ -141,7 +145,8 @@ TEST_F(FTIndexUtilsTest, rewriteTSFilter) {
   }
   {
     MockESAdapter mockESAdapter;
-    EXPECT_CALL(mockESAdapter, fuzzy(indexName, "fuzzy_pattern", "1")).WillOnce(Return(esResult));
+    EXPECT_CALL(mockESAdapter, fuzzy(indexName, "fuzzy_pattern", "1", -1, -1))
+        .WillOnce(Return(esResult));
     auto argument = TextSearchArgument::make(&pool, tagName, propName, "fuzzy_pattern");
     argument->setFuzziness(1);
     auto expr = TextSearchExpression::makeFuzzy(&pool, argument);

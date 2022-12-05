@@ -33,17 +33,44 @@ struct HttpResponse {
 class HttpClient {
  public:
   static HttpClient& instance();
+
   virtual ~HttpClient() = default;
+
   virtual HttpResponse get(const std::string& url);
+
   virtual HttpResponse get(const std::string& url, const std::vector<std::string>& headers);
+
+  virtual HttpResponse get(const std::string& url,
+                           const std::vector<std::string>& headers,
+                           const std::string& username,
+                           const std::string& password);
 
   virtual HttpResponse post(const std::string& url,
                             const std::vector<std::string>& headers,
                             const std::string& body);
+
+  virtual HttpResponse post(const std::string& url,
+                            const std::vector<std::string>& headers,
+                            const std::string& body,
+                            const std::string& username,
+                            const std::string& password);
+
   virtual HttpResponse delete_(const std::string& url, const std::vector<std::string>& headers);
+
+  virtual HttpResponse delete_(const std::string& url,
+                               const std::vector<std::string>& headers,
+                               const std::string& username,
+                               const std::string& password);
+
   virtual HttpResponse put(const std::string& url,
                            const std::vector<std::string>& headers,
                            const std::string& body);
+
+  virtual HttpResponse put(const std::string& url,
+                           const std::vector<std::string>& headers,
+                           const std::string& body,
+                           const std::string& username,
+                           const std::string& password);
 
  protected:
   HttpClient() = default;
@@ -52,7 +79,9 @@ class HttpClient {
   static HttpResponse sendRequest(const std::string& url,
                                   const std::string& method,
                                   const std::vector<std::string>& headers,
-                                  const std::string& body);
+                                  const std::string& body,
+                                  const std::string& username,
+                                  const std::string& password);
   static void setUrl(CURL* curl, const std::string& url);
   static void setMethod(CURL* curl, const std::string& method);
   static curl_slist* setHeaders(CURL* curl, const std::vector<std::string>& headers);
@@ -60,6 +89,7 @@ class HttpClient {
   static void setRespBody(CURL* curl, const std::string& body);
   static void setRespHeader(CURL* curl, const std::string& header);
   static void setTimeout(CURL* curl);
+  static void setAuth(CURL* curl, const std::string& username, const std::string& password);
   static size_t onWriteData(void* ptr, size_t size, size_t nmemb, void* stream);
 };
 

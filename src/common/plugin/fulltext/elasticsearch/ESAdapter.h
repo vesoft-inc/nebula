@@ -91,8 +91,8 @@ class ESAdapter {
    */
   virtual StatusOr<ESQueryResult> prefix(const std::string& index,
                                          const std::string& pattern,
-                                         int64_t size,
-                                         int64_t timeout);
+                                         int64_t size = -1,
+                                         int64_t timeout = -1);
 
   /**
    * @brief
@@ -118,8 +118,8 @@ class ESAdapter {
   virtual StatusOr<ESQueryResult> fuzzy(const std::string& index,
                                         const std::string& pattern,
                                         const std::string& fuzziness,
-                                        int64_t size,
-                                        int64_t timeout);
+                                        int64_t size = -1,
+                                        int64_t timeout = -1);
 
   /**
    * @brief
@@ -143,8 +143,8 @@ class ESAdapter {
    */
   virtual StatusOr<ESQueryResult> regexp(const std::string& index,
                                          const std::string& pattern,
-                                         int64_t size,
-                                         int64_t timeout);
+                                         int64_t size = -1,
+                                         int64_t timeout = -1);
 
   /**
    * @brief
@@ -168,8 +168,8 @@ class ESAdapter {
    */
   virtual StatusOr<ESQueryResult> wildcard(const std::string& index,
                                            const std::string& pattern,
-                                           int64_t size,
-                                           int64_t timeout);
+                                           int64_t size = -1,
+                                           int64_t timeout = -1);
 
   // /**
   //  * @brief

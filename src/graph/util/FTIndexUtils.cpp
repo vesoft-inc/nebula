@@ -85,7 +85,7 @@ StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
       int fuzziness = tsExpr->arg()->fuzziness();
       int64_t size = tsExpr->arg()->limit();
       int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, &pattern, &esAdapter, fuzziness, &size, &timeout]() {
+      execFunc = [&index, pattern, &esAdapter, fuzziness, size, timeout]() {
         return esAdapter.fuzzy(
             index, pattern, fuzziness < 0 ? "AUTO" : std::to_string(fuzziness), size, timeout);
       };
@@ -95,7 +95,7 @@ StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
       std::string pattern = tsExpr->arg()->val();
       int64_t size = tsExpr->arg()->limit();
       int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
         return esAdapter.prefix(index, pattern, size, timeout);
       };
       break;
@@ -104,7 +104,7 @@ StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
       std::string pattern = tsExpr->arg()->val();
       int64_t size = tsExpr->arg()->limit();
       int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
         return esAdapter.regexp(index, pattern, size, timeout);
       };
       break;
@@ -113,7 +113,7 @@ StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
       std::string pattern = tsExpr->arg()->val();
       int64_t size = tsExpr->arg()->limit();
       int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
         return esAdapter.wildcard(index, pattern, size, timeout);
       };
       break;

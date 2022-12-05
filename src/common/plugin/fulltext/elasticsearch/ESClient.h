@@ -39,7 +39,7 @@ class ESClient {
   HttpClient& httpClient_;
   std::string protocol_;
   std::string address_;
-  std::string user_;
+  std::string username_;
   std::string password_;
 
   StatusOr<folly::dynamic> sendHttpRequest(const std::string& url,

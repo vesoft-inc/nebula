@@ -16,7 +16,7 @@ ESClient::ESClient(HttpClient& httpClient,
     : httpClient_(httpClient),
       protocol_(protocol),
       address_(address),
-      user_(user),
+      username_(user),
       password_(password) {
   // TODO(hs.zhang): enable protocol
   // TODO(hs.zhang): enable user&password
@@ -57,8 +57,9 @@ ESClient::ESClient(HttpClient& httpClient,
  */
 StatusOr<folly::dynamic> ESClient::createIndex(const std::string& name,
                                                const folly::dynamic& body) {
-  std::string url = fmt::format("http://{}/{}", address_, name);
-  auto resp = httpClient_.put(url, {"Content-Type: application/json"}, folly::toJson(body));
+  std::string url = fmt::format("{}://{}/{}", protocol_, address_, name);
+  auto resp = httpClient_.put(
+      url, {"Content-Type: application/json"}, folly::toJson(body), username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }
@@ -67,8 +68,8 @@ StatusOr<folly::dynamic> ESClient::createIndex(const std::string& name,
 }
 
 StatusOr<folly::dynamic> ESClient::dropIndex(const std::string& name) {
-  std::string url = fmt::format("http://{}/{}", address_, name);
-  auto resp = httpClient_.delete_(url, {"Content-Type: application/json"});
+  std::string url = fmt::format("{}://{}/{}", protocol_, address_, name);
+  auto resp = httpClient_.delete_(url, {"Content-Type: application/json"}, username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }
@@ -76,8 +77,8 @@ StatusOr<folly::dynamic> ESClient::dropIndex(const std::string& name) {
 }
 
 StatusOr<folly::dynamic> ESClient::getIndex(const std::string& name) {
-  std::string url = fmt::format("http://{}/{}", address_, name);
-  auto resp = httpClient_.get(url, {"Content-Type: application/json"});
+  std::string url = fmt::format("{}://{}/{}", protocol_, address_, name);
+  auto resp = httpClient_.get(url, {"Content-Type: application/json"}, username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }
@@ -87,9 +88,13 @@ StatusOr<folly::dynamic> ESClient::getIndex(const std::string& name) {
 StatusOr<folly::dynamic> ESClient::deleteByQuery(const std::string& index,
                                                  const folly::dynamic& query,
                                                  bool refresh) {
-  std::string url = fmt::format(
-      "http://{}/{}/_delete_by_query?refresh={}", address_, index, refresh ? "true" : "false");
-  auto resp = httpClient_.post(url, {"Content-Type: application/json"}, folly::toJson(query));
+  std::string url = fmt::format("{}://{}/{}/_delete_by_query?refresh={}",
+                                protocol_,
+                                address_,
+                                index,
+                                refresh ? "true" : "false");
+  auto resp = httpClient_.post(
+      url, {"Content-Type: application/json"}, folly::toJson(query), username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }
@@ -99,11 +104,12 @@ StatusOr<folly::dynamic> ESClient::deleteByQuery(const std::string& index,
 StatusOr<folly::dynamic> ESClient::search(const std::string& index,
                                           const folly::dynamic& query,
                                           int64_t timeout) {
-  std::string url = fmt::format("http://{}/{}/_search", address_, index);
+  std::string url = fmt::format("{}://{}/{}/_search", protocol_, address_, index);
   if (timeout > 0) {
     url += fmt::format("?timeout={}ms", timeout);
   }
-  auto resp = httpClient_.post(url, {"Content-Type: application/json"}, folly::toJson(query));
+  auto resp = httpClient_.post(
+      url, {"Content-Type: application/json"}, folly::toJson(query), username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }
@@ -111,13 +117,15 @@ StatusOr<folly::dynamic> ESClient::search(const std::string& index,
 }
 
 StatusOr<folly::dynamic> ESClient::bulk(const std::vector<folly::dynamic>& bulk, bool refresh) {
-  std::string url = fmt::format("http://{}/_bulk?refresh={}", address_, refresh ? "true" : "false");
+  std::string url =
+      fmt::format("{}://{}/_bulk?refresh={}", protocol_, address_, refresh ? "true" : "false");
   std::string body;
   for (auto& obj : bulk) {
     body += folly::toJson(obj);
     body += "\n";
   }
-  auto resp = httpClient_.post(url, {"Content-Type: application/x-ndjson"}, body);
+  auto resp =
+      httpClient_.post(url, {"Content-Type: application/x-ndjson"}, body, username_, password_);
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));
   }

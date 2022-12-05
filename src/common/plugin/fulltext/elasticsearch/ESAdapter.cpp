@@ -190,8 +190,8 @@ StatusOr<ESQueryResult> ESAdapter::prefix(const std::string& index,
   body["query"]["prefix"]["text"] = pattern;
   if (size > 0) {
     body["size"] = size;
+    body["from"] = 0;
   }
-  body["from"] = 0;
   return ESAdapter::query(index, body, timeout);
 }
 
@@ -204,8 +204,8 @@ StatusOr<ESQueryResult> ESAdapter::wildcard(const std::string& index,
   body["query"]["wildcard"] = folly::dynamic::object("text", pattern);
   if (size > 0) {
     body["size"] = size;
+    body["from"] = 0;
   }
-  body["from"] = 0;
   return ESAdapter::query(index, body, timeout);
 }
 
@@ -218,8 +218,8 @@ StatusOr<ESQueryResult> ESAdapter::regexp(const std::string& index,
   body["query"]["regexp"] = folly::dynamic::object("text", pattern);
   if (size > 0) {
     body["size"] = size;
+    body["from"] = 0;
   }
-  body["from"] = 0;
   return ESAdapter::query(index, body, timeout);
 }
 
@@ -234,8 +234,8 @@ StatusOr<ESQueryResult> ESAdapter::fuzzy(const std::string& index,
   body["query"]["fuzzy"]["text"] = folly::dynamic::object("value", pattern)("fuzziness", fuzziness);
   if (size > 0) {
     body["size"] = size;
+    body["from"] = 0;
   }
-  body["from"] = 0;
   return ESAdapter::query(index, body, timeout);
 }
 
