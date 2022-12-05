@@ -57,9 +57,9 @@ namespace opt {
     PlanNode::Kind::kDataCollect,
     PlanNode::Kind::kLeftJoin,
     PlanNode::Kind::kInnerJoin,
-    PlanNode::Kind::kBiLeftJoin,
-    PlanNode::Kind::kBiInnerJoin,
-    PlanNode::Kind::kBiCartesianProduct,
+    PlanNode::Kind::kHashLeftJoin,
+    PlanNode::Kind::kHashInnerJoin,
+    PlanNode::Kind::kCrossJoin,
     PlanNode::Kind::kRollUpApply,
     PlanNode::Kind::kArgument};
 

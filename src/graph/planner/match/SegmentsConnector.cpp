@@ -16,7 +16,7 @@ SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
                                      const SubPlan& right,
                                      const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
-  auto innerJoin = BiInnerJoin::make(qctx, left.root, right.root);
+  auto innerJoin = HashInnerJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
   std::vector<Expression*> probeKeys;
   auto pool = qctx->objPool();
@@ -39,7 +39,7 @@ SubPlan SegmentsConnector::leftJoin(QueryContext* qctx,
                                     const SubPlan& right,
                                     const std::unordered_set<std::string>& intersectedAliases) {
   SubPlan newPlan = left;
-  auto leftJoin = BiLeftJoin::make(qctx, left.root, right.root);
+  auto leftJoin = HashLeftJoin::make(qctx, left.root, right.root);
   std::vector<Expression*> hashKeys;
   std::vector<Expression*> probeKeys;
   auto pool = qctx->objPool();
@@ -61,7 +61,7 @@ SubPlan SegmentsConnector::cartesianProduct(QueryContext* qctx,
                                             const SubPlan& left,
                                             const SubPlan& right) {
   SubPlan newPlan = left;
-  newPlan.root = BiCartesianProduct::make(qctx, left.root, right.root);
+  newPlan.root = CrossJoin::make(qctx, left.root, right.root);
   return newPlan;
 }
 

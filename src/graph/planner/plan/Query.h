@@ -1649,7 +1649,7 @@ class AppendVertices final : public GetVertices {
 };
 
 // Binary Join that joins two results from two inputs.
-class BiJoin : public BinaryInputNode {
+class HashJoin : public BinaryInputNode {
  public:
   const std::vector<Expression*>& hashKeys() const {
     return hashKeys_;
@@ -1672,14 +1672,14 @@ class BiJoin : public BinaryInputNode {
   void accept(PlanNodeVisitor* visitor) override;
 
  protected:
-  BiJoin(QueryContext* qctx,
-         Kind kind,
-         PlanNode* left,
-         PlanNode* right,
-         std::vector<Expression*> hashKeys,
-         std::vector<Expression*> probeKeys);
+  HashJoin(QueryContext* qctx,
+           Kind kind,
+           PlanNode* left,
+           PlanNode* right,
+           std::vector<Expression*> hashKeys,
+           std::vector<Expression*> probeKeys);
 
-  void cloneMembers(const BiJoin&);
+  void cloneMembers(const HashJoin&);
 
  protected:
   std::vector<Expression*> hashKeys_;
@@ -1687,14 +1687,14 @@ class BiJoin : public BinaryInputNode {
 };
 
 // Left join
-class BiLeftJoin final : public BiJoin {
+class HashLeftJoin final : public HashJoin {
  public:
-  static BiLeftJoin* make(QueryContext* qctx,
-                          PlanNode* left,
-                          PlanNode* right,
-                          std::vector<Expression*> hashKeys = {},
-                          std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<BiLeftJoin>(
+  static HashLeftJoin* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            std::vector<Expression*> hashKeys = {},
+                            std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->makeAndAdd<HashLeftJoin>(
         qctx, left, right, std::move(hashKeys), std::move(probeKeys));
   }
 
@@ -1703,25 +1703,26 @@ class BiLeftJoin final : public BiJoin {
 
  private:
   friend ObjectPool;
-  BiLeftJoin(QueryContext* qctx,
-             PlanNode* left,
-             PlanNode* right,
-             std::vector<Expression*> hashKeys,
-             std::vector<Expression*> probeKeys)
-      : BiJoin(qctx, Kind::kBiLeftJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+  HashLeftJoin(QueryContext* qctx,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> hashKeys,
+               std::vector<Expression*> probeKeys)
+      : HashJoin(
+            qctx, Kind::kHashLeftJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
-  void cloneMembers(const BiLeftJoin&);
+  void cloneMembers(const HashLeftJoin&);
 };
 
 // Inner join
-class BiInnerJoin final : public BiJoin {
+class HashInnerJoin final : public HashJoin {
  public:
-  static BiInnerJoin* make(QueryContext* qctx,
-                           PlanNode* left,
-                           PlanNode* right,
-                           std::vector<Expression*> hashKeys = {},
-                           std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<BiInnerJoin>(
+  static HashInnerJoin* make(QueryContext* qctx,
+                             PlanNode* left,
+                             PlanNode* right,
+                             std::vector<Expression*> hashKeys = {},
+                             std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->makeAndAdd<HashInnerJoin>(
         qctx, left, right, std::move(hashKeys), std::move(probeKeys));
   }
 
@@ -1730,14 +1731,15 @@ class BiInnerJoin final : public BiJoin {
 
  private:
   friend ObjectPool;
-  BiInnerJoin(QueryContext* qctx,
-              PlanNode* left,
-              PlanNode* right,
-              std::vector<Expression*> hashKeys,
-              std::vector<Expression*> probeKeys)
-      : BiJoin(qctx, Kind::kBiInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+  HashInnerJoin(QueryContext* qctx,
+                PlanNode* left,
+                PlanNode* right,
+                std::vector<Expression*> hashKeys,
+                std::vector<Expression*> probeKeys)
+      : HashJoin(
+            qctx, Kind::kHashInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
-  void cloneMembers(const BiInnerJoin&);
+  void cloneMembers(const HashInnerJoin&);
 };
 
 // Roll Up Apply two results from two inputs.

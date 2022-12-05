@@ -245,29 +245,29 @@ void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<cons
 }
 
 const std::string& InnerJoinExecutor::leftVar() const {
-  if (node_->kind() == PlanNode::Kind::kBiInnerJoin) {
-    return node_->asNode<BiJoin>()->leftInputVar();
+  if (node_->kind() == PlanNode::Kind::kHashInnerJoin) {
+    return node_->asNode<HashJoin>()->leftInputVar();
   } else {
     return node_->asNode<Join>()->leftVar().first;
   }
 }
 
 const std::string& InnerJoinExecutor::rightVar() const {
-  if (node_->kind() == PlanNode::Kind::kBiInnerJoin) {
-    return node_->asNode<BiJoin>()->rightInputVar();
+  if (node_->kind() == PlanNode::Kind::kHashInnerJoin) {
+    return node_->asNode<HashJoin>()->rightInputVar();
   } else {
     return node_->asNode<Join>()->rightVar().first;
   }
 }
 
-BiInnerJoinExecutor::BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx)
+HashInnerJoinExecutor::HashInnerJoinExecutor(const PlanNode* node, QueryContext* qctx)
     : InnerJoinExecutor(node, qctx) {
-  name_ = "BiInnerJoinExecutor";
+  name_ = "HashInnerJoinExecutor";
 }
 
-folly::Future<Status> BiInnerJoinExecutor::execute() {
+folly::Future<Status> HashInnerJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* joinNode = asNode<BiJoin>(node());
+  auto* joinNode = asNode<HashJoin>(node());
   NG_RETURN_IF_ERROR(checkBiInputDataSets());
   return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
 }
