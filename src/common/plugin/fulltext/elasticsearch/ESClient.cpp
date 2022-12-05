@@ -96,8 +96,13 @@ StatusOr<folly::dynamic> ESClient::deleteByQuery(const std::string& index,
   return folly::parseJson(resp.body);
 }
 
-StatusOr<folly::dynamic> ESClient::search(const std::string& index, const folly::dynamic& query) {
+StatusOr<folly::dynamic> ESClient::search(const std::string& index,
+                                          const folly::dynamic& query,
+                                          int64_t timeout) {
   std::string url = fmt::format("http://{}/{}/_search", address_, index);
+  if (timeout > 0) {
+    url += fmt::format("?timeout={}ms", timeout);
+  }
   auto resp = httpClient_.post(url, {"Content-Type: application/json"}, folly::toJson(query));
   if (resp.curlCode != 0) {
     return Status::Error(fmt::format("curl error({}):{}", resp.curlCode, resp.curlMessage));

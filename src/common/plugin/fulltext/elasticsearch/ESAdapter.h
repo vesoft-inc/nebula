@@ -89,7 +89,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  virtual StatusOr<ESQueryResult> prefix(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> prefix(const std::string& index,
+                                         const std::string& pattern,
+                                         int64_t size,
+                                         int64_t timeout);
 
   /**
    * @brief
@@ -114,7 +117,9 @@ class ESAdapter {
    */
   virtual StatusOr<ESQueryResult> fuzzy(const std::string& index,
                                         const std::string& pattern,
-                                        const std::string& fuzziness);
+                                        const std::string& fuzziness,
+                                        int64_t size,
+                                        int64_t timeout);
 
   /**
    * @brief
@@ -136,7 +141,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  virtual StatusOr<ESQueryResult> regexp(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> regexp(const std::string& index,
+                                         const std::string& pattern,
+                                         int64_t size,
+                                         int64_t timeout);
 
   /**
    * @brief
@@ -158,7 +166,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  virtual StatusOr<ESQueryResult> wildcard(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> wildcard(const std::string& index,
+                                           const std::string& pattern,
+                                           int64_t size,
+                                           int64_t timeout);
 
   // /**
   //  * @brief
@@ -190,7 +201,9 @@ class ESAdapter {
   // StatusOr<ESQueryResult> term(const std::string& index, const std::vector<std::string>& words);
 
   virtual StatusOr<ESQueryResult> match_all(const std::string& index);
-  StatusOr<ESQueryResult> query(const std::string& index, const folly::dynamic& query);
+  StatusOr<ESQueryResult> query(const std::string& index,
+                                const folly::dynamic& query,
+                                int64_t timeout);
 
  protected:
   static std::string genDocID(const std::string& vid,

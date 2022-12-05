@@ -83,24 +83,39 @@ StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
     case Expression::Kind::kTSFuzzy: {
       std::string pattern = tsExpr->arg()->val();
       int fuzziness = tsExpr->arg()->fuzziness();
-      execFunc = [&index, &pattern, &esAdapter, fuzziness]() {
-        return esAdapter.fuzzy(index, pattern, fuzziness < 0 ? "AUTO" : std::to_string(fuzziness));
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, &pattern, &esAdapter, fuzziness, &size, &timeout]() {
+        return esAdapter.fuzzy(
+            index, pattern, fuzziness < 0 ? "AUTO" : std::to_string(fuzziness), size, timeout);
       };
       break;
     }
     case Expression::Kind::kTSPrefix: {
       std::string pattern = tsExpr->arg()->val();
-      execFunc = [&index, &pattern, &esAdapter]() { return esAdapter.prefix(index, pattern); };
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+        return esAdapter.prefix(index, pattern, size, timeout);
+      };
       break;
     }
     case Expression::Kind::kTSRegexp: {
       std::string pattern = tsExpr->arg()->val();
-      execFunc = [&index, &pattern, &esAdapter]() { return esAdapter.regexp(index, pattern); };
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+        return esAdapter.regexp(index, pattern, size, timeout);
+      };
       break;
     }
     case Expression::Kind::kTSWildcard: {
       std::string pattern = tsExpr->arg()->val();
-      execFunc = [&index, &pattern, &esAdapter]() { return esAdapter.wildcard(index, pattern); };
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, &pattern, &esAdapter, &size, &timeout]() {
+        return esAdapter.wildcard(index, pattern, size, timeout);
+      };
       break;
     }
     default: {

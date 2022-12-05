@@ -30,7 +30,9 @@ class ESClient {
   StatusOr<folly::dynamic> deleteByQuery(const std::string& index,
                                          const folly::dynamic& query,
                                          bool refresh = false);
-  StatusOr<folly::dynamic> search(const std::string& index, const folly::dynamic& query);
+  StatusOr<folly::dynamic> search(const std::string& index,
+                                  const folly::dynamic& query,
+                                  int64_t timeout);
   StatusOr<folly::dynamic> bulk(const std::vector<folly::dynamic>& bulk, bool refresh = false);
 
  private:
