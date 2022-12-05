@@ -20,7 +20,7 @@ DECLARE_uint32(raft_heartbeat_interval_secs);
 namespace nebula {
 namespace raftex {
 
-TEST(LeaderTransferTest, SimpleTest) {
+TEST(LeaderTransferTest, DISABLED_SimpleTest) {
   FLAGS_raft_heartbeat_interval_secs = 1;
   fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
