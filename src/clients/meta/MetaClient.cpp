@@ -933,8 +933,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Task report is out of date!");
     case nebula::cpp2::ErrorCode::E_BACKUP_FAILED:
       return Status::Error("Backup failure!");
-    case nebula::cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX:
-      return Status::Error("Backup building indexes!");
+    case nebula::cpp2::ErrorCode::E_BACKUP_RUNNING_JOBS:
+      return Status::Error("Backup encounter running or queue jobs!");
     case nebula::cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND:
       return Status::Error("The space is not found when backup!");
     case nebula::cpp2::ErrorCode::E_RESTORE_FAILURE:

@@ -405,7 +405,7 @@ enum ErrorCode {
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure
-    E_BACKUP_BUILDING_INDEX           = -2066,  // Backup terminated (index being created)
+    E_BACKUP_RUNNING_JOBS             = -2066,  // Backup terminated (some data modification jobs running)
     E_BACKUP_SPACE_NOT_FOUND          = -2067,  // Graph space does not exist at the time of backup
 
     // RESTORE Failure
