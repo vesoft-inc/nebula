@@ -590,23 +590,31 @@ Status AddHostsIntoZoneValidator::toPlan() {
 // Validate creating test search index.
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
-  auto name = *sentence->indexName();
-  if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
-    return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
+  folly::StringPiece name = folly::StringPiece(*sentence->indexName());
+  if (!name.startsWith(kFulltextIndexNamePrefix)) {
+    return Status::SyntaxError("Index name must begin with \"%s\"", kFulltextIndexNamePrefix);
   }
-  bool containUpper = false;
+  if (name.size() > kFulltextIndexNameLength) {
+    return Status::SyntaxError("Index name's length must less equal than %d",
+                               kFulltextIndexNameLength);
+  }
+  bool ok = true;
   for (auto c : name) {
-    containUpper |= std::isupper(c);
+    if (std::islower(c) || std::isdigit(c) || c == '_') {
+      continue;
+    }
+    ok = false;
+    break;
   }
-  if (containUpper) {
-    return Status::SyntaxError("Fulltext index names cannot contain uppercase letters");
+  if (!ok) {
+    return Status::SyntaxError("Fulltext index name can only contain [_0-9a-z].");
   }
   auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
   NG_RETURN_IF_ERROR(tsRet);
-  auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name);
+  auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name.toString());
   NG_RETURN_IF_ERROR(tsIndex);
   if (tsIndex.value()) {
-    return Status::Error("text search index exist : %s", name.c_str());
+    return Status::Error("text search index exist : %s", name.data());
   }
   auto space = vctx_->whichSpace();
   auto status = sentence->isEdge()
