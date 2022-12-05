@@ -554,7 +554,7 @@ Status MatchValidator::validateWith(const WithClause *with,
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
       AliasType inputType = withClauseCtx.yield->aliasesAvailable.at(label);
-      DeduceAliasTypeVisitor visitor(qctx_, vctx_, space_.id, inputType);
+      DeduceAliasTypeVisitor visitor(inputType);
       const_cast<Expression *>(col->expr())->accept(&visitor);
       if (!visitor.ok()) {
         return std::move(visitor).status();

@@ -23,15 +23,7 @@
 namespace nebula {
 namespace graph {
 
-DeduceAliasTypeVisitor::DeduceAliasTypeVisitor(QueryContext *qctx,
-                                               ValidateContext *vctx,
-                                               GraphSpaceID space,
-                                               AliasType inputType)
-    : qctx_(qctx), vctx_(vctx), space_(space), inputType_(inputType) {
-  UNUSED(qctx_);
-  UNUSED(vctx_);
-  UNUSED(space_);
-}
+DeduceAliasTypeVisitor::DeduceAliasTypeVisitor(AliasType inputType) : inputType_(inputType) {}
 
 void DeduceAliasTypeVisitor::visit(VertexExpression *expr) {
   UNUSED(expr);
@@ -49,7 +41,8 @@ void DeduceAliasTypeVisitor::visit(PathBuildExpression *expr) {
 }
 
 void DeduceAliasTypeVisitor::visit(FunctionCallExpression *expr) {
-  auto funName = expr->name();
+  std::string funName = expr->name();
+  std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (funName == "nodes") {
     outputType_ = AliasType::kNodeList;
   } else if (funName == "relationships") {
