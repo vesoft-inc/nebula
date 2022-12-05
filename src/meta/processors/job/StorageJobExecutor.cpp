@@ -103,7 +103,7 @@ ErrOrHosts StorageJobExecutor::getListenerHost(GraphSpaceID space, cpp2::Listene
   auto activeHostsRet =
       ActiveHostsMan::getActiveHosts(kvstore_,
                                      FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor,
-                                     cpp2::HostRole::LISTENER);
+                                     cpp2::HostRole::STORAGE_LISTENER);
   if (!nebula::ok(activeHostsRet)) {
     return nebula::error(activeHostsRet);
   }
