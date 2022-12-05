@@ -30,6 +30,8 @@ static cpp2::HostRole toHostRole(cpp2::ListHostType type) {
       return cpp2::HostRole::STORAGE;
     case cpp2::ListHostType::AGENT:
       return cpp2::HostRole::AGENT;
+    case cpp2::ListHostType::STORAGE_LISTENER:
+      return cpp2::HostRole::STORAGE_LISTENER;
     default:
       return cpp2::HostRole::UNKNOWN;
   }
