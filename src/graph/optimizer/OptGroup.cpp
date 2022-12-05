@@ -92,6 +92,28 @@ Status OptGroup::validateSubPlan(const OptGroupNode *gn,
   return Status::OK();
 }
 
+Status OptGroup::validate(const OptRule *rule) const {
+  if (groupNodes_.empty() && !groupNodesReferenced_.empty()) {
+    return Status::Error(
+        "The OptGroup has no any OptGroupNode but used by other OptGroupNode "
+        "when applying the rule: %s, numGroupNodesRef: %lu",
+        rule->toString().c_str(),
+        groupNodesReferenced_.size());
+  }
+  for (auto *gn : groupNodes_) {
+    NG_RETURN_IF_ERROR(gn->validate(rule));
+    if (gn->node()->outputVar() != outputVar_) {
+      return Status::Error(
+          "The output columns of the OptGroupNode is different from OptGroup "
+          "when applying the rule: %s, %s vs. %s",
+          rule->toString().c_str(),
+          gn->node()->outputVar().c_str(),
+          outputVar_.c_str());
+    }
+  }
+  return Status::OK();
+}
+
 void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   DCHECK_EQ(this, DCHECK_NOTNULL(groupNode)->group());
   if (outputVar_.empty()) {
@@ -144,6 +166,10 @@ Status OptGroup::explore(const OptRule *rule) {
     auto resStatus = rule->transform(ctx_, matched);
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
+
+    // for (auto *ngn : result.newGroupNodes) {
+    //   NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
+    // }
     // In some cases, we can apply optimization rules even if the control flow and data flow are
     // inconsistent. For now, let the optimization rules themselves guarantee correctness.
     if (result.eraseAll) {
@@ -152,7 +178,7 @@ Status OptGroup::explore(const OptRule *rule) {
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
-        NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
+        // NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
         addGroupNode(ngn);
       }
       break;
@@ -160,7 +186,7 @@ Status OptGroup::explore(const OptRule *rule) {
 
     if (!result.newGroupNodes.empty()) {
       for (auto ngn : result.newGroupNodes) {
-        NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
+        // NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
         addGroupNode(ngn);
       }
 
@@ -298,6 +324,43 @@ void OptGroupNode::release() {
   for (auto *dep : dependencies_) {
     dep->deleteRefGroupNode(this);
   }
+}
+
+Status OptGroupNode::validate(const OptRule *rule) const {
+  if (!node_) {
+    return Status::Error("The OptGroupNode does not have plan node when applying the rule: %s",
+                         rule->toString().c_str());
+  }
+  if (!group_) {
+    return Status::Error(
+        "The OptGroupNode does not have the right OptGroup when applying the rule: %s",
+        rule->toString().c_str());
+  }
+  if (!bodies_.empty()) {
+    if (node_->kind() != PlanNode::Kind::kLoop) {
+      return Status::Error(
+          "The plan node is not Loop in OptGroupNode when applying the rule: %s, planNode: %s",
+          rule->toString().c_str(),
+          PlanNode::toString(node_->kind()));
+    }
+    for (auto *g : bodies_) {
+      NG_RETURN_IF_ERROR(g->validate(rule));
+    }
+  }
+  if (dependencies_.empty()) {
+    if (node_->kind() != PlanNode::Kind::kStart && node_->kind() != PlanNode::Kind::kArgument) {
+      return Status::Error(
+          "The leaf plan node is not Start or Argument in OptGroupNode when applying the rule: %s, "
+          "planNode: %s",
+          rule->toString().c_str(),
+          PlanNode::toString(node_->kind()));
+    }
+  } else {
+    for (auto *g : dependencies_) {
+      NG_RETURN_IF_ERROR(g->validate(rule));
+    }
+  }
+  return Status::OK();
 }
 
 }  // namespace opt

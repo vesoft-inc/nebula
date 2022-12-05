@@ -81,6 +81,7 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
       for (auto rule : ruleSet->rules()) {
         // Explore until the maximum number of iterations(Rules) is reached
         NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
+        NG_RETURN_IF_ERROR(rootGroup->validate(rule));
         rootGroup->setUnexplored(rule);
       }
     }

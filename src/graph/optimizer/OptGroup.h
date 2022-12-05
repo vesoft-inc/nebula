@@ -58,6 +58,8 @@ class OptGroup final {
     isRootGroup_ = true;
   }
 
+  Status validate(const OptRule *rule) const;
+
  private:
   friend ObjectPool;
   explicit OptGroup(OptContext *ctx) noexcept;
@@ -132,6 +134,8 @@ class OptGroupNode final {
 
   // Release the opt group node from its opt group
   void release();
+
+  Status validate(const OptRule *rule) const;
 
  private:
   friend ObjectPool;
