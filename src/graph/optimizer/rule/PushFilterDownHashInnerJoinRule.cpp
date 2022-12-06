@@ -64,7 +64,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownHashInnerJoinRule::transform(
   // produce new InnerJoin node
   auto* newInnerJoinNode = static_cast<graph::HashInnerJoin*>(oldInnerJoinNode->clone());
   auto newJoinGroup = rightFilterUnpicked ? OptGroup::create(octx) : filterGroupNode->group();
-  auto newGroupNode = OptGroupNode::create(octx, newInnerJoinNode, newJoinGroup);
+  // TODO(yee): it's too tricky
+  auto newGroupNode = rightFilterUnpicked
+                          ? const_cast<OptGroup*>(newJoinGroup)->makeGroupNode(newInnerJoinNode)
+                          : OptGroupNode::create(octx, newInnerJoinNode, newJoinGroup);
   newGroupNode->dependsOn(leftGroup);
   newGroupNode->dependsOn(rightGroup);
   newInnerJoinNode->setLeftVar(leftGroup->outputVar());

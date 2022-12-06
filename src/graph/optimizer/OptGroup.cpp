@@ -126,13 +126,9 @@ void OptGroup::addGroupNode(OptGroupNode *groupNode) {
 }
 
 OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
-  if (outputVar_.empty()) {
-    outputVar_ = node->outputVar();
-  } else {
-    DCHECK_EQ(outputVar_, node->outputVar());
-  }
-  groupNodes_.emplace_back(OptGroupNode::create(ctx_, node, this));
-  return groupNodes_.back();
+  auto *gn = OptGroupNode::create(ctx_, node, this);
+  addGroupNode(gn);
+  return gn;
 }
 
 Status OptGroup::explore(const OptRule *rule) {
@@ -167,9 +163,15 @@ Status OptGroup::explore(const OptRule *rule) {
     NG_RETURN_IF_ERROR(resStatus);
     auto result = std::move(resStatus).value();
 
-    // for (auto *ngn : result.newGroupNodes) {
-    //   NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
-    // }
+    for (auto *gn : result.newGroupNodes) {
+      auto it = std::find(groupNodes_.begin(), groupNodes_.end(), gn);
+      if (it != groupNodes_.end()) {
+        return Status::Error("Should not push the OptGroupNode %s into the group in the rule: %s",
+                             gn->node()->toString().c_str(),
+                             rule->toString().c_str());
+      }
+    }
+
     // In some cases, we can apply optimization rules even if the control flow and data flow are
     // inconsistent. For now, let the optimization rules themselves guarantee correctness.
     if (result.eraseAll) {
@@ -178,7 +180,6 @@ Status OptGroup::explore(const OptRule *rule) {
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
-        // NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
         addGroupNode(ngn);
       }
       break;
@@ -186,7 +187,6 @@ Status OptGroup::explore(const OptRule *rule) {
 
     if (!result.newGroupNodes.empty()) {
       for (auto ngn : result.newGroupNodes) {
-        // NG_RETURN_IF_ERROR(validateSubPlan(ngn, rule, leaves));
         addGroupNode(ngn);
       }
 
