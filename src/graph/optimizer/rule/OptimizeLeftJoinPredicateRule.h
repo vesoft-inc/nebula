@@ -9,24 +9,24 @@
 
 namespace nebula {
 namespace opt {
-
-/*
-Before:
-   BiLeftJoin({id(v)}, id(v))
-       /    \
-    ...    Project
-                 \
-                AppendVertices(v)
-                           \
-                          Traverse(e)
-
-After:
-   BiLeftJoin({id(v)}, none_direct_dst(e))
-       /    \
-    ...    Project
-                 \
-               Traverse(e)
-*/
+/* Before:
+ *      HashLeftJoin({id(v)}, {id(v)})
+ *          /    \
+ *       ...    Project
+ *        /            \
+ *  AppendVertices(v) AppendVertices(v)
+ *       /                   \
+ *     ...                Traverse(e)
+ *
+ *  After:
+ *     HashLeftJoin({id(v)}, {$-.v})
+ *         /    \
+ *      ...    Project(..., none_direct_dst(e) AS v)
+ *       /            \
+ *  AppendVertices(v)  Traverse(e)
+ *     /
+ *   ...
+ */
 class OptimizeLeftJoinPredicateRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
