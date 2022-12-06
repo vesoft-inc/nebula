@@ -33,7 +33,7 @@ Status CloudAuthenticator::auth(const std::string& user, const std::string& pass
 
   std::vector<std::string> hearder = {"Content-Type: application/json",
                                       "Authorization:Nebula " + base64Str};
-  auto httpResponse = HttpClient::post(FLAGS_cloud_http_url, hearder, "");
+  auto httpResponse = HttpClient::instance().post(FLAGS_cloud_http_url, hearder, "");
 
   if (httpResponse.curlCode != 0) {
     std::string msg =

@@ -15,6 +15,15 @@
 namespace nebula {
 namespace graph {
 
+void SubPlan::appendStartNode(QueryContext* qctx) {
+  if (tail->isSingleInput() && tail->kind() != PlanNode::Kind::kStart &&
+      tail->kind() != PlanNode::Kind::kArgument) {
+    auto* start = StartNode::make(qctx);
+    tail->setDep(0, start);
+    tail = start;
+  }
+}
+
 ExecutionPlan::ExecutionPlan(PlanNode* root) : id_(EPIdGenerator::instance().id()), root_(root) {}
 
 ExecutionPlan::~ExecutionPlan() {}

@@ -14,7 +14,7 @@ bool getUrl(const std::string& urlPath, std::string& respBody) {
       "http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, urlPath.c_str());
   VLOG(1) << "Retrieving url: " << url;
 
-  auto httpResp = HttpClient::get(url.c_str());
+  auto httpResp = HttpClient::instance().get(url.c_str());
   if (httpResp.curlCode != 0) {
     std::string error = fmt::format("curl error({}): {}", httpResp.curlCode, httpResp.curlMessage);
     LOG(ERROR) << error;
@@ -30,7 +30,7 @@ StatusOr<std::string> putUrl(const std::string& urlPath, const folly::dynamic& d
       "http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, urlPath.c_str());
   VLOG(1) << "Retrieving url: " << url;
 
-  auto httpResp = HttpClient::put(url.c_str(), {}, folly::toJson(data));
+  auto httpResp = HttpClient::instance().put(url.c_str(), {}, folly::toJson(data));
   if (httpResp.curlCode != 0) {
     std::string error = fmt::format("curl error({}): {}", httpResp.curlCode, httpResp.curlMessage);
     LOG(ERROR) << error;
