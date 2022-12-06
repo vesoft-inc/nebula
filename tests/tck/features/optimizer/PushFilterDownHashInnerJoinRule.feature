@@ -182,7 +182,7 @@ Feature: Push Filter down HashInnerJoin rule
       | 16 | TopN           | 25           |                                                                                                               |
       | 25 | HashInnerJoin  | 27,29        |                                                                                                               |
       | 27 | Project        | 30           |                                                                                                               |
-      | 30 | Filter         | 4            | {"condition": "(((($-.b.player.age+$-.a.player.age)>40) AND ($-.a.player.age<45)) AND ($-.b.player.age>30))"} |
+      | 30 | Filter         | 4            | {"condition": "((($-.b.player.age+$-.a.player.age)>40) AND ($-.a.player.age<45) AND ($-.b.player.age>30))"} |
       | 4  | AppendVertices | 24           |                                                                                                               |
       | 24 | Traverse       | 1            |                                                                                                               |
       | 1  | IndexScan      | 2            |                                                                                                               |
