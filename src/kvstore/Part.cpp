@@ -55,7 +55,7 @@ std::pair<LogID, TermID> Part::lastCommittedLogId() {
     VLOG(2) << idStr_ << "Cannot fetch the last committed log id from the storage engine";
     return std::make_pair(0, 0);
   }
-  CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
+  DCHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
 
   LogID lastId;
   memcpy(reinterpret_cast<void*>(&lastId), val.data(), sizeof(LogID));

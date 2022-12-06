@@ -150,13 +150,13 @@ std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
   }
   // read last logId from listener wal file.
   LogID logId;
-  CHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), 0),
-           static_cast<ssize_t>(sizeof(LogID)));
+  DCHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), 0),
+            static_cast<ssize_t>(sizeof(LogID)));
 
   // read last termId from listener wal file.
   TermID termId;
-  CHECK_EQ(pread(fd, reinterpret_cast<char*>(&termId), sizeof(TermID), sizeof(LogID)),
-           static_cast<ssize_t>(sizeof(TermID)));
+  DCHECK_EQ(pread(fd, reinterpret_cast<char*>(&termId), sizeof(TermID), sizeof(LogID)),
+            static_cast<ssize_t>(sizeof(TermID)));
   close(fd);
   return {logId, termId};
 }
@@ -174,8 +174,8 @@ LogID ESListener::lastApplyLogId() {
   // read last applied logId from listener wal file.
   LogID logId;
   auto offset = sizeof(LogID) + sizeof(TermID);
-  CHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), offset),
-           static_cast<ssize_t>(sizeof(LogID)));
+  DCHECK_EQ(pread(fd, reinterpret_cast<char*>(&logId), sizeof(LogID), offset),
+            static_cast<ssize_t>(sizeof(LogID)));
   close(fd);
   return logId;
 }

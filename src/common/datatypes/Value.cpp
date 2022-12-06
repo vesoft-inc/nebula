@@ -589,319 +589,319 @@ void Value::setDuration(std::unique_ptr<Duration>&& v) {
 }
 
 const double& Value::getFloat() const {
-  CHECK_EQ(type_, Type::FLOAT);
+  DCHECK_EQ(type_, Type::FLOAT);
   return value_.fVal;
 }
 
 const std::string& Value::getStr() const {
-  CHECK_EQ(type_, Type::STRING);
+  DCHECK_EQ(type_, Type::STRING);
   return *value_.sVal;
 }
 
 const Date& Value::getDate() const {
-  CHECK_EQ(type_, Type::DATE);
+  DCHECK_EQ(type_, Type::DATE);
   return value_.dVal;
 }
 
 const Time& Value::getTime() const {
-  CHECK_EQ(type_, Type::TIME);
+  DCHECK_EQ(type_, Type::TIME);
   return value_.tVal;
 }
 
 const DateTime& Value::getDateTime() const {
-  CHECK_EQ(type_, Type::DATETIME);
+  DCHECK_EQ(type_, Type::DATETIME);
   return value_.dtVal;
 }
 
 const Vertex& Value::getVertex() const {
-  CHECK_EQ(type_, Type::VERTEX);
+  DCHECK_EQ(type_, Type::VERTEX);
   return *(value_.vVal);
 }
 
 const Vertex* Value::getVertexPtr() const {
-  CHECK_EQ(type_, Type::VERTEX);
-  return value_.vVal;
+  DCHECK_EQ(type_, Type::VERTEX);
+  return value_.vVal.get();
 }
 
 const Edge& Value::getEdge() const {
-  CHECK_EQ(type_, Type::EDGE);
+  DCHECK_EQ(type_, Type::EDGE);
   return *(value_.eVal);
 }
 
 const Edge* Value::getEdgePtr() const {
-  CHECK_EQ(type_, Type::EDGE);
-  return value_.eVal;
+  DCHECK_EQ(type_, Type::EDGE);
+  return value_.eVal.get();
 }
 
 const Path& Value::getPath() const {
-  CHECK_EQ(type_, Type::PATH);
+  DCHECK_EQ(type_, Type::PATH);
   return *(value_.pVal);
 }
 
 const Path* Value::getPathPtr() const {
-  CHECK_EQ(type_, Type::PATH);
+  DCHECK_EQ(type_, Type::PATH);
   return value_.pVal.get();
 }
 
 const List& Value::getList() const {
-  CHECK_EQ(type_, Type::LIST);
+  DCHECK_EQ(type_, Type::LIST);
   return *(value_.lVal);
 }
 
 const List* Value::getListPtr() const {
-  CHECK_EQ(type_, Type::LIST);
+  DCHECK_EQ(type_, Type::LIST);
   return value_.lVal.get();
 }
 
 const Map& Value::getMap() const {
-  CHECK_EQ(type_, Type::MAP);
+  DCHECK_EQ(type_, Type::MAP);
   return *(value_.mVal);
 }
 
 const Map* Value::getMapPtr() const {
-  CHECK_EQ(type_, Type::MAP);
+  DCHECK_EQ(type_, Type::MAP);
   return value_.mVal.get();
 }
 
 const Set& Value::getSet() const {
-  CHECK_EQ(type_, Type::SET);
+  DCHECK_EQ(type_, Type::SET);
   return *(value_.uVal);
 }
 
 const Set* Value::getSetPtr() const {
-  CHECK_EQ(type_, Type::SET);
+  DCHECK_EQ(type_, Type::SET);
   return value_.uVal.get();
 }
 
 const DataSet& Value::getDataSet() const {
-  CHECK_EQ(type_, Type::DATASET);
+  DCHECK_EQ(type_, Type::DATASET);
   return *(value_.gVal);
 }
 
 const DataSet* Value::getDataSetPtr() const {
-  CHECK_EQ(type_, Type::DATASET);
+  DCHECK_EQ(type_, Type::DATASET);
   return value_.gVal.get();
 }
 
 const Geography& Value::getGeography() const {
-  CHECK_EQ(type_, Type::GEOGRAPHY);
+  DCHECK_EQ(type_, Type::GEOGRAPHY);
   return *(value_.ggVal);
 }
 
 const Geography* Value::getGeographyPtr() const {
-  CHECK_EQ(type_, Type::GEOGRAPHY);
+  DCHECK_EQ(type_, Type::GEOGRAPHY);
   return value_.ggVal.get();
 }
 
 const Duration& Value::getDuration() const {
-  CHECK_EQ(type_, Type::DURATION);
+  DCHECK_EQ(type_, Type::DURATION);
   return *value_.duVal;
 }
 
 const Duration* Value::getDurationPtr() const {
-  CHECK_EQ(type_, Type::DURATION);
+  DCHECK_EQ(type_, Type::DURATION);
   return value_.duVal.get();
 }
 
 NullType& Value::mutableNull() {
-  CHECK_EQ(type_, Type::NULLVALUE);
+  DCHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
 }
 
 bool& Value::mutableBool() {
-  CHECK_EQ(type_, Type::BOOL);
+  DCHECK_EQ(type_, Type::BOOL);
   return value_.bVal;
 }
 
 int64_t& Value::mutableInt() {
-  CHECK_EQ(type_, Type::INT);
+  DCHECK_EQ(type_, Type::INT);
   return value_.iVal;
 }
 
 double& Value::mutableFloat() {
-  CHECK_EQ(type_, Type::FLOAT);
+  DCHECK_EQ(type_, Type::FLOAT);
   return value_.fVal;
 }
 
 std::string& Value::mutableStr() {
-  CHECK_EQ(type_, Type::STRING);
+  DCHECK_EQ(type_, Type::STRING);
   return *value_.sVal;
 }
 
 Date& Value::mutableDate() {
-  CHECK_EQ(type_, Type::DATE);
+  DCHECK_EQ(type_, Type::DATE);
   return value_.dVal;
 }
 
 Time& Value::mutableTime() {
-  CHECK_EQ(type_, Type::TIME);
+  DCHECK_EQ(type_, Type::TIME);
   return value_.tVal;
 }
 
 DateTime& Value::mutableDateTime() {
-  CHECK_EQ(type_, Type::DATETIME);
+  DCHECK_EQ(type_, Type::DATETIME);
   return value_.dtVal;
 }
 
 Vertex& Value::mutableVertex() {
-  CHECK_EQ(type_, Type::VERTEX);
+  DCHECK_EQ(type_, Type::VERTEX);
   return *(value_.vVal);
 }
 
 Edge& Value::mutableEdge() {
-  CHECK_EQ(type_, Type::EDGE);
+  DCHECK_EQ(type_, Type::EDGE);
   return *(value_.eVal);
 }
 
 Path& Value::mutablePath() {
-  CHECK_EQ(type_, Type::PATH);
+  DCHECK_EQ(type_, Type::PATH);
   return *(value_.pVal);
 }
 
 List& Value::mutableList() {
-  CHECK_EQ(type_, Type::LIST);
+  DCHECK_EQ(type_, Type::LIST);
   return *(value_.lVal);
 }
 
 Map& Value::mutableMap() {
-  CHECK_EQ(type_, Type::MAP);
+  DCHECK_EQ(type_, Type::MAP);
   return *(value_.mVal);
 }
 
 Set& Value::mutableSet() {
-  CHECK_EQ(type_, Type::SET);
+  DCHECK_EQ(type_, Type::SET);
   return *(value_.uVal);
 }
 
 DataSet& Value::mutableDataSet() {
-  CHECK_EQ(type_, Type::DATASET);
+  DCHECK_EQ(type_, Type::DATASET);
   return *(value_.gVal);
 }
 
 Geography& Value::mutableGeography() {
-  CHECK_EQ(type_, Type::GEOGRAPHY);
+  DCHECK_EQ(type_, Type::GEOGRAPHY);
   return *(value_.ggVal);
 }
 
 Duration& Value::mutableDuration() {
-  CHECK_EQ(type_, Type::DURATION);
+  DCHECK_EQ(type_, Type::DURATION);
   return *value_.duVal;
 }
 
 NullType Value::moveNull() {
-  CHECK_EQ(type_, Type::NULLVALUE);
+  DCHECK_EQ(type_, Type::NULLVALUE);
   NullType v = std::move(value_.nVal);
   clear();
   return std::move(v);
 }
 
 bool Value::moveBool() {
-  CHECK_EQ(type_, Type::BOOL);
+  DCHECK_EQ(type_, Type::BOOL);
   bool v = std::move(value_.bVal);
   clear();
   return std::move(v);
 }
 
 int64_t Value::moveInt() {
-  CHECK_EQ(type_, Type::INT);
+  DCHECK_EQ(type_, Type::INT);
   int64_t v = std::move(value_.iVal);
   clear();
   return std::move(v);
 }
 
 double Value::moveFloat() {
-  CHECK_EQ(type_, Type::FLOAT);
+  DCHECK_EQ(type_, Type::FLOAT);
   double v = std::move(value_.fVal);
   clear();
   return std::move(v);
 }
 
 std::string Value::moveStr() {
-  CHECK_EQ(type_, Type::STRING);
+  DCHECK_EQ(type_, Type::STRING);
   std::string v = std::move(*value_.sVal);
   clear();
   return v;
 }
 
 Date Value::moveDate() {
-  CHECK_EQ(type_, Type::DATE);
+  DCHECK_EQ(type_, Type::DATE);
   Date v = std::move(value_.dVal);
   clear();
   return v;
 }
 
 Time Value::moveTime() {
-  CHECK_EQ(type_, Type::TIME);
+  DCHECK_EQ(type_, Type::TIME);
   Time v = std::move(value_.tVal);
   clear();
   return v;
 }
 
 DateTime Value::moveDateTime() {
-  CHECK_EQ(type_, Type::DATETIME);
+  DCHECK_EQ(type_, Type::DATETIME);
   DateTime v = std::move(value_.dtVal);
   clear();
   return v;
 }
 
 Vertex Value::moveVertex() {
-  CHECK_EQ(type_, Type::VERTEX);
+  DCHECK_EQ(type_, Type::VERTEX);
   Vertex v = std::move(*(value_.vVal));
   clear();
   return v;
 }
 
 Edge Value::moveEdge() {
-  CHECK_EQ(type_, Type::EDGE);
+  DCHECK_EQ(type_, Type::EDGE);
   Edge v = std::move(*(value_.eVal));
   clear();
   return v;
 }
 
 Path Value::movePath() {
-  CHECK_EQ(type_, Type::PATH);
+  DCHECK_EQ(type_, Type::PATH);
   Path v = std::move(*(value_.pVal));
   clear();
   return v;
 }
 
 List Value::moveList() {
-  CHECK_EQ(type_, Type::LIST);
+  DCHECK_EQ(type_, Type::LIST);
   List list = std::move(*(value_.lVal));
   clear();
   return list;
 }
 
 Map Value::moveMap() {
-  CHECK_EQ(type_, Type::MAP);
+  DCHECK_EQ(type_, Type::MAP);
   Map map = std::move(*(value_.mVal));
   clear();
   return map;
 }
 
 Set Value::moveSet() {
-  CHECK_EQ(type_, Type::SET);
+  DCHECK_EQ(type_, Type::SET);
   Set set = std::move(*(value_.uVal));
   clear();
   return set;
 }
 
 DataSet Value::moveDataSet() {
-  CHECK_EQ(type_, Type::DATASET);
+  DCHECK_EQ(type_, Type::DATASET);
   DataSet ds = std::move(*(value_.gVal));
   clear();
   return ds;
 }
 
 Geography Value::moveGeography() {
-  CHECK_EQ(type_, Type::GEOGRAPHY);
+  DCHECK_EQ(type_, Type::GEOGRAPHY);
   Geography v = std::move(*(value_.ggVal));
   clear();
   return v;
 }
 
 Duration Value::moveDuration() {
-  CHECK_EQ(type_, Type::DURATION);
+  DCHECK_EQ(type_, Type::DURATION);
   Duration v = std::move(*value_.duVal);
   clear();
   return v;

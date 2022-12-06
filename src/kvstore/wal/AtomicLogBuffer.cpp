@@ -55,7 +55,7 @@ void AtomicLogBuffer::Iterator::seek(LogID logId) {
 
 AtomicLogBuffer::~AtomicLogBuffer() {
   auto refs = refs_.load(std::memory_order_acquire);
-  CHECK_EQ(0, refs);
+  DCHECK_EQ(0, refs);
   auto* curr = head_.load(std::memory_order_relaxed);
   auto* prev = curr;
   while (curr != nullptr) {
@@ -179,7 +179,7 @@ void AtomicLogBuffer::releaseRef() {
   // So we should load tail before refs count down to ensure the tail current
   // thread got is older than the new readers see.
 
-  CHECK_EQ(1, readers);
+  DCHECK_EQ(1, readers);
 
   auto dirtyNodes = dirtyNodes_.load(std::memory_order_relaxed);
   bool gcRunning = false;

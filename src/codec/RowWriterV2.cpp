@@ -143,13 +143,13 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
 }
 
 void RowWriterV2::processV2EncodedStr() noexcept {
-  CHECK_EQ(0x08, buf_[0] & 0x18);
+  DCHECK_EQ(0x08, buf_[0] & 0x18);
   int32_t verBytes = buf_[0] & 0x07;
   SchemaVer ver = 0;
   if (verBytes > 0) {
     memcpy(reinterpret_cast<void*>(&ver), &buf_[1], verBytes);
   }
-  CHECK_EQ(ver, schema_->getVersion())
+  DCHECK_EQ(ver, schema_->getVersion())
       << "The data is encoded by schema version " << ver
       << ", while the provided schema version is " << schema_->getVersion();
 

@@ -431,7 +431,7 @@ Value RowReaderV1::getVid(int64_t index) const noexcept {
     // Since 2.0, vid has been defined as a binary array. So we need to convert
     // the int64 vid in 1.0 to a binary array
     Value v(getInt64(index));
-    CHECK_EQ(v.type(), Value::Type::INT);
+    DCHECK_EQ(v.type(), Value::Type::INT);
     int64_t vid = v.getInt();
     v.setStr(std::string(reinterpret_cast<char*>(&vid), sizeof(int64_t)));
     return v;

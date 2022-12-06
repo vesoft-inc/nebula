@@ -59,9 +59,9 @@ folly::SemiFuture<Code> ChainAddEdgesLocalProcessor::processRemote(Code code) {
   if (rcPrepare_ != Code::SUCCEEDED) {
     return rcPrepare_;
   }
-  CHECK_EQ(req_.get_parts().size(), 1);
+  DCHECK_EQ(req_.get_parts().size(), 1);
   auto reversedRequest = reverseRequest(req_);
-  CHECK_EQ(reversedRequest.get_parts().size(), 1);
+  DCHECK_EQ(reversedRequest.get_parts().size(), 1);
   auto [pro, fut] = folly::makePromiseContract<Code>();
   doRpc(std::move(pro), std::move(reversedRequest));
   return std::move(fut);
@@ -104,7 +104,7 @@ void ChainAddEdgesLocalProcessor::reportFailed(ResumeType type) {
 }
 
 bool ChainAddEdgesLocalProcessor::prepareRequest(const cpp2::AddEdgesRequest& req) {
-  CHECK_EQ(req.get_parts().size(), 1);
+  DCHECK_EQ(req.get_parts().size(), 1);
   req_ = req;
   spaceId_ = req_.get_space_id();
   localPartId_ = req.get_parts().begin()->first;

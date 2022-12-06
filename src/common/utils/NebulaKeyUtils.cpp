@@ -303,7 +303,7 @@ bool NebulaKeyUtils::isAdminTaskKey(const folly::StringPiece& rawKey) {
 
 std::tuple<int32_t, GraphSpaceID, JobID, TaskID> NebulaKeyUtils::parseAdminTaskKey(
     folly::StringPiece key) {
-  CHECK_EQ(key.size(), sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
+  DCHECK_EQ(key.size(), sizeof(int32_t) + sizeof(GraphSpaceID) + sizeof(JobID) + sizeof(TaskID));
   size_t offset = 0;
   int32_t seqId = *reinterpret_cast<const int32_t*>(key.data());
   offset += sizeof(int32_t);

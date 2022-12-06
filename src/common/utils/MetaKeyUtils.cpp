@@ -477,7 +477,7 @@ HostAddr MetaKeyUtils::parseLeaderKey(folly::StringPiece key) {
 HostAddr MetaKeyUtils::parseLeaderKeyV1(folly::StringPiece key) {
   LOG(ERROR) << "deprecated function\n" << boost::stacktrace::stacktrace();
   HostAddr host;
-  CHECK_EQ(key.size(), kLeadersTable.size() + sizeof(int64_t));
+  DCHECK_EQ(key.size(), kLeadersTable.size() + sizeof(int64_t));
   key.advance(kLeadersTable.size());
   auto ip = *reinterpret_cast<const uint32_t*>(key.begin());
   host.host = network::NetworkUtils::intToIPv4(ip);

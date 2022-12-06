@@ -81,7 +81,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(kvstore::WriteBatch*
     auto oldZoneName = MetaKeyUtils::parseZoneName(oldZoneKey);
     auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
 
-    CHECK_EQ(1, hosts.size());
+    DCHECK_EQ(1, hosts.size());
     if (hostMap.find(hosts[0]) != hostMap.end()) {
       auto host = hostMap[hosts[0]];
       auto newZoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);

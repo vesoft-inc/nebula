@@ -95,7 +95,7 @@ proxygen::RequestHandler *Route::generateHandler(const std::string &path) const 
   std::smatch m;
   std::regex_search(path, m, *pattern_);
   PathParams params;
-  CHECK_EQ(groups_.size(), m.size() - 1UL) << "groups is not equal to matches";
+  DCHECK_EQ(groups_.size(), m.size() - 1UL) << "groups is not equal to matches";
   for (std::size_t i = 0; i < groups_.size(); i++) {
     params.emplace(groups_[i], m[i + 1]);
   }

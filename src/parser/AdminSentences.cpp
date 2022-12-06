@@ -293,10 +293,10 @@ std::string AdminJobSentence::toString() const {
     case meta::cpp2::JobOp::SHOW_All:
       return "SHOW JOBS";
     case meta::cpp2::JobOp::SHOW:
-      CHECK_EQ(paras_.size(), 1U);
+      DCHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("SHOW JOB %s", paras_[0].c_str());
     case meta::cpp2::JobOp::STOP:
-      CHECK_EQ(paras_.size(), 1U);
+      DCHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("STOP JOB %s", paras_[0].c_str());
     case meta::cpp2::JobOp::RECOVER:
       if (paras_.empty()) {

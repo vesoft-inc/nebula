@@ -606,8 +606,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
       VLOG(4) << "Roll back to log " << id << ", the last WAL file is now \""
               << walFiles_.rbegin()->second->path() << "\"";
       rollbackInFile(walFiles_.rbegin()->second, id);
-      CHECK_EQ(lastLogId_, id);
-      CHECK_EQ(walFiles_.rbegin()->second->lastId(), id);
+      DCHECK_EQ(lastLogId_, id);
+      DCHECK_EQ(walFiles_.rbegin()->second->lastId(), id);
     }
   }
 

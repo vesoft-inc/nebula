@@ -137,7 +137,7 @@ std::vector<kvstore::KV> ChainDeleteEdgesLocalProcessor::makePrime(
 }
 
 Code ChainDeleteEdgesLocalProcessor::checkRequest(const cpp2::DeleteEdgesRequest& req) {
-  CHECK_EQ(req.get_parts().size(), 1);
+  DCHECK_EQ(req.get_parts().size(), 1);
   req_ = req;
   DCHECK(!req_.get_parts().empty());
   spaceId_ = req_.get_space_id();

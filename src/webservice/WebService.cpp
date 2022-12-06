@@ -117,7 +117,7 @@ Status WebService::start(uint16_t httpPort) {
     server_->start(
         [&]() {
           auto addresses = server_->addresses();
-          CHECK_EQ(addresses.size(), 1UL);
+          DCHECK_EQ(addresses.size(), 1UL);
           if (FLAGS_ws_http_port == 0) {
             FLAGS_ws_http_port = addresses[0].address.getPort();
           }

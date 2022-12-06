@@ -670,7 +670,7 @@ void Executor::drop(const PlanNode *node) {
       // Make sure use the variable happened-before decrement count
       if (inputVar->userCount.fetch_sub(1, std::memory_order_release) == 1) {
         // Make sure drop happened-after count decrement
-        CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
+        DCHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
       }
     }

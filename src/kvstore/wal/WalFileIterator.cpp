@@ -111,7 +111,7 @@ LogIterator& WalFileIterator::operator++() {
     VLOG(4) << "Current ID is " << currId_ << ", and the first ID in the next file is "
             << nextFirstId_ << ", so need to move to the next file";
     // Close the current file
-    CHECK_EQ(close(fds_.front()), 0);
+    DCHECK_EQ(close(fds_.front()), 0);
     fds_.pop_front();
     idRanges_.pop_front();
 
@@ -123,7 +123,7 @@ LogIterator& WalFileIterator::operator++() {
     }
 
     nextFirstId_ = getFirstIdInNextFile();
-    CHECK_EQ(currId_, idRanges_.front().first);
+    DCHECK_EQ(currId_, idRanges_.front().first);
     currPos_ = 0;
   } else {
     // Move to the next log
@@ -146,7 +146,7 @@ LogIterator& WalFileIterator::operator++() {
         eof_ = true;
         break;
       }
-      CHECK_EQ(currId_, logId);
+      DCHECK_EQ(currId_, logId);
       // Read the termID
       if (pread(
               fd, reinterpret_cast<char*>(&currTerm_), sizeof(TermID), currPos_ + sizeof(LogID)) !=
@@ -187,11 +187,11 @@ ClusterID WalFileIterator::logSource() const {
   // Retrieve from the file
   DCHECK(!fds_.empty());
   ClusterID cluster = 0;
-  CHECK_EQ(pread(fds_.front(),
-                 &(cluster),
-                 sizeof(ClusterID),
-                 currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t)),
-           static_cast<ssize_t>(sizeof(ClusterID)))
+  DCHECK_EQ(pread(fds_.front(),
+                  &(cluster),
+                  sizeof(ClusterID),
+                  currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t)),
+            static_cast<ssize_t>(sizeof(ClusterID)))
       << "Failed to read. Curr position is " << currPos_ << ", expected read length is "
       << sizeof(ClusterID) << " (errno: " << errno << "): " << strerror(errno);
 
@@ -203,11 +203,11 @@ folly::StringPiece WalFileIterator::logMsg() const {
   DCHECK(!fds_.empty());
 
   currLog_.resize(currMsgLen_);
-  CHECK_EQ(pread(fds_.front(),
-                 &(currLog_[0]),
-                 currMsgLen_,
-                 currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t) + sizeof(ClusterID)),
-           static_cast<ssize_t>(currMsgLen_))
+  DCHECK_EQ(pread(fds_.front(),
+                  &(currLog_[0]),
+                  currMsgLen_,
+                  currPos_ + sizeof(LogID) + sizeof(TermID) + sizeof(int32_t) + sizeof(ClusterID)),
+            static_cast<ssize_t>(currMsgLen_))
       << "Failed to read. Curr position is " << currPos_ << ", expected read length is "
       << currMsgLen_ << " (errno: " << errno << "): " << strerror(errno);
 

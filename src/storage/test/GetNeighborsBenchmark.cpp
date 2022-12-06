@@ -196,11 +196,11 @@ void goEdgeNode(int32_t iters,
           cell.values.emplace_back(std::move(list));
           count++;
         }
-        CHECK_EQ(FLAGS_max_rank, count);
+        DCHECK_EQ(FLAGS_max_rank, count);
       }
       resultDataSet.rows.emplace_back(std::move(row));
     }
-    CHECK_EQ(vertex.size(), resultDataSet.rowSize());
+    DCHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
     resp.result_ref() = std::move(result);
     resp.vertices_ref() = std::move(resultDataSet);
@@ -290,11 +290,11 @@ void prefix(int32_t iters,
           cell.values.emplace_back(std::move(list));
           count++;
         }
-        CHECK_EQ(FLAGS_max_rank, count);
+        DCHECK_EQ(FLAGS_max_rank, count);
       }
       resultDataSet.rows.emplace_back(std::move(row));
     }
-    CHECK_EQ(vertex.size(), resultDataSet.rowSize());
+    DCHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
     resp.result_ref() = std::move(result);
     resp.vertices_ref() = std::move(resultDataSet);

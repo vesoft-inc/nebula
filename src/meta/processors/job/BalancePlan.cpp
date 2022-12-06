@@ -60,7 +60,7 @@ folly::Future<meta::cpp2::JobStatus> BalancePlan::invoke() {
           stopped = stopped_;
         }
         if (finished) {
-          CHECK_EQ(j, buckets_[i].size() - 1);
+          DCHECK_EQ(j, buckets_[i].size() - 1);
           saveInStore();
           VLOG(4) << "BalancePlan::invoke finish";
           auto result =
@@ -104,7 +104,7 @@ folly::Future<meta::cpp2::JobStatus> BalancePlan::invoke() {
           stopped = stopped_;
         }
         if (finished) {
-          CHECK_EQ(j, buckets_[i].size() - 1);
+          DCHECK_EQ(j, buckets_[i].size() - 1);
           VLOG(4) << "BalancePlan::invoke finish";
           auto result = stopped ? meta::cpp2::JobStatus::STOPPED : meta::cpp2::JobStatus::FAILED;
           promise_.setValue(result);

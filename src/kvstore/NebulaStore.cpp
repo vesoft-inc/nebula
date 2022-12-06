@@ -507,7 +507,7 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId) {
       for (auto& partId : parts) {
         engine->removePart(partId);
       }
-      CHECK_EQ(0, engine->totalPartsNum());
+      DCHECK_EQ(0, engine->totalPartsNum());
     }
     CHECK(spaceIt->second->parts_.empty());
     std::vector<std::string> enginePaths;

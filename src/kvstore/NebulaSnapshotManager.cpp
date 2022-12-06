@@ -58,7 +58,7 @@ void NebulaSnapshotManager::accessAllRowsInSnapshot(GraphSpaceID spaceId,
     cb(kInvalidLogId, kInvalidLogTerm, data, totalCount, totalSize, raftex::SnapshotStatus::FAILED);
     return;
   }
-  CHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
+  DCHECK_EQ(val.size(), sizeof(LogID) + sizeof(TermID));
   LogID commitLogId;
   TermID commitLogTerm;
   memcpy(reinterpret_cast<void*>(&commitLogId), val.data(), sizeof(LogID));

@@ -1080,7 +1080,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true, true);
       if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         std::lock_guard<std::mutex> g(raftLock_);
-        CHECK_EQ(lastLogId, lastCommitId);
+        DCHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
         lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
@@ -1765,7 +1765,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         result = wal_->appendLogs(logIter);
       }
       if (result) {
-        CHECK_EQ(lastId, wal_->lastLogId());
+        DCHECK_EQ(lastId, wal_->lastLogId());
         lastLogId_ = wal_->lastLogId();
         lastLogTerm_ = wal_->lastLogTerm();
         lastMatchedLogId = lastLogId_;
@@ -1794,7 +1794,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
       VLOG(4) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
-      CHECK_EQ(lastLogIdCanCommit, lastCommitId);
+      DCHECK_EQ(lastLogIdCanCommit, lastCommitId);
       committedLogId_ = lastCommitId;
       committedLogTerm_ = lastCommitTerm;
       resp.committed_log_id_ref() = lastLogIdCanCommit;
