@@ -592,11 +592,12 @@ Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
   folly::StringPiece name = folly::StringPiece(*sentence->indexName());
   if (!name.startsWith(kFulltextIndexNamePrefix)) {
-    return Status::SyntaxError("Index name must begin with \"%s\"", kFulltextIndexNamePrefix);
+    return Status::SyntaxError("Index name must begin with \"%s\"",
+                               kFulltextIndexNamePrefix.c_str());
   }
   if (name.size() > kFulltextIndexNameLength) {
-    return Status::SyntaxError("Index name's length must less equal than %d",
-                               kFulltextIndexNameLength);
+    return Status::SyntaxError(fmt::format("Fulltext index name's length must less equal than {}",
+                                           kFulltextIndexNameLength));
   }
   bool ok = true;
   for (auto c : name) {
