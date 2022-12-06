@@ -304,6 +304,8 @@ class PlanNode {
     return static_cast<const T*>(this);
   }
 
+  bool isColumnsIncludedIn(const PlanNode* other) const;
+
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
 

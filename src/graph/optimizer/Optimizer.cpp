@@ -39,6 +39,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
   auto rootGroup = std::move(ret).value();
+  rootGroup->setRootGroup();
 
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
   auto *newRoot = rootGroup->getPlan();
@@ -52,6 +53,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 
 // Just for Properties Pruning
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
+  NG_RETURN_IF_ERROR(rewriteArgumentInputVar(root));
   if (FLAGS_enable_optimizer_property_pruner_rule) {
     graph::PropertyTracker propsUsed;
     graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
@@ -79,6 +81,7 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
       for (auto rule : ruleSet->rules()) {
         // Explore until the maximum number of iterations(Rules) is reached
         NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
+        NG_RETURN_IF_ERROR(rootGroup->validate(rule));
         rootGroup->setUnexplored(rule);
       }
     }
@@ -123,6 +126,101 @@ void Optimizer::addBodyToGroupNode(OptContext *ctx,
   auto n = const_cast<PlanNode *>(node);
   auto body = convertToGroup(ctx, n, visited);
   gnode->addBody(body);
+}
+
+namespace {
+
+// The plan node referenced by argument always is in the left side of plan tree. So we only need to
+// check whether the left root child of binary input plan node contains what the argument needs in
+// its output columns
+bool findArgumentRefPlanNodeInPath(const std::vector<const PlanNode *> &path, PlanNode *argument) {
+  DCHECK_EQ(argument->kind(), PlanNode::Kind::kArgument);
+  for (int i = path.size() - 1; i >= 0; i--) {
+    const auto *pn = path[i];
+    if (pn->isBiInput()) {
+      DCHECK_LT(i, path.size() - 1);
+      const auto *bpn = static_cast<const BinaryInputNode *>(pn);
+      if (bpn->right() == path[i + 1]) {
+        // Argument is in the right side dependency of binary plan node, check the left child
+        // output columns
+        if (argument->isColumnsIncludedIn(bpn->left())) {
+          argument->setInputVar(bpn->left()->outputVar());
+          return true;
+        }
+      } else {
+        // Argument is in the left side dependency of binary plan node, continue to find
+        // next parent plan node
+        DCHECK_EQ(bpn->left(), path[i + 1]);
+      }
+    }
+  }
+  return false;
+}
+
+Status rewriteArgumentInputVarInternal(PlanNode *root,
+                                       uint16_t stackDepth,
+                                       bool &hasArgument,
+                                       std::vector<const PlanNode *> &path) {
+  const uint16_t kMaxStackDepth = 512u;
+  if (stackDepth > kMaxStackDepth) {
+    return Status::Error("The depth of plan tree has exceeded the max %u level", kMaxStackDepth);
+  }
+  stackDepth++;
+
+  if (!root) return Status::OK();
+
+  path.push_back(root);
+  switch (root->numDeps()) {
+    case 0: {
+      if (root->kind() == PlanNode::Kind::kArgument) {
+        hasArgument = true;
+        DCHECK(root->inputVar().empty())
+            << "Should keep the input empty for argument when plan generation";
+
+        if (!findArgumentRefPlanNodeInPath(path, root) || root->inputVar().empty()) {
+          return Status::Error("Could not find the right input variable for argument plan node");
+        }
+      }
+      break;
+    }
+    case 1: {
+      auto *dep = const_cast<PlanNode *>(root->dep());
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, stackDepth, hasArgument, path));
+      break;
+    }
+    case 2: {
+      auto *bpn = static_cast<BinaryInputNode *>(root);
+      auto *left = const_cast<PlanNode *>(bpn->left());
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, stackDepth, hasArgument, path));
+      auto *right = const_cast<PlanNode *>(bpn->right());
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, stackDepth, hasArgument, path));
+      break;
+    }
+    default: {
+      return Status::Error(
+          "Invalid dependencies of plan node `%s': %lu", root->toString().c_str(), root->numDeps());
+    }
+  }
+  path.pop_back();
+
+  // Ensure that there's no argument plan node if loop/select plan nodes exist in execution plan
+  if (root->kind() == PlanNode::Kind::kLoop || root->kind() == PlanNode::Kind::kSelect) {
+    if (hasArgument) {
+      return Status::Error(
+          "Loop/Select plan node should not exist with argument in the same execution plan");
+    }
+  }
+
+  return Status::OK();
+}
+
+}  // namespace
+
+// static
+Status Optimizer::rewriteArgumentInputVar(PlanNode *root) {
+  bool hasArgument = false;
+  std::vector<const PlanNode *> path;
+  return rewriteArgumentInputVarInternal(root, 0, hasArgument, path);
 }
 
 }  // namespace opt

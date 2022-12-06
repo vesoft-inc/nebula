@@ -827,6 +827,24 @@ Expression *ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
   return allFlattenExpr;
 }
 
+bool ExpressionUtils::checkVarPropIfExist(const std::vector<std::string> &columns,
+                                          const Expression *e) {
+  auto varProps = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kVarProperty});
+  if (varProps.empty()) {
+    return false;
+  }
+  for (const auto *expr : varProps) {
+    DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
+    auto iter = std::find_if(columns.begin(), columns.end(), [expr](const std::string &item) {
+      return !item.compare(static_cast<const VariablePropertyExpression *>(expr)->prop());
+    });
+    if (iter == columns.end()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // pick the subparts of expression that meet picker's criteria
 void ExpressionUtils::splitFilter(const Expression *expr,
                                   std::function<bool(const Expression *)> picker,

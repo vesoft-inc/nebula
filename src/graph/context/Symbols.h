@@ -72,10 +72,6 @@ class SymbolTable final {
 
   Variable* getVar(const std::string& varName);
 
-  void setAliasGeneratedBy(const std::vector<std::string>& aliases, const std::string& varName);
-
-  StatusOr<std::string> getAliasGeneratedBy(const std::string& alias);
-
   std::string toString() const;
 
  private:
@@ -85,8 +81,6 @@ class SymbolTable final {
   ExecutionContext* ectx_{nullptr};
   // var name -> variable
   std::unordered_map<std::string, Variable*> vars_;
-  // alias -> first variable that generate the alias
-  std::unordered_map<std::string, std::string> aliasGeneratedBy_;
 };
 
 }  // namespace graph

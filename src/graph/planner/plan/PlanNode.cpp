@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "PlanNode.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -355,6 +354,17 @@ void PlanNode::setInputVar(const std::string& varname, size_t idx) {
   }
 }
 
+bool PlanNode::isColumnsIncludedIn(const PlanNode* other) const {
+  const auto& otherColNames = other->colNames();
+  for (auto& colName : colNames()) {
+    auto iter = std::find(otherColNames.begin(), otherColNames.end(), colName);
+    if (iter == otherColNames.end()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
   auto desc = std::make_unique<PlanNodeDescription>();
   desc->id = id_;
@@ -464,7 +474,6 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
 }
 
 void PlanNode::setColNames(std::vector<std::string> cols) {
-  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr()->name);
   outputVarPtr()->colNames = std::move(cols);
 }
 }  // namespace graph

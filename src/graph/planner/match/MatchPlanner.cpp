@@ -88,11 +88,6 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
     }
   }
   if (!interAliases.empty()) {
-    if (matchPlan.tail->kind() == PlanNode::Kind::kArgument) {
-      // The input of the argument operator is always the output of the plan on the other side of
-      // the join
-      matchPlan.tail->setInputVar(queryPlan.root->outputVar());
-    }
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;
@@ -167,7 +162,9 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
 
   // TBD: need generate var for all queryPlan.tail?
   if (queryPlan.tail->isSingleInput()) {
-    queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    if (queryPlan.tail->kind() != PlanNode::Kind::kArgument) {
+      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    }
     if (!tailConnected_) {
       tailConnected_ = true;
       queryPlan.appendStartNode(qctx);
