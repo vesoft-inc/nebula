@@ -9,11 +9,16 @@ Feature: Multi Line Multi Query Parts
   Scenario: Multi Line Multi Path Patterns
     When executing query:
       """
-      USE nba;
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2,
-      CASE WHEN l.team.name is not null THEN l.team.name
-      WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=='Tim Duncan'
+      RETURN
+        m.player.name AS n1,
+        n.player.name AS n2,
+        CASE
+          WHEN l.team.name is not null THEN l.team.name
+          WHEN l.player.name is not null THEN l.player.name ELSE 'null'
+        END AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1           | n2            | n3           |
@@ -29,8 +34,10 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=='Tim Duncan'
+      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1            | n2           | n3                  |
