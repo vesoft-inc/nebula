@@ -888,3 +888,59 @@ Feature: Prune Properties rule
     Then the result should be, in any order:
       | count(a) |
       | 5        |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return sum(a)
+      """
+    Then the result should be, in any order:
+      | sum(a) |
+      | 10025  |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return max(a)
+      """
+    Then the result should be, in any order:
+      | max(a) |
+      | 2015   |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return min(a)
+      """
+    Then the result should be, in any order:
+      | min(a) |
+      | 1997   |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return avg(a)
+      """
+    Then the result should be, in any order:
+      | avg(a) |
+      | 2005.0 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return std(a)
+      """
+    Then the result should be, in any order:
+      | std(a)            |
+      | 6.542170893518461 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return std(a)
+      """
+    Then the result should be, in any order:
+      | std(a)            |
+      | 6.542170893518461 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return bit_or(a)
+      """
+    Then the result should be, in any order:
+      | bit_or(a) |
+      | 2015      |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return bit_and(a)
+      """
+    Then the result should be, in any order:
+      | bit_and(a) |
+      | 1984       |
