@@ -149,21 +149,21 @@ Feature: Push Filter down HashInnerJoin rule
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                    |
-      | 30 | Sort           | 14           |                                                                  |
-      | 14 | Project        | 19           |                                                                  |
-      | 19 | HashInnerJoin  | 6,22         |                                                                  |
-      | 6  | Project        | 20           |                                                                  |
-      | 20 | AppendVertices | 2            |                                                                  |
-      | 2  | Dedup          | 1            |                                                                  |
-      | 1  | PassThrough    | 3            |                                                                  |
-      | 3  | Start          |              |                                                                  |
-      | 22 | Project        | 21           |                                                                  |
-      | 21 | Filter         | 10           | { "condition": "(($-.e[0].likeness>0) OR (-.v1.player.age>0))" } |
-      | 10 | AppendVertices | 9            |                                                                  |
-      | 9  | Traverse       | 7            |                                                                  |
-      | 7  | Argument       | 8            |                                                                  |
-      | 8  | Start          |              |                                                                  |
+      | id | name           | dependencies | operator info                                                     |
+      | 30 | Sort           | 14           |                                                                   |
+      | 14 | Project        | 19           |                                                                   |
+      | 19 | HashInnerJoin  | 6,22         |                                                                   |
+      | 6  | Project        | 20           |                                                                   |
+      | 20 | AppendVertices | 2            |                                                                   |
+      | 2  | Dedup          | 1            |                                                                   |
+      | 1  | PassThrough    | 3            |                                                                   |
+      | 3  | Start          |              |                                                                   |
+      | 22 | Project        | 21           |                                                                   |
+      | 21 | Filter         | 10           | { "condition": "(($-.e[0].likeness>0) OR ($-.v1.player.age>0))" } |
+      | 10 | AppendVertices | 9            |                                                                   |
+      | 9  | Traverse       | 7            |                                                                   |
+      | 7  | Argument       | 8            |                                                                   |
+      | 8  | Start          |              |                                                                   |
     When profiling query:
       """
       match (a:player)-[:like]->(b)
@@ -178,20 +178,20 @@ Feature: Push Filter down HashInnerJoin rule
       | a                                                                 | b                                                   | c                                |
       | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"}) | ("Steve Nash" :player{age: 45, name: "Steve Nash"}) | ("Lakers" :team{name: "Lakers"}) |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                             |
-      | 16 | TopN           | 25           |                                                                                                           |
-      | 25 | HashInnerJoin  | 27,29        |                                                                                                           |
-      | 27 | Project        | 30           |                                                                                                           |
-      | 30 | Filter         | 4            | {"condition": "((((-.b.player.age+-.a.player.age)>40) AND (-.a.player.age<45)) AND (-.b.player.age>30))"} |
-      | 4  | AppendVertices | 24           |                                                                                                           |
-      | 24 | Traverse       | 1            |                                                                                                           |
-      | 1  | IndexScan      | 2            |                                                                                                           |
-      | 2  | Start          |              |                                                                                                           |
-      | 29 | Project        | 28           |                                                                                                           |
-      | 28 | Filter         | 9            | {"condition": "(-.c.team.name>\"A\")"}                                                                    |
-      | 9  | AppendVertices | 8            |                                                                                                           |
-      | 8  | Traverse       | 7            |                                                                                                           |
-      | 7  | Argument       |              |                                                                                                           |
+      | id | name           | dependencies | operator info                                                                                                 |
+      | 16 | TopN           | 25           |                                                                                                               |
+      | 25 | HashInnerJoin  | 27,29        |                                                                                                               |
+      | 27 | Project        | 30           |                                                                                                               |
+      | 30 | Filter         | 4            | {"condition": "(((($-.b.player.age+$-.a.player.age)>40) AND ($-.a.player.age<45)) AND ($-.b.player.age>30))"} |
+      | 4  | AppendVertices | 24           |                                                                                                               |
+      | 24 | Traverse       | 1            |                                                                                                               |
+      | 1  | IndexScan      | 2            |                                                                                                               |
+      | 2  | Start          |              |                                                                                                               |
+      | 29 | Project        | 28           |                                                                                                               |
+      | 28 | Filter         | 9            | {"condition": "($-.c.team.name>\"A\")"}                                                                       |
+      | 9  | AppendVertices | 8            |                                                                                                               |
+      | 8  | Traverse       | 7            |                                                                                                               |
+      | 7  | Argument       |              |                                                                                                               |
     When profiling query:
       """
       match (a:player)-[:like]->(b)
@@ -206,37 +206,38 @@ Feature: Push Filter down HashInnerJoin rule
       | a                                                                 | b                                                   | c                                |
       | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"}) | ("Steve Nash" :player{age: 45, name: "Steve Nash"}) | ("Lakers" :team{name: "Lakers"}) |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                     |
-      | 16 | TopN           | 13           |                                                                                                   |
-      | 13 | Project        | 12           |                                                                                                   |
+      | id | name           | dependencies | operator info                                                                                       |
+      | 16 | TopN           | 13           |                                                                                                     |
+      | 13 | Project        | 12           |                                                                                                     |
       | 12 | Filter         | 11           | {"condition": "((c.team.name>\"A\") OR (((b.player.age+a.player.age)>40) AND (a.player.age<45)))" } |
-      | 11 | HashInnerJoin  | 18,10        |                                                                                                   |
-      | 18 | Project        | 17           |                                                                                                   |
-      | 17 | Filter         | 4            | {"condition": "((-.b.player.age>30) OR (-.b.player.age>45))"}                                     |
-      | 4  | AppendVertices | 19           |                                                                                                   |
-      | 19 | Traverse       | 1            |                                                                                                   |
-      | 1  | IndexScan      | 2            |                                                                                                   |
-      | 2  | Start          |              |                                                                                                   |
-      | 10 | Project        | 9            |                                                                                                   |
-      | 9  | AppendVertices | 8            |                                                                                                   |
-      | 8  | Traverse       | 7            |                                                                                                   |
-      | 7  | Argument       |              |                                                                                                   |
-    When profiling query:
-      """
-      match p=(a:player)-[e:like*1..3]->(b)
-      where b.player.age>42
-      with relationships(p)[1] AS e1
-      match (b)-[:serve]->(c)
-      where c.team.name>'S' and (b)-[e1]->()
-      return c
-      order by c
-      limit 1
-      """
-    Then the result should be, in any order:
-      | e | v2 |
-    And the execution plan should be:
-      | id | name | dependencies | operator info |
+      | 11 | HashInnerJoin  | 18,10        |                                                                                                     |
+      | 18 | Project        | 17           |                                                                                                     |
+      | 17 | Filter         | 4            | {"condition": "(($-.b.player.age>30) OR ($-.b.player.age>45))"}                                     |
+      | 4  | AppendVertices | 19           |                                                                                                     |
+      | 19 | Traverse       | 1            |                                                                                                     |
+      | 1  | IndexScan      | 2            |                                                                                                     |
+      | 2  | Start          |              |                                                                                                     |
+      | 10 | Project        | 9            |                                                                                                     |
+      | 9  | AppendVertices | 8            |                                                                                                     |
+      | 8  | Traverse       | 7            |                                                                                                     |
+      | 7  | Argument       |              |                                                                                                     |
 
+  # Depends on the PR #4973
+  # When profiling query:
+  # """
+  # match p=(a:player)-[e:like*1..3]->(b)
+  # where b.player.age>42
+  # with relationships(p)[1] AS e1
+  # match (b)-[:serve]->(c)
+  # where c.team.name>'S' and (b)-[e1]->()
+  # return c
+  # order by c
+  # limit 1
+  # """
+  # Then the result should be, in any order:
+  # | e | v2 |
+  # And the execution plan should be:
+  # | id | name | dependencies | operator info |
   Scenario: NOT push filter down HashInnerJoin
     When profiling query:
       """

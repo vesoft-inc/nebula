@@ -212,6 +212,7 @@ std::string LabelTagPropertyExpression::toString() const {
   std::string labelStr;
   if (label_ != nullptr) {
     labelStr = label_->toString();
+    // Remove the leading '$' character for variable except '$-/$$/$^'
     if (labelStr.find(kInputRef) != 0 && labelStr.find(kSrcRef) != 0 &&
         labelStr.find(kDstRef) != 0) {
       labelStr.erase(0, 1);
