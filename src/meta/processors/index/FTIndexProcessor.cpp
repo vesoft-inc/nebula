@@ -55,23 +55,10 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       onFinished();
       return;
     }
-    // Only string or fixed_string types are supported.
-    if (targetCol->get_type().get_type() != nebula::cpp2::PropertyType::STRING &&
-        targetCol->get_type().get_type() != nebula::cpp2::PropertyType::FIXED_STRING) {
+    // Only string type are supported.
+    if (targetCol->get_type().get_type() != nebula::cpp2::PropertyType::STRING) {
       LOG(INFO) << "Column data type error : "
                 << apache::thrift::util::enumNameSafe(targetCol->get_type().get_type());
-      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
-      onFinished();
-      return;
-    }
-    // if the data type is fixed_string,
-    // the data length must be less than MAX_INDEX_TYPE_LENGTH.
-    // else if the data type is string,
-    // will be truncated to MAX_INDEX_TYPE_LENGTH bytes when data insert.
-    if (targetCol->get_type().get_type() == nebula::cpp2::PropertyType::FIXED_STRING &&
-        *targetCol->get_type().get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-      LOG(INFO) << "Unsupported data length more than " << MAX_INDEX_TYPE_LENGTH
-                << " bytes : " << col << "(" << *targetCol->get_type().get_type_length() << ")";
       handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
       onFinished();
       return;
@@ -89,8 +76,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
     return;
   }
   auto it = nebula::value(ret).get();
-  // If already have a full-text index that depend on this tag or edge,  reject
-  // to create it. even though it's a different column.
+
   while (it->valid()) {
     auto indexName = MetaKeyUtils::parsefulltextIndexName(it->key());
     auto indexItem = MetaKeyUtils::parsefulltextIndex(it->val());
@@ -100,17 +86,8 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       onFinished();
       return;
     }
-    // Because tagId/edgeType is the space range, judge the spaceId and schemaId
-    if (index.get_space_id() == indexItem.get_space_id() &&
-        index.get_depend_schema() == indexItem.get_depend_schema()) {
-      LOG(INFO) << "Depends on the same schema , index : " << indexName;
-      handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
-      onFinished();
-      return;
-    }
     it->next();
   }
-
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::fulltextIndexKey(name), MetaKeyUtils::fulltextIndexVal(index));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
