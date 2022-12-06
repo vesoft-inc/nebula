@@ -53,18 +53,17 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
 
   auto& tvEdgeAlias = traverse->edgeAlias();
 
-  auto& hashKeys = leftJoin->hashKeys();
-  auto& probeKeys = leftJoin->probeKeys();
+  auto& leftExprs = leftJoin->hashKeys();
+  auto& rightExprs = leftJoin->probeKeys();
 
-  // Use visitor to collect all function `id` in the hashKeys
   bool found = false;
-  size_t hashKeyIdx = 0;
-  for (size_t i = 0; i < hashKeys.size(); ++i) {
-    auto* hashKey = hashKeys[i];
-    if (hashKey->kind() != Expression::Kind::kFunctionCall) {
+  size_t rightExprIdx = 0;
+  for (size_t i = 0; i < rightExprs.size(); ++i) {
+    auto* rightExpr = rightExprs[i];
+    if (rightExpr->kind() != Expression::Kind::kFunctionCall) {
       continue;
     }
-    auto* func = static_cast<FunctionCallExpression*>(hashKey);
+    auto* func = static_cast<FunctionCallExpression*>(rightExpr);
     if (func->name() != "id" && func->name() != "_joinkey") {
       continue;
     }
@@ -76,14 +75,14 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
     }
     auto& alias = static_cast<InputPropertyExpression*>(arg)->prop();
     if (alias != avNodeAlias) continue;
-    // Must check if probe keys contain the same key
-    if (*probeKeys[i] != *hashKey) {
+    // Must check if left exprs contain the same key
+    if (*leftExprs[i] != *rightExpr) {
       return TransformResult::noTransform();
     }
     if (found) {
       return TransformResult::noTransform();
     }
-    hashKeyIdx = i;
+    rightExprIdx = i;
     found = true;
   }
   if (!found) {
@@ -112,33 +111,34 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
 
   auto* pool = octx->qctx()->objPool();
   // Let the new project generate expr `none_direct_dst($-.tvEdgeAlias)`,
-  // and let the new left join use it as hash key
+  // and let the new left join use it as right expr
   auto* args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, tvEdgeAlias));
   auto* newPrjExpr = FunctionCallExpression::make(pool, "none_direct_dst", args);
 
+  auto oldYieldColumns = project->columns()->columns();
   auto* newYieldColumns = pool->makeAndAdd<YieldColumns>();
-  for (size_t i = 0; i < project->columns()->size(); ++i) {
+  for (size_t i = 0; i < oldYieldColumns.size(); ++i) {
     if (i == prjIdx) {
       newYieldColumns->addColumn(new YieldColumn(newPrjExpr, avNodeAlias));
     } else {
-      newYieldColumns->addColumn(project->columns()->columns()[i]->clone().release());
+      newYieldColumns->addColumn(oldYieldColumns[i]->clone().release());
     }
   }
   auto* newProject = graph::Project::make(octx->qctx(), nullptr, newYieldColumns);
 
   // $-.`avNodeAlias`
-  auto* newHashExpr = InputPropertyExpression::make(pool, avNodeAlias);
-  std::vector<Expression*> newHashKeys;
-  for (size_t i = 0; i < hashKeys.size(); ++i) {
-    if (i == hashKeyIdx) {
-      newHashKeys.emplace_back(newHashExpr);
+  auto* newRightExpr = InputPropertyExpression::make(pool, avNodeAlias);
+  std::vector<Expression*> newRightExprs;
+  for (size_t i = 0; i < rightExprs.size(); ++i) {
+    if (i == rightExprIdx) {
+      newRightExprs.emplace_back(newRightExpr);
     } else {
-      newHashKeys.emplace_back(hashKeys[i]);
+      newRightExprs.emplace_back(rightExprs[i]->clone());
     }
   }
   auto* newLeftJoin =
-      graph::HashLeftJoin::make(octx->qctx(), nullptr, nullptr, newHashKeys, probeKeys);
+      graph::HashLeftJoin::make(octx->qctx(), nullptr, nullptr, leftExprs, newRightExprs);
 
   TransformResult result;
   result.eraseAll = true;

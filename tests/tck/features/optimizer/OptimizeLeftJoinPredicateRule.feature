@@ -48,7 +48,7 @@ Feature: Optimize left join predicate
       | 21 | Sort           | 18           |                                                                                                                         |
       | 18 | Project        | 17           |                                                                                                                         |
       | 17 | Aggregate      | 16           |                                                                                                                         |
-      | 16 | HashLeftJoin   | 10,15        | {"probeKeys": ["_joinkey($-.friendTeam)", "_joinkey($-.friend)"], "hashKeys": ["$-.friendTeam", "_joinkey($-.friend)"]} |
+      | 16 | HashLeftJoin   | 10,15        | {"hashKeys": ["_joinkey($-.friendTeam)", "_joinkey($-.friend)"], "probeKeys": ["$-.friendTeam", "_joinkey($-.friend)"]} |
       | 10 | Dedup          | 28           |                                                                                                                         |
       | 28 | Project        | 22           |                                                                                                                         |
       | 22 | Filter         | 26           |                                                                                                                         |
