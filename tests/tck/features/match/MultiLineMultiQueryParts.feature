@@ -9,11 +9,16 @@ Feature: Multi Line Multi Query Parts
   Scenario: Multi Line Multi Path Patterns
     When executing query:
       """
-      USE nba;
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2,
-      CASE WHEN l.team.name is not null THEN l.team.name
-      WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=='Tim Duncan'
+      RETURN
+        m.player.name AS n1,
+        n.player.name AS n2,
+        CASE
+          WHEN l.team.name is not null THEN l.team.name
+          WHEN l.player.name is not null THEN l.player.name ELSE 'null'
+        END AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1           | n2            | n3           |
@@ -29,8 +34,10 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=='Tim Duncan'
+      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1            | n2           | n3                  |
@@ -287,6 +294,17 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in any order:
       | count |
       | 4     |
+    # When the input of argument is NULL
+    When executing query:
+      """
+      MATCH (v1:player) WHERE id(v1) IN ["Tony Parker", "Tim Duncan"]
+      OPTIONAL MATCH (v1)-[e:like{likeness:90}]->(v2) MATCH (v2)-[e2:serve]->(v3)
+      RETURN *
+      """
+    Then the result should be, in any order:
+      | v1                                                    | e                                                | v2                              | e2                                                  | v3                        |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}] | ("LaMarcus Aldridge" :player{}) | [:serve "LaMarcus Aldridge"->"Spurs" @0 {}]         | ("Spurs" :team{})         |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}] | ("LaMarcus Aldridge" :player{}) | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {}] | ("Trail Blazers" :team{}) |
 
   Scenario: Multi Line Multi Query Parts
     When executing query:

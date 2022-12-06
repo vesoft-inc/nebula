@@ -1538,6 +1538,10 @@ class Traverse final : public GetNeighbors {
     return range_;
   }
 
+  bool isOneStep() const {
+    return !range_;
+  }
+
   // Contains zero step
   bool zeroStep() const {
     return range_ != nullptr && range_->min() == 0;
@@ -1553,6 +1557,17 @@ class Traverse final : public GetNeighbors {
 
   bool trackPrevPath() const {
     return trackPrevPath_;
+  }
+
+  const std::string& nodeAlias() const {
+    auto& cols = this->colNames();
+    DCHECK_GE(cols.size(), 2);
+    return cols[cols.size() - 2];
+  }
+
+  const std::string& edgeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
   }
 
   void setStepRange(MatchStepRange* range) {
@@ -1616,6 +1631,11 @@ class AppendVertices final : public GetVertices {
 
   bool trackPrevPath() const {
     return trackPrevPath_;
+  }
+
+  const std::string nodeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
   }
 
   void setVertexFilter(Expression* vFilter) {
