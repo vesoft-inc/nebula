@@ -5,6 +5,7 @@
 
 #include "graph/optimizer/rule/PushFilterDownTraverseRule.h"
 
+#include "common/expression/ConstantExpression.h"
 #include "common/expression/Expression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -45,9 +46,7 @@ bool PushFilterDownTraverseRule::match(OptContext* ctx, const MatchedResult& mat
             PlanNode::Kind::kTraverse);
   auto traverse =
       static_cast<const Traverse*>(matched.dependencies[0].dependencies[0].node->node());
-  auto step = traverse->stepRange();
-  // step == nullptr means one step.
-  return step == nullptr;
+  return traverse->isOneStep();
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
@@ -59,26 +58,26 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
 
   auto* avGroupNode = matched.dependencies[0].node;
   auto* av = static_cast<graph::AppendVertices*>(avGroupNode->node());
-  auto& avColNames = av->colNames();
-  auto& nodeAlias = avColNames.back();
-  UNUSED(nodeAlias);
 
   auto* tvGroupNode = matched.dependencies[0].dependencies[0].node;
   auto* tv = static_cast<graph::Traverse*>(tvGroupNode->node());
-  auto& tvColNames = tv->colNames();
-  auto& edgeAlias = tvColNames.back();
+  auto& edgeAlias = tv->edgeAlias();
 
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
 
+  // Pick the expr looks like `$-.e[0].likeness
   auto picker = [&edgeAlias](const Expression* e) -> bool {
-    auto varProps = graph::ExpressionUtils::collectAll(e,
-                                                       {Expression::Kind::kTagProperty,
-                                                        Expression::Kind::kEdgeProperty,
-                                                        Expression::Kind::kInputProperty,
-                                                        Expression::Kind::kVarProperty,
-                                                        Expression::Kind::kDstProperty,
-                                                        Expression::Kind::kSrcProperty});
+    // TODO(jie): Handle the strange exists expr. e.g. exists(e.likeness)
+    auto exprs = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kPredicate});
+    for (auto* expr : exprs) {
+      if (static_cast<const PredicateExpression*>(expr)->name() == "exists") {
+        return false;
+      }
+    }
+
+    auto varProps = graph::ExpressionUtils::collectAll(
+        e, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
     if (varProps.empty()) {
       return false;
     }
@@ -96,7 +95,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
   if (!filterPicked) {
     return TransformResult::noTransform();
   }
-  auto* newfilterPicked =
+  auto* newFilterPicked =
       graph::ExpressionUtils::rewriteEdgePropertyFilter(pool, edgeAlias, filterPicked->clone());
 
   Filter* newFilter = nullptr;
@@ -122,13 +121,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
   }
 
   auto* eFilter = tv->eFilter();
-  Expression* newEFilter = nullptr;
-  if (eFilter) {
-    auto logicExpr = LogicalExpression::makeAnd(pool, newfilterPicked, eFilter->clone());
-    newEFilter = logicExpr;
-  } else {
-    newEFilter = newfilterPicked;
-  }
+  Expression* newEFilter = eFilter
+                               ? LogicalExpression::makeAnd(pool, newFilterPicked, eFilter->clone())
+                               : newFilterPicked;
 
   auto* newTv = static_cast<graph::Traverse*>(tv->clone());
   newAv->setInputVar(newTv->outputVar());

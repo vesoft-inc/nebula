@@ -10,6 +10,19 @@
 namespace nebula {
 namespace opt {
 
+/*
+ * Before:
+ * Filter(e.likeness > 78)
+ *        |
+ *   AppendVertices
+ *        |
+ *     Traverse
+ *
+ * After :
+ *   AppendVertices
+ *        |
+ *     Traverse(eFilter_: *.likeness > 78)
+ */
 class PushFilterDownTraverseRule final : public OptRule {
  public:
   const Pattern &pattern() const override;

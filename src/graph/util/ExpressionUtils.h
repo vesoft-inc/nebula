@@ -229,6 +229,9 @@ class ExpressionUtils {
   // e.g. id(v) == 1, id(v) IN [...]
   static bool isVidPredication(const Expression* expr);
 
+  // Check if the expr looks like `$-.e[0].likeness`
+  static bool isSingleLenExpandExpr(const std::string& edgeAlias, const Expression* expr);
+
   static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
                                                const std::string& edgeAlias,
                                                Expression* expr);
