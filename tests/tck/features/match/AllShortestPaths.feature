@@ -489,24 +489,24 @@ Feature: allShortestPaths
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
     And the execution plan should be:
-      | id | name               | dependencies | operator info |
-      | 19 | Project            | 18           |               |
-      | 18 | HashInnerJoin      | 10,17        |               |
-      | 10 | Project            | 9            |               |
-      | 9  | BiCartesianProduct | 24,25        |               |
-      | 24 | AppendVertices     | 20           |               |
-      | 20 | IndexScan          | 2            |               |
-      | 2  | Start              |              |               |
-      | 25 | AppendVertices     | 21           |               |
-      | 21 | IndexScan          | 6            |               |
-      | 6  | Start              |              |               |
-      | 17 | Project            | 16           |               |
-      | 16 | ShortestPath       | 15           |               |
-      | 15 | BiCartesianProduct | 12,14        |               |
-      | 12 | Project            | 11           |               |
-      | 11 | Argument           |              |               |
-      | 14 | Project            | 13           |               |
-      | 13 | Argument           |              |               |
+      | id | name           | dependencies | operator info |
+      | 19 | Project        | 18           |               |
+      | 18 | HashInnerJoin  | 10,17        |               |
+      | 10 | Project        | 9            |               |
+      | 9  | CrossJoin      | 24,25        |               |
+      | 24 | AppendVertices | 20           |               |
+      | 20 | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
+      | 25 | AppendVertices | 21           |               |
+      | 21 | IndexScan      | 6            |               |
+      | 6  | Start          |              |               |
+      | 17 | Project        | 16           |               |
+      | 16 | ShortestPath   | 15           |               |
+      | 15 | CrossJoin      | 12,14        |               |
+      | 12 | Project        | 11           |               |
+      | 11 | Argument       |              |               |
+      | 14 | Project        | 13           |               |
+      | 13 | Argument       |              |               |
     When profiling query:
       """
       MATCH (a:player{name:'Tim Duncan'}), (b:player{name:'Tony Parker'})
@@ -519,21 +519,21 @@ Feature: allShortestPaths
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | ("Tim Duncan" :player{name: "Tim Duncan"}) |
     And the execution plan should be:
-      | id | name               | dependencies | operator info |
-      | 19 | Project            | 18           |               |
-      | 18 | BiLeftJoin         | 10,17        |               |
-      | 10 | Project            | 9            |               |
-      | 9  | BiCartesianProduct | 24,25        |               |
-      | 24 | AppendVertices     | 20           |               |
-      | 20 | IndexScan          | 2            |               |
-      | 2  | Start              |              |               |
-      | 25 | AppendVertices     | 21           |               |
-      | 21 | IndexScan          | 6            |               |
-      | 6  | Start              |              |               |
-      | 17 | Project            | 16           |               |
-      | 16 | ShortestPath       | 15           |               |
-      | 15 | BiCartesianProduct | 12,14        |               |
-      | 12 | Project            | 11           |               |
-      | 11 | Argument           |              |               |
-      | 14 | Project            | 13           |               |
-      | 13 | Argument           |              |               |
+      | id | name           | dependencies | operator info |
+      | 19 | Project        | 18           |               |
+      | 18 | HashLeftJoin   | 10,17        |               |
+      | 10 | Project        | 9            |               |
+      | 9  | CrossJoin      | 24,25        |               |
+      | 24 | AppendVertices | 20           |               |
+      | 20 | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
+      | 25 | AppendVertices | 21           |               |
+      | 21 | IndexScan      | 6            |               |
+      | 6  | Start          |              |               |
+      | 17 | Project        | 16           |               |
+      | 16 | ShortestPath   | 15           |               |
+      | 15 | CrossJoin      | 12,14        |               |
+      | 12 | Project        | 11           |               |
+      | 11 | Argument       |              |               |
+      | 14 | Project        | 13           |               |
+      | 13 | Argument       |              |               |
