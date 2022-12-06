@@ -119,7 +119,9 @@ void OptGroup::addGroupNode(OptGroupNode *groupNode) {
   if (outputVar_.empty()) {
     outputVar_ = groupNode->node()->outputVar();
   } else {
-    DCHECK_EQ(outputVar_, groupNode->node()->outputVar());
+    DCHECK_EQ(outputVar_, groupNode->node()->outputVar())
+        << "outputVar_: " << outputVar_ << "groupNode plan: " << groupNode->node()->toString()
+        << ", groupNode->node()->outputVar(): " << groupNode->node()->outputVar();
   }
   groupNodes_.emplace_back(groupNode);
   groupNode->node()->updateSymbols();
