@@ -27,11 +27,7 @@ DeduceAliasTypeVisitor::DeduceAliasTypeVisitor(QueryContext *qctx,
                                                ValidateContext *vctx,
                                                GraphSpaceID space,
                                                AliasType inputType)
-    : qctx_(qctx), vctx_(vctx), space_(space), inputType_(inputType) {
-  UNUSED(qctx_);
-  UNUSED(vctx_);
-  UNUSED(space_);
-}
+    : qctx_(qctx), vctx_(vctx), space_(space), inputType_(inputType) {}
 
 void DeduceAliasTypeVisitor::visit(VertexExpression *expr) {
   UNUSED(expr);
@@ -63,7 +59,14 @@ void DeduceAliasTypeVisitor::visit(FunctionCallExpression *expr) {
 }
 
 void DeduceAliasTypeVisitor::visit(SubscriptExpression *expr) {
-  UNUSED(expr);
+  Expression *leftExpr = expr->left();
+  DeduceAliasTypeVisitor childVisitor(qctx_, vctx_, space_, inputType_);
+  leftExpr->accept(&childVisitor);
+  if (!childVisitor.ok()) {
+    status_ = std::move(childVisitor).status();
+    return;
+  }
+  inputType_ = childVisitor.outputType();
   // This is not accurate, since there exist List of List...Edges/Nodes,
   // may have opportunities when analyze more detail of the expr.
   if (inputType_ == AliasType::kEdgeList) {

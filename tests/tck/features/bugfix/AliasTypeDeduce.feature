@@ -14,3 +14,10 @@ Feature: Test extract filter
     Then the result should be, in any order:
       | cnt1 | prev                                                                                                        | curr                                                  |
       | 0    | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
+    When executing query:
+      """
+      match p=(a:player)-[e:like*1..3]->(b) where b.player.age>42 with relationships(p)[1] AS e1 match (b)-[:serve]->(c) where c.team.name>"S" and (b)-[e1]->() return count(c)
+      """
+    Then the result should be, in any order:
+      | count(c) |
+      | 2250     |

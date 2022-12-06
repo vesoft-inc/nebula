@@ -85,8 +85,8 @@ class DeduceAliasTypeVisitor final : public ExprVisitor {
   void visit(SubscriptRangeExpression *expr) override;
 
  private:
-  const QueryContext *qctx_{nullptr};
-  const ValidateContext *vctx_{nullptr};
+  QueryContext *qctx_{nullptr};
+  ValidateContext *vctx_{nullptr};
   GraphSpaceID space_;
   Status status_;
   AliasType inputType_{AliasType::kRuntime};
