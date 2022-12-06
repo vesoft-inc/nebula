@@ -5,6 +5,7 @@
 #include "graph/optimizer/rule/PushEFilterDownRule.h"
 
 #include "common/expression/Expression.h"
+#include "common/expression/FunctionCallExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -123,17 +124,15 @@ std::string PushEFilterDownRule::toString() const {
         return nullptr;
       }
     } else {
-      ret = LogicalExpression::makeOr(pool);
-      std::vector<Expression *> operands;
-      operands.reserve(edges.size());
+      auto args = ArgumentList::make(pool);
       for (auto &edge : edges) {
         auto reEdgeExp = rewriteStarEdge(propertyExpr, spaceId, edge, schemaMng, pool);
         if (reEdgeExp == nullptr) {
           return nullptr;
         }
-        operands.emplace_back(reEdgeExp);
+        args->addArgument(reEdgeExp);
       }
-      static_cast<LogicalExpression *>(ret)->setOperands(std::move(operands));
+      ret = FunctionCallExpression::make(pool, "_any", args);
     }
     return ret;
   };

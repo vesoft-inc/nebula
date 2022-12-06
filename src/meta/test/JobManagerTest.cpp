@@ -752,7 +752,7 @@ TEST_F(JobManagerTest, NotStoppableJob) {
   };
 
   initListener();
-  TestUtils::setupHB(kv_.get(), {listener}, cpp2::HostRole::LISTENER, "sha");
+  TestUtils::setupHB(kv_.get(), {listener}, cpp2::HostRole::STORAGE_LISTENER, "sha");
 
   std::vector<cpp2::JobType> notStoppableJob{
       cpp2::JobType::COMPACT,
