@@ -158,12 +158,9 @@ FileType FileUtils::fileType(const char* path) {
   struct stat st;
   if (lstat(path, &st)) {
     if (errno == ENOENT) {
-      VLOG(3) << "The path \"" << path << "\" does not exist";
       return FileType::NOTEXIST;
     } else {
-      // Failed o get file stat
-      VLOG(3) << "Failed to get information about \"" << path << "\" (" << errno
-              << "): " << strerror(errno);
+      // Failed to get file stat
       return FileType::UNKNOWN;
     }
   }

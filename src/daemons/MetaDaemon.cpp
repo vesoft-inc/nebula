@@ -79,10 +79,6 @@ int main(int argc, char* argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  if (FLAGS_data_path.empty()) {
-    LOG(ERROR) << "Meta Data Path should not empty";
-    return EXIT_FAILURE;
-  }
 
   // Setup logging
   status = setupLogging(argv[0]);
@@ -104,6 +100,11 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 #endif
+
+  if (FLAGS_data_path.empty()) {
+    LOG(ERROR) << "Meta Data Path should not empty";
+    return EXIT_FAILURE;
+  }
 
   // Init stats
   nebula::initMetaStats();
