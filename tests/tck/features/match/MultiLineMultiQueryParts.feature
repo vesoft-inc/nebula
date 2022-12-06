@@ -294,6 +294,15 @@ Feature: Multi Line Multi Query Parts
     Then the result should be, in any order:
       | count |
       | 4     |
+    # When the input of argument is NULL
+    When executing query:
+      """
+      MATCH (v1:player) WHERE id(v1) IN ["Tony Parker", "Tim Duncan"]
+      OPTIONAL MATCH (v1)-[e:like{likeness:90}]->(v2) MATCH (v2)-[e2:serve]->(v2)
+      RETURN *
+      """
+    Then the result should be, in any order:
+      | v1 | e | v2 | e2 |
 
   Scenario: Multi Line Multi Query Parts
     When executing query:
