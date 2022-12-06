@@ -79,7 +79,14 @@ void DeduceAliasTypeVisitor::visit(SubscriptExpression *expr) {
 }
 
 void DeduceAliasTypeVisitor::visit(SubscriptRangeExpression *expr) {
-  UNUSED(expr);
+  Expression *leftExpr = expr->list();
+  DeduceAliasTypeVisitor childVisitor(qctx_, vctx_, space_, inputType_);
+  leftExpr->accept(&childVisitor);
+  if (!childVisitor.ok()) {
+    status_ = std::move(childVisitor).status();
+    return;
+  }
+  inputType_ = childVisitor.outputType();
   // This is not accurate, since there exist List of List...Edges/Nodes,
   // may have opportunities when analyze more detail of the expr.
   if (inputType_ == AliasType::kEdgeList) {
