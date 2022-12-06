@@ -137,8 +137,9 @@ Status OptGroup::explore(const OptRule *rule) {
   }
   setExplored(rule);
 
-  DCHECK(isRootGroup_ || !groupNodesReferenced_.empty())
-      << "Current group should be referenced by other group nodes before optimization";
+  // TODO(yee): the opt group maybe in the loop body branch
+  // DCHECK(isRootGroup_ || !groupNodesReferenced_.empty())
+  //     << "Current group should be referenced by other group nodes before optimization";
 
   for (auto iter = groupNodes_.begin(); iter != groupNodes_.end();) {
     auto *groupNode = DCHECK_NOTNULL(*iter);
