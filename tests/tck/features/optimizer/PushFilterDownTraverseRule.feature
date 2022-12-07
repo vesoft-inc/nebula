@@ -65,8 +65,7 @@ Feature: Push Filter down Traverse rule
       | 2  | Dedup          | 1            |                |                                       |
       | 1  | PassThrough    | 3            |                |                                       |
       | 3  | Start          |              |                |                                       |
-      | 15 | Project        | 15           |                |                                       |
-      | 30 | AppendVertices | 14           |                |                                       |
+      | 15 | Project        | 14           |                |                                       |
       | 14 | Traverse       | 12           |                |                                       |
       | 12 | Traverse       | 11           |                |                                       |
       | 11 | Argument       |              |                |                                       |
