@@ -26,6 +26,7 @@ class PushEFilterDownRule final : public OptRule {
                                      GraphSpaceID spaceId,
                                      const std::vector<storage::cpp2::EdgeProp> &edges,
                                      meta::SchemaManager *schemaMng,
+                                     bool isBothDirection,
                                      ObjectPool *pool);
   static Expression *rewriteStarEdge(const PropertyExpression *exp,
                                      GraphSpaceID spaceId,
