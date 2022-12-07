@@ -1102,7 +1102,7 @@ Status MatchValidator::validateMatchPathExpr(
     if (find->second != AliasType::kPath) {
       return Status::SemanticError("Alias `%s' should be Path, but got type '%s",
                                    matchPath.alias()->c_str(),
-                                   AliasTypeName[static_cast<int>(find->second)]);
+                                   AliasTypeName::get(find->second).c_str());
     }
   }
   for (const auto &node : matchPath.nodes()) {
@@ -1120,7 +1120,7 @@ Status MatchValidator::validateMatchPathExpr(
       if (find->second != AliasType::kNode) {
         return Status::SemanticError("Alias `%s' should be Node, but got type '%s",
                                      node->alias().c_str(),
-                                     AliasTypeName[static_cast<int>(find->second)]);
+                                     AliasTypeName::get(find->second).c_str());
       }
     }
   }
@@ -1135,7 +1135,7 @@ Status MatchValidator::validateMatchPathExpr(
       if (find->second != AliasType::kEdge) {
         return Status::SemanticError("Alias `%s' should be Edge, but got type '%s'",
                                      edge->alias().c_str(),
-                                     AliasTypeName[static_cast<int>(find->second)]);
+                                     AliasTypeName::get(find->second).c_str());
       }
     }
   }

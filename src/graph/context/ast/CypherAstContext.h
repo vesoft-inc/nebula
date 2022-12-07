@@ -57,7 +57,24 @@ struct EdgeInfo {
 
 enum class AliasType : int8_t { kNode, kEdge, kPath, kNodeList, kEdgeList, kRuntime };
 
-constexpr std::array AliasTypeName = {"Node", "Edge", "Path", "NodeList", "EdgeList", "Runtime"};
+struct AliasTypeName {
+  static std::string get(AliasType type) {
+    switch (type) {
+      case AliasType::kNode:
+        return "Node";
+      case AliasType::kEdge:
+        return "Edge";
+      case AliasType::kPath:
+        return "Path";
+      case AliasType::kNodeList:
+        return "NodeList";
+      case AliasType::kEdgeList:
+        return "EdgeList";
+      case AliasType::kRuntime:
+        return "Runtime";
+    }
+  }
+};
 
 struct ScanInfo {
   Expression* filter{nullptr};
