@@ -56,6 +56,23 @@ StatusOr<OptRule::TransformResult> RemoveAppendVerticesBelowJoinRule::transform(
   auto& leftExprs = join->hashKeys();
   auto& rightExprs = join->probeKeys();
 
+  std::vector<const Expression*> referAVNodeAliasExprs;
+  for (auto* rightExpr : rightExprs) {
+    auto propExprs = graph::ExpressionUtils::collectAll(
+        rightExpr, {Expression::Kind::kVarProperty, Expression::Kind::kInputProperty});
+    for (auto* expr : propExprs) {
+      auto* propExpr = static_cast<const PropertyExpression*>(expr);
+      if (propExpr->prop() == avNodeAlias) {
+        referAVNodeAliasExprs.push_back(propExpr);
+      }
+    }
+  }
+  // If avNodeAlias is referred by more than one expr,
+  // we cannot remove the append vertices which generate the avNodeAlias column
+  if (referAVNodeAliasExprs.size() > 1) {
+    return TransformResult::noTransform();
+  }
+
   bool found = false;
   size_t rightExprIdx = 0;
   for (size_t i = 0; i < rightExprs.size(); ++i) {
@@ -89,11 +106,28 @@ StatusOr<OptRule::TransformResult> RemoveAppendVerticesBelowJoinRule::transform(
     return TransformResult::noTransform();
   }
 
+  auto columns = project->columns()->columns();
+  referAVNodeAliasExprs.clear();
+  for (auto* column : columns) {
+    auto propExprs = graph::ExpressionUtils::collectAll(
+        column->expr(), {Expression::Kind::kVarProperty, Expression::Kind::kInputProperty});
+    for (auto* expr : propExprs) {
+      auto* propExpr = static_cast<const PropertyExpression*>(expr);
+      if (propExpr->prop() == avNodeAlias) {
+        referAVNodeAliasExprs.push_back(propExpr);
+      }
+    }
+  }
+  // If avNodeAlias is referred by more than one expr,
+  // we cannot remove the append vertices which generate the avNodeAlias column
+  if (referAVNodeAliasExprs.size() > 1) {
+    return TransformResult::noTransform();
+  }
+
   found = false;
   size_t prjIdx = 0;
-  auto* columns = project->columns();
-  for (size_t i = 0; i < columns->size(); ++i) {
-    const auto* col = columns->columns()[i];
+  for (size_t i = 0; i < columns.size(); ++i) {
+    const auto* col = columns[i];
     if (col->expr()->kind() != Expression::Kind::kInputProperty) {
       continue;
     }
