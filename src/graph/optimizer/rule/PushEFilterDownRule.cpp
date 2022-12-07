@@ -144,7 +144,7 @@ std::string PushEFilterDownRule::toString() const {
                                                             const storage::cpp2::EdgeProp &edge,
                                                             meta::SchemaManager *schemaMng,
                                                             ObjectPool *pool) {
-  auto edgeNameResult = schemaMng->toEdgeName(spaceId, edge.get_type());
+  auto edgeNameResult = schemaMng->toEdgeName(spaceId, std::abs(edge.get_type()));
   if (!edgeNameResult.ok()) {
     return nullptr;
   }
