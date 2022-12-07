@@ -16,6 +16,21 @@ Feature: Basic match
       | ("Yao Ming") |
     When executing query:
       """
+      MATCH (v:player) RETURN v.player.age LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.age |
+      | /\d+/        |
+      | /\d+/        |
+      | /\d+/        |
+    Then the execution plan should be:
+      | id | name           | dependencies | operator info         |
+      | 4  | Limit          | 3            | {offset: 0, count: 3} |
+      | 3  | AppendVertices | 2            |                       |
+      | 2  | IndexScan      | 1            | {limit: 3}            |
+      | 1  | Start          |              |                       |
+    When executing query:
+      """
       MATCH (v:player) WHERE v.player.age < 0 RETURN v
       """
     Then the result should be, in any order, with relax comparison:

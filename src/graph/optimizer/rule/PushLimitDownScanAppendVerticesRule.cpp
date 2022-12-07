@@ -11,6 +11,8 @@
 #include "graph/planner/plan/Query.h"
 
 using nebula::graph::AppendVertices;
+using nebula::graph::Explore;
+using nebula::graph::IndexScan;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;
@@ -19,7 +21,8 @@ using nebula::graph::ScanVertices;
 namespace nebula {
 namespace opt {
 
-// Limit->AppendVertices->ScanVertices ==> Limit->AppendVertices->ScanVertices(Limit)
+// Limit->AppendVertices->ScanVertices/IndexScan ==>
+// Limit->AppendVertices->ScanVertices/IndexScan(Limit)
 
 std::unique_ptr<OptRule> PushLimitDownScanAppendVerticesRule::kInstance =
     std::unique_ptr<PushLimitDownScanAppendVerticesRule>(new PushLimitDownScanAppendVerticesRule());
@@ -32,7 +35,8 @@ const Pattern &PushLimitDownScanAppendVerticesRule::pattern() const {
   static Pattern pattern =
       Pattern::create(graph::PlanNode::Kind::kLimit,
                       {Pattern::create(graph::PlanNode::Kind::kAppendVertices,
-                                       {Pattern::create(graph::PlanNode::Kind::kScanVertices)})});
+                                       {Pattern::create({graph::PlanNode::Kind::kScanVertices,
+                                                         graph::PlanNode::Kind::kIndexScan})})});
   return pattern;
 }
 
@@ -65,7 +69,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanAppendVerticesRule::transfor
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
   const auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
-  const auto scanVertices = static_cast<const ScanVertices *>(scanVerticesGroupNode->node());
+  const auto scanVertices = static_cast<const Explore *>(scanVerticesGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
   if (scanVertices->limit() >= 0 && limitRows >= scanVertices->limit()) {
@@ -80,7 +84,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanAppendVerticesRule::transfor
   auto newAppendVerticesGroup = OptGroup::create(octx);
   auto newAppendVerticesGroupNode = newAppendVerticesGroup->makeGroupNode(newAppendVertices);
 
-  auto newScanVertices = static_cast<ScanVertices *>(scanVertices->clone());
+  auto newScanVertices = static_cast<Explore *>(scanVertices->clone());
   newScanVertices->setLimit(limitRows);
   auto newScanVerticesGroup = OptGroup::create(octx);
   auto newScanVerticesGroupNode = newScanVerticesGroup->makeGroupNode(newScanVertices);
