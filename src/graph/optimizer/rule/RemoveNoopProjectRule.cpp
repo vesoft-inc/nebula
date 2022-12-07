@@ -62,6 +62,7 @@ const std::unordered_set<graph::PlanNode::Kind> RemoveNoopProjectRule::kQueries{
     PlanNode::Kind::kHashInnerJoin,
     PlanNode::Kind::kCrossJoin,
     PlanNode::Kind::kRollUpApply,
+    PlanNode::Kind::kPatternApply,
     PlanNode::Kind::kArgument,
 };
 

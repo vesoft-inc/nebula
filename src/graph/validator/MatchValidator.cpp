@@ -5,6 +5,10 @@
 
 #include "graph/validator/MatchValidator.h"
 
+#include "common/expression/FunctionCallExpression.h"
+#include "common/expression/LogicalExpression.h"
+#include "common/expression/MatchPathPatternExpression.h"
+#include "common/expression/UnaryExpression.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/visitor/ExtractGroupSuiteVisitor.h"
@@ -133,6 +137,9 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
   NG_RETURN_IF_ERROR(buildNodeInfo(path, pathInfo.nodeInfos, dummy));
   NG_RETURN_IF_ERROR(buildEdgeInfo(path, pathInfo.edgeInfos, dummy));
   NG_RETURN_IF_ERROR(buildPathExpr(path, pathInfo, dummy));
+  pathInfo.isPred = path->isPredicate();
+  pathInfo.isAntiPred = path->isAntiPredicate();
+
   return Status::OK();
 }
 
@@ -342,8 +349,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   }
 
   NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter}, whereClauseCtx.aliasesAvailable));
-  NG_RETURN_IF_ERROR(validateMatchPathExpr(
-      whereClauseCtx.filter, whereClauseCtx.aliasesAvailable, whereClauseCtx.paths));
+  NG_RETURN_IF_ERROR(
+      validatePathInWhere(whereClauseCtx, whereClauseCtx.aliasesAvailable, whereClauseCtx.paths));
 
   return Status::OK();
 }
@@ -1064,7 +1071,7 @@ Status MatchValidator::validateMatchPathExpr(
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));
     // Check variables
-    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl, availableAliases));
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
     // Build path alias
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
@@ -1081,10 +1088,121 @@ Status MatchValidator::validateMatchPathExpr(
   return Status::OK();
 }
 
+bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+  if (expr->kind() == Expression::Kind::kMatchPathPattern) {
+    auto pred = static_cast<MatchPathPatternExpression *>(expr)->matchPath().clone();
+    pred.setPredicate();
+    pathPreds.emplace_back(std::move(pred));
+    // Absorb expression into path predicate
+    return true;
+  } else if (expr->kind() == Expression::Kind::kUnaryNot) {
+    auto *operand = static_cast<UnaryExpression *>(expr)->operand();
+    if (operand->kind() == Expression::Kind::kMatchPathPattern) {
+      auto pred = static_cast<MatchPathPatternExpression *>(operand)->matchPath().clone();
+      pred.setAntiPredicate();
+      pathPreds.emplace_back(std::move(pred));
+      // Absorb expression into path predicate
+      return true;
+    } else if (operand->kind() == Expression::Kind::kFunctionCall) {
+      auto funcExpr = static_cast<FunctionCallExpression *>(operand);
+      if (funcExpr->isFunc("exists")) {
+        auto args = funcExpr->args()->args();
+        DCHECK_EQ(args.size(), 1);
+        if (args[0]->kind() == Expression::Kind::kMatchPathPattern) {
+          auto pred = static_cast<MatchPathPatternExpression *>(args[0])->matchPath().clone();
+          pred.setAntiPredicate();
+          pathPreds.emplace_back(std::move(pred));
+          // Absorb expression into path predicate
+          return true;
+        }
+      }
+    }
+  }
+  // Take no effects
+  return false;
+}
+
+bool extractMultiPathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+  if (expr->kind() == Expression::Kind::kLogicalAnd) {
+    auto &operands = static_cast<LogicalExpression *>(expr)->operands();
+    for (auto iter = operands.begin(); iter != operands.end();) {
+      if (extractSinglePathPredicate(*iter, pathPreds)) {
+        // Should remove this operand bcz it was already absorbed into pathPreds
+        operands.erase(iter);
+      } else {
+        iter++;
+      }
+    }
+    // Alread remove inner predicate operands
+    return false;
+  } else {
+    return extractSinglePathPredicate(expr, pathPreds);
+  }
+}
+
+Status MatchValidator::validatePathInWhere(
+    WhereClauseContext &wctx,
+    const std::unordered_map<std::string, AliasType> &availableAliases,
+    std::vector<Path> &paths) {
+  auto expr = ExpressionUtils::flattenInnerLogicalExpr(wctx.filter);
+  auto *pool = qctx_->objPool();
+  ValidatePatternExpressionVisitor visitor(pool, vctx_);
+  expr->accept(&visitor);
+  std::vector<MatchPath> pathPreds;
+  // FIXME(czp): Delete this function and add new expression visitor to cover all general cases
+  if (extractMultiPathPredicate(expr, pathPreds)) {
+    wctx.filter = nullptr;
+  } else {
+    // Flatten and fold the inner logical expressions that already have operands that can be
+    // compacted
+    wctx.filter =
+        ExpressionUtils::foldInnerLogicalExpr(ExpressionUtils::flattenInnerLogicalExpr(expr));
+  }
+  for (auto &pred : pathPreds) {
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(pred, availableAliases));
+    // Build path alias
+    auto pathAlias = pred.toString();
+    pred.setAlias(new std::string(pathAlias));
+    paths.emplace_back();
+    NG_RETURN_IF_ERROR(validatePath(&pred, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&pred, paths.back()));
+  }
+
+  // All inside pattern expressions are path predicate
+  if (wctx.filter == nullptr) {
+    return Status::OK();
+  }
+
+  ValidatePatternExpressionVisitor pathExprVisitor(pool, vctx_);
+  wctx.filter->accept(&pathExprVisitor);
+  auto matchPathExprs =
+      ExpressionUtils::collectAll(wctx.filter, {Expression::Kind::kMatchPathPattern});
+  for (auto &matchPathExpr : matchPathExprs) {
+    DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
+    auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
+        static_cast<const MatchPathPatternExpression *>(matchPathExpr));
+    // Check variables
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
+    // Build path alias
+    auto &matchPath = matchPathExprImpl->matchPath();
+    auto pathAlias = matchPath.toString();
+    matchPath.setAlias(new std::string(pathAlias));
+    if (matchPathExprImpl->genList() == nullptr) {
+      // Don't done in expression visitor
+      Expression *genList = InputPropertyExpression::make(pool, pathAlias);
+      matchPathExprImpl->setGenList(genList);
+    }
+    paths.emplace_back();
+    NG_RETURN_IF_ERROR(validatePath(&matchPath, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&matchPath, paths.back()));
+  }
+
+  return Status::OK();
+}
+
 /*static*/ Status MatchValidator::checkMatchPathExpr(
-    const MatchPathPatternExpression *expr,
+    const MatchPath &matchPath,
     const std::unordered_map<std::string, AliasType> &availableAliases) {
-  const auto &matchPath = expr->matchPath();
   if (matchPath.alias() != nullptr) {
     const auto find = availableAliases.find(*matchPath.alias());
     if (find == availableAliases.end()) {

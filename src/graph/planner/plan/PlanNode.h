@@ -69,6 +69,7 @@ class PlanNode {
     kHashInnerJoin,
     kCrossJoin,
     kRollUpApply,
+    kPatternApply,
     kArgument,
 
     // Logic

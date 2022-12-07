@@ -44,6 +44,11 @@ class SegmentsConnector final {
                              const SubPlan& right,
                              const graph::Path& path);
 
+  static SubPlan patternApply(CypherClauseContextBase* ctx,
+                              const SubPlan& left,
+                              const SubPlan& right,
+                              const graph::Path& path);
+
   /*
    * left->right
    */
