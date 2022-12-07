@@ -55,6 +55,7 @@ nebula_add_library(
     rule/PushLimitDownScanEdgesRule.cpp
     rule/RemoveProjectDedupBeforeGetDstBySrcRule.cpp
     rule/PushFilterDownTraverseRule.cpp
+    rule/OptimizeLeftJoinPredicateRule.cpp
 )
 
 nebula_add_subdirectory(test)
