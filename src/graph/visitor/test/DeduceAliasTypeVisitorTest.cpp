@@ -82,18 +82,17 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     EXPECT_EQ(visitor.outputType(), AliasType::kRuntime);
   }
   {
-    auto* items = ExpressionList::make(pool);
-    auto expr = SubscriptExpression::make(
-        pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
+    auto expr = SubscriptExpression::make(pool,
+                                          FunctionCallExpression::make(pool, "relationships"),
+                                          ConstantExpression::make(pool, 1));
     DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kEdgeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdge);
   }
   {
-    auto* items = ExpressionList::make(pool);
     auto expr = SubscriptExpression::make(
-        pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
+        pool, FunctionCallExpression::make(pool, "nodes"), ConstantExpression::make(pool, 1));
     DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kNodeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
@@ -111,18 +110,17 @@ TEST_F(DeduceAliasTypeVisitorTest, SubscriptExpr) {
     EXPECT_EQ(visitor.outputType(), AliasType::kRuntime);
   }
   {
-    auto* items = ExpressionList::make(pool);
-    auto expr = SubscriptRangeExpression::make(
-        pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
+    auto expr = SubscriptRangeExpression::make(pool,
+                                               FunctionCallExpression::make(pool, "relationships"),
+                                               ConstantExpression::make(pool, 1));
     DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kEdgeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
     EXPECT_EQ(visitor.outputType(), AliasType::kEdgeList);
   }
   {
-    auto* items = ExpressionList::make(pool);
     auto expr = SubscriptRangeExpression::make(
-        pool, ListExpression::make(pool, items), ConstantExpression::make(pool, 1));
+        pool, FunctionCallExpression::make(pool, "nodes"), ConstantExpression::make(pool, 1));
     DeduceAliasTypeVisitor visitor(nullptr, nullptr, 0, AliasType::kNodeList);
     expr->accept(&visitor);
     EXPECT_TRUE(visitor.ok());
