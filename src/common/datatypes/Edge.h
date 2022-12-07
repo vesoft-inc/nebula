@@ -20,6 +20,7 @@ struct Edge {
   std::string name;
   EdgeRanking ranking;
   std::unordered_map<std::string, Value> props;
+  std::atomic<size_t> refcnt{1};
 
   Edge() {}
   Edge(Edge&& v) noexcept
@@ -44,6 +45,13 @@ struct Edge {
         ranking(std::move(r)),
         props(std::move(p)) {}
 
+  size_t ref() {
+    return ++refcnt;
+  }
+  size_t unref() {
+    return --refcnt;
+  }
+
   void clear();
 
   void __clear() {
@@ -56,6 +64,10 @@ struct Edge {
   folly::dynamic getMetaData() const;
 
   bool operator==(const Edge& rhs) const;
+
+  bool operator!=(const Edge& rhs) const {
+    return !(*this == rhs);
+  }
 
   void format() {
     if (type < 0) {

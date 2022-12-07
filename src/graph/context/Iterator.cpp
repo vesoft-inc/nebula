@@ -439,12 +439,15 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
   return currentEdge_->values[propIndex->second];
 }
 
-Value GetNeighborsIter::getVertex(const std::string& name) const {
+Value GetNeighborsIter::getVertex(const std::string& name) {
   UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
   }
   auto vidVal = getColumn(0);
+  if (!prevVertex_.empty() && prevVertex_.getVertex().vid == vidVal) {
+    return prevVertex_;
+  }
 
   Vertex vertex;
   vertex.vid = vidVal;
@@ -470,7 +473,8 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
     }
     vertex.tags.emplace_back(std::move(tag));
   }
-  return Value(std::move(vertex));
+  prevVertex_ = Value(std::move(vertex));
+  return prevVertex_;
 }
 
 std::vector<Value> GetNeighborsIter::vids() {
@@ -735,7 +739,7 @@ StatusOr<std::size_t> SequentialIter::getColumnIndex(const std::string& col) con
   return index->second;
 }
 
-Value SequentialIter::getVertex(const std::string& name) const {
+Value SequentialIter::getVertex(const std::string& name) {
   return getColumn(name);
 }
 
@@ -852,7 +856,7 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
   }
 }
 
-Value PropIter::getVertex(const std::string& name) const {
+Value PropIter::getVertex(const std::string& name) {
   UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
