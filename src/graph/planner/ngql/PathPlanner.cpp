@@ -158,6 +158,7 @@ PlanNode* PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
 
 StatusOr<SubPlan> PathPlanner::allPathPlan() {
   auto qctx = pathCtx_->qctx;
+  auto pool = qctx->objPool();
   auto* pt = PassThroughNode::make(qctx, nullptr);
   auto* left = pathInputPlan(pt, pathCtx_->from);
   auto* right = pathInputPlan(pt, pathCtx_->to);
@@ -170,7 +171,7 @@ StatusOr<SubPlan> PathPlanner::allPathPlan() {
   path->setVertexProps(std::move(vertexProp).value());
   path->setEdgeProps(buildEdgeProps(false, withProp));
   path->setReverseEdgeProps(buildEdgeProps(true, withProp));
-  path->setColNames({"src", "edge", "dst"});
+  path->setColNames({"_src", "_edge", "_dst"});
 
   SubPlan subPlan;
   subPlan.root = path;
@@ -179,6 +180,16 @@ StatusOr<SubPlan> PathPlanner::allPathPlan() {
   if (pathCtx_->filter != nullptr) {
     subPlan.root = Filter::make(qctx, subPlan.root, pathCtx_->filter);
   }
+  auto pathBuild = PathBuildExpression::make(pool);
+  pathBuild->add(InputPropertyExpression::make(pool, "_src"));
+  pathBuild->add(InputPropertyExpression::make(pool, "_edge"));
+  pathBuild->add(InputPropertyExpression::make(pool, "_dst"));
+
+  auto columns = pool->makeAndAdd<YieldColumns>();
+  columns->addColumn(new YieldColumn(DCHECK_NOTNULL(pathBuild)));
+
+  subPlan.root = Project::make(qctx, subPlan.root, columns);
+  subPlan.root->setColNames(std::move(pathCtx_->colNames));
   return subPlan;
 }
 

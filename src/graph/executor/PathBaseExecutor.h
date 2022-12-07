@@ -4,7 +4,6 @@
 #ifndef GRAPH_EXECUTOR_PATHBASE_EXECUTOR_H_
 #define GRAPH_EXECUTOR_PATHBASE_EXECUTOR_H_
 
-// #include "graph/planner/plan/Algo.h"
 #include "graph/executor/Executor.h"
 
 using nebula::storage::StorageRpcResponse;
