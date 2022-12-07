@@ -178,20 +178,20 @@ Feature: Push Filter down HashInnerJoin rule
       | a                                                                 | b                                                   | c                                |
       | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"}) | ("Steve Nash" :player{age: 45, name: "Steve Nash"}) | ("Lakers" :team{name: "Lakers"}) |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                 |
-      | 16 | TopN           | 25           |                                                                                                               |
-      | 25 | HashInnerJoin  | 27,29        |                                                                                                               |
-      | 27 | Project        | 30           |                                                                                                               |
+      | id | name           | dependencies | operator info                                                                                               |
+      | 16 | TopN           | 25           |                                                                                                             |
+      | 25 | HashInnerJoin  | 27,29        |                                                                                                             |
+      | 27 | Project        | 30           |                                                                                                             |
       | 30 | Filter         | 4            | {"condition": "((($-.b.player.age+$-.a.player.age)>40) AND ($-.a.player.age<45) AND ($-.b.player.age>30))"} |
-      | 4  | AppendVertices | 24           |                                                                                                               |
-      | 24 | Traverse       | 1            |                                                                                                               |
-      | 1  | IndexScan      | 2            |                                                                                                               |
-      | 2  | Start          |              |                                                                                                               |
-      | 29 | Project        | 28           |                                                                                                               |
-      | 28 | Filter         | 9            | {"condition": "($-.c.team.name>\"A\")"}                                                                       |
-      | 9  | AppendVertices | 8            |                                                                                                               |
-      | 8  | Traverse       | 7            |                                                                                                               |
-      | 7  | Argument       |              |                                                                                                               |
+      | 4  | AppendVertices | 24           |                                                                                                             |
+      | 24 | Traverse       | 1            |                                                                                                             |
+      | 1  | IndexScan      | 2            |                                                                                                             |
+      | 2  | Start          |              |                                                                                                             |
+      | 29 | Project        | 28           |                                                                                                             |
+      | 28 | Filter         | 9            | {"condition": "($-.c.team.name>\"A\")"}                                                                     |
+      | 9  | AppendVertices | 8            |                                                                                                             |
+      | 8  | Traverse       | 7            |                                                                                                             |
+      | 7  | Argument       |              |                                                                                                             |
     When profiling query:
       """
       match (a:player)-[:like]->(b)
