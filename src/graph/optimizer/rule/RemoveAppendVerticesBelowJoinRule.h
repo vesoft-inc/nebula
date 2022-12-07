@@ -10,7 +10,7 @@
 namespace nebula {
 namespace opt {
 // Before:
-//      HashLeftJoin({id(v)}, {id(v)})
+//      HashLeft/InnerJoin({id(v)}, {id(v)})
 //          |           |
 //         ...       Project
 //          |           |
@@ -19,7 +19,7 @@ namespace opt {
 //         ...       Traverse(e)
 //
 //  After:
-//     HashLeftJoin({id(v)}, {$-.v})
+//     HashLeft/InnerJoin({id(v)}, {$-.v})
 //         |            |
 //        ...     Project(..., none_direct_dst(e) AS v)
 //         |            |
@@ -27,7 +27,7 @@ namespace opt {
 //         |
 //        ...
 //
-class OptimizeLeftJoinPredicateRule final : public OptRule {
+class RemoveAppendVerticesBelowJoinRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -37,7 +37,7 @@ class OptimizeLeftJoinPredicateRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  OptimizeLeftJoinPredicateRule();
+  RemoveAppendVerticesBelowJoinRule();
 
   static std::unique_ptr<OptRule> kInstance;
 };

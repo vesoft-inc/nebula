@@ -2,7 +2,7 @@
 //
 // This source code is licensed under Apache 2.0 License.
 
-#include "graph/optimizer/rule/OptimizeLeftJoinPredicateRule.h"
+#include "graph/optimizer/rule/RemoveAppendVerticesBelowJoinRule.h"
 
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -16,16 +16,16 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> OptimizeLeftJoinPredicateRule::kInstance =
-    std::unique_ptr<OptimizeLeftJoinPredicateRule>(new OptimizeLeftJoinPredicateRule());
+std::unique_ptr<OptRule> RemoveAppendVerticesBelowJoinRule::kInstance =
+    std::unique_ptr<RemoveAppendVerticesBelowJoinRule>(new RemoveAppendVerticesBelowJoinRule());
 
-OptimizeLeftJoinPredicateRule::OptimizeLeftJoinPredicateRule() {
+RemoveAppendVerticesBelowJoinRule::RemoveAppendVerticesBelowJoinRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern& OptimizeLeftJoinPredicateRule::pattern() const {
+const Pattern& RemoveAppendVerticesBelowJoinRule::pattern() const {
   static Pattern pattern = Pattern::create(
-      PlanNode::Kind::kHashLeftJoin,
+      {PlanNode::Kind::kHashLeftJoin, PlanNode::Kind::kHashInnerJoin},
       {Pattern::create(PlanNode::Kind::kUnknown),
        Pattern::create(PlanNode::Kind::kProject,
                        {Pattern::create(PlanNode::Kind::kAppendVertices,
@@ -33,11 +33,11 @@ const Pattern& OptimizeLeftJoinPredicateRule::pattern() const {
   return pattern;
 }
 
-StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
+StatusOr<OptRule::TransformResult> RemoveAppendVerticesBelowJoinRule::transform(
     OptContext* octx, const MatchedResult& matched) const {
-  auto* leftJoinGroupNode = matched.node;
-  auto* leftJoinGroup = leftJoinGroupNode->group();
-  auto* leftJoin = static_cast<graph::HashLeftJoin*>(leftJoinGroupNode->node());
+  auto* joinGroupNode = matched.node;
+  auto* joinGroup = joinGroupNode->group();
+  auto* join = static_cast<graph::HashJoin*>(joinGroupNode->node());
 
   auto* projectGroupNode = matched.dependencies[1].node;
   auto* project = static_cast<graph::Project*>(projectGroupNode->node());
@@ -53,8 +53,25 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
 
   auto& tvEdgeAlias = traverse->edgeAlias();
 
-  auto& leftExprs = leftJoin->hashKeys();
-  auto& rightExprs = leftJoin->probeKeys();
+  auto& leftExprs = join->hashKeys();
+  auto& rightExprs = join->probeKeys();
+
+  std::vector<const Expression*> referAVNodeAliasExprs;
+  for (auto* rightExpr : rightExprs) {
+    auto propExprs = graph::ExpressionUtils::collectAll(
+        rightExpr, {Expression::Kind::kVarProperty, Expression::Kind::kInputProperty});
+    for (auto* expr : propExprs) {
+      auto* propExpr = static_cast<const PropertyExpression*>(expr);
+      if (propExpr->prop() == avNodeAlias) {
+        referAVNodeAliasExprs.push_back(propExpr);
+      }
+    }
+  }
+  // If avNodeAlias is referred by more than one expr,
+  // we cannot remove the append vertices which generate the avNodeAlias column
+  if (referAVNodeAliasExprs.size() > 1) {
+    return TransformResult::noTransform();
+  }
 
   bool found = false;
   size_t rightExprIdx = 0;
@@ -89,11 +106,28 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
     return TransformResult::noTransform();
   }
 
+  auto columns = project->columns()->columns();
+  referAVNodeAliasExprs.clear();
+  for (auto* column : columns) {
+    auto propExprs = graph::ExpressionUtils::collectAll(
+        column->expr(), {Expression::Kind::kVarProperty, Expression::Kind::kInputProperty});
+    for (auto* expr : propExprs) {
+      auto* propExpr = static_cast<const PropertyExpression*>(expr);
+      if (propExpr->prop() == avNodeAlias) {
+        referAVNodeAliasExprs.push_back(propExpr);
+      }
+    }
+  }
+  // If avNodeAlias is referred by more than one expr,
+  // we cannot remove the append vertices which generate the avNodeAlias column
+  if (referAVNodeAliasExprs.size() > 1) {
+    return TransformResult::noTransform();
+  }
+
   found = false;
   size_t prjIdx = 0;
-  auto* columns = project->columns();
-  for (size_t i = 0; i < columns->size(); ++i) {
-    const auto* col = columns->columns()[i];
+  for (size_t i = 0; i < columns.size(); ++i) {
+    const auto* col = columns[i];
     if (col->expr()->kind() != Expression::Kind::kInputProperty) {
       continue;
     }
@@ -111,7 +145,7 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
 
   auto* pool = octx->qctx()->objPool();
   // Let the new project generate expr `none_direct_dst($-.tvEdgeAlias)`,
-  // and let the new left join use it as right expr
+  // and let the new left/inner join use it as right expr
   auto* args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, tvEdgeAlias));
   auto* newPrjExpr = FunctionCallExpression::make(pool, "none_direct_dst", args);
@@ -137,8 +171,12 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
       newRightExprs.emplace_back(rightExprs[i]->clone());
     }
   }
-  auto* newLeftJoin =
-      graph::HashLeftJoin::make(octx->qctx(), nullptr, nullptr, leftExprs, newRightExprs);
+  graph::HashJoin* newJoin = nullptr;
+  if (join->kind() == PlanNode::Kind::kHashLeftJoin) {
+    newJoin = graph::HashLeftJoin::make(octx->qctx(), nullptr, nullptr, leftExprs, newRightExprs);
+  } else {
+    newJoin = graph::HashInnerJoin::make(octx->qctx(), nullptr, nullptr, leftExprs, newRightExprs);
+  }
 
   TransformResult result;
   result.eraseAll = true;
@@ -148,19 +186,19 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
   auto* newProjectGroupNode = newProjectGroup->makeGroupNode(newProject);
   newProjectGroupNode->setDeps(appendVerticesGroupNode->dependencies());
 
-  newLeftJoin->setLeftVar(leftJoin->leftInputVar());
-  newLeftJoin->setRightVar(newProject->outputVar());
-  newLeftJoin->setOutputVar(leftJoin->outputVar());
-  auto* newLeftJoinGroupNode = OptGroupNode::create(octx, newLeftJoin, leftJoinGroup);
-  newLeftJoinGroupNode->dependsOn(leftJoinGroupNode->dependencies()[0]);
-  newLeftJoinGroupNode->dependsOn(newProjectGroup);
+  newJoin->setLeftVar(join->leftInputVar());
+  newJoin->setRightVar(newProject->outputVar());
+  newJoin->setOutputVar(join->outputVar());
+  auto* newJoinGroupNode = OptGroupNode::create(octx, newJoin, joinGroup);
+  newJoinGroupNode->dependsOn(joinGroupNode->dependencies()[0]);
+  newJoinGroupNode->dependsOn(newProjectGroup);
 
-  result.newGroupNodes.emplace_back(newLeftJoinGroupNode);
+  result.newGroupNodes.emplace_back(newJoinGroupNode);
   return result;
 }
 
-std::string OptimizeLeftJoinPredicateRule::toString() const {
-  return "OptimizeLeftJoinPredicateRule";
+std::string RemoveAppendVerticesBelowJoinRule::toString() const {
+  return "RemoveAppendVerticesBelowJoinRule";
 }
 
 }  // namespace opt

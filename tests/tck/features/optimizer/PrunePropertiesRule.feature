@@ -364,8 +364,7 @@ Feature: Prune Properties rule
       | 11 | Project        | 10           |                                                                                                                                                                                      |
       | 10 | AppendVertices | 9            | {  "props": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" } |
       | 9  | Traverse       | 8            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                           |
-      | 8  | Argument       | 0            |                                                                                                                                                                                      |
-      | 0  | Start          |              |                                                                                                                                                                                      |
+      | 8  | Argument       |              |                                                                                                                                                                                      |
     When profiling query:
       """
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
@@ -377,19 +376,17 @@ Feature: Prune Properties rule
       | scount |
       | 270    |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                 |
-      | 12 | Aggregate      | 13           |                                                                                                                               |
-      | 13 | HashInnerJoin  | 15, 11       |                                                                                                                               |
-      | 15 | Project        | 4            |                                                                                                                               |
-      | 4  | Traverse       | 3            | { "vertexProps": "" }                                                                                                         |
-      | 3  | Traverse       | 14           | {  "vertexProps": "" }                                                                                                        |
-      | 14 | IndexScan      | 2            |                                                                                                                               |
-      | 2  | Start          |              |                                                                                                                               |
-      | 11 | Project        | 10           |                                                                                                                               |
-      | 10 | AppendVertices | 9            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10}]" } |
-      | 9  | Traverse       | 8            | {  "vertexProps": "" }                                                                                                        |
-      | 8  | Argument       | 0            |                                                                                                                               |
-      | 0  | Start          |              |                                                                                                                               |
+      | id | name          | dependencies | operator info          |
+      | 12 | Aggregate     | 13           |                        |
+      | 13 | HashInnerJoin | 15, 11       |                        |
+      | 15 | Project       | 4            |                        |
+      | 4  | Traverse      | 3            | { "vertexProps": "" }  |
+      | 3  | Traverse      | 14           | {  "vertexProps": "" } |
+      | 14 | IndexScan     | 2            |                        |
+      | 2  | Start         |              |                        |
+      | 11 | Project       | 9            |                        |
+      | 9  | Traverse      | 8            | {  "vertexProps": "" } |
+      | 8  | Argument      |              |                        |
 
   @distonly
   Scenario: return function
