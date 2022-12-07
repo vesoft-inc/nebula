@@ -97,9 +97,13 @@ Status MatchValidator::validateImpl() {
           NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(), *whereClauseCtx));
           withClauseCtx->where = std::move(whereClauseCtx);
         }
-
         // A with pass all named aliases to the next query part.
-        aliasesAvailable = withClauseCtx->aliasesGenerated;
+        if (withClause->returnItems()->allNamedAliases()) {
+          aliasesAvailable.insert(withClauseCtx->aliasesGenerated.begin(),
+                                  withClauseCtx->aliasesGenerated.end());
+        } else {
+          aliasesAvailable = withClauseCtx->aliasesGenerated;
+        }
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
         cypherCtx_->queryParts.emplace_back();
         cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
