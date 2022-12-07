@@ -346,6 +346,25 @@ class GetVertices : public Explore {
     return props_.get();
   }
 
+  bool noNeedFetchProp() const {
+    if (props_.get() == nullptr) {
+      return true;
+    }
+    auto& vprops = *props_;
+    for (const auto& vprop : vprops) {
+      auto& props = vprop.get_props();
+      if (props.size() > 1) {
+        return false;
+      }
+      DCHECK_EQ(props.size(), 1);
+      auto& prop = props.front();
+      if (prop.compare("_tag")) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   const std::vector<Expr>* exprs() const {
     return exprs_.get();
   }
