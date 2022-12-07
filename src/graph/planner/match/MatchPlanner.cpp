@@ -80,8 +80,8 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
           alias.second != AliasType::kRuntime) {
         return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
                                                  alias.first,
-                                                 AliasTypeName(alias.second),
-                                                 AliasTypeName(it->second)));
+                                                 AliasTypeName[static_cast<int>(alias.second)],
+                                                 AliasTypeName[static_cast<int>(it->second)]));
       }
       // Joined On EdgeList is not supported
       if (alias.second == AliasType::kEdgeList) {
