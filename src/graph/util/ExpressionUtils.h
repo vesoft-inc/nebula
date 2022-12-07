@@ -104,6 +104,8 @@ class ExpressionUtils {
   // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
   static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
 
+  static Expression* foldInnerLogicalExpr(const Expression* expr);
+
   // Returns the operands of container expressions
   // For list and set, return the operands
   // For map, return the keys

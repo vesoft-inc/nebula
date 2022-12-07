@@ -80,6 +80,7 @@
 #include "graph/executor/query/LeftJoinExecutor.h"
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
+#include "graph/executor/query/PatternApplyExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/query/RollUpApplyExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
@@ -541,6 +542,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kRollUpApply: {
       return pool->makeAndAdd<RollUpApplyExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kPatternApply: {
+      return pool->makeAndAdd<PatternApplyExecutor>(node, qctx);
     }
     case PlanNode::Kind::kArgument: {
       return pool->makeAndAdd<ArgumentExecutor>(node, qctx);

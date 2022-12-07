@@ -944,5 +944,41 @@ PlanNode* RollUpApply::clone() const {
   return newRollUpApply;
 }
 
+std::unique_ptr<PlanNodeDescription> PatternApply::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("keyCols", folly::toJson(util::toJson(keyCols_)), desc.get());
+  return desc;
+}
+
+void PatternApply::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
+PatternApply::PatternApply(QueryContext* qctx,
+                           Kind kind,
+                           PlanNode* left,
+                           PlanNode* right,
+                           std::vector<Expression*> keyCols,
+                           bool isAntiPred)
+    : BinaryInputNode(qctx, kind, left, right),
+      keyCols_(std::move(keyCols)),
+      isAntiPred_(isAntiPred) {}
+
+void PatternApply::cloneMembers(const PatternApply& r) {
+  BinaryInputNode::cloneMembers(r);
+  for (const auto* col : r.keyCols_) {
+    keyCols_.emplace_back(col->clone());
+  }
+  isAntiPred_ = r.isAntiPred_;
+}
+
+PlanNode* PatternApply::clone() const {
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newPatternApply = PatternApply::make(qctx_, lnode, rnode, {});
+  newPatternApply->cloneMembers(*this);
+  return newPatternApply;
+}
+
 }  // namespace graph
 }  // namespace nebula
