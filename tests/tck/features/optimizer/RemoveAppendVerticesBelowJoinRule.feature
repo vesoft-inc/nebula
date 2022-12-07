@@ -1,7 +1,6 @@
 # Copyright (c) 2022 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jie
 Feature: Remove AppendVertices Below Join
 
   Background:
@@ -16,10 +15,10 @@ Feature: Remove AppendVertices Below Join
       OPTIONAL MATCH (friend)<-[:like]-(friend2:player)<-[:like]-(friendTeam)
       WITH friendTeam, count(friend2) AS numFriends
       RETURN
-        id(friendTeam) AS teamId,
-        friendTeam.team.name AS teamName,
-        numFriends
-        ORDER BY teamName DESC
+      id(friendTeam) AS teamId,
+      friendTeam.team.name AS teamName,
+      numFriends
+      ORDER BY teamName DESC
       """
     Then the result should be, in order, with relax comparison:
       | teamId          | teamName        | numFriends |
@@ -77,18 +76,16 @@ Feature: Remove AppendVertices Below Join
       | me              | both              | he             |
       | ("Tony Parker") | ("Manu Ginobili") | ("Tim Duncan") |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                    |
-      | 16 | HashInnerJoin  | 10,15        | {"hashKeys": ["_joinkey($-.both)"], "probeKeys": ["$-.both"]}    |
-      | 10 | Dedup          | 28           |                                                                  |
-      | 28 | Project        | 22           |                                                                  |
-      | 22 | Filter         | 26           |                                                                  |
-      | 26 | AppendVertices | 25           |                                                                  |
-      | 25 | Traverse       | 24           |                                                                  |
-      | 24 | Traverse       | 2            |                                                                  |
-      | 2  | Dedup          | 1            |                                                                  |
-      | 1  | PassThrough    | 3            |                                                                  |
-      | 3  | Start          |              |                                                                  |
-      | 15 | Project        | 14           | {"columns": ["$-.he AS he", "none_direct_dst($-.__VAR_1) AS v"]} |
-      | 14 | Traverse       | 12           |                                                                  |
-      | 12 | Traverse       | 11           |                                                                  |
-      | 11 | Argument       |              |                                                                  |
+      | id | name           | dependencies | operator info                                                       |
+      | 13 | HashInnerJoin  | 6,12         | {"hashKeys": ["_joinkey($-.both)"], "probeKeys": ["$-.both"]}       |
+      | 6  | Project        | 5            |                                                                     |
+      | 5  | AppendVertices | 15           |                                                                     |
+      | 15 | Traverse       | 2            |                                                                     |
+      | 2  | Dedup          | 1            |                                                                     |
+      | 1  | PassThrough    | 3            |                                                                     |
+      | 3  | Start          |              |                                                                     |
+      | 12 | Project        | 16           | {"columns": ["$-.he AS he", "none_direct_dst($-.__VAR_1) AS both"]} |
+      | 16 | Traverse       | 8            |                                                                     |
+      | 8  | Dedup          | 7            |                                                                     |
+      | 7  | PassThrough    | 9            |                                                                     |
+      | 9  | Start          |              |                                                                     |
