@@ -50,22 +50,22 @@ Feature: Basic match
       """
       MATCH (v:player) WITH (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
     When executing query:
       """
       MATCH (v:player) UNWIND (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
     When executing query:
       """
       MATCH (v:player) WHERE (v)-[v]-() RETURN v
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
     When executing query:
       """
       MATCH (v:player) RETURN (v)-[v]-()
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
 
   Scenario: In Where
     When executing query:
