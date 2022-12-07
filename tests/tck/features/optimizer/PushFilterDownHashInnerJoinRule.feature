@@ -32,19 +32,19 @@ Feature: Push Filter down HashInnerJoin rule
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                     |
-      | 30 | Sort           | 14           |                                   |
-      | 14 | Project        | 19           |                                   |
-      | 19 | HashInnerJoin  | 6,22         |                                   |
-      | 6  | Project        | 20           |                                   |
-      | 20 | AppendVertices | 2            |                                   |
-      | 2  | Dedup          | 1            |                                   |
-      | 1  | PassThrough    | 3            |                                   |
-      | 3  | Start          |              |                                   |
-      | 22 | Project        | 10           |                                   |
-      | 10 | AppendVertices | 9            |                                   |
-      | 9  | Traverse       | 7            | {"edge filter": "(*.likeness>0)"} |
-      | 7  | Argument       |              |                                   |
+      | id | name           | dependencies | operator info                   |
+      | 30 | Sort           | 14           |                                 |
+      | 14 | Project        | 19           |                                 |
+      | 19 | HashInnerJoin  | 6,22         |                                 |
+      | 6  | Project        | 20           |                                 |
+      | 20 | AppendVertices | 2            |                                 |
+      | 2  | Dedup          | 1            |                                 |
+      | 1  | PassThrough    | 3            |                                 |
+      | 3  | Start          |              |                                 |
+      | 22 | Project        | 10           |                                 |
+      | 10 | AppendVertices | 9            |                                 |
+      | 9  | Traverse       | 7            | {"filter": "(like.likeness>0)"} |
+      | 7  | Argument       |              |                                 |
     When profiling query:
       """
       MATCH (v:player)
@@ -122,7 +122,7 @@ Feature: Push Filter down HashInnerJoin rule
       | 3  | Start          |              |                                   |
       | 25 | Project        | 10           |                                   |
       | 10 | AppendVertices | 9            |                                   |
-      | 9  | Traverse       | 7            | {"edge filter": "(*.likeness>0)"} |
+      | 9  | Traverse       | 7            | {"filter": "(like.likeness>0)"}   |
       | 7  | Argument       |              |                                   |
     When profiling query:
       """
