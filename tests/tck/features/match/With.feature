@@ -387,3 +387,16 @@ Feature: With clause
       | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]       |
       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                               |
       | [:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]       |
+
+  Scenario: with wildcard after multiple matches
+    When executing query:
+      """
+      match (v0:player)--(v1:team) where v1.team.name == "Spurs" and v0.player.name == "Tim Duncan"
+      match (v:player) where v.player.name != "Tim Duncan" with v0 where v0.player.age > 0
+      match (v0:player)
+      with *
+      return count(v0)
+      """
+    Then the result should be, in order:
+      | count(v0) |
+      | 51        |
