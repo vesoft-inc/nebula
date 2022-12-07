@@ -151,12 +151,6 @@ StatusOr<OptRule::TransformResult> OptimizeLeftJoinPredicateRule::transform(
   newLeftJoin->setLeftVar(leftJoin->leftInputVar());
   newLeftJoin->setRightVar(newProject->outputVar());
   newLeftJoin->setOutputVar(leftJoin->outputVar());
-  // LOG the col names of newLeftJoin
-  auto& newLeftJoinColNames = newLeftJoin->colNames();
-  LOG(ERROR) << "newLeftJoinColNames.size(): " << newLeftJoinColNames.size();
-  for (auto& colName : newLeftJoinColNames) {
-    LOG(ERROR) << "colName: " << colName;
-  }
   auto* newLeftJoinGroupNode = OptGroupNode::create(octx, newLeftJoin, leftJoinGroup);
   newLeftJoinGroupNode->dependsOn(leftJoinGroupNode->dependencies()[0]);
   newLeftJoinGroupNode->dependsOn(newProjectGroup);
