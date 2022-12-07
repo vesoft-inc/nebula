@@ -73,6 +73,7 @@ struct AliasTypeName {
       case AliasType::kRuntime:
         return "Runtime";
     }
+    return "Error";  // should not reach here
   }
 };
 
