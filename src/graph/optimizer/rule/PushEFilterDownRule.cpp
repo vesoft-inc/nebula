@@ -123,7 +123,7 @@ std::string PushEFilterDownRule::toString() const {
     DCHECK_EQ(propertyExpr->sym(), "*");
     DCHECK(!edges.empty());
     Expression *ret = nullptr;
-    if (edges.size() == 1) {
+    if (edges.size() == 1 || (isBothDirection && edges.size() == 2)) {
       ret = rewriteStarEdge(propertyExpr, spaceId, edges.front(), schemaMng, pool);
       if (ret == nullptr) {
         return nullptr;
