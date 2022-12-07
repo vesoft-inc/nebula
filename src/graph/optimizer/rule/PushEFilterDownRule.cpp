@@ -53,8 +53,12 @@ StatusOr<OptRule::TransformResult> PushEFilterDownRule::transform(
   auto pool = qctx->objPool();
   auto eFilter = traverse->eFilter()->clone();
 
-  eFilter = rewriteStarEdge(
-      eFilter, traverse->space(), *DCHECK_NOTNULL(traverse->edgeProps()), qctx->schemaMng(), pool);
+  eFilter = rewriteStarEdge(eFilter,
+                            traverse->space(),
+                            *DCHECK_NOTNULL(traverse->edgeProps()),
+                            qctx->schemaMng(),
+                            traverse->edgeDirection() == storage::cpp2::EdgeDirection::BOTH,
+                            pool);
   if (eFilter == nullptr) {
     return TransformResult::noTransform();
   }
@@ -93,6 +97,7 @@ std::string PushEFilterDownRule::toString() const {
     GraphSpaceID spaceId,
     const std::vector<storage::cpp2::EdgeProp> &edges,
     meta::SchemaManager *schemaMng,
+    bool isBothDirection,
     ObjectPool *pool) {
   graph::RewriteVisitor::Matcher matcher = [](const Expression *exp) -> bool {
     switch (exp->kind()) {
@@ -113,7 +118,7 @@ std::string PushEFilterDownRule::toString() const {
     }
   };
   graph::RewriteVisitor::Rewriter rewriter =
-      [spaceId, &edges, schemaMng, pool](const Expression *exp) -> Expression * {
+      [spaceId, &edges, schemaMng, isBothDirection, pool](const Expression *exp) -> Expression * {
     auto *propertyExpr = static_cast<const PropertyExpression *>(exp);
     DCHECK_EQ(propertyExpr->sym(), "*");
     DCHECK(!edges.empty());
@@ -126,6 +131,9 @@ std::string PushEFilterDownRule::toString() const {
     } else {
       auto args = ArgumentList::make(pool);
       for (auto &edge : edges) {
+        if (isBothDirection && edge.get_type() < 0) {
+          continue;
+        }
         auto reEdgeExp = rewriteStarEdge(propertyExpr, spaceId, edge, schemaMng, pool);
         if (reEdgeExp == nullptr) {
           return nullptr;
