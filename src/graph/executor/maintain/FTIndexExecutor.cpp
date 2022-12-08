@@ -41,14 +41,14 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
                        << "' failed: " << resp.status();
           return resp.status();
         }
-        auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-        if (!tsRet.ok()) {
-          LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
+        auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+        if (!esAdapterRet.ok()) {
+          LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
         }
-        auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), inode->getName());
+        auto esAdapter = std::move(esAdapterRet).value();
+        auto ftRet = esAdapter.dropIndex(inode->getName());
         if (!ftRet.ok()) {
-          LOG(WARNING) << "Drop fulltext index '" << inode->getName()
-                       << "' failed: " << ftRet.status();
+          LOG(WARNING) << "Drop fulltext index '" << inode->getName() << "' failed: " << ftRet;
         }
         return Status::OK();
       });

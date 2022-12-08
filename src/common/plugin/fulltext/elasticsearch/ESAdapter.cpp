@@ -180,36 +180,63 @@ Status ESAdapter::bulk(const ESBulk& bulk, bool refresh) {
   return Status::Error(folly::toJson(resp));
 }
 
-StatusOr<ESQueryResult> ESAdapter::prefix(const std::string& index, const std::string& pattern) {
+StatusOr<ESQueryResult> ESAdapter::prefix(const std::string& index,
+                                          const std::string& pattern,
+                                          int64_t size,
+                                          int64_t timeout) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["prefix"] = folly::dynamic::object();
   body["query"]["prefix"]["text"] = pattern;
-  return ESAdapter::query(index, body);
+  if (size > 0) {
+    body["size"] = size;
+    body["from"] = 0;
+  }
+  return ESAdapter::query(index, body, timeout);
 }
 
-StatusOr<ESQueryResult> ESAdapter::wildcard(const std::string& index, const std::string& pattern) {
+StatusOr<ESQueryResult> ESAdapter::wildcard(const std::string& index,
+                                            const std::string& pattern,
+                                            int64_t size,
+                                            int64_t timeout) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["wildcard"] = folly::dynamic::object("text", pattern);
-  return ESAdapter::query(index, body);
+  if (size > 0) {
+    body["size"] = size;
+    body["from"] = 0;
+  }
+  return ESAdapter::query(index, body, timeout);
 }
 
-StatusOr<ESQueryResult> ESAdapter::regexp(const std::string& index, const std::string& pattern) {
+StatusOr<ESQueryResult> ESAdapter::regexp(const std::string& index,
+                                          const std::string& pattern,
+                                          int64_t size,
+                                          int64_t timeout) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["regexp"] = folly::dynamic::object("text", pattern);
-  return ESAdapter::query(index, body);
+  if (size > 0) {
+    body["size"] = size;
+    body["from"] = 0;
+  }
+  return ESAdapter::query(index, body, timeout);
 }
 
 StatusOr<ESQueryResult> ESAdapter::fuzzy(const std::string& index,
                                          const std::string& pattern,
-                                         const std::string& fuzziness) {
+                                         const std::string& fuzziness,
+                                         int64_t size,
+                                         int64_t timeout) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["fuzzy"] = folly::dynamic::object();
   body["query"]["fuzzy"]["text"] = folly::dynamic::object("value", pattern)("fuzziness", fuzziness);
-  return ESAdapter::query(index, body);
+  if (size > 0) {
+    body["size"] = size;
+    body["from"] = 0;
+  }
+  return ESAdapter::query(index, body, timeout);
 }
 
 // StatusOr<ESQueryResult> ESAdapter::term(const std::string& index,const std::vector<std::string>&
@@ -221,11 +248,13 @@ StatusOr<ESQueryResult> ESAdapter::match_all(const std::string& index) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["match_all"] = folly::dynamic::object();
-  return ESAdapter::query(index, body);
+  return ESAdapter::query(index, body, -1);
 }
 
-StatusOr<ESQueryResult> ESAdapter::query(const std::string& index, const folly::dynamic& query) {
-  auto result = randomClient().search(index, query);
+StatusOr<ESQueryResult> ESAdapter::query(const std::string& index,
+                                         const folly::dynamic& query,
+                                         int64_t timeout) {
+  auto result = randomClient().search(index, query, timeout);
   if (!result.ok()) {
     return std::move(result).status();
   }

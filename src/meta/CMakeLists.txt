@@ -164,7 +164,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
@@ -173,6 +173,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:http_client_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)
