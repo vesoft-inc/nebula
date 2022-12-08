@@ -402,3 +402,14 @@ Feature: With clause
     Then the result should be, in order:
       | count(v0) |
       | 51        |
+    When executing query:
+      """
+      match (v:player)
+      with v AS p
+      match (p)
+      with p AS v
+      match (v)
+      with *
+      return count (p)
+      """
+    Then a SemanticError should be raised at runtime:  Alias used but not defined: `p'
