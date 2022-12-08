@@ -1666,7 +1666,7 @@ TEST(MetaClientTest, ListenerTest) {
   GraphSpaceID space = ret.value();
   std::vector<HostAddr> listenerHosts = {{"1", 0}, {"1", 1}, {"1", 2}, {"1", 3}};
   {
-    TestUtils::setupHB(kv, listenerHosts, cpp2::HostRole::LISTENER, gitInfoSha());
+    TestUtils::setupHB(kv, listenerHosts, cpp2::HostRole::STORAGE_LISTENER, gitInfoSha());
     auto addRet =
         client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, listenerHosts).get();
     ASSERT_TRUE(addRet.ok()) << addRet.status();

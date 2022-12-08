@@ -14,7 +14,11 @@
 // invoke the getNeighbors interface, according to the number of times specified by the user,
 // and assemble the result into paths
 //
-//  The definition of path is : array of vertex and edges
+//  Path is an array of vertex and edges physically.
+//  Its definition is a trail, in which all edges are distinct. It's different to a walk
+//  which allows duplicated vertices and edges, and a path where all vertices and edges
+//  are distinct.
+//
 //  Eg a->b->c. path is [Vertex(a), [Edge(a->b), Vertex(b), Edge(b->c), Vertex(c)]]
 //  the purpose is to extract the path by pathBuildExpression
 // `resDs_` : keep result dataSet
