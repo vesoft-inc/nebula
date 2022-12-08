@@ -190,10 +190,11 @@ class NebulaService(object):
         ports_count = process_count * self.ports_per_process
         self.all_ports = self._find_free_port(ports_count)
         print(self.all_ports)
+        sa_ports_count= self.metad_num + self.storaged_num + self.graphd_num
         index = 0
         standalone = NebulaProcess(
             "standalone",
-            self.all_ports[index: index + ports_count],
+            self.all_ports[index: index + sa_ports_count],
             index,
             self.graphd_param,
             is_standalone=True
