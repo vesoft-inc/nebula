@@ -222,22 +222,6 @@ Feature: Push Filter down HashInnerJoin rule
       | 8  | Traverse       | 7            |                                                                                                     |
       | 7  | Argument       |              |                                                                                                     |
 
-  # Depends on the PR #4973
-  # When profiling query:
-  # """
-  # match p=(a:player)-[e:like*1..3]->(b)
-  # where b.player.age>42
-  # with relationships(p)[1] AS e1
-  # match (b)-[:serve]->(c)
-  # where c.team.name>'S' and (b)-[e1]->()
-  # return c
-  # order by c
-  # limit 1
-  # """
-  # Then the result should be, in any order:
-  # | e | v2 |
-  # And the execution plan should be:
-  # | id | name | dependencies | operator info |
   Scenario: NOT push filter down HashInnerJoin
     When profiling query:
       """
