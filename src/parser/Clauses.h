@@ -257,6 +257,7 @@ class YieldColumn final {
   explicit YieldColumn(Expression *expr, const std::string &alias = "") {
     expr_ = expr;
     alias_ = alias;
+    isMatched_ = false;
   }
 
   std::unique_ptr<YieldColumn> clone() const {
@@ -285,9 +286,18 @@ class YieldColumn final {
 
   std::string toString() const;
 
+  void setMatched(bool isMatched) {
+    isMatched_ = isMatched;
+  }
+
+  bool isMatched() const {
+    return isMatched_;
+  }
+
  private:
   Expression *expr_{nullptr};
   std::string alias_;
+  bool isMatched_;
 };
 
 bool operator==(const YieldColumn &l, const YieldColumn &r);
@@ -297,8 +307,9 @@ inline bool operator!=(const YieldColumn &l, const YieldColumn &r) {
 
 class YieldColumns final {
  public:
-  void addColumn(YieldColumn *field) {
+  void addColumn(YieldColumn *field, bool isMatched = false) {
     columns_.emplace_back(field);
+    field->setMatched(isMatched);
   }
 
   std::vector<YieldColumn *> columns() const {
@@ -345,6 +356,15 @@ class YieldColumns final {
   }
 
   bool hasAgg() const;
+
+  YieldColumn *find(const std::string &name) const {
+    for (auto &col : columns_) {
+      if (name.compare(col->name()) == 0) {
+        return col.get();
+      }
+    }
+    return nullptr;
+  }
 
  private:
   std::vector<std::unique_ptr<YieldColumn>> columns_;

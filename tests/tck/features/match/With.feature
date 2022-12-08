@@ -378,7 +378,7 @@ Feature: With clause
   Scenario: with wildcard after unwind
     When executing query:
       """
-      match p = (v0)-[e0]->(v1) where id(v0) in ["Tim Duncan"] unwind v0 as uv0 with * return e0 limit 5;
+      match p = (v0)-[e0]->(v1) where id(v0) in ["Tim Duncan"] unwind v0 as uv0 with * return e0;
       """
     Then the result should be, in any order:
       | e0                                                                                  |
@@ -387,3 +387,29 @@ Feature: With clause
       | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]       |
       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                               |
       | [:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]       |
+      | [:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]                             |
+
+  Scenario: with wildcard after multiple matches
+    When executing query:
+      """
+      match (v0:player)--(v1:team) where v1.team.name == "Spurs" and v0.player.name == "Tim Duncan"
+      match (v:player) where v.player.name != "Tim Duncan" with v0 where v0.player.age > 0
+      match (v0:player)
+      with *
+      return count(v0)
+      """
+    Then the result should be, in order:
+      | count(v0) |
+      | 51        |
+    When executing query:
+      """
+      match (v:player)
+      with v AS p
+      match (p)
+      with p AS v
+      match (v)
+      with *
+      return count (p)
+      """
+    Then a SemanticError should be raised at runtime:  Alias used but not defined: `p'
