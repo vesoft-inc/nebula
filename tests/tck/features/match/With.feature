@@ -378,7 +378,7 @@ Feature: With clause
   Scenario: with wildcard after unwind
     When executing query:
       """
-      match p = (v0)-[e0]->(v1) where id(v0) in ["Tim Duncan"] unwind v0 as uv0 with * return e0 limit 5;
+      match p = (v0)-[e0]->(v1) where id(v0) in ["Tim Duncan"] unwind v0 as uv0 with * return e0;
       """
     Then the result should be, in any order:
       | e0                                                                                  |
@@ -387,6 +387,8 @@ Feature: With clause
       | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]       |
       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                               |
       | [:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]       |
+      | [:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]                             |
 
   Scenario: with wildcard after multiple matches
     When executing query:
