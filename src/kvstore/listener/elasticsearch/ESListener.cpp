@@ -221,8 +221,6 @@ void ESListener::processLogs() {
   }
 
   LogID lastApplyId = -1;
-  // // the kv pair which can sync to remote safely
-  // std::vector<KV> data;
   BatchHolder batch;
   while (iter->valid()) {
     lastApplyId = iter->logId();
@@ -256,9 +254,7 @@ void ESListener::processLogs() {
         break;
       }
       case OP_REMOVE_RANGE: {
-        auto kvs = decodeMultiValues(log);
-        DCHECK_EQ(2, kvs.size());
-        batch.rangeRemove(kvs[0].toString(), kvs[1].toString());
+        LOG(WARNING) << "ESListener don't deal with OP_REMOVE_RANGE";
         break;
       }
       case OP_MULTI_REMOVE: {
