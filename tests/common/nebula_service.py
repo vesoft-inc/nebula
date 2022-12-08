@@ -198,10 +198,11 @@ class NebulaService(object):
             self.graphd_param,
             is_standalone=True
         )
+        index = index + 1
         listener = NebulaProcess(
             "listener",
             self.all_ports[index: index + self.ports_per_process],
-            suffix_index,
+            0,
             self.listener_param
         )
         self.graphd_processes.append(standalone)
