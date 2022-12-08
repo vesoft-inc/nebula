@@ -89,7 +89,7 @@ Feature: Push Filter down Traverse rule
       | id | name           | dependencies | operator info                            |
       | 11 | TopN           | 10           |                                          |
       | 10 | Project        | 9            |                                          |
-      | 9  | Filter         | 4            | {"condition": "(-.v.player.age!=35)" }   |
+      | 9  | Filter         | 4            | {"condition": "($-.v.player.age!=35)" }  |
       | 4  | AppendVertices | 12           |                                          |
       | 12 | Traverse       | 8            | {"filter": "((like.likeness+100)!=199)"} |
       | 8  | IndexScan      | 2            |                                          |
