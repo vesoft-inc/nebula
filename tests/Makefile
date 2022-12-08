@@ -116,6 +116,7 @@ test: sess
 	$(test_j) --dist=loadfile -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
+	$(test_j) tck/steps/test_kill_slow_query_base_test.py && \
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
 	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py && \
 	$(test_j) tck/steps/test_kill_permission_via_same_service.py && \
