@@ -15,4 +15,5 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )

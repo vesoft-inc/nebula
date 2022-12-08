@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
+#include <map>
+
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
 #include "common/fs/TempDir.h"
@@ -44,7 +46,11 @@ class DummyListener : public Listener {
       : Listener(spaceId, partId, localAddr, walPath, ioPool, workers, handlers) {}
 
   std::vector<KV> data() {
-    return data_;
+    std::vector<KV> ret;
+    for (auto& [key, value] : data_) {
+      ret.emplace_back(key, value);
+    }
+    return ret;
   }
 
   std::tuple<cpp2::ErrorCode, int64_t, int64_t> commitSnapshot(const std::vector<std::string>& rows,
@@ -57,15 +63,14 @@ class DummyListener : public Listener {
     int64_t size = 0;
     std::tuple<nebula::cpp2::ErrorCode, nebula::LogID, nebula::TermID> result{
         nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
-    std::vector<KV> data;
-    data.reserve(rows.size());
+    BatchHolder batch;
     for (const auto& row : rows) {
       count++;
       size += row.size();
       auto kv = decodeKV(row);
-      data.emplace_back(kv.first, kv.second);
+      batch.put(kv.first.toString(), kv.second.toString());
     }
-    if (!apply(data)) {
+    if (!apply(batch)) {
       LOG(INFO) << idStr_ << "Failed to apply data while committing snapshot.";
       result = {nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED,
                 kNoSnapshotCount,
@@ -117,8 +122,8 @@ class DummyListener : public Listener {
     }
 
     LogID lastApplyId = -1;
-    // the kv pair which can sync to remote safely
-    std::vector<KV> data;
+    // // the kv pair which can sync to remote safely
+    BatchHolder batch;
     while (iter->valid()) {
       lastApplyId = iter->logId();
 
@@ -134,28 +139,52 @@ class DummyListener : public Listener {
         case OP_PUT: {
           auto pieces = decodeMultiValues(log);
           DCHECK_EQ(2, pieces.size());
-          data.emplace_back(pieces[0], pieces[1]);
+          batch.put(pieces[0].toString(), pieces[1].toString());
           break;
         }
         case OP_MULTI_PUT: {
           auto kvs = decodeMultiValues(log);
           DCHECK_EQ(0, kvs.size() % 2);
           for (size_t i = 0; i < kvs.size(); i += 2) {
-            data.emplace_back(kvs[i], kvs[i + 1]);
+            batch.put(kvs[i].toString(), kvs[i + 1].toString());
           }
           break;
         }
-        case OP_REMOVE:
-        case OP_REMOVE_RANGE:
+        case OP_REMOVE: {
+          auto key = decodeSingleValue(log);
+          batch.remove(key.toString());
+          break;
+        }
+        case OP_REMOVE_RANGE: {
+          auto kvs = decodeMultiValues(log);
+          DCHECK_EQ(2, kvs.size());
+          batch.rangeRemove(kvs[0].toString(), kvs[1].toString());
+          break;
+        }
         case OP_MULTI_REMOVE: {
+          auto keys = decodeMultiValues(log);
+          for (auto key : keys) {
+            batch.remove(key.toString());
+          }
           break;
         }
         case OP_BATCH_WRITE: {
-          auto batch = decodeBatchValue(log);
-          for (auto& op : batch) {
+          auto batchData = decodeBatchValue(log);
+          for (auto& op : batchData) {
             // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
-            if (op.first == BatchLogType::OP_BATCH_PUT) {
-              data.emplace_back(op.second.first, op.second.second);
+            switch (op.first) {
+              case BatchLogType::OP_BATCH_PUT: {
+                batch.put(op.second.first.toString(), op.second.second.toString());
+                break;
+              }
+              case BatchLogType::OP_BATCH_REMOVE: {
+                batch.remove(op.second.first.toString());
+                break;
+              }
+              case BatchLogType::OP_BATCH_REMOVE_RANGE: {
+                batch.rangeRemove(op.second.first.toString(), op.second.second.toString());
+                break;
+              }
             }
           }
           break;
@@ -173,7 +202,7 @@ class DummyListener : public Listener {
       ++(*iter);
     }
     // apply to state machine
-    if (lastApplyId != -1 && apply(data)) {
+    if (lastApplyId != -1 && apply(batch)) {
       std::lock_guard<std::mutex> guard(raftLock_);
       lastApplyLogId_ = lastApplyId;
       persist(committedLogId_, term_, lastApplyLogId_);
@@ -184,10 +213,30 @@ class DummyListener : public Listener {
  protected:
   void init() override {}
 
-  bool apply(const std::vector<KV>& kvs) {
-    for (const auto& kv : kvs) {
-      data_.emplace_back(kv);
+  bool apply(const BatchHolder& batch) {
+    for (auto& log : batch.getBatch()) {
+      switch (std::get<0>(log)) {
+        case BatchLogType::OP_BATCH_PUT: {
+          data_[std::get<1>(log)] = std::get<2>(log);
+          break;
+        }
+        case BatchLogType::OP_BATCH_REMOVE: {
+          data_.erase(std::get<1>(log));
+          break;
+        }
+        case BatchLogType::OP_BATCH_REMOVE_RANGE: {
+          auto iter = data_.lower_bound(std::get<1>(log));
+          while (iter != data_.end()) {
+            if (iter->first < std::get<2>(log)) {
+              iter = data_.erase(iter);
+            } else {
+              break;
+            }
+          }
+        }
+      }
     }
+
     return true;
   }
 
@@ -212,7 +261,7 @@ class DummyListener : public Listener {
   }
 
  private:
-  std::vector<KV> data_;
+  std::map<std::string, std::string> data_;
   std::pair<int64_t, int64_t> committedSnapshot_{0, 0};
   int32_t snapshotBatchCount_{0};
 };
@@ -448,9 +497,14 @@ TEST_P(ListenerBasicTest, SimpleTest) {
     auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100, data.size());
+    std::map<std::string, std::string> expect;
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
-      CHECK_EQ(folly::stringPrintf("key_%d_%d", partId, i), data[i].first);
-      CHECK_EQ(folly::stringPrintf("val_%d_%d", partId, i), data[i].second);
+      expect[fmt::format("key_{}_{}", partId, i)] = fmt::format("val_{}_{}", partId, i);
+    }
+    auto iter = expect.begin();
+    for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++, iter++) {
+      CHECK_EQ(iter->first, data[i].first);
+      CHECK_EQ(iter->second, data[i].second);
     }
   }
 }
@@ -518,9 +572,14 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
     auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(200, data.size());
+    std::map<std::string, std::string> expect;
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
-      CHECK_EQ(folly::stringPrintf("key_%d_%d", partId, i), data[i].first);
-      CHECK_EQ(folly::stringPrintf("val_%d_%d", partId, i), data[i].second);
+      expect[fmt::format("key_{}_{}", partId, i)] = fmt::format("val_{}_{}", partId, i);
+    }
+    auto iter = expect.begin();
+    for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++, iter++) {
+      CHECK_EQ(iter->first, data[i].first);
+      CHECK_EQ(iter->second, data[i].second);
     }
   }
 }
@@ -552,9 +611,14 @@ TEST_P(ListenerBasicTest, CommitSnapshotTest) {
     auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100, data.size());
+    std::map<std::string, std::string> expect;
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
-      CHECK_EQ(folly::stringPrintf("key_%d_%d", partId, i), data[i].first);
-      CHECK_EQ(folly::stringPrintf("val_%d_%d", partId, i), data[i].second);
+      expect[fmt::format("key_{}_{}", partId, i)] = fmt::format("val_{}_{}", partId, i);
+    }
+    auto iter = expect.begin();
+    for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++, iter++) {
+      CHECK_EQ(iter->first, data[i].first);
+      CHECK_EQ(iter->second, data[i].second);
     }
   }
 }

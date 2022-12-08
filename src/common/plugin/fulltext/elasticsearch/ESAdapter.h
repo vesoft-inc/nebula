@@ -60,13 +60,14 @@ class ESAdapter {
  public:
   explicit ESAdapter(std::vector<ESClient>&& clients);
   ESAdapter() = default;
-  void setClients(std::vector<ESClient>&& clients);
-  Status createIndex(const std::string& name);
-  Status dropIndex(const std::string& name);
-  Status clearIndex(const std::string& name, bool refresh = false);
-  StatusOr<bool> isIndexExist(const std::string& name);
+  virtual ~ESAdapter() = default;
+  virtual void setClients(std::vector<ESClient>&& clients);
+  virtual Status createIndex(const std::string& name);
+  virtual Status dropIndex(const std::string& name);
+  virtual Status clearIndex(const std::string& name, bool refresh = false);
+  virtual StatusOr<bool> isIndexExist(const std::string& name);
 
-  Status bulk(const ESBulk& bulk, bool refresh = false);
+  virtual Status bulk(const ESBulk& bulk, bool refresh = false);
 
   /**
    * @brief
@@ -88,7 +89,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  StatusOr<ESQueryResult> prefix(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> prefix(const std::string& index,
+                                         const std::string& pattern,
+                                         int64_t size = -1,
+                                         int64_t timeout = -1);
 
   /**
    * @brief
@@ -111,9 +115,11 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  StatusOr<ESQueryResult> fuzzy(const std::string& index,
-                                const std::string& pattern,
-                                const std::string& fuzziness);
+  virtual StatusOr<ESQueryResult> fuzzy(const std::string& index,
+                                        const std::string& pattern,
+                                        const std::string& fuzziness,
+                                        int64_t size = -1,
+                                        int64_t timeout = -1);
 
   /**
    * @brief
@@ -135,7 +141,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  StatusOr<ESQueryResult> regexp(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> regexp(const std::string& index,
+                                         const std::string& pattern,
+                                         int64_t size = -1,
+                                         int64_t timeout = -1);
 
   /**
    * @brief
@@ -157,7 +166,10 @@ class ESAdapter {
    * @param pattern
    * @return StatusOr<ESQueryResult>
    */
-  StatusOr<ESQueryResult> wildcard(const std::string& index, const std::string& pattern);
+  virtual StatusOr<ESQueryResult> wildcard(const std::string& index,
+                                           const std::string& pattern,
+                                           int64_t size = -1,
+                                           int64_t timeout = -1);
 
   // /**
   //  * @brief
@@ -188,10 +200,12 @@ class ESAdapter {
   //  */
   // StatusOr<ESQueryResult> term(const std::string& index, const std::vector<std::string>& words);
 
-  StatusOr<ESQueryResult> match_all(const std::string& index);
-  StatusOr<ESQueryResult> query(const std::string& index, const folly::dynamic& query);
+  virtual StatusOr<ESQueryResult> match_all(const std::string& index);
+  StatusOr<ESQueryResult> query(const std::string& index,
+                                const folly::dynamic& query,
+                                int64_t timeout);
 
- private:
+ protected:
   static std::string genDocID(const std::string& vid,
                               const std::string& src,
                               const std::string& dst,

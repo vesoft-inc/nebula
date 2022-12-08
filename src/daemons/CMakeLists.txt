@@ -54,7 +54,7 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>
-    $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:geo_index_obj>
 )
@@ -147,7 +147,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
-        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:es_adapter_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:gc_obj>
         ${common_deps}
@@ -234,7 +234,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
-        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:es_adapter_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:storage_server>
         $<TARGET_OBJECTS:internal_storage_service_handler>

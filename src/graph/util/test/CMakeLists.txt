@@ -27,6 +27,7 @@ nebula_add_test(
     SOURCES
         ExpressionUtilsTest.cpp
         IdGeneratorTest.cpp
+        FTindexUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
@@ -52,7 +53,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:graph_obj>
-        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
@@ -72,11 +72,14 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client_stats_obj>
         $<TARGET_OBJECTS:storage_client_stats_obj>
         $<TARGET_OBJECTS:gc_obj>
+        $<TARGET_OBJECTS:es_adapter_obj>
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         gtest
+        gmock
         gtest_main
         ${Boost_Thread_LIBRARY}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
-        # curl
+        curl
 )
