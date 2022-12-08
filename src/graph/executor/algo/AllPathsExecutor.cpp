@@ -33,6 +33,9 @@ void AllPathsExecutor::init() {
     leftVids_.reserve(size);
     for (; iter->valid(); iter->next()) {
       auto& vid = iter->getColumn(0);
+      if (vid.empty()) {
+        continue;
+      }
       if (leftInitVids_.emplace(vid).second) {
         leftVids_.emplace_back(vid);
       }
@@ -45,6 +48,9 @@ void AllPathsExecutor::init() {
     rightVids_.reserve(size);
     for (; iter->valid(); iter->next()) {
       auto& vid = iter->getColumn(0);
+      if (vid.empty()) {
+        continue;
+      }
       if (rightInitVids_.emplace(vid).second) {
         rightVids_.emplace_back(vid);
       }

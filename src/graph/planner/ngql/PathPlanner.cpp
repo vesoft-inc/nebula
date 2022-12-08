@@ -132,15 +132,17 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* left, PlanNode* right) {
   return subPlan;
 }
 
-PlanNode* PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
+SubPlan PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
   auto qctx = pathCtx_->qctx;
+  SubPlan subPlan;
   if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     std::string vidsVar;
     PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
     auto* dedup = Dedup::make(qctx, dep);
     dedup->setInputVar(vidsVar);
     dedup->setColNames({kVid});
-    return dedup;
+    subPlan.root = subPlan.tail = dedup;
+    return subPlan;
   }
   auto pool = qctx->objPool();
   auto* columns = pool->makeAndAdd<YieldColumns>();
@@ -153,19 +155,34 @@ PlanNode* PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
   }
   auto* dedup = Dedup::make(qctx, project);
   dedup->setColNames({kVid});
-  return dedup;
+  subPlan.root = dedup;
+  subPlan.tail = project;
+  return subPlan;
 }
 
 StatusOr<SubPlan> PathPlanner::allPathPlan() {
+  SubPlan subPlan;
   auto qctx = pathCtx_->qctx;
   auto pool = qctx->objPool();
   auto* pt = PassThroughNode::make(qctx, nullptr);
-  auto* left = pathInputPlan(pt, pathCtx_->from);
-  auto* right = pathInputPlan(pt, pathCtx_->to);
+  auto& from = pathCtx_->from;
+  auto& to = pathCtx_->to;
+  auto leftPlan = pathInputPlan(pt, from);
+  auto rightPlan = pathInputPlan(pt, to);
+
+  if (from.vids.empty()) {
+    auto& leftInputName = from.fromType == kPipe ? pathCtx_->inputVarName : from.userDefinedVarName;
+    leftPlan.tail->setInputVar(leftInputName);
+  }
+  if (to.vids.empty()) {
+    auto& rightInputName = to.fromType == kPipe ? pathCtx_->inputVarName : to.userDefinedVarName;
+    rightPlan.tail->setInputVar(rightInputName);
+  }
 
   auto steps = pathCtx_->steps.steps();
   auto withProp = pathCtx_->withProp;
-  auto* path = AllPaths::make(qctx, left, right, steps, pathCtx_->noLoop, withProp);
+  auto* path =
+      AllPaths::make(qctx, leftPlan.root, rightPlan.root, steps, pathCtx_->noLoop, withProp);
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, withProp);
   NG_RETURN_IF_ERROR(vertexProp);
   path->setVertexProps(std::move(vertexProp).value());
@@ -173,7 +190,6 @@ StatusOr<SubPlan> PathPlanner::allPathPlan() {
   path->setReverseEdgeProps(buildEdgeProps(true, withProp));
   path->setColNames({"_src", "_edge", "_dst"});
 
-  SubPlan subPlan;
   subPlan.root = path;
   subPlan.tail = pt;
 
