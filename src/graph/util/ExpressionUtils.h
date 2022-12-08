@@ -32,7 +32,7 @@ class ExpressionUtils {
   // Checks if the kind of the given expression is one of the expected kind
   static inline bool isKindOf(const Expression* expr,
                               const std::unordered_set<Expression::Kind>& expected) {
-    return expected.find(expr->kind()) != expected.end();
+    return expected.find(DCHECK_NOTNULL(expr)->kind()) != expected.end();
   }
 
   // Checks if the expression is a property expression (TagProperty or LabelTagProperty or
@@ -103,6 +103,8 @@ class ExpressionUtils {
   // A and (B or C)  => (A and B) or (A and C)
   // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
   static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
+
+  static Expression* foldInnerLogicalExpr(const Expression* expr);
 
   // Returns the operands of container expressions
   // For list and set, return the operands
@@ -182,9 +184,12 @@ class ExpressionUtils {
   // calls flattenInnerLogicalAndExpr() first then executes flattenInnerLogicalOrExpr()
   static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
+  // Check whether there exists the property of variable expression in `columns'
+  static bool checkVarPropIfExist(const std::vector<std::string>& columns, const Expression* e);
+
   // Uses the picker to split the given experssion expr into two parts: filterPicked and
   // filterUnpicked If expr is a non-LogicalAnd expression, applies the picker to expr directly If
-  // expr is a logicalAnd expression,  applies the picker to all its operands
+  // expr is a logicalAnd expression, applies the picker to all its operands
   static void splitFilter(const Expression* expr,
                           std::function<bool(const Expression*)> picker,
                           Expression** filterPicked,
@@ -225,6 +230,13 @@ class ExpressionUtils {
   // Whether the whole expression is vertex id predication
   // e.g. id(v) == 1, id(v) IN [...]
   static bool isVidPredication(const Expression* expr);
+
+  // Check if the expr looks like `$-.e[0].likeness`
+  static bool isSingleLenExpandExpr(const std::string& edgeAlias, const Expression* expr);
+
+  static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
+                                               const std::string& edgeAlias,
+                                               Expression* expr);
 };
 
 }  // namespace graph

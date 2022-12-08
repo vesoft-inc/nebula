@@ -8,6 +8,7 @@
 #include <folly/json.h>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
@@ -41,6 +42,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
     {"coalesce", Value::Type::__EMPTY__},
+    {"_any", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -2002,6 +2004,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    // `none_direct_dst` always return the dstId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -2818,6 +2825,21 @@ FunctionManager::FunctionManager() {
       } catch (const std::exception &e) {
         return Value::kNullBadData;
       }
+    };
+  }
+  // Get any argument which is not empty/null
+  {
+    auto &attr = functions_["_any"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      for (const auto &arg : args) {
+        if (!arg.get().isNull() && !arg.get().empty()) {
+          return arg.get();
+        }
+      }
+      return Value::kNullValue;
     };
   }
 }  // NOLINT

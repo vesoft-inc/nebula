@@ -17,8 +17,13 @@ namespace nebula {
 namespace opt {
 
 const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
+  auto *pnode = DCHECK_NOTNULL(result(pos).node)->node();
+  return DCHECK_NOTNULL(pnode);
+}
+
+const MatchedResult &MatchedResult::result(const std::vector<int32_t> &pos) const {
   if (pos.empty()) {
-    return DCHECK_NOTNULL(node)->node();
+    return *this;
   }
 
   DCHECK_EQ(pos[0], 0);
@@ -28,15 +33,20 @@ const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
     DCHECK_LT(pos[i], result->dependencies.size());
     result = &result->dependencies[pos[i]];
   }
-  return DCHECK_NOTNULL(result->node)->node();
+  return *DCHECK_NOTNULL(result);
 }
 
-void MatchedResult::collectBoundary(std::vector<OptGroup *> &boundary) const {
+void MatchedResult::collectPatternLeaves(std::vector<OptGroup *> &leaves) const {
   if (dependencies.empty()) {
-    boundary.insert(boundary.end(), node->dependencies().begin(), node->dependencies().end());
+    if (node->dependencies().empty()) {
+      // nullptr means this node in matched pattern is a leaf node
+      leaves.push_back(nullptr);
+    } else {
+      leaves.insert(leaves.end(), node->dependencies().begin(), node->dependencies().end());
+    }
   } else {
     for (const auto &dep : dependencies) {
-      dep.collectBoundary(boundary);
+      dep.collectPatternLeaves(leaves);
     }
   }
 }
@@ -93,8 +103,9 @@ bool OptRule::TransformResult::checkDataFlow(const std::vector<OptGroup *> &boun
       });
 }
 
-/*static*/ bool OptRule::TransformResult::checkDataFlow(const OptGroupNode *groupNode,
-                                                        const std::vector<OptGroup *> &boundary) {
+/*static*/
+bool OptRule::TransformResult::checkDataFlow(const OptGroupNode *groupNode,
+                                             const std::vector<OptGroup *> &boundary) {
   const auto &deps = groupNode->dependencies();
   // reach the boundary
   if (std::all_of(deps.begin(), deps.end(), [&boundary](OptGroup *dep) {
@@ -110,13 +121,26 @@ bool OptRule::TransformResult::checkDataFlow(const std::vector<OptGroup *> &boun
   const auto *node = groupNode->node();
   if (node->inputVars().size() == deps.size()) {
     // Don't check when count of dependencies is different from count of input variables
+    auto checkNumReadBy = [](const graph::Variable *v) -> bool {
+      switch (v->readBy.size()) {
+        case 1:
+          return true;
+        case 2:
+          // There is at least one Argument plan node if this variable read by 2 other nodes
+          return std::any_of(v->readBy.begin(), v->readBy.end(), [](auto *n) {
+            return n->kind() == graph::PlanNode::Kind::kArgument;
+          });
+        default:
+          return false;
+      }
+    };
     for (std::size_t i = 0; i < deps.size(); i++) {
       const OptGroup *dep = deps[i];
       if (node->inputVar(i) != dep->outputVar()) {
         return false;
       }
       // Only use by father plan node
-      if (node->inputVars()[i]->readBy.size() != 1) {
+      if (!checkNumReadBy(node->inputVars()[i])) {
         return false;
       }
       return std::all_of(
@@ -159,7 +183,8 @@ bool OptRule::checkDataflowDeps(OptContext *ctx,
   if (!isRoot) {
     for (auto pnode : outVar->readBy) {
       auto optGNode = ctx->findOptGroupNodeByPlanNodeId(pnode->id());
-      if (!optGNode) continue;
+      // Ignore the data dependency introduced by Argument plan node
+      if (!optGNode || optGNode->node()->kind() == graph::PlanNode::Kind::kArgument) continue;
       const auto &deps = optGNode->dependencies();
       auto found = std::find(deps.begin(), deps.end(), node->group());
       if (found == deps.end()) {

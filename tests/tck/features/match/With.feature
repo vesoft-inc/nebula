@@ -374,3 +374,16 @@ Feature: With clause
     Then the result should be, in any order:
       | e.edgeProp_1_0 |
       | NULL           |
+
+  Scenario: with wildcard after unwind
+    When executing query:
+      """
+      match p = (v0)-[e0]->(v1) where id(v0) in ["Tim Duncan"] unwind v0 as uv0 with * return e0 limit 5;
+      """
+    Then the result should be, in any order:
+      | e0                                                                                  |
+      | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]                |
+      | [:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}] |
+      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]       |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                               |
+      | [:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]       |
