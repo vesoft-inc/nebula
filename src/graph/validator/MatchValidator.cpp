@@ -379,7 +379,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
     switch (boundary->kind) {
       case CypherClauseKind::kUnwind: {
         auto unwindCtx = static_cast<const UnwindClauseContext *>(boundary.get());
-        columns->addColumn(makeColumn(unwindCtx->alias));
+        columns->addColumn(makeColumn(unwindCtx->alias), true);
         break;
       }
       case CypherClauseKind::kWith: {
@@ -390,7 +390,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
         }
         for (auto &col : yieldColumns->columns()) {
           if (!col->alias().empty()) {
-            columns->addColumn(makeColumn(col->alias()));
+            columns->addColumn(makeColumn(col->alias()), true);
           }
         }
         break;
@@ -584,7 +584,10 @@ Status MatchValidator::validateWith(const WithClause *with,
       auto found = withClauseCtx.yield->aliasesAvailable.find(label);
       DCHECK(found != withClauseCtx.yield->aliasesAvailable.end());
       if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second).second) {
-        return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+        auto columnFound = withClauseCtx.yield->yieldColumns->find(col->alias());
+        if (!(columnFound != nullptr && columnFound->isMatched())) {
+          return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+        }
       }
     } else {
       if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
