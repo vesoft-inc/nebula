@@ -14,6 +14,22 @@ Feature: Basic match
     Then the result should be, in any order, with relax comparison:
       | v            |
       | ("Yao Ming") |
+    When profiling query:
+      """
+      MATCH (v:player) RETURN v.player.age LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.age |
+      | /\d+/        |
+      | /\d+/        |
+      | /\d+/        |
+    Then the execution plan should be:
+      | id | name           | dependencies | operator info                 |
+      | 5  | Project        | 4            |                               |
+      | 4  | Limit          | 3            | {"offset": "0", "count": "3"} |
+      | 3  | AppendVertices | 2            |                               |
+      | 2  | IndexScan      | 1            | {"limit": "3"}                |
+      | 1  | Start          |              |                               |
     When executing query:
       """
       MATCH (v:player) WHERE v.player.age < 0 RETURN v
@@ -627,6 +643,12 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v:player:bachelor) RETURN v
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    # TODO(jie): Optimize this case
+    When executing query:
+      """
+      MATCH (v) WHERE v.player.age == 18 RETURN v LIMIT 3
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
