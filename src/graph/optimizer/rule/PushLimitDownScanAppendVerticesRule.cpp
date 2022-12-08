@@ -57,8 +57,22 @@ bool PushLimitDownScanAppendVerticesRule::match(OptContext *ctx,
   }
   auto *filter = av->filter();
   auto *vFilter = av->vFilter();
-  // Limit can't push over filter operation
-  return filter == nullptr && vFilter == nullptr;
+
+  if (vFilter != nullptr) return false;
+  if (filter == nullptr) return true;
+  auto scanNode = matched.planNode({0, 0, 0});
+  if (scanNode->kind() == PlanNode::Kind::kScanVertices) return false;
+  // If the scanNode is kIndexScan, and the filter looks like `player._tag IS NOT EMPTY`,
+  // the limit could also be pushed down
+  if (filter->kind() != Expression::Kind::kIsNotEmpty) {
+    return false;
+  }
+  auto *isNotEmpty = static_cast<const UnaryExpression *>(filter);
+  auto *operand = isNotEmpty->operand();
+  if (operand->kind() != Expression::Kind::kTagProperty) {
+    return false;
+  }
+  return true;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownScanAppendVerticesRule::transform(
