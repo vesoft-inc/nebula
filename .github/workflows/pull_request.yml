@@ -19,7 +19,7 @@ jobs:
   lint:
     name: lint
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -31,7 +31,7 @@ jobs:
         uses: apache/skywalking-eyes/header@main 
       - name: Ensure clang-format-10 is available
         run: |
-          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
+          command -v clang-format-10 > /dev/null || (sudo apt update && sudo apt install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh

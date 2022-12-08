@@ -866,14 +866,15 @@ HashJoin::HashJoin(QueryContext* qctx,
     : BinaryInputNode(qctx, kind, left, right),
       hashKeys_(std::move(hashKeys)),
       probeKeys_(std::move(probeKeys)) {
-  auto lColNames = left->colNames();
-  auto& rColNames = right->colNames();
-  for (auto& rColName : rColNames) {
-    if (std::find(lColNames.begin(), lColNames.end(), rColName) == lColNames.end()) {
-      lColNames.emplace_back(rColName);
+  if (left && right) {
+    auto lColNames = left->colNames();
+    for (auto& rColName : right->colNames()) {
+      if (std::find(lColNames.begin(), lColNames.end(), rColName) == lColNames.end()) {
+        lColNames.emplace_back(rColName);
+      }
     }
+    setColNames(lColNames);
   }
-  setColNames(lColNames);
 }
 
 std::unique_ptr<PlanNodeDescription> HashLeftJoin::explain() const {
@@ -883,9 +884,7 @@ std::unique_ptr<PlanNodeDescription> HashLeftJoin::explain() const {
 }
 
 PlanNode* HashLeftJoin::clone() const {
-  auto* lnode = left() ? left()->clone() : nullptr;
-  auto* rnode = right() ? right()->clone() : nullptr;
-  auto* newLeftJoin = HashLeftJoin::make(qctx_, lnode, rnode);
+  auto* newLeftJoin = HashLeftJoin::make(qctx_, nullptr, nullptr);
   newLeftJoin->cloneMembers(*this);
   return newLeftJoin;
 }
@@ -901,9 +900,7 @@ std::unique_ptr<PlanNodeDescription> HashInnerJoin::explain() const {
 }
 
 PlanNode* HashInnerJoin::clone() const {
-  auto* lnode = left() ? left()->clone() : nullptr;
-  auto* rnode = right() ? right()->clone() : nullptr;
-  auto* newInnerJoin = HashInnerJoin::make(qctx_, lnode, rnode);
+  auto* newInnerJoin = HashInnerJoin::make(qctx_, nullptr, nullptr);
   newInnerJoin->cloneMembers(*this);
   return newInnerJoin;
 }
@@ -942,11 +939,45 @@ void RollUpApply::cloneMembers(const RollUpApply& r) {
 }
 
 PlanNode* RollUpApply::clone() const {
-  auto* lnode = left() ? left()->clone() : nullptr;
-  auto* rnode = right() ? right()->clone() : nullptr;
-  auto* newRollUpApply = RollUpApply::make(qctx_, lnode, rnode, {}, nullptr);
+  auto* newRollUpApply = RollUpApply::make(qctx_, nullptr, nullptr, {}, nullptr);
   newRollUpApply->cloneMembers(*this);
   return newRollUpApply;
+}
+
+std::unique_ptr<PlanNodeDescription> PatternApply::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("keyCols", folly::toJson(util::toJson(keyCols_)), desc.get());
+  return desc;
+}
+
+void PatternApply::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
+PatternApply::PatternApply(QueryContext* qctx,
+                           Kind kind,
+                           PlanNode* left,
+                           PlanNode* right,
+                           std::vector<Expression*> keyCols,
+                           bool isAntiPred)
+    : BinaryInputNode(qctx, kind, left, right),
+      keyCols_(std::move(keyCols)),
+      isAntiPred_(isAntiPred) {}
+
+void PatternApply::cloneMembers(const PatternApply& r) {
+  BinaryInputNode::cloneMembers(r);
+  for (const auto* col : r.keyCols_) {
+    keyCols_.emplace_back(col->clone());
+  }
+  isAntiPred_ = r.isAntiPred_;
+}
+
+PlanNode* PatternApply::clone() const {
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newPatternApply = PatternApply::make(qctx_, lnode, rnode, {});
+  newPatternApply->cloneMembers(*this);
+  return newPatternApply;
 }
 
 }  // namespace graph

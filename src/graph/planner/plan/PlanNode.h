@@ -69,6 +69,7 @@ class PlanNode {
     kHashInnerJoin,
     kCrossJoin,
     kRollUpApply,
+    kPatternApply,
     kArgument,
 
     // Logic
@@ -303,6 +304,8 @@ class PlanNode {
     DCHECK(dynamic_cast<const T*>(this) != nullptr);
     return static_cast<const T*>(this);
   }
+
+  bool isColumnsIncludedIn(const PlanNode* other) const;
 
  protected:
   PlanNode(QueryContext* qctx, Kind kind);

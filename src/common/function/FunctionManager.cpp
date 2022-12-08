@@ -2004,6 +2004,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    // `none_direct_dst` always return the dstId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;

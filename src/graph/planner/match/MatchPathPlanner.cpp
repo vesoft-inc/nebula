@@ -77,7 +77,11 @@ StatusOr<SubPlan> MatchPathPlanner::transform(WhereClauseContext* bindWhere,
   NG_RETURN_IF_ERROR(findStarts(bindWhere, nodeAliasesSeen, startFromEdge, startIndex, subplan));
   NG_RETURN_IF_ERROR(expand(startFromEdge, startIndex, subplan));
 
-  MatchSolver::buildProjectColumns(ctx_->qctx, path_, subplan);
+  // No need to actually build path if the path is just a predicate
+  if (!path_.isPred) {
+    MatchSolver::buildProjectColumns(ctx_->qctx, path_, subplan);
+  }
+
   return subplan;
 }
 

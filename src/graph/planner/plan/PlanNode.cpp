@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "PlanNode.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -300,6 +299,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Argument";
     case Kind::kRollUpApply:
       return "RollUpApply";
+    case Kind::kPatternApply:
+      return "PatternApply";
     case Kind::kGetDstBySrc:
       return "GetDstBySrc";
       // no default so the compiler will warning when lack
@@ -353,6 +354,17 @@ void PlanNode::setInputVar(const std::string& varname, size_t idx) {
   } else {
     symTable->readBy(varname, this);
   }
+}
+
+bool PlanNode::isColumnsIncludedIn(const PlanNode* other) const {
+  const auto& otherColNames = other->colNames();
+  for (auto& colName : colNames()) {
+    auto iter = std::find(otherColNames.begin(), otherColNames.end(), colName);
+    if (iter == otherColNames.end()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
@@ -464,7 +476,6 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
 }
 
 void PlanNode::setColNames(std::vector<std::string> cols) {
-  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr()->name);
   outputVarPtr()->colNames = std::move(cols);
 }
 }  // namespace graph
