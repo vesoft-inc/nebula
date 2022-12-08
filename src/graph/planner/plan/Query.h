@@ -356,6 +356,9 @@ class GetVertices : public Explore {
       if (props.size() > 1) {
         return false;
       }
+      if (props.empty()) {
+        continue;
+      }
       DCHECK_EQ(props.size(), 1);
       auto& prop = props.front();
       if (prop.compare("_tag")) {
