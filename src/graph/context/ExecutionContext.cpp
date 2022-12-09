@@ -37,7 +37,7 @@ void ExecutionContext::dropResult(const std::string& name) {
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
   auto it = valueMap_.find(name);
-  CHECK(it != valueMap_.end());
+  DCHECK(it != valueMap_.end());
   return it->second.size();
 }
 

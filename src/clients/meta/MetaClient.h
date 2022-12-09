@@ -256,7 +256,7 @@ class MetaClient : public BaseMetaClient {
 
   void registerListener(MetaChangedListener* listener) {
     folly::SharedMutex::WriteHolder holder(listenerLock_);
-    CHECK(listener_ == nullptr);
+    DCHECK(listener_ == nullptr);
     listener_ = listener;
   }
 

@@ -31,7 +31,7 @@ class RebuildIndexTask : public AdminTask {
     LOG(INFO) << "Release Rebuild Task";
   }
 
-  bool check() override;
+  bool DCHECK() override;
 
   void finish(nebula::cpp2::ErrorCode rc) override;
 

@@ -30,12 +30,12 @@ class HBaseRangeIter : public KVIterator {
   }
 
   void next() override {
-    CHECK(current_ != end_);
+    DCHECK(current_ != end_);
     current_++;
   }
 
   void prev() override {
-    CHECK(current_ != begin_);
+    DCHECK(current_ != begin_);
     current_--;
   }
 

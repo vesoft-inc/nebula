@@ -200,7 +200,7 @@ nebula::cpp2::ErrorCode JobManager::prepareRunJob(JobExecutor* jobExec,
     return nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
   }
 
-  auto code = jobExec->check();
+  auto code = jobExec->DCHECK();
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Job Executor check failed";
     return code;
@@ -613,7 +613,7 @@ void JobManager::enqueue(GraphSpaceID space,
     priorityQueues_.emplace(space, std::move(priQueue));
   }
   iter = priorityQueues_.find(space);
-  CHECK(iter != priorityQueues_.end());
+  DCHECK(iter != priorityQueues_.end());
   if (jobType == cpp2::JobType::LEADER_BALANCE) {
     iter->second->at_priority(static_cast<size_t>(JbPriority::kHIGH))
         .enqueue(std::make_tuple(op, jobId, space));

@@ -53,7 +53,7 @@ bool NebulaStore::init() {
   bgWorkers_ = std::make_shared<thread::GenericThreadPool>();
   bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
   storeWorker_ = std::make_shared<thread::GenericWorker>();
-  CHECK(storeWorker_->start());
+  DCHECK(storeWorker_->start());
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
   if (raftService_ == nullptr) {
@@ -82,7 +82,7 @@ bool NebulaStore::init() {
 }
 
 void NebulaStore::loadPartFromDataPath() {
-  CHECK(!!options_.partMan_);
+  DCHECK(!!options_.partMan_);
   LOG(INFO) << "Scan the local path, and init the spaces_";
   // avoid duplicate engine created
   std::unordered_set<std::pair<GraphSpaceID, PartitionID>> partSet;
@@ -165,7 +165,7 @@ void NebulaStore::loadPartFromDataPath() {
 
             // fill the peers
             auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
-            CHECK(metaStatus.ok());
+            DCHECK(metaStatus.ok());
             auto partMeta = metaStatus.value();
             Peers peers;
             for (auto& h : partMeta.hosts_) {
@@ -245,7 +245,7 @@ void NebulaStore::loadPartFromDataPath() {
                 {
                   folly::RWSpinLock::WriteHolder holder(&lock_);
                   auto iter = spaces_.find(spaceId);
-                  CHECK(iter != spaces_.end());
+                  DCHECK(iter != spaces_.end());
                   // Check if part already exists.
                   // Prevent the same part from existing on different dataPaths.
                   auto ret = iter->second->parts_.emplace(partId, part);
@@ -416,7 +416,7 @@ void NebulaStore::addPart(GraphSpaceID spaceId,
   }
 
   auto spaceIt = this->spaces_.find(spaceId);
-  CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
+  DCHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
   auto partIt = spaceIt->second->parts_.find(partId);
   if (partIt != spaceIt->second->parts_.end()) {
     LOG(INFO) << "[Space: " << spaceId << ", Part: " << partId << "] has existed!";
@@ -509,7 +509,7 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId) {
       }
       DCHECK_EQ(0, engine->totalPartsNum());
     }
-    CHECK(spaceIt->second->parts_.empty());
+    DCHECK(spaceIt->second->parts_.empty());
     std::vector<std::string> enginePaths;
     if (FLAGS_auto_remove_invalid_space) {
       for (auto& engine : engines) {

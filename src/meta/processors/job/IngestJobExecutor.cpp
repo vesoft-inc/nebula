@@ -18,7 +18,7 @@ IngestJobExecutor::IngestJobExecutor(GraphSpaceID space,
                                      const std::vector<std::string>& paras)
     : SimpleConcurrentJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
-nebula::cpp2::ErrorCode IngestJobExecutor::check() {
+nebula::cpp2::ErrorCode IngestJobExecutor::DCHECK() {
   return paras_.empty() ? nebula::cpp2::ErrorCode::SUCCEEDED
                         : nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
@@ -40,7 +40,7 @@ folly::Future<Status> IngestJobExecutor::executeInternal(HostAddr&& address,
                 {},
                 std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

@@ -16,7 +16,7 @@ namespace graph {
 
 Status InsertVerticesValidator::validateImpl() {
   spaceId_ = vctx_->whichSpace().id;
-  NG_RETURN_IF_ERROR(check());
+  NG_RETURN_IF_ERROR(DCHECK());
   NG_RETURN_IF_ERROR(prepareVertices());
   return Status::OK();
 }
@@ -36,7 +36,7 @@ Status InsertVerticesValidator::toPlan() {
 
 // Check validity of insert vertices.
 // Check schema validity.
-Status InsertVerticesValidator::check() {
+Status InsertVerticesValidator::DCHECK() {
   auto sentence = static_cast<InsertVerticesSentence *>(sentence_);
   ifNotExists_ = sentence->isIfNotExists();
   ignoreExistedIndex_ = sentence->ignoreExistedIndex();
@@ -148,7 +148,7 @@ Status InsertVerticesValidator::prepareVertices() {
 
 Status InsertEdgesValidator::validateImpl() {
   spaceId_ = vctx_->whichSpace().id;
-  NG_RETURN_IF_ERROR(check());
+  NG_RETURN_IF_ERROR(DCHECK());
   NG_RETURN_IF_ERROR(prepareEdges());
   return Status::OK();
 }
@@ -171,7 +171,7 @@ Status InsertEdgesValidator::toPlan() {
 }
 
 // Check edge type and properties.
-Status InsertEdgesValidator::check() {
+Status InsertEdgesValidator::DCHECK() {
   auto sentence = static_cast<InsertEdgesSentence *>(sentence_);
   ifNotExists_ = sentence->isIfNotExists();
   ignoreExistedIndex_ = sentence->ignoreExistedIndex();
@@ -579,7 +579,7 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeK
 
 // Check validity of properties in expression, and check type of edge key expression.
 Status DeleteEdgesValidator::checkInput() {
-  CHECK(!edgeKeyRefs_.empty());
+  DCHECK(!edgeKeyRefs_.empty());
   auto &edgeKeyRef = *edgeKeyRefs_.begin();
   NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->srcid(), exprProps_));
   NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->dstid(), exprProps_));

@@ -32,7 +32,7 @@ void testFn(bool withVersion) {
     options.create_if_missing = true;
     options.disable_auto_compactions = true;
     auto status = rocksdb::DB::Open(options, rootPath.path(), &db);
-    CHECK(status.ok());
+    DCHECK(status.ok());
     rocksdb::WriteOptions woptions;
     for (int i = 0; i < 1000; i++) {
       for (int v = 0; v < FLAGS_versions; v++) {

@@ -89,7 +89,7 @@ HttpResponse HttpClient::sendRequest(const std::string& url,
   CurlHandle::instance();
   HttpResponse resp;
   CURL* curl = curl_easy_init();
-  CHECK(curl);
+  DCHECK(curl);
   setUrl(curl, url);
   setMethod(curl, method);
   curl_slist* h = setHeaders(curl, header);
@@ -158,10 +158,10 @@ size_t HttpClient::onWriteData(void* ptr, size_t size, size_t nmemb, void* strea
   if (ptr == nullptr || size == 0) {
     return 0;
   }
-  CHECK(stream);
+  DCHECK(stream);
   size_t realsize = size * nmemb;
   std::string* buffer = static_cast<std::string*>(stream);
-  CHECK(buffer);
+  DCHECK(buffer);
   buffer->append(static_cast<char*>(ptr), realsize);
   return realsize;
 }

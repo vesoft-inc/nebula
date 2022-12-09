@@ -67,7 +67,7 @@ class InMemoryBufferList : public std::enable_shared_from_this<InMemoryBufferLis
                      << ", numLogs in buffer " << buffers_.front()->size();
         }
         buffers_.pop_front();
-        CHECK(!buffers_.empty());
+        DCHECK(!buffers_.empty());
         CHECK_EQ(currId_, buffers_.front()->firstLogId());
         nextFirstId_ = getFirstIdInNextBuffer();
         currIdx_ = 0;
@@ -78,22 +78,22 @@ class InMemoryBufferList : public std::enable_shared_from_this<InMemoryBufferLis
     }
 
     LogID logId() const override {
-      CHECK(valid_);
+      DCHECK(valid_);
       return currId_;
     }
 
     TermID logTerm() const override {
-      CHECK(valid_);
+      DCHECK(valid_);
       return buffers_.front()->getTerm(currIdx_);
     }
 
     ClusterID logSource() const override {
-      CHECK(valid_);
+      DCHECK(valid_);
       return buffers_.front()->getCluster(currIdx_);
     }
 
     folly::StringPiece logMsg() const override {
-      CHECK(valid_);
+      DCHECK(valid_);
       return buffers_.front()->getLog(currIdx_);
     }
 

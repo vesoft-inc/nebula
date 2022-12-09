@@ -69,8 +69,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
       addrs_(std::move(addrs)),
       options_(options),
       metadata_(new MetaData()) {
-  CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
-  CHECK(!addrs_.empty())
+  DCHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
+  DCHECK(!addrs_.empty())
       << "No meta server address is specified or can be solved. Meta server is required";
   clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>(
       FLAGS_enable_ssl || FLAGS_enable_meta_ssl);
@@ -158,7 +158,7 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     return false;
   }
 
-  CHECK(bgThread_->start());
+  DCHECK(bgThread_->start());
   LOG(INFO) << "Register time task for heartbeat!";
   size_t delayMS = FLAGS_heartbeat_interval_secs * 1000 + folly::Random::rand32(900);
   bgThread_->addDelayTask(delayMS, &MetaClient::heartBeatThreadFunc, this);
@@ -979,7 +979,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& local
     if (partsIt != cache->partsOnHost_.end()) {
       for (auto& partId : partsIt->second) {
         auto partAllocIter = cache->partsAlloc_.find(partId);
-        CHECK(partAllocIter != cache->partsAlloc_.end());
+        DCHECK(partAllocIter != cache->partsAlloc_.end());
         auto& partM = partMap[spaceId][partId];
         partM.spaceId_ = spaceId;
         partM.partId_ = partId;

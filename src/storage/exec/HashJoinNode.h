@@ -132,10 +132,10 @@ class HashJoinNode : public IterateNode<VertexID> {
     // edgeTypes
     if (type != context_->edgeType_) {
       auto idxIter = edgeContext_->indexMap_.find(type);
-      CHECK(idxIter != edgeContext_->indexMap_.end());
+      DCHECK(idxIter != edgeContext_->indexMap_.end());
       auto schemaIter = edgeContext_->schemas_.find(std::abs(type));
-      CHECK(schemaIter != edgeContext_->schemas_.end());
-      CHECK(!schemaIter->second.empty());
+      DCHECK(schemaIter != edgeContext_->schemas_.end());
+      DCHECK(!schemaIter->second.empty());
 
       context_->edgeSchema_ = schemaIter->second.back().get();
       // idx is the index in all edges need to return

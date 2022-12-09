@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-bool FlushTask::check() {
+bool FlushTask::DCHECK() {
   return env_->kvstore_ != nullptr;
 }
 

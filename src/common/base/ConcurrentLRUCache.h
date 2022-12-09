@@ -27,7 +27,7 @@ class ConcurrentLRUCache final {
  public:
   explicit ConcurrentLRUCache(size_t capacity, uint32_t bucketsExp = 4)
       : bucketsNum_(1 << bucketsExp), bucketsExp_(bucketsExp) {
-    CHECK(capacity > bucketsNum_ && bucketsNum_ > 0);
+    DCHECK(capacity > bucketsNum_ && bucketsNum_ > 0);
     auto capPerBucket = capacity >> bucketsExp;
     auto left = capacity;
     for (uint32_t i = 0; i < bucketsNum_ - 1; i++) {
@@ -231,7 +231,7 @@ class LRU {
     // recently used list
     const value_type& value = std::get<0>(i->second);
     typename list_type::iterator j = std::get<1>(i->second);
-    CHECK(key == *j);
+    DCHECK(key == *j);
     if (j != list_.begin()) {
       // move item to the front of the most recently used list
       list_.splice(list_.begin(), list_, j);

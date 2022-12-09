@@ -127,13 +127,13 @@ int main(int argc, char **argv) {
     auto qctx = std::make_unique<nebula::graph::QueryContext>();
     GQLParser parser(qctx.get());
     auto result = parser.parse(simpleQuery);
-    CHECK(result.ok()) << result.status();
+    DCHECK(result.ok()) << result.status();
   }
   {
     auto qctx = std::make_unique<nebula::graph::QueryContext>();
     GQLParser parser(qctx.get());
     auto result = parser.parse(complexQuery);
-    CHECK(result.ok()) << result.status();
+    DCHECK(result.ok()) << result.status();
   }
 
   folly::runBenchmarks();

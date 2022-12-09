@@ -295,11 +295,11 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
         }));
   }
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
-    CHECK(!t.hasException());
+    DCHECK(!t.hasException());
     const auto& tries = t.value();
     std::vector<Row> statResults;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      DCHECK(!tries[j].hasException());
       auto& [partId, code, dataset, statResult] = tries[j].value();
       if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
         for (auto& row : dataset) {

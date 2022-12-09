@@ -30,7 +30,7 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
   void next() override {
     do {
       iter_->next();
-    } while (iter_->valid() && !check());
+    } while (iter_->valid() && !DCHECK());
   }
 
   folly::StringPiece key() const override {
@@ -47,7 +47,7 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
 
  private:
   // return true when the value iter to a valid edge value
-  bool check() {
+  bool DCHECK() {
     return true;
   }
 

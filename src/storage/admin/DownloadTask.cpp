@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-bool DownloadTask::check() {
+bool DownloadTask::DCHECK() {
   return env_->kvstore_ != nullptr;
 }
 

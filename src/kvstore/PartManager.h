@@ -297,7 +297,7 @@ class MemPartManager final : public PartManager {
    */
   void removePart(GraphSpaceID spaceId, PartitionID partId) {
     auto it = partsMap_.find(spaceId);
-    CHECK(it != partsMap_.end());
+    DCHECK(it != partsMap_.end());
     if (it->second.find(partId) != it->second.end()) {
       it->second.erase(partId);
       if (handler_) {

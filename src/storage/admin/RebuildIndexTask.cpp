@@ -14,7 +14,7 @@ namespace storage {
 
 const int32_t kReserveNum = 1024 * 4;
 
-bool RebuildIndexTask::check() {
+bool RebuildIndexTask::DCHECK() {
   return env_->kvstore_ != nullptr;
 }
 void RebuildIndexTask::finish(nebula::cpp2::ErrorCode rc) {

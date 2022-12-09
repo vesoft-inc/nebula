@@ -42,9 +42,9 @@ Status SignalHandler::install(int sig, Handler handler) {
     init_ = true;
   }
 
-  CHECK(sig >= 1 && sig <= 64);
-  CHECK(sig != SIGKILL) << "SIGKILL cannot be handled";
-  CHECK(sig != SIGSTOP) << "SIGKSTOP cannot be handled";
+  DCHECK(sig >= 1 && sig <= 64);
+  DCHECK(sig != SIGKILL) << "SIGKILL cannot be handled";
+  DCHECK(sig != SIGSTOP) << "SIGKSTOP cannot be handled";
   return get().installInternal(sig, std::move(handler));
 }
 

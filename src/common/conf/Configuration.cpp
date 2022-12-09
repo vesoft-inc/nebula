@@ -14,7 +14,7 @@ Configuration::Configuration() {
 }
 
 Configuration::Configuration(folly::dynamic content) {
-  CHECK(content.isObject()) << "The content is not a valid configuration";
+  DCHECK(content.isObject()) << "The content is not a valid configuration";
   content_ = std::make_unique<folly::dynamic>(std::move(content));
 }
 

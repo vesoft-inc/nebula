@@ -97,7 +97,7 @@ class BalanceJobExecutor : public MetaJobExecutor {
    *
    * @return
    */
-  nebula::cpp2::ErrorCode check() override;
+  nebula::cpp2::ErrorCode DCHECK() override;
 
   /**
    * @brief See implementation in child class

@@ -178,11 +178,11 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
-    CHECK(!t.hasException());
+    DCHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      DCHECK(!tries[j].hasException());
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);

@@ -23,7 +23,7 @@ folly::Future<Status> FlushJobExecutor::executeInternal(HostAddr&& address,
       ->addTask(
           cpp2::JobType::FLUSH, jobId_, taskId_++, space_, std::move(address), {}, std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

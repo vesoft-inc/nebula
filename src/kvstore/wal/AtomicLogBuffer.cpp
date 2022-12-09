@@ -196,7 +196,7 @@ void AtomicLogBuffer::releaseRef() {
       // Now we begin to delete the nodes.
       auto* curr = dirtyHead;
       while (curr != nullptr) {
-        CHECK(curr->markDeleted_.load(std::memory_order_relaxed));
+        DCHECK(curr->markDeleted_.load(std::memory_order_relaxed));
         VLOG(5) << "Delete node " << curr->firstLogId_;
         auto* del = curr;
         curr = curr->next_;

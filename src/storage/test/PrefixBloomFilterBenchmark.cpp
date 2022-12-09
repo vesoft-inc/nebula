@@ -57,7 +57,7 @@ void testPrefixSeek(StorageEnv* env, int32_t partCount, int32_t iters) {
         std::unique_ptr<kvstore::KVIterator> iter;
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
-        CHECK(iter->valid());
+        DCHECK(iter->valid());
         iter->next();
       }
     }

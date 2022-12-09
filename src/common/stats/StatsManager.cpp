@@ -168,7 +168,7 @@ CounterId StatsManager::counterWithLabels(const CounterId& id,
 
   auto& sm = get();
   auto index = id.index();
-  CHECK(!labels.empty());
+  DCHECK(!labels.empty());
   std::string newIndex;
   newIndex.append(index);
   newIndex.append("{");
@@ -197,7 +197,7 @@ CounterId StatsManager::histoWithLabels(const CounterId& id, const std::vector<L
 
   auto& sm = get();
   auto index = id.index();
-  CHECK(!labels.empty());
+  DCHECK(!labels.empty());
   std::string newIndex;
   newIndex.append(index);
   newIndex.append("{");
@@ -227,7 +227,7 @@ void StatsManager::removeCounterWithLabels(const CounterId& id,
 
   auto& sm = get();
   auto index = id.index();
-  CHECK(!labels.empty());
+  DCHECK(!labels.empty());
   std::string newIndex;
   newIndex.append(index);
   newIndex.append("{");
@@ -250,7 +250,7 @@ void StatsManager::removeHistoWithLabels(const CounterId& id,
 
   auto& sm = get();
   auto index = id.index();
-  CHECK(!labels.empty());
+  DCHECK(!labels.empty());
   std::string newIndex;
   newIndex.append(index);
   newIndex.append("{");
@@ -414,7 +414,7 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
         }
 
         auto status = readStats(statsName.second.id_, range, method);
-        CHECK(status.ok());
+        DCHECK(status.ok());
         int64_t metricValue = status.value();
         vals.push_back(folly::dynamic::object(metricName, metricValue));
       }

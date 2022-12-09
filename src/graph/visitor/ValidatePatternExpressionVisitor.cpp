@@ -58,7 +58,7 @@ void ValidatePatternExpressionVisitor::visit(MatchPathPatternExpression *expr) {
 }
 
 Expression *ValidatePatternExpressionVisitor::andAll(const std::vector<Expression *> &exprs) const {
-  CHECK(!exprs.empty());
+  DCHECK(!exprs.empty());
   if (exprs.size() == 1) {
     return exprs[0];
   }

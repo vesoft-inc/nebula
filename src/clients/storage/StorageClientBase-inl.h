@@ -235,7 +235,7 @@ StorageClientBase<ClientType, ClientManagerType>::clusterIdsToHosts(GraphSpaceID
     leaders[partId] = std::move(leader).value();
   }
   for (auto& id : ids) {
-    CHECK(!!metaClient_);
+    DCHECK(!!metaClient_);
     status = metaClient_->partId(numParts, f(id));
     if (!status.ok()) {
       return status.status();

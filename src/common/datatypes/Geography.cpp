@@ -210,32 +210,32 @@ GeoShape Geography::shape() const {
 }
 
 const Point& Geography::point() const {
-  CHECK(std::holds_alternative<Point>(geo_));
+  DCHECK(std::holds_alternative<Point>(geo_));
   return std::get<Point>(geo_);
 }
 
 const LineString& Geography::lineString() const {
-  CHECK(std::holds_alternative<LineString>(geo_));
+  DCHECK(std::holds_alternative<LineString>(geo_));
   return std::get<LineString>(geo_);
 }
 
 const Polygon& Geography::polygon() const {
-  CHECK(std::holds_alternative<Polygon>(geo_));
+  DCHECK(std::holds_alternative<Polygon>(geo_));
   return std::get<Polygon>(geo_);
 }
 
 Point& Geography::mutablePoint() {
-  CHECK(std::holds_alternative<Point>(geo_));
+  DCHECK(std::holds_alternative<Point>(geo_));
   return std::get<Point>(geo_);
 }
 
 LineString& Geography::mutableLineString() {
-  CHECK(std::holds_alternative<LineString>(geo_));
+  DCHECK(std::holds_alternative<LineString>(geo_));
   return std::get<LineString>(geo_);
 }
 
 Polygon& Geography::mutablePolygon() {
-  CHECK(std::holds_alternative<Polygon>(geo_));
+  DCHECK(std::holds_alternative<Polygon>(geo_));
   return std::get<Polygon>(geo_);
 }
 

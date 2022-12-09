@@ -17,7 +17,7 @@ using nebula::cpp2::PropertyType;
 
 RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
     : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
-  CHECK(!!schema_);
+  DCHECK(!!schema_);
 
   // Reserve space for the header, the data, and the string values
   buf_.reserve(schema_->size() + schema_->getNumFields() / 8 + 8 + 1024);
@@ -190,7 +190,7 @@ bool RowWriterV2::checkNullBit(ssize_t pos) const noexcept {
 }
 
 WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
-  CHECK(!finished_) << "You have called finish()";
+  DCHECK(!finished_) << "You have called finish()";
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return WriteResult::UNKNOWN_FIELD;
   }
@@ -222,13 +222,13 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
 }
 
 WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) noexcept {
-  CHECK(!finished_) << "You have called finish()";
+  DCHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
   return setValue(index, val);
 }
 
 WriteResult RowWriterV2::setNull(ssize_t index) noexcept {
-  CHECK(!finished_) << "You have called finish()";
+  DCHECK(!finished_) << "You have called finish()";
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return WriteResult::UNKNOWN_FIELD;
   }
@@ -245,7 +245,7 @@ WriteResult RowWriterV2::setNull(ssize_t index) noexcept {
 }
 
 WriteResult RowWriterV2::setNull(const std::string& name) noexcept {
-  CHECK(!finished_) << "You have called finish()";
+  DCHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
   return setNull(index);
 }
@@ -914,7 +914,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
 }
 
 WriteResult RowWriterV2::finish() noexcept {
-  CHECK(!finished_) << "You have called finish()";
+  DCHECK(!finished_) << "You have called finish()";
 
   // First to check whether all fields are set. If not, to check whether
   // it can be NULL or there is a default value for the field

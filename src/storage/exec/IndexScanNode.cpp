@@ -155,9 +155,9 @@ void RangePath::buildKey() {
   auto fieldIter = index_->get_fields().begin();
   for (size_t i = 0; i < hints_.size() - 1; i++, fieldIter++) {
     auto& hint = hints_[i];
-    CHECK(fieldIter->get_name() == hint.get_column_name());
+    DCHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
-    CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
+    DCHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, commonIndexPrefix);
     serializeString_ +=
         fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
@@ -334,9 +334,9 @@ void PrefixPath::buildKey() {
   auto fieldIter = index_->get_fields().begin();
   for (size_t i = 0; i < hints_.size(); i++, fieldIter++) {
     auto& hint = hints_[i];
-    CHECK(fieldIter->get_name() == hint.get_column_name());
+    DCHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
-    CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
+    DCHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
     serializeString_ +=
         fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
@@ -450,7 +450,7 @@ IndexNode::Result IndexScanNode::doNext() {
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
     if (!compatible) {
       q = path_->qualified(rowData);
-      CHECK(q != QualifiedStrategy::UNCERTAIN);
+      DCHECK(q != QualifiedStrategy::UNCERTAIN);
       if (q == QualifiedStrategy::INCOMPATIBLE) {
         continue;
       }

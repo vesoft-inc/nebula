@@ -24,7 +24,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleVertexProps(
       VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId;
       return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
     }
-    CHECK(!iter->second.empty());
+    DCHECK(!iter->second.empty());
     const auto& tagSchema = iter->second.back();
     auto tagName = this->env_->schemaMan_->toTagName(spaceId_, tagId);
     if (!tagName.ok()) {
@@ -74,7 +74,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::handleEdgeProps(
       VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
       return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     }
-    CHECK(!iter->second.empty());
+    DCHECK(!iter->second.empty());
     const auto& edgeSchema = iter->second.back();
     auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
     if (!edgeName.ok()) {
@@ -169,7 +169,7 @@ void QueryBaseProcessor<REQ, RESP>::buildTagTTLInfo() {
   for (const auto& tc : tagContext_.propContexts_) {
     auto tagId = tc.first;
     auto iter = tagContext_.schemas_.find(tagId);
-    CHECK(iter != tagContext_.schemas_.end());
+    DCHECK(iter != tagContext_.schemas_.end());
     const auto& tagSchema = iter->second.back();
 
     auto ttlInfo = tagSchema->getTTLInfo();
@@ -185,7 +185,7 @@ void QueryBaseProcessor<REQ, RESP>::buildEdgeTTLInfo() {
   for (const auto& ec : edgeContext_.propContexts_) {
     auto edgeType = ec.first;
     auto iter = edgeContext_.schemas_.find(std::abs(edgeType));
-    CHECK(iter != edgeContext_.schemas_.end());
+    DCHECK(iter != edgeContext_.schemas_.end());
     const auto& edgeSchema = iter->second.back();
 
     auto ttlInfo = edgeSchema->getTTLInfo();
@@ -472,7 +472,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
         VLOG(1) << "Can't find spaceId " << spaceId_ << " tagId " << tagId;
         return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
       }
-      CHECK(!iter->second.empty());
+      DCHECK(!iter->second.empty());
       const auto& tagSchema = iter->second.back();
 
       if (propName == kVid || propName == kTag) {
@@ -531,7 +531,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
         VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << std::abs(edgeType);
         return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
       }
-      CHECK(!iter->second.empty());
+      DCHECK(!iter->second.empty());
       const auto& edgeSchema = iter->second.back();
 
       if (propName == kSrc || propName == kType || propName == kRank || propName == kDst) {

@@ -20,7 +20,7 @@ DEFINE_int32(stats_sleep_interval_ms,
 namespace nebula {
 namespace storage {
 
-bool StatsTask::check() {
+bool StatsTask::DCHECK() {
   return env_->kvstore_ != nullptr && env_->schemaMan_ != nullptr;
 }
 

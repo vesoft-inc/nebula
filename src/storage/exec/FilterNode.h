@@ -59,7 +59,7 @@ class FilterNode : public IterateNode<T> {
       if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
         break;
       }
-      if (this->valid() && !check()) {
+      if (this->valid() && !DCHECK()) {
         if (context_->resultStat_ != ResultStatus::TAG_FILTER_OUT) {
           context_->resultStat_ = ResultStatus::FILTER_OUT;
         }
@@ -76,7 +76,7 @@ class FilterNode : public IterateNode<T> {
   }
 
  private:
-  bool check() override {
+  bool DCHECK() override {
     if (filterExp_ == nullptr) {
       return true;
     }

@@ -190,7 +190,7 @@ void goEdgeNode(int32_t iters,
           auto props = context->props_;
           for (const auto& prop : *props) {
             auto value = nebula::storage::QueryUtils::readValue(reader, prop.name_, prop.field_);
-            CHECK(value.ok());
+            DCHECK(value.ok());
             list.emplace_back(std::move(value).value());
           }
           cell.values.emplace_back(std::move(list));
@@ -234,14 +234,14 @@ void prefix(int32_t iters,
 
     auto tagSchemas = env->schemaMan_->getAllVerTagSchema(spaceId).value();
     auto tagSchemaIter = tagSchemas.find(player);
-    CHECK(tagSchemaIter != tagSchemas.end());
-    CHECK(!tagSchemaIter->second.empty());
+    DCHECK(tagSchemaIter != tagSchemas.end());
+    DCHECK(!tagSchemaIter->second.empty());
     auto* tagSchema = &(tagSchemaIter->second);
 
     auto edgeSchemas = env->schemaMan_->getAllVerEdgeSchema(spaceId).value();
     auto edgeSchemaIter = edgeSchemas.find(std::abs(serve));
-    CHECK(edgeSchemaIter != edgeSchemas.end());
-    CHECK(!edgeSchemaIter->second.empty());
+    DCHECK(edgeSchemaIter != edgeSchemas.end());
+    DCHECK(!edgeSchemaIter->second.empty());
     auto* edgeSchema = &(edgeSchemaIter->second);
 
     nebula::RowReaderWrapper reader;
@@ -257,7 +257,7 @@ void prefix(int32_t iters,
         auto prefix = nebula::NebulaKeyUtils::tagKey(vIdLen, partId, vId, player);
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
-        CHECK(iter->valid());
+        DCHECK(iter->valid());
         auto val = iter->val();
         reader.reset(*tagSchema, val);
         CHECK_NOTNULL(reader);
@@ -284,7 +284,7 @@ void prefix(int32_t iters,
           for (const auto& prop : *props) {
             auto value =
                 nebula::storage::QueryUtils::readValue(reader.get(), prop.name_, prop.field_);
-            CHECK(value.ok());
+            DCHECK(value.ok());
             list.emplace_back(std::move(value).value());
           }
           cell.values.emplace_back(std::move(list));

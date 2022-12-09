@@ -236,12 +236,12 @@ class StatusOr final {
   // Return the associated `Status' if and only if it has one,
   //
   Status status() const & {
-    CHECK(hasStatus());
+    DCHECK(hasStatus());
     return variant_.status_;
   }
 
   Status status() && {
-    CHECK(hasStatus());
+    DCHECK(hasStatus());
     auto status = std::move(variant_.status_);
     resetStatus();
     return status;

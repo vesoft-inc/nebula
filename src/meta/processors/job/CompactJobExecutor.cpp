@@ -28,7 +28,7 @@ folly::Future<Status> CompactJobExecutor::executeInternal(HostAddr&& address,
                 {},
                 std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

@@ -372,14 +372,14 @@ RaftPart::RaftPart(
         return this->preProcessLog(logId, logTermId, logClusterId, log);
       },
       diskMan);
-  CHECK(!!executor_) << idStr_ << "Should not be nullptr";
+  DCHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
 
 RaftPart::~RaftPart() {
   std::lock_guard<std::mutex> g(raftLock_);
 
   // Make sure the partition has stopped
-  CHECK(status_ == Status::STOPPED);
+  DCHECK(status_ == Status::STOPPED);
   VLOG(1) << idStr_ << " The part has been destroyed...";
 }
 
@@ -547,7 +547,7 @@ void RaftPart::addLearner(const HostAddr& addr, bool needLock) {
 }
 
 void RaftPart::preProcessTransLeader(const HostAddr& target) {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   VLOG(1) << idStr_ << "Pre process transfer leader to " << target;
   switch (role_) {
     case Role::FOLLOWER: {
@@ -617,7 +617,7 @@ void RaftPart::commitTransLeader(const HostAddr& target, bool needLock) {
 }
 
 void RaftPart::updateQuorum() {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   int32_t total = 0;
   for (auto& h : hosts_) {
     if (!h->isLearner()) {
@@ -643,7 +643,7 @@ bool RaftPart::checkAlive(const HostAddr& addr) {
 }
 
 void RaftPart::addPeer(const HostAddr& peer) {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   if (peer == addr_) {
     if (role_ == Role::LEARNER) {
       VLOG(1) << idStr_ << "I am learner, promote myself to be follower";
@@ -672,7 +672,7 @@ void RaftPart::addPeer(const HostAddr& peer) {
 }
 
 void RaftPart::removePeer(const HostAddr& peer) {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   if (peer == addr_) {
     // The part will be removed in REMOVE_PART_ON_SRC phase
     VLOG(1) << idStr_ << "Remove myself from the raft group.";
@@ -695,7 +695,7 @@ void RaftPart::removePeer(const HostAddr& peer) {
 }
 
 nebula::cpp2::ErrorCode RaftPart::checkPeer(const HostAddr& candidate) {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   auto hosts = followers();
   auto it = std::find_if(hosts.begin(), hosts.end(), [&candidate](const auto& h) {
     return h->address() == candidate;
@@ -745,7 +745,7 @@ void RaftPart::removeListenerPeer(const HostAddr& listener) {
 }
 
 void RaftPart::preProcessRemovePeer(const HostAddr& peer) {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   if (role_ == Role::LEADER) {
     VLOG(1) << idStr_ << "I am leader, skip remove peer in preProcessLog";
     return;
@@ -759,7 +759,7 @@ void RaftPart::commitRemovePeer(const HostAddr& peer, bool needLock) {
       VLOG(1) << idStr_ << "I am " << roleStr(role_) << ", skip remove peer in commit";
       return;
     }
-    CHECK(Role::LEADER == role_);
+    DCHECK(Role::LEADER == role_);
     removePeer(peer);
   };
   if (needLock) {
@@ -984,7 +984,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
              pHosts = std::move(hosts),
              beforeAppendLogUs](folly::Try<AppendLogResponses>&& result) mutable {
         VLOG(4) << self->idStr_ << "Received enough response";
-        CHECK(!result.hasException());
+        DCHECK(!result.hasException());
         stats::StatsManager::addValue(kReplicateLogLatencyUs,
                                       time::WallClock::fastNowInMicroSec() - beforeAppendLogUs);
         self->processAppendLogResponses(*result,
@@ -1101,7 +1101,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     LogID firstId = 0;
     {
       std::lock_guard<std::mutex> lck(logsLock_);
-      CHECK(replicatingLogs_);
+      DCHECK(replicatingLogs_);
       iter.commit();
       if (logs_.empty()) {
         // no incoming during log replication
@@ -1239,7 +1239,7 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
     return false;
   }
 
-  CHECK(role_ == Role::CANDIDATE);
+  DCHECK(role_ == Role::CANDIDATE);
 
   // term changed during actual leader election
   if (!isPreVote && proposedTerm != term_) {
@@ -1356,7 +1356,7 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
                   auto&& t) mutable {
           VLOG(4) << self->idStr_
                   << "AskForVoteRequest has been sent to all peers, waiting for responses";
-          CHECK(!t.hasException());
+          DCHECK(!t.hasException());
           pro.setValue(
               self->handleElectionResponses(t.value(), std::move(hosts), proposedTerm, isPreVote));
         });
@@ -2086,7 +2086,7 @@ void RaftPart::sendHeartbeat() {
       })
       .then([replica, hosts = std::move(hosts), startMs, currTerm, this](
                 folly::Try<HeartbeatResponses>&& resps) {
-        CHECK(!resps.hasException());
+        DCHECK(!resps.hasException());
         size_t numSucceeded = 0;
         TermID highestTerm = currTerm;
         for (auto& resp : *resps) {
@@ -2120,7 +2120,7 @@ void RaftPart::sendHeartbeat() {
 }
 
 std::vector<std::shared_ptr<Host>> RaftPart::followers() const {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   decltype(hosts_) hosts;
   for (auto& h : hosts_) {
     if (!h->isLearner()) {
@@ -2173,7 +2173,7 @@ bool RaftPart::checkAppendLogResult(nebula::cpp2::ErrorCode res) {
 }
 
 void RaftPart::reset() {
-  CHECK(!raftLock_.try_lock());
+  DCHECK(!raftLock_.try_lock());
   wal_->reset();
   cleanup();
   lastLogId_ = committedLogId_ = 0;

@@ -21,7 +21,7 @@ folly::Future<Status> RebuildFTJobExecutor::executeInternal(HostAddr&& address,
                 taskParameters_,
                 std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

@@ -66,7 +66,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
   rocksdb::Options options;
   rocksdb::DB* db = nullptr;
   rocksdb::Status status = initRocksdbOptions(options, spaceId, vIdLen);
-  CHECK(status.ok()) << status.ToString();
+  DCHECK(status.ok()) << status.ToString();
   if (mergeOp != nullptr) {
     options.merge_operator = mergeOp;
   }
@@ -79,7 +79,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
   } else {
     status = rocksdb::DB::Open(options, path, &db);
   }
-  CHECK(status.ok()) << status.ToString();
+  DCHECK(status.ok()) << status.ToString();
   if (!readonly && spaceId_ != kDefaultSpaceId /* only for storage*/) {
     rocksdb::ReadOptions readOptions;
     std::string dataVersionValue = "";
@@ -89,7 +89,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
       status = db->Put(
           writeOptions, NebulaKeyUtils::dataVersionKey(), NebulaKeyUtils::dataVersionValue());
     }
-    CHECK(status.ok()) << status.ToString();
+    DCHECK(status.ok()) << status.ToString();
   }
   db_.reset(db);
   std::string factoryName = options.table_factory->Name();
@@ -561,7 +561,7 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
     rocksdb::BackupEngineOptions backupOptions(backupPath_);
     backupOptions.backup_log_files = false;
     auto status = rocksdb::BackupEngine::Open(rocksdb::Env::Default(), backupOptions, &backupDb);
-    CHECK(status.ok()) << status.ToString();
+    DCHECK(status.ok()) << status.ToString();
     backupDb_.reset(backupDb);
     LOG(INFO) << "open plain table backup engine on " << backupPath_;
 

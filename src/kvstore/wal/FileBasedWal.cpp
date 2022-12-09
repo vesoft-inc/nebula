@@ -263,7 +263,7 @@ void FileBasedWal::scanAllWalFiles() {
 void FileBasedWal::closeCurrFile() {
   if (currFd_ < 0) {
     // Already closed
-    CHECK(!currInfo_);
+    DCHECK(!currInfo_);
     return;
   }
 
@@ -598,7 +598,7 @@ bool FileBasedWal::rollbackToLog(LogID id) {
 
     if (walFiles_.empty()) {
       // All WAL files are gone
-      CHECK(id == firstLogId_ - 1 || id == 0);
+      DCHECK(id == firstLogId_ - 1 || id == 0);
       firstLogId_ = 0;
       lastLogId_ = 0;
       lastLogTerm_ = 0;

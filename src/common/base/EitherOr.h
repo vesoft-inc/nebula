@@ -400,17 +400,17 @@ class EitherOr {
    *
    **********************************************/
   LEFT& left() & {
-    CHECK(isLeftType());
+    DCHECK(isLeftType());
     return val_.left_;
   }
 
   const LEFT& left() const& {
-    CHECK(isLeftType());
+    DCHECK(isLeftType());
     return val_.left_;
   }
 
   LEFT left() && {
-    CHECK(isLeftType());
+    DCHECK(isLeftType());
     auto v = std::move(val_.left_);
     val_.left_.~LEFT();
     state_ = State::VOID;
@@ -418,17 +418,17 @@ class EitherOr {
   }
 
   RIGHT& right() & {
-    CHECK(isRightType());
+    DCHECK(isRightType());
     return val_.right_;
   }
 
   const RIGHT& right() const& {
-    CHECK(isRightType());
+    DCHECK(isRightType());
     return val_.right_;
   }
 
   RIGHT right() && {
-    CHECK(isRightType());
+    DCHECK(isRightType());
     auto v = std::move(val_.right_);
     val_.right_.~RIGHT();
     state_ = State::VOID;

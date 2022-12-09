@@ -45,8 +45,8 @@ class TagNode final : public IterateNode<VertexID> {
     UNUSED(expCtx_);
     UNUSED(exp_);
     auto schemaIter = tagContext_->schemas_.find(tagId_);
-    CHECK(schemaIter != tagContext_->schemas_.end());
-    CHECK(!schemaIter->second.empty());
+    DCHECK(schemaIter != tagContext_->schemas_.end());
+    DCHECK(!schemaIter->second.empty());
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getTagTTLInfo(tagContext_, tagId_);
     tagName_ = tagContext_->tagNames_[tagId_];

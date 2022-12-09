@@ -19,7 +19,7 @@ class IngestTask : public AdminTask {
  public:
   IngestTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-  bool check() override;
+  bool DCHECK() override;
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 };

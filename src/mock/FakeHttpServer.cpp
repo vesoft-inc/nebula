@@ -13,7 +13,7 @@
 namespace nebula {
 
 void FakeHttpHandler::onRequest(std::unique_ptr<proxygen::HTTPMessage> message) noexcept {
-  CHECK(message->getMethod());
+  DCHECK(message->getMethod());
   method_ = message->getMethod().value();
   auto headers = message->extractHeaders();
   headers.forEach(
@@ -44,7 +44,7 @@ void FakeHttpHandler::onEOM() noexcept {
       result = onDelete();
       break;
     default:
-      CHECK(false);
+      DCHECK(false);
       break;
   }
   auto builder = ::proxygen::ResponseBuilder(downstream_);

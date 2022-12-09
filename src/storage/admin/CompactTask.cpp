@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-bool CompactTask::check() {
+bool CompactTask::DCHECK() {
   return env_->kvstore_ != nullptr;
 }
 

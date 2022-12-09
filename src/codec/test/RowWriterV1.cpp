@@ -12,7 +12,7 @@ using meta::cpp2::Schema;
 using nebula::cpp2::PropertyType;
 
 RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) {
-  CHECK(!!schema_);
+  DCHECK(!!schema_);
 }
 
 int64_t RowWriterV1::size() const noexcept {

@@ -23,7 +23,7 @@ class InsertVerticesValidator final : public Validator {
 
   Status toPlan() override;
 
-  Status check();
+  Status DCHECK();
 
   Status prepareVertices();
 
@@ -48,7 +48,7 @@ class InsertEdgesValidator final : public Validator {
 
   Status toPlan() override;
 
-  Status check();
+  Status DCHECK();
 
   Status prepareEdges();
 

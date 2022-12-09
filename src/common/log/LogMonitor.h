@@ -21,7 +21,7 @@ class LogMonitor {
  public:
   LogMonitor() : oldMinLogLevel_(FLAGS_minloglevel), freeByte_(1UL << 60) {
     worker_ = std::make_shared<thread::GenericWorker>();
-    CHECK(worker_->start());
+    DCHECK(worker_->start());
     worker_->addRepeatTask(
         FLAGS_log_disk_check_interval_secs * 1000, &LogMonitor::checkAndChangeLogLevel, this);
   }

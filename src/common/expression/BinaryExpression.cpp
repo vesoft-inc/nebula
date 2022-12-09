@@ -32,10 +32,10 @@ void BinaryExpression::writeTo(Encoder& encoder) const {
 void BinaryExpression::resetFrom(Decoder& decoder) {
   // Read lhs_
   lhs_ = decoder.readExpression(pool_);
-  CHECK(!!lhs_);
+  DCHECK(!!lhs_);
   // Read rhs_
   rhs_ = decoder.readExpression(pool_);
-  CHECK(!!rhs_);
+  DCHECK(!!rhs_);
 }
 
 }  // namespace nebula

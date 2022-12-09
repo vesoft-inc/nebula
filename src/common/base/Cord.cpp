@@ -21,7 +21,7 @@ Cord::~Cord() {
 void Cord::allocateBlock() {
   DCHECK_EQ(blockPt_, blockContentSize_);
   char* blk = reinterpret_cast<char*>(malloc(blockSize_ * sizeof(char)));
-  CHECK(blk) << "Out of memory";
+  DCHECK(blk) << "Out of memory";
 
   if (tail_) {
     // Link the tail to the new block

@@ -24,7 +24,7 @@ class StatsJobExecutor : public StorageJobExecutor {
     toHost_ = TargetHosts::LEADER;
   }
 
-  nebula::cpp2::ErrorCode check() override;
+  nebula::cpp2::ErrorCode DCHECK() override;
 
   nebula::cpp2::ErrorCode prepare() override;
 

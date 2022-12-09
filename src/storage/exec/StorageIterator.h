@@ -80,13 +80,13 @@ class SingleEdgeIterator : public StorageIterator {
                      const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
                      const std::optional<std::pair<std::string, int64_t>>* ttl)
       : context_(context), iter_(std::move(iter)), edgeType_(edgeType), schemas_(schemas) {
-    CHECK(!!iter_);
+    DCHECK(!!iter_);
     if (ttl->has_value()) {
       hasTtl_ = true;
       ttlCol_ = ttl->value().first;
       ttlDuration_ = ttl->value().second;
     }
-    while (iter_->valid() && !check()) {
+    while (iter_->valid() && !DCHECK()) {
       iter_->next();
     }
   }
@@ -105,7 +105,7 @@ class SingleEdgeIterator : public StorageIterator {
         reader_.reset();
         break;
       }
-    } while (!check());
+    } while (!DCHECK());
   }
 
   folly::StringPiece key() const override {
@@ -128,7 +128,7 @@ class SingleEdgeIterator : public StorageIterator {
   /**
    * @brief return true when the value iter to a valid edge value
    */
-  bool check() {
+  bool DCHECK() {
     reader_.reset(*schemas_, iter_->val());
     if (!reader_) {
       context_->resultStat_ = ResultStatus::ILLEGAL_DATA;

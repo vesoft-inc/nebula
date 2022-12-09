@@ -166,7 +166,7 @@ uint16_t NetworkUtils::getAvailablePort() {
   uint16_t low = 0;
   uint16_t high = 0;
 
-  CHECK(getDynamicPortRange(low, high)) << "Failed to get the dynamic port range";
+  DCHECK(getDynamicPortRange(low, high)) << "Failed to get the dynamic port range";
   VLOG(1) << "Dynamic port range is [" << low << ", " << high << "]";
 
   std::unordered_set<uint16_t> portsInUse = getPortsInUse();

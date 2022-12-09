@@ -12,7 +12,7 @@ DECLARE_uint32(raft_heartbeat_interval_secs);
 namespace nebula {
 namespace storage {
 
-bool RebuildFTIndexTask::check() {
+bool RebuildFTIndexTask::DCHECK() {
   return env_->kvstore_ != nullptr;
 }
 

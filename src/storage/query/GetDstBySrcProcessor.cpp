@@ -111,7 +111,7 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
-    CHECK(!t.hasException());
+    DCHECK(!t.hasException());
     const auto& tries = t.value();
 
     // size_t sum = 0;
@@ -228,7 +228,7 @@ nebula::cpp2::ErrorCode GetDstBySrcProcessor::buildEdgeContext(
       VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;
       return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     }
-    CHECK(!iter->second.empty());
+    DCHECK(!iter->second.empty());
     auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, std::abs(edgeType));
     if (!edgeName.ok()) {
       VLOG(1) << "Can't find spaceId " << spaceId_ << " edgeType " << edgeType;

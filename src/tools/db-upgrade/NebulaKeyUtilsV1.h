@@ -142,7 +142,7 @@ class NebulaKeyUtilsV1 final {
   }
 
   static int64_t getVersion(const folly::StringPiece& rawKey) {
-    CHECK(isVertex(rawKey) || isEdge(rawKey));
+    DCHECK(isVertex(rawKey) || isEdge(rawKey));
     auto offset = rawKey.size() - sizeof(int64_t);
     return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
   }

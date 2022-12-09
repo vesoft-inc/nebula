@@ -37,7 +37,7 @@ class WebService final {
   ~WebService();
 
   NG_MUST_USE_RESULT web::Router& router() {
-    CHECK(!started_) << "Don't add routes after starting web server!";
+    DCHECK(!started_) << "Don't add routes after starting web server!";
     return *router_;
   }
 

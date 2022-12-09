@@ -37,7 +37,7 @@ class ESListener : public Listener {
              meta::SchemaManager* schemaMan)
       : Listener(spaceId, partId, std::move(localAddr), walPath, ioPool, workers, handlers),
         schemaMan_(schemaMan) {
-    CHECK(!!schemaMan);
+    DCHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(
         folly::stringPrintf("%s/last_apply_log_%d", walPath.c_str(), partId));
   }

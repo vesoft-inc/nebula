@@ -18,7 +18,7 @@ BalanceJobExecutor::BalanceJobExecutor(JobDescription jobDescription,
                                        const std::vector<std::string>& paras)
     : MetaJobExecutor(jobDescription, kvstore, adminClient, paras) {}
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::check() {
+nebula::cpp2::ErrorCode BalanceJobExecutor::DCHECK() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

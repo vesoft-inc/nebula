@@ -332,7 +332,7 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
         nebula::cpp2::ErrorCode::E_RAFT_PERSIST_SNAPSHOT_FAILED, kNoSnapshotCount, kNoSnapshotSize};
   }
   if (finished) {
-    CHECK(!raftLock_.try_lock());
+    DCHECK(!raftLock_.try_lock());
     leaderCommitId_ = committedLogId;
     lastApplyLogId_ = committedLogId;
     persist(committedLogId, committedLogTerm, lastApplyLogId_);

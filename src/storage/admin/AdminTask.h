@@ -92,7 +92,7 @@ class AdminTask {
    * @brief Check the argument
    *
    */
-  virtual bool check() = 0;
+  virtual bool DCHECK() = 0;
 
   /**
    * @brief Set the Callback object

@@ -18,7 +18,7 @@ SimpleConcurrentJobExecutor::SimpleConcurrentJobExecutor(GraphSpaceID space,
                                                          const std::vector<std::string>& paras)
     : StorageJobExecutor(space, jobId, kvstore, adminClient, paras) {}
 
-nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::check() {
+nebula::cpp2::ErrorCode SimpleConcurrentJobExecutor::DCHECK() {
   return paras_.empty() ? nebula::cpp2::ErrorCode::SUCCEEDED
                         : nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }

@@ -12,7 +12,7 @@
 namespace nebula {
 namespace meta {
 
-nebula::cpp2::ErrorCode StatsJobExecutor::check() {
+nebula::cpp2::ErrorCode StatsJobExecutor::DCHECK() {
   return paras_.empty() ? nebula::cpp2::ErrorCode::SUCCEEDED
                         : nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
@@ -64,7 +64,7 @@ folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
       ->addTask(
           cpp2::JobType::STATS, jobId_, taskId_++, space_, std::move(address), {}, std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

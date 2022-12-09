@@ -65,7 +65,7 @@ class Perf {
     meta::MetaClientOptions options;
     options.skipConfig_ = true;
     mClient_ = std::make_unique<meta::MetaClient>(threadPool_, metaAddrsRet.value(), options);
-    CHECK(mClient_->waitForMetadReady());
+    DCHECK(mClient_->waitForMetadReady());
 
     auto spaceResult = mClient_->getSpaceIdByNameFromCache(FLAGS_space_name);
     if (!spaceResult.ok()) {

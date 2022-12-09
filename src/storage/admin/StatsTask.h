@@ -27,7 +27,7 @@ class StatsTask : public AdminTask {
     LOG(INFO) << "Release Stats Task";
   }
 
-  bool check() override;
+  bool DCHECK() override;
 
   /**
    * @brief Generate sub tasks for StatsTask.

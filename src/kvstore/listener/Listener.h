@@ -145,7 +145,7 @@ class Listener : public raftex::RaftPart {
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode cleanup() override {
-    CHECK(!raftLock_.try_lock());
+    DCHECK(!raftLock_.try_lock());
     leaderCommitId_ = 0;
     lastApplyLogId_ = 0;
     persist(0, 0, lastApplyLogId_);
@@ -233,7 +233,7 @@ class Listener : public raftex::RaftPart {
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
-    CHECK(!raftLock_.try_lock());
+    DCHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
       VLOG(2) << idStr_ << "The candidate " << candidate << " is not in my peers";
       return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;

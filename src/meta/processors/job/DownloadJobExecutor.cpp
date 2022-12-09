@@ -21,7 +21,7 @@ DownloadJobExecutor::DownloadJobExecutor(GraphSpaceID space,
   helper_ = std::make_unique<nebula::hdfs::HdfsCommandHelper>();
 }
 
-nebula::cpp2::ErrorCode DownloadJobExecutor::check() {
+nebula::cpp2::ErrorCode DownloadJobExecutor::DCHECK() {
   if (paras_.size() != 1) {
     return nebula::cpp2::ErrorCode::E_INVALID_JOB;
   }
@@ -100,7 +100,7 @@ folly::Future<Status> DownloadJobExecutor::executeInternal(HostAddr&& address,
                 taskParameters_,
                 std::move(parts))
       .then([pro = std::move(pro)](auto&& t) mutable {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         auto status = std::move(t).value();
         if (status.ok()) {
           pro.setValue(Status::OK());

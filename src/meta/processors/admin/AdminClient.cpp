@@ -326,7 +326,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
           auto v = std::move(t).value();
           for (auto& resp : v) {
             // The exception has been catched inside getResponseFromPart.
-            CHECK(!resp.hasException());
+            DCHECK(!resp.hasException());
             auto st = std::move(resp).value();
             if (!st.ok()) {
               p.setValue(st);
@@ -671,7 +671,7 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
       .via(ioThreadPool_.get())
       .thenValue([p = std::move(promise), result, allHosts](auto&& tries) mutable {
         for (size_t i = 0; i < allHosts.size(); i++) {
-          CHECK(!tries[i].hasException());
+          DCHECK(!tries[i].hasException());
           auto hostLeader = std::move(tries[i].value());
           if (!hostLeader.ok()) {
             continue;

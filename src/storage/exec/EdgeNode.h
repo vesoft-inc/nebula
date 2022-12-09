@@ -51,8 +51,8 @@ class EdgeNode : public IterateNode<T> {
     UNUSED(expCtx_);
     UNUSED(exp_);
     auto schemaIter = edgeContext_->schemas_.find(std::abs(edgeType_));
-    CHECK(schemaIter != edgeContext_->schemas_.end());
-    CHECK(!schemaIter->second.empty());
+    DCHECK(schemaIter != edgeContext_->schemas_.end());
+    DCHECK(!schemaIter->second.empty());
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
     edgeName_ = edgeContext_->edgeNames_[edgeType_];

@@ -31,7 +31,7 @@ void UnaryExpression::writeTo(Encoder& encoder) const {
 void UnaryExpression::resetFrom(Decoder& decoder) {
   // Read operand_
   operand_ = decoder.readExpression(pool_);
-  CHECK(!!operand_);
+  DCHECK(!!operand_);
 }
 
 const Value& UnaryExpression::eval(ExpressionContext& ctx) {

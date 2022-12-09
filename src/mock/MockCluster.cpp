@@ -110,7 +110,7 @@ std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> MockCluster:
 }
 
 void MockCluster::initListener(const char* dataPath, const HostAddr& addr) {
-  CHECK(metaServer_ != nullptr);
+  DCHECK(metaServer_ != nullptr);
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   auto localhosts = std::vector<HostAddr>{HostAddr(localIP(), metaServer_->port_)};
   lMetaClient_ =
@@ -284,7 +284,7 @@ std::unique_ptr<meta::IndexManager> MockCluster::memIndexMan(GraphSpaceID spaceI
 }
 
 meta::MetaClient* MockCluster::initMetaClient(meta::MetaClientOptions options) {
-  CHECK(metaServer_ != nullptr);
+  DCHECK(metaServer_ != nullptr);
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   auto localhosts = std::vector<HostAddr>{HostAddr(localIP(), metaServer_->port_)};
   metaClient_ = std::make_unique<meta::MetaClient>(threadPool, localhosts, options);

@@ -163,7 +163,7 @@ class StorageClientBase {
   getHostPartsWithCursor(GraphSpaceID spaceId) const;
 
   virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId, PartitionID partId) const {
-    CHECK(metaClient_ != nullptr);
+    DCHECK(metaClient_ != nullptr);
     return metaClient_->getPartHostsFromCache(spaceId, partId);
   }
 

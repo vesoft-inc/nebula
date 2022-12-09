@@ -438,8 +438,8 @@ FileUtils::Iterator::~Iterator() {
 }
 
 void FileUtils::Iterator::next() {
-  CHECK(valid());
-  CHECK(type_ != FileType::UNKNOWN);
+  DCHECK(valid());
+  DCHECK(type_ != FileType::UNKNOWN);
   while (true) {
     if (type_ == FileType::DIRECTORY) {
       dirNext();
@@ -459,8 +459,8 @@ void FileUtils::Iterator::next() {
 }
 
 void FileUtils::Iterator::dirNext() {
-  CHECK(type_ == FileType::DIRECTORY);
-  CHECK(dir_ != nullptr);
+  DCHECK(type_ == FileType::DIRECTORY);
+  DCHECK(dir_ != nullptr);
   struct dirent* dent;
   while ((dent = ::readdir(dir_)) != nullptr) {
     if (dent->d_name[0] == '.') {
@@ -476,8 +476,8 @@ void FileUtils::Iterator::dirNext() {
 }
 
 void FileUtils::Iterator::fileNext() {
-  CHECK(type_ == FileType::REGULAR);
-  CHECK(fstream_ != nullptr);
+  DCHECK(type_ == FileType::REGULAR);
+  DCHECK(fstream_ != nullptr);
   if (!std::getline(*fstream_, entry_)) {
     status_ = Status::Error("EOF");
   }

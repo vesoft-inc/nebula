@@ -41,13 +41,13 @@ Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
 void Host::waitForStop() {
   std::unique_lock<std::mutex> g(lock_);
 
-  CHECK(stopped_);
+  DCHECK(stopped_);
   noMoreRequestCV_.wait(g, [this] { return !requestOnGoing_; });
   VLOG(1) << idStr_ << "The host has been stopped!";
 }
 
 nebula::cpp2::ErrorCode Host::canAppendLog() const {
-  CHECK(!lock_.try_lock());
+  DCHECK(!lock_.try_lock());
   if (stopped_) {
     VLOG(3) << idStr_ << "The host is stopped, just return";
     return nebula::cpp2::ErrorCode::E_RAFT_HOST_STOPPED;
@@ -150,7 +150,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
 }
 
 void Host::setResponse(const cpp2::AppendLogResponse& r) {
-  CHECK(!lock_.try_lock());
+  DCHECK(!lock_.try_lock());
   promise_.setValue(r);
   cachingPromise_.setValue(r);
   cachingPromise_ = folly::SharedPromise<cpp2::AppendLogResponse>();
@@ -272,7 +272,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
 
 ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>>
 Host::prepareAppendLogRequest() {
-  CHECK(!lock_.try_lock());
+  DCHECK(!lock_.try_lock());
   VLOG(3) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
 
@@ -332,7 +332,7 @@ Host::prepareAppendLogRequest() {
 }
 
 nebula::cpp2::ErrorCode Host::startSendSnapshot() {
-  CHECK(!lock_.try_lock());
+  DCHECK(!lock_.try_lock());
   if (!sendingSnapshot_) {
     VLOG(1) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
             << ", logIdToSend = " << logIdToSend_
@@ -448,14 +448,14 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
 }
 
 bool Host::noRequest() const {
-  CHECK(!lock_.try_lock());
+  DCHECK(!lock_.try_lock());
   static auto emptyTup = std::make_tuple(0, 0, 0);
   return pendingReq_ == emptyTup;
 }
 
 std::shared_ptr<cpp2::AppendLogRequest> Host::getPendingReqIfAny(std::shared_ptr<Host> self) {
-  CHECK(!self->lock_.try_lock());
-  CHECK(self->requestOnGoing_) << self->idStr_;
+  DCHECK(!self->lock_.try_lock());
+  DCHECK(self->requestOnGoing_) << self->idStr_;
 
   // Check if there are any pending request to send
   if (self->noRequest()) {

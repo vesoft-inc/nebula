@@ -16,7 +16,7 @@ namespace nebula {
 namespace web {
 
 void Route::checkPath(const std::string &path) {
-  CHECK(!path.empty() && path[0] == '/') << "Path must start with '/'";
+  DCHECK(!path.empty() && path[0] == '/') << "Path must start with '/'";
 }
 
 void Route::setPath(const std::string &path) {
@@ -84,7 +84,7 @@ Router::~Router() {
 }
 
 void Route::handler(ReqHandlerGenerator generator) {
-  CHECK(!generator_) << "Only allowed to register handler generator once for a route";
+  DCHECK(!generator_) << "Only allowed to register handler generator once for a route";
   generator_ = generator;
 }
 
@@ -116,7 +116,7 @@ proxygen::RequestHandler *Router::dispatch(const proxygen::HTTPMessage *msg) con
 
 Route &Router::route(proxygen::HTTPMethod method, const std::string &path) {
   if (webSvc_) {
-    CHECK(!webSvc_->started()) << "Don't add routes after starting web server!";
+    DCHECK(!webSvc_->started()) << "Don't add routes after starting web server!";
   }
   Route *next = nullptr;
   if (!prefix_.empty()) {

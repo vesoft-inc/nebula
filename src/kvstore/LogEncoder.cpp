@@ -231,7 +231,7 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
   HostAddr addr;
 
   CHECK_GE(encoded.size(), sizeof(int64_t) + 1);
-  CHECK(encoded[sizeof(int64_t)] == type);
+  DCHECK(encoded[sizeof(int64_t)] == type);
 
   folly::StringPiece raw = encoded;
   raw.advance(sizeof(int64_t) + 1);

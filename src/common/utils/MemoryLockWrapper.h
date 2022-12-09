@@ -68,7 +68,7 @@ class MemoryLockGuard {
   // return the first conflict key, if any
   // this has to be called iff locked_ is false;
   Key conflictKey() {
-    CHECK(locked_ == false);
+    DCHECK(locked_ == false);
     return *iter_;
   }
 

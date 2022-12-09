@@ -21,7 +21,7 @@ class RebuildFTIndexTask : public AdminTask {
  public:
   RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-  bool check() override;
+  bool DCHECK() override;
 
   /**
    * @brief Generate subtasks for rebuilding FT index.

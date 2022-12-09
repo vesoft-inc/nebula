@@ -139,7 +139,7 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
   void next() override {
     do {
       upstream_->next();
-    } while (upstream_->valid() && !check());
+    } while (upstream_->valid() && !DCHECK());
   }
 
   folly::StringPiece key() const override {
@@ -157,7 +157,7 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
 
  protected:
   // return true when the iterator points to a valid value
-  virtual bool check() {
+  virtual bool DCHECK() {
     return true;
   }
 

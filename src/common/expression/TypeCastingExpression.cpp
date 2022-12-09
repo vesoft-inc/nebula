@@ -121,7 +121,7 @@ void TypeCastingExpression::resetFrom(Decoder& decoder) {
 
   // Read operand_
   operand_ = decoder.readExpression(pool_);
-  CHECK(!!operand_);
+  DCHECK(!!operand_);
 }
 
 std::string TypeCastingExpression::toString() const {

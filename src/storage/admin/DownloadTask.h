@@ -22,7 +22,7 @@ class DownloadTask : public AdminTask {
     helper_ = std::make_unique<hdfs::HdfsCommandHelper>();
   }
 
-  bool check() override;
+  bool DCHECK() override;
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 

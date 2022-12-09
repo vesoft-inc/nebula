@@ -243,7 +243,7 @@ cpp2::UpdateEdgeRequest ChainUpdateEdgeLocalProcessor::reverseRequest(
   reversedRequest.edge_key_ref() = reversedEdgeKey;
 
   auto partsNum = env_->metaClient_->partsNum(req.get_space_id());
-  CHECK(partsNum.ok());
+  DCHECK(partsNum.ok());
   auto srcVid = reversedRequest.get_edge_key().get_src().getStr();
   auto partId = env_->metaClient_->partId(partsNum.value(), srcVid);
   reversedRequest.part_id_ref() = partId;

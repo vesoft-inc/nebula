@@ -87,7 +87,7 @@ void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const 
     auto dataPath = canonical.parent_path().parent_path();
     dataPath = boost::filesystem::absolute(dataPath);
     auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
-    CHECK(iter != newPaths->dataPaths_.end());
+    DCHECK(iter != newPaths->dataPaths_.end());
     newPaths->partIndex_[spaceId][partId] = iter - newPaths->dataPaths_.begin();
     newPaths->partPath_[spaceId][canonical.string()].emplace(partId);
     paths_.store(newPaths, std::memory_order_release);
@@ -108,7 +108,7 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
     auto dataPath = canonical.parent_path().parent_path();
     dataPath = boost::filesystem::absolute(dataPath);
     auto iter = std::find(newPaths->dataPaths_.begin(), newPaths->dataPaths_.end(), dataPath);
-    CHECK(iter != newPaths->dataPaths_.end());
+    DCHECK(iter != newPaths->dataPaths_.end());
     newPaths->partIndex_[spaceId].erase(partId);
     newPaths->partPath_[spaceId][canonical.string()].erase(partId);
     paths_.store(newPaths, std::memory_order_release);

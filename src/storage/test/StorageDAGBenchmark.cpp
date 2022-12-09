@@ -74,7 +74,7 @@ class FutureDAG {
       }
 
       folly::collectAll(futures).via(workers_[i]).thenTry([node, partId, &vId](auto&& t) {
-        CHECK(!t.hasException());
+        DCHECK(!t.hasException());
         for (const auto& codeTry : t.value()) {
           if (codeTry.hasException()) {
             node->promise_.setException(std::move(codeTry.exception()));
@@ -97,7 +97,7 @@ class FutureDAG {
     return getNode(outputIdx_)
         ->promise_.getFuture()
         .thenTry([this](auto&& t) -> folly::Future<nebula::cpp2::ErrorCode> {
-          CHECK(!t.hasException());
+          DCHECK(!t.hasException());
           reset();
           return t.value();
         });

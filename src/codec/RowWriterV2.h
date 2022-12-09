@@ -119,7 +119,7 @@ class RowWriterV2 {
    * @return const std::string&
    */
   const std::string& getEncodedStr() const noexcept {
-    CHECK(finished_) << "You need to call finish() first";
+    DCHECK(finished_) << "You need to call finish() first";
     return buf_;
   }
 
@@ -129,7 +129,7 @@ class RowWriterV2 {
    * @return std::string
    */
   std::string moveEncodedStr() noexcept {
-    CHECK(finished_) << "You need to call finish() first";
+    DCHECK(finished_) << "You need to call finish() first";
     return std::move(buf_);
   }
 
@@ -151,7 +151,7 @@ class RowWriterV2 {
    */
   template <typename T>
   WriteResult set(size_t index, T&& v) noexcept {
-    CHECK(!finished_) << "You have called finish()";
+    DCHECK(!finished_) << "You have called finish()";
     if (index >= schema_->getNumFields()) {
       return WriteResult::UNKNOWN_FIELD;
     }
@@ -169,7 +169,7 @@ class RowWriterV2 {
    */
   template <typename T>
   WriteResult set(const std::string& name, T&& v) noexcept {
-    CHECK(!finished_) << "You have called finish()";
+    DCHECK(!finished_) << "You have called finish()";
     int64_t index = schema_->getFieldIndex(name);
     if (index >= 0) {
       return write(static_cast<size_t>(index), std::forward<T>(v));

@@ -130,7 +130,7 @@ Status WebService::start(uint16_t httpPort) {
           cv.notify_all();
         },
         [&](std::exception_ptr eptr) {
-          CHECK(eptr);
+          DCHECK(eptr);
           try {
             std::rethrow_exception(eptr);
           } catch (const std::exception& e) {

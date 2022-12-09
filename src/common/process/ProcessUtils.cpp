@@ -131,7 +131,7 @@ StatusOr<std::string> ProcessUtils::getProcessName(pid_t pid) {
 pid_t ProcessUtils::maxPid() {
   static const std::regex pattern("([0-9]+)");
   fs::FileUtils::FileLineIterator iter("/proc/sys/kernel/pid_max", &pattern);
-  CHECK(iter.valid());
+  DCHECK(iter.valid());
   return folly::to<uint32_t>(iter.matched()[1].str());
 }
 

@@ -20,7 +20,7 @@ class ArgumentList final {
   }
 
   void addArgument(Expression* arg) {
-    CHECK(!!arg);
+    DCHECK(!!arg);
     args_.emplace_back(arg);
   }
 

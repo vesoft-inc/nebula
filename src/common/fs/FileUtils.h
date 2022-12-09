@@ -198,30 +198,30 @@ class FileUtils final {
     // Line or directory entry
     // REQUIRES:    valid() == true
     std::string& entry() {
-      CHECK(valid());
+      DCHECK(valid());
       return entry_;
     }
 
     // Line or directory entry
     // REQUIRES:    valid() == true
     const std::string& entry() const {
-      CHECK(valid());
+      DCHECK(valid());
       return entry_;
     }
 
     // The matched result of the pattern
     // REQUIRES:    valid() == true && pattern != nullptr
     std::smatch& matched() {
-      CHECK(valid());
-      CHECK(pattern_ != nullptr);
+      DCHECK(valid());
+      DCHECK(pattern_ != nullptr);
       return matched_;
     }
 
     // The matched result of the pattern
     // REQUIRES:    valid() == true && pattern != nullptr
     const std::smatch& matched() const {
-      CHECK(valid());
-      CHECK(pattern_ != nullptr);
+      DCHECK(valid());
+      DCHECK(pattern_ != nullptr);
       return matched_;
     }
 
