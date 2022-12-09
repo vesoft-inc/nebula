@@ -53,17 +53,17 @@ class RemoveListenerProcessor : public BaseProcessor<cpp2::ExecResp> {
  *        And will fill the listener ative state.
  *
  */
-class ListListenerProcessor : public BaseProcessor<cpp2::ListListenerResp> {
+class ListListenersProcessor : public BaseProcessor<cpp2::ListListenersResp> {
  public:
-  static ListListenerProcessor* instance(kvstore::KVStore* kvstore) {
-    return new ListListenerProcessor(kvstore);
+  static ListListenersProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListListenersProcessor(kvstore);
   }
 
-  void process(const cpp2::ListListenerReq& req);
+  void process(const cpp2::ListListenersReq& req);
 
  private:
-  explicit ListListenerProcessor(kvstore::KVStore* kvstore)
-      : BaseProcessor<cpp2::ListListenerResp>(kvstore) {}
+  explicit ListListenersProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListListenersResp>(kvstore) {}
 };
 
 }  // namespace meta

@@ -31,21 +31,26 @@ struct PartHosts {
 
 // ListenerHosts saves the listener type and the peers of the data replica
 struct ListenerHosts {
-  ListenerHosts(PartitionID partId, std::vector<HostAddr> peers)
-      : partId_(partId), peers_(std::move(peers)) {}
+  ListenerHosts(PartitionID partId, ListenerID listenerId, std::vector<HostAddr> peers)
+      : partId_(partId), listenerId_(listenerId), peers_(std::move(peers)) {}
 
   bool operator==(const ListenerHosts& rhs) const {
-    return this->partId_ == rhs.partId_ && this->peers_ == rhs.peers_;
+    return this->partId_ == rhs.partId_ && this->listenerId_ == rhs.listenerId_ &&
+           this->peers_ == rhs.peers_;
   }
 
   bool operator<(const ListenerHosts& rhs) const {
     if (this->partId_ == rhs.partId_) {
-      return this->peers_ < rhs.peers_;
+      if (this->listenerId_ == rhs.listenerId_) {
+        return this->peers_ < rhs.peers_;
+      }
+      return this->listenerId_ < rhs.listenerId_;
     }
     return this->partId_ < rhs.partId_;
   }
 
   PartitionID partId_;
+  ListenerID listenerId_;
   // peers is the part peers which would send logs to the listener
   std::vector<HostAddr> peers_;
 };

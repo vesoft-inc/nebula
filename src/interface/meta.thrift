@@ -914,7 +914,7 @@ struct RemoveListenerReq {
     2: ListenerType            type,
 }
 
-struct ListListenerReq {
+struct ListListenersReq {
     1: common.GraphSpaceID     space_id,
 }
 
@@ -922,10 +922,11 @@ struct ListenerInfo {
     1: ListenerType            type,
     2: common.HostAddr         host,
     3: common.PartitionID      part_id,
-    4: HostStatus              status,
+    4: common.ListenerID       listener_id,
+    5: HostStatus              status,
 }
 
-struct ListListenerResp {
+struct ListListenersResp {
     1: common.ErrorCode        code,
     2: common.HostAddr         leader,
     3: list<ListenerInfo>      listeners,
@@ -1271,9 +1272,9 @@ service MetaService {
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
 
-    ExecResp       addListener(1: AddListenerReq req);
-    ExecResp       removeListener(1: RemoveListenerReq req);
-    ListListenerResp listListener(1: ListListenerReq req);
+    ExecResp          addListener(1: AddListenerReq req);
+    ExecResp          removeListener(1: RemoveListenerReq req);
+    ListListenersResp listListeners(1: ListListenersReq req);
 
     GetStatsResp  getStats(1: GetStatsReq req);
     ExecResp signInService(1: SignInServiceReq req);

@@ -736,15 +736,16 @@ TEST_F(JobManagerTest, NotStoppableJob) {
   std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
   GraphSpaceID spaceId = 1;
   PartitionID partId = 1;
+  ListenerID listenerId = 1;
   JobID jobId = 1;
   HostAddr listener("listener_host", 0);
 
   // Write a listener info into meta, rebuild fulltext will use it
   auto initListener = [&] {
     std::vector<kvstore::KV> kvs;
-    kvs.emplace_back(
-        MetaKeyUtils::listenerKey(spaceId, partId, meta::cpp2::ListenerType::ELASTICSEARCH),
-        MetaKeyUtils::serializeHostAddr(listener));
+    kvs.emplace_back(MetaKeyUtils::listenerKey(
+                         spaceId, partId, meta::cpp2::ListenerType::ELASTICSEARCH, listenerId),
+                     MetaKeyUtils::serializeHostAddr(listener));
     folly::Baton<true, std::atomic> baton;
     kv_->asyncMultiPut(
         kDefaultSpaceId, kDefaultPartId, std::move(kvs), [&](auto) { baton.post(); });

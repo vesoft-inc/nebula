@@ -1099,33 +1099,19 @@ class TestListener : public MetaChangedListener {
     listenerSpaceNum--;
   }
 
-  void onListenerPartAdded(GraphSpaceID spaceId,
-                           PartitionID partId,
-                           cpp2::ListenerType type,
-                           const std::vector<HostAddr>& peers) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(type);
-    UNUSED(peers);
+  void onListenerPartAdded(GraphSpaceID,
+                           PartitionID,
+                           cpp2::ListenerType,
+                           ListenerID,
+                           const std::vector<HostAddr>&) override {
     listenerPartNum++;
   }
 
-  void onListenerPartRemoved(GraphSpaceID spaceId,
-                             PartitionID partId,
-                             cpp2::ListenerType type) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(type);
+  void onListenerPartRemoved(GraphSpaceID, PartitionID, cpp2::ListenerType) override {
     listenerPartNum--;
   }
 
-  void onCheckRemoteListeners(GraphSpaceID spaceId,
-                              PartitionID partId,
-                              const std::vector<HostAddr>& remoteListeners) override {
-    UNUSED(spaceId);
-    UNUSED(partId);
-    UNUSED(remoteListeners);
-  }
+  void onCheckRemoteListeners(GraphSpaceID, PartitionID, const std::vector<HostAddr>&) override {}
 
   void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) override {
     UNUSED(diskParts);
@@ -1639,6 +1625,7 @@ TEST(MetaClientTest, Config) {
 TEST(MetaClientTest, ListenerTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/MetaClientListenerTest.XXXXXX");
+  ListenerID firstListenerId = 0, secondListenerId = 0;
 
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
@@ -1672,16 +1659,18 @@ TEST(MetaClientTest, ListenerTest) {
     ASSERT_TRUE(addRet.ok()) << addRet.status();
   }
   {
-    auto listRet = client->listListener(space).get();
+    auto listRet = client->listListeners(space).get();
     ASSERT_TRUE(listRet.ok()) << listRet.status();
     auto listeners = listRet.value();
     ASSERT_EQ(9, listeners.size());
+    firstListenerId = listeners[0].get_listener_id();
     std::vector<cpp2::ListenerInfo> expected;
     for (size_t i = 0; i < 9; i++) {
       cpp2::ListenerInfo l;
       l.type_ref() = cpp2::ListenerType::ELASTICSEARCH;
       l.host_ref() = listenerHosts[i % 4];
       l.part_id_ref() = i + 1;
+      l.listener_id_ref() = firstListenerId;
       l.status_ref() = cpp2::HostStatus::ONLINE;
       expected.emplace_back(std::move(l));
     }
@@ -1692,11 +1681,40 @@ TEST(MetaClientTest, ListenerTest) {
     ASSERT_TRUE(removeRet.ok()) << removeRet.status();
   }
   {
-    auto listRet = client->listListener(space).get();
+    auto listRet = client->listListeners(space).get();
     ASSERT_TRUE(listRet.ok()) << listRet.status();
     auto listeners = listRet.value();
     ASSERT_EQ(0, listeners.size());
   }
+  // A different listenerId is generated when adding a listener.
+  {
+    auto addRet =
+        client->addListener(space, cpp2::ListenerType::ELASTICSEARCH, listenerHosts).get();
+    ASSERT_TRUE(addRet.ok()) << addRet.status();
+  }
+  {
+    auto listRet = client->listListeners(space).get();
+    ASSERT_TRUE(listRet.ok()) << listRet.status();
+    auto listeners = listRet.value();
+    ASSERT_EQ(9, listeners.size());
+    secondListenerId = listeners[0].get_listener_id();
+    std::vector<cpp2::ListenerInfo> expected;
+    for (size_t i = 0; i < 9; i++) {
+      cpp2::ListenerInfo l;
+      l.type_ref() = cpp2::ListenerType::ELASTICSEARCH;
+      l.host_ref() = listenerHosts[i % 4];
+      l.part_id_ref() = i + 1;
+      l.listener_id_ref() = secondListenerId;
+      l.status_ref() = cpp2::HostStatus::ONLINE;
+      expected.emplace_back(std::move(l));
+    }
+    ASSERT_EQ(expected, listeners);
+  }
+  {
+    auto removeRet = client->removeListener(space, cpp2::ListenerType::ELASTICSEARCH).get();
+    ASSERT_TRUE(removeRet.ok()) << removeRet.status();
+  }
+  ASSERT_NE(firstListenerId, secondListenerId);
   cluster.stop();
 }
 

@@ -290,13 +290,11 @@ void NebulaStore::loadLocalListenerFromPartManager() {
   // Initialize listener on the storeSvcAddr_, and start these listener
   LOG(INFO) << "Init listener from partManager for " << storeSvcAddr_;
   auto listenersMap = options_.partMan_->listeners(storeSvcAddr_);
-  for (const auto& spaceEntry : listenersMap) {
-    auto spaceId = spaceEntry.first;
-    for (const auto& typeEntry : spaceEntry.second) {
-      auto type = typeEntry.first;
+  for (auto& [spaceId, listerInfos] : listenersMap) {
+    for (auto& [type, listenerHosts] : listerInfos) {
       addListenerSpace(spaceId, type);
-      for (const auto& info : typeEntry.second) {
-        addListenerPart(spaceId, info.partId_, type, info.peers_);
+      for (const auto& info : listenerHosts) {
+        addListenerPart(spaceId, info.partId_, type, info.listenerId_, info.peers_);
       }
     }
   }
@@ -590,6 +588,7 @@ void NebulaStore::removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::Listener
 void NebulaStore::addListenerPart(GraphSpaceID spaceId,
                                   PartitionID partId,
                                   meta::cpp2::ListenerType type,
+                                  ListenerID listenerId,
                                   const std::vector<HostAddr>& peers) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = spaceListeners_.find(spaceId);
@@ -600,21 +599,36 @@ void NebulaStore::addListenerPart(GraphSpaceID spaceId,
   if (partIt == spaceIt->second->listeners_.end()) {
     partIt = spaceIt->second->listeners_.emplace(partId, ListenerMap()).first;
   }
-  auto listener = partIt->second.find(type);
-  if (listener != partIt->second.end()) {
-    LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
-              << " of [Space: " << spaceId << ", Part: " << partId << "] has existed!";
-    return;
+  auto listenerIt = partIt->second.find(type);
+  if (listenerIt != partIt->second.end()) {
+    // Need to check whether the listenerId is consistent.
+    auto currentListnerId = listenerIt->second->getListenerId();
+    if (currentListnerId == listenerId) {
+      LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
+                << " of [Space: " << spaceId << ", Part: " << partId
+                << ", ListenerId: " << currentListnerId << "] has existed!";
+      return;
+    } else {
+      // Remove the old listener and add a new listener
+      raftService_->removePartition(listenerIt->second);
+      listenerIt->second->resetListener();
+      partIt->second.erase(type);
+      LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
+                << " of [Space: " << spaceId << ", Part: " << partId
+                << ", ListenerId: " << currentListnerId << "] is removed";
+    }
   }
-  partIt->second.emplace(type, newListener(spaceId, partId, type, peers));
+  partIt->second.emplace(type, newListener(spaceId, partId, type, listenerId, peers));
   LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
-            << " of [Space: " << spaceId << ", Part: " << partId << "] is added";
+            << " of [Space: " << spaceId << ", Part: " << partId << ", ListenerId: " << listenerId
+            << "] is added";
   return;
 }
 
 std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                    PartitionID partId,
                                                    meta::cpp2::ListenerType type,
+                                                   ListenerID listenerId,
                                                    const std::vector<HostAddr>& peers) {
   // Lock has been acquired in addListenerPart.
   // todo(doodle): we don't support start multiple type of listener in same process for now. If we
@@ -624,8 +638,15 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
   std::shared_ptr<Listener> listener;
   if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
-    listener = std::make_shared<ESListener>(
-        spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
+    listener = std::make_shared<ESListener>(spaceId,
+                                            partId,
+                                            listenerId,
+                                            raftAddr_,
+                                            walPath,
+                                            ioPool_,
+                                            bgWorkers_,
+                                            workers_,
+                                            options_.schemaMan_);
   } else {
     LOG(FATAL) << "Should not reach here";
     return nullptr;

@@ -1151,14 +1151,16 @@ std::vector<HostAddr> MetaKeyUtils::parseZoneHosts(folly::StringPiece rawData) {
 
 std::string MetaKeyUtils::listenerKey(GraphSpaceID spaceId,
                                       PartitionID partId,
-                                      meta::cpp2::ListenerType type) {
+                                      meta::cpp2::ListenerType type,
+                                      ListenerID listenerId) {
   std::string key;
   key.reserve(kListenerTable.size() + sizeof(GraphSpaceID) + sizeof(meta::cpp2::ListenerType) +
-              sizeof(PartitionID));
+              sizeof(PartitionID) + sizeof(ListenerID));
   key.append(kListenerTable.data(), kListenerTable.size())
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&type), sizeof(meta::cpp2::ListenerType))
-      .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID));
+      .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
+      .append(reinterpret_cast<const char*>(&listenerId), sizeof(ListenerID));
   return key;
 }
 
@@ -1190,8 +1192,14 @@ GraphSpaceID MetaKeyUtils::parseListenerSpace(folly::StringPiece rawData) {
 }
 
 PartitionID MetaKeyUtils::parseListenerPart(folly::StringPiece rawData) {
-  auto offset = kListenerTable.size() + sizeof(meta::cpp2::ListenerType) + sizeof(GraphSpaceID);
+  auto offset = kListenerTable.size() + sizeof(GraphSpaceID) + sizeof(meta::cpp2::ListenerType);
   return *reinterpret_cast<const PartitionID*>(rawData.data() + offset);
+}
+
+ListenerID MetaKeyUtils::parseListenerId(folly::StringPiece rawData) {
+  auto offset = kListenerTable.size() + sizeof(GraphSpaceID) + sizeof(meta::cpp2::ListenerType) +
+                sizeof(PartitionID);
+  return *reinterpret_cast<const ListenerID*>(rawData.data() + offset);
 }
 
 std::string MetaKeyUtils::statsKey(GraphSpaceID spaceId) {

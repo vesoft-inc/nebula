@@ -399,6 +399,8 @@ class BaseProcessor {
 
   /**
    * @brief Check if given space exist given type's listener.
+   * In one space, each type of listener can only have one listenerId, and different types of
+   * listeners cannot be in the same process.
    *
    * @tparam RESP
    * @param space

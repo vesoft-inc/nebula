@@ -50,7 +50,7 @@ folly::Future<Status> RemoveListenerExecutor::execute() {
 folly::Future<Status> ShowListenerExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listListener(spaceId).via(runner()).thenValue(
+  return qctx()->getMetaClient()->listListeners(spaceId).via(runner()).thenValue(
       [this](StatusOr<std::vector<meta::cpp2::ListenerInfo>> resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {

@@ -515,6 +515,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::zoneExist(const std::string& zoneNa
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
                                                            cpp2::ListenerType type) {
+  // In one space, each type of listener can only have one listenerId.
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {

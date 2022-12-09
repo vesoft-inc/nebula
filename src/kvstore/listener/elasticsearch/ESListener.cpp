@@ -14,7 +14,17 @@ DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener com
 
 namespace nebula {
 namespace kvstore {
+
 void ESListener::init() {
+  // Check the listenerId, if not the same, need to reset
+  auto listenerIdFile = folly::stringPrintf("%s/listnenerId", walPath_.c_str());
+  auto listenerId = getLisenerIdFromFile(listenerIdFile);
+  if (listenerId != listenerId_) {
+    wal_->reset();
+    cleanup();
+    writeListenerIdFile(listenerIdFile, listenerId_);
+  }
+
   auto vRet = schemaMan_->getSpaceVidLen(spaceId_);
   if (!vRet.ok()) {
     LOG(FATAL) << "vid length error";

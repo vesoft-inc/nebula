@@ -468,9 +468,9 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeListener(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ListListenerResp> MetaServiceHandler::future_listListener(
-    const cpp2::ListListenerReq& req) {
-  auto* processor = ListListenerProcessor::instance(kvstore_);
+folly::Future<cpp2::ListListenersResp> MetaServiceHandler::future_listListeners(
+    const cpp2::ListListenersReq& req) {
+  auto* processor = ListListenersProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

@@ -37,6 +37,38 @@ StatusOr<meta::PartHosts> MemPartManager::partMeta(GraphSpaceID spaceId, Partiti
   }
   return partIt->second;
 }
+void MemPartManager::addPart(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             std::vector<HostAddr> peers) {
+  bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
+  auto& p = partsMap_[spaceId];
+  bool noPart = p.find(partId) == p.end();
+  p[partId] = meta::PartHosts();
+  auto& pm = p[partId];
+  pm.spaceId_ = spaceId;
+  pm.partId_ = partId;
+  pm.hosts_ = std::move(peers);
+  if (noSpace && handler_) {
+    handler_->addSpace(spaceId);
+  }
+  if (noPart && handler_) {
+    handler_->addPart(spaceId, partId, false, peers);
+  }
+}
+
+void MemPartManager::removePart(GraphSpaceID spaceId, PartitionID partId) {
+  auto it = partsMap_.find(spaceId);
+  CHECK(it != partsMap_.end());
+  if (it->second.find(partId) != it->second.end()) {
+    it->second.erase(partId);
+    if (handler_) {
+      handler_->removePart(spaceId, partId);
+      if (it->second.empty()) {
+        handler_->removeSpace(spaceId);
+      }
+    }
+  }
+}
 
 Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, PartitionID partId) {
   auto it = partsMap_.find(spaceId);
@@ -225,9 +257,10 @@ void MetaServerBasedPartManager::onListenerSpaceRemoved(GraphSpaceID spaceId,
 void MetaServerBasedPartManager::onListenerPartAdded(GraphSpaceID spaceId,
                                                      PartitionID partId,
                                                      meta::cpp2::ListenerType type,
+                                                     ListenerID listenerId,
                                                      const std::vector<HostAddr>& peers) {
   if (handler_ != nullptr) {
-    handler_->addListenerPart(spaceId, partId, type, peers);
+    handler_->addListenerPart(spaceId, partId, type, listenerId, peers);
   } else {
     VLOG(1) << "handler_ is nullptr!";
   }

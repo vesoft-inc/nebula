@@ -50,9 +50,18 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     parts.emplace_back(MetaKeyUtils::parsePartKeyPartId(iter->key()));
     iter->next();
   }
+
+  auto listenerIdRet = autoIncrementIdInSpace(space);
+  if (!nebula::ok(listenerIdRet)) {
+    LOG(INFO) << "Add listnener failed : Get listener id failed.";
+    handleErrorCode(nebula::error(listenerIdRet));
+    onFinished();
+    return;
+  }
+  auto listenerId = nebula::value(listenerIdRet);
   std::vector<kvstore::KV> data;
   for (size_t i = 0; i < parts.size(); i++) {
-    data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type),
+    data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type, listenerId),
                       MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
@@ -103,7 +112,7 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
   doBatchOperation(std::move(batch));
 }
 
-void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
+void ListListenersProcessor::process(const cpp2::ListListenersReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
   folly::SharedMutex::ReadHolder holder(LockUtils::lock());
@@ -126,15 +135,18 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
     onFinished();
     return;
   }
-
-  std::vector<nebula::meta::cpp2::ListenerInfo> listeners;
   auto activeHosts = std::move(nebula::value(activeHostsRet));
+
+  std::vector<cpp2::ListenerInfo> listeners;
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
     cpp2::ListenerInfo listener;
-    listener.type_ref() = MetaKeyUtils::parseListenerType(iter->key());
+    auto listenerKey = iter->key();
+    listener.part_id_ref() = MetaKeyUtils::parseListenerPart(listenerKey);
+    listener.type_ref() = MetaKeyUtils::parseListenerType(listenerKey);
+    listener.listener_id_ref() = MetaKeyUtils::parseListenerId(listenerKey);
     listener.host_ref() = MetaKeyUtils::deserializeHostAddr(iter->val());
-    listener.part_id_ref() = MetaKeyUtils::parseListenerPart(iter->key());
+
     if (std::find(activeHosts.begin(), activeHosts.end(), *listener.host_ref()) !=
         activeHosts.end()) {
       listener.status_ref() = cpp2::HostStatus::ONLINE;

@@ -193,8 +193,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_removeListener(const cpp2::RemoveListenerReq& req) override;
 
-  folly::Future<cpp2::ListListenerResp> future_listListener(
-      const cpp2::ListListenerReq& req) override;
+  folly::Future<cpp2::ListListenersResp> future_listListeners(
+      const cpp2::ListListenersReq& req) override;
 
   folly::Future<cpp2::RestoreMetaResp> future_restoreMeta(const cpp2::RestoreMetaReq& req) override;
 

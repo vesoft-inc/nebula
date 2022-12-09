@@ -38,12 +38,13 @@ class DummyListener : public Listener {
  public:
   DummyListener(GraphSpaceID spaceId,
                 PartitionID partId,
+                ListenerID listenerId,
                 HostAddr localAddr,
                 const std::string& walPath,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 std::shared_ptr<thread::GenericThreadPool> workers,
                 std::shared_ptr<folly::Executor> handlers)
-      : Listener(spaceId, partId, localAddr, walPath, ioPool, workers, handlers) {}
+      : Listener(spaceId, partId, listenerId, localAddr, walPath, ioPool, workers, handlers) {}
 
   std::vector<KV> data() {
     std::vector<KV> ret;
@@ -370,6 +371,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
       auto local = NebulaStore::getRaftAddr(listenerHosts_[index]);
       auto dummy = std::make_shared<DummyListener>(spaceId_,
                                                    partId,
+                                                   listenerId_,
                                                    local,
                                                    walPath,
                                                    listeners_[index]->ioPool_,
@@ -439,6 +441,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
 
   std::unique_ptr<fs::TempDir> rootPath_;
   GraphSpaceID spaceId_ = 1;
+  ListenerID listenerId_ = 1;
   std::vector<HostAddr> peers_;
   std::vector<HostAddr> listenerHosts_;
   std::vector<std::unique_ptr<NebulaStore>> stores_;

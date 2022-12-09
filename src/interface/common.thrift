@@ -54,6 +54,7 @@ typedef i32 (cpp.type = "nebula::Port") Port
 typedef i64 (cpp.type = "nebula::SessionID") SessionID
 
 typedef i64 (cpp.type = "nebula::ExecutionPlanID") ExecutionPlanID
+typedef i32 (cpp.type = "nebula::ListenerID") ListenerID
 
 union SchemaID {
     1: TagID     tag_id,

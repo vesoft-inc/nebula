@@ -106,6 +106,7 @@ class Listener : public raftex::RaftPart {
    */
   Listener(GraphSpaceID spaceId,
            PartitionID partId,
+           ListenerID listenerId,
            HostAddr localAddr,
            const std::string& walPath,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -144,13 +145,7 @@ class Listener : public raftex::RaftPart {
    *
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode cleanup() override {
-    CHECK(!raftLock_.try_lock());
-    leaderCommitId_ = 0;
-    lastApplyLogId_ = 0;
-    persist(0, 0, lastApplyLogId_);
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
-  }
+  nebula::cpp2::ErrorCode cleanup() override;
 
   /**
    * @brief Trigger RaftPart::reset, clean all data and reset states
@@ -161,6 +156,15 @@ class Listener : public raftex::RaftPart {
    * @brief Check whether listener has catchup leader
    */
   bool pursueLeaderDone();
+
+  /**
+   * @brief Get the Listener Id
+   *
+   * @return ListenerID
+   */
+  ListenerID getListenerId() {
+    return listenerId_;
+  }
 
  protected:
   /**
@@ -232,14 +236,7 @@ class Listener : public raftex::RaftPart {
    * @param candidate Address when received a request
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
-    CHECK(!raftLock_.try_lock());
-    if (peers_.find(candidate) == peers_.end()) {
-      VLOG(2) << idStr_ << "The candidate " << candidate << " is not in my peers";
-      return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
-    }
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
-  }
+  nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override;
 
   /**
    * @brief For listener, we just return true directly. Another background thread trigger the actual
@@ -271,10 +268,29 @@ class Listener : public raftex::RaftPart {
    */
   void doApply();
 
+  /**
+   * @brief Get the Lisener Id
+   *
+   * @param path  listener file path
+   * @return ListenerId
+   */
+  ListenerID getLisenerIdFromFile(const std::string& path);
+
+  /**
+   * @brief Write listnerId to file
+   *
+   * @param path  listener file path
+   * @param listenerId
+   * @return true if the file was successfully written.
+   */
+  bool writeListenerIdFile(const std::string& path, ListenerID listenerId);
+
  protected:
   LogID leaderCommitId_ = 0;
   LogID lastApplyLogId_ = 0;
   std::set<HostAddr> peers_;
+  ListenerID listenerId_ = -1;
+  std::string walPath_;
 };
 
 }  // namespace kvstore

@@ -16,6 +16,7 @@ namespace nebula {
 
 static const PartitionID kDefaultPartId = 0;
 static const GraphSpaceID kDefaultSpaceId = 0;
+static const GraphSpaceID kDefaultListenerId = 0;
 
 using BalanceID = int64_t;
 
@@ -334,9 +335,11 @@ class MetaKeyUtils final {
 
   static std::vector<HostAddr> parseZoneHosts(folly::StringPiece rawData);
 
+  // listener
   static std::string listenerKey(GraphSpaceID spaceId,
                                  PartitionID partId,
-                                 meta::cpp2::ListenerType type);
+                                 meta::cpp2::ListenerType type,
+                                 ListenerID listenerId);
 
   static std::string listenerPrefix(GraphSpaceID spaceId);
 
@@ -347,6 +350,8 @@ class MetaKeyUtils final {
   static GraphSpaceID parseListenerSpace(folly::StringPiece rawData);
 
   static PartitionID parseListenerPart(folly::StringPiece rawData);
+
+  static ListenerID parseListenerId(folly::StringPiece rawData);
 
   static std::string statsKey(GraphSpaceID spaceId);
 

@@ -20,6 +20,7 @@ class ESListener : public Listener {
    *
    * @param spaceId
    * @param partId
+   * @param listenerId
    * @param localAddr Listener ip/addr
    * @param walPath Listener's wal path
    * @param ioPool IOThreadPool for listener
@@ -29,13 +30,15 @@ class ESListener : public Listener {
    */
   ESListener(GraphSpaceID spaceId,
              PartitionID partId,
+             ListenerID listenerId,
              HostAddr localAddr,
              const std::string& walPath,
              std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
              std::shared_ptr<thread::GenericThreadPool> workers,
              std::shared_ptr<folly::Executor> handlers,
              meta::SchemaManager* schemaMan)
-      : Listener(spaceId, partId, std::move(localAddr), walPath, ioPool, workers, handlers),
+      : Listener(
+            spaceId, partId, listenerId, std::move(localAddr), walPath, ioPool, workers, handlers),
         schemaMan_(schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(

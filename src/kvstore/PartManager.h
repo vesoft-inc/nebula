@@ -101,11 +101,13 @@ class Handler {
    * @param spaceId
    * @param partId
    * @param type Listener type
+   * @param listenerId
    * @param peers Raft peers of listener
    */
   virtual void addListenerPart(GraphSpaceID spaceId,
                                PartitionID partId,
                                meta::cpp2::ListenerType type,
+                               ListenerID listenerId,
                                const std::vector<HostAddr>& peers) = 0;
 
   /**
@@ -225,7 +227,7 @@ class PartManager {
 };
 
 /**
- * @brief Memory based PartManager, it is used in UTs now.
+ * @brief Memory based PartManager, it is used in UTs and MetaDaemon.
  */
 class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
@@ -272,22 +274,7 @@ class MemPartManager final : public PartManager {
    * @param partId
    * @param peers
    */
-  void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
-    bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
-    auto& p = partsMap_[spaceId];
-    bool noPart = p.find(partId) == p.end();
-    p[partId] = meta::PartHosts();
-    auto& pm = p[partId];
-    pm.spaceId_ = spaceId;
-    pm.partId_ = partId;
-    pm.hosts_ = std::move(peers);
-    if (noSpace && handler_) {
-      handler_->addSpace(spaceId);
-    }
-    if (noPart && handler_) {
-      handler_->addPart(spaceId, partId, false, peers);
-    }
-  }
+  void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {});
 
   /**
    * @brief Remove a partition from part manager
@@ -295,19 +282,7 @@ class MemPartManager final : public PartManager {
    * @param spaceId
    * @param partId
    */
-  void removePart(GraphSpaceID spaceId, PartitionID partId) {
-    auto it = partsMap_.find(spaceId);
-    CHECK(it != partsMap_.end());
-    if (it->second.find(partId) != it->second.end()) {
-      it->second.erase(partId);
-      if (handler_) {
-        handler_->removePart(spaceId, partId);
-        if (it->second.empty()) {
-          handler_->removeSpace(spaceId);
-        }
-      }
-    }
-  }
+  void removePart(GraphSpaceID spaceId, PartitionID partId);
 
   /**
    * @brief Check current part exist or not on host.
@@ -521,11 +496,13 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
    * @param spaceId
    * @param partId
    * @param type Listener type
+   * @param listenerId
    * @param peers The peers of the partition
    */
   void onListenerPartAdded(GraphSpaceID spaceId,
                            PartitionID partId,
                            meta::cpp2::ListenerType type,
+                           ListenerID listenerId,
                            const std::vector<HostAddr>& peers) override;
 
   /**

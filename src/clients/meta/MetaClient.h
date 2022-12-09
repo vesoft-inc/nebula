@@ -69,9 +69,14 @@ using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, In
 // Get Index Structure by indexID
 using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 
-// Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
+// Listeners is a map of ListenerHost => map<PartId, pair<type, listenerId>>.
+// It used to add/remove listener on local host.
+// Note:
+// Under the same hostAddr, the same space and part can only have one listenerId.
+// The addlistener in meta has guaranteed.
 using Listeners =
-    std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
+    std::unordered_map<HostAddr,
+                       std::unordered_map<PartitionID, std::pair<cpp2::ListenerType, ListenerID>>>;
 
 // Get services
 using ServiceClientsList =
@@ -174,6 +179,7 @@ class MetaChangedListener {
   virtual void onListenerPartAdded(GraphSpaceID spaceId,
                                    PartitionID partId,
                                    cpp2::ListenerType type,
+                                   ListenerID listenerId,
                                    const std::vector<HostAddr>& peers) = 0;
   virtual void onListenerPartRemoved(GraphSpaceID spaceId,
                                      PartitionID partId,
@@ -437,10 +443,7 @@ class MetaClient : public BaseMetaClient {
 
   folly::Future<StatusOr<bool>> removeListener(GraphSpaceID spaceId, cpp2::ListenerType type);
 
-  folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> listListener(GraphSpaceID spaceId);
-
-  StatusOr<std::vector<std::pair<PartitionID, cpp2::ListenerType>>>
-  getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAddr& host);
+  folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> listListeners(GraphSpaceID spaceId);
 
   // Given host, get the all peers info. This function is used for listener to start up related
   // listener part

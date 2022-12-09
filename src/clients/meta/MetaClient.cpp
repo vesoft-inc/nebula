@@ -607,15 +607,15 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCach
 }
 
 bool MetaClient::loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache) {
-  auto listenerRet = listListener(spaceId).get();
+  auto listenerRet = listListeners(spaceId).get();
   if (!listenerRet.ok()) {
     LOG(ERROR) << "Get listeners failed for spaceId " << spaceId << ", " << listenerRet.status();
     return false;
   }
   Listeners listeners;
   for (auto& listener : listenerRet.value()) {
-    listeners[listener.get_host()].emplace_back(
-        std::make_pair(listener.get_part_id(), listener.get_type()));
+    listeners[listener.get_host()][listener.get_part_id()] =
+        std::make_pair(listener.get_type(), listener.get_listener_id());
   }
   cache->listeners_ = std::move(listeners);
   return true;
@@ -1063,54 +1063,7 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
     return;
   }
 
-  VLOG(1) << "Let's check if any listeners is updated for " << options_.localHost_;
-  for (auto& [spaceId, typeMap] : newMap) {
-    auto oldSpaceIter = oldMap.find(spaceId);
-    if (oldSpaceIter == oldMap.end()) {
-      // create all type of listener when new space listener added
-      for (const auto& [type, listenerParts] : typeMap) {
-        VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
-                << apache::thrift::util::enumNameSafe(type);
-        listener_->onListenerSpaceAdded(spaceId, type);
-        for (const auto& newListener : listenerParts) {
-          VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
-                  << " was added, type is " << apache::thrift::util::enumNameSafe(type);
-          listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
-        }
-      }
-    } else {
-      for (auto& [type, listenerParts] : typeMap) {
-        auto oldTypeIter = oldSpaceIter->second.find(type);
-        // create missing type of listener when new type of listener added
-        if (oldTypeIter == oldSpaceIter->second.end()) {
-          VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
-                  << apache::thrift::util::enumNameSafe(type);
-          listener_->onListenerSpaceAdded(spaceId, type);
-          for (const auto& newListener : listenerParts) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
-                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
-            listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
-          }
-        } else {
-          // create missing part of listener of specified type
-          std::sort(listenerParts.begin(), listenerParts.end());
-          std::sort(oldTypeIter->second.begin(), oldTypeIter->second.end());
-          std::vector<ListenerHosts> diff;
-          std::set_difference(listenerParts.begin(),
-                              listenerParts.end(),
-                              oldTypeIter->second.begin(),
-                              oldTypeIter->second.end(),
-                              std::back_inserter(diff));
-          for (const auto& newListener : diff) {
-            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
-                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
-            listener_->onListenerPartAdded(spaceId, newListener.partId_, type, newListener.peers_);
-          }
-        }
-      }
-    }
-  }
-
+  // Note: first remove listener and then add listener.
   VLOG(1) << "Let's check if any listeners is removed from " << options_.localHost_;
   for (auto& [spaceId, typeMap] : oldMap) {
     auto newSpaceIter = newMap.find(spaceId);
@@ -1122,6 +1075,7 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
                   << " was removed, type is " << apache::thrift::util::enumNameSafe(type);
           listener_->onListenerPartRemoved(spaceId, outdateListener.partId_, type);
         }
+        // On one HostAddr, one spaceId and one partId can only have one Listener replica.
         listener_->onListenerSpaceRemoved(spaceId, type);
         VLOG(1) << "[Listener] SpaceId " << spaceId << " was removed, type is "
                 << apache::thrift::util::enumNameSafe(type);
@@ -1158,6 +1112,58 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
       }
     }
   }
+
+  VLOG(1) << "Let's check if any listeners is updated for " << options_.localHost_;
+  for (auto& [spaceId, typeMap] : newMap) {
+    auto oldSpaceIter = oldMap.find(spaceId);
+    if (oldSpaceIter == oldMap.end()) {
+      // create all type of listener when new space listener added
+      for (const auto& [type, listenerParts] : typeMap) {
+        VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
+                << apache::thrift::util::enumNameSafe(type);
+        listener_->onListenerSpaceAdded(spaceId, type);
+        for (const auto& newListener : listenerParts) {
+          VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                  << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+          // Use listenerId for further check.
+          listener_->onListenerPartAdded(
+              spaceId, newListener.partId_, type, newListener.listenerId_, newListener.peers_);
+        }
+      }
+    } else {
+      for (auto& [type, listenerParts] : typeMap) {
+        auto oldTypeIter = oldSpaceIter->second.find(type);
+        // create missing type of listener when new type of listener added
+        if (oldTypeIter == oldSpaceIter->second.end()) {
+          VLOG(1) << "[Listener] SpaceId " << spaceId << " was added, type is "
+                  << apache::thrift::util::enumNameSafe(type);
+          listener_->onListenerSpaceAdded(spaceId, type);
+          for (const auto& newListener : listenerParts) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+            listener_->onListenerPartAdded(
+                spaceId, newListener.partId_, type, newListener.listenerId_, newListener.peers_);
+          }
+        } else {
+          // create missing part of listener of specified type
+          std::sort(listenerParts.begin(), listenerParts.end());
+          std::sort(oldTypeIter->second.begin(), oldTypeIter->second.end());
+          std::vector<ListenerHosts> diff;
+          std::set_difference(listenerParts.begin(),
+                              listenerParts.end(),
+                              oldTypeIter->second.begin(),
+                              oldTypeIter->second.end(),
+                              std::back_inserter(diff));
+          for (const auto& newListener : diff) {
+            VLOG(1) << "[Listener] SpaceId " << spaceId << ", partId " << newListener.partId_
+                    << " was added, type is " << apache::thrift::util::enumNameSafe(type);
+            listener_->onListenerPartAdded(
+                spaceId, newListener.partId_, type, newListener.listenerId_, newListener.peers_);
+          }
+        }
+      }
+    }
+  }
 }
 
 void MetaClient::loadRemoteListeners() {
@@ -1167,10 +1173,8 @@ void MetaClient::loadRemoteListeners() {
     return;
   }
   auto partsMap = getPartsMapFromCache(options_.localHost_);
-  for (const auto& spaceEntry : partsMap) {
-    auto spaceId = spaceEntry.first;
-    for (const auto& partEntry : spaceEntry.second) {
-      auto partId = partEntry.first;
+  for (auto& [spaceId, partInfo] : partsMap) {
+    for (auto& [partId, partHosts] : partInfo) {
       auto listeners = getListenerHostTypeBySpacePartType(spaceId, partId);
       std::vector<HostAddr> remoteListeners;
       if (listeners.ok()) {
@@ -2873,16 +2877,16 @@ folly::Future<StatusOr<bool>> MetaClient::removeListener(GraphSpaceID spaceId,
   return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> MetaClient::listListener(
+folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> MetaClient::listListeners(
     GraphSpaceID spaceId) {
-  cpp2::ListListenerReq req;
+  cpp2::ListListenersReq req;
   req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::ListenerInfo>>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_listListener(request); },
-      [](cpp2::ListListenerResp&& resp) -> decltype(auto) {
+      [](auto client, auto request) { return client->future_listListeners(request); },
+      [](cpp2::ListListenersResp&& resp) -> decltype(auto) {
         return std::move(resp).get_listeners();
       },
       std::move(promise));
@@ -2898,27 +2902,6 @@ bool MetaClient::registerCfg() {
   return configReady_;
 }
 
-StatusOr<std::vector<std::pair<PartitionID, cpp2::ListenerType>>>
-MetaClient::getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAddr& host) {
-  if (!ready_) {
-    return Status::Error("Not ready!");
-  }
-  folly::rcu_reader guard;
-  const auto& metadata = *metadata_.load();
-  auto spaceIt = metadata.localCache_.find(spaceId);
-  if (spaceIt == metadata.localCache_.end()) {
-    VLOG(3) << "Space " << spaceId << " not found!";
-    return Status::SpaceNotFound();
-  }
-  auto iter = spaceIt->second->listeners_.find(host);
-  if (iter == spaceIt->second->listeners_.end()) {
-    VLOG(3) << "Space " << spaceId << ", Listener on host " << host.toString() << " not found!";
-    return Status::ListenerNotFound();
-  } else {
-    return iter->second;
-  }
-}
-
 StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& host) {
   if (!ready_) {
     return Status::Error("Not ready!");
@@ -2930,19 +2913,18 @@ StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& h
 
 ListenersMap MetaClient::doGetListenersMap(const HostAddr& host, const LocalCache& localCache) {
   ListenersMap listenersMap;
-  for (const auto& space : localCache) {
-    auto spaceId = space.first;
-    for (const auto& listener : space.second->listeners_) {
-      if (host != listener.first) {
+  for (auto& [spaceId, spaceInfo] : localCache) {
+    for (auto& [listenerHost, listenerPartInfo] : spaceInfo->listeners_) {
+      if (host != listenerHost) {
         continue;
       }
-      for (const auto& part : listener.second) {
-        auto partId = part.first;
-        auto type = part.second;
-        auto partIter = space.second->partsAlloc_.find(partId);
-        if (partIter != space.second->partsAlloc_.end()) {
+      for (auto& [partId, typeId] : listenerPartInfo) {
+        auto listenerType = typeId.first;
+        auto listenerId = typeId.second;
+        auto partIter = spaceInfo->partsAlloc_.find(partId);
+        if (partIter != spaceInfo->partsAlloc_.end()) {
           auto peers = partIter->second;
-          listenersMap[spaceId][type].emplace_back(partId, std::move(peers));
+          listenersMap[spaceId][listenerType].emplace_back(partId, listenerId, std::move(peers));
         } else {
           FLOG_WARN("%s has listener of [%d, %d], but can't find part peers",
                     host.toString().c_str(),
@@ -2968,10 +2950,10 @@ StatusOr<HostAddr> MetaClient::getListenerHostsBySpacePartType(GraphSpaceID spac
     VLOG(3) << "Space " << spaceId << " not found!";
     return Status::SpaceNotFound();
   }
-  for (const auto& host : spaceIt->second->listeners_) {
-    for (const auto& l : host.second) {
-      if (l.first == partId && l.second == type) {
-        return host.first;
+  for (auto& [listenerHost, listenerPartInfo] : spaceIt->second->listeners_) {
+    for (auto& [listenerPartId, typeId] : listenerPartInfo) {
+      if (listenerPartId == partId && typeId.first == type) {
+        return listenerHost;
       }
     }
   }
@@ -2991,10 +2973,10 @@ StatusOr<std::vector<RemoteListenerInfo>> MetaClient::getListenerHostTypeBySpace
     return Status::SpaceNotFound();
   }
   std::vector<RemoteListenerInfo> items;
-  for (const auto& host : spaceIt->second->listeners_) {
-    for (const auto& l : host.second) {
-      if (l.first == partId) {
-        items.emplace_back(std::make_pair(host.first, l.second));
+  for (auto& [listenerHost, listenerPartInfo] : spaceIt->second->listeners_) {
+    for (auto& [listenerPartId, typeId] : listenerPartInfo) {
+      if (listenerPartId == partId) {
+        items.emplace_back(listenerHost, typeId.first);
       }
     }
   }

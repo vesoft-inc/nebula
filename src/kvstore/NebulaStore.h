@@ -644,11 +644,13 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param partId
    * @param type Listener type
+   * @param listenerId
    * @param peers Raft peers of listener
    */
   void addListenerPart(GraphSpaceID spaceId,
                        PartitionID partId,
                        meta::cpp2::ListenerType type,
+                       ListenerID listenerId,
                        const std::vector<HostAddr>& peers) override;
 
   /**
@@ -811,12 +813,14 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param partId
    * @param type Listener type
+   * @param listenerId
    * @param peers The raft peer's address
    * @return std::shared_ptr<Listener>
    */
   std::shared_ptr<Listener> newListener(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         meta::cpp2::ListenerType type,
+                                        ListenerID listenerId,
                                         const std::vector<HostAddr>& peers);
 
   /**

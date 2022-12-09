@@ -6,6 +6,7 @@
 #include "kvstore/listener/Listener.h"
 
 #include "codec/RowReaderWrapper.h"
+#include "common/fs/FileUtils.h"
 #include "common/time/WallClock.h"
 #include "kvstore/LogEncoder.h"
 
@@ -19,6 +20,7 @@ namespace kvstore {
 
 Listener::Listener(GraphSpaceID spaceId,
                    PartitionID partId,
+                   ListenerID listenerId,
                    HostAddr localAddr,
                    const std::string& walPath,
                    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -34,7 +36,10 @@ Listener::Listener(GraphSpaceID spaceId,
                handlers,
                nullptr,
                nullptr,
-               nullptr) {}
+               nullptr) {
+  listenerId_ = listenerId;
+  walPath_ = walPath;
+}
 
 void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
@@ -122,6 +127,23 @@ void Listener::cleanWal() {
   wal()->cleanWAL(lastApplyLogId_);
 }
 
+nebula::cpp2::ErrorCode Listener::cleanup() {
+  CHECK(!raftLock_.try_lock());
+  leaderCommitId_ = 0;
+  lastApplyLogId_ = 0;
+  persist(0, 0, lastApplyLogId_);
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode Listener::checkPeer(const HostAddr& candidate) {
+  CHECK(!raftLock_.try_lock());
+  if (peers_.find(candidate) == peers_.end()) {
+    VLOG(2) << idStr_ << "The candidate " << candidate << " is not in my peers";
+    return nebula::cpp2::ErrorCode::E_RAFT_INVALID_PEER;
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Listener::commitLogs(
     std::unique_ptr<LogIterator> iter, bool, bool) {
   LogID lastId = kNoCommitLogId;
@@ -181,6 +203,42 @@ bool Listener::pursueLeaderDone() {
   VLOG(1) << folly::sformat(
       "pursue leader : leaderCommitId={}, lastApplyLogId_={}", leaderCommitId_, lastApplyLogId_);
   return (leaderCommitId_ - lastApplyLogId_) <= FLAGS_listener_pursue_leader_threshold;
+}
+
+ListenerID Listener::getLisenerIdFromFile(const std::string& path) {
+  if (!fs::FileUtils::exist(path)) {
+    return -1;
+  }
+  auto fd = open(path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0644);
+  if (fd < 0) {
+    LOG(FATAL) << "Failed to open the file " << path << " (" << errno << "): " << strerror(errno);
+  }
+  // read listenerId from log file.
+  ListenerID listenerId;
+  auto ret = pread(fd, &listenerId, sizeof(ListenerID), 0);
+  if (ret != static_cast<ssize_t>(sizeof(ListenerID))) {
+    close(fd);
+    VLOG(3) << "Read listenerId file failed, path " << path;
+    return -1;
+  }
+  return listenerId;
+}
+
+bool Listener::writeListenerIdFile(const std::string& path, ListenerID listenerId) {
+  auto fd = open(path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0644);
+  if (fd < 0) {
+    LOG(FATAL) << "Failed to open the file " << path << " (" << errno << "): " << strerror(errno);
+  }
+  std::string val;
+  val.append(reinterpret_cast<const char*>(&listenerId), sizeof(ListenerID));
+  ssize_t written = write(fd, val.c_str(), val.size());
+  if (written != (ssize_t)val.size()) {
+    VLOG(3) << "Written:" << path << "failed, error:" << strerror(errno);
+    close(fd);
+    return false;
+  }
+  close(fd);
+  return true;
 }
 
 }  // namespace kvstore
