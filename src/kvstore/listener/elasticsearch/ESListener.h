@@ -7,13 +7,11 @@
 #define KVSTORE_LISTENER_ES_LISTENER_H_
 
 #include "codec/RowReaderWrapper.h"
-#include "common/plugin/fulltext/FTStorageAdapter.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "kvstore/listener/Listener.h"
 
 namespace nebula {
 namespace kvstore {
-
-using nebula::plugin::DocItem;
 
 class ESListener : public Listener {
  public:
@@ -56,7 +54,7 @@ class ESListener : public Listener {
    * @param data Key/value to apply
    * @return True if succeed. False if failed.
    */
-  bool apply(const std::vector<KV>& data);
+  bool apply(const BatchHolder& batch);
 
   /**
    * @brief Persist commitLogId commitLogTerm and lastApplyLogId
@@ -106,66 +104,22 @@ class ESListener : public Listener {
    */
   std::string encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const noexcept;
 
-  /**
-   * @brief Convert key value to DocItem
-   *
-   * @param items DocItems to send
-   * @param kv Key/value to encode into DocItems
-   * @return Whether append DocItem succeed
-   */
-  bool appendDocItem(std::vector<DocItem>& items, const KV& kv) const;
-
-  /**
-   * @brief Convert edge key value to DocItem
-   *
-   * @param items DocItems to send
-   * @param kv Edge key/value to encode into DocItems
-   * @return Whether append DocItem succeed
-   */
-  bool appendEdgeDocItem(std::vector<DocItem>& items, const KV& kv) const;
-
-  /**
-   * @brief Convert tag key value to DocItem
-   *
-   * @param items DocItems to send
-   * @param kv Edge key/value to encode into DocItems
-   * @return Whether append DocItem succeed
-   */
-  bool appendTagDocItem(std::vector<DocItem>& items, const KV& kv) const;
-
-  /**
-   * @brief Add the fulltext index field to DocItem
-   *
-   * @param items DocItems to send
-   * @param reader Key/value's reader
-   * @param fti Fulltext index schema
-   * @return Whether append DocItem succeed
-   */
-  bool appendDocs(std::vector<DocItem>& items,
-                  RowReader* reader,
-                  const std::pair<std::string, nebula::meta::cpp2::FTIndex>& fti) const;
-
-  /**
-   * @brief Bulk DocItem to es
-   *
-   * @param items DocItems to send
-   * @return Whether send succeed
-   */
-  bool writeData(const std::vector<nebula::plugin::DocItem>& items) const;
-
-  /**
-   * @brief Put DocItem to es
-   *
-   * @param items DocItems to send
-   * @return Whether send succeed
-   */
-  bool writeDatum(const std::vector<nebula::plugin::DocItem>& items) const;
-
  private:
   meta::SchemaManager* schemaMan_{nullptr};
+  using PickFunc = std::function<void(BatchLogType type,
+                                      const std::string& index,
+                                      const std::string& vid,
+                                      const std::string& src,
+                                      const std::string& dst,
+                                      int64_t rank,
+                                      const std::string& text)>;
+  void pickTagAndEdgeData(BatchLogType type,
+                          const std::string& key,
+                          const std::string& value,
+                          const PickFunc& func);
   std::unique_ptr<std::string> lastApplyLogFile_{nullptr};
   std::unique_ptr<std::string> spaceName_{nullptr};
-  std::vector<nebula::plugin::HttpClient> esClients_;
+  ::nebula::plugin::ESAdapter esAdapter_;
   int32_t vIdLen_;
 };
 

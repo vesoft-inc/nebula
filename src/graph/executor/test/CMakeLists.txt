@@ -34,7 +34,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:graph_session_obj>
