@@ -761,12 +761,12 @@ Feature: Prune Properties rule
         order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | degree       | name          | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes" | 41  | 2022            | 32               |
+      | properties(src_v).sex | degree   | name          | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
+      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
