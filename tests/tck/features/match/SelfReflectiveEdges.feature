@@ -4,7 +4,21 @@
 Feature: Matches on self-reflective edges
 
   Scenario: no duplicated self reflective edges
-    Given a graph with space named "nba"
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      create tag player(name string, age int);
+      create tag team(name string);
+      create edge like(likeness int);
+      create edge teammate(start_year int, end_year int);
+      create edge serve(start_year int, end_year int);
+      """
     And having executed:
       """
       insert vertex player (name, age) values "Hades":("Hades", 99999);
@@ -29,12 +43,3 @@ Feature: Matches on self-reflective edges
       | e1                                                                 | e2                                                                 |
       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       |
       | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] |
-    When executing query:
-      """
-      DELETE EDGE serve "Hades"->"Underworld";
-      DELETE EDGE teammate "Hades"->"Hades";
-      DELETE EDGE like "Hades"->"Hades";
-      DELETE VERTEX "Underworld";
-      DELETE VERTEX "Hades";
-      """
-    Then the execution should be successful
