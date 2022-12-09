@@ -43,3 +43,4 @@ Feature: Matches on self-reflective edges
       | e1                                                                 | e2                                                                 |
       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       |
       | [:like "Hades"->"Hades" @0 {likeness: 3000}]                       | [:teammate "Hades"->"Hades" @0 {end_year: 3000, start_year: 3000}] |
+    And drop the used space
