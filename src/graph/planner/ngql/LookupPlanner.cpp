@@ -28,35 +28,43 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
   auto qctx = lookupCtx->qctx;
   auto from = static_cast<const LookupSentence*>(lookupCtx->sentence)->from();
   SubPlan plan;
-  if (lookupCtx->isEdge) {
-    auto* edgeIndexFullScan = EdgeIndexFullScan::make(qctx,
+  if (lookupCtx->isFulltextIndex) {
+    auto expr = static_cast<TextSearchExpression*>(lookupCtx->fulltextExpr);
+    auto fulltextIndexScan = FulltextIndexScan::make(qctx, lookupCtx->fulltextIndex, expr);
+    fulltextIndexScan->setSpace(lookupCtx->space.id);
+    fulltextIndexScan->setColNames(lookupCtx->idxReturnCols);
+    fulltextIndexScan->setSchemaId(lookupCtx->schemaId);
+    plan.tail = fulltextIndexScan;
+    plan.root = fulltextIndexScan;
+  } else {
+    if (lookupCtx->isEdge) {
+      auto* edgeIndexFullScan = EdgeIndexFullScan::make(qctx,
+                                                        nullptr,
+                                                        from,
+                                                        lookupCtx->space.id,
+                                                        {},
+                                                        lookupCtx->idxReturnCols,
+                                                        lookupCtx->schemaId);
+      edgeIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
+      plan.tail = edgeIndexFullScan;
+      plan.root = edgeIndexFullScan;
+    } else {
+      auto* tagIndexFullScan = TagIndexFullScan::make(qctx,
                                                       nullptr,
                                                       from,
                                                       lookupCtx->space.id,
                                                       {},
                                                       lookupCtx->idxReturnCols,
-                                                      lookupCtx->schemaId,
-                                                      lookupCtx->isEmptyResultSet);
-    edgeIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
-    plan.tail = edgeIndexFullScan;
-    plan.root = edgeIndexFullScan;
-  } else {
-    auto* tagIndexFullScan = TagIndexFullScan::make(qctx,
-                                                    nullptr,
-                                                    from,
-                                                    lookupCtx->space.id,
-                                                    {},
-                                                    lookupCtx->idxReturnCols,
-                                                    lookupCtx->schemaId,
-                                                    lookupCtx->isEmptyResultSet);
-    tagIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
-    plan.tail = tagIndexFullScan;
-    plan.root = tagIndexFullScan;
-  }
-  plan.tail->setColNames(lookupCtx->idxColNames);
+                                                      lookupCtx->schemaId);
+      tagIndexFullScan->setYieldColumns(lookupCtx->yieldExpr);
+      plan.tail = tagIndexFullScan;
+      plan.root = tagIndexFullScan;
+    }
+    plan.tail->setColNames(lookupCtx->idxColNames);
 
-  if (lookupCtx->filter) {
-    plan.root = Filter::make(qctx, plan.root, lookupCtx->filter);
+    if (lookupCtx->filter) {
+      plan.root = Filter::make(qctx, plan.root, lookupCtx->filter);
+    }
   }
   plan.root = Project::make(qctx, plan.root, lookupCtx->yieldExpr);
   if (lookupCtx->dedup) {

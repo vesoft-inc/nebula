@@ -214,7 +214,6 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   returnCols_ = g.returnCols_;
   isEdge_ = g.isEdge();
   schemaId_ = g.schemaId();
-  isEmptyResultSet_ = g.isEmptyResultSet();
   yieldColumns_ = g.yieldColumns();
 }
 
@@ -978,6 +977,23 @@ PlanNode* PatternApply::clone() const {
   auto* newPatternApply = PatternApply::make(qctx_, lnode, rnode, {});
   newPatternApply->cloneMembers(*this);
   return newPatternApply;
+}
+
+PlanNode* FulltextIndexScan::clone() const {
+  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_);
+  ret->isEdge_ = isEdge_;
+  ret->schemaId_ = schemaId_;
+  ret->vertexProps_ = std::make_unique<std::vector<VertexProp>>(*vertexProps_);
+  ret->edgeProps_ = std::make_unique<std::vector<EdgeProp>>(*edgeProps_);
+  ret->cloneMembers(*this);
+  return ret;
+}
+
+std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
+  auto desc = Explore::explain();
+  addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
+  // TODO(hs.zhang): add all infomation
+  return desc;
 }
 
 }  // namespace graph

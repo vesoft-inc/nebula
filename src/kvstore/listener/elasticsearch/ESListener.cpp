@@ -34,7 +34,7 @@ void ESListener::init() {
       password = *c.pwd_ref();
     }
     std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    esClients.emplace_back(HttpClient::instance(), protocol, host.toString(), user, password);
+    esClients.emplace_back(HttpClient::instance(), protocol, host.toRawString(), user, password);
   }
   esAdapter_.setClients(std::move(esClients));
   auto sRet = schemaMan_->toGraphSpaceName(spaceId_);
@@ -106,6 +106,9 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     }
   } else if (nebula::NebulaKeyUtils::isEdge(vIdLen_, key)) {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
+    if (edgeType < 0) {
+      return;
+    }
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, edgeType);
     if (!ftIndexRes.ok()) {
       return;
@@ -228,7 +231,6 @@ void ESListener::processLogs() {
   BatchHolder batch;
   while (iter->valid()) {
     lastApplyId = iter->logId();
-
     auto log = iter->logMsg();
     if (log.empty()) {
       // skip the heartbeat

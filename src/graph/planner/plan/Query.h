@@ -527,7 +527,6 @@ class IndexScan : public Explore {
                          std::vector<std::string> returnCols = {},
                          bool isEdge = false,
                          int32_t schemaId = -1,
-                         bool isEmptyResultSet = false,
                          bool dedup = false,
                          std::vector<storage::cpp2::OrderBy> orderBy = {},
                          int64_t limit = std::numeric_limits<int64_t>::max(),
@@ -539,7 +538,6 @@ class IndexScan : public Explore {
                                                   std::move(returnCols),
                                                   isEdge,
                                                   schemaId,
-                                                  isEmptyResultSet,
                                                   dedup,
                                                   std::move(orderBy),
                                                   limit,
@@ -566,16 +564,8 @@ class IndexScan : public Explore {
     schemaId_ = schema;
   }
 
-  bool isEmptyResultSet() const {
-    return isEmptyResultSet_;
-  }
-
   YieldColumns* yieldColumns() const {
     return yieldColumns_;
-  }
-
-  void setEmptyResultSet(bool isEmptyResultSet) {
-    isEmptyResultSet_ = isEmptyResultSet;
   }
 
   void setIndexQueryContext(std::vector<IndexQueryContext> contexts) {
@@ -606,7 +596,6 @@ class IndexScan : public Explore {
             std::vector<std::string>&& returnCols,
             bool isEdge,
             int32_t schemaId,
-            bool isEmptyResultSet,
             bool dedup,
             std::vector<storage::cpp2::OrderBy> orderBy,
             int64_t limit,
@@ -617,7 +606,6 @@ class IndexScan : public Explore {
     returnCols_ = std::move(returnCols);
     isEdge_ = isEdge;
     schemaId_ = schemaId;
-    isEmptyResultSet_ = isEmptyResultSet;
   }
 
   void cloneMembers(const IndexScan&);
@@ -628,9 +616,83 @@ class IndexScan : public Explore {
   bool isEdge_;
   int32_t schemaId_;
 
-  // TODO(yee): Generate special plan for this scenario
-  bool isEmptyResultSet_{false};
   YieldColumns* yieldColumns_;
+};
+
+class FulltextIndexScan : public Explore {
+ public:
+  static FulltextIndexScan* make(QueryContext* qctx,
+                                 const std::string& index,
+                                 TextSearchExpression* searchExpr) {
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr);
+  }
+  const std::string& index() const {
+    return index_;
+  }
+
+  TextSearchExpression* searchExpression() const {
+    return searchExpr_;
+  }
+
+  bool isEdge() const {
+    return isEdge_;
+  }
+
+  int32_t schemaId() const {
+    return schemaId_;
+  }
+
+  void setSchemaId(int32_t id) {
+    schemaId_ = id;
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    if (vertexProps_ == nullptr) {
+      vertexProps_ = std::make_unique<std::vector<VertexProp>>();
+      VertexProp prop;
+      prop.tag_ref() = schemaId_;
+      for (auto& col : returnCols_) {
+        prop.props_ref()->push_back(col);
+      }
+      vertexProps_->push_back(prop);
+    }
+    return vertexProps_.get();
+  }
+
+  const std::vector<EdgeProp>* edgeProps() const {
+    if (edgeProps_ == nullptr) {
+      edgeProps_ = std::make_unique<std::vector<EdgeProp>>();
+      EdgeProp prop;
+      prop.type_ref() = schemaId_;
+      for (auto& col : returnCols_) {
+        prop.props_ref()->push_back(col);
+      }
+      edgeProps_->push_back(prop);
+    }
+    return edgeProps_.get();
+  }
+
+  const std::vector<std::string>& colNames() const {
+    return returnCols_;
+  }
+
+  PlanNode* clone() const override;
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  friend ObjectPool;
+  FulltextIndexScan(QueryContext* qctx, const std::string& index, TextSearchExpression* searchExpr)
+      : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
+        index_(index),
+        searchExpr_(searchExpr) {}
+  std::string index_;
+  TextSearchExpression* searchExpr_{nullptr};
+  std::vector<std::string> returnCols_;
+  int32_t schemaId_;
+  mutable std::unique_ptr<std::vector<VertexProp>> vertexProps_ = nullptr;
+  mutable std::unique_ptr<std::vector<EdgeProp>> edgeProps_ = nullptr;
+  bool isEdge_{false};
 };
 
 // Scan vertices
