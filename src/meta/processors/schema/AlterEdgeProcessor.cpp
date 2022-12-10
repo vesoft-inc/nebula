@@ -103,7 +103,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti.get_fields(), edgeItems);
+    auto ftStatus = ftIndexCheck(fti, edgeItems);
     if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(ftStatus);
       onFinished();

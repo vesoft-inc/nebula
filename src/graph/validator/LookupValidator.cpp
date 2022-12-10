@@ -501,19 +501,12 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
 // Check does test search contains properties search in test search expression
 StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
-  auto metaClient = qctx_->getMetaClient();
-  auto tsi = metaClient->getFTIndexBySpaceSchemaFromCache(spaceId(), schemaId());
-  NG_RETURN_IF_ERROR(tsi);
-  auto tsName = tsi.value().first;
-
-  auto ftFields = tsi.value().second.get_fields();
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
   auto prop = tsExpr->arg()->prop();
-
-  auto iter = std::find(ftFields.begin(), ftFields.end(), prop);
-  if (iter == ftFields.end()) {
-    return Status::SemanticError("Column %s not found in %s", prop.c_str(), tsName.c_str());
-  }
+  auto metaClient = qctx_->getMetaClient();
+  auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
+  NG_RETURN_IF_ERROR(tsi);
+  auto tsName = tsi.value().first;
   return tsName;
 }
 

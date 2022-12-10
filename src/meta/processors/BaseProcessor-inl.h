@@ -411,8 +411,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
-    GraphSpaceID spaceId, int32_t tagOrEdge) {
+ErrorOr<nebula::cpp2::ErrorCode, std::map<std::string, cpp2::FTIndex>>
+BaseProcessor<RESP>::getFTIndex(GraphSpaceID spaceId, int32_t tagOrEdge) {
   const auto& indexPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto iterRet = doPrefix(indexPrefix);
   if (!nebula::ok(iterRet)) {
@@ -422,18 +422,18 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
     return retCode;
   }
   auto indexIter = nebula::value(iterRet).get();
-
+  std::map<std::string, cpp2::FTIndex> ret;
   while (indexIter->valid()) {
     auto index = MetaKeyUtils::parsefulltextIndex(indexIter->val());
     auto id = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? index.get_depend_schema().get_edge_type()
                   : index.get_depend_schema().get_tag_id();
     if (spaceId == index.get_space_id() && tagOrEdge == id) {
-      return index;
+      ret[indexIter->key().toString()] = index;
     }
     indexIter->next();
   }
-  return nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+  return ret;
 }
 
 template <typename RESP>
@@ -464,14 +464,18 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
-    const std::vector<std::string>& cols, const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+    const std::map<std::string, cpp2::FTIndex>& ftIndices,
+    const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+  std::set<std::string> cols;
+  for (auto& [indexName, index] : ftIndices) {
+    cols.insert(index.fields_ref()->front());
+  }
   for (const auto& item : alterItems) {
     if (*item.op_ref() == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
         *item.op_ref() == nebula::meta::cpp2::AlterSchemaOp::DROP) {
       const auto& itemCols = item.get_schema().get_columns();
       for (const auto& iCol : itemCols) {
-        auto it =
-            std::find_if(cols.begin(), cols.end(), [&](const auto& c) { return c == iCol.name; });
+        auto it = cols.find(iCol.name);
         if (it != cols.end()) {
           LOG(INFO) << "fulltext index conflict";
           return nebula::cpp2::ErrorCode::E_CONFLICT;
