@@ -124,6 +124,8 @@ class AllPaths final : public BinaryInputNode {
     return qctx->objPool()->makeAndAdd<AllPaths>(qctx, left, right, steps, noLoop, withProp);
   }
 
+  PlanNode* clone() const override;
+
   size_t steps() const {
     return steps_;
   }
@@ -206,6 +208,8 @@ class AllPaths final : public BinaryInputNode {
         steps_(steps),
         noLoop_(noLoop),
         withProp_(withProp) {}
+
+  void cloneMembers(const AllPaths&);
 
  private:
   size_t steps_{0};

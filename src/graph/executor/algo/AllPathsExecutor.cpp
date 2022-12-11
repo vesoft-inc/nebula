@@ -128,6 +128,7 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                                                    qctx_->plan()->id(),
                                                    qctx_->plan()->isProfileEnabled());
   auto& vids = reverse ? rightVids_ : leftVids_;
+  auto filter = pathNode_->filter() ? pathNode_->filter()->clone() : nullptr;
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -141,8 +142,8 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                      false,
                      false,
                      {},
-                     -1,       //  (TODO jmq)limit
-                     nullptr,  //  (TODO jmq)filter
+                     -1,
+                     filter,
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime, reverse](auto&& resps) {

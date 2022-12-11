@@ -19,6 +19,34 @@ int64_t AllPaths::limit(QueryContext* qctx) const {
       .getInt();
 }
 
+PlanNode* AllPaths::clone() const {
+  auto* path = AllPaths::make(qctx_, nullptr, nullptr, steps_, noLoop_, withProp_);
+  path->cloneMembers(*this);
+  return path;
+}
+
+void AllPaths::cloneMembers(const AllPaths& path) {
+  BinaryInputNode::cloneMembers(path);
+  limit_ = path.limit_;
+  filter_ = path.filter_;
+  setEdgeDirection(path.edgeDirection_);
+  if (path.vertexProps_) {
+    auto vertexProps = *path.vertexProps_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+  if (path.edgeProps_) {
+    auto edgeProps = *path.edgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+  if (path.reverseEdgeProps_) {
+    auto edgeProps = *path.reverseEdgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setReverseEdgeProps(std::move(edgePropsPtr));
+  }
+}
+
 std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
@@ -40,6 +68,7 @@ std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   addDescription("noloop ", folly::toJson(util::toJson(noLoop_)), desc.get());
   addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
@@ -83,7 +112,7 @@ void ShortestPath::cloneMembers(const ShortestPath& path) {
   if (path.reverseEdgeProps_) {
     auto edgeProps = *path.reverseEdgeProps_;
     auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-    setEdgeProps(std::move(edgePropsPtr));
+    setReverseEdgeProps(std::move(edgePropsPtr));
   }
 }
 
