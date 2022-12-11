@@ -17,6 +17,7 @@ folly::Future<Status> AllPathsExecutor::execute() {
   noLoop_ = pathNode_->noLoop();
   steps_ = pathNode_->steps();
   withProp_ = pathNode_->withProp();
+  limit_ = pathNode_->limit();
   result_.colNames = pathNode_->colNames();
   init();
   if (leftVids_.empty() || rightVids_.empty()) {

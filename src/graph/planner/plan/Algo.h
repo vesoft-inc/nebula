@@ -146,12 +146,8 @@ class AllPaths final : public BinaryInputNode {
     return filter_;
   }
 
-  // Get the constant limit value
-  int64_t limit(QueryContext* qctx = nullptr) const;
-
-  // Get the limit value in runtime
-  int64_t limit(QueryExpressionContext& ctx) const {
-    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+  int64_t limit() const {
+    return limit_;
   }
 
   storage::cpp2::EdgeDirection edgeDirection() const {
@@ -170,16 +166,12 @@ class AllPaths final : public BinaryInputNode {
     return vertexProps_.get();
   }
 
-  void setLimit(Expression* limit) {
+  void setLimit(int64_t limit) {
     limit_ = limit;
   }
 
   void setFilter(Expression* filter) {
     filter_ = filter;
-  }
-
-  void setLimit(int64_t limit) {
-    limit_ = ConstantExpression::make(qctx_->objPool(), limit);
   }
 
   void setEdgeDirection(Direction direction) {
@@ -215,7 +207,7 @@ class AllPaths final : public BinaryInputNode {
   size_t steps_{0};
   bool noLoop_{false};
   bool withProp_{false};
-  Expression* limit_{nullptr};
+  int64_t limit_{-1};
   Expression* filter_{nullptr};
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
   std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;

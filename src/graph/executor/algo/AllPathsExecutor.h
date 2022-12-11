@@ -46,7 +46,7 @@ class AllPathsExecutor final : public PathBaseExecutor {
   const AllPaths* pathNode_{nullptr};
   bool withProp_{false};
   bool noLoop_{false};
-  size_t limit_{0};
+  int64_t limit_{std::numeric_limits<int64_t>::max()};
   size_t steps_{0};
 
   size_t leftSteps_{0};

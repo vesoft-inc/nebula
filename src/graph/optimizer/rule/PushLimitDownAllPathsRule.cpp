@@ -44,7 +44,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownAllPathsRule::transform(
   const auto path = static_cast<const AllPaths *>(pathGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count(qctx);
-  if (path->limit(qctx) >= 0 && limitRows >= path->limit(qctx)) {
+  if (path->limit() >= 0 && limitRows >= path->limit()) {
     return TransformResult::noTransform();
   }
 

@@ -12,13 +12,6 @@
 namespace nebula {
 namespace graph {
 
-int64_t AllPaths::limit(QueryContext* qctx) const {
-  DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
-  return DCHECK_NOTNULL(limit_)
-      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
-      .getInt();
-}
-
 PlanNode* AllPaths::clone() const {
   auto* path = AllPaths::make(qctx_, nullptr, nullptr, steps_, noLoop_, withProp_);
   path->cloneMembers(*this);
@@ -69,8 +62,7 @@ std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
-  addDescription(
-      "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
+  addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
