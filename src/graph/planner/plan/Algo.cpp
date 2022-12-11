@@ -69,6 +69,8 @@ std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
+  addDescription(
+      "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
