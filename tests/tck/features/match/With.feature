@@ -413,3 +413,34 @@ Feature: With clause
       return count (p)
       """
     Then a SemanticError should be raised at runtime:  Alias used but not defined: `p'
+
+  Scenario: with wildcard after unwind before argument
+    When executing query:
+      """
+      match (v:player)--(t:team)
+      where id(v) == "Tim Duncan"
+      unwind [1] as digit
+      with *
+      match (t:team)<--(v1)
+      return v1.player.name
+      """
+    Then the result should be, in any order:
+      | v1.player.name      |
+      | "Cory Joseph"       |
+      | "Kyle Anderson"     |
+      | "Danny Green"       |
+      | "David West"        |
+      | "Jonathon Simmons"  |
+      | "LaMarcus Aldridge" |
+      | "Rudy Gay"          |
+      | "Tony Parker"       |
+      | "Marco Belinelli"   |
+      | "Marco Belinelli"   |
+      | "Tiago Splitter"    |
+      | "Tim Duncan"        |
+      | "Manu Ginobili"     |
+      | "Tracy McGrady"     |
+      | "Boris Diaw"        |
+      | "Aron Baynes"       |
+      | "Paul Gasol"        |
+      | "Dejounte Murray"   |
