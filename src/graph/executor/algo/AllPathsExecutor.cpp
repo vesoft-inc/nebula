@@ -148,8 +148,8 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime, reverse](auto&& resps) {
-        UNUSED(getNbrTime);
-        // addStats(resp, getNbrTime.elapsedInUSec(), reverse);
+        auto step = reverse ? rightSteps_ : leftSteps_;
+        addGetNeighborStats(resps, step, getNbrTime.elapsedInUSec(), reverse);
         auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
         NG_RETURN_IF_ERROR(result);
         auto& responses = std::move(resps).responses();
