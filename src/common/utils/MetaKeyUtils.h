@@ -16,7 +16,7 @@ namespace nebula {
 
 static const PartitionID kDefaultPartId = 0;
 static const GraphSpaceID kDefaultSpaceId = 0;
-static const GraphSpaceID kDefaultListenerId = 0;
+static const ListenerID kDefaultListenerId = 0;
 
 using BalanceID = int64_t;
 

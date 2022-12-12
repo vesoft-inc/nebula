@@ -290,8 +290,8 @@ void NebulaStore::loadLocalListenerFromPartManager() {
   // Initialize listener on the storeSvcAddr_, and start these listener
   LOG(INFO) << "Init listener from partManager for " << storeSvcAddr_;
   auto listenersMap = options_.partMan_->listeners(storeSvcAddr_);
-  for (auto& [spaceId, listerInfos] : listenersMap) {
-    for (auto& [type, listenerHosts] : listerInfos) {
+  for (auto& [spaceId, listenerInfos] : listenersMap) {
+    for (auto& [type, listenerHosts] : listenerInfos) {
       addListenerSpace(spaceId, type);
       for (const auto& info : listenerHosts) {
         addListenerPart(spaceId, info.partId_, type, info.listenerId_, info.peers_);
