@@ -23,6 +23,12 @@ folly::Future<Status> UnwindExecutor::execute() {
   ds.colNames = unwind->colNames();
   for (; iter->valid(); iter->next()) {
     const Value &list = unwindExpr->eval(ctx(iter.get()));
+    if (!list.isList()) {
+      std::stringstream ss;
+      ss << "Unwind on types other than list for " << unwindExpr->toString()
+         << ". This is not supported.";
+      return Status::Error(ss.str());
+    }
     std::vector<Value> vals = extractList(list);
     for (auto &v : vals) {
       Row row;
