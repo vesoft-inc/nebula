@@ -95,6 +95,9 @@ case ${TARGET} in
     storaged)
         TARGETS=(${TARGET})
         ;;
+    storaged-listener)
+        TARGETS=(${TARGET})
+        ;;
     standalone)
         TARGETS=(${TARGET})
         ;;
@@ -119,6 +122,9 @@ function start_daemon {
     local daemon_name=nebula-${1}
     local config=${2}
     local executable=${INSTALL_ROOT}/bin/${daemon_name}
+     if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
 
     [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
 
@@ -167,6 +173,9 @@ function stop_daemon {
     local daemon_name=nebula-${1}
     local config=${2}
     local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
 
     [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
 
@@ -187,6 +196,9 @@ function wait_daemon_to_exit {
     local daemon_name=nebula-${1}
     local config=${2}
     local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
 
     [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
 
@@ -226,8 +238,14 @@ function kill_daemon {
 # args: <daemon name> [config file]
 function status_daemon {
     local daemon_name=nebula-${1}
-    local daemon_version=$(daemon_version ${INSTALL_ROOT}/bin/${daemon_name})
     local config=${2}
+
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
+
+    local daemon_version=$(daemon_version ${executable})
 
     [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
 
