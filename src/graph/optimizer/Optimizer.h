@@ -49,6 +49,8 @@ class Optimizer final {
 
   static Status rewriteArgumentInputVar(graph::PlanNode *root);
 
+  Status checkPlanDepth(const graph::PlanNode *root) const;
+
   static constexpr int8_t kMaxIterationRound = 5;
 
   std::vector<const RuleSet *> ruleSets_;
