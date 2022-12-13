@@ -11,10 +11,10 @@
     <img src="https://github.com/vesoft-inc/nebula/workflows/nightly/badge.svg" alt="nightly build"/>
   </a>
   <a href="https://github.com/vesoft-inc/nebula/stargazers">
-    <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
+      <img src="https://img.shields.io/github/stars/vesoft-inc/nebula" alt="GitHub stars" />
   </a>
   <a href="https://github.com/vesoft-inc/nebula/network/members">
-    <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
+      <img src="https://img.shields.io/github/forks/vesoft-inc/nebula" alt="GitHub forks" />
   </a>
   <br>
 </p>

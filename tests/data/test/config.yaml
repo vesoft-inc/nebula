@@ -1,0 +1,737 @@
+space:
+    name: test
+    partitionNum: 1
+    ReplicaFactor: 1
+    vidType: int
+    charset: utf8
+    collate: utf8_bin
+schema: |-
+    CREATE TAG Label_0 (Label_0_2_Bool Bool, Label_0_5_Int Int, Label_0_6_Double Double, Label_0_8_Double Double, Label_0_9_Double Double, Label_0_10_Bool Bool, Label_0_0_String String, Label_0_1_Int Int, Label_0_3_Int Int, Label_0_4_Int Int, Label_0_7_Bool Bool);
+    CREATE TAG Label_1 (Label_1_0_String String, Label_1_4_String String, Label_1_5_Bool Bool, Label_1_6_Int Int, Label_1_10_Int Int, Label_1_1_Int Int, Label_1_2_Bool Bool, Label_1_3_String String, Label_1_7_String String, Label_1_8_Int Int, Label_1_9_Int Int);
+    CREATE TAG Label_2 (Label_2_0_Int Int, Label_2_1_String String, Label_2_2_Int Int, Label_2_3_String String, Label_2_4_Double Double, Label_2_5_String String);
+    CREATE TAG Label_3 (Label_3_1_Double Double, Label_3_2_Bool Bool, Label_3_5_Int Int, Label_3_6_Int Int, Label_3_7_Bool Bool, Label_3_8_String String, Label_3_0_Int Int, Label_3_3_Double Double, Label_3_4_Double Double);
+    CREATE TAG Label_4 (Label_4_3_String String, Label_4_4_String String, Label_4_5_Bool Bool, Label_4_6_Int Int, Label_4_7_Int Int, Label_4_0_Int Int, Label_4_1_Double Double, Label_4_2_Int Int);
+    CREATE TAG Label_5 (Label_5_0_Bool Bool, Label_5_1_Double Double, Label_5_2_Double Double, Label_5_3_Double Double, Label_5_4_Double Double, Label_5_5_Int Int);
+    CREATE TAG Label_6 (Label_6_6_String String, Label_6_7_Double Double, Label_6_0_String String, Label_6_1_Bool Bool, Label_6_2_Bool Bool, Label_6_3_Bool Bool, Label_6_4_Bool Bool, Label_6_5_String String);
+    CREATE TAG Label_7 (Label_7_6_Int Int, Label_7_7_Bool Bool, Label_7_0_Bool Bool, Label_7_1_Double Double, Label_7_2_String String, Label_7_3_Double Double, Label_7_4_Double Double, Label_7_5_Double Double, Label_7_8_Bool Bool, Label_7_9_String String);
+    CREATE TAG Label_8 (Label_8_0_Double Double, Label_8_1_Int Int, Label_8_3_Bool Bool, Label_8_4_Double Double, Label_8_8_Double Double, Label_8_9_Bool Bool, Label_8_2_Bool Bool, Label_8_5_Int Int, Label_8_6_Int Int, Label_8_7_Double Double, Label_8_10_Bool Bool);
+    CREATE TAG Label_9 (Label_9_1_Int Int, Label_9_3_Double Double, Label_9_6_String String, Label_9_8_Int Int, Label_9_10_Bool Bool, Label_9_0_Int Int, Label_9_4_Int Int, Label_9_5_Int Int, Label_9_7_Bool Bool, Label_9_9_Int Int, Label_9_2_Bool Bool);
+    CREATE TAG Label_10 (Label_10_3_Int Int, Label_10_4_Int Int, Label_10_5_Int Int, Label_10_0_Double Double, Label_10_1_Int Int, Label_10_2_Double Double);
+    CREATE TAG Label_11 (Label_11_3_Double Double, Label_11_4_Bool Bool, Label_11_6_Bool Bool, Label_11_7_Bool Bool, Label_11_0_Bool Bool, Label_11_1_Bool Bool, Label_11_2_Int Int, Label_11_5_Bool Bool, Label_11_8_Double Double, Label_11_9_Double Double, Label_11_10_Bool Bool);
+    CREATE EDGE Rel_0 (Rel_0_0_Bool Bool, Rel_0_1_Int Int, Rel_0_2_Double Double, Rel_0_3_String String, Rel_0_4_Bool Bool, Rel_0_5_Bool Bool, Rel_0_6_String String);
+    CREATE EDGE Rel_1 (Rel_1_2_Int Int, Rel_1_3_Bool Bool, Rel_1_4_Bool Bool, Rel_1_5_Double Double, Rel_1_6_Bool Bool, Rel_1_7_Bool Bool, Rel_1_0_Bool Bool, Rel_1_1_String String);
+    CREATE EDGE Rel_2 (Rel_2_4_Bool Bool, Rel_2_5_String String, Rel_2_6_Bool Bool, Rel_2_7_Int Int, Rel_2_0_Int Int, Rel_2_1_String String, Rel_2_2_Int Int, Rel_2_3_Int Int);
+    CREATE EDGE Rel_3 (Rel_3_0_Int Int, Rel_3_1_String String, Rel_3_2_Bool Bool, Rel_3_3_Int Int, Rel_3_4_Int Int, Rel_3_5_String String, Rel_3_6_Bool Bool);
+    CREATE EDGE Rel_4 (Rel_4_6_Double Double, Rel_4_7_String String, Rel_4_9_Bool Bool, Rel_4_1_Int Int, Rel_4_2_Int Int, Rel_4_4_Bool Bool, Rel_4_5_String String, Rel_4_0_Int Int, Rel_4_3_Bool Bool, Rel_4_8_Bool Bool);
+    CREATE EDGE Rel_5 (Rel_5_0_Double Double, Rel_5_1_Bool Bool, Rel_5_2_String String, Rel_5_3_String String, Rel_5_4_String String, Rel_5_5_Bool Bool, Rel_5_6_Int Int, Rel_5_7_Int Int);
+    CREATE EDGE Rel_6 (Rel_6_2_Double Double, Rel_6_5_Int Int, Rel_6_9_Double Double, Rel_6_0_Int Int, Rel_6_3_Double Double, Rel_6_4_Double Double, Rel_6_6_Int Int, Rel_6_7_Bool Bool, Rel_6_8_Double Double, Rel_6_10_Int Int, Rel_6_1_Double Double);
+    CREATE TAG INDEX Label_0_index ON Label_0 (Label_0_8_Double, Label_0_3_Int, Label_0_1_Int, Label_0_7_Bool, Label_0_5_Int);
+    CREATE TAG INDEX Label_4_index ON Label_4 (Label_4_4_String(64), Label_4_3_String(64), Label_4_0_Int);
+    CREATE TAG INDEX Label_6_index ON Label_6 (Label_6_4_Bool, Label_6_3_Bool, Label_6_1_Bool, Label_6_7_Double, Label_6_6_String(64), Label_6_0_String(64), Label_6_5_String(64), Label_6_2_Bool);
+    CREATE TAG INDEX Label_11_index ON Label_11 (Label_11_6_Bool, Label_11_5_Bool, Label_11_1_Bool, Label_11_3_Double, Label_11_8_Double)
+files:
+    - path: Label_0.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_0
+              props:
+                - name: Label_0_0_String
+                  type: string
+                  index: 11
+                - name: Label_0_1_Int
+                  type: int
+                  index: 10
+                - name: Label_0_3_Int
+                  type: int
+                  index: 2
+                - name: Label_0_4_Int
+                  type: int
+                  index: 5
+                - name: Label_0_7_Bool
+                  type: bool
+                  index: 4
+                - name: Label_0_2_Bool
+                  type: bool
+                  index: 7
+                - name: Label_0_5_Int
+                  type: int
+                  index: 6
+                - name: Label_0_6_Double
+                  type: double
+                  index: 3
+                - name: Label_0_8_Double
+                  type: double
+                  index: 1
+                - name: Label_0_9_Double
+                  type: double
+                  index: 9
+                - name: Label_0_10_Bool
+                  type: bool
+                  index: 8
+    - path: Label_1.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_1
+              props:
+                - name: Label_1_1_Int
+                  type: int
+                  index: 6
+                - name: Label_1_2_Bool
+                  type: bool
+                  index: 8
+                - name: Label_1_3_String
+                  type: string
+                  index: 2
+                - name: Label_1_7_String
+                  type: string
+                  index: 3
+                - name: Label_1_8_Int
+                  type: int
+                  index: 11
+                - name: Label_1_9_Int
+                  type: int
+                  index: 4
+                - name: Label_1_0_String
+                  type: string
+                  index: 1
+                - name: Label_1_4_String
+                  type: string
+                  index: 5
+                - name: Label_1_5_Bool
+                  type: bool
+                  index: 9
+                - name: Label_1_6_Int
+                  type: int
+                  index: 10
+                - name: Label_1_10_Int
+                  type: int
+                  index: 7
+    - path: Label_2.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_2
+              props:
+                - name: Label_2_4_Double
+                  type: double
+                  index: 5
+                - name: Label_2_5_String
+                  type: string
+                  index: 4
+                - name: Label_2_0_Int
+                  type: int
+                  index: 2
+                - name: Label_2_1_String
+                  type: string
+                  index: 3
+                - name: Label_2_2_Int
+                  type: int
+                  index: 6
+                - name: Label_2_3_String
+                  type: string
+                  index: 1
+    - path: Label_3.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_3
+              props:
+                - name: Label_3_0_Int
+                  type: int
+                  index: 5
+                - name: Label_3_3_Double
+                  type: double
+                  index: 9
+                - name: Label_3_4_Double
+                  type: double
+                  index: 8
+                - name: Label_3_7_Bool
+                  type: bool
+                  index: 6
+                - name: Label_3_8_String
+                  type: string
+                  index: 1
+                - name: Label_3_1_Double
+                  type: double
+                  index: 3
+                - name: Label_3_2_Bool
+                  type: bool
+                  index: 2
+                - name: Label_3_5_Int
+                  type: int
+                  index: 7
+                - name: Label_3_6_Int
+                  type: int
+                  index: 4
+    - path: Label_4.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_4
+              props:
+                - name: Label_4_3_String
+                  type: string
+                  index: 6
+                - name: Label_4_4_String
+                  type: string
+                  index: 3
+                - name: Label_4_5_Bool
+                  type: bool
+                  index: 4
+                - name: Label_4_6_Int
+                  type: int
+                  index: 5
+                - name: Label_4_7_Int
+                  type: int
+                  index: 8
+                - name: Label_4_0_Int
+                  type: int
+                  index: 2
+                - name: Label_4_1_Double
+                  type: double
+                  index: 7
+                - name: Label_4_2_Int
+                  type: int
+                  index: 1
+    - path: Label_5.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_5
+              props:
+                - name: Label_5_4_Double
+                  type: double
+                  index: 1
+                - name: Label_5_5_Int
+                  type: int
+                  index: 5
+                - name: Label_5_0_Bool
+                  type: bool
+                  index: 2
+                - name: Label_5_1_Double
+                  type: double
+                  index: 3
+                - name: Label_5_2_Double
+                  type: double
+                  index: 6
+                - name: Label_5_3_Double
+                  type: double
+                  index: 4
+    - path: Label_6.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_6
+              props:
+                - name: Label_6_4_Bool
+                  type: bool
+                  index: 6
+                - name: Label_6_5_String
+                  type: string
+                  index: 8
+                - name: Label_6_6_String
+                  type: string
+                  index: 5
+                - name: Label_6_7_Double
+                  type: double
+                  index: 7
+                - name: Label_6_0_String
+                  type: string
+                  index: 2
+                - name: Label_6_1_Bool
+                  type: bool
+                  index: 1
+                - name: Label_6_2_Bool
+                  type: bool
+                  index: 4
+                - name: Label_6_3_Bool
+                  type: bool
+                  index: 3
+    - path: Label_7.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_7
+              props:
+                - name: Label_7_0_Bool
+                  type: bool
+                  index: 7
+                - name: Label_7_1_Double
+                  type: double
+                  index: 5
+                - name: Label_7_2_String
+                  type: string
+                  index: 8
+                - name: Label_7_3_Double
+                  type: double
+                  index: 9
+                - name: Label_7_4_Double
+                  type: double
+                  index: 4
+                - name: Label_7_5_Double
+                  type: double
+                  index: 3
+                - name: Label_7_6_Int
+                  type: int
+                  index: 6
+                - name: Label_7_7_Bool
+                  type: bool
+                  index: 1
+                - name: Label_7_8_Bool
+                  type: bool
+                  index: 2
+                - name: Label_7_9_String
+                  type: string
+                  index: 10
+    - path: Label_8.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_8
+              props:
+                - name: Label_8_2_Bool
+                  type: bool
+                  index: 1
+                - name: Label_8_5_Int
+                  type: int
+                  index: 7
+                - name: Label_8_6_Int
+                  type: int
+                  index: 11
+                - name: Label_8_7_Double
+                  type: double
+                  index: 8
+                - name: Label_8_10_Bool
+                  type: bool
+                  index: 6
+                - name: Label_8_0_Double
+                  type: double
+                  index: 5
+                - name: Label_8_1_Int
+                  type: int
+                  index: 9
+                - name: Label_8_3_Bool
+                  type: bool
+                  index: 3
+                - name: Label_8_4_Double
+                  type: double
+                  index: 2
+                - name: Label_8_8_Double
+                  type: double
+                  index: 4
+                - name: Label_8_9_Bool
+                  type: bool
+                  index: 10
+    - path: Label_9.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_9
+              props:
+                - name: Label_9_3_Double
+                  type: double
+                  index: 8
+                - name: Label_9_6_String
+                  type: string
+                  index: 3
+                - name: Label_9_8_Int
+                  type: int
+                  index: 11
+                - name: Label_9_10_Bool
+                  type: bool
+                  index: 4
+                - name: Label_9_0_Int
+                  type: int
+                  index: 2
+                - name: Label_9_1_Int
+                  type: int
+                  index: 9
+                - name: Label_9_5_Int
+                  type: int
+                  index: 7
+                - name: Label_9_7_Bool
+                  type: bool
+                  index: 1
+                - name: Label_9_9_Int
+                  type: int
+                  index: 10
+                - name: Label_9_2_Bool
+                  type: bool
+                  index: 6
+                - name: Label_9_4_Int
+                  type: int
+                  index: 5
+    - path: Label_10.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_10
+              props:
+                - name: Label_10_4_Int
+                  type: int
+                  index: 1
+                - name: Label_10_5_Int
+                  type: int
+                  index: 5
+                - name: Label_10_0_Double
+                  type: double
+                  index: 3
+                - name: Label_10_1_Int
+                  type: int
+                  index: 2
+                - name: Label_10_2_Double
+                  type: double
+                  index: 4
+                - name: Label_10_3_Int
+                  type: int
+                  index: 6
+    - path: Label_11.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_11
+              props:
+                - name: Label_11_3_Double
+                  type: double
+                  index: 2
+                - name: Label_11_4_Bool
+                  type: bool
+                  index: 7
+                - name: Label_11_6_Bool
+                  type: bool
+                  index: 8
+                - name: Label_11_7_Bool
+                  type: bool
+                  index: 5
+                - name: Label_11_8_Double
+                  type: double
+                  index: 9
+                - name: Label_11_9_Double
+                  type: double
+                  index: 1
+                - name: Label_11_10_Bool
+                  type: bool
+                  index: 11
+                - name: Label_11_0_Bool
+                  type: bool
+                  index: 4
+                - name: Label_11_1_Bool
+                  type: bool
+                  index: 3
+                - name: Label_11_2_Int
+                  type: int
+                  index: 10
+                - name: Label_11_5_Bool
+                  type: bool
+                  index: 6
+    - path: Rel_0.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_0
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_0_4_Bool
+              type: bool
+              index: 4
+            - name: Rel_0_5_Bool
+              type: bool
+              index: 8
+            - name: Rel_0_6_String
+              type: string
+              index: 5
+            - name: Rel_0_0_Bool
+              type: bool
+              index: 6
+            - name: Rel_0_1_Int
+              type: int
+              index: 7
+            - name: Rel_0_2_Double
+              type: double
+              index: 2
+            - name: Rel_0_3_String
+              type: string
+              index: 3
+    - path: Rel_1.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_1
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_1_6_Bool
+              type: bool
+              index: 6
+            - name: Rel_1_7_Bool
+              type: bool
+              index: 7
+            - name: Rel_1_0_Bool
+              type: bool
+              index: 5
+            - name: Rel_1_1_String
+              type: string
+              index: 4
+            - name: Rel_1_2_Int
+              type: int
+              index: 9
+            - name: Rel_1_3_Bool
+              type: bool
+              index: 2
+            - name: Rel_1_4_Bool
+              type: bool
+              index: 3
+            - name: Rel_1_5_Double
+              type: double
+              index: 8
+    - path: Rel_2.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_2
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_2_7_Int
+              type: int
+              index: 9
+            - name: Rel_2_0_Int
+              type: int
+              index: 8
+            - name: Rel_2_1_String
+              type: string
+              index: 5
+            - name: Rel_2_2_Int
+              type: int
+              index: 4
+            - name: Rel_2_3_Int
+              type: int
+              index: 7
+            - name: Rel_2_4_Bool
+              type: bool
+              index: 6
+            - name: Rel_2_5_String
+              type: string
+              index: 3
+            - name: Rel_2_6_Bool
+              type: bool
+              index: 2
+    - path: Rel_3.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_3
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_3_4_Int
+              type: int
+              index: 3
+            - name: Rel_3_5_String
+              type: string
+              index: 5
+            - name: Rel_3_6_Bool
+              type: bool
+              index: 4
+            - name: Rel_3_0_Int
+              type: int
+              index: 6
+            - name: Rel_3_1_String
+              type: string
+              index: 7
+            - name: Rel_3_2_Bool
+              type: bool
+              index: 8
+            - name: Rel_3_3_Int
+              type: int
+              index: 2
+    - path: Rel_4.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_4
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_4_9_Bool
+              type: bool
+              index: 10
+            - name: Rel_4_1_Int
+              type: int
+              index: 7
+            - name: Rel_4_2_Int
+              type: int
+              index: 9
+            - name: Rel_4_4_Bool
+              type: bool
+              index: 11
+            - name: Rel_4_5_String
+              type: string
+              index: 8
+            - name: Rel_4_6_Double
+              type: double
+              index: 4
+            - name: Rel_4_7_String
+              type: string
+              index: 6
+            - name: Rel_4_0_Int
+              type: int
+              index: 2
+            - name: Rel_4_3_Bool
+              type: bool
+              index: 3
+            - name: Rel_4_8_Bool
+              type: bool
+              index: 5
+    - path: Rel_5.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_5
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_5_4_String
+              type: string
+              index: 8
+            - name: Rel_5_5_Bool
+              type: bool
+              index: 3
+            - name: Rel_5_6_Int
+              type: int
+              index: 4
+            - name: Rel_5_7_Int
+              type: int
+              index: 7
+            - name: Rel_5_0_Double
+              type: double
+              index: 5
+            - name: Rel_5_1_Bool
+              type: bool
+              index: 2
+            - name: Rel_5_2_String
+              type: string
+              index: 9
+            - name: Rel_5_3_String
+              type: string
+              index: 6
+    - path: Rel_6.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_6
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_6_4_Double
+              type: double
+              index: 3
+            - name: Rel_6_6_Int
+              type: int
+              index: 9
+            - name: Rel_6_7_Bool
+              type: bool
+              index: 8
+            - name: Rel_6_8_Double
+              type: double
+              index: 12
+            - name: Rel_6_10_Int
+              type: int
+              index: 10
+            - name: Rel_6_1_Double
+              type: double
+              index: 4
+            - name: Rel_6_3_Double
+              type: double
+              index: 11
+            - name: Rel_6_5_Int
+              type: int
+              index: 2
+            - name: Rel_6_9_Double
+              type: double
+              index: 6
+            - name: Rel_6_0_Int
+              type: int
+              index: 5
+            - name: Rel_6_2_Double
+              type: double
+              index: 7
