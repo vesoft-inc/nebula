@@ -380,6 +380,12 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
       case CypherClauseKind::kUnwind: {
         auto unwindCtx = static_cast<const UnwindClauseContext *>(boundary.get());
         columns->addColumn(makeColumn(unwindCtx->alias), true);
+        for (auto &passAlias : prevQueryPart.aliasesAvailable) {
+          columns->addColumn(makeColumn(passAlias.first), true);
+        }
+        for (auto &passAlias : prevQueryPart.aliasesGenerated) {
+          columns->addColumn(makeColumn(passAlias.first), true);
+        }
         break;
       }
       case CypherClauseKind::kWith: {
