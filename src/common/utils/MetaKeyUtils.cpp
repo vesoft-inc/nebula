@@ -1199,6 +1199,9 @@ PartitionID MetaKeyUtils::parseListenerPart(folly::StringPiece rawData) {
 ListenerID MetaKeyUtils::parseListenerId(folly::StringPiece rawData) {
   auto offset = kListenerTable.size() + sizeof(GraphSpaceID) + sizeof(meta::cpp2::ListenerType) +
                 sizeof(PartitionID);
+  if (rawData.size() == offset) {
+    return nebula::kDefaultListenerId;
+  }
   return *reinterpret_cast<const ListenerID*>(rawData.data() + offset);
 }
 

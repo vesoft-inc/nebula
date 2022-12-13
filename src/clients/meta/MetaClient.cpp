@@ -1098,6 +1098,7 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
           std::sort(listenerParts.begin(), listenerParts.end());
           std::sort(newTypeIter->second.begin(), newTypeIter->second.end());
           std::vector<ListenerHosts> diff;
+          // Here to compare whether the listenerId is the same.
           std::set_difference(listenerParts.begin(),
                               listenerParts.end(),
                               newTypeIter->second.begin(),

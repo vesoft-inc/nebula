@@ -8,6 +8,7 @@
 #include "codec/RowReaderWrapper.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/WallClock.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 
 DEFINE_int32(listener_commit_interval_secs, 1, "Listener commit interval");
@@ -207,7 +208,9 @@ bool Listener::pursueLeaderDone() {
 
 ListenerID Listener::getLisenerIdFromFile(const std::string& path) {
   if (!fs::FileUtils::exist(path)) {
-    return -1;
+    // In order to be compatible with the previous version without listenerId, if the file does not
+    // exist, use the default listenerId.
+    return nebula::kDefaultListenerId;
   }
   auto fd = open(path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC, 0644);
   if (fd < 0) {
