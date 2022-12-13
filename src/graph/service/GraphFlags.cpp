@@ -83,6 +83,8 @@ DEFINE_int32(max_sessions_per_ip_per_user,
 
 DEFINE_bool(optimize_appendvertices, false, "if true, return directly without go through RPC");
 
+DEFINE_uint32(num_path_thread, 0, "number of threads to build path");
+
 // Sanity-checking Flag Values
 static bool ValidateSessIdleTimeout(const char* flagname, int32_t value) {
   // The max timeout is 604800 seconds(a week)

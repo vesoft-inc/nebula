@@ -40,13 +40,15 @@ class AllPathsExecutor final : public PathBaseExecutor {
 
   void buildPath();
 
+  void multiThread();
+
   folly::Future<Status> buildResult();
 
  private:
   const AllPaths* pathNode_{nullptr};
   bool withProp_{false};
   bool noLoop_{false};
-  int64_t limit_{std::numeric_limits<int64_t>::max()};
+  size_t limit_{std::numeric_limits<size_t>::max()};
   size_t steps_{0};
 
   size_t leftSteps_{0};

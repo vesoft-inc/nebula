@@ -7,7 +7,6 @@
 #include "graph/context/QueryContext.h"
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
-#include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 
@@ -220,159 +219,10 @@ class FindPathTest : public testing::Test {
     }
   }
 
-  void allPathInit() {
-    // From {a, d} To {x, k}
-    {  // 1 step
-       // From: a->b, a->c, d->c, d->a, d->e
-      DataSet ds;
-      ds.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data(
-          {{"a", {"b", "c"}}, {"d", {"a", "c", "e"}}});
-      for (const auto& src : data) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds.rows.emplace_back(std::move(row));
-      }
-      all1StepFrom_ = std::move(ds);
-
-      // To: x<-h, x<-k, k<-g
-      DataSet ds1;
-      ds1.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data1(
-          {{"x", {"h", "k"}}, {"k", {"g"}}});
-      for (const auto& src : data1) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(-EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds1.rows.emplace_back(std::move(row));
-      }
-      all1StepTo_ = std::move(ds1);
-    }
-    {  // 2 step
-      // From: b->a, b->c, c->a, c->f, c->g, e->b, a->b, a->c
-      DataSet ds;
-      ds.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data(
-          {{"b", {"a", "c"}}, {"c", {"a", "f", "g"}}, {"e", {"b"}}, {"a", {"b", "c"}}});
-      for (const auto& src : data) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds.rows.emplace_back(std::move(row));
-      }
-      all2StepFrom_ = std::move(ds);
-
-      // To : h<-f, h<-g, k<-g, g<-c
-      DataSet ds1;
-      ds1.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data1(
-          {{"h", {"f", "g"}}, {"k", {"g"}}, {"g", {"c"}}});
-      for (const auto& src : data1) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(-EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds1.rows.emplace_back(std::move(row));
-      }
-      all2StepTo_ = std::move(ds1);
-    }
-    {  // 3 step
-      // From: b->a, b->c, c->a, c->f, c->g, a->b, a->c, f->h, g->f, g->k, g->h
-      DataSet ds;
-      ds.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data({{"b", {"a", "c"}},
-                                                                      {"c", {"a", "f", "g"}},
-                                                                      {"f", {"h"}},
-                                                                      {"a", {"b", "c"}},
-                                                                      {"g", {"h", "f", "k"}}});
-      for (const auto& src : data) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds.rows.emplace_back(std::move(row));
-      }
-      all3StepFrom_ = std::move(ds);
-
-      // To : f<-c, f<-g, g<-c, c<-a, c<-b, c<-d
-      DataSet ds1;
-      ds1.colNames = gnColNames_;
-      std::unordered_map<std::string, std::vector<std::string>> data1(
-          {{"c", {"a", "b", "d"}}, {"f", {"c", "g"}}, {"g", {"c"}}});
-      for (const auto& src : data1) {
-        Row row;
-        row.values.emplace_back(src.first);
-        row.values.emplace_back(Value());
-        List edges;
-        for (const auto& dst : src.second) {
-          List edge;
-          edge.values.emplace_back(-EDGE_TYPE);
-          edge.values.emplace_back(dst);
-          edge.values.emplace_back(EDGE_RANK);
-          edges.values.emplace_back(std::move(edge));
-        }
-        row.values.emplace_back(edges);
-        row.values.emplace_back(Value());
-        ds1.rows.emplace_back(std::move(row));
-      }
-      all3StepTo_ = std::move(ds1);
-    }
-  }
-
   void SetUp() override {
     qctx_ = std::make_unique<QueryContext>();
     singleSourceInit();
     mulitSourceInit();
-    allPathInit();
   }
 
  protected:
@@ -387,12 +237,6 @@ class FindPathTest : public testing::Test {
   DataSet multi1StepTo_;
   DataSet multi2StepFrom_;
   DataSet multi2StepTo_;
-  DataSet all1StepFrom_;
-  DataSet all1StepTo_;
-  DataSet all2StepFrom_;
-  DataSet all2StepTo_;
-  DataSet all3StepFrom_;
-  DataSet all3StepTo_;
   const std::vector<std::string> pathColNames_ = {"path"};
   const std::vector<std::string> gnColNames_ = {
       kVid, "_stats", "_edge:+like:_type:_dst:_rank", "_expr"};

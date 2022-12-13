@@ -3,6 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/AllPathsExecutor.h"
 
+#include "common/thread/GenericThreadPool.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/service/GraphFlags.h"
 
@@ -308,6 +309,85 @@ void AllPathsExecutor::buildPath() {
                         std::make_move_iterator(paths.begin()),
                         std::make_move_iterator(paths.end()));
   }
+}
+
+void AllPathsExecutor::multiThread() {
+  std::vector<folly::Future<std::vector<Row>>> futures;
+  nebula::thread::GenericThreadPool pool;
+  pool.start(FLAGS_num_path_thread, "build-path");
+
+  std::function<std::vector<Row>(size_t, Value, std::vector<std::vector<Value>>)> task =
+      [this, &task, &pool, &futures](
+          size_t step, Value&& src, std::vector<std::vector<Value>>&& edgeLists) {
+        auto& adjList = leftAdjList_;
+        std::vector<Row> result;
+        std::vector<std::vector<Value>> newEdgeLists;
+        newEdgeLists.reserve(edgeLists.size());
+
+        for (auto& edgeList : edgeLists) {
+          auto& dst = edgeList.back().getEdge().dst;
+          auto dstIter = rightInitVids_.find(dst);
+          if (dstIter != rightInitVids_.end()) {
+            Row row;
+            row.values.emplace_back(src);
+            row.values.emplace_back(List(edgeList));
+            row.values.emplace_back(*dstIter);
+            result.emplace_back(std::move(row));
+            if (result.size() == limit_) {
+              break;
+            }
+          }
+          if (step <= steps_) {
+            auto adjIter = adjList.find(dst);
+            if (adjIter == adjList.end()) {
+              continue;
+            }
+
+            auto& adjedges = adjIter->second;
+            for (auto& edge : adjedges) {
+              if (hasSameEdge(edgeList, edge.getEdge())) {
+                continue;
+              }
+              auto newEdgeList = edgeList;
+              newEdgeList.emplace_back(adjIter->first);
+              newEdgeList.emplace_back(edge);
+              newEdgeLists.emplace_back(std::move(newEdgeList));
+            }
+          }
+        }
+        if (step <= steps_ && !newEdgeLists.empty()) {
+          futures.emplace_back(
+              pool.addTask(task, step + 1, std::move(src), std::move(newEdgeLists)));
+        }
+        return result;
+      };
+
+  for (auto& vid : leftInitVids_) {
+    auto vidIter = leftAdjList_.find(vid);
+    if (vidIter == leftAdjList_.end()) {
+      continue;
+    }
+    auto src = vidIter->first;
+    auto& adjEdges = vidIter->second;
+    if (adjEdges.empty()) {
+      continue;
+    }
+    std::vector<std::vector<Value>> edgeLists;
+    edgeLists.reserve(adjEdges.size());
+    for (auto& edge : adjEdges) {
+      edgeLists.emplace_back(std::vector<Value>({edge}));
+    }
+    size_t step = 2;
+    futures.emplace_back(pool.addTask(task, step, src, std::move(edgeLists)));
+  }
+  pool.wait();
+  folly::collect(futures).thenValue([this](std::vector<std::vector<Row>>&& resp) {
+    for (auto& rows : resp) {
+      result_.rows.insert(result_.rows.end(),
+                          std::make_move_iterator(rows.begin()),
+                          std::make_move_iterator(rows.end()));
+    }
+  });
 }
 
 std::vector<Row> AllPathsExecutor::doBuildPath(const Value& vid) {
