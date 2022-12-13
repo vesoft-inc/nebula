@@ -154,3 +154,36 @@ Feature: Unwind clause
       RETURN  num
       """
     Then a SemanticError should be raised at runtime: Can't use aggregating expressions in unwind clause, `count(b)'
+
+  Scenario: unwind vtp edge expression
+    When executing query:
+      """
+      match (v:player)
+      where v.player.name in ["Tim Duncan"]
+      unwind v.player.age as age
+      return age;
+      """
+    Then the result should be, in any order:
+      | age |
+      | 42  |
+    When executing query:
+      """
+      match (v:player)-[e:like]-()
+      where v.player.name in ["Tim Duncan"]
+      unwind e.likeness as age
+      return age, e
+      """
+    Then the result should be, in any order:
+      | age | e                                                           |
+      | 55  | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]   |
+      | 70  | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]       |
+      | 80  | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]    |
+      | 90  | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     |
+      | 95  | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 80  | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]        |
+      | 75  | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] |
+      | 80  | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]       |
+      | 95  | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       |
+      | 95  | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]       |
+      | 99  | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]   |
+      | 80  | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]  |

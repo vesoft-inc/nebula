@@ -23,17 +23,40 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
     case Value::Type::MAP:
       return lvalue.getMap().at(rvalue.getStr());
     case Value::Type::VERTEX: {
+      /*
+       * WARNING(Xuntao): Vertices shall not be evaluated as AttributeExpressions,
+       * since there shall always be a tag specified in the format of:
+       * var.tag.property. Due to design flaws, however, we have to keep
+       * this case segment.
+       */
       if (rvalue.getStr() == kVid) {
         result_ = lvalue.getVertex().vid;
         return result_;
       }
-      for (auto &tag : lvalue.getVertex().tags) {
-        auto iter = tag.props.find(rvalue.getStr());
-        if (iter != tag.props.end()) {
-          return iter->second;
+      /*
+       * WARNING(Xuntao): the following code snippet is dedicated to address the legacy
+       * problem of treating LabelTagProperty expressions as Attribute expressions.
+       * This snippet is necessary to allow users to write var.tag.prop in
+       * ListComprehensionExpression without making structural changes to the implementation.
+       */
+      if (left()->kind() != Expression::Kind::kAttribute) {
+        return lvalue;
+      } else if (left()->kind() == Expression::Kind::kAttribute &&
+                 dynamic_cast<AttributeExpression *>(left())->right()->kind() ==
+                     Expression::Kind::kConstant) {
+        auto &tagName = dynamic_cast<AttributeExpression *>(left())->right()->eval(ctx).getStr();
+        for (auto &tag : lvalue.getVertex().tags) {
+          if (tagName.compare(tag.name) != 0) {
+            continue;
+          } else {
+            auto iter = tag.props.find(rvalue.getStr());
+            if (iter != tag.props.end()) {
+              return iter->second;
+            }
+          }
         }
       }
-      return Value::kNullValue;
+      return Value::kNullBadType;
     }
     case Value::Type::EDGE: {
       DCHECK(!rvalue.getStr().empty());

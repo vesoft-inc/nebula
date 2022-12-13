@@ -636,7 +636,8 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
     return Status::SemanticError("Expression in UNWIND must be aliased (use AS)");
   }
   unwindCtx.alias = unwindClause->alias();
-  unwindCtx.unwindExpr = unwindClause->expr()->clone();
+  unwindCtx.unwindExpr = ExpressionUtils::rewriteAttr2LabelTagProp(unwindClause->expr()->clone(),
+                                                                   unwindCtx.aliasesAvailable);
   if (ExpressionUtils::hasAny(unwindCtx.unwindExpr, {Expression::Kind::kAggregate})) {
     return Status::SemanticError("Can't use aggregating expressions in unwind clause, `%s'",
                                  unwindCtx.unwindExpr->toString().c_str());
