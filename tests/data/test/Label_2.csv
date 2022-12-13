@@ -1,0 +1,68 @@
+:VID(int),Label_2.Label_2_3_String:string,Label_2.Label_2_0_Int:int,Label_2.Label_2_1_String:string,Label_2.Label_2_5_String:string,Label_2.Label_2_4_Double:double,Label_2.Label_2_2_Int:int
+1,'Kyrie Irving',76,'Null1','Damian Lillard',0.116925,15
+2,'Dwight Howard',24,'Grant Hill','Damian Lillard',0.236674,2
+3,'Null3',87,'David West','Manu Ginobili',0.744995,78
+6,'Tim Duncan',81,'Chris Paul','Tracy McGrady',0.802675,52
+8,'Null3',33,'Carmelo Anthony','Amar\'e Stoudemire',0.211864,50
+9,'Vince Carter',58,'Marc Gasol','Rudy Gay',0.437958,62
+13,'Kyle Anderson',91,'Dwyane Wade','Ricky Rubio',0.659009,34
+14,'Chris Paul',7,'Null4','Stephen Curry',0.987186,35
+16,'Null2',42,'JaVale McGee','Yao Ming',0.250001,40
+17,'Tracy McGrady',90,'Manu Ginobili','Russell Westbrook',0.335221,59
+19,'JaVale McGee',32,'Stephen Curry','Vince Carter',0.058036,90
+21,'Giannis Antetokounmpo',77,'Kevin Durant','Yao Ming',0.763030,41
+24,'Null3',16,'Blake Griffin','Marco Belinelli',0.771367,8
+25,'Dirk Nowitzki',68,'Null2','Blake Griffin',0.143249,17
+26,'Amar\'e Stoudemire',36,'Kobe Bryant','Null2',0.504497,25
+28,'Chris Paul',39,'Shaquile O\'Neal','Stephen Curry',0.720985,24
+29,'Cory Joseph',55,'Boris Diaw','Dwyane Wade',0.538607,4
+30,'Paul Gasol',63,'LaMarcus Aldridge','Ricky Rubio',0.101026,22
+31,'Vince Carter',19,'DeAndre Jordan','Jason Kidd',0.802539,1
+33,'Chris Paul',99,'Carmelo Anthony','LaMarcus Aldridge',0.823670,18
+35,'Boris Diaw',39,'Kevin Durant','Jonathon Simmons',0.746723,51
+36,'David West',73,'Rudy Gay','Kristaps Porzingis',0.556269,94
+37,'Cory Joseph',15,'Yao Ming','Danny Green',0.115564,30
+38,'Tim Duncan',68,'Tony Parker','Danny Green',0.798289,20
+42,'Dirk Nowitzki',58,'Tracy McGrady','Amar\'e Stoudemire',0.197210,33
+44,'Luka Doncic',84,'Null2','Danny Green',0.542922,45
+45,'Danny Green',59,'Ray Allen','Kevin Durant',0.555921,10
+46,'Damian Lillard',62,'Paul Gasol','Null3',0.805284,67
+49,'Ray Allen',22,'Chris Paul','Chris Paul',0.657269,34
+55,'James Harden',65,'Ray Allen','Null1',0.129050,74
+56,'Kyle Anderson',62,'Marc Gasol','Kyle Anderson',0.042407,91
+59,'Danny Green',44,'Null4','James Harden',0.709536,91
+61,'David West',30,'James Harden','Danny Green',0.235920,22
+62,'Ben Simmons',6,'Giannis Antetokounmpo','Stephen Curry',0.630386,47
+63,'Ben Simmons',55,'DeAndre Jordan','Russell Westbrook',0.054165,14
+64,'Null4',64,'Shaquile O\'Neal','Shaquile O\'Neal',0.992323,68
+65,'JaVale McGee',17,'Stephen Curry','Kyle Anderson',0.827842,73
+67,'Chris Paul',26,'Stephen Curry','Null3',0.377756,97
+68,'Paul Gasol',27,'LaMarcus Aldridge','JaVale McGee',0.110830,15
+69,'Dwyane Wade',47,'Dirk Nowitzki','Jonathon Simmons',0.840625,5
+70,'Danny Green',22,'Tim Duncan','Null2',0.602538,11
+71,'Steve Nash',84,'Tony Parker','Carmelo Anthony',0.347314,98
+74,'Vince Carter',38,'Null2','Rajon Rondo',0.329988,54
+75,'Cory Joseph',8,'Joel Embiid','Joel Embiid',0.857791,97
+77,'Kristaps Porzingis',84,'David West','LeBron James',0.452145,92
+78,'Rudy Gay',85,'Shaquile O\'Neal','Boris Diaw',0.755047,4
+79,'Null3',79,'Yao Ming','Joel Embiid',0.502007,31
+80,'Rajon Rondo',65,'Kevin Durant','Kevin Durant',0.771398,27
+81,'Kyle Anderson',38,'DeAndre Jordan','LaMarcus Aldridge',0.046656,60
+82,'Nobody',81,'Kevin Durant','Rajon Rondo',0.285624,71
+83,'Blake Griffin',98,'Jason Kidd','Steve Nash',0.957244,91
+84,'Boris Diaw',5,'Damian Lillard','Stephen Curry',0.333182,83
+85,'Ray Allen',96,'Stephen Curry','Null4',0.217420,33
+86,'Stephen Curry',67,'Ricky Rubio','Stephen Curry',0.601146,35
+87,'Rajon Rondo',35,'Klay Thompson','Vince Carter',0.741930,85
+89,'Cory Joseph',99,'Manu Ginobili','James Harden',0.767578,26
+90,'David West',81,'Joel Embiid','Jason Kidd',0.442427,32
+91,'Marc Gasol',30,'Chris Paul','Luka Doncic',0.324348,5
+92,'Kyle Anderson',10,'Manu Ginobili','Kyle Anderson',0.127624,98
+94,'Danny Green',15,'Kristaps Porzingis','Steve Nash',0.483558,49
+95,'Dejounte Murray',82,'Kevin Durant','Yao Ming',0.156733,36
+97,'Vince Carter',93,'Amar\'e Stoudemire','Cory Joseph',0.775183,19
+102,'Manu Ginobili',8,'Tracy McGrady','James Harden',0.921040,85
+103,'Dwight Howard',6,'Tim Duncan','Dwyane Wade',0.275827,89
+104,'Kristaps Porzingis',66,'Carmelo Anthony','Ben Simmons',0.626306,95
+106,'Carmelo Anthony',51,'Kristaps Porzingis','James Harden',0.306933,9
+456,'JaVale McGee',21,'Tiago Splitter','Paul George',0.776873,28
