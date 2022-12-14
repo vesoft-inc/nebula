@@ -1,317 +1,291 @@
-:SRC_VID(int),:DST_VID(int),Rel_0.Rel_0_2_Double:double,Rel_0.Rel_0_3_String:string,Rel_0.Rel_0_4_Bool:bool,Rel_0.Rel_0_6_String:string,Rel_0.Rel_0_0_Bool:bool,Rel_0.Rel_0_1_Int:int,Rel_0.Rel_0_5_Bool:bool
-61,39,0.650251,'Vince Carter',false,'Danny Green',true,34,false
-24,71,0.730313,'James Harden',false,'Kyle Anderson',true,40,false
-3,51,0.138541,'Blake Griffin',false,'Null3',true,14,true
-53,25,0.043180,'Null1',true,'JaVale McGee',false,63,true
-86,64,0.920840,'Rajon Rondo',false,'Manu Ginobili',true,71,false
-99,25,0.890527,'Jason Kidd',true,'Dwight Howard',false,66,true
-54,46,0.971304,'Chris Paul',false,'Rudy Gay',true,91,false
-90,77,0.965355,'Yao Ming',false,'Joel Embiid',true,31,true
-56,12,0.568098,'Rajon Rondo',true,'Tiago Splitter',true,64,false
-24,94,0.616458,'Paul Gasol',false,'Null4',false,11,false
-70,29,0.970098,'Null2',false,'Cory Joseph',false,20,true
-43,101,0.119036,'Grant Hill',false,'Yao Ming',true,41,true
-91,45,0.802897,'Dwyane Wade',true,'Tony Parker',true,87,false
-41,104,0.227444,'Jonathon Simmons',false,'Aron Baynes',true,82,false
-71,17,0.541027,'Marc Gasol',true,'Kobe Bryant',false,21,false
-34,34,0.528932,'Blake Griffin',false,'Rudy Gay',false,96,true
-13,34,0.916136,'Cory Joseph',true,'Grant Hill',false,43,true
-27,31,0.492134,'Ricky Rubio',true,'Kyrie Irving',true,93,true
-61,10,0.874858,'Ricky Rubio',true,'Tracy McGrady',true,49,true
-43,64,0.242191,'Russell Westbrook',false,'Amar\'e Stoudemire',false,53,false
-41,61,0.903951,'Dejounte Murray',true,'Marco Belinelli',false,79,false
-91,52,0.602467,'Paul Gasol',true,'Dejounte Murray',true,5,false
-76,79,0.171633,'Ray Allen',true,'Ben Simmons',false,88,false
-13,99,0.131668,'Grant Hill',false,'Dejounte Murray',true,70,false
-14,77,0.862620,'Tim Duncan',true,'Shaquile O\'Neal',false,76,false
-79,13,0.322021,'Kyrie Irving',false,'Dejounte Murray',true,5,false
-12,36,0.960288,'Dirk Nowitzki',false,'Null3',true,7,true
-34,75,0.947907,'Amar\'e Stoudemire',true,'Null4',true,31,false
-100,92,0.141506,'Paul George',true,'Ben Simmons',false,90,false
-20,107,0.988422,'Chris Paul',true,'Marco Belinelli',false,91,true
-18,74,0.657734,'Null4',true,'DeAndre Jordan',false,39,false
-46,27,0.386660,'Null2',true,'Giannis Antetokounmpo',true,69,false
-24,21,0.363323,'Kristaps Porzingis',false,'Dejounte Murray',false,2,true
-91,41,0.904787,'Blake Griffin',false,'Amar\'e Stoudemire',true,88,false
-64,68,0.054662,'Rajon Rondo',true,'Kevin Durant',false,89,false
-67,3,0.799950,'Tony Parker',true,'Amar\'e Stoudemire',true,20,true
-16,32,0.071950,'Vince Carter',true,'Cory Joseph',true,71,true
-79,3,0.898586,'Rajon Rondo',false,'Shaquile O\'Neal',true,82,false
-65,89,0.706374,'Kobe Bryant',false,'Manu Ginobili',false,15,false
-103,10,0.815371,'Amar\'e Stoudemire',false,'Nobody',true,82,true
-56,35,0.032943,'Boris Diaw',false,'Null4',false,47,true
-86,45,0.590284,'Paul Gasol',false,'JaVale McGee',true,99,true
-105,107,0.646620,'Paul George',true,'James Harden',true,3,false
-39,74,0.326113,'Carmelo Anthony',true,'Boris Diaw',false,63,false
-10,1,0.329493,'Kyle Anderson',false,'Tony Parker',true,25,true
-56,54,0.126377,'Kristaps Porzingis',false,'Russell Westbrook',true,22,true
-94,15,0.967341,'Shaquile O\'Neal',true,'LaMarcus Aldridge',false,49,true
-38,81,0.008835,'James Harden',true,'Marco Belinelli',true,95,false
-41,70,0.843274,'Jonathon Simmons',true,'Joel Embiid',false,69,false
-80,101,0.175791,'Dirk Nowitzki',true,'Kyle Anderson',true,89,false
-29,6,0.851025,'Amar\'e Stoudemire',true,'Ben Simmons',true,95,false
-83,85,0.252303,'Tim Duncan',true,'Tiago Splitter',false,34,false
-21,45,0.353197,'Rajon Rondo',false,'Blake Griffin',false,80,false
-81,37,0.485151,'Marc Gasol',false,'Rajon Rondo',false,73,false
-106,9,0.999484,'Stephen Curry',true,'Damian Lillard',false,95,false
-31,8,0.123973,'Null2',false,'Yao Ming',true,76,true
-4,9,0.217969,'JaVale McGee',true,'Kevin Durant',false,68,false
-32,65,0.641720,'Null4',false,'Cory Joseph',true,74,true
-86,31,0.962294,'Dejounte Murray',true,'Manu Ginobili',true,46,true
-53,58,0.565347,'Marc Gasol',true,'Steve Nash',true,2,false
-26,31,0.466836,'Kristaps Porzingis',true,'Null3',false,48,false
-81,12,0.694626,'Ricky Rubio',false,'Boris Diaw',false,96,true
-97,77,0.965509,'JaVale McGee',false,'Blake Griffin',false,42,false
-104,80,0.791878,'Null4',true,'Klay Thompson',true,24,false
-64,57,0.576771,'Ben Simmons',false,'Grant Hill',false,41,false
-83,103,0.160775,'Dirk Nowitzki',true,'DeAndre Jordan',false,14,false
-24,59,0.911782,'Steve Nash',false,'Jason Kidd',true,88,true
-54,21,0.384946,'Stephen Curry',false,'Marc Gasol',true,15,true
-42,10,0.445178,'DeAndre Jordan',false,'Paul George',false,60,false
-5,47,0.551700,'Vince Carter',false,'Paul George',true,44,true
-98,74,0.163615,'Cory Joseph',false,'Ray Allen',true,59,true
-101,46,0.620210,'Paul George',true,'Tiago Splitter',false,66,false
-80,82,0.189828,'LaMarcus Aldridge',true,'Rajon Rondo',false,66,false
-66,104,0.263618,'James Harden',true,'Amar\'e Stoudemire',true,73,true
-24,3,0.479407,'Manu Ginobili',false,'Tim Duncan',false,2,true
-3,38,0.876537,'Dejounte Murray',true,'Kyrie Irving',false,81,true
-9,63,0.095026,'Blake Griffin',false,'Jonathon Simmons',true,54,true
-10,61,0.594509,'Rudy Gay',false,'Manu Ginobili',true,59,false
-85,98,0.848104,'Paul George',false,'LeBron James',false,73,true
-28,54,0.045613,'Ray Allen',false,'Paul Gasol',false,65,true
-2,18,0.752563,'Ben Simmons',true,'Giannis Antetokounmpo',true,93,true
-87,8,0.602360,'Rajon Rondo',true,'Steve Nash',false,93,true
-41,37,0.192735,'Dwyane Wade',true,'Null1',true,90,false
-94,74,0.001499,'Tiago Splitter',false,'Null2',false,31,true
-96,26,0.506337,'Danny Green',false,'Russell Westbrook',true,31,true
-45,41,0.706025,'Paul Gasol',true,'Tim Duncan',true,54,true
-100,6,0.739329,'Null2',false,'Kobe Bryant',true,64,true
-101,60,0.585706,'Null4',false,'Amar\'e Stoudemire',false,30,false
-25,12,0.902871,'Stephen Curry',false,'Marc Gasol',false,27,false
-90,82,0.061885,'Null3',true,'LeBron James',true,80,false
-5,50,0.804503,'Chris Paul',true,'Nobody',true,4,true
-6,71,0.071620,'Jason Kidd',false,'Carmelo Anthony',false,94,true
-97,7,0.808742,'Shaquile O\'Neal',false,'Kyrie Irving',true,42,true
-17,84,0.427263,'JaVale McGee',true,'Danny Green',false,80,true
-103,30,0.622828,'JaVale McGee',false,'Grant Hill',true,86,false
-59,25,0.614730,'Grant Hill',true,'Rajon Rondo',false,1,false
-63,39,0.348629,'Kobe Bryant',true,'Boris Diaw',true,1,false
-68,107,0.992975,'Dirk Nowitzki',false,'Null3',false,66,false
-43,37,0.445015,'Kevin Durant',true,'LeBron James',true,72,true
-77,37,0.873562,'Kyle Anderson',false,'Ray Allen',false,95,true
-29,9,0.062066,'Null2',false,'Null4',false,19,false
-84,7,0.538240,'Null3',false,'Vince Carter',false,70,true
-91,91,0.716469,'Danny Green',false,'Boris Diaw',true,59,true
-2,22,0.024232,'David West',false,'Ray Allen',true,25,true
-32,101,0.082420,'Null2',false,'Shaquile O\'Neal',true,99,true
-4,68,0.239065,'Null4',false,'Luka Doncic',true,45,true
-21,103,0.675556,'Giannis Antetokounmpo',true,'Ray Allen',true,67,false
-45,85,0.365051,'Ray Allen',true,'Kevin Durant',true,84,true
-95,27,0.142577,'Dwyane Wade',true,'Kyle Anderson',true,41,false
-79,98,0.817894,'Marco Belinelli',true,'Tiago Splitter',false,6,true
-5,98,0.702406,'Nobody',false,'Kevin Durant',true,41,true
-105,62,0.761639,'Null2',false,'DeAndre Jordan',false,0,true
-81,44,0.433500,'Null1',false,'Ray Allen',true,3,false
-22,43,0.359933,'Aron Baynes',true,'Steve Nash',false,26,false
-66,68,0.634587,'Damian Lillard',false,'Boris Diaw',false,86,false
-31,50,0.365453,'Giannis Antetokounmpo',false,'Stephen Curry',true,30,false
-3,94,0.742910,'Vince Carter',true,'Rajon Rondo',true,37,false
-86,103,0.801264,'Ben Simmons',false,'Null1',true,49,false
-66,50,0.719879,'Damian Lillard',false,'Tony Parker',false,37,true
-56,57,0.575002,'Boris Diaw',false,'David West',true,73,false
-45,10,0.446501,'Amar\'e Stoudemire',true,'Tiago Splitter',false,40,true
-7,16,0.984254,'Tony Parker',true,'Chris Paul',false,56,true
-11,62,0.718158,'Null4',false,'Manu Ginobili',true,0,true
-61,89,0.052533,'Boris Diaw',true,'Null4',false,55,true
-68,81,0.496751,'Null1',true,'Tim Duncan',false,82,true
-97,93,0.374504,'Tim Duncan',false,'Jonathon Simmons',true,61,true
-44,38,0.373593,'Kevin Durant',false,'Amar\'e Stoudemire',true,64,false
-40,84,0.541325,'Kristaps Porzingis',false,'LeBron James',true,78,true
-93,73,0.674826,'Null1',true,'Dwyane Wade',true,59,false
-58,32,0.388761,'DeAndre Jordan',true,'Amar\'e Stoudemire',false,23,false
-55,43,0.740282,'Ricky Rubio',true,'JaVale McGee',true,29,true
-63,10,0.419879,'James Harden',false,'James Harden',true,8,true
-61,74,0.346288,'Tim Duncan',false,'Boris Diaw',true,89,false
-24,53,0.117047,'Paul George',true,'Null4',false,28,false
-94,54,0.940827,'Dwight Howard',true,'Tiago Splitter',true,22,false
-63,2,0.466567,'LaMarcus Aldridge',true,'Chris Paul',false,9,true
-17,40,0.033425,'LeBron James',true,'Luka Doncic',true,34,false
-48,54,0.312052,'Boris Diaw',true,'Danny Green',true,70,false
-38,3,0.028500,'Danny Green',true,'Dwight Howard',true,91,true
-87,107,0.212243,'Tony Parker',true,'Kobe Bryant',true,80,false
-56,55,0.090177,'Giannis Antetokounmpo',false,'Stephen Curry',false,67,true
-21,65,0.961957,'Klay Thompson',true,'Damian Lillard',true,13,false
-52,38,0.008399,'Kyle Anderson',false,'Tracy McGrady',true,90,false
-102,62,0.847127,'Null3',true,'Null1',false,21,false
-77,41,0.071848,'Dirk Nowitzki',false,'LeBron James',true,20,true
-27,3,0.745601,'Giannis Antetokounmpo',true,'Amar\'e Stoudemire',true,31,true
-29,15,0.140622,'Dwight Howard',true,'JaVale McGee',true,54,false
-10,92,0.830032,'Klay Thompson',false,'Vince Carter',true,54,true
-77,71,0.206385,'Dwight Howard',false,'LaMarcus Aldridge',true,22,true
-100,56,0.573303,'Blake Griffin',true,'Jonathon Simmons',false,55,true
-57,92,0.232389,'Kevin Durant',true,'Damian Lillard',true,64,true
-17,24,0.793592,'Giannis Antetokounmpo',false,'Tim Duncan',false,6,false
-55,70,0.452299,'Boris Diaw',true,'Ben Simmons',true,79,true
-90,34,0.068377,'Ricky Rubio',false,'Nobody',true,97,true
-7,71,0.695507,'Dwyane Wade',true,'Dwyane Wade',true,52,false
-33,102,0.960920,'Cory Joseph',false,'Cory Joseph',false,9,false
-16,16,0.688265,'Null3',false,'Steve Nash',false,66,false
-35,31,0.609625,'Grant Hill',false,'James Harden',false,26,false
-43,81,0.509884,'Rudy Gay',false,'Damian Lillard',true,75,false
-25,21,0.349865,'Chris Paul',true,'Klay Thompson',true,0,true
-47,107,0.422358,'Kevin Durant',false,'Amar\'e Stoudemire',false,87,true
-54,75,0.574056,'Cory Joseph',false,'JaVale McGee',false,99,false
-45,45,0.562176,'JaVale McGee',false,'Ray Allen',true,83,false
-52,40,0.547622,'Dirk Nowitzki',false,'Yao Ming',true,29,false
-71,28,0.687090,'Damian Lillard',true,'Tiago Splitter',false,8,true
-94,89,0.047733,'Tracy McGrady',false,'Paul Gasol',true,31,false
-33,98,0.811606,'Paul Gasol',false,'Damian Lillard',true,43,false
-11,67,0.335816,'Marc Gasol',true,'Amar\'e Stoudemire',false,22,true
-31,47,0.776119,'Stephen Curry',true,'Joel Embiid',false,35,false
-33,105,0.393160,'Ben Simmons',true,'Ben Simmons',false,98,false
-18,14,0.084690,'Chris Paul',true,'Ricky Rubio',false,28,false
-14,38,0.889894,'Luka Doncic',true,'Tim Duncan',false,42,true
-22,13,0.204058,'Tiago Splitter',true,'Jason Kidd',true,10,false
-78,65,0.236497,'Dwyane Wade',true,'Rajon Rondo',false,63,false
-17,38,0.643585,'Kristaps Porzingis',true,'Shaquile O\'Neal',true,85,false
-60,107,0.381339,'Kyrie Irving',true,'Russell Westbrook',false,44,true
-80,93,0.306140,'James Harden',true,'James Harden',false,22,true
-91,60,0.461409,'Joel Embiid',false,'Shaquile O\'Neal',false,68,true
-38,47,0.571068,'Kyrie Irving',true,'DeAndre Jordan',true,95,false
-37,45,0.692159,'Yao Ming',false,'Dwight Howard',true,81,true
-105,16,0.165841,'Manu Ginobili',true,'Danny Green',false,28,false
-90,87,0.101777,'Nobody',false,'Shaquile O\'Neal',true,83,false
-42,85,0.799773,'Dwight Howard',true,'Ben Simmons',true,47,true
-64,61,0.524894,'Null1',true,'Joel Embiid',false,24,true
-84,74,0.767716,'Kevin Durant',true,'Kobe Bryant',false,22,true
-97,82,0.849785,'Ben Simmons',true,'Paul George',false,65,false
-48,74,0.955332,'Giannis Antetokounmpo',false,'DeAndre Jordan',false,69,true
-87,50,0.364881,'Dirk Nowitzki',false,'Paul Gasol',true,87,true
-21,98,0.372800,'Rajon Rondo',false,'Russell Westbrook',true,6,true
-1,30,0.412427,'Klay Thompson',true,'Tim Duncan',true,45,false
-78,32,0.076332,'Ray Allen',true,'LaMarcus Aldridge',true,21,false
-45,75,0.492820,'David West',true,'Null4',false,1,true
-12,103,0.372059,'Luka Doncic',false,'Ray Allen',true,16,true
-26,24,0.190781,'Tim Duncan',true,'Jason Kidd',false,35,true
-101,104,0.304384,'Aron Baynes',true,'Ben Simmons',true,33,true
-45,70,0.176491,'Dejounte Murray',true,'Kyle Anderson',true,52,true
-97,92,0.806436,'Jason Kidd',false,'Carmelo Anthony',false,69,false
-45,8,0.021415,'Kyle Anderson',false,'Jonathon Simmons',false,88,true
-9,83,0.053486,'Paul Gasol',false,'Dwyane Wade',true,90,true
-77,20,0.562240,'Amar\'e Stoudemire',false,'Kyrie Irving',false,76,false
-102,40,0.289604,'Boris Diaw',false,'Russell Westbrook',true,88,false
-57,67,0.815355,'Carmelo Anthony',true,'Vince Carter',true,63,false
-98,34,0.585814,'Tiago Splitter',true,'Paul Gasol',false,5,true
-5,11,0.857041,'Rudy Gay',true,'Yao Ming',true,54,true
-6,99,0.730402,'LeBron James',false,'Damian Lillard',false,41,false
-84,89,0.075734,'Cory Joseph',true,'Tony Parker',false,11,false
-27,103,0.171078,'James Harden',false,'Chris Paul',true,93,false
-106,52,0.084055,'Paul Gasol',false,'James Harden',true,30,true
-91,24,0.828037,'Steve Nash',false,'Vince Carter',false,99,false
-72,52,0.452762,'Tracy McGrady',false,'Dwyane Wade',true,20,true
-87,72,0.718670,'Marco Belinelli',false,'Giannis Antetokounmpo',true,6,false
-69,102,0.744204,'Kyrie Irving',false,'Kristaps Porzingis',true,28,true
-69,99,0.233824,'Dwyane Wade',false,'Tony Parker',false,98,false
-107,26,0.631437,'Ben Simmons',false,'Dwight Howard',false,17,true
-24,25,0.664123,'Giannis Antetokounmpo',true,'Null2',true,52,false
-43,38,0.284852,'Jason Kidd',true,'Yao Ming',true,6,false
-101,79,0.254581,'Kevin Durant',false,'Null1',false,5,true
-8,9,0.837951,'LeBron James',false,'Ray Allen',false,39,false
-106,85,0.686200,'Rajon Rondo',false,'Boris Diaw',true,58,true
-88,14,0.077216,'Tracy McGrady',false,'Dejounte Murray',false,43,false
-10,55,0.894622,'Damian Lillard',true,'Dejounte Murray',false,28,true
-73,90,0.268983,'Damian Lillard',false,'Ricky Rubio',false,79,false
-28,3,0.541828,'Steve Nash',false,'Luka Doncic',true,58,true
-6,18,0.945146,'Dwyane Wade',false,'Grant Hill',true,12,false
-56,101,0.950159,'Jonathon Simmons',true,'Luka Doncic',true,48,true
-62,71,0.623731,'Vince Carter',true,'Ben Simmons',false,62,true
-84,61,0.133041,'Vince Carter',true,'JaVale McGee',false,45,true
-102,92,0.664686,'Manu Ginobili',false,'Ben Simmons',true,24,true
-11,104,0.681821,'JaVale McGee',true,'Rudy Gay',true,35,false
-96,27,0.874790,'Giannis Antetokounmpo',false,'Vince Carter',false,23,true
-76,102,0.586431,'Ben Simmons',false,'Shaquile O\'Neal',true,6,false
-63,21,0.024021,'Blake Griffin',false,'Yao Ming',true,99,true
-88,30,0.288864,'Luka Doncic',true,'Tim Duncan',false,70,true
-92,31,0.715157,'Damian Lillard',false,'Grant Hill',false,89,false
-40,13,0.174221,'Giannis Antetokounmpo',true,'Carmelo Anthony',true,27,false
-38,4,0.785301,'Jason Kidd',false,'Paul George',true,58,false
-100,7,0.356865,'Nobody',false,'Dejounte Murray',false,9,false
-31,54,0.018461,'Rajon Rondo',false,'Grant Hill',false,56,false
-5,102,0.277638,'Manu Ginobili',false,'Ray Allen',true,20,true
-87,62,0.350532,'Vince Carter',false,'Ray Allen',true,18,false
-58,75,0.524674,'Paul George',true,'Russell Westbrook',true,6,false
-76,54,0.572107,'JaVale McGee',true,'Paul George',false,7,false
-96,87,0.950220,'Russell Westbrook',false,'Kyrie Irving',true,40,true
-43,55,0.593730,'Amar\'e Stoudemire',false,'Tony Parker',true,18,false
-64,76,0.646799,'Null1',true,'Boris Diaw',true,31,false
-3,100,0.459173,'Paul George',false,'Jonathon Simmons',false,57,false
-102,41,0.960355,'JaVale McGee',false,'Kristaps Porzingis',true,22,true
-75,79,0.412410,'Kobe Bryant',false,'Aron Baynes',false,75,true
-63,26,0.143656,'Cory Joseph',false,'Marc Gasol',false,32,false
-63,95,0.884064,'Nobody',false,'Marco Belinelli',true,23,false
-30,64,0.683255,'Dwyane Wade',false,'Stephen Curry',true,6,true
-35,69,0.622824,'Marc Gasol',false,'Kyrie Irving',false,13,false
-456,39,0.107941,'Ricky Rubio',false,'Shaquile O\'Neal',false,89,false
-456,54,0.319067,'Luka Doncic',false,'Stephen Curry',true,74,false
-456,64,0.878655,'Tony Parker',true,'Jonathon Simmons',false,4,true
-456,456,0.895397,'Paul Gasol',true,'Kevin Durant',false,0,true
-456,66,0.656614,'Marc Gasol',true,'Tiago Splitter',true,4,false
-456,1,0.817849,'David West',true,'Rudy Gay',true,7,true
-456,43,0.767377,'Danny Green',false,'Jonathon Simmons',false,19,true
-456,7,0.683472,'Jonathon Simmons',true,'Paul Gasol',true,19,true
-456,25,0.651376,'Russell Westbrook',true,'Tony Parker',true,97,false
-456,30,0.816838,'Kobe Bryant',false,'Chris Paul',true,34,false
-456,11,0.194535,'DeAndre Jordan',true,'LaMarcus Aldridge',false,18,false
-456,72,0.127340,'Danny Green',true,'Joel Embiid',true,72,false
-456,49,0.276635,'Tracy McGrady',false,'Chris Paul',true,73,false
-456,52,0.333415,'Vince Carter',false,'Jason Kidd',false,85,false
-456,26,0.857238,'Marco Belinelli',true,'Ricky Rubio',false,79,true
-456,12,0.976844,'Paul George',true,'Ben Simmons',true,70,true
-456,103,0.306367,'LaMarcus Aldridge',true,'Amar\'e Stoudemire',false,78,true
-456,73,0.286702,'Danny Green',true,'Aron Baynes',true,95,false
-456,77,0.182667,'Marco Belinelli',true,'Kyle Anderson',false,52,true
-456,67,0.397499,'Luka Doncic',false,'Kristaps Porzingis',true,60,false
-456,94,0.954446,'David West',true,'Yao Ming',true,61,true
-456,84,0.605749,'JaVale McGee',true,'Yao Ming',false,34,true
-456,4,0.721558,'DeAndre Jordan',true,'LeBron James',false,72,true
-456,100,0.027539,'James Harden',true,'Ricky Rubio',false,3,true
-456,106,0.451238,'Vince Carter',true,'James Harden',false,89,true
-456,53,0.152987,'Amar\'e Stoudemire',false,'Aron Baynes',true,96,false
-456,24,0.244416,'LaMarcus Aldridge',true,'Dwyane Wade',false,11,true
-456,45,0.225331,'Blake Griffin',false,'Paul Gasol',true,68,false
-456,98,0.626819,'Ray Allen',true,'Shaquile O\'Neal',false,22,true
-456,36,0.058418,'Danny Green',true,'Nobody',true,75,false
-65,456,0.707277,'Null4',true,'Danny Green',false,40,false
-456,50,0.798383,'Rajon Rondo',false,'Paul George',false,19,false
-5,456,0.972259,'Tim Duncan',true,'Stephen Curry',true,3,true
-456,28,0.395844,'Klay Thompson',false,'Rajon Rondo',false,96,false
-456,27,0.599498,'Blake Griffin',false,'Kobe Bryant',false,38,false
-456,46,0.462693,'Giannis Antetokounmpo',true,'Null4',true,15,true
-456,6,0.458695,'Manu Ginobili',true,'Rudy Gay',false,75,true
-31,456,0.032863,'Grant Hill',false,'Tim Duncan',false,61,false
-456,70,0.041507,'Null4',false,'Vince Carter',true,9,true
-456,47,0.561574,'Rajon Rondo',false,'Giannis Antetokounmpo',false,0,false
-456,32,0.845484,'Tony Parker',false,'Dwyane Wade',true,21,false
-456,89,0.763593,'Marco Belinelli',true,'Ray Allen',false,32,false
-26,456,0.353621,'Danny Green',true,'Steve Nash',false,42,false
-456,88,0.932191,'Null3',false,'Carmelo Anthony',true,14,true
-456,13,0.967100,'Shaquile O\'Neal',true,'Dirk Nowitzki',true,38,true
-456,83,0.513050,'Ray Allen',false,'Manu Ginobili',true,42,false
-456,59,0.632679,'Kobe Bryant',false,'LeBron James',false,91,true
-456,71,0.596485,'Manu Ginobili',true,'LaMarcus Aldridge',true,87,true
-456,96,0.472737,'Dwight Howard',false,'Luka Doncic',true,16,true
-54,456,0.720030,'Giannis Antetokounmpo',true,'Danny Green',true,76,true
-456,79,0.430510,'Kristaps Porzingis',true,'James Harden',true,76,false
-456,86,0.595082,'Null1',false,'Grant Hill',false,62,false
-456,82,0.331717,'Vince Carter',true,'Ray Allen',false,15,false
-456,42,0.143582,'Manu Ginobili',true,'Cory Joseph',false,12,false
-7,7,0.746217,'Blake Griffin',true,'Dejounte Murray',false,91,true
-21,21,0.822574,'Tracy McGrady',false,'Kevin Durant',false,72,true
-5,5,0.577409,'Paul George',true,'Nobody',true,70,true
-38,38,0.429988,'Damian Lillard',true,'Dejounte Murray',false,47,false
-84,84,0.607469,'James Harden',false,'Kyle Anderson',false,37,false
-43,43,0.097794,'Paul George',false,'Jonathon Simmons',true,74,false
-48,48,0.946133,'Dejounte Murray',true,'Kyle Anderson',true,47,true
-95,95,0.086611,'Dwyane Wade',false,'Dwight Howard',false,40,false
-101,101,0.072421,'Giannis Antetokounmpo',false,'Blake Griffin',false,3,false
-19,19,0.237409,'Amar\'e Stoudemire',true,'Grant Hill',false,66,true
+:SRC_VID(int),:DST_VID(int),Rel_0.Rel_0_10_geography_linestring:geography(linestring),Rel_0.Rel_0_3_Double:double,Rel_0.Rel_0_1_Bool:bool,Rel_0.Rel_0_5_geography_polygon:geography(polygon),Rel_0.Rel_0_6_datetime:datetime,Rel_0.Rel_0_2_String:string,Rel_0.Rel_0_4_geography_polygon:geography(polygon),Rel_0.Rel_0_9_geography_point:geography(point),Rel_0.Rel_0_8_timestamp:timestamp,Rel_0.Rel_0_7_Double:double,Rel_0.Rel_0_0_geography_polygon:geography(polygon)
+12,84,"ST_GeogFromText(""LINESTRING(5 69, 4 80)"")",0.275999,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(14 9)"")",now(),0.258873,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+46,101,"ST_GeogFromText(""LINESTRING(2 0, 47 17)"")",0.048902,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',null,"ST_GeogFromText(""POINT(86 29)"")",now(),0.256988,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,83,"ST_GeogFromText(""LINESTRING(24 1, 72 9)"")",0.123593,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(15 2)"")",now(),0.570413,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+16,81,"ST_GeogFromText(""LINESTRING(73 74, 59 69)"")",0.167711,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(62 21)"")",now(),0.697021,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+58,83,"ST_GeogFromText(""LINESTRING(41 10, 68 19)"")",0.474897,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Grant Hill',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(14 16)"")",now(),0.486778,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+75,54,"ST_GeogFromText(""LINESTRING(60 77, 11 2)"")",0.505215,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(49 0)"")",now(),0.044939,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+35,62,"ST_GeogFromText(""LINESTRING(47 11, 49 27)"")",0.179649,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(65 56)"")",now(),0.299540,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+40,52,"ST_GeogFromText(""LINESTRING(33 55, 65 18)"")",0.957244,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(43 3)"")",now(),0.354241,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+4,47,"ST_GeogFromText(""LINESTRING(78 86, 36 36)"")",0.929464,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(52 66)"")",now(),0.767307,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+92,44,"ST_GeogFromText(""LINESTRING(46 47, 32 1)"")",0.990280,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(71 72)"")",now(),0.040887,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+64,76,"ST_GeogFromText(""LINESTRING(9 43, 30 70)"")",0.222741,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(36 78)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+20,75,"ST_GeogFromText(""LINESTRING(49 32, 53 56)"")",0.631149,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(31 34)"")",now(),0.339338,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+69,79,"ST_GeogFromText(""LINESTRING(44 8, 73 16)"")",0.295335,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(0 15)"")",now(),0.781076,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+3,1,"ST_GeogFromText(""LINESTRING(10 63, 33 83)"")",0.550520,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(3 71)"")",now(),0.000781,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+82,105,"ST_GeogFromText(""LINESTRING(5 5, 70 28)"")",0.691285,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(84 86)"")",now(),0.836259,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,24,"ST_GeogFromText(""LINESTRING(23 56, 84 61)"")",0.325780,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(22 59)"")",now(),0.188226,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+14,67,"ST_GeogFromText(""LINESTRING(80 63, 47 1)"")",0.746668,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(2 53)"")",now(),0.393527,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+59,54,"ST_GeogFromText(""LINESTRING(76 46, 1 0)"")",0.011813,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(15 3)"")",now(),0.871671,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+4,43,"ST_GeogFromText(""LINESTRING(57 16, 5 40)"")",0.227626,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(17 5)"")",now(),0.127624,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+29,22,"ST_GeogFromText(""LINESTRING(51 45, 62 2)"")",0.666915,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 39)"")",now(),0.885129,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+56,98,"ST_GeogFromText(""LINESTRING(47 44, 16 22)"")",0.350354,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(84 82)"")",now(),0.968476,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+95,52,"ST_GeogFromText(""LINESTRING(25 31, 58 81)"")",0.005652,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(33 6)"")",now(),0.792005,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+10,20,"ST_GeogFromText(""LINESTRING(40 1, 16 80)"")",0.700335,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(21 89)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+93,39,"ST_GeogFromText(""LINESTRING(71 57, 80 36)"")",0.337858,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(56 23)"")",now(),0.266255,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+1,10,"ST_GeogFromText(""LINESTRING(40 66, 28 30)"")",0.326548,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(89 38)"")",now(),0.513702,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+44,92,"ST_GeogFromText(""LINESTRING(23 46, 82 36)"")",0.800505,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(65 73)"")",now(),0.618875,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+57,4,"ST_GeogFromText(""LINESTRING(44 18, 24 72)"")",0.540930,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(47 60)"")",now(),0.317598,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+62,43,"ST_GeogFromText(""LINESTRING(3 78, 4 43)"")",0.563788,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(73 74)"")",now(),0.479611,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+65,16,"ST_GeogFromText(""LINESTRING(69 3, 44 36)"")",0.392097,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'DeAndre Jordan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(60 57)"")",now(),0.765944,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+46,93,"ST_GeogFromText(""LINESTRING(33 14, 87 77)"")",0.278032,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 66)"")",now(),0.892428,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,26,"ST_GeogFromText(""LINESTRING(42 23, 14 52)"")",0.932583,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(80 57)"")",now(),0.765823,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,52,"ST_GeogFromText(""LINESTRING(53 55, 20 67)"")",0.665581,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 60)"")",now(),0.504502,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+99,62,"ST_GeogFromText(""LINESTRING(88 32, 41 15)"")",0.046727,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 28)"")",now(),0.113350,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+99,33,"ST_GeogFromText(""LINESTRING(19 18, 84 11)"")",0.161570,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(5 38)"")",now(),0.324696,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+25,73,"ST_GeogFromText(""LINESTRING(19 88, 53 85)"")",0.596298,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(8 33)"")",now(),0.135933,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,44,"ST_GeogFromText(""LINESTRING(24 74, 76 87)"")",0.268524,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(39 30)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+85,96,"ST_GeogFromText(""LINESTRING(33 9, 55 69)"")",0.897751,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(48 23)"")",now(),0.013211,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,76,"ST_GeogFromText(""LINESTRING(6 63, 20 89)"")",0.787210,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(15 79)"")",now(),0.914475,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+25,37,"ST_GeogFromText(""LINESTRING(1 26, 74 40)"")",0.371381,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(69 1)"")",now(),0.944158,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+29,108,"ST_GeogFromText(""LINESTRING(6 84, 11 70)"")",0.207832,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rajon Rondo',null,"ST_GeogFromText(""POINT(6 28)"")",now(),0.159949,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+15,37,"ST_GeogFromText(""LINESTRING(28 51, 70 60)"")",0.062320,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(41 43)"")",now(),0.664133,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,28,"ST_GeogFromText(""LINESTRING(87 24, 64 14)"")",0.942383,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(40 54)"")",now(),0.339926,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+84,42,"ST_GeogFromText(""LINESTRING(68 72, 9 5)"")",0.283496,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(54 79)"")",now(),0.650817,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+35,92,"ST_GeogFromText(""LINESTRING(85 71, 61 82)"")",0.086480,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(43 85)"")",now(),0.324510,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+38,12,"ST_GeogFromText(""LINESTRING(30 53, 11 38)"")",0.725598,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(42 71)"")",now(),0.638839,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+75,66,"ST_GeogFromText(""LINESTRING(3 10, 17 41)"")",0.097205,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',null,"ST_GeogFromText(""POINT(4 24)"")",now(),0.606053,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+11,38,"ST_GeogFromText(""LINESTRING(2 43, 25 6)"")",0.869052,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 57)"")",now(),0.762413,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+105,2,"ST_GeogFromText(""LINESTRING(69 29, 62 30)"")",0.465732,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(20 59)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,78,"ST_GeogFromText(""LINESTRING(2 80, 73 50)"")",0.142240,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Grant Hill',null,"ST_GeogFromText(""POINT(9 7)"")",now(),0.576243,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+99,68,"ST_GeogFromText(""LINESTRING(33 36, 0 6)"")",0.990456,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(2 64)"")",now(),0.444279,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+23,96,"ST_GeogFromText(""LINESTRING(29 13, 83 51)"")",0.958575,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(49 83)"")",now(),0.060031,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+23,91,"ST_GeogFromText(""LINESTRING(13 14, 47 87)"")",0.974294,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Grant Hill',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(10 79)"")",now(),0.785059,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+11,94,"ST_GeogFromText(""LINESTRING(48 11, 17 54)"")",0.669361,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(62 49)"")",now(),0.645352,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+6,101,"ST_GeogFromText(""LINESTRING(19 21, 27 58)"")",0.822713,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,null,"ST_GeogFromText(""POINT(88 28)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+101,49,"ST_GeogFromText(""LINESTRING(31 60, 38 62)"")",0.841780,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(55 54)"")",now(),0.206437,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+59,84,"ST_GeogFromText(""LINESTRING(5 56, 3 23)"")",0.570348,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(32 46)"")",now(),0.064231,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+13,16,"ST_GeogFromText(""LINESTRING(61 27, 10 78)"")",0.245194,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(52 14)"")",now(),0.244329,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+37,99,"ST_GeogFromText(""LINESTRING(72 14, 83 22)"")",0.297535,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(46 42)"")",now(),0.880334,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+102,61,"ST_GeogFromText(""LINESTRING(79 8, 44 20)"")",0.502769,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(42 51)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,42,"ST_GeogFromText(""LINESTRING(56 10, 15 31)"")",0.718631,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(47 65)"")",now(),0.652085,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+61,7,"ST_GeogFromText(""LINESTRING(30 55, 69 75)"")",0.908416,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 62)"")",now(),0.654233,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,82,"ST_GeogFromText(""LINESTRING(88 21, 34 51)"")",0.388666,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(21 86)"")",now(),0.564758,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+90,38,"ST_GeogFromText(""LINESTRING(51 29, 11 80)"")",0.784899,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Damian Lillard',null,"ST_GeogFromText(""POINT(10 36)"")",now(),0.497824,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+96,95,"ST_GeogFromText(""LINESTRING(14 30, 28 38)"")",0.021374,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(70 12)"")",now(),0.532887,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+10,12,"ST_GeogFromText(""LINESTRING(27 52, 59 11)"")",0.544168,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(38 89)"")",now(),0.261726,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+103,53,"ST_GeogFromText(""LINESTRING(18 78, 58 78)"")",0.778560,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(72 84)"")",now(),0.107161,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+14,47,"ST_GeogFromText(""LINESTRING(77 22, 11 41)"")",0.658691,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(56 69)"")",now(),0.093244,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+4,74,"ST_GeogFromText(""LINESTRING(86 2, 11 59)"")",0.467943,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(52 12)"")",now(),0.870034,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+99,45,"ST_GeogFromText(""LINESTRING(56 10, 77 22)"")",0.420345,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(84 64)"")",now(),0.478667,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+49,85,"ST_GeogFromText(""LINESTRING(60 33, 0 39)"")",0.479832,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(30 9)"")",now(),0.580452,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+11,12,"ST_GeogFromText(""LINESTRING(1 40, 20 74)"")",0.349263,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(11 34)"")",now(),0.950786,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+14,74,"ST_GeogFromText(""LINESTRING(65 1, 64 28)"")",0.105875,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(2 77)"")",now(),0.727336,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+16,57,"ST_GeogFromText(""LINESTRING(35 75, 12 59)"")",0.489008,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',null,"ST_GeogFromText(""POINT(17 83)"")",now(),0.949082,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+61,30,"ST_GeogFromText(""LINESTRING(53 64, 50 57)"")",0.035069,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(14 21)"")",now(),0.326113,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+36,58,"ST_GeogFromText(""LINESTRING(41 1, 52 23)"")",0.725906,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(28 50)"")",now(),0.144070,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+45,8,"ST_GeogFromText(""LINESTRING(57 36, 66 53)"")",0.885377,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(56 40)"")",now(),0.320985,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+83,80,"ST_GeogFromText(""LINESTRING(59 23, 49 24)"")",0.479567,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(61 5)"")",now(),0.039983,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+17,73,"ST_GeogFromText(""LINESTRING(32 84, 71 85)"")",0.976758,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(48 24)"")",now(),0.175869,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+21,29,"ST_GeogFromText(""LINESTRING(5 2, 22 37)"")",0.507562,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(30 89)"")",now(),0.874144,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+95,74,"ST_GeogFromText(""LINESTRING(22 62, 74 73)"")",0.190097,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(46 80)"")",now(),0.490154,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+53,33,"ST_GeogFromText(""LINESTRING(69 70, 31 18)"")",0.465992,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyle Anderson',null,"ST_GeogFromText(""POINT(34 26)"")",now(),0.915873,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+57,86,"ST_GeogFromText(""LINESTRING(27 22, 74 56)"")",0.704002,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(25 75)"")",now(),0.647226,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+58,63,"ST_GeogFromText(""LINESTRING(86 87, 85 3)"")",0.416384,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',null,"ST_GeogFromText(""POINT(46 56)"")",now(),0.008149,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+77,85,"ST_GeogFromText(""LINESTRING(79 55, 28 1)"")",0.878709,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(17 50)"")",now(),0.865404,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+97,16,"ST_GeogFromText(""LINESTRING(16 66, 72 36)"")",0.675059,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(49 72)"")",now(),0.312364,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+72,5,"ST_GeogFromText(""LINESTRING(13 74, 25 55)"")",0.940335,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Chris Paul',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(34 87)"")",now(),0.912288,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+54,3,"ST_GeogFromText(""LINESTRING(3 8, 0 28)"")",0.242621,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(26 89)"")",now(),0.117674,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+86,92,"ST_GeogFromText(""LINESTRING(73 89, 81 51)"")",0.656167,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(38 55)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+107,9,"ST_GeogFromText(""LINESTRING(50 44, 69 42)"")",0.787441,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(18 6)"")",now(),0.396129,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+94,41,"ST_GeogFromText(""LINESTRING(72 87, 89 70)"")",0.948269,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(12 39)"")",now(),0.328143,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+9,37,"ST_GeogFromText(""LINESTRING(80 30, 69 81)"")",0.949017,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(67 38)"")",now(),0.752890,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+77,83,"ST_GeogFromText(""LINESTRING(39 17, 37 85)"")",0.836176,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(18 61)"")",now(),0.855622,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+54,86,"ST_GeogFromText(""LINESTRING(72 87, 35 32)"")",0.938701,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 38)"")",now(),0.605504,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+80,78,"ST_GeogFromText(""LINESTRING(46 35, 52 35)"")",0.717910,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(11 38)"")",now(),0.816672,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+26,70,"ST_GeogFromText(""LINESTRING(47 78, 24 48)"")",0.388535,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',null,"ST_GeogFromText(""POINT(33 32)"")",now(),0.655636,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+20,35,"ST_GeogFromText(""LINESTRING(73 73, 71 58)"")",0.227073,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(89 11)"")",now(),0.391311,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+47,108,"ST_GeogFromText(""LINESTRING(29 54, 14 51)"")",0.028406,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(64 65)"")",now(),0.292801,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,2,"ST_GeogFromText(""LINESTRING(76 10, 53 49)"")",0.056588,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(33 60)"")",now(),0.421121,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+89,37,"ST_GeogFromText(""LINESTRING(29 49, 33 67)"")",0.701855,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(53 69)"")",now(),0.722628,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+31,95,"ST_GeogFromText(""LINESTRING(31 52, 53 78)"")",0.543341,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(62 69)"")",now(),0.393583,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+19,1,"ST_GeogFromText(""LINESTRING(34 44, 41 23)"")",0.577016,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(5 25)"")",now(),0.871675,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+75,81,"ST_GeogFromText(""LINESTRING(56 44, 4 11)"")",0.788513,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,null,"ST_GeogFromText(""POINT(83 16)"")",now(),0.656690,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+38,45,"ST_GeogFromText(""LINESTRING(81 35, 60 81)"")",0.104983,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(86 29)"")",now(),0.270683,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+72,60,"ST_GeogFromText(""LINESTRING(33 9, 19 14)"")",0.417830,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(44 1)"")",now(),0.896463,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+27,42,"ST_GeogFromText(""LINESTRING(67 42, 9 14)"")",0.072784,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(1 83)"")",now(),0.129851,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+92,99,"ST_GeogFromText(""LINESTRING(31 56, 37 7)"")",0.461795,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(83 82)"")",now(),0.653044,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+87,72,"ST_GeogFromText(""LINESTRING(46 19, 50 20)"")",0.221488,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(89 70)"")",now(),0.863161,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+12,61,"ST_GeogFromText(""LINESTRING(8 44, 33 84)"")",0.940751,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(81 22)"")",now(),0.019344,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+27,84,"ST_GeogFromText(""LINESTRING(4 50, 78 67)"")",0.351229,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(5 60)"")",now(),0.525408,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+97,12,"ST_GeogFromText(""LINESTRING(67 11, 54 35)"")",0.558786,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,null,"ST_GeogFromText(""POINT(20 1)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+48,28,"ST_GeogFromText(""LINESTRING(58 13, 40 51)"")",0.641908,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(37 67)"")",now(),0.632498,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+68,17,"ST_GeogFromText(""LINESTRING(10 35, 10 77)"")",0.310081,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(45 65)"")",now(),0.778296,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+59,6,"ST_GeogFromText(""LINESTRING(20 19, 83 43)"")",0.985151,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'DeAndre Jordan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 27)"")",now(),0.015320,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+34,88,"ST_GeogFromText(""LINESTRING(4 64, 3 19)"")",0.839679,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(60 48)"")",now(),0.643553,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+94,53,"ST_GeogFromText(""LINESTRING(32 19, 5 9)"")",0.871466,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(32 84)"")",now(),0.341569,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+85,93,"ST_GeogFromText(""LINESTRING(86 62, 59 40)"")",0.687170,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(56 20)"")",now(),0.639979,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+82,21,"ST_GeogFromText(""LINESTRING(72 86, 60 45)"")",0.539911,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 78)"")",now(),0.881649,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,107,"ST_GeogFromText(""LINESTRING(40 4, 42 69)"")",0.856934,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(33 16)"")",now(),0.866263,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+28,55,"ST_GeogFromText(""LINESTRING(46 56, 89 84)"")",0.833376,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(83 33)"")",now(),0.389474,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+100,43,"ST_GeogFromText(""LINESTRING(52 73, 77 38)"")",0.021888,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(57 74)"")",now(),0.003441,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+76,63,"ST_GeogFromText(""LINESTRING(22 26, 21 27)"")",0.076042,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(46 27)"")",now(),0.893019,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+25,99,"ST_GeogFromText(""LINESTRING(43 47, 13 70)"")",0.294822,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(35 43)"")",now(),0.571592,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+49,33,"ST_GeogFromText(""LINESTRING(40 55, 25 88)"")",0.090987,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',null,"ST_GeogFromText(""POINT(33 56)"")",now(),0.970304,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+77,27,"ST_GeogFromText(""LINESTRING(32 46, 51 49)"")",0.586436,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(30 59)"")",now(),0.419284,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+26,30,"ST_GeogFromText(""LINESTRING(12 61, 47 22)"")",0.653173,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(72 1)"")",now(),0.501053,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+19,88,"ST_GeogFromText(""LINESTRING(80 6, 46 34)"")",0.497192,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 11)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+41,51,"ST_GeogFromText(""LINESTRING(49 15, 10 16)"")",0.318232,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(79 32)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+69,101,"ST_GeogFromText(""LINESTRING(53 89, 42 5)"")",0.799354,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(48 8)"")",now(),0.839651,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+3,66,"ST_GeogFromText(""LINESTRING(59 32, 57 43)"")",0.676913,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(70 38)"")",now(),0.139668,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+86,96,"ST_GeogFromText(""LINESTRING(37 0, 84 44)"")",0.211214,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 71)"")",now(),0.821445,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+60,27,"ST_GeogFromText(""LINESTRING(33 3, 76 34)"")",0.599606,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 74)"")",now(),0.857424,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+46,5,"ST_GeogFromText(""LINESTRING(87 57, 34 29)"")",0.255505,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ben Simmons',null,"ST_GeogFromText(""POINT(59 73)"")",now(),0.891720,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+35,69,"ST_GeogFromText(""LINESTRING(74 23, 52 66)"")",0.029695,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(10 4)"")",now(),0.186546,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+1,82,"ST_GeogFromText(""LINESTRING(55 3, 25 76)"")",0.351515,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(39 89)"")",now(),0.541132,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+36,71,"ST_GeogFromText(""LINESTRING(63 79, 63 14)"")",0.972969,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(38 66)"")",now(),0.243601,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+98,77,"ST_GeogFromText(""LINESTRING(37 19, 81 19)"")",0.106180,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(1 86)"")",now(),0.408481,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+8,41,"ST_GeogFromText(""LINESTRING(75 57, 83 56)"")",0.816468,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(64 82)"")",now(),0.819815,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+6,103,"ST_GeogFromText(""LINESTRING(61 82, 50 39)"")",0.062419,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(71 86)"")",now(),0.310736,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+50,93,"ST_GeogFromText(""LINESTRING(45 75, 84 0)"")",0.064293,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(3 81)"")",now(),0.917773,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+103,99,"ST_GeogFromText(""LINESTRING(19 15, 56 15)"")",0.156649,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(34 37)"")",now(),0.160328,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+25,54,"ST_GeogFromText(""LINESTRING(19 44, 84 1)"")",0.023666,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(64 20)"")",now(),0.327307,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+53,90,"ST_GeogFromText(""LINESTRING(6 87, 12 40)"")",0.155389,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 38)"")",now(),0.945043,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+3,84,"ST_GeogFromText(""LINESTRING(82 44, 2 36)"")",0.090204,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 56)"")",now(),0.182101,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+55,97,"ST_GeogFromText(""LINESTRING(17 42, 87 8)"")",0.000160,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(87 15)"")",now(),0.850484,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+95,33,"ST_GeogFromText(""LINESTRING(47 52, 80 6)"")",0.720927,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rajon Rondo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(55 33)"")",now(),0.736704,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+1,46,"ST_GeogFromText(""LINESTRING(15 13, 46 66)"")",0.431706,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(53 21)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+60,70,"ST_GeogFromText(""LINESTRING(40 29, 71 61)"")",0.732412,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(1 35)"")",now(),0.556957,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,39,"ST_GeogFromText(""LINESTRING(3 0, 44 82)"")",0.050753,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(10 1)"")",now(),0.712029,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+13,36,"ST_GeogFromText(""LINESTRING(75 31, 58 89)"")",0.986539,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(34 68)"")",now(),0.881423,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+8,36,"ST_GeogFromText(""LINESTRING(23 14, 71 52)"")",0.001694,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 79)"")",now(),0.676616,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+48,98,"ST_GeogFromText(""LINESTRING(7 26, 48 50)"")",0.504783,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(47 68)"")",now(),0.525854,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+4,104,"ST_GeogFromText(""LINESTRING(53 76, 37 6)"")",0.182965,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',null,"ST_GeogFromText(""POINT(68 28)"")",now(),0.315669,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+58,41,"ST_GeogFromText(""LINESTRING(84 47, 40 79)"")",0.999708,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 6)"")",now(),0.452415,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+65,22,"ST_GeogFromText(""LINESTRING(30 51, 22 32)"")",0.366753,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'David West',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(32 39)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+44,7,"ST_GeogFromText(""LINESTRING(39 29, 13 2)"")",0.429727,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(28 38)"")",now(),0.024346,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+47,80,"ST_GeogFromText(""LINESTRING(57 28, 37 50)"")",0.622242,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(44 12)"")",now(),0.329661,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+96,28,"ST_GeogFromText(""LINESTRING(54 11, 5 63)"")",0.806607,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(32 36)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+106,44,"ST_GeogFromText(""LINESTRING(87 54, 45 70)"")",0.651144,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(18 27)"")",now(),0.942254,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+76,30,"ST_GeogFromText(""LINESTRING(66 67, 12 31)"")",0.244176,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(28 49)"")",now(),0.041292,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+39,76,"ST_GeogFromText(""LINESTRING(25 40, 68 9)"")",0.397438,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(40 72)"")",now(),0.364565,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+20,37,"ST_GeogFromText(""LINESTRING(19 50, 3 17)"")",0.148386,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(11 53)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+35,100,"ST_GeogFromText(""LINESTRING(30 54, 70 41)"")",0.899279,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(21 54)"")",now(),0.331131,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+106,75,"ST_GeogFromText(""LINESTRING(5 14, 45 26)"")",0.189675,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(63 9)"")",now(),0.821453,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+36,106,"ST_GeogFromText(""LINESTRING(11 18, 17 14)"")",0.623442,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(28 16)"")",now(),0.737171,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+24,89,"ST_GeogFromText(""LINESTRING(32 6, 40 8)"")",0.893066,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(59 61)"")",now(),0.576330,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+82,93,"ST_GeogFromText(""LINESTRING(59 62, 59 50)"")",0.942460,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(71 11)"")",now(),0.430530,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+68,28,"ST_GeogFromText(""LINESTRING(82 88, 58 49)"")",0.939338,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 64)"")",now(),0.141930,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+48,6,"ST_GeogFromText(""LINESTRING(17 45, 33 74)"")",0.683855,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(64 59)"")",now(),0.782533,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+70,68,"ST_GeogFromText(""LINESTRING(6 30, 21 10)"")",0.077150,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(43 89)"")",now(),0.113979,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+85,86,"ST_GeogFromText(""LINESTRING(66 61, 12 72)"")",0.333056,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(41 45)"")",now(),0.945017,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+61,19,"ST_GeogFromText(""LINESTRING(1 18, 24 21)"")",0.358954,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 8)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+55,16,"ST_GeogFromText(""LINESTRING(45 68, 16 15)"")",0.712120,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 24)"")",now(),0.864503,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+100,101,"ST_GeogFromText(""LINESTRING(16 85, 3 62)"")",0.405752,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(72 73)"")",now(),0.554164,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+70,55,"ST_GeogFromText(""LINESTRING(55 58, 62 52)"")",0.936139,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(88 12)"")",now(),0.687827,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+85,17,"ST_GeogFromText(""LINESTRING(76 49, 69 35)"")",0.181728,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(33 51)"")",now(),0.526707,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+71,76,"ST_GeogFromText(""LINESTRING(72 42, 66 70)"")",0.570522,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(76 24)"")",now(),0.388011,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+8,80,"ST_GeogFromText(""LINESTRING(35 58, 74 33)"")",0.398539,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(17 66)"")",now(),0.947527,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+45,83,"ST_GeogFromText(""LINESTRING(50 49, 4 6)"")",0.367264,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(87 14)"")",now(),0.385553,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+39,12,"ST_GeogFromText(""LINESTRING(39 27, 83 50)"")",0.500904,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(44 53)"")",now(),0.766060,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+44,4,"ST_GeogFromText(""LINESTRING(1 75, 43 45)"")",0.916422,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',null,"ST_GeogFromText(""POINT(32 43)"")",now(),0.358573,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+28,13,"ST_GeogFromText(""LINESTRING(82 7, 61 58)"")",0.508619,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(79 88)"")",now(),0.298145,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+95,17,"ST_GeogFromText(""LINESTRING(53 68, 84 14)"")",0.944375,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(36 39)"")",now(),0.854724,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+23,2,"ST_GeogFromText(""LINESTRING(48 72, 28 75)"")",0.642871,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 78)"")",now(),0.518557,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+80,41,"ST_GeogFromText(""LINESTRING(31 4, 6 9)"")",0.241162,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 12)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+52,8,"ST_GeogFromText(""LINESTRING(30 42, 30 68)"")",0.507080,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(86 12)"")",now(),0.461767,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+35,35,"ST_GeogFromText(""LINESTRING(88 46, 42 71)"")",0.639022,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(86 61)"")",now(),0.473377,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+58,18,"ST_GeogFromText(""LINESTRING(78 71, 62 5)"")",0.905949,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(68 30)"")",now(),0.850851,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,66,"ST_GeogFromText(""LINESTRING(35 50, 25 41)"")",0.379183,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(17 1)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+4,2,"ST_GeogFromText(""LINESTRING(70 61, 27 67)"")",0.187638,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',null,"ST_GeogFromText(""POINT(57 34)"")",now(),0.983839,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+20,28,"ST_GeogFromText(""LINESTRING(25 46, 38 58)"")",0.024333,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Luka Doncic',null,"ST_GeogFromText(""POINT(85 22)"")",now(),0.275208,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+88,84,"ST_GeogFromText(""LINESTRING(73 39, 87 82)"")",0.130880,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jonathon Simmons',null,"ST_GeogFromText(""POINT(63 73)"")",now(),0.765393,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+92,19,"ST_GeogFromText(""LINESTRING(5 76, 1 50)"")",0.751051,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(4 58)"")",now(),0.072168,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+47,88,"ST_GeogFromText(""LINESTRING(34 70, 71 50)"")",0.635561,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(61 5)"")",now(),0.955358,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+30,25,"ST_GeogFromText(""LINESTRING(74 0, 47 8)"")",0.737982,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(10 68)"")",now(),0.102201,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+24,83,"ST_GeogFromText(""LINESTRING(28 57, 16 29)"")",0.754020,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(22 63)"")",now(),0.733965,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+58,36,"ST_GeogFromText(""LINESTRING(43 3, 79 2)"")",0.060826,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(69 24)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+48,33,"ST_GeogFromText(""LINESTRING(31 34, 63 7)"")",0.752878,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(11 1)"")",now(),0.726277,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,88,"ST_GeogFromText(""LINESTRING(11 61, 54 32)"")",0.633391,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 78)"")",now(),0.641036,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+77,12,"ST_GeogFromText(""LINESTRING(89 77, 12 37)"")",0.398953,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(87 73)"")",now(),0.540141,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+64,66,"ST_GeogFromText(""LINESTRING(49 49, 7 7)"")",0.998930,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(81 69)"")",now(),0.851967,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+97,97,"ST_GeogFromText(""LINESTRING(7 38, 10 83)"")",0.204665,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 4)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+54,26,"ST_GeogFromText(""LINESTRING(84 15, 71 28)"")",0.045093,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(36 77)"")",now(),0.681388,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+85,44,"ST_GeogFromText(""LINESTRING(29 43, 87 62)"")",0.871399,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(13 60)"")",now(),0.546469,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+27,17,"ST_GeogFromText(""LINESTRING(25 22, 39 71)"")",0.743489,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(6 32)"")",now(),0.387265,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+44,49,"ST_GeogFromText(""LINESTRING(65 26, 38 8)"")",0.063660,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(77 41)"")",now(),0.502215,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+81,10,"ST_GeogFromText(""LINESTRING(83 44, 3 16)"")",0.939029,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(87 88)"")",now(),0.231025,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+64,57,"ST_GeogFromText(""LINESTRING(81 71, 27 14)"")",0.486987,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(71 39)"")",now(),0.507488,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+60,89,"ST_GeogFromText(""LINESTRING(14 20, 4 33)"")",0.825038,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Chris Paul',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(35 30)"")",now(),0.371150,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+73,22,"ST_GeogFromText(""LINESTRING(22 76, 89 14)"")",0.827673,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(26 7)"")",now(),0.858238,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+67,102,"ST_GeogFromText(""LINESTRING(2 5, 5 74)"")",0.738307,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(68 76)"")",now(),0.950851,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+51,59,"ST_GeogFromText(""LINESTRING(53 46, 31 68)"")",0.366467,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(36 70)"")",now(),0.128823,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+36,31,"ST_GeogFromText(""LINESTRING(61 72, 83 33)"")",0.974757,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(69 9)"")",now(),0.283150,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+59,34,"ST_GeogFromText(""LINESTRING(10 1, 70 1)"")",0.252314,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(42 79)"")",now(),0.617237,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+47,9,"ST_GeogFromText(""LINESTRING(26 54, 53 35)"")",0.922537,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(40 41)"")",now(),0.747056,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+13,91,"ST_GeogFromText(""LINESTRING(10 23, 3 59)"")",0.377358,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 34)"")",now(),0.656638,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+54,104,"ST_GeogFromText(""LINESTRING(64 18, 76 30)"")",0.026021,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 35)"")",now(),0.733199,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+105,85,"ST_GeogFromText(""LINESTRING(66 55, 12 62)"")",0.197177,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(66 25)"")",now(),0.731398,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+43,11,"ST_GeogFromText(""LINESTRING(58 51, 17 34)"")",0.202146,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(42 75)"")",now(),0.297504,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+108,29,"ST_GeogFromText(""LINESTRING(54 53, 57 71)"")",0.122332,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(48 29)"")",now(),0.073603,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+26,23,"ST_GeogFromText(""LINESTRING(2 59, 33 67)"")",0.998462,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(9 87)"")",now(),0.437960,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+22,27,"ST_GeogFromText(""LINESTRING(37 61, 56 59)"")",0.192517,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(79 47)"")",now(),0.376859,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+89,43,"ST_GeogFromText(""LINESTRING(55 33, 46 24)"")",0.709573,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(51 34)"")",now(),0.729572,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+7,22,"ST_GeogFromText(""LINESTRING(67 12, 71 30)"")",0.682642,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',null,"ST_GeogFromText(""POINT(14 27)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,5,"ST_GeogFromText(""LINESTRING(42 46, 19 28)"")",0.399815,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 57)"")",now(),0.075142,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,77,"ST_GeogFromText(""LINESTRING(28 50, 60 13)"")",0.838116,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(9 4)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,27,"ST_GeogFromText(""LINESTRING(72 3, 4 52)"")",0.284448,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(25 88)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,53,"ST_GeogFromText(""LINESTRING(7 74, 66 55)"")",0.985836,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(59 38)"")",now(),0.937521,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,87,"ST_GeogFromText(""LINESTRING(23 54, 47 49)"")",0.283544,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyle Anderson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(0 89)"")",now(),0.390780,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,107,"ST_GeogFromText(""LINESTRING(35 2, 31 66)"")",0.242141,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 61)"")",now(),0.348482,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,63,"ST_GeogFromText(""LINESTRING(56 39, 68 63)"")",0.928098,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(37 85)"")",now(),0.117052,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,75,"ST_GeogFromText(""LINESTRING(35 71, 1 25)"")",0.050698,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',null,"ST_GeogFromText(""POINT(3 58)"")",now(),0.734746,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+56,383,"ST_GeogFromText(""LINESTRING(21 56, 36 35)"")",0.629256,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(27 87)"")",now(),0.395767,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+21,383,"ST_GeogFromText(""LINESTRING(41 20, 82 36)"")",0.849204,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(42 82)"")",now(),0.530546,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,38,"ST_GeogFromText(""LINESTRING(26 78, 38 34)"")",0.051273,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tony Parker',null,"ST_GeogFromText(""POINT(51 38)"")",now(),0.740305,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+86,383,"ST_GeogFromText(""LINESTRING(40 73, 29 27)"")",0.427165,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(7 24)"")",now(),0.498545,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,90,"ST_GeogFromText(""LINESTRING(66 21, 19 40)"")",0.083941,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(20 59)"")",now(),0.559897,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,89,"ST_GeogFromText(""LINESTRING(53 34, 60 76)"")",0.156771,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(25 34)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,64,"ST_GeogFromText(""LINESTRING(0 33, 85 5)"")",0.628391,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(8 28)"")",now(),0.347606,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,8,"ST_GeogFromText(""LINESTRING(49 42, 9 68)"")",0.549474,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Grant Hill',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(85 45)"")",now(),0.068554,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,94,"ST_GeogFromText(""LINESTRING(21 2, 87 42)"")",0.602402,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(73 57)"")",now(),0.123306,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,47,"ST_GeogFromText(""LINESTRING(17 83, 16 25)"")",0.144540,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(25 51)"")",now(),0.105352,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,29,"ST_GeogFromText(""LINESTRING(4 71, 73 54)"")",0.858490,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(75 4)"")",now(),0.535361,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,56,"ST_GeogFromText(""LINESTRING(85 62, 65 51)"")",0.510018,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',null,"ST_GeogFromText(""POINT(61 27)"")",now(),0.211213,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,26,"ST_GeogFromText(""LINESTRING(52 23, 58 42)"")",0.766770,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(75 79)"")",now(),0.350849,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,54,"ST_GeogFromText(""LINESTRING(3 81, 46 71)"")",0.201195,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(8 77)"")",now(),0.019032,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,13,"ST_GeogFromText(""LINESTRING(54 0, 89 15)"")",0.493586,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(64 89)"")",now(),0.912323,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,93,"ST_GeogFromText(""LINESTRING(58 57, 41 61)"")",0.314036,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(70 1)"")",now(),0.283076,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+32,383,"ST_GeogFromText(""LINESTRING(66 77, 2 65)"")",0.799637,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(22 59)"")",now(),0.050632,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,51,"ST_GeogFromText(""LINESTRING(24 13, 21 83)"")",0.786668,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(88 19)"")",now(),0.228925,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,81,"ST_GeogFromText(""LINESTRING(44 85, 9 23)"")",0.922000,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(17 51)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,23,"ST_GeogFromText(""LINESTRING(66 59, 45 46)"")",0.825291,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(49 49)"")",now(),0.239526,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,20,"ST_GeogFromText(""LINESTRING(33 58, 33 46)"")",0.572839,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Cory Joseph',null,"ST_GeogFromText(""POINT(85 40)"")",now(),0.486719,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+69,383,"ST_GeogFromText(""LINESTRING(45 76, 19 2)"")",0.737968,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(71 15)"")",now(),0.382817,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,33,"ST_GeogFromText(""LINESTRING(43 73, 66 1)"")",0.142783,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(10 47)"")",now(),0.856029,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,17,"ST_GeogFromText(""LINESTRING(73 33, 86 40)"")",0.807200,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(75 72)"")",now(),0.934251,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,97,"ST_GeogFromText(""LINESTRING(33 0, 0 89)"")",0.760915,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(37 82)"")",now(),0.204663,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+78,383,"ST_GeogFromText(""LINESTRING(77 63, 24 81)"")",0.008764,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 41)"")",now(),0.221664,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,55,"ST_GeogFromText(""LINESTRING(21 33, 36 18)"")",0.601182,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(16 64)"")",now(),0.195237,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,7,"ST_GeogFromText(""LINESTRING(47 85, 70 37)"")",0.592489,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(65 73)"")",now(),0.241019,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,4,"ST_GeogFromText(""LINESTRING(35 79, 29 69)"")",0.562446,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(69 13)"")",now(),0.649219,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,2,"ST_GeogFromText(""LINESTRING(27 33, 31 56)"")",0.278213,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(22 19)"")",now(),0.570336,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,39,"ST_GeogFromText(""LINESTRING(67 62, 27 89)"")",0.444018,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'David West',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(69 18)"")",now(),0.935300,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,72,"ST_GeogFromText(""LINESTRING(40 61, 24 34)"")",0.009182,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(35 68)"")",now(),0.072422,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,30,"ST_GeogFromText(""LINESTRING(14 44, 68 72)"")",0.781815,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(35 57)"")",now(),0.320502,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,49,"ST_GeogFromText(""LINESTRING(52 88, 42 57)"")",0.848103,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(39 31)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,57,"ST_GeogFromText(""LINESTRING(51 83, 16 30)"")",0.093848,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(88 44)"")",now(),0.182963,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,59,"ST_GeogFromText(""LINESTRING(0 39, 23 50)"")",0.470608,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(1 41)"")",now(),0.551046,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,98,"ST_GeogFromText(""LINESTRING(5 10, 35 83)"")",0.700419,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(34 62)"")",now(),0.503447,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,36,"ST_GeogFromText(""LINESTRING(46 49, 85 15)"")",0.353862,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(62 82)"")",now(),0.964091,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,60,"ST_GeogFromText(""LINESTRING(42 85, 24 61)"")",0.629918,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(82 32)"")",now(),0.478264,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+74,383,"ST_GeogFromText(""LINESTRING(83 9, 74 47)"")",0.083985,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(60 3)"")",now(),0.553141,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,24,"ST_GeogFromText(""LINESTRING(30 81, 40 10)"")",0.642134,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dejounte Murray',null,"ST_GeogFromText(""POINT(64 61)"")",now(),0.400674,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,105,"ST_GeogFromText(""LINESTRING(13 6, 67 68)"")",0.100153,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'David West',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 38)"")",now(),0.515128,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,99,"ST_GeogFromText(""LINESTRING(28 27, 41 58)"")",0.629979,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Grant Hill',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(48 41)"")",now(),0.106422,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,68,"ST_GeogFromText(""LINESTRING(35 10, 7 16)"")",0.368632,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(39 83)"")",now(),0.055772,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,1,"ST_GeogFromText(""LINESTRING(45 49, 41 71)"")",0.467331,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(18 27)"")",now(),0.636009,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,9,"ST_GeogFromText(""LINESTRING(81 4, 49 27)"")",0.319351,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(4 79)"")",now(),0.511371,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,19,"ST_GeogFromText(""LINESTRING(71 12, 46 2)"")",0.970561,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(52 66)"")",now(),0.655742,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+60,383,"ST_GeogFromText(""LINESTRING(88 76, 30 64)"")",0.099013,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(67 81)"")",now(),0.926667,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,44,"ST_GeogFromText(""LINESTRING(80 1, 70 4)"")",0.329441,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(41 85)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,3,"ST_GeogFromText(""LINESTRING(15 35, 9 76)"")",0.534960,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(35 76)"")",now(),0.732614,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+383,62,"ST_GeogFromText(""LINESTRING(36 88, 10 35)"")",0.329045,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(4 88)"")",now(),0.905874,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+19,19,"ST_GeogFromText(""LINESTRING(21 88, 45 25)"")",0.409692,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(63 79)"")",now(),0.391641,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+57,57,"ST_GeogFromText(""LINESTRING(84 33, 47 36)"")",0.108238,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(74 59)"")",now(),0.827399,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+79,79,"ST_GeogFromText(""LINESTRING(11 4, 48 37)"")",0.462727,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Ben Simmons',null,"ST_GeogFromText(""POINT(15 23)"")",now(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+94,94,"ST_GeogFromText(""LINESTRING(19 23, 43 20)"")",0.926264,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(3 70)"")",now(),0.293808,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+61,61,"ST_GeogFromText(""LINESTRING(19 8, 17 13)"")",0.847789,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(50 35)"")",now(),0.281355,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+47,47,"ST_GeogFromText(""LINESTRING(62 36, 37 3)"")",0.391930,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(63 52)"")",now(),0.078585,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+6,6,"ST_GeogFromText(""LINESTRING(85 86, 37 13)"")",0.143402,true,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(78 56)"")",now(),0.460350,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
+62,62,"ST_GeogFromText(""LINESTRING(32 28, 7 15)"")",0.226188,false,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",datetime(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")","ST_GeogFromText(""POINT(19 21)"")",now(),0.411615,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")"
