@@ -227,50 +227,48 @@ class TestPermission(NebulaTestSuite):
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'CREATE TAG t1(t_c int)';
+        query = 'CREATE TAG t1(t_c int)'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
 
-        query = 'CREATE EDGE e1(e_c int)';
+        query = 'CREATE EDGE e1(e_c int)'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported sentence
-        # query = 'CREATE TAG INDEX tid1 ON t1(t_c)';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'CREATE TAG INDEX tid1 ON t1(t_c)'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = 'CREATE EDGE INDEX eid1 ON e1(e_c)';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'CREATE EDGE INDEX eid1 ON e1(e_c)'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
         query = 'DESCRIBE TAG t1';
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'DESCRIBE EDGE e1';
+        query = 'DESCRIBE EDGE e1'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported sentence
-        # query = 'DESCRIBE TAG INDEX tid1';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'DESCRIBE TAG INDEX tid1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = 'DESCRIBE EDGE INDEX eid1';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'DESCRIBE EDGE INDEX eid1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = 'DROP TAG INDEX tid1';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'DROP TAG INDEX tid1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = 'DROP EDGE INDEX eid1';
-        # resp = self.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = 'DROP EDGE INDEX eid1'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
 
-        query = 'ALTER TAG t1 DROP (t_c)';
+        query = 'ALTER TAG t1 DROP (t_c)'
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -300,14 +298,13 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported sentence
-        # query = "CREATE TAG INDEX tid1 ON t1(t_c)";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "CREATE TAG INDEX tid1 ON t1(t_c)";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
         query = "DESCRIBE TAG t1";
         resp = self.adminClient.execute(query)
@@ -317,22 +314,21 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported sentence
-        # query = "DESCRIBE TAG INDEX tid1";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DESCRIBE TAG INDEX tid1";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DESCRIBE EDGE INDEX eid1";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DESCRIBE EDGE INDEX eid1";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DROP TAG INDEX tid1";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DROP TAG INDEX tid1";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DROP EDGE INDEX eid1";
-        # resp = self.adminClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DROP EDGE INDEX eid1";
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
 
         query = "ALTER TAG t1 DROP (t_c)";
         resp = self.adminClient.execute(query)
@@ -372,14 +368,13 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported index
-        # query = "CREATE TAG INDEX tid1 ON t1(t_c)";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "CREATE TAG INDEX tid1 ON t1(t_c)";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
         query = "DESCRIBE TAG t1";
         resp = self.dbaClient.execute(query)
@@ -389,22 +384,21 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        # TODO(shylock) not supported index
-        # query = "DESCRIBE TAG INDEX tid1";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DESCRIBE TAG INDEX tid1";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DESCRIBE EDGE INDEX eid1";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DESCRIBE EDGE INDEX eid1";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DROP TAG INDEX tid1";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DROP TAG INDEX tid1";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
-        # query = "DROP EDGE INDEX eid1";
-        # resp = self.dbaClient.execute(query)
-        # self.check_resp_succeeded(resp)
+        query = "DROP EDGE INDEX eid1";
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
 
         query = "ALTER TAG t1 DROP (t_c)";
         resp = self.dbaClient.execute(query)
@@ -436,14 +430,13 @@ class TestPermission(NebulaTestSuite):
         resp = self.userClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # TODO(shylock) not supported index
-        # query = "CREATE TAG INDEX tid1 ON t1(t_c)";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "CREATE TAG INDEX tid1 ON t1(t_c)";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = "DESCRIBE TAG t1";
         resp = self.userClient.execute(query)
@@ -453,22 +446,21 @@ class TestPermission(NebulaTestSuite):
         resp = self.userClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # TODO(shylock) not supported sentence
-        # query = "DESCRIBE TAG INDEX tid1";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        query = "DESCRIBE TAG INDEX tid1";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # query = "DESCRIBE EDGE INDEX eid1";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        query = "DESCRIBE EDGE INDEX eid1";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # query = "DROP TAG INDEX tid1";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "DROP TAG INDEX tid1";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # query = "DROP EDGE INDEX eid1";
-        # resp = self.userClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "DROP EDGE INDEX eid1";
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = "ALTER TAG t1 DROP (t_c)";
         resp = self.userClient.execute(query)
@@ -500,14 +492,13 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # TODO(shylock) not supported sentence
-        # query = "CREATE TAG INDEX tid1 ON t1(t_c)";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "CREATE TAG INDEX tid1 ON t1(t_c)";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = "DESCRIBE TAG t1";
         resp = self.guestClient.execute(query)
@@ -517,22 +508,21 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # TODO(shylock) not supported sentence
-        # query = "DESCRIBE TAG INDEX tid1";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        query = "DESCRIBE TAG INDEX tid1";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # query = "DESCRIBE EDGE INDEX eid1";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        query = "DESCRIBE EDGE INDEX eid1";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
 
-        # query = "DROP TAG INDEX tid1";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "DROP TAG INDEX tid1";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        # query = "DROP EDGE INDEX eid1";
-        # resp = self.guestClient.execute(query)
-        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        query = "DROP EDGE INDEX eid1";
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = "ALTER TAG t1 DROP (t_c)";
         resp = self.guestClient.execute(query)
