@@ -1,0 +1,317 @@
+:SRC_VID(int),:DST_VID(int),Rel_0.Rel_0_2_Double:double,Rel_0.Rel_0_3_String:string,Rel_0.Rel_0_4_Bool:bool,Rel_0.Rel_0_6_String:string,Rel_0.Rel_0_0_Bool:bool,Rel_0.Rel_0_1_Int:int,Rel_0.Rel_0_5_Bool:bool
+61,39,0.650251,'Vince Carter',false,'Danny Green',true,34,false
+24,71,0.730313,'James Harden',false,'Kyle Anderson',true,40,false
+3,51,0.138541,'Blake Griffin',false,'Null3',true,14,true
+53,25,0.043180,'Null1',true,'JaVale McGee',false,63,true
+86,64,0.920840,'Rajon Rondo',false,'Manu Ginobili',true,71,false
+99,25,0.890527,'Jason Kidd',true,'Dwight Howard',false,66,true
+54,46,0.971304,'Chris Paul',false,'Rudy Gay',true,91,false
+90,77,0.965355,'Yao Ming',false,'Joel Embiid',true,31,true
+56,12,0.568098,'Rajon Rondo',true,'Tiago Splitter',true,64,false
+24,94,0.616458,'Paul Gasol',false,'Null4',false,11,false
+70,29,0.970098,'Null2',false,'Cory Joseph',false,20,true
+43,101,0.119036,'Grant Hill',false,'Yao Ming',true,41,true
+91,45,0.802897,'Dwyane Wade',true,'Tony Parker',true,87,false
+41,104,0.227444,'Jonathon Simmons',false,'Aron Baynes',true,82,false
+71,17,0.541027,'Marc Gasol',true,'Kobe Bryant',false,21,false
+34,34,0.528932,'Blake Griffin',false,'Rudy Gay',false,96,true
+13,34,0.916136,'Cory Joseph',true,'Grant Hill',false,43,true
+27,31,0.492134,'Ricky Rubio',true,'Kyrie Irving',true,93,true
+61,10,0.874858,'Ricky Rubio',true,'Tracy McGrady',true,49,true
+43,64,0.242191,'Russell Westbrook',false,'Amar\'e Stoudemire',false,53,false
+41,61,0.903951,'Dejounte Murray',true,'Marco Belinelli',false,79,false
+91,52,0.602467,'Paul Gasol',true,'Dejounte Murray',true,5,false
+76,79,0.171633,'Ray Allen',true,'Ben Simmons',false,88,false
+13,99,0.131668,'Grant Hill',false,'Dejounte Murray',true,70,false
+14,77,0.862620,'Tim Duncan',true,'Shaquile O\'Neal',false,76,false
+79,13,0.322021,'Kyrie Irving',false,'Dejounte Murray',true,5,false
+12,36,0.960288,'Dirk Nowitzki',false,'Null3',true,7,true
+34,75,0.947907,'Amar\'e Stoudemire',true,'Null4',true,31,false
+100,92,0.141506,'Paul George',true,'Ben Simmons',false,90,false
+20,107,0.988422,'Chris Paul',true,'Marco Belinelli',false,91,true
+18,74,0.657734,'Null4',true,'DeAndre Jordan',false,39,false
+46,27,0.386660,'Null2',true,'Giannis Antetokounmpo',true,69,false
+24,21,0.363323,'Kristaps Porzingis',false,'Dejounte Murray',false,2,true
+91,41,0.904787,'Blake Griffin',false,'Amar\'e Stoudemire',true,88,false
+64,68,0.054662,'Rajon Rondo',true,'Kevin Durant',false,89,false
+67,3,0.799950,'Tony Parker',true,'Amar\'e Stoudemire',true,20,true
+16,32,0.071950,'Vince Carter',true,'Cory Joseph',true,71,true
+79,3,0.898586,'Rajon Rondo',false,'Shaquile O\'Neal',true,82,false
+65,89,0.706374,'Kobe Bryant',false,'Manu Ginobili',false,15,false
+103,10,0.815371,'Amar\'e Stoudemire',false,'Nobody',true,82,true
+56,35,0.032943,'Boris Diaw',false,'Null4',false,47,true
+86,45,0.590284,'Paul Gasol',false,'JaVale McGee',true,99,true
+105,107,0.646620,'Paul George',true,'James Harden',true,3,false
+39,74,0.326113,'Carmelo Anthony',true,'Boris Diaw',false,63,false
+10,1,0.329493,'Kyle Anderson',false,'Tony Parker',true,25,true
+56,54,0.126377,'Kristaps Porzingis',false,'Russell Westbrook',true,22,true
+94,15,0.967341,'Shaquile O\'Neal',true,'LaMarcus Aldridge',false,49,true
+38,81,0.008835,'James Harden',true,'Marco Belinelli',true,95,false
+41,70,0.843274,'Jonathon Simmons',true,'Joel Embiid',false,69,false
+80,101,0.175791,'Dirk Nowitzki',true,'Kyle Anderson',true,89,false
+29,6,0.851025,'Amar\'e Stoudemire',true,'Ben Simmons',true,95,false
+83,85,0.252303,'Tim Duncan',true,'Tiago Splitter',false,34,false
+21,45,0.353197,'Rajon Rondo',false,'Blake Griffin',false,80,false
+81,37,0.485151,'Marc Gasol',false,'Rajon Rondo',false,73,false
+106,9,0.999484,'Stephen Curry',true,'Damian Lillard',false,95,false
+31,8,0.123973,'Null2',false,'Yao Ming',true,76,true
+4,9,0.217969,'JaVale McGee',true,'Kevin Durant',false,68,false
+32,65,0.641720,'Null4',false,'Cory Joseph',true,74,true
+86,31,0.962294,'Dejounte Murray',true,'Manu Ginobili',true,46,true
+53,58,0.565347,'Marc Gasol',true,'Steve Nash',true,2,false
+26,31,0.466836,'Kristaps Porzingis',true,'Null3',false,48,false
+81,12,0.694626,'Ricky Rubio',false,'Boris Diaw',false,96,true
+97,77,0.965509,'JaVale McGee',false,'Blake Griffin',false,42,false
+104,80,0.791878,'Null4',true,'Klay Thompson',true,24,false
+64,57,0.576771,'Ben Simmons',false,'Grant Hill',false,41,false
+83,103,0.160775,'Dirk Nowitzki',true,'DeAndre Jordan',false,14,false
+24,59,0.911782,'Steve Nash',false,'Jason Kidd',true,88,true
+54,21,0.384946,'Stephen Curry',false,'Marc Gasol',true,15,true
+42,10,0.445178,'DeAndre Jordan',false,'Paul George',false,60,false
+5,47,0.551700,'Vince Carter',false,'Paul George',true,44,true
+98,74,0.163615,'Cory Joseph',false,'Ray Allen',true,59,true
+101,46,0.620210,'Paul George',true,'Tiago Splitter',false,66,false
+80,82,0.189828,'LaMarcus Aldridge',true,'Rajon Rondo',false,66,false
+66,104,0.263618,'James Harden',true,'Amar\'e Stoudemire',true,73,true
+24,3,0.479407,'Manu Ginobili',false,'Tim Duncan',false,2,true
+3,38,0.876537,'Dejounte Murray',true,'Kyrie Irving',false,81,true
+9,63,0.095026,'Blake Griffin',false,'Jonathon Simmons',true,54,true
+10,61,0.594509,'Rudy Gay',false,'Manu Ginobili',true,59,false
+85,98,0.848104,'Paul George',false,'LeBron James',false,73,true
+28,54,0.045613,'Ray Allen',false,'Paul Gasol',false,65,true
+2,18,0.752563,'Ben Simmons',true,'Giannis Antetokounmpo',true,93,true
+87,8,0.602360,'Rajon Rondo',true,'Steve Nash',false,93,true
+41,37,0.192735,'Dwyane Wade',true,'Null1',true,90,false
+94,74,0.001499,'Tiago Splitter',false,'Null2',false,31,true
+96,26,0.506337,'Danny Green',false,'Russell Westbrook',true,31,true
+45,41,0.706025,'Paul Gasol',true,'Tim Duncan',true,54,true
+100,6,0.739329,'Null2',false,'Kobe Bryant',true,64,true
+101,60,0.585706,'Null4',false,'Amar\'e Stoudemire',false,30,false
+25,12,0.902871,'Stephen Curry',false,'Marc Gasol',false,27,false
+90,82,0.061885,'Null3',true,'LeBron James',true,80,false
+5,50,0.804503,'Chris Paul',true,'Nobody',true,4,true
+6,71,0.071620,'Jason Kidd',false,'Carmelo Anthony',false,94,true
+97,7,0.808742,'Shaquile O\'Neal',false,'Kyrie Irving',true,42,true
+17,84,0.427263,'JaVale McGee',true,'Danny Green',false,80,true
+103,30,0.622828,'JaVale McGee',false,'Grant Hill',true,86,false
+59,25,0.614730,'Grant Hill',true,'Rajon Rondo',false,1,false
+63,39,0.348629,'Kobe Bryant',true,'Boris Diaw',true,1,false
+68,107,0.992975,'Dirk Nowitzki',false,'Null3',false,66,false
+43,37,0.445015,'Kevin Durant',true,'LeBron James',true,72,true
+77,37,0.873562,'Kyle Anderson',false,'Ray Allen',false,95,true
+29,9,0.062066,'Null2',false,'Null4',false,19,false
+84,7,0.538240,'Null3',false,'Vince Carter',false,70,true
+91,91,0.716469,'Danny Green',false,'Boris Diaw',true,59,true
+2,22,0.024232,'David West',false,'Ray Allen',true,25,true
+32,101,0.082420,'Null2',false,'Shaquile O\'Neal',true,99,true
+4,68,0.239065,'Null4',false,'Luka Doncic',true,45,true
+21,103,0.675556,'Giannis Antetokounmpo',true,'Ray Allen',true,67,false
+45,85,0.365051,'Ray Allen',true,'Kevin Durant',true,84,true
+95,27,0.142577,'Dwyane Wade',true,'Kyle Anderson',true,41,false
+79,98,0.817894,'Marco Belinelli',true,'Tiago Splitter',false,6,true
+5,98,0.702406,'Nobody',false,'Kevin Durant',true,41,true
+105,62,0.761639,'Null2',false,'DeAndre Jordan',false,0,true
+81,44,0.433500,'Null1',false,'Ray Allen',true,3,false
+22,43,0.359933,'Aron Baynes',true,'Steve Nash',false,26,false
+66,68,0.634587,'Damian Lillard',false,'Boris Diaw',false,86,false
+31,50,0.365453,'Giannis Antetokounmpo',false,'Stephen Curry',true,30,false
+3,94,0.742910,'Vince Carter',true,'Rajon Rondo',true,37,false
+86,103,0.801264,'Ben Simmons',false,'Null1',true,49,false
+66,50,0.719879,'Damian Lillard',false,'Tony Parker',false,37,true
+56,57,0.575002,'Boris Diaw',false,'David West',true,73,false
+45,10,0.446501,'Amar\'e Stoudemire',true,'Tiago Splitter',false,40,true
+7,16,0.984254,'Tony Parker',true,'Chris Paul',false,56,true
+11,62,0.718158,'Null4',false,'Manu Ginobili',true,0,true
+61,89,0.052533,'Boris Diaw',true,'Null4',false,55,true
+68,81,0.496751,'Null1',true,'Tim Duncan',false,82,true
+97,93,0.374504,'Tim Duncan',false,'Jonathon Simmons',true,61,true
+44,38,0.373593,'Kevin Durant',false,'Amar\'e Stoudemire',true,64,false
+40,84,0.541325,'Kristaps Porzingis',false,'LeBron James',true,78,true
+93,73,0.674826,'Null1',true,'Dwyane Wade',true,59,false
+58,32,0.388761,'DeAndre Jordan',true,'Amar\'e Stoudemire',false,23,false
+55,43,0.740282,'Ricky Rubio',true,'JaVale McGee',true,29,true
+63,10,0.419879,'James Harden',false,'James Harden',true,8,true
+61,74,0.346288,'Tim Duncan',false,'Boris Diaw',true,89,false
+24,53,0.117047,'Paul George',true,'Null4',false,28,false
+94,54,0.940827,'Dwight Howard',true,'Tiago Splitter',true,22,false
+63,2,0.466567,'LaMarcus Aldridge',true,'Chris Paul',false,9,true
+17,40,0.033425,'LeBron James',true,'Luka Doncic',true,34,false
+48,54,0.312052,'Boris Diaw',true,'Danny Green',true,70,false
+38,3,0.028500,'Danny Green',true,'Dwight Howard',true,91,true
+87,107,0.212243,'Tony Parker',true,'Kobe Bryant',true,80,false
+56,55,0.090177,'Giannis Antetokounmpo',false,'Stephen Curry',false,67,true
+21,65,0.961957,'Klay Thompson',true,'Damian Lillard',true,13,false
+52,38,0.008399,'Kyle Anderson',false,'Tracy McGrady',true,90,false
+102,62,0.847127,'Null3',true,'Null1',false,21,false
+77,41,0.071848,'Dirk Nowitzki',false,'LeBron James',true,20,true
+27,3,0.745601,'Giannis Antetokounmpo',true,'Amar\'e Stoudemire',true,31,true
+29,15,0.140622,'Dwight Howard',true,'JaVale McGee',true,54,false
+10,92,0.830032,'Klay Thompson',false,'Vince Carter',true,54,true
+77,71,0.206385,'Dwight Howard',false,'LaMarcus Aldridge',true,22,true
+100,56,0.573303,'Blake Griffin',true,'Jonathon Simmons',false,55,true
+57,92,0.232389,'Kevin Durant',true,'Damian Lillard',true,64,true
+17,24,0.793592,'Giannis Antetokounmpo',false,'Tim Duncan',false,6,false
+55,70,0.452299,'Boris Diaw',true,'Ben Simmons',true,79,true
+90,34,0.068377,'Ricky Rubio',false,'Nobody',true,97,true
+7,71,0.695507,'Dwyane Wade',true,'Dwyane Wade',true,52,false
+33,102,0.960920,'Cory Joseph',false,'Cory Joseph',false,9,false
+16,16,0.688265,'Null3',false,'Steve Nash',false,66,false
+35,31,0.609625,'Grant Hill',false,'James Harden',false,26,false
+43,81,0.509884,'Rudy Gay',false,'Damian Lillard',true,75,false
+25,21,0.349865,'Chris Paul',true,'Klay Thompson',true,0,true
+47,107,0.422358,'Kevin Durant',false,'Amar\'e Stoudemire',false,87,true
+54,75,0.574056,'Cory Joseph',false,'JaVale McGee',false,99,false
+45,45,0.562176,'JaVale McGee',false,'Ray Allen',true,83,false
+52,40,0.547622,'Dirk Nowitzki',false,'Yao Ming',true,29,false
+71,28,0.687090,'Damian Lillard',true,'Tiago Splitter',false,8,true
+94,89,0.047733,'Tracy McGrady',false,'Paul Gasol',true,31,false
+33,98,0.811606,'Paul Gasol',false,'Damian Lillard',true,43,false
+11,67,0.335816,'Marc Gasol',true,'Amar\'e Stoudemire',false,22,true
+31,47,0.776119,'Stephen Curry',true,'Joel Embiid',false,35,false
+33,105,0.393160,'Ben Simmons',true,'Ben Simmons',false,98,false
+18,14,0.084690,'Chris Paul',true,'Ricky Rubio',false,28,false
+14,38,0.889894,'Luka Doncic',true,'Tim Duncan',false,42,true
+22,13,0.204058,'Tiago Splitter',true,'Jason Kidd',true,10,false
+78,65,0.236497,'Dwyane Wade',true,'Rajon Rondo',false,63,false
+17,38,0.643585,'Kristaps Porzingis',true,'Shaquile O\'Neal',true,85,false
+60,107,0.381339,'Kyrie Irving',true,'Russell Westbrook',false,44,true
+80,93,0.306140,'James Harden',true,'James Harden',false,22,true
+91,60,0.461409,'Joel Embiid',false,'Shaquile O\'Neal',false,68,true
+38,47,0.571068,'Kyrie Irving',true,'DeAndre Jordan',true,95,false
+37,45,0.692159,'Yao Ming',false,'Dwight Howard',true,81,true
+105,16,0.165841,'Manu Ginobili',true,'Danny Green',false,28,false
+90,87,0.101777,'Nobody',false,'Shaquile O\'Neal',true,83,false
+42,85,0.799773,'Dwight Howard',true,'Ben Simmons',true,47,true
+64,61,0.524894,'Null1',true,'Joel Embiid',false,24,true
+84,74,0.767716,'Kevin Durant',true,'Kobe Bryant',false,22,true
+97,82,0.849785,'Ben Simmons',true,'Paul George',false,65,false
+48,74,0.955332,'Giannis Antetokounmpo',false,'DeAndre Jordan',false,69,true
+87,50,0.364881,'Dirk Nowitzki',false,'Paul Gasol',true,87,true
+21,98,0.372800,'Rajon Rondo',false,'Russell Westbrook',true,6,true
+1,30,0.412427,'Klay Thompson',true,'Tim Duncan',true,45,false
+78,32,0.076332,'Ray Allen',true,'LaMarcus Aldridge',true,21,false
+45,75,0.492820,'David West',true,'Null4',false,1,true
+12,103,0.372059,'Luka Doncic',false,'Ray Allen',true,16,true
+26,24,0.190781,'Tim Duncan',true,'Jason Kidd',false,35,true
+101,104,0.304384,'Aron Baynes',true,'Ben Simmons',true,33,true
+45,70,0.176491,'Dejounte Murray',true,'Kyle Anderson',true,52,true
+97,92,0.806436,'Jason Kidd',false,'Carmelo Anthony',false,69,false
+45,8,0.021415,'Kyle Anderson',false,'Jonathon Simmons',false,88,true
+9,83,0.053486,'Paul Gasol',false,'Dwyane Wade',true,90,true
+77,20,0.562240,'Amar\'e Stoudemire',false,'Kyrie Irving',false,76,false
+102,40,0.289604,'Boris Diaw',false,'Russell Westbrook',true,88,false
+57,67,0.815355,'Carmelo Anthony',true,'Vince Carter',true,63,false
+98,34,0.585814,'Tiago Splitter',true,'Paul Gasol',false,5,true
+5,11,0.857041,'Rudy Gay',true,'Yao Ming',true,54,true
+6,99,0.730402,'LeBron James',false,'Damian Lillard',false,41,false
+84,89,0.075734,'Cory Joseph',true,'Tony Parker',false,11,false
+27,103,0.171078,'James Harden',false,'Chris Paul',true,93,false
+106,52,0.084055,'Paul Gasol',false,'James Harden',true,30,true
+91,24,0.828037,'Steve Nash',false,'Vince Carter',false,99,false
+72,52,0.452762,'Tracy McGrady',false,'Dwyane Wade',true,20,true
+87,72,0.718670,'Marco Belinelli',false,'Giannis Antetokounmpo',true,6,false
+69,102,0.744204,'Kyrie Irving',false,'Kristaps Porzingis',true,28,true
+69,99,0.233824,'Dwyane Wade',false,'Tony Parker',false,98,false
+107,26,0.631437,'Ben Simmons',false,'Dwight Howard',false,17,true
+24,25,0.664123,'Giannis Antetokounmpo',true,'Null2',true,52,false
+43,38,0.284852,'Jason Kidd',true,'Yao Ming',true,6,false
+101,79,0.254581,'Kevin Durant',false,'Null1',false,5,true
+8,9,0.837951,'LeBron James',false,'Ray Allen',false,39,false
+106,85,0.686200,'Rajon Rondo',false,'Boris Diaw',true,58,true
+88,14,0.077216,'Tracy McGrady',false,'Dejounte Murray',false,43,false
+10,55,0.894622,'Damian Lillard',true,'Dejounte Murray',false,28,true
+73,90,0.268983,'Damian Lillard',false,'Ricky Rubio',false,79,false
+28,3,0.541828,'Steve Nash',false,'Luka Doncic',true,58,true
+6,18,0.945146,'Dwyane Wade',false,'Grant Hill',true,12,false
+56,101,0.950159,'Jonathon Simmons',true,'Luka Doncic',true,48,true
+62,71,0.623731,'Vince Carter',true,'Ben Simmons',false,62,true
+84,61,0.133041,'Vince Carter',true,'JaVale McGee',false,45,true
+102,92,0.664686,'Manu Ginobili',false,'Ben Simmons',true,24,true
+11,104,0.681821,'JaVale McGee',true,'Rudy Gay',true,35,false
+96,27,0.874790,'Giannis Antetokounmpo',false,'Vince Carter',false,23,true
+76,102,0.586431,'Ben Simmons',false,'Shaquile O\'Neal',true,6,false
+63,21,0.024021,'Blake Griffin',false,'Yao Ming',true,99,true
+88,30,0.288864,'Luka Doncic',true,'Tim Duncan',false,70,true
+92,31,0.715157,'Damian Lillard',false,'Grant Hill',false,89,false
+40,13,0.174221,'Giannis Antetokounmpo',true,'Carmelo Anthony',true,27,false
+38,4,0.785301,'Jason Kidd',false,'Paul George',true,58,false
+100,7,0.356865,'Nobody',false,'Dejounte Murray',false,9,false
+31,54,0.018461,'Rajon Rondo',false,'Grant Hill',false,56,false
+5,102,0.277638,'Manu Ginobili',false,'Ray Allen',true,20,true
+87,62,0.350532,'Vince Carter',false,'Ray Allen',true,18,false
+58,75,0.524674,'Paul George',true,'Russell Westbrook',true,6,false
+76,54,0.572107,'JaVale McGee',true,'Paul George',false,7,false
+96,87,0.950220,'Russell Westbrook',false,'Kyrie Irving',true,40,true
+43,55,0.593730,'Amar\'e Stoudemire',false,'Tony Parker',true,18,false
+64,76,0.646799,'Null1',true,'Boris Diaw',true,31,false
+3,100,0.459173,'Paul George',false,'Jonathon Simmons',false,57,false
+102,41,0.960355,'JaVale McGee',false,'Kristaps Porzingis',true,22,true
+75,79,0.412410,'Kobe Bryant',false,'Aron Baynes',false,75,true
+63,26,0.143656,'Cory Joseph',false,'Marc Gasol',false,32,false
+63,95,0.884064,'Nobody',false,'Marco Belinelli',true,23,false
+30,64,0.683255,'Dwyane Wade',false,'Stephen Curry',true,6,true
+35,69,0.622824,'Marc Gasol',false,'Kyrie Irving',false,13,false
+456,39,0.107941,'Ricky Rubio',false,'Shaquile O\'Neal',false,89,false
+456,54,0.319067,'Luka Doncic',false,'Stephen Curry',true,74,false
+456,64,0.878655,'Tony Parker',true,'Jonathon Simmons',false,4,true
+456,456,0.895397,'Paul Gasol',true,'Kevin Durant',false,0,true
+456,66,0.656614,'Marc Gasol',true,'Tiago Splitter',true,4,false
+456,1,0.817849,'David West',true,'Rudy Gay',true,7,true
+456,43,0.767377,'Danny Green',false,'Jonathon Simmons',false,19,true
+456,7,0.683472,'Jonathon Simmons',true,'Paul Gasol',true,19,true
+456,25,0.651376,'Russell Westbrook',true,'Tony Parker',true,97,false
+456,30,0.816838,'Kobe Bryant',false,'Chris Paul',true,34,false
+456,11,0.194535,'DeAndre Jordan',true,'LaMarcus Aldridge',false,18,false
+456,72,0.127340,'Danny Green',true,'Joel Embiid',true,72,false
+456,49,0.276635,'Tracy McGrady',false,'Chris Paul',true,73,false
+456,52,0.333415,'Vince Carter',false,'Jason Kidd',false,85,false
+456,26,0.857238,'Marco Belinelli',true,'Ricky Rubio',false,79,true
+456,12,0.976844,'Paul George',true,'Ben Simmons',true,70,true
+456,103,0.306367,'LaMarcus Aldridge',true,'Amar\'e Stoudemire',false,78,true
+456,73,0.286702,'Danny Green',true,'Aron Baynes',true,95,false
+456,77,0.182667,'Marco Belinelli',true,'Kyle Anderson',false,52,true
+456,67,0.397499,'Luka Doncic',false,'Kristaps Porzingis',true,60,false
+456,94,0.954446,'David West',true,'Yao Ming',true,61,true
+456,84,0.605749,'JaVale McGee',true,'Yao Ming',false,34,true
+456,4,0.721558,'DeAndre Jordan',true,'LeBron James',false,72,true
+456,100,0.027539,'James Harden',true,'Ricky Rubio',false,3,true
+456,106,0.451238,'Vince Carter',true,'James Harden',false,89,true
+456,53,0.152987,'Amar\'e Stoudemire',false,'Aron Baynes',true,96,false
+456,24,0.244416,'LaMarcus Aldridge',true,'Dwyane Wade',false,11,true
+456,45,0.225331,'Blake Griffin',false,'Paul Gasol',true,68,false
+456,98,0.626819,'Ray Allen',true,'Shaquile O\'Neal',false,22,true
+456,36,0.058418,'Danny Green',true,'Nobody',true,75,false
+65,456,0.707277,'Null4',true,'Danny Green',false,40,false
+456,50,0.798383,'Rajon Rondo',false,'Paul George',false,19,false
+5,456,0.972259,'Tim Duncan',true,'Stephen Curry',true,3,true
+456,28,0.395844,'Klay Thompson',false,'Rajon Rondo',false,96,false
+456,27,0.599498,'Blake Griffin',false,'Kobe Bryant',false,38,false
+456,46,0.462693,'Giannis Antetokounmpo',true,'Null4',true,15,true
+456,6,0.458695,'Manu Ginobili',true,'Rudy Gay',false,75,true
+31,456,0.032863,'Grant Hill',false,'Tim Duncan',false,61,false
+456,70,0.041507,'Null4',false,'Vince Carter',true,9,true
+456,47,0.561574,'Rajon Rondo',false,'Giannis Antetokounmpo',false,0,false
+456,32,0.845484,'Tony Parker',false,'Dwyane Wade',true,21,false
+456,89,0.763593,'Marco Belinelli',true,'Ray Allen',false,32,false
+26,456,0.353621,'Danny Green',true,'Steve Nash',false,42,false
+456,88,0.932191,'Null3',false,'Carmelo Anthony',true,14,true
+456,13,0.967100,'Shaquile O\'Neal',true,'Dirk Nowitzki',true,38,true
+456,83,0.513050,'Ray Allen',false,'Manu Ginobili',true,42,false
+456,59,0.632679,'Kobe Bryant',false,'LeBron James',false,91,true
+456,71,0.596485,'Manu Ginobili',true,'LaMarcus Aldridge',true,87,true
+456,96,0.472737,'Dwight Howard',false,'Luka Doncic',true,16,true
+54,456,0.720030,'Giannis Antetokounmpo',true,'Danny Green',true,76,true
+456,79,0.430510,'Kristaps Porzingis',true,'James Harden',true,76,false
+456,86,0.595082,'Null1',false,'Grant Hill',false,62,false
+456,82,0.331717,'Vince Carter',true,'Ray Allen',false,15,false
+456,42,0.143582,'Manu Ginobili',true,'Cory Joseph',false,12,false
+7,7,0.746217,'Blake Griffin',true,'Dejounte Murray',false,91,true
+21,21,0.822574,'Tracy McGrady',false,'Kevin Durant',false,72,true
+5,5,0.577409,'Paul George',true,'Nobody',true,70,true
+38,38,0.429988,'Damian Lillard',true,'Dejounte Murray',false,47,false
+84,84,0.607469,'James Harden',false,'Kyle Anderson',false,37,false
+43,43,0.097794,'Paul George',false,'Jonathon Simmons',true,74,false
+48,48,0.946133,'Dejounte Murray',true,'Kyle Anderson',true,47,true
+95,95,0.086611,'Dwyane Wade',false,'Dwight Howard',false,40,false
+101,101,0.072421,'Giannis Antetokounmpo',false,'Blake Griffin',false,3,false
+19,19,0.237409,'Amar\'e Stoudemire',true,'Grant Hill',false,66,true
