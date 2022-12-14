@@ -40,7 +40,7 @@ class AllPathsExecutor final : public PathBaseExecutor {
 
   void buildPath();
 
-  void multiThread();
+  void buildPathMultiJobs();
 
   folly::Future<Status> buildResult();
 
@@ -49,6 +49,7 @@ class AllPathsExecutor final : public PathBaseExecutor {
   bool withProp_{false};
   bool noLoop_{false};
   size_t limit_{std::numeric_limits<size_t>::max()};
+  std::atomic<size_t> cnt_{0};
   size_t steps_{0};
 
   size_t leftSteps_{0};

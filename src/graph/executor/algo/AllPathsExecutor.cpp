@@ -277,7 +277,8 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
     }
   }
 
-  buildPath();
+  // buildPath();
+  buildPathMultiJobs();
   if (!withProp_ || emptyPropVids_.empty()) {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
@@ -299,68 +300,55 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
   });
 }
 
-void AllPathsExecutor::buildPath() {
-  for (const auto& vid : leftInitVids_) {
-    auto paths = doBuildPath(vid);
-    if (paths.empty()) {
-      continue;
-    }
-    result_.rows.insert(result_.rows.end(),
-                        std::make_move_iterator(paths.begin()),
-                        std::make_move_iterator(paths.end()));
-  }
-}
-
-void AllPathsExecutor::multiThread() {
-  std::vector<folly::Future<std::vector<Row>>> futures;
+void AllPathsExecutor::buildPathMultiJobs() {
+  std::vector<folly::SemiFuture<std::vector<Row>>> futures;
   nebula::thread::GenericThreadPool pool;
   pool.start(FLAGS_num_path_thread, "build-path");
 
-  std::function<std::vector<Row>(size_t, Value, std::vector<std::vector<Value>>)> task =
-      [this, &task, &pool, &futures](
-          size_t step, Value&& src, std::vector<std::vector<Value>>&& edgeLists) {
-        auto& adjList = leftAdjList_;
-        std::vector<Row> result;
-        std::vector<std::vector<Value>> newEdgeLists;
-        newEdgeLists.reserve(edgeLists.size());
+  using funType = std::function<std::vector<Row>(size_t, Value, std::vector<std::vector<Value>>)>;
+  funType task = [this, &task, &pool, &futures](
+                     size_t step, Value&& src, std::vector<std::vector<Value>>&& edgeLists) {
+    auto& adjList = leftAdjList_;
+    std::vector<Row> result;
+    std::vector<std::vector<Value>> newEdgeLists;
+    newEdgeLists.reserve(edgeLists.size());
 
-        for (auto& edgeList : edgeLists) {
-          auto& dst = edgeList.back().getEdge().dst;
-          auto dstIter = rightInitVids_.find(dst);
-          if (dstIter != rightInitVids_.end()) {
-            Row row;
-            row.values.emplace_back(src);
-            row.values.emplace_back(List(edgeList));
-            row.values.emplace_back(*dstIter);
-            result.emplace_back(std::move(row));
-            if (result.size() == limit_) {
-              break;
-            }
-          }
-          if (step <= steps_) {
-            auto adjIter = adjList.find(dst);
-            if (adjIter == adjList.end()) {
-              continue;
-            }
+    for (auto& edgeList : edgeLists) {
+      auto& dst = edgeList.back().getEdge().dst;
+      auto dstIter = rightInitVids_.find(dst);
+      if (dstIter != rightInitVids_.end()) {
+        Row row;
+        row.values.emplace_back(src);
+        row.values.emplace_back(List(edgeList));
+        row.values.emplace_back(*dstIter);
+        result.emplace_back(std::move(row));
+        ++cnt_;
+      }
+      if (step <= steps_) {
+        auto adjIter = adjList.find(dst);
+        if (adjIter == adjList.end()) {
+          continue;
+        }
 
-            auto& adjedges = adjIter->second;
-            for (auto& edge : adjedges) {
-              if (hasSameEdge(edgeList, edge.getEdge())) {
-                continue;
-              }
-              auto newEdgeList = edgeList;
-              newEdgeList.emplace_back(adjIter->first);
-              newEdgeList.emplace_back(edge);
-              newEdgeLists.emplace_back(std::move(newEdgeList));
-            }
+        auto& adjedges = adjIter->second;
+        for (auto& edge : adjedges) {
+          if (hasSameEdge(edgeList, edge.getEdge())) {
+            continue;
           }
+          auto newEdgeList = edgeList;
+          newEdgeList.emplace_back(adjIter->first);
+          newEdgeList.emplace_back(edge);
+          newEdgeLists.emplace_back(std::move(newEdgeList));
         }
-        if (step <= steps_ && !newEdgeLists.empty()) {
-          futures.emplace_back(
-              pool.addTask(task, step + 1, std::move(src), std::move(newEdgeLists)));
-        }
-        return result;
-      };
+      }
+    }
+    if (cnt_.load(std::memory_order_relaxed) >= limit_) {
+      pool.stop();
+    } else if (step <= steps_ && !newEdgeLists.empty()) {
+      futures.emplace_back(pool.addTask(task, step + 1, std::move(src), std::move(newEdgeLists)));
+    }
+    return result;
+  };
 
   for (auto& vid : leftInitVids_) {
     auto vidIter = leftAdjList_.find(vid);
@@ -381,13 +369,29 @@ void AllPathsExecutor::multiThread() {
     futures.emplace_back(pool.addTask(task, step, src, std::move(edgeLists)));
   }
   pool.wait();
-  folly::collect(futures).thenValue([this](std::vector<std::vector<Row>>&& resp) {
+
+  folly::collect(futures).via(runner()).thenValue([this](std::vector<std::vector<Row>>&& resp) {
     for (auto& rows : resp) {
       result_.rows.insert(result_.rows.end(),
                           std::make_move_iterator(rows.begin()),
                           std::make_move_iterator(rows.end()));
     }
+    if (limit_ != std::numeric_limits<size_t>::max()) {
+      result_.rows.resize(limit_);
+    }
   });
+}
+
+void AllPathsExecutor::buildPath() {
+  for (const auto& vid : leftInitVids_) {
+    auto paths = doBuildPath(vid);
+    if (paths.empty()) {
+      continue;
+    }
+    result_.rows.insert(result_.rows.end(),
+                        std::make_move_iterator(paths.begin()),
+                        std::make_move_iterator(paths.end()));
+  }
 }
 
 std::vector<Row> AllPathsExecutor::doBuildPath(const Value& vid) {
