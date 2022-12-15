@@ -209,6 +209,11 @@ class TestPermission(NebulaTestSuite):
         resp = self.execute(query)
         self.check_resp_succeeded(resp)
 
+        # user without role
+        query = 'CREATE USER nop WITH PASSWORD "nop"'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
         time.sleep(self.delay)
         ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
         assert ret
@@ -220,6 +225,9 @@ class TestPermission(NebulaTestSuite):
         assert ret
 
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
+        assert ret
+
+        ret, self.nopClient = self.spawn_nebula_client_and_auth('nop', 'nop')
         assert ret
 
         # god write schema test
@@ -540,6 +548,68 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
+        # no role write schema test
+        query = 'USE space2'
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # Can't use space
+        # query = "CREATE TAG t1(t_c int)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "CREATE EDGE e1(e_c int)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "CREATE TAG INDEX tid1 ON t1(t_c)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "CREATE EDGE INDEX eid1 ON e1(e_c)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "DESCRIBE TAG t1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        # query = "DESCRIBE EDGE e1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        # query = "DESCRIBE TAG INDEX tid1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        # query = "DESCRIBE EDGE INDEX eid1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+
+        # query = "DROP TAG INDEX tid1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "DROP EDGE INDEX eid1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "ALTER TAG t1 DROP (t_c)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "ALTER EDGE e1 DROP (e_c)";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "DROP TAG t1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = "DROP EDGE e1";
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
         # god write data test
         query = 'USE space2'
         resp = self.dbaClient.execute(query)
@@ -634,6 +704,24 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
 
+        # no role write data test
+        query = 'USE space2'
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # can't use space
+        # query = 'INSERT VERTEX t1(t_c) VALUES "1":(1)'
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = 'INSERT EDGE e1(e_c) VALUES "1" -> "2":(95)';
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # query = 'GO FROM "1" OVER e1 YIELD e1._dst';
+        # resp = self.nopClient.execute(query)
+        # self.check_resp_succeeded(resp)
+
         # use space test
         query = "CREATE SPACE space3(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))";
         resp = self.execute(query)
@@ -654,6 +742,144 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # roll back space
+        query = 'USE space2'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        # write data
+        query = 'INSERT VERTEX t1(t_c) VALUES "1":(1)'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.userClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # can't use space
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+
+        # read data
+        query = 'MATCH (v) RETURN v LIMIT 3'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.dbaClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.userClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        resp = self.guestClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        # can't use space
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+
+        # write user
+        query = 'CREATE USER xxx WITH PASSWORD "xxx"'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'DROP USER xxx'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'CREATE USER xxx WITH PASSWORD "xxx"'
+        resp = self.adminClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.dbaClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        # write role
+        query = 'CREATE USER xxx WITH PASSWORD "xxx"'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'GRANT ROLE GUEST ON space2 TO xxx'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'REVOKE ROLE GUEST ON space2 FROM xxx'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'GRANT ROLE GUEST ON space2 TO xxx'
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'REVOKE ROLE GUEST ON space2 FROM xxx'
+        resp = self.adminClient.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'GRANT ROLE GUEST ON space2 TO xxx'
+        resp = self.dbaClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        query = 'DROP USER xxx'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        # write space
+        query = 'CREATE SPACE write_space_test(partition_num=1, replica_factor=1, vid_type=int)'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'DROP SPACE write_space_test'
+        resp = self.execute(query)
+        self.check_resp_succeeded(resp)
+
+        query = 'CREATE SPACE write_space_test(partition_num=1, replica_factor=1, vid_type=int)'
+        resp = self.adminClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.dbaClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.userClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.guestClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+
+        resp = self.nopClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
     def test_show_test(self):
