@@ -101,7 +101,13 @@ class StatsManager final {
  public:
   enum class StatsMethod { SUM = 1, COUNT, AVG, RATE };
 
-  enum class TimeRange { FIVE_SECONDS = 0, ONE_MINUTE = 1, TEN_MINUTES = 2, ONE_HOUR = 3 };
+  enum class TimeRange {
+    FIVE_SECONDS = 0,
+    ONE_MINUTE = 1,
+    TEN_MINUTES = 2,
+    ONE_HOUR = 3,
+    ALL_TIME = 4
+  };
 
   static void setDomain(folly::StringPiece domain);
   // addr     -- The ip/port of the stats collector. StatsManager will

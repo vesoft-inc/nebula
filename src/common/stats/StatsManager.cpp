@@ -90,13 +90,14 @@ CounterId StatsManager::registerStats(folly::StringPiece counterName,
   }
 
   // Insert the Stats
+  // The duration '0' is a special "all-time" level.
   sm.stats_.emplace(
       counterName,
       std::make_pair(std::make_unique<std::mutex>(),
                      std::make_unique<StatsType>(
                          60,
                          std::initializer_list<StatsType::Duration>(
-                             {seconds(5), seconds(60), seconds(600), seconds(3600)}))));
+                             {seconds(5), seconds(60), seconds(600), seconds(3600), seconds(0)}))));
   std::string index(counterName);
   auto it2 = sm.nameMap_.emplace(
       std::piecewise_construct,
@@ -337,6 +338,8 @@ StatusOr<StatsManager::VT> StatsManager::readValue(folly::StringPiece metricName
     range = TimeRange::TEN_MINUTES;
   } else if (parts[2] == "3600") {
     range = TimeRange::ONE_HOUR;
+  } else if (parts[2] == "0") {
+    range = TimeRange::ALL_TIME;
   } else {
     // Unsupported time range
     LOG(ERROR) << "Unsupported time range \"" << parts[2] << "\"";
@@ -410,6 +413,9 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
           case TimeRange::ONE_HOUR:
             metricName = metricPrefix + ".3600";
             break;
+          case TimeRange::ALL_TIME:
+            metricName = metricPrefix + ".0";
+            break;
             // intentionally no `default'
         }
 
@@ -438,6 +444,9 @@ void StatsManager::readAllValue(folly::dynamic& vals) {
             break;
           case TimeRange::ONE_HOUR:
             metricName = metricPrefix + ".3600";
+            break;
+          case TimeRange::ALL_TIME:
+            metricName = metricPrefix + ".0";
             break;
             // intentionally no `default'
         }
