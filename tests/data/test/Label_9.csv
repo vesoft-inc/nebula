@@ -1,0 +1,64 @@
+:VID(int),Label_9.Label_9_1_String:string,Label_9.Label_9_4_date:date,Label_9.Label_9_5_Bool:bool,Label_9.Label_9_3_String:string,Label_9.Label_9_6_datetime:datetime,Label_9.Label_9_2_Int:int,Label_9.Label_9_0_Bool:bool
+1,'Null2',date(),false,'Null3',datetime(),44,true
+2,'Tony Parker',date(),false,'Kobe Bryant',datetime(),77,true
+3,'Dwight Howard',date(),true,'Dirk Nowitzki',datetime(),95,true
+4,'Kyrie Irving',date(),true,'Tiago Splitter',datetime(),6,true
+6,'Shaquile O\'Neal',date(),false,'Joel Embiid',datetime(),3,true
+7,'Grant Hill',date(),true,'Klay Thompson',datetime(),60,false
+9,'Ray Allen',date(),false,'Chris Paul',datetime(),26,false
+10,'Null1',date(),true,'David West',datetime(),12,true
+11,'Null4',date(),true,'JaVale McGee',datetime(),89,false
+12,'Marco Belinelli',date(),false,'Dejounte Murray',datetime(),81,false
+13,'LaMarcus Aldridge',date(),false,'LeBron James',datetime(),27,true
+14,'Null1',date(),true,'Shaquile O\'Neal',datetime(),88,false
+15,'Rudy Gay',date(),true,'Marc Gasol',datetime(),46,false
+16,'Grant Hill',date(),true,'LeBron James',datetime(),88,false
+20,'Steve Nash',date(),false,'Jonathon Simmons',datetime(),42,true
+21,'Jonathon Simmons',date(),false,'Ben Simmons',datetime(),78,false
+22,'Nobody',date(),false,'Aron Baynes',datetime(),62,false
+23,'JaVale McGee',date(),true,'Kobe Bryant',datetime(),96,true
+24,'Vince Carter',date(),false,'Marc Gasol',datetime(),34,false
+27,'Kevin Durant',date(),false,'Shaquile O\'Neal',datetime(),47,true
+28,'LaMarcus Aldridge',date(),true,'Stephen Curry',datetime(),86,false
+31,'Rajon Rondo',date(),true,'Jason Kidd',datetime(),78,true
+35,'Chris Paul',date(),false,'Dwight Howard',datetime(),47,true
+38,'Kyle Anderson',date(),true,'Tony Parker',datetime(),91,false
+41,'Ray Allen',date(),false,'Tracy McGrady',datetime(),1,false
+47,'Null4',date(),false,'Tiago Splitter',datetime(),26,false
+48,'Manu Ginobili',date(),false,'Vince Carter',datetime(),81,false
+53,'Kyle Anderson',date(),true,'Nobody',datetime(),15,true
+58,'Aron Baynes',date(),true,'DeAndre Jordan',datetime(),37,false
+59,'Stephen Curry',date(),true,'Null4',datetime(),6,false
+60,'Kobe Bryant',date(),true,'Nobody',datetime(),5,false
+61,'Jonathon Simmons',date(),true,'James Harden',datetime(),85,true
+64,'James Harden',date(),false,'Dwyane Wade',datetime(),75,true
+65,'Kristaps Porzingis',date(),true,'Jason Kidd',datetime(),89,true
+67,'Grant Hill',date(),false,'Null4',datetime(),93,true
+68,'Kyle Anderson',date(),true,'Tracy McGrady',datetime(),32,false
+70,'Ricky Rubio',date(),true,'Kristaps Porzingis',datetime(),48,false
+74,'Steve Nash',date(),true,'David West',datetime(),96,true
+76,'Rudy Gay',date(),true,'Paul George',datetime(),6,true
+77,'Kyrie Irving',date(),false,'Rajon Rondo',datetime(),26,false
+78,'Null2',date(),true,'Kevin Durant',datetime(),51,true
+80,'Carmelo Anthony',date(),false,'Russell Westbrook',datetime(),54,false
+81,'Tim Duncan',date(),false,'Joel Embiid',datetime(),54,true
+82,'James Harden',date(),false,'Null2',datetime(),74,true
+85,'Marco Belinelli',date(),true,'Klay Thompson',datetime(),76,true
+86,'Tim Duncan',date(),false,'Null2',datetime(),53,true
+87,'Luka Doncic',date(),false,'Dejounte Murray',datetime(),18,true
+88,'David West',date(),false,'Dirk Nowitzki',datetime(),77,true
+89,'Cory Joseph',date(),false,'Null4',datetime(),90,true
+90,'Damian Lillard',date(),false,'Nobody',datetime(),75,false
+91,'Amar\'e Stoudemire',date(),false,'Rudy Gay',datetime(),75,true
+92,'Carmelo Anthony',date(),false,'Chris Paul',datetime(),34,true
+94,'Dwyane Wade',date(),false,'Steve Nash',datetime(),4,false
+96,'Steve Nash',date(),false,'Kyle Anderson',datetime(),94,true
+98,'Carmelo Anthony',date(),false,'Grant Hill',datetime(),72,false
+99,'Stephen Curry',date(),false,'Tim Duncan',datetime(),24,false
+100,'Klay Thompson',date(),false,'Vince Carter',datetime(),72,true
+101,'Boris Diaw',date(),false,'Joel Embiid',datetime(),30,true
+102,'Cory Joseph',date(),false,'Kristaps Porzingis',datetime(),6,true
+104,'Dejounte Murray',date(),false,'Nobody',datetime(),19,false
+105,'Kyrie Irving',date(),false,'Kobe Bryant',datetime(),0,true
+107,'Null1',date(),false,'Paul George',datetime(),1,true
+383,'Kyle Anderson',date(),false,'LeBron James',datetime(),11,true
