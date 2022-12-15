@@ -18,7 +18,9 @@ folly::Future<Status> AllPathsExecutor::execute() {
   noLoop_ = pathNode_->noLoop();
   steps_ = pathNode_->steps();
   withProp_ = pathNode_->withProp();
-  limit_ = pathNode_->limit();
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   result_.colNames = pathNode_->colNames();
   init();
   if (leftVids_.empty() || rightVids_.empty()) {
@@ -173,6 +175,13 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
           expandFromLeft(iter.get());
         }
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -277,8 +286,26 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
     }
   }
 
-  // buildPath();
-  buildPathMultiJobs();
+  auto futures = buildPathMultiJobs();
+  folly::collect(futures).via(runner()).thenValue([this](std::vector<std::vector<Row>>&& resp) {
+    DLOG(ERROR) << "collect resp 's size " << resp.size();
+    for (auto& rows : resp) {
+      DLOG(ERROR) << "rows ' size " << rows.size();
+      if (rows.empty()) {
+        continue;
+      }
+      result_.rows.insert(result_.rows.end(),
+                          std::make_move_iterator(rows.begin()),
+                          std::make_move_iterator(rows.end()));
+    }
+    DLOG(ERROR) << " result' s size " << result_.rows.size();
+    DLOG(ERROR) << "reuslt is " << result_.toString();
+    if (limit_ != std::numeric_limits<size_t>::max() && limit_ < result_.rows.size()) {
+      result_.rows.resize(limit_);
+    }
+  });
+  DLOG(ERROR) << "test";
+
   if (!withProp_ || emptyPropVids_.empty()) {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
@@ -300,7 +327,7 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
   });
 }
 
-void AllPathsExecutor::buildPathMultiJobs() {
+std::vector<folly::SemiFuture<std::vector<Row>>> AllPathsExecutor::buildPathMultiJobs() {
   std::vector<folly::SemiFuture<std::vector<Row>>> futures;
   nebula::thread::GenericThreadPool pool;
   pool.start(FLAGS_num_path_thread, "build-path");
@@ -308,6 +335,8 @@ void AllPathsExecutor::buildPathMultiJobs() {
   using funType = std::function<std::vector<Row>(size_t, Value, std::vector<std::vector<Value>>)>;
   funType task = [this, &task, &pool, &futures](
                      size_t step, Value&& src, std::vector<std::vector<Value>>&& edgeLists) {
+    DLOG(ERROR) << "step is : " << step << " src : " << src.toString() << " edgeLists.size() "
+                << edgeLists.size();
     auto& adjList = leftAdjList_;
     std::vector<Row> result;
     std::vector<std::vector<Value>> newEdgeLists;
@@ -342,9 +371,14 @@ void AllPathsExecutor::buildPathMultiJobs() {
         }
       }
     }
+    if (step > steps_) {
+      DLOG(ERROR) << " stop ";
+      pool.stop();
+    }
     if (cnt_.load(std::memory_order_relaxed) >= limit_) {
       pool.stop();
     } else if (step <= steps_ && !newEdgeLists.empty()) {
+      DLOG(ERROR) << " newEdgeLists.size() " << newEdgeLists.size();
       futures.emplace_back(pool.addTask(task, step + 1, std::move(src), std::move(newEdgeLists)));
     }
     return result;
@@ -369,17 +403,7 @@ void AllPathsExecutor::buildPathMultiJobs() {
     futures.emplace_back(pool.addTask(task, step, src, std::move(edgeLists)));
   }
   pool.wait();
-
-  folly::collect(futures).via(runner()).thenValue([this](std::vector<std::vector<Row>>&& resp) {
-    for (auto& rows : resp) {
-      result_.rows.insert(result_.rows.end(),
-                          std::make_move_iterator(rows.begin()),
-                          std::make_move_iterator(rows.end()));
-    }
-    if (limit_ != std::numeric_limits<size_t>::max()) {
-      result_.rows.resize(limit_);
-    }
-  });
+  return futures;
 }
 
 void AllPathsExecutor::buildPath() {

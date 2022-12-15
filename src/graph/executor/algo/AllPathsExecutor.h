@@ -40,7 +40,7 @@ class AllPathsExecutor final : public PathBaseExecutor {
 
   void buildPath();
 
-  void buildPathMultiJobs();
+  std::vector<folly::SemiFuture<std::vector<Row>>> buildPathMultiJobs();
 
   folly::Future<Status> buildResult();
 
