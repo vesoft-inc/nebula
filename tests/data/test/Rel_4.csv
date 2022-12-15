@@ -1,294 +1,302 @@
-:SRC_VID(int),:DST_VID(int),Rel_4.Rel_4_0_Int:int,Rel_4.Rel_4_3_Bool:bool,Rel_4.Rel_4_6_Double:double,Rel_4.Rel_4_8_Bool:bool,Rel_4.Rel_4_7_String:string,Rel_4.Rel_4_1_Int:int,Rel_4.Rel_4_5_String:string,Rel_4.Rel_4_2_Int:int,Rel_4.Rel_4_9_Bool:bool,Rel_4.Rel_4_4_Bool:bool
-101,70,49,true,0.988627,true,'Kyle Anderson',64,'Dirk Nowitzki',8,false,false
-61,39,5,true,0.637541,false,'DeAndre Jordan',26,'Dirk Nowitzki',54,true,true
-86,64,43,false,0.683263,false,'Russell Westbrook',34,'LaMarcus Aldridge',29,true,false
-99,25,4,false,0.625033,true,'Tiago Splitter',3,'Kobe Bryant',5,true,false
-54,46,1,false,0.812120,true,'Cory Joseph',13,'Amar\'e Stoudemire',61,false,true
-24,94,3,false,0.277634,false,'Cory Joseph',0,'Damian Lillard',39,false,false
-64,8,6,false,0.324510,false,'Jonathon Simmons',45,'Shaquile O\'Neal',30,true,true
-70,29,49,false,0.408205,false,'Luka Doncic',49,'Amar\'e Stoudemire',53,false,true
-43,101,98,true,0.970609,true,'Null4',45,'Kyle Anderson',62,true,true
-91,45,68,false,0.359718,false,'Ricky Rubio',48,'Dwyane Wade',34,false,false
-41,104,64,false,0.638976,false,'Ben Simmons',25,'Stephen Curry',45,false,true
-71,17,98,false,0.275775,true,'Tim Duncan',7,'Cory Joseph',38,false,true
-13,34,88,true,0.121030,true,'Dwyane Wade',41,'Blake Griffin',63,true,false
-61,10,57,false,0.475972,false,'David West',94,'Dwight Howard',92,false,true
-43,64,53,false,0.394231,true,'Null4',51,'Damian Lillard',91,true,true
-41,61,56,false,0.624896,false,'Grant Hill',98,'Rajon Rondo',83,false,true
-91,52,34,true,0.182568,false,'Tiago Splitter',40,'Danny Green',6,true,false
-76,79,15,true,0.439153,false,'Marc Gasol',3,'Tim Duncan',82,true,false
-14,77,2,false,0.322692,true,'Giannis Antetokounmpo',47,'Manu Ginobili',62,true,false
-79,13,82,true,0.399314,true,'Null1',81,'Boris Diaw',54,false,true
-12,36,8,false,0.570348,true,'Grant Hill',96,'Tiago Splitter',35,true,false
-34,75,88,false,0.550523,false,'Ricky Rubio',4,'LeBron James',88,false,true
-16,87,2,false,0.864480,true,'Boris Diaw',42,'Kevin Durant',44,true,false
-11,85,34,true,0.661674,false,'Null2',56,'Kevin Durant',57,true,false
-20,107,13,true,0.560119,true,'Kyrie Irving',95,'Tiago Splitter',68,false,false
-28,41,56,true,0.240357,false,'Null1',88,'Blake Griffin',81,true,true
-46,27,57,false,0.783803,false,'Steve Nash',54,'Boris Diaw',9,false,false
-91,41,31,false,0.177364,false,'Dirk Nowitzki',74,'Kristaps Porzingis',92,true,false
-68,44,24,false,0.601490,false,'Steve Nash',15,'Ray Allen',95,false,false
-64,68,83,false,0.895907,true,'Yao Ming',7,'James Harden',66,false,false
-9,22,14,true,0.159234,false,'Boris Diaw',56,'Vince Carter',58,false,true
-95,44,92,true,0.307225,true,'LaMarcus Aldridge',23,'Dwight Howard',37,false,false
-79,3,69,true,0.376904,false,'Stephen Curry',21,'Shaquile O\'Neal',45,false,false
-65,89,76,false,0.622642,true,'Yao Ming',82,'Jason Kidd',84,true,true
-103,10,89,true,0.556277,true,'Giannis Antetokounmpo',90,'Kristaps Porzingis',69,false,false
-56,35,7,true,0.530538,true,'Danny Green',11,'Ricky Rubio',9,true,false
-86,45,24,true,0.300107,true,'Dwyane Wade',15,'Dwyane Wade',88,false,false
-105,107,20,true,0.786171,true,'Nobody',81,'Null4',33,false,true
-54,92,23,false,0.954997,false,'LeBron James',63,'Dwight Howard',35,false,true
-94,15,27,false,0.569468,false,'Marco Belinelli',43,'Paul George',56,true,false
-89,20,60,false,0.676031,false,'Ray Allen',12,'Paul George',45,true,false
-41,70,38,true,0.571911,false,'Null4',29,'Boris Diaw',72,false,true
-68,72,69,true,0.882988,true,'Joel Embiid',43,'Kristaps Porzingis',82,false,false
-46,62,50,false,0.503343,true,'Ricky Rubio',12,'Yao Ming',9,true,true
-83,85,14,false,0.351608,false,'Ray Allen',72,'Dwight Howard',84,true,false
-2,21,49,false,0.756279,false,'Kristaps Porzingis',20,'Shaquile O\'Neal',17,true,true
-81,37,98,false,0.140666,false,'Jonathon Simmons',56,'Luka Doncic',88,false,false
-106,9,42,false,0.418034,false,'David West',94,'Shaquile O\'Neal',48,true,true
-4,9,4,false,0.656167,false,'Kevin Durant',91,'Shaquile O\'Neal',88,false,false
-53,58,66,false,0.951109,true,'Russell Westbrook',71,'Aron Baynes',60,true,false
-26,31,91,false,0.766143,false,'Yao Ming',44,'Giannis Antetokounmpo',81,true,true
-72,41,58,true,0.924542,false,'Giannis Antetokounmpo',51,'Paul George',25,true,true
-97,77,12,true,0.008615,false,'Chris Paul',81,'Kristaps Porzingis',54,true,false
-64,57,9,true,0.884686,true,'Tiago Splitter',88,'JaVale McGee',22,true,true
-80,36,2,true,0.023492,false,'Null2',90,'Grant Hill',6,false,true
-54,21,47,true,0.349907,true,'Null4',96,'Jason Kidd',57,false,true
-5,47,68,false,0.590928,true,'David West',61,'Jason Kidd',55,false,false
-98,74,60,true,0.328950,false,'David West',8,'Dwight Howard',63,false,true
-24,3,32,true,0.003246,false,'Kobe Bryant',57,'Damian Lillard',86,false,false
-47,87,45,true,0.534991,true,'Kristaps Porzingis',54,'Yao Ming',40,true,false
-9,63,36,false,0.331145,false,'LaMarcus Aldridge',86,'Dwyane Wade',60,true,true
-10,61,39,true,0.584849,false,'Dwyane Wade',24,'Tracy McGrady',81,true,false
-85,98,26,true,0.116941,true,'Grant Hill',62,'Paul George',48,true,false
-28,54,64,false,0.106844,false,'Null4',82,'Kyrie Irving',98,false,false
-39,66,58,false,0.574408,true,'LaMarcus Aldridge',38,'Jonathon Simmons',76,true,true
-67,105,42,false,0.379621,true,'Paul George',26,'JaVale McGee',93,false,false
-87,8,12,false,0.176395,false,'Tim Duncan',79,'LaMarcus Aldridge',68,true,false
-41,37,18,true,0.414257,true,'Nobody',28,'Tim Duncan',21,false,false
-94,74,37,false,0.269450,false,'Carmelo Anthony',89,'Null2',44,true,true
-103,64,28,true,0.854539,false,'Jason Kidd',77,'Dwight Howard',78,false,true
-96,26,69,true,0.127911,true,'Tracy McGrady',33,'Luka Doncic',6,true,false
-45,41,15,false,0.495299,true,'Ricky Rubio',19,'Klay Thompson',23,false,false
-75,102,27,false,0.368963,true,'Chris Paul',67,'Paul Gasol',85,false,false
-64,41,91,false,0.684833,false,'Russell Westbrook',19,'Kyle Anderson',38,true,true
-5,93,42,false,0.151618,false,'Kristaps Porzingis',99,'Shaquile O\'Neal',13,true,false
-100,6,17,false,0.280596,true,'Yao Ming',61,'Shaquile O\'Neal',44,false,false
-101,60,64,true,0.264658,false,'Rudy Gay',10,'Tony Parker',17,true,false
-70,23,40,false,0.541584,true,'Jason Kidd',63,'Dejounte Murray',86,true,true
-91,64,82,false,0.402890,false,'Shaquile O\'Neal',14,'Rajon Rondo',78,true,false
-25,12,35,true,0.398798,false,'Stephen Curry',61,'Tracy McGrady',21,true,false
-90,82,87,true,0.745084,false,'Ricky Rubio',42,'Kyle Anderson',39,true,true
-92,40,9,false,0.660419,false,'Chris Paul',23,'Russell Westbrook',84,false,true
-6,71,96,true,0.563742,false,'Chris Paul',4,'LaMarcus Aldridge',20,false,true
-76,3,65,false,0.160434,true,'Kristaps Porzingis',38,'James Harden',18,true,false
-59,12,0,true,0.800558,false,'Paul George',62,'Dejounte Murray',41,false,false
-17,84,74,true,0.818815,true,'Ray Allen',18,'JaVale McGee',43,false,false
-72,50,79,true,0.057625,false,'JaVale McGee',71,'Klay Thompson',74,false,false
-78,84,95,false,0.096738,false,'Chris Paul',42,'Rudy Gay',73,true,true
-65,68,10,true,0.850529,false,'Tim Duncan',48,'LeBron James',64,true,true
-14,70,95,false,0.694928,true,'Dwight Howard',50,'Damian Lillard',39,false,true
-59,25,6,false,0.635728,false,'Rajon Rondo',22,'Null3',10,true,false
-63,39,50,true,0.299133,false,'Giannis Antetokounmpo',71,'Klay Thompson',62,true,false
-4,101,52,true,0.764520,true,'LaMarcus Aldridge',78,'Carmelo Anthony',76,true,true
-68,107,94,false,0.376286,false,'Vince Carter',56,'Cory Joseph',36,false,false
-43,37,5,true,0.615331,true,'LeBron James',59,'Yao Ming',26,true,false
-77,37,38,true,0.937740,false,'Aron Baynes',27,'Paul Gasol',24,false,true
-84,7,33,false,0.015949,false,'Dwight Howard',67,'DeAndre Jordan',13,true,true
-91,91,26,false,0.044989,true,'Luka Doncic',30,'Carmelo Anthony',80,false,false
-87,78,86,true,0.917703,false,'Tiago Splitter',58,'Jonathon Simmons',14,false,false
-35,67,10,true,0.744570,false,'Kobe Bryant',7,'Null2',42,true,true
-45,85,12,true,0.580449,true,'Tracy McGrady',82,'Russell Westbrook',62,false,false
-79,98,71,true,0.180994,true,'Tony Parker',43,'Stephen Curry',67,false,false
-5,98,27,true,0.099880,true,'Russell Westbrook',24,'Null3',85,true,true
-26,92,22,true,0.431990,false,'Kevin Durant',52,'Joel Embiid',2,true,false
-105,62,76,false,0.263353,false,'JaVale McGee',65,'Kobe Bryant',88,false,true
-81,44,73,true,0.578121,false,'Blake Griffin',62,'Jason Kidd',88,true,false
-22,43,86,false,0.274684,true,'Kevin Durant',53,'Dirk Nowitzki',72,true,false
-66,68,61,false,0.836724,true,'Vince Carter',87,'JaVale McGee',83,false,false
-31,50,13,true,0.643021,true,'James Harden',12,'Null1',88,true,true
-3,94,89,true,0.983931,false,'Giannis Antetokounmpo',51,'David West',65,true,true
-86,103,36,true,0.155389,false,'Marco Belinelli',0,'Null2',7,false,false
-56,57,53,false,0.981946,false,'Dwight Howard',26,'JaVale McGee',58,true,true
-7,16,71,false,0.305942,false,'Kyrie Irving',98,'Kyrie Irving',19,true,true
-11,62,43,true,0.061032,false,'Rajon Rondo',14,'Vince Carter',8,true,false
-92,19,3,true,0.872124,true,'Null4',46,'Dejounte Murray',21,false,true
-61,89,81,false,0.198793,false,'Carmelo Anthony',75,'Null2',99,false,false
-68,81,78,true,0.876729,false,'Ray Allen',15,'Giannis Antetokounmpo',99,false,true
-44,38,88,false,0.563574,false,'Kobe Bryant',37,'Stephen Curry',97,true,false
-58,32,89,true,0.485389,true,'Jason Kidd',11,'Manu Ginobili',82,false,true
-63,10,91,false,0.718755,true,'Damian Lillard',22,'Yao Ming',83,true,true
-10,58,62,true,0.299799,false,'Kristaps Porzingis',45,'Null1',39,true,true
-24,53,77,true,0.326018,false,'JaVale McGee',21,'Dwyane Wade',80,false,true
-94,54,84,true,0.948407,false,'Blake Griffin',85,'Cory Joseph',14,false,true
-72,72,50,true,0.076767,true,'DeAndre Jordan',40,'Ray Allen',41,true,false
-17,40,69,false,0.960375,false,'Luka Doncic',43,'Cory Joseph',74,true,false
-48,54,4,false,0.898936,true,'Manu Ginobili',68,'Grant Hill',51,false,false
-38,3,33,false,0.905319,true,'Dwight Howard',82,'Giannis Antetokounmpo',89,false,false
-21,65,71,true,0.782178,false,'Cory Joseph',36,'Rajon Rondo',77,true,true
-60,81,81,true,0.712819,true,'Ben Simmons',20,'Tony Parker',76,false,false
-102,62,31,true,0.202466,true,'Damian Lillard',61,'Steve Nash',88,false,false
-27,3,98,false,0.423929,false,'Boris Diaw',88,'Kristaps Porzingis',89,true,true
-29,15,25,true,0.602584,false,'Manu Ginobili',47,'Tony Parker',85,true,true
-3,13,22,false,0.561207,false,'Kyle Anderson',37,'Stephen Curry',85,true,true
-77,71,31,true,0.454774,false,'Joel Embiid',21,'Klay Thompson',79,false,false
-100,56,92,true,0.993373,false,'Ray Allen',83,'Rajon Rondo',92,false,false
-57,92,21,false,0.207684,false,'Blake Griffin',2,'Dirk Nowitzki',94,true,true
-81,26,45,false,0.622619,false,'Grant Hill',42,'Manu Ginobili',75,true,false
-27,95,85,true,0.612680,false,'Shaquile O\'Neal',1,'Giannis Antetokounmpo',98,false,true
-90,34,67,true,0.980130,false,'Klay Thompson',97,'LaMarcus Aldridge',24,false,false
-7,71,14,false,0.944424,false,'Kyle Anderson',45,'Danny Green',81,true,true
-33,102,67,false,0.199136,false,'JaVale McGee',60,'Dwight Howard',52,true,false
-16,16,53,false,0.347875,false,'David West',23,'Nobody',2,true,false
-43,81,13,true,0.612237,false,'Nobody',74,'Kristaps Porzingis',92,true,true
-25,21,32,true,0.820104,false,'Yao Ming',87,'Boris Diaw',74,false,false
-58,60,80,false,0.707921,false,'Steve Nash',5,'Tim Duncan',26,false,true
-6,51,8,false,0.527342,true,'LaMarcus Aldridge',73,'Carmelo Anthony',33,true,false
-71,28,61,false,0.289951,false,'Null4',24,'Aron Baynes',47,false,false
-94,89,44,false,0.418591,true,'Dwyane Wade',45,'Dwyane Wade',98,true,true
-19,16,83,true,0.885453,true,'Carmelo Anthony',93,'Paul Gasol',17,false,true
-89,67,79,true,0.134298,false,'Stephen Curry',81,'LaMarcus Aldridge',14,false,false
-90,2,82,true,0.122206,true,'DeAndre Jordan',84,'Marco Belinelli',81,false,false
-33,105,76,true,0.725590,false,'Kobe Bryant',36,'LaMarcus Aldridge',57,true,false
-18,14,56,true,0.608403,true,'Vince Carter',86,'Dirk Nowitzki',8,false,true
-33,88,58,false,0.013214,false,'Giannis Antetokounmpo',22,'Manu Ginobili',56,true,false
-22,13,41,true,0.891588,false,'Luka Doncic',16,'Paul Gasol',23,true,true
-78,65,51,false,0.306148,true,'Luka Doncic',5,'Joel Embiid',25,false,true
-17,38,96,true,0.010848,false,'Kevin Durant',57,'JaVale McGee',62,false,true
-60,107,35,true,0.229767,true,'Boris Diaw',54,'Blake Griffin',10,false,true
-104,42,99,true,0.294266,true,'David West',31,'Grant Hill',40,false,false
-85,99,12,true,0.710590,true,'Vince Carter',30,'Paul George',69,false,false
-91,60,79,false,0.579332,true,'Paul Gasol',38,'Yao Ming',30,true,false
-16,14,41,false,0.782983,true,'Ricky Rubio',48,'Chris Paul',25,true,true
-18,102,15,true,0.397263,true,'Shaquile O\'Neal',37,'Null4',91,false,true
-38,47,42,false,0.322742,true,'Marco Belinelli',95,'LeBron James',66,false,false
-37,45,13,true,0.808410,true,'JaVale McGee',95,'Amar\'e Stoudemire',70,false,false
-20,8,79,false,0.615170,true,'Rudy Gay',10,'Jason Kidd',0,true,true
-42,85,16,false,0.863264,true,'LaMarcus Aldridge',76,'Tony Parker',53,true,false
-64,61,50,false,0.405799,false,'Dirk Nowitzki',41,'Tiago Splitter',65,true,true
-97,82,79,true,0.069866,true,'LaMarcus Aldridge',63,'Null4',28,true,false
-65,45,18,true,0.252119,false,'Stephen Curry',58,'Kyle Anderson',30,true,true
-48,74,16,false,0.263783,true,'Chris Paul',15,'David West',26,true,true
-87,50,48,false,0.839465,true,'Boris Diaw',38,'Ricky Rubio',45,true,false
-21,98,2,true,0.836180,true,'Boris Diaw',70,'Tony Parker',85,true,false
-1,30,93,true,0.795843,false,'Klay Thompson',33,'Carmelo Anthony',88,false,false
-78,32,28,false,0.587110,true,'Kobe Bryant',66,'Cory Joseph',92,true,false
-45,75,2,true,0.977375,false,'Jonathon Simmons',82,'Chris Paul',28,false,false
-12,103,78,true,0.234109,true,'Marco Belinelli',0,'Null3',67,false,true
-101,104,94,true,0.634046,true,'LeBron James',42,'Tiago Splitter',58,false,false
-45,70,41,true,0.808179,true,'Nobody',29,'LeBron James',3,false,false
-25,25,84,true,0.420757,false,'Manu Ginobili',43,'Damian Lillard',89,true,false
-56,104,53,false,0.685217,true,'Dwight Howard',24,'Kristaps Porzingis',9,true,false
-69,69,23,true,0.949002,false,'James Harden',44,'LeBron James',91,false,true
-45,8,47,true,0.026021,false,'Paul George',7,'Danny Green',38,false,false
-77,20,27,false,0.841831,false,'Ben Simmons',29,'Tracy McGrady',37,false,true
-102,40,56,true,0.649079,true,'Carmelo Anthony',6,'Nobody',12,true,false
-57,67,54,false,0.226911,false,'Paul Gasol',77,'Tracy McGrady',49,true,false
-98,34,80,true,0.591912,false,'Shaquile O\'Neal',17,'Dwight Howard',55,true,true
-5,11,67,false,0.482473,false,'Grant Hill',46,'LeBron James',8,false,true
-79,102,80,true,0.581225,true,'Chris Paul',35,'Dwyane Wade',42,false,false
-23,22,71,true,0.801865,false,'Manu Ginobili',13,'Tony Parker',21,false,true
-63,5,95,false,0.462045,false,'Giannis Antetokounmpo',18,'Jason Kidd',29,true,true
-6,99,88,true,0.790921,true,'Nobody',36,'Blake Griffin',14,true,true
-84,89,61,true,0.745229,true,'Rajon Rondo',80,'LaMarcus Aldridge',8,false,true
-27,103,65,false,0.550227,true,'Vince Carter',48,'Kyle Anderson',58,false,false
-91,24,60,true,0.996715,true,'Jonathon Simmons',93,'LaMarcus Aldridge',71,false,true
-60,64,44,true,0.309922,false,'Steve Nash',24,'Manu Ginobili',30,false,false
-72,52,22,true,0.233300,true,'LeBron James',19,'Nobody',77,true,false
-87,72,40,false,0.114093,false,'Tracy McGrady',90,'Damian Lillard',80,false,true
-69,102,46,false,0.837902,false,'Carmelo Anthony',24,'Shaquile O\'Neal',43,true,true
-69,99,0,true,0.213095,false,'Rajon Rondo',50,'Paul Gasol',82,true,true
-103,70,83,true,0.541699,false,'Cory Joseph',44,'Rajon Rondo',59,false,false
-43,38,78,false,0.541595,true,'Vince Carter',22,'Dwight Howard',95,false,true
-101,79,74,true,0.653926,false,'Manu Ginobili',4,'Klay Thompson',43,true,false
-87,23,99,true,0.895983,true,'Danny Green',85,'Stephen Curry',73,false,true
-106,85,56,true,0.362122,false,'Tracy McGrady',16,'Null4',36,true,false
-6,18,23,false,0.288814,true,'DeAndre Jordan',67,'Giannis Antetokounmpo',26,false,false
-56,101,72,true,0.151395,false,'Tim Duncan',26,'Chris Paul',53,false,true
-62,71,98,false,0.279477,false,'Dwight Howard',89,'Danny Green',24,false,false
-57,44,90,true,0.484590,false,'Dwyane Wade',29,'Chris Paul',56,false,false
-84,61,35,false,0.029379,true,'Kyrie Irving',61,'Paul Gasol',37,true,true
-102,92,25,true,0.129899,false,'Boris Diaw',17,'Blake Griffin',23,false,true
-11,104,13,true,0.720348,true,'Marco Belinelli',13,'Kyle Anderson',83,false,false
-17,95,98,false,0.896181,true,'Boris Diaw',34,'LeBron James',28,true,false
-96,27,3,true,0.841362,true,'Kobe Bryant',42,'Damian Lillard',42,false,false
-63,21,91,false,0.008278,true,'Rajon Rondo',42,'Dirk Nowitzki',42,true,true
-40,13,85,true,0.562824,false,'Steve Nash',43,'Marco Belinelli',13,true,false
-86,105,3,false,0.632152,true,'Giannis Antetokounmpo',69,'DeAndre Jordan',86,false,true
-37,70,80,true,0.543532,true,'Klay Thompson',31,'Grant Hill',12,false,true
-88,49,66,true,0.355536,false,'Jonathon Simmons',65,'Tim Duncan',65,true,true
-34,31,89,true,0.763461,false,'Yao Ming',91,'Giannis Antetokounmpo',20,false,false
-31,54,1,false,0.046235,false,'Tony Parker',50,'Null3',5,false,true
-49,6,60,false,0.063091,false,'Amar\'e Stoudemire',95,'Paul George',3,true,true
-88,73,11,false,0.081839,true,'LeBron James',93,'Blake Griffin',69,true,false
-5,102,70,true,0.534719,true,'Dejounte Murray',89,'Ben Simmons',89,false,true
-87,62,29,false,0.463940,true,'Jonathon Simmons',14,'Rudy Gay',57,false,false
-97,94,69,true,0.978880,false,'Dejounte Murray',10,'Marco Belinelli',20,true,false
-58,75,54,false,0.109858,false,'Dejounte Murray',70,'Paul Gasol',64,true,true
-43,84,50,true,0.767833,false,'Shaquile O\'Neal',86,'Vince Carter',82,true,false
-99,102,37,true,0.467348,false,'Tracy McGrady',49,'Tony Parker',65,false,true
-43,55,28,true,0.338284,false,'Cory Joseph',96,'Tracy McGrady',44,false,false
-69,68,20,false,0.643840,false,'Giannis Antetokounmpo',34,'Aron Baynes',56,false,false
-22,58,82,false,0.750764,true,'LeBron James',59,'Ben Simmons',76,true,true
-64,76,27,true,0.962034,true,'Nobody',47,'LeBron James',75,true,true
-6,98,30,true,0.512304,true,'Giannis Antetokounmpo',62,'Ray Allen',17,false,true
-3,100,90,true,0.234493,false,'Boris Diaw',80,'Kevin Durant',53,false,false
-102,41,95,false,0.850456,true,'Vince Carter',72,'Dwight Howard',95,true,true
-75,79,96,false,0.185006,true,'Rudy Gay',42,'Aron Baynes',24,false,false
-63,26,28,true,0.774235,true,'Kristaps Porzingis',93,'Vince Carter',56,false,true
-62,62,71,true,0.693277,false,'Dirk Nowitzki',49,'Marc Gasol',43,false,false
-2,51,2,true,0.561738,false,'Joel Embiid',88,'Jason Kidd',95,true,false
-456,54,2,true,0.669158,true,'Paul Gasol',67,'Grant Hill',75,true,false
-456,456,93,true,0.477786,false,'Giannis Antetokounmpo',90,'LaMarcus Aldridge',21,false,false
-456,1,1,false,0.944435,true,'Dwight Howard',72,'LaMarcus Aldridge',89,true,true
-456,43,1,true,0.799529,true,'Null4',39,'Cory Joseph',88,false,false
-456,25,92,true,0.919858,true,'Dwyane Wade',90,'Tony Parker',69,false,true
-456,80,94,false,0.623769,false,'David West',31,'Ben Simmons',74,true,true
-456,30,51,true,0.889095,false,'Kristaps Porzingis',42,'Vince Carter',57,true,false
-456,72,38,false,0.564241,false,'Rajon Rondo',36,'Manu Ginobili',33,true,false
-456,52,84,false,0.684901,true,'Dirk Nowitzki',28,'Luka Doncic',75,true,false
-456,12,67,true,0.121574,false,'JaVale McGee',50,'Shaquile O\'Neal',69,false,false
-456,73,67,false,0.092384,false,'David West',28,'JaVale McGee',47,true,true
-456,87,42,true,0.492277,false,'Rudy Gay',11,'LeBron James',65,false,false
-456,63,72,true,0.355056,true,'Null2',33,'Blake Griffin',13,true,false
-456,77,37,true,0.772825,true,'Grant Hill',28,'Carmelo Anthony',86,false,false
-456,67,44,false,0.558242,true,'Vince Carter',27,'LeBron James',36,true,false
-456,48,44,false,0.346655,true,'Shaquile O\'Neal',68,'Tiago Splitter',0,true,false
-456,84,79,true,0.105617,true,'Ricky Rubio',4,'LaMarcus Aldridge',97,false,false
-456,97,27,false,0.819798,false,'Ray Allen',4,'Rudy Gay',95,false,false
-456,100,13,false,0.841324,true,'Kevin Durant',95,'Tim Duncan',31,false,true
-456,60,24,false,0.511956,false,'DeAndre Jordan',81,'Boris Diaw',94,false,false
-456,45,72,true,0.363201,true,'Tiago Splitter',34,'Tracy McGrady',93,true,false
-456,107,85,false,0.278396,false,'Aron Baynes',38,'Luka Doncic',99,true,true
-69,456,28,true,0.657928,false,'LeBron James',28,'DeAndre Jordan',15,true,false
-65,456,15,false,0.773741,true,'LeBron James',33,'Russell Westbrook',72,true,true
-456,50,90,false,0.866042,true,'Klay Thompson',39,'Marc Gasol',63,true,true
-456,27,83,false,0.381983,true,'Rajon Rondo',36,'Amar\'e Stoudemire',81,false,true
-456,46,69,false,0.690798,false,'LeBron James',44,'Ricky Rubio',47,false,false
-456,47,25,true,0.481837,true,'Vince Carter',82,'Luka Doncic',55,true,false
-456,2,39,false,0.366141,false,'Danny Green',23,'Russell Westbrook',44,true,true
-456,89,43,true,0.671799,false,'DeAndre Jordan',13,'Dwyane Wade',86,false,false
-26,456,45,false,0.321367,true,'Danny Green',91,'Stephen Curry',79,true,true
-456,88,87,true,0.180871,true,'Boris Diaw',11,'Tiago Splitter',99,true,false
-456,13,18,true,0.482380,false,'Jonathon Simmons',46,'DeAndre Jordan',66,true,true
-456,59,51,true,0.510326,false,'Manu Ginobili',89,'LaMarcus Aldridge',21,true,true
-456,58,16,false,0.669342,false,'David West',32,'Ben Simmons',5,false,false
-456,71,25,true,0.697221,true,'Dwyane Wade',37,'Dirk Nowitzki',13,true,true
-456,96,0,false,0.647320,false,'Joel Embiid',28,'LaMarcus Aldridge',42,true,false
-456,79,50,true,0.895930,true,'Danny Green',92,'Dejounte Murray',35,false,true
-456,78,18,true,0.716699,false,'Jason Kidd',63,'Shaquile O\'Neal',8,true,true
-456,82,71,true,0.603895,true,'Steve Nash',42,'Blake Griffin',91,true,true
-456,42,14,false,0.771938,false,'Grant Hill',76,'Ben Simmons',45,true,false
-21,456,44,true,0.675012,false,'Cory Joseph',54,'Kristaps Porzingis',22,false,true
-7,7,36,false,0.584074,true,'Klay Thompson',31,'Tracy McGrady',71,false,true
-21,21,71,true,0.053677,true,'Luka Doncic',23,'Shaquile O\'Neal',32,false,false
-5,5,84,true,0.226462,false,'Manu Ginobili',73,'Stephen Curry',64,false,false
-30,30,26,true,0.294849,false,'Grant Hill',82,'Null3',14,true,false
-61,61,14,true,0.456091,true,'Rajon Rondo',57,'Dwight Howard',25,true,true
-84,84,19,false,0.685015,false,'Rajon Rondo',17,'Ben Simmons',92,true,false
-35,35,44,false,0.382856,true,'Kyle Anderson',44,'David West',37,false,true
-27,27,18,true,0.738191,true,'Paul George',27,'Dejounte Murray',81,false,true
-95,95,91,true,0.517391,false,'Manu Ginobili',99,'Steve Nash',12,true,false
-101,101,23,true,0.694486,true,'Boris Diaw',15,'Luka Doncic',50,false,false
-19,19,63,true,0.502693,false,'LaMarcus Aldridge',94,'Steve Nash',21,true,true
+:SRC_VID(int),:DST_VID(int),Rel_4.Rel_4_2_Int:int,Rel_4.Rel_4_1_Int:int,Rel_4.Rel_4_6_Int:int,Rel_4.Rel_4_3_Int:int,Rel_4.Rel_4_4_Int:int,Rel_4.Rel_4_5_Double:double,Rel_4.Rel_4_0_Int:int
+12,84,null,67,3,85,17,0.712184,11
+46,101,72,8,60,85,35,0.036066,56
+31,44,81,8,2,32,68,0.631743,64
+67,83,52,6,40,81,50,0.710587,73
+16,81,67,45,28,61,58,0.385051,42
+58,83,30,75,56,71,37,0.585388,34
+75,54,59,74,82,81,40,0.733952,91
+51,104,7,0,64,72,71,0.603055,9
+40,52,36,6,77,56,60,0.973685,46
+4,47,11,85,26,33,68,0.443853,19
+92,44,null,15,47,60,56,0.821793,22
+64,76,77,47,19,65,83,0.202279,80
+69,79,42,22,28,12,39,0.443656,5
+108,18,15,6,46,25,25,0.458283,35
+82,105,50,91,89,14,26,0.559341,55
+102,41,25,75,7,69,14,0.405819,95
+104,3,68,70,38,89,73,0.561965,17
+14,67,72,2,17,37,61,0.123463,99
+59,54,97,66,93,41,68,0.947567,47
+55,34,10,58,44,22,10,0.129999,25
+4,43,10,55,60,93,60,0.570686,11
+29,22,42,9,34,69,4,0.369138,30
+81,66,10,53,9,94,77,0.177463,96
+29,63,4,95,24,87,42,0.154011,73
+77,37,23,35,47,78,48,0.020220,88
+56,98,null,20,48,77,16,0.502139,31
+95,52,46,76,80,76,46,0.190765,63
+1,10,31,80,1,13,44,0.470961,62
+44,92,null,52,97,4,79,0.269222,4
+6,14,28,63,74,78,19,0.675056,32
+57,4,0,61,64,26,7,0.505822,25
+30,36,65,80,25,92,11,0.041431,5
+32,3,14,83,93,19,58,0.965959,20
+62,43,54,33,44,51,29,0.854741,69
+67,26,null,4,17,49,4,0.340379,16
+32,52,55,86,28,63,23,0.545343,88
+70,90,34,9,74,43,8,0.530159,25
+99,33,8,34,64,43,10,0.016637,85
+22,44,43,8,84,5,79,0.895146,20
+85,96,35,60,6,31,63,0.445991,20
+39,58,17,5,60,28,15,0.650612,9
+36,70,80,6,54,53,84,0.086650,79
+32,76,91,10,76,82,31,0.547358,17
+29,108,null,57,54,53,48,0.293075,46
+15,37,null,93,61,4,87,0.432692,4
+32,28,75,32,46,97,37,0.870360,18
+53,85,99,95,38,52,11,0.820891,21
+35,92,6,8,84,40,21,0.314094,60
+1,26,91,24,36,53,23,0.377497,88
+40,102,70,44,44,73,49,0.560438,36
+75,66,24,48,19,1,2,0.709224,51
+105,2,35,65,83,83,76,0.150515,16
+67,78,58,40,5,70,43,0.931935,49
+99,68,27,30,52,81,30,0.546024,50
+31,26,62,40,58,0,67,0.685464,96
+97,71,77,19,35,27,43,0.444817,42
+23,96,94,70,28,33,7,0.624578,14
+23,91,32,11,56,65,2,0.714487,55
+25,4,62,83,5,51,48,0.852628,60
+11,94,12,24,97,56,72,0.910937,44
+6,101,40,60,17,58,74,0.779342,76
+101,49,21,89,33,62,51,0.704443,46
+23,64,73,17,98,79,2,0.492576,88
+37,99,64,2,16,5,3,0.239689,40
+34,108,42,49,77,56,45,0.182510,60
+8,38,null,92,40,49,99,0.102970,64
+32,42,88,89,7,82,90,0.005021,32
+32,82,89,74,38,0,71,0.396158,73
+91,30,34,31,13,40,62,0.068373,55
+103,53,16,99,68,17,80,0.820905,77
+14,47,42,85,74,49,40,0.514169,23
+4,74,89,56,80,95,69,0.094318,33
+49,85,83,37,82,82,60,0.453252,5
+11,12,36,38,52,68,6,0.805227,16
+104,1,60,85,55,71,45,0.381861,76
+61,30,63,81,72,74,15,0.139982,78
+45,8,18,14,53,25,32,0.793489,16
+17,73,75,88,3,65,37,0.702373,20
+21,29,59,8,65,86,27,0.434641,13
+58,63,4,57,9,65,70,0.108577,58
+77,85,52,4,72,71,84,0.273368,51
+97,16,22,1,77,86,35,0.564274,32
+56,27,46,10,92,15,3,0.131085,20
+71,41,53,40,25,74,55,0.670503,21
+72,5,56,35,49,56,1,0.862042,25
+54,3,19,29,43,93,36,0.764327,5
+107,9,54,25,95,84,20,0.452871,61
+94,41,83,96,26,47,96,0.266721,77
+86,27,59,96,78,69,68,0.026163,94
+9,37,50,82,46,21,9,0.473530,93
+77,83,37,5,8,73,60,0.217073,32
+54,86,95,96,88,57,30,0.568081,43
+26,70,78,98,27,12,62,0.053219,79
+47,108,64,50,77,63,90,0.930910,31
+67,2,26,88,21,20,10,0.528364,69
+89,37,57,88,37,80,35,0.685403,64
+19,1,61,44,31,69,55,0.364932,26
+38,45,42,61,68,63,29,0.665551,61
+72,60,50,28,74,77,95,0.006869,85
+2,77,41,73,48,14,16,0.680152,57
+33,26,76,5,23,36,80,0.410010,53
+27,42,10,85,35,82,59,0.723216,56
+87,72,26,34,3,25,0,0.989374,81
+12,61,null,92,4,70,68,0.256225,38
+27,84,91,5,86,85,39,0.850952,23
+86,53,83,36,28,39,29,0.678167,86
+96,104,77,25,59,61,36,0.030228,22
+97,12,null,15,31,40,95,0.138269,62
+48,28,30,28,3,13,7,0.831476,41
+79,103,17,10,82,23,44,0.072281,75
+68,17,35,47,67,86,87,0.142175,24
+59,6,17,30,70,11,75,0.514751,69
+54,37,20,11,41,65,40,0.442795,24
+34,88,40,61,39,40,4,0.508820,17
+94,53,26,95,23,19,86,0.932230,98
+85,93,71,76,17,4,49,0.774572,76
+18,51,68,71,9,74,58,0.444884,99
+22,107,12,80,49,33,93,0.643058,6
+28,55,33,61,41,86,2,0.751932,63
+100,43,77,55,9,38,92,0.008995,50
+15,29,61,71,56,89,79,0.265390,29
+92,108,54,72,90,35,36,0.739835,28
+93,36,75,71,88,47,74,0.266940,93
+76,63,35,1,5,44,65,0.683452,54
+25,99,98,26,68,40,54,0.141956,0
+107,37,32,21,99,15,1,0.787228,97
+77,27,52,47,8,61,63,0.302811,94
+45,68,45,97,82,88,2,0.652047,70
+26,30,32,56,52,11,71,0.344592,66
+19,88,90,0,82,56,73,0.510015,24
+52,82,80,16,22,0,36,0.913422,34
+41,51,40,1,79,33,88,0.286362,60
+69,101,5,65,26,80,30,0.159270,8
+3,66,31,26,57,77,93,0.947969,64
+3,74,5,27,43,58,7,0.297081,56
+108,31,90,94,34,29,99,0.150827,6
+44,28,null,5,54,40,96,0.971861,60
+86,96,46,91,20,24,12,0.502995,86
+60,27,73,54,48,3,10,0.394965,57
+38,56,50,47,22,61,98,0.781363,88
+46,5,85,90,88,37,98,0.824287,39
+100,20,9,14,62,44,74,0.961110,74
+35,69,59,75,3,82,27,0.284386,60
+31,67,38,40,62,89,37,0.469560,87
+36,71,8,70,14,16,48,0.811365,99
+87,33,41,37,81,61,42,0.692618,35
+98,77,66,5,1,94,49,0.816183,37
+8,41,51,15,29,1,51,0.104984,61
+62,83,51,7,16,51,81,0.407835,38
+26,85,21,17,51,26,69,0.607049,54
+50,93,41,86,72,9,94,0.438203,71
+103,99,2,53,69,92,78,0.901465,78
+25,54,null,61,61,65,25,0.755294,32
+53,90,27,32,37,71,7,0.719879,15
+91,52,90,69,66,42,34,0.714652,97
+36,44,44,23,0,75,47,0.492648,8
+95,33,35,75,68,21,18,0.490700,45
+60,70,null,88,8,62,97,0.011398,94
+54,82,95,27,92,37,42,0.857031,2
+68,101,61,65,22,31,52,0.633348,69
+67,39,64,46,68,14,17,0.184823,73
+13,36,6,76,50,31,76,0.318217,58
+8,36,0,89,7,97,5,0.614205,88
+48,98,83,42,55,3,92,0.154364,0
+4,104,92,78,47,5,6,0.906037,36
+58,41,88,30,3,43,91,0.153154,62
+65,22,89,56,71,15,65,0.941834,33
+76,9,86,89,9,67,53,0.501410,56
+44,7,72,57,50,3,66,0.227911,65
+101,99,89,86,54,85,92,0.551415,63
+47,80,26,72,12,3,90,0.246488,47
+96,28,84,23,40,50,90,0.612525,12
+41,49,48,82,34,29,34,0.578751,31
+99,15,74,73,95,58,23,0.703714,32
+106,44,66,32,77,0,58,0.678487,82
+76,30,58,94,42,70,95,0.752793,16
+39,76,50,98,8,30,50,0.066448,12
+35,100,40,14,47,38,44,0.900872,58
+10,14,12,41,68,61,89,0.571364,88
+59,69,59,59,21,59,50,0.317670,79
+106,75,8,10,29,27,77,0.215264,20
+36,106,82,26,21,36,87,0.354445,43
+24,89,61,83,19,75,26,0.431235,98
+68,28,44,47,50,29,69,0.454734,51
+48,6,9,70,62,79,68,0.955768,66
+48,17,21,28,71,75,23,0.609839,70
+70,68,75,99,50,23,35,0.476409,19
+85,86,72,90,24,56,13,0.766209,65
+61,19,13,72,91,11,48,0.962072,44
+6,30,40,48,63,60,77,0.939681,56
+55,16,26,44,87,34,76,0.474878,15
+100,101,19,59,23,3,17,0.596385,63
+70,55,49,96,45,55,87,0.462070,93
+85,17,24,93,40,70,50,0.408229,61
+71,76,55,72,72,45,99,0.240041,26
+8,80,10,55,13,37,40,0.794548,42
+45,83,92,58,51,16,63,0.834809,97
+101,17,24,17,16,71,38,0.402832,43
+100,58,15,50,99,78,76,0.144189,13
+56,56,24,54,46,55,49,0.932772,4
+39,85,94,2,89,80,59,0.801506,97
+28,13,4,91,50,32,84,0.907481,85
+21,82,81,10,28,1,79,0.078090,84
+36,79,29,40,1,86,36,0.190323,23
+95,17,87,9,98,56,60,0.886633,23
+35,35,null,39,57,91,11,0.327379,73
+22,85,87,33,69,58,34,0.512729,0
+58,18,84,53,8,44,3,0.146734,91
+81,4,23,71,57,49,96,0.198211,37
+22,66,null,79,91,0,31,0.055146,43
+4,2,53,6,38,89,20,0.960957,76
+20,28,50,16,7,10,89,0.255608,57
+80,49,44,85,99,23,10,0.749488,89
+88,92,44,53,28,19,46,0.438726,68
+88,84,51,10,15,7,68,0.650413,42
+92,19,40,25,23,22,67,0.100165,48
+47,88,62,26,34,72,33,0.289902,1
+30,25,76,80,34,52,28,0.036872,13
+24,83,33,11,77,91,10,0.742241,73
+58,36,1,28,93,9,46,0.578806,30
+1,65,10,77,78,44,78,0.655129,54
+48,33,0,59,41,15,66,0.587162,69
+22,88,91,7,92,76,22,0.963030,91
+88,33,5,97,12,57,42,0.792659,74
+64,66,10,4,26,37,17,0.581766,3
+97,97,54,61,2,36,15,0.639035,16
+54,26,50,3,7,42,0,0.463583,73
+27,17,0,50,87,11,74,0.523452,59
+44,49,11,99,56,85,59,0.318186,53
+81,10,49,83,60,35,46,0.488647,6
+60,89,42,86,96,33,23,0.782181,99
+67,102,42,51,67,71,27,0.518377,39
+89,8,73,11,17,55,21,0.476782,96
+36,31,2,21,70,89,37,0.454760,29
+66,25,null,44,77,76,1,0.111766,93
+13,91,26,14,22,44,1,0.392026,62
+54,104,null,38,47,25,92,0.678876,12
+105,85,40,45,43,45,89,0.893542,7
+108,29,18,28,99,45,0,0.373681,24
+26,23,40,95,9,17,90,0.008790,23
+97,78,31,56,50,60,8,0.595218,67
+22,27,56,13,21,54,8,0.135583,74
+7,22,27,40,59,28,7,0.323664,50
+383,48,null,3,13,33,59,0.216575,77
+383,77,69,83,89,37,61,0.486302,45
+383,27,40,62,51,51,9,0.003329,54
+35,383,82,17,91,60,85,0.552601,10
+383,107,34,22,6,40,67,0.619149,25
+383,63,72,54,35,5,62,0.212307,72
+383,75,32,76,24,81,30,0.432243,48
+56,383,67,3,17,94,26,0.843725,64
+383,34,59,23,88,78,97,0.818976,7
+383,38,69,46,39,66,49,0.525105,85
+86,383,50,39,44,37,11,0.930077,14
+383,90,38,98,47,93,89,0.993249,10
+383,12,41,58,8,38,53,0.339142,62
+383,8,2,79,78,61,69,0.076551,92
+383,47,48,87,55,97,45,0.751716,10
+383,29,null,28,34,8,38,0.051179,28
+383,56,78,26,44,81,28,0.966522,12
+383,26,85,20,60,78,42,0.853844,57
+383,54,60,36,5,56,7,0.589349,50
+32,383,80,20,78,94,8,0.514591,90
+383,23,null,76,62,65,73,0.034968,69
+383,74,5,11,2,8,34,0.656321,26
+69,383,9,96,56,34,47,0.223710,20
+82,383,51,27,75,10,84,0.417050,47
+383,33,69,77,4,27,5,0.311805,69
+383,17,59,25,53,96,0,0.718676,55
+383,6,20,54,17,12,51,0.549781,31
+383,55,49,44,99,33,28,0.995711,97
+383,4,97,82,0,7,40,0.952410,61
+383,39,94,58,79,14,55,0.446382,61
+383,84,45,8,62,6,10,0.170335,61
+383,72,24,53,25,93,88,0.870413,39
+383,30,null,43,9,24,75,0.099022,25
+383,49,66,36,40,48,19,0.159384,88
+383,45,60,39,42,13,60,0.333563,34
+383,57,null,91,93,8,75,0.579017,25
+383,59,96,61,51,34,70,0.595723,50
+383,36,29,29,14,2,75,0.910866,13
+383,60,68,42,57,8,87,0.289496,85
+74,383,25,29,27,48,37,0.579862,47
+383,105,30,29,97,19,15,0.441499,48
+383,68,59,20,85,10,9,0.865225,37
+383,1,87,21,91,89,67,0.961421,72
+383,19,92,10,8,3,86,0.496953,20
+383,106,72,38,61,49,66,0.351745,43
+60,383,89,45,10,60,57,0.792895,40
+383,44,55,13,58,0,93,0.204528,25
+383,104,68,17,44,91,33,0.014306,63
+383,101,79,83,85,3,50,0.768130,8
+383,31,29,63,83,6,79,0.891378,42
+65,65,63,16,28,37,78,0.684126,84
+57,57,75,28,14,84,52,0.708898,42
+79,79,99,46,57,57,88,0.706145,4
+61,61,23,73,31,78,7,0.954906,2
+47,47,null,20,38,92,85,0.882010,85
+22,22,0,64,24,59,43,0.233127,9
+39,39,45,72,21,40,5,0.229031,14
+62,62,57,34,98,36,7,0.253026,11
