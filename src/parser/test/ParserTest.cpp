@@ -3324,4 +3324,11 @@ TEST_F(ParserTest, TestNameLabel) {
   }
 }
 
+TEST_F(ParserTest, TestShowSentenceWithPipe) {
+  {
+    std::string query = "SHOW sessions | YIELD $-.SessionId AS sid";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
 }  // namespace nebula

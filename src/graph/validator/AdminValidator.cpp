@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/charset/Charset.h"
+#include "common/datatypes/Value.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
@@ -598,6 +599,22 @@ Status SignOutServiceValidator::toPlan() {
   auto *node = SignOutService::make(qctx_, nullptr, type);
   root_ = node;
   tail_ = root_;
+  return Status::OK();
+}
+
+Status ShowSessionsValidator::validateImpl() {
+  if (!inputs_.empty()) {
+    return Status::SemanticError("Show sessions sentence do not support input");
+  }
+
+  outputs_.emplace_back("SessionId", Value::Type::INT);
+  outputs_.emplace_back("UserName", Value::Type::STRING);
+  outputs_.emplace_back("SpaceName", Value::Type::STRING);
+  outputs_.emplace_back("CreateTime", Value::Type::DATETIME);
+  outputs_.emplace_back("UpdateTime", Value::Type::DATETIME);
+  outputs_.emplace_back("GraphAddr", Value::Type::STRING);
+  outputs_.emplace_back("Timezone", Value::Type::INT);
+  outputs_.emplace_back("ClientIp", Value::Type::STRING);
   return Status::OK();
 }
 
