@@ -22,7 +22,6 @@ Feature: Slow Query Test
       """
     Then the execution should be successful
     And wait 10 seconds
-
     # make sure the record exists
     When executing query:
       """
@@ -33,7 +32,6 @@ Feature: Slow Query Test
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-
     When executing query:
       """
       SHOW QUERIES

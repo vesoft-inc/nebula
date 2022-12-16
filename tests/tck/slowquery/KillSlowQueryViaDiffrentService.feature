@@ -14,7 +14,6 @@ Feature: Slow Query Test
       GO 100000 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
       """
     Then an ExecutionError should be raised at runtime: Execution had been killed
-    
 
   Scenario: [slowquery_test_102] Kill go sentence
     When executing query via graph 1:
@@ -22,7 +21,6 @@ Feature: Slow Query Test
       SHOW QUERIES
       """
     Then the execution should be successful
-
     # make sure the record exists
     And wait 10 seconds
     When executing query via graph 1:
@@ -34,7 +32,6 @@ Feature: Slow Query Test
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-
     # sessionId not exist
     When executing query via graph 1:
       """
@@ -45,7 +42,6 @@ Feature: Slow Query Test
       | KILL QUERY(session=200, plan=$-.eid)
       """
     Then an ExecutionError should be raised at runtime: SessionId[200] does not exist
-
     # planId not exist
     When executing query via graph 1:
       """
@@ -56,7 +52,6 @@ Feature: Slow Query Test
       | KILL QUERY(session=$-.sid, plan=201)
       """
     Then an ExecutionError should be raised at runtime.
-
     # Kill go sentence
     When executing query via graph 1:
       """
@@ -68,14 +63,12 @@ Feature: Slow Query Test
       """
     Then the execution should be successful
 
-
   Scenario: [slowquery_test_103] Setup slow query
     When executing query via graph 0:
       """
       match ()-[e:like*1..10000]->(v2) return v2;
       """
     Then an ExecutionError should be raised at runtime: Execution had been killed
-    
 
   Scenario: [slowquery_test_104] Kill match sentence
     When executing query via graph 1:
@@ -84,7 +77,6 @@ Feature: Slow Query Test
       """
     Then the execution should be successful
     And wait 1 seconds
-
     # make sure the record exists
     When executing query via graph 1:
       """
@@ -95,7 +87,6 @@ Feature: Slow Query Test
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-    
     # kill match sentence
     When executing query via graph 1:
       """

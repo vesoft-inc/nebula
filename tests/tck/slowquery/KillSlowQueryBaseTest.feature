@@ -82,7 +82,7 @@ Feature: Slow Query Test
       SHOW LOCAL QUERIES
       """
     Then the execution should be successful
-  
+
   Scenario: [slowquery_test_012] show queries
     When executing query:
       """

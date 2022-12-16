@@ -22,7 +22,6 @@ Feature: Test kill queries from same service
       """
     Then the execution should be successful
     And wait 10 seconds
-
     # Make sure the record exists
     When executing query with user test_permission with password test:
       """
@@ -34,7 +33,6 @@ Feature: Test kill queries from same service
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-
     When executing query with user test_permission with password test:
       """
       USE nba;
@@ -45,7 +43,6 @@ Feature: Test kill queries from same service
       | KILL QUERY(session=$-.sid, plan=$-.eid)
       """
     Then an PermissionError should be raised at runtime: Only GOD role could kill others' queries.
-    
     When executing query with user root with password nebula:
       """
       USE nba;
@@ -65,7 +62,6 @@ Feature: Test kill queries from same service
       """
     Then the execution should be successful
     And wait 5 seconds
-
     When executing query with user test_permission with password test:
       """
       USE nba;
@@ -79,7 +75,6 @@ Feature: Test kill queries from same service
       SHOW QUERIES
       """
     Then the execution should be successful
-    
     # Make sure the record exists
     And wait 15 seconds
     When executing query with user test_permission with password test:
@@ -92,7 +87,6 @@ Feature: Test kill queries from same service
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-
     When executing query with user test_permission with password test:
       """
       USE nba;
