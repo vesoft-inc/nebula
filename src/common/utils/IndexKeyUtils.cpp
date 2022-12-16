@@ -165,8 +165,13 @@ std::string IndexKeyUtils::indexVal(const Value& v) {
 // static
 Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
   Value value;
-  auto len = *reinterpret_cast<const size_t*>(raw.data());
-  apache::thrift::CompactSerializer::deserialize(raw.subpiece(sizeof(size_t), len), value);
+  try {
+    auto len = *reinterpret_cast<const size_t*>(raw.data());
+    apache::thrift::CompactSerializer::deserialize(raw.subpiece(sizeof(size_t), len), value);
+  } catch (std::exception& ex) {
+    LOG(WARNING) << folly::stringPrintf(
+        "Decode index value %s got a exception: %s", folly::hexlify(raw).c_str(), ex.what());
+  }
   return value;
 }
 
