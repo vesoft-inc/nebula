@@ -120,7 +120,7 @@ class TestConfigs(NebulaTestSuite):
         resp = self.client.execute('''
                                    UPDATE CONFIGS storage:rocksdb_column_family_options={
                                    max_bytes_for_level_base="268435456",
-                                   write_buffer_size="33554432",
+                                   write_buffer_size="67108864",
                                    max_write_buffer_number="4"}
                                    ''')
         self.check_resp_succeeded(resp)
