@@ -40,7 +40,18 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
        * ListComprehensionExpression without making structural changes to the implementation.
        */
       if (left()->kind() != Expression::Kind::kAttribute) {
-        return lvalue;
+        if (right()->kind() == Expression::Kind::kConstant &&
+            rvalue.type() == Value::Type::STRING) {
+          auto rStr = rvalue.getStr();
+          for (auto &tag : lvalue.getVertex().tags) {
+            if (rStr.compare(tag.name) == 0) {
+              return lvalue;
+            }
+          }
+          LOG(ERROR) << "Tag not found for: " << rStr
+                     << "Please check whether the related expression "
+                     << "follows the format of vertex.tag.property.";
+        }
       } else if (left()->kind() == Expression::Kind::kAttribute &&
                  dynamic_cast<AttributeExpression *>(left())->right()->kind() ==
                      Expression::Kind::kConstant) {
