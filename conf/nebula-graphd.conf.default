@@ -5,9 +5,9 @@
 --pid_file=pids/nebula-graphd.pid
 # Whether to enable optimizer
 --enable_optimizer=true
-# The default charset when a space is created
+# The default charset when a space is created. Choose from [utf8, utf8mb4].
 --default_charset=utf8
-# The default collate when a space is created
+# The default collate when a space is created. Choose from [utf8_bin, utf8_general_ci, utf8mb4_bin, utf8mb4_general_ci].
 --default_collate=utf8_bin
 # Whether to use the configuration obtained from the configuration file
 --local_config=true
