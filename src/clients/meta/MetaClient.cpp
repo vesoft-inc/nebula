@@ -821,7 +821,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_FAIL_TO_CONNECT:
       return Status::Error("Fail to connect!");
     case nebula::cpp2::ErrorCode::E_RPC_FAILURE:
-      return Status::Error("Rpc failure!");
+      return Status::Error("Rpc failure, probably timeout!");
     case nebula::cpp2::ErrorCode::E_LEADER_CHANGED:
       return Status::LeaderChanged("Leader changed!");
     case nebula::cpp2::ErrorCode::E_NO_HOSTS:
@@ -868,8 +868,6 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("The balancer is running!");
     case nebula::cpp2::ErrorCode::E_CONFIG_IMMUTABLE:
       return Status::Error("Config immutable!");
-    case nebula::cpp2::ErrorCode::E_CONFLICT:
-      return Status::Error("Conflict!");
     case nebula::cpp2::ErrorCode::E_INVALID_PARM:
       return Status::Error("Invalid param!");
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
@@ -965,6 +963,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Related index exists, please drop index first");
     case nebula::cpp2::ErrorCode::E_RELATED_SPACE_EXISTS:
       return Status::Error("There are still space on the host");
+    case nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS:
+      return Status::Error("Related fulltext index exists, please drop it first");
     default:
       return Status::Error("Unknown error!");
   }
