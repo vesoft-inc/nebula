@@ -325,7 +325,7 @@ Feature: With clause
     Given an empty graph
     And having executed:
       """
-      CREATE SPACE IF NOT EXISTS `nebula_huskie` (partition_num = 32, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = INT64, atomic_edge = false);
+      CREATE SPACE IF NOT EXISTS `nebula_huskie` (partition_num = 32, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = INT64);
       """
     And having executed:
       """
