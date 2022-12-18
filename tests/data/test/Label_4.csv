@@ -1,64 +1,57 @@
-:VID(int),Label_4.Label_4_2_Int:int,Label_4.Label_4_0_Int:int,Label_4.Label_4_4_String:string,Label_4.Label_4_5_Bool:bool,Label_4.Label_4_6_Int:int,Label_4.Label_4_3_String:string,Label_4.Label_4_1_Double:double,Label_4.Label_4_7_Int:int
-1,81,38,'Tiago Splitter',false,53,'Jason Kidd',0.926186,94
-4,23,36,'Cory Joseph',true,30,'Null4',0.070102,60
-6,71,86,'Grant Hill',false,7,'LaMarcus Aldridge',0.644881,45
-7,14,71,'Grant Hill',true,52,'Kristaps Porzingis',0.346402,42
-9,41,50,'Null1',false,21,'Kyle Anderson',0.788938,88
-11,20,59,'Danny Green',true,46,'Aron Baynes',0.015980,78
-13,42,43,'Kyle Anderson',false,62,'Yao Ming',0.997822,62
-14,31,94,'Aron Baynes',true,77,'Null3',0.405827,59
-17,39,56,'Boris Diaw',false,55,'Cory Joseph',0.364778,14
-18,29,75,'Luka Doncic',true,62,'Luka Doncic',0.862426,8
-19,49,29,'Amar\'e Stoudemire',false,87,'Kyrie Irving',0.037809,59
-20,14,13,'Dejounte Murray',false,22,'LeBron James',0.653954,63
-21,35,75,'Dejounte Murray',false,1,'Tracy McGrady',0.763519,57
-24,75,96,'Tim Duncan',false,30,'Ben Simmons',0.681192,49
-25,86,22,'Boris Diaw',false,46,'DeAndre Jordan',0.258746,95
-28,98,17,'Kyrie Irving',false,67,'Dwight Howard',0.998958,99
-34,1,94,'Damian Lillard',false,11,'Luka Doncic',0.251757,23
-35,97,60,'Rudy Gay',true,35,'Kyrie Irving',0.809549,91
-37,83,86,'Dwight Howard',false,37,'Marco Belinelli',0.008619,80
-43,60,72,'Jonathon Simmons',true,59,'Dejounte Murray',0.812063,55
-44,73,58,'Blake Griffin',false,5,'Carmelo Anthony',0.972105,28
-45,86,57,'Blake Griffin',false,50,'Dirk Nowitzki',0.508792,24
-46,75,0,'James Harden',false,45,'Stephen Curry',0.404970,1
-48,78,1,'Kyrie Irving',true,49,'Klay Thompson',0.212604,60
-51,23,45,'Null3',true,74,'Steve Nash',0.864370,26
-54,93,36,'Russell Westbrook',true,70,'Kyrie Irving',0.537671,60
-55,35,9,'Yao Ming',false,96,'Nobody',0.812824,77
-56,59,83,'DeAndre Jordan',true,73,'Boris Diaw',0.669850,7
-57,4,38,'Cory Joseph',true,89,'Stephen Curry',0.227577,18
-59,72,47,'Damian Lillard',true,83,'Marco Belinelli',0.239990,75
-61,14,9,'Aron Baynes',true,28,'Giannis Antetokounmpo',0.234705,30
-62,73,14,'Damian Lillard',false,12,'JaVale McGee',0.485323,5
-63,49,66,'Manu Ginobili',true,42,'JaVale McGee',0.893927,17
-64,98,68,'Tiago Splitter',false,60,'Shaquile O\'Neal',0.080504,61
-65,32,11,'Klay Thompson',true,87,'Tim Duncan',0.326517,46
-67,2,38,'Amar\'e Stoudemire',false,35,'Null4',0.861647,92
-69,87,77,'Danny Green',true,5,'Dirk Nowitzki',0.956387,38
-70,40,44,'Marco Belinelli',false,21,'Carmelo Anthony',0.927361,67
-72,66,3,'Null4',true,63,'Manu Ginobili',0.437970,21
-74,14,25,'Giannis Antetokounmpo',true,17,'Null4',0.179399,89
-75,9,28,'Nobody',false,12,'Kobe Bryant',0.019206,57
-77,58,82,'Paul Gasol',false,55,'Null3',0.108530,15
-78,26,84,'Joel Embiid',true,60,'Blake Griffin',0.909780,20
-80,10,56,'Joel Embiid',false,34,'Paul George',0.818432,12
-81,59,37,'Dwight Howard',false,91,'Jonathon Simmons',0.163399,81
-82,52,38,'Boris Diaw',true,89,'Ben Simmons',0.050619,83
-83,31,34,'Cory Joseph',true,31,'Jonathon Simmons',0.568588,89
-84,20,53,'Tony Parker',true,69,'Kyrie Irving',0.272519,26
-85,38,73,'Danny Green',false,69,'Dirk Nowitzki',0.786742,34
-86,18,82,'Tim Duncan',true,13,'Vince Carter',0.583680,19
-87,20,3,'Blake Griffin',false,46,'Joel Embiid',0.617366,33
-89,53,23,'Jason Kidd',true,13,'Carmelo Anthony',0.590996,57
-90,99,89,'Kristaps Porzingis',true,58,'James Harden',0.619598,53
-93,63,63,'Blake Griffin',false,3,'Boris Diaw',0.784125,79
-94,39,67,'Grant Hill',true,29,'Kobe Bryant',0.348011,82
-98,92,37,'Dejounte Murray',false,56,'Null1',0.486852,26
-99,45,13,'Tony Parker',false,4,'Chris Paul',0.670718,7
-100,70,42,'Ricky Rubio',false,58,'Amar\'e Stoudemire',0.635805,67
-101,29,45,'David West',true,42,'Dwight Howard',0.398883,95
-102,58,68,'Kyle Anderson',false,49,'Ricky Rubio',0.285409,51
-103,89,88,'Stephen Curry',false,1,'Tony Parker',0.889165,73
-104,79,59,'Marco Belinelli',false,56,'Ben Simmons',0.291899,53
-456,81,8,'Steve Nash',false,87,'Carmelo Anthony',0.000262,19
+:VID(int),Label_4.Label_4_0_String:string,Label_4.Label_4_2_Bool:bool,Label_4.Label_4_1_String:string,Label_4.Label_4_7_datetime:datetime,Label_4.Label_4_4_String:string,Label_4.Label_4_5_String:string,Label_4.Label_4_6_timestamp:timestamp,Label_4.Label_4_3_Bool:bool
+1,'James Harden',false,'Tony Parker',datetime(),'Cory Joseph','Manu Ginobili',now(),true
+3,'Kyle Anderson',true,'Amar\'e Stoudemire',datetime(),'Ricky Rubio','Vince Carter',now(),false
+7,'Danny Green',false,'Dirk Nowitzki',datetime(),'Giannis Antetokounmpo','Yao Ming',now(),false
+10,'Danny Green',false,'Luka Doncic',datetime(),'LaMarcus Aldridge','Vince Carter',now(),false
+11,'Ricky Rubio',false,'Rudy Gay',datetime(),'James Harden','Damian Lillard',now(),false
+12,'Marc Gasol',false,'Dejounte Murray',datetime(),'Null1','David West',now(),true
+14,'Marco Belinelli',true,'Tim Duncan',datetime(),'Null4','Amar\'e Stoudemire',now(),false
+15,'Danny Green',true,'Danny Green',datetime(),'Chris Paul','Grant Hill',now(),false
+16,'Paul Gasol',false,'Null4',datetime(),'LeBron James','Dwyane Wade',now(),false
+17,'Aron Baynes',true,'Stephen Curry',datetime(),'Dejounte Murray','Marco Belinelli',now(),false
+18,'Kobe Bryant',false,'Rajon Rondo',datetime(),'LaMarcus Aldridge','Luka Doncic',now(),true
+20,'Klay Thompson',true,'Kevin Durant',datetime(),'Dwyane Wade','Grant Hill',now(),true
+24,'Dirk Nowitzki',false,'Amar\'e Stoudemire',datetime(),'Damian Lillard','Null3',now(),false
+25,'Jason Kidd',false,'Giannis Antetokounmpo',datetime(),'DeAndre Jordan','Chris Paul',now(),false
+26,'Jonathon Simmons',true,'Null1',datetime(),'Kobe Bryant','Jason Kidd',now(),false
+27,'Amar\'e Stoudemire',true,'Rajon Rondo',datetime(),'Carmelo Anthony','Paul George',now(),false
+28,'Ben Simmons',true,'Blake Griffin',datetime(),'Blake Griffin','Tony Parker',now(),false
+30,'Rudy Gay',true,'Rudy Gay',datetime(),'Danny Green','Nobody',now(),false
+31,'Kristaps Porzingis',true,'Dwight Howard',datetime(),'Klay Thompson','Rudy Gay',now(),true
+33,'Manu Ginobili',true,'Null2',datetime(),'JaVale McGee','Jonathon Simmons',now(),false
+38,'Steve Nash',false,'DeAndre Jordan',datetime(),'Danny Green','Blake Griffin',now(),true
+39,'Jason Kidd',true,'Ray Allen',datetime(),'Dwight Howard','Boris Diaw',now(),true
+41,'Jason Kidd',true,'Null4',datetime(),'Kristaps Porzingis','Tiago Splitter',now(),true
+45,'Damian Lillard',false,'Stephen Curry',datetime(),'Null2','Boris Diaw',now(),true
+47,'Vince Carter',true,'Carmelo Anthony',datetime(),'Cory Joseph','Ricky Rubio',now(),false
+51,'Grant Hill',true,'Aron Baynes',datetime(),'Kyle Anderson','Cory Joseph',now(),true
+53,'David West',true,'Yao Ming',datetime(),'Null4','Jonathon Simmons',now(),false
+56,'LaMarcus Aldridge',true,'Ricky Rubio',datetime(),'Nobody','Dwyane Wade',now(),false
+59,'Dwyane Wade',false,'Rudy Gay',datetime(),'Chris Paul','Marc Gasol',now(),false
+60,'Cory Joseph',false,'Kevin Durant',datetime(),'Tiago Splitter','Aron Baynes',now(),false
+64,'Paul George',true,'Shaquile O\'Neal',datetime(),'Danny Green','Null1',now(),false
+65,'Null2',false,'Carmelo Anthony',datetime(),'Stephen Curry','JaVale McGee',now(),true
+67,'Ricky Rubio',true,'Dwyane Wade',datetime(),'Null2','Luka Doncic',now(),true
+68,'Cory Joseph',true,'Carmelo Anthony',datetime(),'Manu Ginobili','Vince Carter',now(),true
+74,'Dwight Howard',false,'Kyle Anderson',datetime(),'Damian Lillard','Jonathon Simmons',now(),true
+76,'Null4',false,'Nobody',datetime(),'Tim Duncan','LaMarcus Aldridge',now(),true
+77,'Rajon Rondo',true,'Null2',datetime(),'Nobody','David West',now(),false
+80,'Amar\'e Stoudemire',false,'Carmelo Anthony',datetime(),'Shaquile O\'Neal','Chris Paul',now(),true
+81,'Marc Gasol',false,'Marco Belinelli',datetime(),'Giannis Antetokounmpo','Tiago Splitter',now(),true
+82,'Jonathon Simmons',false,'JaVale McGee',datetime(),'Amar\'e Stoudemire','Boris Diaw',now(),false
+84,'Tiago Splitter',true,'Tiago Splitter',datetime(),'Manu Ginobili','Nobody',now(),false
+87,'Vince Carter',true,'DeAndre Jordan',datetime(),'Dejounte Murray','Ricky Rubio',now(),true
+89,'JaVale McGee',false,'Boris Diaw',datetime(),'Kyle Anderson','Kyle Anderson',now(),true
+92,'Kristaps Porzingis',true,'Null4',datetime(),'David West','Vince Carter',now(),true
+96,'Luka Doncic',true,'James Harden',datetime(),'Carmelo Anthony','Jason Kidd',now(),false
+97,'Dwyane Wade',true,'Giannis Antetokounmpo',datetime(),'Tim Duncan','Aron Baynes',now(),false
+98,'DeAndre Jordan',false,'Steve Nash',datetime(),'Kyrie Irving','Blake Griffin',now(),false
+99,'Null2',true,'Kevin Durant',datetime(),'Tracy McGrady','Paul George',now(),true
+100,'Rudy Gay',false,'Shaquile O\'Neal',datetime(),'Luka Doncic','Blake Griffin',now(),false
+101,'Damian Lillard',true,'Dejounte Murray',datetime(),'Null4','Tracy McGrady',now(),false
+102,'Dirk Nowitzki',false,'Rajon Rondo',datetime(),'Tiago Splitter','Tiago Splitter',now(),true
+103,'Giannis Antetokounmpo',false,'Jonathon Simmons',datetime(),'Vince Carter','Amar\'e Stoudemire',now(),false
+105,'Carmelo Anthony',true,'Giannis Antetokounmpo',datetime(),'Marc Gasol','James Harden',now(),false
+107,'Grant Hill',false,'David West',datetime(),'Kevin Durant','David West',now(),false
+108,'Cory Joseph',false,'Chris Paul',datetime(),'Joel Embiid','Rajon Rondo',now(),true
+383,'Null1',true,'Cory Joseph',datetime(),'Marc Gasol','Klay Thompson',now(),true
