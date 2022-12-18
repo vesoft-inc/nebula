@@ -4,8 +4,10 @@
 
 
 nebula_add_library(
-  memory_obj OBJECT
-  MemoryUtils.cpp
+        memory_obj OBJECT
+        MemoryUtils.cpp
+        CurrentMemoryTracker.cpp
+        new_delete.cpp
 )
 
 nebula_add_subdirectory(test)

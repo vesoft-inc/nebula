@@ -108,6 +108,13 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
         return handleResponse(std::move(resp));
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(std::runtime_error("Memory Limit Exceeded"));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

@@ -6,11 +6,16 @@
 #include "common/memory/MemoryUtils.h"
 
 #include <gflags/gflags.h>
+#include <jemalloc/jemalloc.h>
+#define STRINGIFY_HELPER(x) #x
+#define STRINGIFY(x) STRINGIFY_HELPER(x)
 
 #include <algorithm>
 #include <fstream>
+#include <limits>
 
 #include "common/fs/FileUtils.h"
+#include "common/memory/MemoryStats.h"
 
 DEFINE_bool(containerized, false, "Whether run this process inside the docker container");
 DEFINE_double(system_memory_high_watermark_ratio, 0.8, "high watermark ratio of system memory");
@@ -25,6 +30,7 @@ static const std::regex reMemAvailable(
 static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)");
 
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
+int64_t MemoryUtils::kMemoryLimit{std::numeric_limits<int64_t>::max()};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
@@ -32,9 +38,9 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   }
   double available = 0.0, total = 0.0;
   if (FLAGS_containerized) {
-    bool cgroupsv2 = FileUtils::exist("/sys/fs/cgroup/cgroup.controllers");
+    bool cgroupsv2 = FileUtils::exist("/sys/fs/cgroup/graphd.slice/cgroup.controllers");
     std::string statPath =
-        cgroupsv2 ? "/sys/fs/cgroup/memory.stat" : "/sys/fs/cgroup/memory/memory.stat";
+        cgroupsv2 ? "/sys/fs/cgroup/graphd.slice/memory.stat" : "/sys/fs/cgroup/memory/memory.stat";
     FileUtils::FileLineIterator iter(statPath, &reTotalCache);
     uint64_t cacheSize = 0;
     for (; iter.valid(); ++iter) {
@@ -42,20 +48,32 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       cacheSize += std::stoul(sm[2].str(), nullptr);
     }
 
-    std::string limitPath =
-        cgroupsv2 ? "/sys/fs/cgroup/memory.max" : "/sys/fs/cgroup/memory/memory.limit_in_bytes";
+    std::string limitPath = cgroupsv2 ? "/sys/fs/cgroup/graphd.slice/memory.max"
+                                      : "/sys/fs/cgroup/memory/memory.limit_in_bytes";
     auto limitStatus = MemoryUtils::readSysContents(limitPath);
     NG_RETURN_IF_ERROR(limitStatus);
     uint64_t limitInBytes = std::move(limitStatus).value();
 
-    std::string usagePath =
-        cgroupsv2 ? "/sys/fs/cgroup/memory.current" : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
+    kMemoryLimit = limitInBytes * 0.7;
+
+    std::string usagePath = cgroupsv2 ? "/sys/fs/cgroup/graphd.slice/memory.current"
+                                      : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
     auto usageStatus = MemoryUtils::readSysContents(usagePath);
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
 
     total = static_cast<double>(limitInBytes);
     available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
+    LOG(INFO) << "total: " << total << " usageInBytes: " << usageInBytes
+              << " cacheSize: " << cacheSize << " available: " << available
+              << " ratio1:" << (1 - available / total) << " kMemoryLimit:" << kMemoryLimit
+              << " used:" << MemoryStats::instance().amount()
+              << " ratio2:" << MemoryStats::instance().amount() / static_cast<double>(kMemoryLimit);
+
+    if (((int64_t)usageInBytes) > 2 * MemoryStats::instance().amount()) {
+      mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
+    }
+
   } else {
     FileUtils::FileLineIterator iter("/proc/meminfo", &reMemAvailable);
     std::vector<uint64_t> memorySize;

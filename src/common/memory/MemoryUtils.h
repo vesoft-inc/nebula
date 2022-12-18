@@ -24,6 +24,7 @@ class MemoryUtils final {
  public:
   static StatusOr<bool> hitsHighWatermark();
 
+  static int64_t kMemoryLimit;
   static std::atomic_bool kHitMemoryHighWatermark;
 
  private:
