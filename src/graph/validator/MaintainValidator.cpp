@@ -614,10 +614,10 @@ Status CreateFTIndexValidator::validateImpl() {
   auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
   NG_RETURN_IF_ERROR(esAdapterRet);
   auto esAdapter = std::move(esAdapterRet).value();
-  auto existResult = esAdapter.isIndexExist(name);
+  auto existResult = esAdapter.isIndexExist(name.toString());
   NG_RETURN_IF_ERROR(existResult);
   if (existResult.value()) {
-    return Status::Error("text search index exist : %s", name.c_str());
+    return Status::Error(fmt::format("text search index exist : {}", name));
   }
   auto space = vctx_->whichSpace();
   auto status = sentence->isEdge()
