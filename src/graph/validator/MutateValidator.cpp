@@ -752,10 +752,6 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
                                             const std::string &sym,
                                             bool &hasWrongType,
                                             bool isEdge) {
-  // RewriteSymExprVisitor visitor(qctx_->objPool(), sym, isEdge);
-  // expr->accept(&visitor);
-  // hasWrongType = visitor.hasWrongType();
-  // return expr;
   std::unordered_set<Expression::Kind> invalidExprs{
       Expression::Kind::kVersionedVar,
       Expression::Kind::kVarProperty,
