@@ -22,7 +22,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     LOG(INFO) << "Failed to create tag `" << tagName
               << "': some edge with the same name already exists.";
     resp_.id_ref() = to(nebula::value(conflictRet), EntryType::TAG);
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SCHEMA_NAME_EXISTS);
     onFinished();
     return;
   } else {

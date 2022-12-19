@@ -1123,11 +1123,11 @@ class CreateFTIndexSentence final : public Sentence {
   CreateFTIndexSentence(bool isEdge,
                         std::string *indexName,
                         std::string *schemaName,
-                        NameLabelList *fields) {
+                        std::string *field) {
     isEdge_ = isEdge;
     indexName_.reset(indexName);
     schemaName_.reset(schemaName);
-    fields_.reset(fields);
+    field_.reset(field);
     kind_ = Kind::kCreateFTIndex;
   }
 
@@ -1144,20 +1144,15 @@ class CreateFTIndexSentence final : public Sentence {
     return schemaName_.get();
   }
 
-  std::vector<std::string> fields() const {
-    std::vector<std::string> result;
-    auto fields = fields_->labels();
-    result.resize(fields.size());
-    auto get = [](auto ptr) { return *ptr; };
-    std::transform(fields.begin(), fields.end(), result.begin(), get);
-    return result;
+  std::string field() const {
+    return *field_;
   }
 
  private:
   bool isEdge_;
   std::unique_ptr<std::string> indexName_;
   std::unique_ptr<std::string> schemaName_;
-  std::unique_ptr<NameLabelList> fields_;
+  std::unique_ptr<std::string> field_;
 };
 class DropFTIndexSentence final : public Sentence {
  public:

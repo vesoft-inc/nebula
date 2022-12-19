@@ -5,8 +5,13 @@
 
 #include "graph/validator/MatchValidator.h"
 
+#include "common/expression/FunctionCallExpression.h"
+#include "common/expression/LogicalExpression.h"
+#include "common/expression/MatchPathPatternExpression.h"
+#include "common/expression/UnaryExpression.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/DeduceAliasTypeVisitor.h"
 #include "graph/visitor/ExtractGroupSuiteVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 #include "graph/visitor/ValidatePatternExpressionVisitor.h"
@@ -92,9 +97,13 @@ Status MatchValidator::validateImpl() {
           NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(), *whereClauseCtx));
           withClauseCtx->where = std::move(whereClauseCtx);
         }
-
         // A with pass all named aliases to the next query part.
-        aliasesAvailable = withClauseCtx->aliasesGenerated;
+        if (withClause->returnItems()->allNamedAliases()) {
+          aliasesAvailable.insert(withClauseCtx->aliasesGenerated.begin(),
+                                  withClauseCtx->aliasesGenerated.end());
+        } else {
+          aliasesAvailable = withClauseCtx->aliasesGenerated;
+        }
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
         cypherCtx_->queryParts.emplace_back();
         cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
@@ -133,6 +142,9 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
   NG_RETURN_IF_ERROR(buildNodeInfo(path, pathInfo.nodeInfos, dummy));
   NG_RETURN_IF_ERROR(buildEdgeInfo(path, pathInfo.edgeInfos, dummy));
   NG_RETURN_IF_ERROR(buildPathExpr(path, pathInfo, dummy));
+  pathInfo.isPred = path->isPredicate();
+  pathInfo.isAntiPred = path->isAntiPredicate();
+
   return Status::OK();
 }
 
@@ -342,8 +354,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   }
 
   NG_RETURN_IF_ERROR(validateAliases({whereClauseCtx.filter}, whereClauseCtx.aliasesAvailable));
-  NG_RETURN_IF_ERROR(validateMatchPathExpr(
-      whereClauseCtx.filter, whereClauseCtx.aliasesAvailable, whereClauseCtx.paths));
+  NG_RETURN_IF_ERROR(
+      validatePathInWhere(whereClauseCtx, whereClauseCtx.aliasesAvailable, whereClauseCtx.paths));
 
   return Status::OK();
 }
@@ -367,7 +379,13 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
     switch (boundary->kind) {
       case CypherClauseKind::kUnwind: {
         auto unwindCtx = static_cast<const UnwindClauseContext *>(boundary.get());
-        columns->addColumn(makeColumn(unwindCtx->alias));
+        columns->addColumn(makeColumn(unwindCtx->alias), true);
+        for (auto &passAlias : prevQueryPart.aliasesAvailable) {
+          columns->addColumn(makeColumn(passAlias.first), true);
+        }
+        for (auto &passAlias : prevQueryPart.aliasesGenerated) {
+          columns->addColumn(makeColumn(passAlias.first), true);
+        }
         break;
       }
       case CypherClauseKind::kWith: {
@@ -378,7 +396,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
         }
         for (auto &col : yieldColumns->columns()) {
           if (!col->alias().empty()) {
-            columns->addColumn(makeColumn(col->alias()));
+            columns->addColumn(makeColumn(col->alias()), true);
           }
         }
         break;
@@ -546,13 +564,19 @@ Status MatchValidator::validateWith(const WithClause *with,
   exprs.reserve(withClauseCtx.yield->yieldColumns->size());
   for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
-    auto aliasType = AliasType::kDefault;
+    auto aliasType = AliasType::kRuntime;
     for (auto *labelExpr : labelExprs) {
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
-      aliasType = withClauseCtx.yield->aliasesAvailable.at(label);
+      AliasType inputType = withClauseCtx.yield->aliasesAvailable.at(label);
+      DeduceAliasTypeVisitor visitor(qctx_, vctx_, space_.id, inputType);
+      const_cast<Expression *>(col->expr())->accept(&visitor);
+      if (!visitor.ok()) {
+        return std::move(visitor).status();
+      }
+      aliasType = visitor.outputType();
     }
     if (col->alias().empty()) {
       if (col->expr()->kind() == Expression::Kind::kLabel) {
@@ -566,7 +590,10 @@ Status MatchValidator::validateWith(const WithClause *with,
       auto found = withClauseCtx.yield->aliasesAvailable.find(label);
       DCHECK(found != withClauseCtx.yield->aliasesAvailable.end());
       if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second).second) {
-        return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+        auto columnFound = withClauseCtx.yield->yieldColumns->find(col->alias());
+        if (!(columnFound != nullptr && columnFound->isMatched())) {
+          return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+        }
       }
     } else {
       if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
@@ -632,7 +659,7 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   //      set z to the same type
   //   else
   //      set z to default
-  AliasType aliasType = AliasType::kDefault;
+  AliasType aliasType = AliasType::kRuntime;
   if (types.size() > 0 &&
       std::adjacent_find(types.begin(), types.end(), std::not_equal_to<>()) == types.end()) {
     aliasType = types[0];
@@ -922,7 +949,7 @@ Status MatchValidator::checkAlias(
     const Expression *refExpr,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   auto kind = refExpr->kind();
-  AliasType aliasType = AliasType::kDefault;
+  AliasType aliasType = AliasType::kRuntime;
 
   switch (kind) {
     case Expression::Kind::kLabel: {
@@ -1064,7 +1091,7 @@ Status MatchValidator::validateMatchPathExpr(
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));
     // Check variables
-    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl, availableAliases));
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
     // Build path alias
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
@@ -1081,10 +1108,121 @@ Status MatchValidator::validateMatchPathExpr(
   return Status::OK();
 }
 
+bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+  if (expr->kind() == Expression::Kind::kMatchPathPattern) {
+    auto pred = static_cast<MatchPathPatternExpression *>(expr)->matchPath().clone();
+    pred.setPredicate();
+    pathPreds.emplace_back(std::move(pred));
+    // Absorb expression into path predicate
+    return true;
+  } else if (expr->kind() == Expression::Kind::kUnaryNot) {
+    auto *operand = static_cast<UnaryExpression *>(expr)->operand();
+    if (operand->kind() == Expression::Kind::kMatchPathPattern) {
+      auto pred = static_cast<MatchPathPatternExpression *>(operand)->matchPath().clone();
+      pred.setAntiPredicate();
+      pathPreds.emplace_back(std::move(pred));
+      // Absorb expression into path predicate
+      return true;
+    } else if (operand->kind() == Expression::Kind::kFunctionCall) {
+      auto funcExpr = static_cast<FunctionCallExpression *>(operand);
+      if (funcExpr->isFunc("exists")) {
+        auto args = funcExpr->args()->args();
+        DCHECK_EQ(args.size(), 1);
+        if (args[0]->kind() == Expression::Kind::kMatchPathPattern) {
+          auto pred = static_cast<MatchPathPatternExpression *>(args[0])->matchPath().clone();
+          pred.setAntiPredicate();
+          pathPreds.emplace_back(std::move(pred));
+          // Absorb expression into path predicate
+          return true;
+        }
+      }
+    }
+  }
+  // Take no effects
+  return false;
+}
+
+bool extractMultiPathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+  if (expr->kind() == Expression::Kind::kLogicalAnd) {
+    auto &operands = static_cast<LogicalExpression *>(expr)->operands();
+    for (auto iter = operands.begin(); iter != operands.end();) {
+      if (extractSinglePathPredicate(*iter, pathPreds)) {
+        // Should remove this operand bcz it was already absorbed into pathPreds
+        operands.erase(iter);
+      } else {
+        iter++;
+      }
+    }
+    // Alread remove inner predicate operands
+    return false;
+  } else {
+    return extractSinglePathPredicate(expr, pathPreds);
+  }
+}
+
+Status MatchValidator::validatePathInWhere(
+    WhereClauseContext &wctx,
+    const std::unordered_map<std::string, AliasType> &availableAliases,
+    std::vector<Path> &paths) {
+  auto expr = ExpressionUtils::flattenInnerLogicalExpr(wctx.filter);
+  auto *pool = qctx_->objPool();
+  ValidatePatternExpressionVisitor visitor(pool, vctx_);
+  expr->accept(&visitor);
+  std::vector<MatchPath> pathPreds;
+  // FIXME(czp): Delete this function and add new expression visitor to cover all general cases
+  if (extractMultiPathPredicate(expr, pathPreds)) {
+    wctx.filter = nullptr;
+  } else {
+    // Flatten and fold the inner logical expressions that already have operands that can be
+    // compacted
+    wctx.filter =
+        ExpressionUtils::foldInnerLogicalExpr(ExpressionUtils::flattenInnerLogicalExpr(expr));
+  }
+  for (auto &pred : pathPreds) {
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(pred, availableAliases));
+    // Build path alias
+    auto pathAlias = pred.toString();
+    pred.setAlias(new std::string(pathAlias));
+    paths.emplace_back();
+    NG_RETURN_IF_ERROR(validatePath(&pred, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&pred, paths.back()));
+  }
+
+  // All inside pattern expressions are path predicate
+  if (wctx.filter == nullptr) {
+    return Status::OK();
+  }
+
+  ValidatePatternExpressionVisitor pathExprVisitor(pool, vctx_);
+  wctx.filter->accept(&pathExprVisitor);
+  auto matchPathExprs =
+      ExpressionUtils::collectAll(wctx.filter, {Expression::Kind::kMatchPathPattern});
+  for (auto &matchPathExpr : matchPathExprs) {
+    DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
+    auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
+        static_cast<const MatchPathPatternExpression *>(matchPathExpr));
+    // Check variables
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
+    // Build path alias
+    auto &matchPath = matchPathExprImpl->matchPath();
+    auto pathAlias = matchPath.toString();
+    matchPath.setAlias(new std::string(pathAlias));
+    if (matchPathExprImpl->genList() == nullptr) {
+      // Don't done in expression visitor
+      Expression *genList = InputPropertyExpression::make(pool, pathAlias);
+      matchPathExprImpl->setGenList(genList);
+    }
+    paths.emplace_back();
+    NG_RETURN_IF_ERROR(validatePath(&matchPath, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&matchPath, paths.back()));
+  }
+
+  return Status::OK();
+}
+
 /*static*/ Status MatchValidator::checkMatchPathExpr(
-    const MatchPathPatternExpression *expr,
+    const MatchPath &matchPath,
     const std::unordered_map<std::string, AliasType> &availableAliases) {
-  const auto &matchPath = expr->matchPath();
   if (matchPath.alias() != nullptr) {
     const auto find = availableAliases.find(*matchPath.alias());
     if (find == availableAliases.end()) {
@@ -1093,7 +1231,9 @@ Status MatchValidator::validateMatchPathExpr(
           matchPath.alias()->c_str());
     }
     if (find->second != AliasType::kPath) {
-      return Status::SemanticError("Alias `%s' should be Path.", matchPath.alias()->c_str());
+      return Status::SemanticError("Alias `%s' should be Path, but got type '%s",
+                                   matchPath.alias()->c_str(),
+                                   AliasTypeName::get(find->second).c_str());
     }
   }
   for (const auto &node : matchPath.nodes()) {
@@ -1109,7 +1249,9 @@ Status MatchValidator::validateMatchPathExpr(
             node->alias().c_str());
       }
       if (find->second != AliasType::kNode) {
-        return Status::SemanticError("Alias `%s' should be Node.", node->alias().c_str());
+        return Status::SemanticError("Alias `%s' should be Node, but got type '%s",
+                                     node->alias().c_str(),
+                                     AliasTypeName::get(find->second).c_str());
       }
     }
   }
@@ -1122,7 +1264,9 @@ Status MatchValidator::validateMatchPathExpr(
             edge->alias().c_str());
       }
       if (find->second != AliasType::kEdge) {
-        return Status::SemanticError("Alias `%s' should be Edge.", edge->alias().c_str());
+        return Status::SemanticError("Alias `%s' should be Edge, but got type '%s'",
+                                     edge->alias().c_str(),
+                                     AliasTypeName::get(find->second).c_str());
       }
     }
   }

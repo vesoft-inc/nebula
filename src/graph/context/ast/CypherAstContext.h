@@ -55,7 +55,27 @@ struct EdgeInfo {
   Expression* filter{nullptr};
 };
 
-enum class AliasType : int8_t { kNode, kEdge, kPath, kEdgeList, kDefault };
+enum class AliasType : int8_t { kNode, kEdge, kPath, kNodeList, kEdgeList, kRuntime };
+
+struct AliasTypeName {
+  static std::string get(AliasType type) {
+    switch (type) {
+      case AliasType::kNode:
+        return "Node";
+      case AliasType::kEdge:
+        return "Edge";
+      case AliasType::kPath:
+        return "Path";
+      case AliasType::kNodeList:
+        return "NodeList";
+      case AliasType::kEdgeList:
+        return "EdgeList";
+      case AliasType::kRuntime:
+        return "Runtime";
+    }
+    return "Error";  // should not reach here
+  }
+};
 
 struct ScanInfo {
   Expression* filter{nullptr};
@@ -82,6 +102,10 @@ struct Path final {
   std::vector<std::string> compareVariables;
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
+
+  // Flag for pattern predicate
+  bool isPred{false};
+  bool isAntiPred{false};
 
   enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};

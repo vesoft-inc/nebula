@@ -24,7 +24,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   }
   if (fields.size() != columnSet.size()) {
     LOG(INFO) << "Conflict field in the edge index.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
@@ -32,7 +32,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   // A maximum of 16 columns are allowed in the index
   if (columnSet.size() > maxIndexLimit) {
     LOG(INFO) << "The number of index columns exceeds maximum limit " << maxIndexLimit;
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }

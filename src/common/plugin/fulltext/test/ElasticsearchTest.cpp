@@ -27,20 +27,50 @@ class MockHttpClient : public HttpClient {
               (const std::string& url, const std::vector<std::string>& headers),
               (override));
   MOCK_METHOD(HttpResponse,
+              get,
+              (const std::string& url,
+               const std::vector<std::string>& headers,
+               const std::string&,
+               const std::string&),
+              (override));
+  MOCK_METHOD(HttpResponse,
               post,
               (const std::string& url,
                const std::vector<std::string>& headers,
                const std::string& body),
               (override));
   MOCK_METHOD(HttpResponse,
+              post,
+              (const std::string& url,
+               const std::vector<std::string>& headers,
+               const std::string& body,
+               const std::string&,
+               const std::string&),
+              (override));
+  MOCK_METHOD(HttpResponse,
               delete_,
               (const std::string& url, const std::vector<std::string>& headers),
+              (override));
+  MOCK_METHOD(HttpResponse,
+              delete_,
+              (const std::string& url,
+               const std::vector<std::string>& headers,
+               const std::string&,
+               const std::string&),
               (override));
   MOCK_METHOD(HttpResponse,
               put,
               (const std::string& url,
                const std::vector<std::string>& headers,
                const std::string& body),
+              (override));
+  MOCK_METHOD(HttpResponse,
+              put,
+              (const std::string& url,
+               const std::vector<std::string>& headers,
+               const std::string& body,
+               const std::string&,
+               const std::string&),
               (override));
 };
 
@@ -112,7 +142,9 @@ TEST_F(ESTest, createIndex) {
   EXPECT_CALL(mockHttpClient,
               put("http://127.0.0.1:9200/nebula_index_1",
                   std::vector<std::string>{"Content-Type: application/json"},
-                  _))
+                  _,
+                  "",
+                  ""))
       .Times(3)
       .WillOnce(Return(normalSuccessResp_))
       .WillOnce(Return(esErrorResp_))
@@ -139,7 +171,9 @@ TEST_F(ESTest, dropIndex) {
   MockHttpClient mockHttpClient;
   EXPECT_CALL(mockHttpClient,
               delete_("http://127.0.0.1:9200/nebula_index_1",
-                      std::vector<std::string>{"Content-Type: application/json"}))
+                      std::vector<std::string>{"Content-Type: application/json"},
+                      "",
+                      ""))
       .Times(3)
       .WillOnce(Return(normalSuccessResp_))
       .WillOnce(Return(esErrorResp_))
@@ -186,7 +220,9 @@ content-length: 78
 
   EXPECT_CALL(mockHttpClient,
               get("http://127.0.0.1:9200/nebula_index_1",
-                  std::vector<std::string>{"Content-Type: application/json"}))
+                  std::vector<std::string>{"Content-Type: application/json"},
+                  "",
+                  ""))
       .Times(4)
       .WillOnce(Return(indexExistResp))
       .WillOnce(Return(indexNotExistResp))
@@ -230,14 +266,18 @@ content-length: 78
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_delete_by_query?refresh=false",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   _))
+                   _,
+                   "",
+                   ""))
       .Times(2)
       .WillOnce(Return(clearSuccessResp_))
       .WillOnce(Return(esErrorResp_));
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_delete_by_query?refresh=true",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   _))
+                   _,
+                   "",
+                   ""))
       .Times(1)
       .WillOnce(Return(curlErrorResp_));
 
@@ -274,7 +314,9 @@ TEST_F(ESTest, prefix) {
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_search",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   folly::toJson(prefixBody)))
+                   folly::toJson(prefixBody),
+                   std::string(""),
+                   std::string("")))
       .Times(3)
       .WillOnce(Return(queryResultResp_))
       .WillOnce(Return(esErrorResp_))
@@ -282,7 +324,7 @@ TEST_F(ESTest, prefix) {
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
   plugin::ESAdapter adapter({client});
   {
-    auto result = adapter.prefix("nebula_index_1", "abc");
+    auto result = adapter.prefix("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -290,12 +332,12 @@ TEST_F(ESTest, prefix) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("a", "b", 10, "edge text"));
   }
   {
-    auto result = adapter.prefix("nebula_index_1", "abc");
+    auto result = adapter.prefix("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"({"reason":"mock error"})");
   }
   {
-    auto result = adapter.prefix("nebula_index_1", "abc");
+    auto result = adapter.prefix("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"(curl error(7):mock error message)");
   }
@@ -316,7 +358,9 @@ TEST_F(ESTest, wildcard) {
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_search",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   folly::toJson(body)))
+                   folly::toJson(body),
+                   "",
+                   ""))
       .Times(3)
       .WillOnce(Return(queryResultResp_))
       .WillOnce(Return(esErrorResp_))
@@ -324,7 +368,7 @@ TEST_F(ESTest, wildcard) {
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
   plugin::ESAdapter adapter({client});
   {
-    auto result = adapter.wildcard("nebula_index_1", "abc");
+    auto result = adapter.wildcard("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -332,12 +376,12 @@ TEST_F(ESTest, wildcard) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("a", "b", 10, "edge text"));
   }
   {
-    auto result = adapter.wildcard("nebula_index_1", "abc");
+    auto result = adapter.wildcard("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"({"reason":"mock error"})");
   }
   {
-    auto result = adapter.wildcard("nebula_index_1", "abc");
+    auto result = adapter.wildcard("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"(curl error(7):mock error message)");
   }
@@ -358,7 +402,9 @@ TEST_F(ESTest, regexp) {
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_search",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   folly::toJson(body)))
+                   folly::toJson(body),
+                   "",
+                   ""))
       .Times(3)
       .WillOnce(Return(queryResultResp_))
       .WillOnce(Return(esErrorResp_))
@@ -366,7 +412,7 @@ TEST_F(ESTest, regexp) {
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
   plugin::ESAdapter adapter({client});
   {
-    auto result = adapter.regexp("nebula_index_1", "abc");
+    auto result = adapter.regexp("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -374,12 +420,12 @@ TEST_F(ESTest, regexp) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("a", "b", 10, "edge text"));
   }
   {
-    auto result = adapter.regexp("nebula_index_1", "abc");
+    auto result = adapter.regexp("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"({"reason":"mock error"})");
   }
   {
-    auto result = adapter.regexp("nebula_index_1", "abc");
+    auto result = adapter.regexp("nebula_index_1", "abc", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"(curl error(7):mock error message)");
   }
@@ -391,14 +437,18 @@ TEST_F(ESTest, bulk) {
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/_bulk?refresh=true",
                    std::vector<std::string>{"Content-Type: application/x-ndjson"},
-                   _))  // TODO(hs.zhang): Matcher
+                   _,
+                   "",
+                   ""))  // TODO(hs.zhang): Matcher
       .Times(2)
       .WillOnce(Return(queryResultResp_))
       .WillOnce(Return(esErrorResp_));
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/_bulk?refresh=false",
                    std::vector<std::string>{"Content-Type: application/x-ndjson"},
-                   _))  // TODO(hs.zhang): Matcher
+                   _,
+                   "",
+                   ""))  // TODO(hs.zhang): Matcher
       .Times(1)
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
@@ -440,7 +490,9 @@ TEST_F(ESTest, fuzzy) {
   EXPECT_CALL(mockHttpClient,
               post("http://127.0.0.1:9200/nebula_index_1/_search",
                    std::vector<std::string>{"Content-Type: application/json"},
-                   _))
+                   _,
+                   "",
+                   ""))
       .Times(3)
       .WillOnce(Return(queryResultResp_))
       .WillOnce(Return(esErrorResp_))
@@ -448,7 +500,7 @@ TEST_F(ESTest, fuzzy) {
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
   plugin::ESAdapter adapter({client});
   {
-    auto result = adapter.fuzzy("nebula_index_1", "abc", "2");
+    auto result = adapter.fuzzy("nebula_index_1", "abc", "2", -1, -1);
     ASSERT_TRUE(result.ok());
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -456,12 +508,12 @@ TEST_F(ESTest, fuzzy) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("a", "b", 10, "edge text"));
   }
   {
-    auto result = adapter.fuzzy("nebula_index_1", "abc", "2");
+    auto result = adapter.fuzzy("nebula_index_1", "abc", "2", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"({"reason":"mock error"})");
   }
   {
-    auto result = adapter.fuzzy("nebula_index_1", "abc", "2");
+    auto result = adapter.fuzzy("nebula_index_1", "abc", "2", -1, -1);
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.status().message(), R"(curl error(7):mock error message)");
   }
@@ -509,7 +561,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_TRUE(result.ok()) << result.message();
   }
   {
-    auto result = adapter.prefix(indexName, "a");
+    auto result = adapter.prefix(indexName, "a", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -522,7 +574,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("2", "abcd"));
   }
   {
-    auto result = adapter.regexp(indexName, "a.*");
+    auto result = adapter.regexp(indexName, "a.*", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -535,7 +587,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("2", "abcd"));
   }
   {
-    auto result = adapter.prefix(indexName, "abcd");
+    auto result = adapter.prefix(indexName, "abcd", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 1);
@@ -569,7 +621,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[4], plugin::ESQueryResult::Item("5", "NebulaGraph是一个图数据库"));
   }
   {
-    auto result = adapter.prefix(indexName, "NebulaGraph");
+    auto result = adapter.prefix(indexName, "NebulaGraph", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -583,7 +635,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("5", "NebulaGraph是一个图数据库"));
   }
   {
-    auto result = adapter.regexp(indexName, "NebulaGraph.*(图数据库|database)");
+    auto result = adapter.regexp(indexName, "NebulaGraph.*(图数据库|database)", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -597,7 +649,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("5", "NebulaGraph是一个图数据库"));
   }
   {
-    auto result = adapter.wildcard(indexName, "Nebula?raph是*");
+    auto result = adapter.wildcard(indexName, "Nebula?raph是*", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 2);
@@ -610,7 +662,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_EQ(esResult.items[1], plugin::ESQueryResult::Item("5", "NebulaGraph是一个图数据库"));
   }
   {
-    auto result = adapter.fuzzy(indexName, "Nebulagraph is a graph Database", "2");
+    auto result = adapter.fuzzy(indexName, "Nebulagraph is a graph Database", "2", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 1);
@@ -625,7 +677,7 @@ TEST_F(RealESTest, DISABLED_QUERY) {
     ASSERT_TRUE(result.ok()) << result.message();
   }
   {
-    auto result = adapter.prefix(indexName, "NebulaGraph");
+    auto result = adapter.prefix(indexName, "NebulaGraph", -1, -1);
     ASSERT_TRUE(result.ok()) << result.status().message();
     auto esResult = std::move(result).value();
     ASSERT_EQ(esResult.items.size(), 1);

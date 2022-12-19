@@ -19,10 +19,14 @@ std::unordered_map<std::string, PredicateExpression::Type> PredicateExpression::
 const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
   DCHECK(collection_->kind() == Expression::Kind::kAttribute ||
          collection_->kind() == Expression::Kind::kSubscript ||
-         collection_->kind() == Expression::Kind::kLabelTagProperty);
+         collection_->kind() == Expression::Kind::kLabelTagProperty ||
+         collection_->kind() == Expression::Kind::kTagProperty)
+      << "actual kind: " << collection_->kind() << ", toString: " << toString();
 
-  if (collection_->kind() == Expression::Kind::kLabelTagProperty) {
-    result_ = !collection_->eval(ctx).isNull();
+  if (collection_->kind() == Expression::Kind::kLabelTagProperty ||
+      collection_->kind() == Expression::Kind::kTagProperty) {
+    auto v = collection_->eval(ctx);
+    result_ = (!v.isNull()) && (!v.empty());
     return result_;
   }
 

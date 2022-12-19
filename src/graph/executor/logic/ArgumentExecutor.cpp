@@ -24,7 +24,9 @@ folly::Future<Status> ArgumentExecutor::execute() {
   std::unordered_set<Value> unique;
   for (; iter->valid(); iter->next()) {
     auto &val = iter->getColumn(alias);
-    if (!val.isVertex()) {
+    if (val.isNull()) {
+      continue;
+    } else if (!val.isVertex()) {
       return Status::Error("Argument only support vertex, but got %s, which is type %s, ",
                            val.toString().c_str(),
                            val.typeName().c_str());

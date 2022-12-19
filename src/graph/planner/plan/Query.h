@@ -346,6 +346,28 @@ class GetVertices : public Explore {
     return props_.get();
   }
 
+  bool noNeedFetchProp() const {
+    if (props_.get() == nullptr) {
+      return true;
+    }
+    auto& vprops = *props_;
+    for (const auto& vprop : vprops) {
+      auto& props = vprop.get_props();
+      if (props.size() > 1) {
+        return false;
+      }
+      if (props.empty()) {
+        continue;
+      }
+      DCHECK_EQ(props.size(), 1);
+      auto& prop = props.front();
+      if (prop.compare("_tag")) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   const std::vector<Expr>* exprs() const {
     return exprs_.get();
   }
@@ -1538,6 +1560,10 @@ class Traverse final : public GetNeighbors {
     return range_;
   }
 
+  bool isOneStep() const {
+    return !range_;
+  }
+
   // Contains zero step
   bool zeroStep() const {
     return range_ != nullptr && range_->min() == 0;
@@ -1553,6 +1579,17 @@ class Traverse final : public GetNeighbors {
 
   bool trackPrevPath() const {
     return trackPrevPath_;
+  }
+
+  const std::string& nodeAlias() const {
+    auto& cols = this->colNames();
+    DCHECK_GE(cols.size(), 2);
+    return cols[cols.size() - 2];
+  }
+
+  const std::string& edgeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
   }
 
   void setStepRange(MatchStepRange* range) {
@@ -1616,6 +1653,11 @@ class AppendVertices final : public GetVertices {
 
   bool trackPrevPath() const {
     return trackPrevPath_;
+  }
+
+  const std::string nodeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
   }
 
   void setVertexFilter(Expression* vFilter) {
@@ -1787,6 +1829,48 @@ class RollUpApply : public BinaryInputNode {
   std::vector<Expression*> compareCols_;
   // Collect column to List
   InputPropertyExpression* collectCol_;
+};
+
+// PatternApply only used by pattern predicate for now
+class PatternApply : public BinaryInputNode {
+ public:
+  static PatternApply* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            std::vector<Expression*> keyCols,
+                            bool isAntiPred = false) {
+    return qctx->objPool()->makeAndAdd<PatternApply>(
+        qctx, Kind::kPatternApply, left, right, std::move(keyCols), isAntiPred);
+  }
+
+  const std::vector<Expression*>& keyCols() const {
+    return keyCols_;
+  }
+
+  bool isAntiPredicate() const {
+    return isAntiPred_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ protected:
+  friend ObjectPool;
+  PatternApply(QueryContext* qctx,
+               Kind kind,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> keyCols,
+               bool isAntiPred);
+
+  void cloneMembers(const PatternApply&);
+
+ protected:
+  // Common columns of subplans on both sides
+  std::vector<Expression*> keyCols_;
+  bool isAntiPred_{false};
 };
 
 }  // namespace graph

@@ -10,6 +10,7 @@
 #include "common/base/Status.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/planner/plan/Query.h"
@@ -610,12 +611,13 @@ Status CreateFTIndexValidator::validateImpl() {
   if (!ok) {
     return Status::SyntaxError("Fulltext index name can only contain [_0-9a-z].");
   }
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
-  auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name.toString());
-  NG_RETURN_IF_ERROR(tsIndex);
-  if (tsIndex.value()) {
-    return Status::Error("text search index exist : %s", name.data());
+  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
+  NG_RETURN_IF_ERROR(esAdapterRet);
+  auto esAdapter = std::move(esAdapterRet).value();
+  auto existResult = esAdapter.isIndexExist(name);
+  NG_RETURN_IF_ERROR(existResult);
+  if (existResult.value()) {
+    return Status::Error("text search index exist : %s", name.c_str());
   }
   auto space = vctx_->whichSpace();
   auto status = sentence->isEdge()
@@ -630,7 +632,7 @@ Status CreateFTIndexValidator::validateImpl() {
   }
   index_.space_id_ref() = space.id;
   index_.depend_schema_ref() = std::move(id);
-  index_.fields_ref() = sentence->fields();
+  index_.fields_ref()->push_back(sentence->field());
   return Status::OK();
 }
 
@@ -643,8 +645,6 @@ Status CreateFTIndexValidator::toPlan() {
 }
 
 Status DropFTIndexValidator::validateImpl() {
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
   return Status::OK();
 }
 

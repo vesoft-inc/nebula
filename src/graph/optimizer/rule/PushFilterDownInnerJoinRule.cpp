@@ -47,27 +47,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownInnerJoinRule::transform(
   auto symTable = octx->qctx()->symTable();
   std::vector<std::string> leftVarColNames = symTable->getVar(leftVar.first)->colNames;
 
-  // split the `condition` based on whether the varPropExpr comes from the left
-  // child
+  // split the `condition` based on whether the varPropExpr comes from the left child
   auto picker = [&leftVarColNames](const Expression* e) -> bool {
-    auto varProps = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kVarProperty});
-    if (varProps.empty()) {
-      return false;
-    }
-    std::vector<std::string> propNames;
-    for (auto* expr : varProps) {
-      DCHECK(expr->kind() == Expression::Kind::kVarProperty);
-      propNames.emplace_back(static_cast<const VariablePropertyExpression*>(expr)->prop());
-    }
-    for (auto prop : propNames) {
-      auto iter = std::find_if(leftVarColNames.begin(),
-                               leftVarColNames.end(),
-                               [&prop](std::string item) { return !item.compare(prop); });
-      if (iter == leftVarColNames.end()) {
-        return false;
-      }
-    }
-    return true;
+    return graph::ExpressionUtils::checkVarPropIfExist(leftVarColNames, e);
   };
   Expression* filterPicked = nullptr;
   Expression* filterUnpicked = nullptr;

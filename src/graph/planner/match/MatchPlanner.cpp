@@ -72,12 +72,16 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   for (auto& alias : matchCtx->aliasesGenerated) {
     auto it = matchCtx->aliasesAvailable.find(alias.first);
     if (it != matchCtx->aliasesAvailable.end()) {
-      // Joined type should be same
-      if (it->second != alias.second) {
+      // Joined type should be same,
+      // If any type is kRuntime, leave the type check to runtime,
+      // Primitive types (Integer, String, etc.) or composite types(List, Map etc.)
+      // are deduced to kRuntime when cannot be deduced during planning.
+      if (it->second != alias.second && it->second != AliasType::kRuntime &&
+          alias.second != AliasType::kRuntime) {
         return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
                                                  alias.first,
-                                                 AliasTypeName[static_cast<int>(alias.second)],
-                                                 AliasTypeName[static_cast<int>(it->second)]));
+                                                 AliasTypeName::get(alias.second),
+                                                 AliasTypeName::get(it->second)));
       }
       // Joined On EdgeList is not supported
       if (alias.second == AliasType::kEdgeList) {
@@ -88,11 +92,6 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
     }
   }
   if (!interAliases.empty()) {
-    if (matchPlan.tail->kind() == PlanNode::Kind::kArgument) {
-      // The input of the argument operator is always the output of the plan on the other side of
-      // the join
-      matchPlan.tail->setInputVar(queryPlan.root->outputVar());
-    }
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;
@@ -167,7 +166,9 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
 
   // TBD: need generate var for all queryPlan.tail?
   if (queryPlan.tail->isSingleInput()) {
-    queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    if (queryPlan.tail->kind() != PlanNode::Kind::kArgument) {
+      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    }
     if (!tailConnected_) {
       tailConnected_ = true;
       queryPlan.appendStartNode(qctx);

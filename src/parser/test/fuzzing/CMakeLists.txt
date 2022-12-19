@@ -7,5 +7,5 @@ nebula_add_test(
     FUZZER ON
     SOURCES ParserFuzzer.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES ${THRIFT_LIBRARIES} wangle
+    LIBRARIES ${THRIFT_LIBRARIES} wangle curl
 )

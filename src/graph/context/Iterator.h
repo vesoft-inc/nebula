@@ -145,7 +145,7 @@ class Iterator {
     return Value::kEmpty;
   }
 
-  virtual Value getVertex(const std::string& name = "") const {
+  virtual Value getVertex(const std::string& name = "") {
     UNUSED(name);
     return Value();
   }
@@ -319,7 +319,7 @@ class GetNeighborsIter final : public Iterator {
 
   const Value& getEdgeProp(const std::string& edge, const std::string& prop) const override;
 
-  Value getVertex(const std::string& name = "") const override;
+  Value getVertex(const std::string& name = "") override;
 
   Value getEdge() const override;
 
@@ -420,6 +420,7 @@ class GetNeighborsIter final : public Iterator {
 
   boost::dynamic_bitset<> bitset_;
   int64_t bitIdx_{-1};
+  Value prevVertex_;
 };
 
 class SequentialIter : public Iterator {
@@ -497,7 +498,7 @@ class SequentialIter : public Iterator {
 
   StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
 
-  Value getVertex(const std::string& name = "") const override;
+  Value getVertex(const std::string& name = "") override;
 
   Value getEdge() const override;
 
@@ -548,7 +549,7 @@ class PropIter final : public SequentialIter {
 
   StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
 
-  Value getVertex(const std::string& name = "") const override;
+  Value getVertex(const std::string& name = "") override;
 
   Value getEdge() const override;
 

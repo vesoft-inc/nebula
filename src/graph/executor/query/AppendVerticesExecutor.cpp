@@ -27,7 +27,7 @@ StatusOr<DataSet> AppendVerticesExecutor::buildRequestDataSet(const AppendVertic
 folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
   auto *av = asNode<AppendVertices>(node());
-  if (FLAGS_optimize_appendvertices && av != nullptr && av->props() == nullptr) {
+  if (FLAGS_optimize_appendvertices && av != nullptr && av->noNeedFetchProp()) {
     return handleNullProp(av);
   }
 

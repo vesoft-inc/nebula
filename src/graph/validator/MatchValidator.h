@@ -98,8 +98,13 @@ class MatchValidator final : public Validator {
                                const std::unordered_map<std::string, AliasType> &availableAliases,
                                std::vector<Path> &paths);
 
+  // Check and extract path in where clause
+  Status validatePathInWhere(WhereClauseContext &wctx,
+                             const std::unordered_map<std::string, AliasType> &availableAliases,
+                             std::vector<Path> &paths);
+
   static Status checkMatchPathExpr(
-      const MatchPathPatternExpression *expr,
+      const MatchPath &matchPath,
       const std::unordered_map<std::string, AliasType> &availableAliases);
 
   static Status buildRollUpPathInfo(const MatchPath *path, Path &pathInfo);
