@@ -453,7 +453,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
           if (it != indexCols.end()) {
             LOG(INFO) << "Index conflict, index :" << index.get_index_name()
                       << ", column : " << tCol.name;
-            return nebula::cpp2::ErrorCode::E_CONFLICT;
+            return nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS;
           }
         }
       }
@@ -478,7 +478,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
         auto it = cols.find(iCol.name);
         if (it != cols.end()) {
           LOG(INFO) << "fulltext index conflict";
-          return nebula::cpp2::ErrorCode::E_CONFLICT;
+          return nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS;
         }
       }
     }

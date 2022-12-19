@@ -56,6 +56,8 @@ class StorageAccessExecutor : public Executor {
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
     switch (code) {
+      case nebula::cpp2::ErrorCode::E_RPC_FAILURE:
+        return Status::Error("Storage Error: RPC failure, probably timeout.");
       case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
         return Status::Error("Storage Error: Vertex or edge not found.");
       case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {

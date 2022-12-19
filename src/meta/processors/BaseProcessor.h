@@ -339,7 +339,7 @@ class BaseProcessor {
    * @tparam RESP
    * @param items
    * @param alterItems
-   * @return ErrorCode::E_CONFLICT if contains
+   * @return ErrorCode::E_RELATED_INDEX_EXISTS if contains
    */
   nebula::cpp2::ErrorCode indexCheck(const std::vector<cpp2::IndexItem>& items,
                                      const std::vector<cpp2::AlterSchemaItem>& alterItems);
@@ -350,7 +350,7 @@ class BaseProcessor {
    * @tparam RESP
    * @param cols
    * @param alterItems
-   * @return nebula::cpp2::ErrorCode
+   * @return ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS if contains
    */
   nebula::cpp2::ErrorCode ftIndexCheck(
       const std::unordered_map<std::string, cpp2::FTIndex>& ftIndices,

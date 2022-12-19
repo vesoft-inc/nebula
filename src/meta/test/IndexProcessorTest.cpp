@@ -301,7 +301,7 @@ TEST(IndexProcessorTest, TagIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
   {
     cpp2::CreateTagIndexReq req;
@@ -665,7 +665,7 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
   {
     cpp2::CreateEdgeIndexReq req;
@@ -834,7 +834,7 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
   {
     cpp2::CreateEdgeIndexReq req;
@@ -846,7 +846,7 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
 }
 
@@ -1001,7 +1001,7 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS, resp.get_code());
   }
   // Verify ErrorCode of drop
   {
@@ -1024,7 +1024,7 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS, resp.get_code());
   }
 }
 
@@ -1128,7 +1128,7 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS, resp.get_code());
   }
   {
     cpp2::AlterTagReq req;
@@ -1149,7 +1149,7 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS, resp.get_code());
   }
 }
 
@@ -1997,7 +1997,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS, resp.get_code());
   }
   {
     cpp2::AlterTagReq req;
@@ -2018,7 +2018,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS, resp.get_code());
   }
   {
     cpp2::AlterTagReq req;
@@ -2060,7 +2060,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS, resp.get_code());
   }
   {
     cpp2::AlterEdgeReq req;
@@ -2081,7 +2081,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS, resp.get_code());
   }
   {
     cpp2::AlterEdgeReq req;
