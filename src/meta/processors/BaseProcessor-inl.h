@@ -411,7 +411,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, std::map<std::string, cpp2::FTIndex>>
+ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<std::string, cpp2::FTIndex>>
 BaseProcessor<RESP>::getFTIndex(GraphSpaceID spaceId, int32_t tagOrEdge) {
   const auto& indexPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto iterRet = doPrefix(indexPrefix);
@@ -422,7 +422,7 @@ BaseProcessor<RESP>::getFTIndex(GraphSpaceID spaceId, int32_t tagOrEdge) {
     return retCode;
   }
   auto indexIter = nebula::value(iterRet).get();
-  std::map<std::string, cpp2::FTIndex> ret;
+  std::unordered_map<std::string, cpp2::FTIndex> ret;
   while (indexIter->valid()) {
     auto index = MetaKeyUtils::parsefulltextIndex(indexIter->val());
     auto id = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
@@ -464,7 +464,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
-    const std::map<std::string, cpp2::FTIndex>& ftIndices,
+    const std::unordered_map<std::string, cpp2::FTIndex>& ftIndices,
     const std::vector<cpp2::AlterSchemaItem>& alterItems) {
   std::set<std::string> cols;
   for (auto& [indexName, index] : ftIndices) {

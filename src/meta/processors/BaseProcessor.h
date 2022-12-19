@@ -352,8 +352,9 @@ class BaseProcessor {
    * @param alterItems
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode ftIndexCheck(const std::map<std::string, cpp2::FTIndex>& ftIndices,
-                                       const std::vector<cpp2::AlterSchemaItem>& alterItems);
+  nebula::cpp2::ErrorCode ftIndexCheck(
+      const std::unordered_map<std::string, cpp2::FTIndex>& ftIndices,
+      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
    * @brief List all tag/edge index for given space and tag/edge id.
@@ -374,7 +375,7 @@ class BaseProcessor {
    * @param tagOrEdge
    * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex>
    */
-  ErrorOr<nebula::cpp2::ErrorCode, std::map<std::string, cpp2::FTIndex>> getFTIndex(
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<std::string, cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t tagOrEdge);
 
   /**

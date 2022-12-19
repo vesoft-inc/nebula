@@ -159,8 +159,8 @@ ServerBasedSchemaManager::getServiceClients(meta::cpp2::ExternalServiceType type
   return std::move(ret).value();
 }
 
-StatusOr<std::map<std::string, nebula::meta::cpp2::FTIndex>> ServerBasedSchemaManager::getFTIndex(
-    GraphSpaceID spaceId, int32_t schemaId) {
+StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::FTIndex>>
+ServerBasedSchemaManager::getFTIndex(GraphSpaceID spaceId, int32_t schemaId) {
   auto ret = metaClient_->getFTIndexFromCache(spaceId, schemaId);
   if (!ret.ok()) {
     return ret.status();

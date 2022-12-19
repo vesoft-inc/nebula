@@ -3476,14 +3476,14 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
   return Status::IndexNotFound();
 }
 
-StatusOr<std::map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(GraphSpaceID spaceId,
-                                                                               int32_t schemaId) {
+StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
-  std::map<std::string, cpp2::FTIndex> ret;
+  std::unordered_map<std::string, cpp2::FTIndex> ret;
   for (auto& it : metadata.fulltextIndexMap_) {
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it.second.get_depend_schema().get_edge_type()

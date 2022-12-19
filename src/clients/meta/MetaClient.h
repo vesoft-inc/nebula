@@ -484,8 +484,8 @@ class MetaClient : public BaseMetaClient {
                                                                       int32_t schemaId,
                                                                       const std::string& field);
 
-  StatusOr<std::map<std::string, cpp2::FTIndex>> getFTIndexFromCache(GraphSpaceID spaceId,
-                                                                     int32_t schemaId);
+  StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> getFTIndexFromCache(GraphSpaceID spaceId,
+                                                                               int32_t schemaId);
 
   StatusOr<cpp2::FTIndex> getFTIndexByNameFromCache(GraphSpaceID spaceId, const std::string& name);
 
