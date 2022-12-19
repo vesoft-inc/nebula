@@ -4,12 +4,14 @@
  */
 #include "graph/validator/MutateValidator.h"
 
+#include "common/datatypes/Value.h"
+#include "common/expression/Expression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteSymExprVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -750,10 +752,74 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
                                             const std::string &sym,
                                             bool &hasWrongType,
                                             bool isEdge) {
-  RewriteSymExprVisitor visitor(qctx_->objPool(), sym, isEdge);
-  expr->accept(&visitor);
-  hasWrongType = visitor.hasWrongType();
-  return std::move(visitor).expr();
+  // RewriteSymExprVisitor visitor(qctx_->objPool(), sym, isEdge);
+  // expr->accept(&visitor);
+  // hasWrongType = visitor.hasWrongType();
+  // return expr;
+  std::unordered_set<Expression::Kind> invalidExprs{
+      Expression::Kind::kVersionedVar,
+      Expression::Kind::kVarProperty,
+      Expression::Kind::kInputProperty,
+      Expression::Kind::kVar,
+      // Expression::Kind::kLabelAttribute, valid only for update edge
+      Expression::Kind::kAttribute,
+      Expression::Kind::kSubscript,
+      Expression::Kind::kUUID,
+      Expression::Kind::kTagProperty,
+      Expression::Kind::kLabelTagProperty,
+      Expression::Kind::kDstProperty,
+      Expression::Kind::kEdgeSrc,
+      Expression::Kind::kEdgeType,
+      Expression::Kind::kEdgeRank,
+      Expression::Kind::kEdgeDst,
+  };
+  if (isEdge) {
+    invalidExprs.emplace(Expression::Kind::kSrcProperty);
+  } else {
+    invalidExprs.emplace(Expression::Kind::kLabelAttribute);
+    invalidExprs.emplace(Expression::Kind::kEdgeProperty);
+  }
+  auto *r = ExpressionUtils::findAny(expr, invalidExprs);
+  if (r != nullptr) {
+    hasWrongType = true;
+    return nullptr;
+  }
+
+  auto *pool = qctx_->objPool();
+  RewriteVisitor::Matcher matcher = [](const Expression *e) -> bool {
+    switch (e->kind()) {
+      case Expression::Kind::kLabel:
+      case Expression::Kind::kLabelAttribute:
+        return true;
+      default:
+        return false;
+    }
+  };
+  RewriteVisitor::Rewriter rewriter = [pool, sym, isEdge](const Expression *e) -> Expression * {
+    switch (e->kind()) {
+      case Expression::Kind::kLabel: {
+        auto laExpr = static_cast<const LabelExpression *>(e);
+        if (isEdge) {
+          return EdgePropertyExpression::make(pool, sym, laExpr->name());
+        } else {
+          return SourcePropertyExpression::make(pool, sym, laExpr->name());
+        }
+      }
+      case Expression::Kind::kLabelAttribute: {
+        auto laExpr = static_cast<const LabelAttributeExpression *>(e);
+        if (isEdge) {
+          return EdgePropertyExpression::make(
+              pool, laExpr->left()->name(), laExpr->right()->value().getStr());
+        } else {
+          return nullptr;
+        }
+      }
+      default:
+        return nullptr;
+    }
+  };
+  auto *newExpr = RewriteVisitor::transform(expr, matcher, rewriter);
+  return newExpr;
 }
 
 Status UpdateVertexValidator::validateImpl() {
