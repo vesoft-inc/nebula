@@ -30,7 +30,8 @@ const Value& ArithmeticExpression::eval(ExpressionContext& ctx) {
       result_ = lhs % rhs;
       break;
     default:
-      LOG(FATAL) << "Unknown type: " << kind_;
+      LOG(DFATAL) << "Unknown type: " << kind_;
+      result_ = Value::kNullBadType;
   }
   return result_;
 }
@@ -54,6 +55,7 @@ std::string ArithmeticExpression::toString() const {
       op = "%";
       break;
     default:
+      LOG(DFATAL) << "Illegal kind for arithmetic expression: " << static_cast<int>(kind());
       op = "illegal symbol ";
   }
   std::stringstream out;

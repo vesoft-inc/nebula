@@ -758,7 +758,7 @@ PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
   auto& ds = value->getDataSet();
   auto status = makeDataSetIndex(ds);
   if (UNLIKELY(!status.ok())) {
-    DLOG(FATAL) << status;
+    LOG(DFATAL) << status;
     clear();
     return;
   }

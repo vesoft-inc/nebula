@@ -211,7 +211,9 @@ class DummyListener : public Listener {
   }
 
  protected:
-  void init() override {}
+  bool init() override {
+    return true;
+  }
 
   bool apply(const BatchHolder& batch) {
     for (auto& log : batch.getBatch()) {

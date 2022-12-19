@@ -143,7 +143,7 @@ nebula::meta::cpp2::GeoShape MetaDataUpgrade::convertToGeoShape(
     case nebula::meta::v2::cpp2::GeoShape::POLYGON:
       return nebula::meta::cpp2::GeoShape::POLYGON;
     default:
-      LOG(FATAL) << "Unimplemented";
+      LOG(FATAL) << "Invalid geo shape : " << static_cast<uint8_t>(shape);
   }
 }
 

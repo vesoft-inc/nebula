@@ -20,7 +20,7 @@ class Snowflake {
  public:
   Snowflake() = default;
 
-  static void initWorkerId(meta::MetaClient* client);
+  static bool initWorkerId(meta::MetaClient* client);
 
   int64_t getId();
 

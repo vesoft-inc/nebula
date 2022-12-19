@@ -479,8 +479,9 @@ bool FileBasedWal::appendLogInternal(LogID id,
 
   ssize_t bytesWritten = write(currFd_, strBuf.data(), strBuf.size());
   if (bytesWritten != (ssize_t)strBuf.size()) {
-    LOG(FATAL) << idStr_ << "bytesWritten:" << bytesWritten << ", expected:" << strBuf.size()
-               << ", error:" << strerror(errno);
+    LOG(DFATAL) << idStr_ << "bytesWritten:" << bytesWritten << ", expected:" << strBuf.size()
+                << ", error:" << strerror(errno);
+    return false;
   }
 
   if (policy_.sync && ::fsync(currFd_) == -1) {

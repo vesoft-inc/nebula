@@ -14,10 +14,11 @@ DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener com
 
 namespace nebula {
 namespace kvstore {
-void ESListener::init() {
+bool ESListener::init() {
   auto vRet = schemaMan_->getSpaceVidLen(spaceId_);
   if (!vRet.ok()) {
-    LOG(FATAL) << "vid length error";
+    LOG(DFATAL) << "vid length error";
+    return false;
   }
   vIdLen_ = vRet.value();
   auto vidTypeRet = schemaMan_->getSpaceVidType(spaceId_);
@@ -28,7 +29,8 @@ void ESListener::init() {
 
   auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!cRet.ok() || cRet.value().empty()) {
-    LOG(FATAL) << "elasticsearch clients error";
+    LOG(DFATAL) << "elasticsearch clients error";
+    return false;
   }
   std::vector<nebula::plugin::ESClient> esClients;
   for (const auto& c : cRet.value()) {
@@ -44,9 +46,11 @@ void ESListener::init() {
   esAdapter_.setClients(std::move(esClients));
   auto sRet = schemaMan_->toGraphSpaceName(spaceId_);
   if (!sRet.ok()) {
-    LOG(FATAL) << "space name error";
+    LOG(DFATAL) << "space name error";
+    return false;
   }
   spaceName_ = std::make_unique<std::string>(sRet.value());
+  return true;
 }
 
 bool ESListener::apply(const BatchHolder& batch) {
@@ -63,7 +67,7 @@ bool ESListener::apply(const BatchHolder& batch) {
     } else if (type == BatchLogType::OP_BATCH_REMOVE) {
       bulk.delete_(index, vid, src, dst, rank);
     } else {
-      LOG(FATAL) << "Unexpect";
+      LOG(DFATAL) << "Unexpect";
     }
   };
   for (const auto& log : batch.getBatch()) {
@@ -152,7 +156,8 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
 
 bool ESListener::persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) {
   if (!writeAppliedId(lastId, lastTerm, lastApplyLogId)) {
-    LOG(FATAL) << "last apply ids write failed";
+    LOG(DFATAL) << "last apply ids write failed";
+    return false;
   }
   return true;
 }
@@ -164,8 +169,9 @@ std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);
   if (fd < 0) {
-    LOG(FATAL) << "Failed to open the file \"" << lastApplyLogFile_->c_str() << "\" (" << errno
-               << "): " << strerror(errno);
+    LOG(DFATAL) << "Failed to open the file \"" << lastApplyLogFile_->c_str() << "\" (" << errno
+                << "): " << strerror(errno);
+    return {0, 0};
   }
   // read last logId from listener wal file.
   LogID logId;
@@ -187,8 +193,9 @@ LogID ESListener::lastApplyLogId() {
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);
   if (fd < 0) {
-    LOG(FATAL) << "Failed to open the file \"" << lastApplyLogFile_->c_str() << "\" (" << errno
-               << "): " << strerror(errno);
+    LOG(DFATAL) << "Failed to open the file \"" << lastApplyLogFile_->c_str() << "\" (" << errno
+                << "): " << strerror(errno);
+    return 0;
   }
   // read last applied logId from listener wal file.
   LogID logId;

@@ -95,7 +95,7 @@ class AppendLogsIterator final : public LogIterator {
         }
       }
       if (notFulfilledPromise > 0) {
-        LOG(FATAL) << "notFulfilledPromise == " << notFulfilledPromise;
+        LOG(DFATAL) << "notFulfilledPromise == " << notFulfilledPromise;
       }
     }
   }
@@ -394,7 +394,7 @@ const char* RaftPart::roleStr(Role role) const {
     case Role::LEARNER:
       return "Learner";
     default:
-      LOG(FATAL) << idStr_ << "Invalid role";
+      LOG(DFATAL) << idStr_ << "Invalid role";
   }
   return nullptr;
 }
@@ -1091,7 +1091,11 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
               [self = shared_from_this(), term = term_] { self->onLeaderReady(term); });
         }
       } else {
-        LOG(FATAL) << idStr_ << "Failed to commit logs";
+        LOG(DFATAL) << idStr_ << "Failed to commit logs";
+        checkAppendLogResult(code);
+        VLOG(3) << idStr_ << "commitLogs failed";
+        iter.commit(code);
+        return;
       }
       VLOG(4) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
               << lastLogId;
