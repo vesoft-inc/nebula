@@ -14,6 +14,7 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
+ENABLE_ES ?= false
 ENABLE_SSL ?= false
 ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
@@ -27,7 +28,14 @@ QUERY_CONCURRENTLY ?= false
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
-test_without_skip = python3 -m pytest -m "not skip" --build_dir=$(BUILD_DIR)
+
+ifeq ($(ENABLE_ES),false)
+	PYTEST_MARKEXPR="not skip and not ft_index"
+else
+	PYTEST_MARKEXPR="not skip"
+endif
+
+test_without_skip = python3 -m pytest -m $(PYTEST_MARKEXPR) --build_dir=$(BUILD_DIR)
 test_without_skip_sa = python3 -m pytest -m "not skip and not distonly" --build_dir=$(BUILD_DIR)
 test_j = $(test_without_skip) -n$(J)
 test_j_sa = $(test_without_skip_sa) -n$(J)
