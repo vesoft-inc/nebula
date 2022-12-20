@@ -15,7 +15,7 @@
 #include <limits>
 
 #include "common/fs/FileUtils.h"
-#include "common/memory/MemoryStats.h"
+#include "common/memory/MemoryTracker.h"
 
 DEFINE_bool(containerized, false, "Whether run this process inside the docker container");
 DEFINE_double(system_memory_high_watermark_ratio, 0.8, "high watermark ratio of system memory");
@@ -30,7 +30,6 @@ static const std::regex reMemAvailable(
 static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)");
 
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
-int64_t MemoryUtils::kMemoryLimit{std::numeric_limits<int64_t>::max()};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
@@ -54,8 +53,6 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     NG_RETURN_IF_ERROR(limitStatus);
     uint64_t limitInBytes = std::move(limitStatus).value();
 
-    kMemoryLimit = limitInBytes * 0.7;
-
     std::string usagePath = cgroupsv2 ? "/sys/fs/cgroup/graphd.slice/memory.current"
                                       : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
     auto usageStatus = MemoryUtils::readSysContents(usagePath);
@@ -64,13 +61,18 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 
     total = static_cast<double>(limitInBytes);
     available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
+
+    memory::MemoryStats::instance().setLimit(limitInBytes *
+                                             FLAGS_system_memory_high_watermark_ratio);
+
     LOG(INFO) << "total: " << total << " usageInBytes: " << usageInBytes
               << " cacheSize: " << cacheSize << " available: " << available
-              << " ratio1:" << (1 - available / total) << " kMemoryLimit:" << kMemoryLimit
-              << " used:" << MemoryStats::instance().amount()
-              << " ratio2:" << MemoryStats::instance().amount() / static_cast<double>(kMemoryLimit);
+              << " ratio1:" << (1 - available / total)
+              << " stats_used:" << memory::MemoryStats::instance().used()
+              << " stats_limit:" << memory::MemoryStats::instance().getLimit()
+              << " stats_ratio:" << memory::MemoryStats::instance().usedRatio();
 
-    if (((int64_t)usageInBytes) > 2 * MemoryStats::instance().amount()) {
+    if ((static_cast<int64_t>(usageInBytes)) > 2 * memory::MemoryStats::instance().used()) {
       mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
     }
 

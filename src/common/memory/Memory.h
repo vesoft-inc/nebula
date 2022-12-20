@@ -9,9 +9,10 @@
 #include <new>
 
 #include "common/base/Base.h"
-#include "common/memory/CurrentMemoryTracker.h"
+#include "common/memory/MemoryTracker.h"
 
-namespace Memory {
+namespace nebula {
+namespace memory {
 
 inline ALWAYS_INLINE size_t alignToSizeT(std::align_val_t align) noexcept {
   return static_cast<size_t>(align);
@@ -22,7 +23,6 @@ inline ALWAYS_INLINE void* newImpl(std::size_t size) {
 
   if (LIKELY(ptr != nullptr)) return ptr;
 
-  /// @note no std::get_new_handler logic implemented
   throw std::bad_alloc{};
 }
 
@@ -31,7 +31,6 @@ inline ALWAYS_INLINE void* newImpl(std::size_t size, std::align_val_t align) {
 
   if (LIKELY(ptr != nullptr)) return ptr;
 
-  /// @note no std::get_new_handler logic implemented
   throw std::bad_alloc{};
 }
 
@@ -59,8 +58,6 @@ inline ALWAYS_INLINE void deleteSized(void* ptr,
   sdallocx(ptr, size, MALLOCX_ALIGN(alignToSizeT(align)));
 }
 
-#include <malloc.h>
-
 inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size) {
   size_t actual_size = size;
 
@@ -72,8 +69,7 @@ inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size) {
   }
   return actual_size;
 }
-inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size,
-                                                    std::align_val_t align[[maybe_unused]]) {
+inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size, std::align_val_t align) {
   size_t actual_size = size;
   /// The nallocx() function allocates no memory, but it performs the same size computation as the
   /// mallocx() function
@@ -81,41 +77,39 @@ inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size,
   if (LIKELY(size != 0)) {
     actual_size = nallocx(size, MALLOCX_ALIGN(alignToSizeT(align)));
   }
-
   return actual_size;
 }
 
 inline ALWAYS_INLINE void trackMemory(std::size_t size) {
   std::size_t actual_size = getActualAllocationSize(size);
-  CurrentMemoryTracker::allocNoThrow(actual_size);
+  MemoryTracker::allocNoThrow(actual_size);
 }
 
 inline ALWAYS_INLINE void trackMemory(std::size_t size, std::align_val_t align) {
   std::size_t actual_size = getActualAllocationSize(size, align);
-  CurrentMemoryTracker::allocNoThrow(actual_size);
+  MemoryTracker::allocNoThrow(actual_size);
 }
 
 inline ALWAYS_INLINE void untrackMemory(void* ptr) noexcept {
   try {
     /// @note It's also possible to use je_malloc_usable_size() here.
     if (LIKELY(ptr != nullptr)) {
-      CurrentMemoryTracker::free(sallocx(ptr, 0));
+      MemoryTracker::free(sallocx(ptr, 0));
     }
   } catch (...) {
   }
 }
 
-inline ALWAYS_INLINE void untrackMemory(void* ptr[[maybe_unused]],
-                                        std::size_t size[[maybe_unused]],
-                                        std::align_val_t align
-                                        [[maybe_unused]] = std::align_val_t(8)) noexcept {
+inline ALWAYS_INLINE void untrackMemory(
+    void* ptr, std::size_t, std::align_val_t align = static_cast<std::align_val_t>(8)) noexcept {
   try {
     /// @note It's also possible to use je_malloc_usable_size() here.
     if (LIKELY(ptr != nullptr)) {
-      CurrentMemoryTracker::free(sallocx(ptr, MALLOCX_ALIGN(alignToSizeT(align))));
+      MemoryTracker::free(sallocx(ptr, MALLOCX_ALIGN(alignToSizeT(align))));
     }
   } catch (...) {
   }
 }
 
-}  // namespace Memory
+}  // namespace memory
+}  // namespace nebula
