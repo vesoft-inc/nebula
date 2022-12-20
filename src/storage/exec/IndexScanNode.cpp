@@ -389,10 +389,15 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
     ctx.retColMap[ctx.returnColumns[i]] = i;
   }
   colPosMap_ = ctx.retColMap;
-  // Analyze whether the scan needs to access base data.
+  // Analyze whether the scan needs to access base data. We check it by if requiredColumns is subset
+  // of index fields. In other words, if scan node is required to return property that index does
+  // not contain, we need to access base data.
   // TODO(hs.zhang): The performance is better to judge based on whether the string is truncated
   auto tmp = ctx.requiredColumns;
   for (auto& field : index_->get_fields()) {
+    // TODO(doodle): Both STRING and FIXED_STRING properties in tag/edge will be transformed into
+    // FIXED_STRING in ColumnDef of IndexItem. As for FIXED_STRING in tag/edge property, we don't
+    // need to access base data actually.
     if (field.get_type().get_type() == ::nebula::cpp2::PropertyType::FIXED_STRING) {
       continue;
     }
