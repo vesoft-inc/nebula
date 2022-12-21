@@ -2,7 +2,10 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
+#include <unordered_map>
+
 #include "common/expression/test/TestBase.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 
@@ -82,6 +85,8 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
   Vertex vertex;
   vertex.vid = "vid";
   vertex.tags.resize(2);
+  vertex.tags[0].name = "tag0";
+  vertex.tags[1].name = "tag1";
   vertex.tags[0].props = {
       {"Venus", "Mars"},
       {"Mull", "Kintyre"},
@@ -91,27 +96,42 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
       {"Tug", "War"},
       {"Venus", "RocksShow"},
   };
+  std::unordered_map<std::string, graph::AliasType> aliasTypeMap = {{"v", graph::AliasType::kNode}};
+  ExpressionContextMock expContext;
+  expContext.setVar("v", Value(vertex));
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Mull");
-    auto expr = AttributeExpression::make(&pool, left, right);
-    auto value = Expression::eval(expr, gExpCtxt);
+    auto *left = LabelExpression::make(&pool, "v");
+    auto *right = ConstantExpression::make(&pool, "tag0");
+    auto *labelAttribute = LabelAttributeExpression::make(&pool, left, right);
+    auto expr =
+        AttributeExpression::make(&pool, labelAttribute, ConstantExpression::make(&pool, "Mull"));
+    auto rewriteExpr =
+        graph::ExpressionUtils::rewriteAttr2LabelTagProp(expr->clone(), aliasTypeMap);
+    auto value = Expression::eval(rewriteExpr, expContext);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("Kintyre", value.getStr());
   }
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Bip");
-    auto expr = AttributeExpression::make(&pool, left, right);
-    auto value = Expression::eval(expr, gExpCtxt);
+    auto *left = LabelExpression::make(&pool, "v");
+    auto *right = ConstantExpression::make(&pool, "tag1");
+    auto *labelAttribute = LabelAttributeExpression::make(&pool, left, right);
+    auto expr =
+        AttributeExpression::make(&pool, labelAttribute, ConstantExpression::make(&pool, "Bip"));
+    auto rewriteExpr =
+        graph::ExpressionUtils::rewriteAttr2LabelTagProp(expr->clone(), aliasTypeMap);
+    auto value = Expression::eval(rewriteExpr, expContext);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("Bop", value.getStr());
   }
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Venus");
-    auto expr = AttributeExpression::make(&pool, left, right);
-    auto value = Expression::eval(expr, gExpCtxt);
+    auto *left = LabelExpression::make(&pool, "v");
+    auto *right = ConstantExpression::make(&pool, "tag0");
+    auto *labelAttribute = LabelAttributeExpression::make(&pool, left, right);
+    auto expr =
+        AttributeExpression::make(&pool, labelAttribute, ConstantExpression::make(&pool, "Venus"));
+    auto rewriteExpr =
+        graph::ExpressionUtils::rewriteAttr2LabelTagProp(expr->clone(), aliasTypeMap);
+    auto value = Expression::eval(rewriteExpr, expContext);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("Mars", value.getStr());
   }
@@ -119,7 +139,7 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
     auto *left = ConstantExpression::make(&pool, Value(vertex));
     auto *right = LabelExpression::make(&pool, "_vid");
     auto expr = AttributeExpression::make(&pool, left, right);
-    auto value = Expression::eval(expr, gExpCtxt);
+    auto value = Expression::eval(expr, expContext);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("vid", value.getStr());
   }

@@ -186,21 +186,30 @@ class NebulaService(object):
             self.init_standalone()
 
     def init_standalone(self):
-        process_count = self.metad_num + self.storaged_num + self.graphd_num
+        process_count = self.metad_num + self.storaged_num + self.graphd_num + self.listener_num
         ports_count = process_count * self.ports_per_process
         self.all_ports = self._find_free_port(ports_count)
         print(self.all_ports)
+        sa_ports_count= self.metad_num + self.storaged_num + self.graphd_num
         index = 0
         standalone = NebulaProcess(
             "standalone",
-            self.all_ports[index: index + ports_count],
+            self.all_ports[index: index + sa_ports_count],
             index,
             self.graphd_param,
             is_standalone=True
         )
+        index = index + 1
+        listener = NebulaProcess(
+            "listener",
+            self.all_ports[index: index + self.ports_per_process],
+            0,
+            self.listener_param
+        )
         self.graphd_processes.append(standalone)
+        self.listener_processes.append(listener)
         self.all_processes = (
-            self.graphd_processes
+            self.graphd_processes + self.listener_processes
         )
         # update meta address
         meta_server_addrs = ','.join(

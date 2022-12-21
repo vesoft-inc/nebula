@@ -236,6 +236,21 @@ def new_space(request, options, exec_ctx):
     exec_ctx["drop_space"] = True
 
 
+@given(parse("add listeners to space"))
+def add_listeners(request, exec_ctx):
+    show_listener = "show hosts storage listener"
+    exec_query(request, show_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
+    values = result.row_values(0)
+    host = values[0]
+    port = values[1]
+    add_listener = f"ADD LISTENER ELASTICSEARCH  {host}:{port}"
+    exec_ctx['result_set'] = []
+    exec_query(request, add_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
+
 @given(parse("Any graph"))
 def new_space(request, exec_ctx):
     name = "EmptyGraph_" + space_generator()
