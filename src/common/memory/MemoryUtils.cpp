@@ -102,19 +102,13 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     }
   }
 
-  std::cout << 111 << std::endl;
-
   // set limit
   memory::MemoryStats::instance().setLimit(total * FLAGS_system_memory_high_watermark_ratio);
-
-  std::cout << 222 << std::endl;
 
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
     int64_t now = time::WallClock::fastNowInSec();
     if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
-      std::cout << 555 << std::endl;
-
       // mallctl seems has issue with address_sanitizer, do purge only when address_sanitizer is off
 #if defined(__has_feature)
 #if not __has_feature(address_sanitizer)
