@@ -3185,6 +3185,30 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ(result.value()->toString(), "SHOW SESSION 123");
   }
+  {
+    std::string query = "KILL SESSION 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  // Error session id type
+  {
+    std::string query = "KILL SESSIONS \"123\"";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
+  }
 }
 
 TEST_F(ParserTest, JobTest) {

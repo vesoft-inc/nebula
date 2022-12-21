@@ -166,6 +166,17 @@ class BaseProcessor {
   void doRemove(const std::string& key);
 
   /**
+   * @brief Remove multiple given keys from kv store.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param key
+   */
+  void doMultiRemove(const std::string& key);
+
+  /**
    * @brief Range remove.
    *        Note that it has side effect: it will set the code to the resp_,
    *        and delete the processor instance. So, it could be only used

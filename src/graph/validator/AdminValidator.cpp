@@ -630,6 +630,18 @@ Status ShowSessionsValidator::toPlan() {
   return Status::OK();
 }
 
+Status KillSessionValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status KillSessionValidator::toPlan() {
+  auto sentence = static_cast<KillSessionSentence *>(sentence_);
+  auto *node = KillSession::make(qctx_, nullptr, sentence->getSessionID());
+  root_ = node;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status ShowQueriesValidator::validateImpl() {
   if (!inputs_.empty()) {
     return Status::SemanticError("Show queries sentence do not support input");
