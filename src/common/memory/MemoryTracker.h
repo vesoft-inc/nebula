@@ -29,7 +29,7 @@ class MemoryStats {
     int64_t willBe = localReserved_ - size;
 
     if UNLIKELY (willBe < 0) {
-      // Calculate how many bytes needed to get from global
+      // if local reserved is not enough, calculate how many bytes needed to get from global.
       int64_t getFromGlobal = kLocalReservedLimit_;
       while (willBe + getFromGlobal <= 0) {
         getFromGlobal += kLocalReservedLimit_;
@@ -55,7 +55,9 @@ class MemoryStats {
   }
 
   void setLimit(int64_t limit) {
-    this->limit_ = limit;
+    if (this->limit_ != limit) {
+      this->limit_ = limit;
+    }
   }
 
   int64_t getLimit() {
@@ -90,6 +92,7 @@ class MemoryStats {
   std::atomic<int64_t> used_{0};
   // Local
   static thread_local int64_t localReserved_;
+  // Each thread reserves this amount of memory
   static constexpr int64_t kLocalReservedLimit_ = 1 * 1024 * 1024;
 };
 

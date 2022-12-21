@@ -3,13 +3,11 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include <cassert>
 #include <new>
 
 #include "common/memory/Memory.h"
 
 /// Replace default new/delete with memory tracking versions.
-
 /// new
 void *operator new(std::size_t size) {
   nebula::memory::trackMemory(size);
