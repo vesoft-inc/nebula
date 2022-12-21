@@ -17,5 +17,5 @@ nebula_add_test(
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:time_obj>
-  LIBRARIES gtest gtest_main
+  LIBRARIES gtest gtest_main jemalloc
 )
