@@ -24,7 +24,16 @@ class ExpressionContextMock final : public ExpressionContext {
   }
 
   void setInnerVar(const std::string& var, Value val) override {
-    exprValueMap_[var] = std::move(val);
+    if (var == "xxx") {
+      if (vals_.empty()) {
+        vals_.emplace_back(val);
+        indices_[var] = vals_.size() - 1;
+      } else {
+        vals_[indices_[var]] = val;
+      }
+    } else {
+      exprValueMap_[var] = std::move(val);
+    }
   }
 
   const Value& getInnerVar(const std::string& var) const override {
@@ -143,7 +152,7 @@ class ExpressionContextMock final : public ExpressionContext {
 
   void setVar(const std::string& var, Value val) override {
     // used by tests of list comprehesion, predicate or reduce
-    if (var == "n" || var == "p" || var == "totalNum") {
+    if (var == "n" || var == "p" || var == "totalNum" || var == "v") {
       vals_.emplace_back(val);
       indices_[var] = vals_.size() - 1;
     }
