@@ -7,7 +7,13 @@
 
 #include "common/memory/Memory.h"
 
-#if !__has_feature(memory_sanitizer)
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+#define MEMORY_SANITIZER 1
+#endif
+#endif
+
+#ifndef MEMORY_SANITIZER
 /// Replace default new/delete with memory tracking versions.
 /// new
 void *operator new(std::size_t size) {
@@ -90,4 +96,5 @@ void operator delete[](void *ptr, std::size_t size, std::align_val_t align) noex
   nebula::memory::untrackMemory(ptr, size, align);
   nebula::memory::deleteSized(ptr, size, align);
 }
+
 #endif
