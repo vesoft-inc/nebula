@@ -980,8 +980,7 @@ PlanNode* PatternApply::clone() const {
 }
 
 PlanNode* FulltextIndexScan::clone() const {
-  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_);
-  ret->isEdge_ = isEdge_;
+  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_, isEdge_);
   ret->schemaId_ = schemaId_;
   ret->vertexProps_ = std::make_unique<std::vector<VertexProp>>(*vertexProps_);
   ret->edgeProps_ = std::make_unique<std::vector<EdgeProp>>(*edgeProps_);

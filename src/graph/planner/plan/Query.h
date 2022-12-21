@@ -623,8 +623,9 @@ class FulltextIndexScan : public Explore {
  public:
   static FulltextIndexScan* make(QueryContext* qctx,
                                  const std::string& index,
-                                 TextSearchExpression* searchExpr) {
-    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr);
+                                 TextSearchExpression* searchExpr,
+                                 bool isEdge) {
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr, isEdge);
   }
   const std::string& index() const {
     return index_;
@@ -672,8 +673,12 @@ class FulltextIndexScan : public Explore {
     return edgeProps_.get();
   }
 
-  const std::vector<std::string>& colNames() const {
+  const std::vector<std::string>& returnCols() const {
     return returnCols_;
+  }
+
+  void setReturnCols(const std::vector<std::string>& returnCols) {
+    returnCols_ = returnCols;
   }
 
   PlanNode* clone() const override;
@@ -682,10 +687,14 @@ class FulltextIndexScan : public Explore {
 
  protected:
   friend ObjectPool;
-  FulltextIndexScan(QueryContext* qctx, const std::string& index, TextSearchExpression* searchExpr)
+  FulltextIndexScan(QueryContext* qctx,
+                    const std::string& index,
+                    TextSearchExpression* searchExpr,
+                    bool isEdge)
       : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
         index_(index),
-        searchExpr_(searchExpr) {}
+        searchExpr_(searchExpr),
+        isEdge_(isEdge) {}
   std::string index_;
   TextSearchExpression* searchExpr_{nullptr};
   std::vector<std::string> returnCols_;

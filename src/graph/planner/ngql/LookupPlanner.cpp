@@ -30,9 +30,10 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
   SubPlan plan;
   if (lookupCtx->isFulltextIndex) {
     auto expr = static_cast<TextSearchExpression*>(lookupCtx->fulltextExpr);
-    auto fulltextIndexScan = FulltextIndexScan::make(qctx, lookupCtx->fulltextIndex, expr);
+    auto fulltextIndexScan =
+        FulltextIndexScan::make(qctx, lookupCtx->fulltextIndex, expr, lookupCtx->isEdge);
     fulltextIndexScan->setSpace(lookupCtx->space.id);
-    fulltextIndexScan->setColNames(lookupCtx->idxReturnCols);
+    fulltextIndexScan->setReturnCols(lookupCtx->idxReturnCols);
     fulltextIndexScan->setSchemaId(lookupCtx->schemaId);
     plan.tail = fulltextIndexScan;
     plan.root = fulltextIndexScan;

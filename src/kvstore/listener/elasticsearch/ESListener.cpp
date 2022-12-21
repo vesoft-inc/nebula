@@ -82,9 +82,13 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, tagId);
     if (!ftIndexRes.ok()) {
+      LOG(ERROR) << ftIndexRes.status().message();
       return;
     }
     auto ftIndex = std::move(ftIndexRes).value();
+    if (ftIndex.empty()) {
+      return;
+    }
     auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, value);
     if (reader == nullptr) {
       LOG(ERROR) << "get tag reader failed, tagID " << tagId;
