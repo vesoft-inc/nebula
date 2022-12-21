@@ -4,6 +4,7 @@
 
 #include "graph/executor/query/ScanVerticesExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 
@@ -45,6 +46,14 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp), sv->colNames());
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc &) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

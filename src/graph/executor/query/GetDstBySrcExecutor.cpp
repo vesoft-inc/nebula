@@ -4,6 +4,7 @@
 
 #include "graph/executor/query/GetDstBySrcExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/Utils.h"
 
@@ -60,6 +61,14 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
           otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         return handleResponse(resp, this->gd_->colNames());
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

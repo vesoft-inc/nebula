@@ -4,6 +4,7 @@
 
 #include "graph/executor/mutate/InsertExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
 
@@ -39,6 +40,14 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc &) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -69,6 +78,14 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc &) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

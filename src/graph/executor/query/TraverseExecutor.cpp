@@ -5,6 +5,7 @@
 #include "graph/executor/query/TraverseExecutor.h"
 
 #include "clients/storage/StorageClient.h"
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
@@ -111,7 +112,8 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
       })
       .thenError(folly::tag_t<std::bad_alloc>{},
                  [](const std::bad_alloc&) {
-                   return folly::makeFuture<Status>(std::runtime_error("Memory Limit Exceeded"));
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
                  })
       .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
         return folly::makeFuture<Status>(std::runtime_error(e.what()));

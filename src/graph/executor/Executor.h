@@ -8,6 +8,7 @@
 #include <boost/core/noncopyable.hpp>
 
 #include "common/cpp/helpers.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/time/Duration.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
@@ -166,7 +167,17 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
   }
 
   // Gather all results and do post works
-  return folly::collect(futures).via(runner()).thenValue(std::move(gather));
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue(std::move(gather))
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc &) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
+      });
 }
 }  // namespace graph
 }  // namespace nebula

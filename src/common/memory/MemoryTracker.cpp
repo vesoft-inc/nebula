@@ -7,7 +7,16 @@
 namespace nebula {
 namespace memory {
 
-thread_local int64_t MemoryStats::localReserved_{0};
+thread_local ThreadMemoryStats MemoryStats::threadMemoryStats_;
+
+ThreadMemoryStats::ThreadMemoryStats() : reserved(0) {}
+
+ThreadMemoryStats::~ThreadMemoryStats() {
+  // Return to global any reserved bytes on destruction
+  if (reserved != 0) {
+    MemoryStats::instance().freeGlobal(reserved);
+  }
+}
 
 void MemoryTracker::alloc(int64_t size) {
   bool throw_if_memory_exceeded = true;

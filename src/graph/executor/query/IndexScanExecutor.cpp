@@ -4,6 +4,7 @@
 
 #include "graph/executor/query/IndexScanExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageClient;
@@ -44,6 +45,14 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp));
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc &) {
+                   return folly::makeFuture<Status>(std::runtime_error(
+                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
