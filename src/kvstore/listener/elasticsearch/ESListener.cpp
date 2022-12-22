@@ -20,6 +20,11 @@ void ESListener::init() {
     LOG(FATAL) << "vid length error";
   }
   vIdLen_ = vRet.value();
+  auto vidTypeRet = schemaMan_->getSpaceVidType(spaceId_);
+  if (!vidTypeRet.ok()) {
+    LOG(FATAL) << "vid type error:" << vidTypeRet.status().message();
+  }
+  isIntVid_ = vidTypeRet.value() == nebula::cpp2::PropertyType::INT64;
 
   auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!cRet.ok() || cRet.value().empty()) {
@@ -105,6 +110,7 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
       std::string indexName = index.first;
       std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
+      vid = truncateVid(vid);
       std::string text = std::move(v).getStr();
       callback(type, indexName, vid, "", "", 0, text);
     }
@@ -137,6 +143,8 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
       int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
       std::string text = std::move(v).getStr();
+      src = truncateVid(src);
+      dst = truncateVid(dst);
       callback(type, indexName, "", src, dst, rank, text);
     }
   }
@@ -354,6 +362,13 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
         lastApplyLogId_);
   }
   return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
+}
+
+std::string ESListener::truncateVid(const std::string& vid) {
+  if (!isIntVid_) {
+    return folly::rtrim(folly::StringPiece(vid), [](char c) { return c == '\0'; }).toString();
+  }
+  return vid;
 }
 
 }  // namespace kvstore

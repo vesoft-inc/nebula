@@ -117,10 +117,13 @@ class ESListener : public Listener {
                           const std::string& key,
                           const std::string& value,
                           const PickFunc& func);
+
+  std::string truncateVid(const std::string& vid);
   std::unique_ptr<std::string> lastApplyLogFile_{nullptr};
   std::unique_ptr<std::string> spaceName_{nullptr};
   ::nebula::plugin::ESAdapter esAdapter_;
   int32_t vIdLen_;
+  bool isIntVid_{false};
 };
 
 }  // namespace kvstore

@@ -12,7 +12,7 @@ Feature: FulltextIndexTest
     And add listeners to space
 
   @ft_index
-  Scenario: fulltext query
+  Scenario: fulltext query1
     When executing query:
       """
       CREATE TAG tag1(prop1 string,prop2 string);
@@ -82,3 +82,27 @@ Feature: FulltextIndexTest
       | src | dst | rank | prop1    |
       | 3   | 4   | 5    | "高性能" |
       | 4   | 5   | 7    | "高吞吐" |
+    When executing query:
+      """
+      LOOKUP ON tag1 where regexp(tag1.prop2,"neBula.*") YIELD id(vertex) as id, tag1.prop1 as prop1
+      """
+    Then the result should be, in any order:
+      | id | prop1 |
+      | 5  | "cba" |
+    When executing query:
+      """
+      LOOKUP ON edge1 where wildcard(edge1.prop1,"高??") YIELD src(edge) as src,dst(edge) as dst,rank(edge) as rank, edge1.prop1 as prop1
+      """
+    Then the result should be, in any order:
+      | src | dst | rank | prop1    |
+      | 3   | 4   | 5    | "高性能" |
+      | 4   | 5   | 7    | "高吞吐" |
+    When executing query:
+      """
+      LOOKUP ON tag1 where fuzzy(edge1.prop2,"nebula") YIELD tag1.prop2 as prop2
+      """
+    Then the result should be, in any order:
+      | prop2    |
+      | "Nebula" |
+      | "neBula" |
+
