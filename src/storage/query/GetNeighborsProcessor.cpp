@@ -5,6 +5,7 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/AggregateNode.h"
 #include "storage/exec/EdgeNode.h"
@@ -28,47 +29,57 @@ void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
 }
 
 void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
-  spaceId_ = req.get_space_id();
-  auto retCode = getSpaceVidLen(spaceId_);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+  try {
+    spaceId_ = req.get_space_id();
+    auto retCode = getSpaceVidLen(spaceId_);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
-  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
-    profileDetailFlag_ = true;
-  }
-  this->planContext_ = std::make_unique<PlanContext>(
-      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+    if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+      profileDetailFlag_ = true;
+    }
+    this->planContext_ = std::make_unique<PlanContext>(
+        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
-  // build TagContext and EdgeContext
-  retCode = checkAndBuildContexts(req);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    // build TagContext and EdgeContext
+    retCode = checkAndBuildContexts(req);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
 
-  int64_t limit = FLAGS_max_edge_returned_per_vertex;
-  bool random = false;
-  if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
-    if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
-      limit = *(*req.traverse_spec_ref()).limit_ref();
+    int64_t limit = FLAGS_max_edge_returned_per_vertex;
+    bool random = false;
+    if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
+      if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
+        limit = *(*req.traverse_spec_ref()).limit_ref();
+      }
+      if ((*req.traverse_spec_ref()).random_ref().has_value()) {
+        random = *(*req.traverse_spec_ref()).random_ref();
+      }
     }
-    if ((*req.traverse_spec_ref()).random_ref().has_value()) {
-      random = *(*req.traverse_spec_ref()).random_ref();
-    }
-  }
 
-  // todo(doodle): specify by each query
-  if (!FLAGS_query_concurrently) {
-    runInSingleThread(req, limit, random);
-  } else {
-    runInMultipleThread(req, limit, random);
+    // todo(doodle): specify by each query
+    if (!FLAGS_query_concurrently) {
+      runInSingleThread(req, limit, random);
+    } else {
+      runInMultipleThread(req, limit, random);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -132,7 +143,10 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);
@@ -158,27 +172,40 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     int64_t limit,
     bool random) {
   return folly::via(
-      executor_, [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
-        auto plan = buildPlan(context, expCtx, result, limit, random);
-        for (const auto& vid : input) {
-          auto vId = vid.getStr();
+             executor_,
+             [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
+               auto plan = buildPlan(context, expCtx, result, limit, random);
+               for (const auto& vid : input) {
+                 auto vId = vid.getStr();
 
-          if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-            LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
-                      << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
-            return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
-          }
+                 if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+                   LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                             << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+                   return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
+                 }
 
-          // the first column of each row would be the vertex id
-          auto ret = plan.go(partId, vId);
-          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            return std::make_pair(ret, partId);
-          }
-        }
-        if (UNLIKELY(this->profileDetailFlag_)) {
-          profilePlan(plan);
-        }
-        return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+                 // the first column of each row would be the vertex id
+                 auto ret = plan.go(partId, vId);
+                 if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                   return std::make_pair(ret, partId);
+                 }
+               }
+               if (UNLIKELY(this->profileDetailFlag_)) {
+                 profilePlan(plan);
+               }
+               return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+             })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
       });
 }
 

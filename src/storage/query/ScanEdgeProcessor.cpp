@@ -5,6 +5,7 @@
 
 #include "storage/query/ScanEdgeProcessor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"
@@ -23,36 +24,46 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
 }
 
 void ScanEdgeProcessor::doProcess(const cpp2::ScanEdgeRequest& req) {
-  spaceId_ = req.get_space_id();
-  enableReadFollower_ = req.get_enable_read_from_follower();
-  // Negative means no limit
-  limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
+  try {
+    spaceId_ = req.get_space_id();
+    enableReadFollower_ = req.get_enable_read_from_follower();
+    // Negative means no limit
+    limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
 
-  auto retCode = getSpaceVidLen(spaceId_);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    auto retCode = getSpaceVidLen(spaceId_);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
 
-  this->planContext_ = std::make_unique<PlanContext>(
-      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+    this->planContext_ = std::make_unique<PlanContext>(
+        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
-  retCode = checkAndBuildContexts(req);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    retCode = checkAndBuildContexts(req);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
 
-  if (!FLAGS_query_concurrently) {
-    runInSingleThread(req);
-  } else {
-    runInMultipleThread(req);
+    if (!FLAGS_query_concurrently) {
+      runInSingleThread(req);
+    } else {
+      runInMultipleThread(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -132,7 +143,19 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
                         return std::make_pair(ret, partId);
                       }
                       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
-                    });
+                    })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
+      });
 }
 
 void ScanEdgeProcessor::runInSingleThread(const cpp2::ScanEdgeRequest& req) {
@@ -182,7 +205,10 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);

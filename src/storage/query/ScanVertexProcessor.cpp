@@ -7,6 +7,7 @@
 
 #include <limits>
 
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"
@@ -25,36 +26,46 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
 }
 
 void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
-  spaceId_ = req.get_space_id();
-  // negative limit number means no limit
-  limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
-  enableReadFollower_ = req.get_enable_read_from_follower();
+  try {
+    spaceId_ = req.get_space_id();
+    // negative limit number means no limit
+    limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
+    enableReadFollower_ = req.get_enable_read_from_follower();
 
-  auto retCode = getSpaceVidLen(spaceId_);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (const auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    auto retCode = getSpaceVidLen(spaceId_);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (const auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
 
-  this->planContext_ = std::make_unique<PlanContext>(
-      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+    this->planContext_ = std::make_unique<PlanContext>(
+        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
-  retCode = checkAndBuildContexts(req);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (const auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    retCode = checkAndBuildContexts(req);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (const auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
 
-  if (!FLAGS_query_concurrently) {
-    runInSingleThread(req);
-  } else {
-    runInMultipleThread(req);
+    if (!FLAGS_query_concurrently) {
+      runInSingleThread(req);
+    } else {
+      runInMultipleThread(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -128,15 +139,27 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanVertexProcess
     Cursor cursor,
     StorageExpressionContext* expCtx) {
   return folly::via(
-      executor_,
-      [this, context, result, cursorsOfPart, partId, input = std::move(cursor), expCtx]() {
-        auto plan = buildPlan(context, result, cursorsOfPart, expCtx);
+             executor_,
+             [this, context, result, cursorsOfPart, partId, input = std::move(cursor), expCtx]() {
+               auto plan = buildPlan(context, result, cursorsOfPart, expCtx);
 
-        auto ret = plan.go(partId, input);
-        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return std::make_pair(ret, partId);
-        }
-        return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+               auto ret = plan.go(partId, input);
+               if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                 return std::make_pair(ret, partId);
+               }
+               return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+             })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
       });
 }
 
@@ -187,7 +210,10 @@ void ScanVertexProcessor::runInMultipleThread(const cpp2::ScanVertexRequest& req
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);

@@ -7,6 +7,7 @@
 
 #include <robin_hood.h>
 
+#include "common/memory/MemoryTracker.h"
 #include "common/thread/GenericThreadPool.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
@@ -28,38 +29,48 @@ void GetDstBySrcProcessor::process(const cpp2::GetDstBySrcRequest& req) {
 }
 
 void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
-  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
-    profileDetailFlag_ = true;
-    profileDetail("GetDstBySrcProcessorTotal", 0);
-    profileDetail("GetDstBySrcProcessorDedup", 0);
-  }
-
-  spaceId_ = req.get_space_id();
-  auto retCode = getSpaceVidLen(spaceId_);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+  try {
+    if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+      profileDetailFlag_ = true;
+      profileDetail("GetDstBySrcProcessorTotal", 0);
+      profileDetail("GetDstBySrcProcessorDedup", 0);
     }
-    onFinished();
-    return;
-  }
-  this->planContext_ = std::make_unique<PlanContext>(
-      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
-  // check edgetypes exists
-  retCode = checkAndBuildContexts(req);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
-      pushResultCode(retCode, p.first);
+    spaceId_ = req.get_space_id();
+    auto retCode = getSpaceVidLen(spaceId_);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
+    this->planContext_ = std::make_unique<PlanContext>(
+        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
-  if (!FLAGS_query_concurrently) {
-    runInSingleThread(req);
-  } else {
-    runInMultipleThread(req);
+    // check edgetypes exists
+    retCode = checkAndBuildContexts(req);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      for (auto& p : req.get_parts()) {
+        pushResultCode(retCode, p.first);
+      }
+      onFinished();
+      return;
+    }
+
+    if (!FLAGS_query_concurrently) {
+      runInSingleThread(req);
+    } else {
+      runInMultipleThread(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -124,7 +135,10 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
     // flatResult_.reserve(sum);
 
     for (size_t j = 0; j < tries.size(); j++) {
-      DCHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       const auto& [code, partId] = tries[j].value();
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
@@ -168,7 +182,19 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
                         }
                       }
                       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
-                    });
+                    })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
+      });
 }
 
 StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
