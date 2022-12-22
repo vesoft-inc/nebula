@@ -1501,3 +1501,647 @@ Feature: IndexTest_Vid_String
       | "4" | "4" |
       | "5" | "5" |
     Then drop the used space
+
+  Scenario: IndexTest TagStringIndexWithTruncateUTF8
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT VERTEX t1(col1)
+      VALUES
+        "1": ("羊"),
+        "2": ("羊羊"),
+        "3": ("羊羊羊"),
+        "4": ("羊羊🐏"),
+        "5": ("羊🐏"),
+        "6": ("羊🐏羊"),
+        "7": ("羊🐏🐏"),
+        "8": ("🐏"),
+        "9": ("🐏羊"),
+        "10": ("🐏羊羊"),
+        "11": ("🐏羊🐏"),
+        "12": ("🐏🐏"),
+        "13": ("🐏🐏羊"),
+        "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "13" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "10" |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+      | "9" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+      | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest TagStringIndexWithoutTruncateUTF8AndCertain
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1(16));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT VERTEX t1(col1)
+      VALUES
+        "1": ("羊"),
+        "2": ("羊羊"),
+        "3": ("羊羊羊"),
+        "4": ("羊羊🐏"),
+        "5": ("羊🐏"),
+        "6": ("羊🐏羊"),
+        "7": ("羊🐏🐏"),
+        "8": ("🐏"),
+        "9": ("🐏羊"),
+        "10": ("🐏羊羊"),
+        "11": ("🐏羊🐏"),
+        "12": ("🐏🐏"),
+        "13": ("🐏🐏羊"),
+        "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "13" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "10" |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+      | "9" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+      | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest EdgeStringIndexWithTruncateUTF8
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT EDGE e1(col1)
+      VALUES
+        "1" -> "1" : ("羊"),
+        "2" -> "2" : ("羊羊"),
+        "3" -> "3" : ("羊羊羊"),
+        "4" -> "4" : ("羊羊🐏"),
+        "5" -> "5" : ("羊🐏"),
+        "6" -> "6" : ("羊🐏羊"),
+        "7" -> "7" : ("羊🐏🐏"),
+        "8" -> "8" : ("🐏"),
+        "9" -> "9" : ("🐏羊"),
+        "10" -> "10": ("🐏羊羊"),
+        "11" -> "11": ("🐏羊🐏"),
+        "12" -> "12": ("🐏🐏"),
+        "13" -> "13": ("🐏🐏羊"),
+        "14" -> "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "13" | "13" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "10" | "10" |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest EdgeStringIndexWithoutTruncateUTF8AndCertain
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1(16));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT EDGE e1(col1)
+      VALUES
+        "1" -> "1" : ("羊"),
+        "2" -> "2" : ("羊羊"),
+        "3" -> "3" : ("羊羊羊"),
+        "4" -> "4" : ("羊羊🐏"),
+        "5" -> "5" : ("羊🐏"),
+        "6" -> "6" : ("羊🐏羊"),
+        "7" -> "7" : ("羊🐏🐏"),
+        "8" -> "8" : ("🐏"),
+        "9" -> "9" : ("🐏羊"),
+        "10" -> "10": ("🐏羊羊"),
+        "11" -> "11": ("🐏羊🐏"),
+        "12" -> "12": ("🐏🐏"),
+        "13" -> "13": ("🐏🐏羊"),
+        "14" -> "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "13" | "13" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "10" | "10" |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    Then drop the used space
