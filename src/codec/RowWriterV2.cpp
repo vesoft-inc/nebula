@@ -7,6 +7,7 @@
 
 #include <cmath>
 
+#include "codec/Common.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "common/utils/DefaultValueContext.h"
@@ -679,7 +680,7 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
     case PropertyType::FIXED_STRING: {
       // In-place string. If the pass-in string is longer than the pre-defined
       // fixed length, the string will be truncated to the fixed length
-      size_t len = v.size() > field->size() ? field->size() : v.size();
+      size_t len = v.size() > field->size() ? utf8CutSize(v, field->size()) : v.size();
       strncpy(&buf_[offset], v.data(), len);
       if (len < field->size()) {
         memset(&buf_[offset + len], 0, field->size() - len);

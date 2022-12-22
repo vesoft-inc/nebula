@@ -80,3 +80,95 @@ Feature: Fetch prop on empty tag/edge
       | e                               |
       | [:zero_prop_edge "1"->"2" @0{}] |
     And drop the used space
+
+  Scenario: Tag Fixed String Property
+    When executing query:
+      """
+      CREATE TAG tag_with_fixed_string(col1 fixed_string(5));
+      """
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX tag_with_fixed_string(col1)
+      VALUES
+        "1": ("😀😀"),
+        "2": ("😂😂"),
+        "3": ("羊羊羊"),
+        "4": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP on tag_with_fixed_string "1" yield tag_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "😀" |
+    When executing query:
+      """
+      FETCH PROP on tag_with_fixed_string "2" yield tag_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "😂" |
+    When executing query:
+      """
+      FETCH PROP on tag_with_fixed_string "3" yield tag_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "羊" |
+    When executing query:
+      """
+      FETCH PROP on tag_with_fixed_string "4" yield tag_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "🐏" |
+    And drop the used space
+
+  Scenario: Edge Fixed String Property
+    When executing query:
+      """
+      CREATE EDGE edge_with_fixed_string(col1 fixed_string(5));
+      """
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT EDGE edge_with_fixed_string(col1)
+      VALUES
+        "1" -> "1": ("😀😀"),
+        "2" -> "2": ("😂😂"),
+        "3" -> "3": ("羊羊羊"),
+        "4" -> "4": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP on edge_with_fixed_string "1" -> "1" yield edge_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "😀" |
+    When executing query:
+      """
+      FETCH PROP on edge_with_fixed_string "2" -> "2" yield edge_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "😂" |
+    When executing query:
+      """
+      FETCH PROP on edge_with_fixed_string "3" -> "3" yield edge_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "羊" |
+    When executing query:
+      """
+      FETCH PROP on edge_with_fixed_string "4" -> "4" yield edge_with_fixed_string.col1 as col1
+      """
+    Then the result should be, in any order:
+      | col1 |
+      | "🐏" |
+    And drop the used space
