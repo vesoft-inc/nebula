@@ -591,24 +591,33 @@ Status AddHostsIntoZoneValidator::toPlan() {
 // Validate creating test search index.
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
-  auto name = *sentence->indexName();
-  if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
-    return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
+  folly::StringPiece name = folly::StringPiece(*sentence->indexName());
+  if (!name.startsWith(kFulltextIndexNamePrefix)) {
+    return Status::SyntaxError("Index name must begin with \"%s\"",
+                               kFulltextIndexNamePrefix.c_str());
   }
-  bool containUpper = false;
+  if (name.size() > kFulltextIndexNameLength) {
+    return Status::SyntaxError(fmt::format("Fulltext index name's length must less equal than {}",
+                                           kFulltextIndexNameLength));
+  }
+  bool ok = true;
   for (auto c : name) {
-    containUpper |= std::isupper(c);
+    if (std::islower(c) || std::isdigit(c) || c == '_') {
+      continue;
+    }
+    ok = false;
+    break;
   }
-  if (containUpper) {
-    return Status::SyntaxError("Fulltext index names cannot contain uppercase letters");
+  if (!ok) {
+    return Status::SyntaxError("Fulltext index name can only contain [_0-9a-z].");
   }
   auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
   NG_RETURN_IF_ERROR(esAdapterRet);
   auto esAdapter = std::move(esAdapterRet).value();
-  auto existResult = esAdapter.isIndexExist(name);
+  auto existResult = esAdapter.isIndexExist(name.toString());
   NG_RETURN_IF_ERROR(existResult);
   if (existResult.value()) {
-    return Status::Error("text search index exist : %s", name.c_str());
+    return Status::Error(fmt::format("text search index exist : {}", name));
   }
   auto space = vctx_->whichSpace();
   auto status = sentence->isEdge()

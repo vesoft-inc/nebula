@@ -1118,10 +1118,6 @@ class AddHostsIntoZoneSentence : public Sentence {
   std::unique_ptr<HostList> address_;
   bool isNew_;
 };
-
-#ifndef FULLTEXT_INDEX_NAME_PREFIX
-#define FULLTEXT_INDEX_NAME_PREFIX "nebula_"
-#endif
 class CreateFTIndexSentence final : public Sentence {
  public:
   CreateFTIndexSentence(bool isEdge,
