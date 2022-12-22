@@ -187,3 +187,85 @@ Feature: Unwind clause
       | 95  | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]       |
       | 99  | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]   |
       | 80  | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]  |
+
+  Scenario: reference the unwind column in match pattern
+    When profiling query:
+      """
+      match (v:player{name:'Tim Duncan'})--(x)
+      with v, collect(distinct x) AS xlist
+      unwind xlist AS x
+      match (x)-[:like]-(y:player)
+      with v, xlist, collect(distinct y) AS ylist
+      return size(xlist) AS xsize, size(ylist) AS ysize
+      """
+    Then the result should be, in any order:
+      | xsize | ysize |
+      | 11    | 19    |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 14 | Project        | 13           |               |
+      | 13 | Aggregate      | 12           |               |
+      | 12 | HashInnerJoin  | 7,11         |               |
+      | 7  | Unwind         | 6            |               |
+      | 6  | Aggregate      | 5            |               |
+      | 5  | Project        | 4            |               |
+      | 4  | AppendVertices | 16           |               |
+      | 16 | Traverse       | 15           |               |
+      | 15 | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
+      | 11 | Project        | 17           |               |
+      | 17 | AppendVertices | 9            |               |
+      | 9  | Traverse       | 8            |               |
+      | 8  | Argument       |              |               |
+    When profiling query:
+      """
+      match (v:player{name:'Tim Duncan'})--(x)
+      with v, collect(distinct x) AS xlist
+      unwind case when size(xlist) == 0 then [null] else xlist end AS x
+      match (x)-[:like]-(y:player)
+      with v, xlist, collect(distinct y) AS ylist
+      return size(xlist) AS xsize, size(ylist) AS ysize
+      """
+    Then the result should be, in any order:
+      | xsize | ysize |
+      | 11    | 19    |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 14 | Project        | 13           |               |
+      | 13 | Aggregate      | 12           |               |
+      | 12 | HashInnerJoin  | 7,11         |               |
+      | 7  | Unwind         | 6            |               |
+      | 6  | Aggregate      | 5            |               |
+      | 5  | Project        | 4            |               |
+      | 4  | AppendVertices | 16           |               |
+      | 16 | Traverse       | 15           |               |
+      | 15 | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
+      | 11 | Project        | 17           |               |
+      | 17 | AppendVertices | 9            |               |
+      | 9  | Traverse       | 8            |               |
+      | 8  | Argument       |              |               |
+    When profiling query:
+      """
+      match (v:player{name:'Tim Duncan'})--(x)
+      optional match (x)-[:like]-(y:player)
+      with v, collect(distinct x) AS xlist, collect(distinct y) AS ylist
+      return size(xlist) AS xsize, size(ylist) AS ysize
+      """
+    Then the result should be, in any order:
+      | xsize | ysize |
+      | 11    | 19    |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 12 | Project        | 11           |               |
+      | 11 | Aggregate      | 10           |               |
+      | 10 | HashLeftJoin   | 5,9          |               |
+      | 5  | Project        | 4            |               |
+      | 4  | AppendVertices | 14           |               |
+      | 14 | Traverse       | 13           |               |
+      | 13 | IndexScan      | 2            |               |
+      | 2  | Start          |              |               |
+      | 9  | Project        | 15           |               |
+      | 15 | AppendVertices | 7            |               |
+      | 7  | Traverse       | 6            |               |
+      | 6  | Argument       |              |               |
