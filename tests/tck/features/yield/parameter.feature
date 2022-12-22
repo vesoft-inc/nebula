@@ -48,7 +48,7 @@ Feature: Parameter
       | {a: 3, b: false, c: "Tim Duncan"} |
 
   Scenario: [param-test-004]cypher with parameters
-   # where clause
+    # where clause
     When executing query:
       """
       MATCH (v) WHERE id(v)==$p3
@@ -163,7 +163,7 @@ Feature: Parameter
       | "Shaquille O'Neal" |
       | "Steve Nash"       |
       | "Ray Allen"        |
-  
+
   Scenario: [param-test-006] go with parameters
     # yield clause
     When executing query:
