@@ -374,6 +374,7 @@ enum ErrorCode {
     E_NO_VALID_HOST                   = -2026,  // Lack of valid hosts
     E_CORRUPTED_BALANCE_PLAN          = -2027,  // A data balancing plan that has been corrupted
     E_NO_INVALID_BALANCE_PLAN         = -2028,  // No invalid balance plan
+    E_HOST_CAN_NOT_BE_ADDED           = -2029,  // the host can not be added for it's not a storage host
 
 
     // Authentication Failure

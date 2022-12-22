@@ -3064,6 +3064,82 @@ TEST(ProcessorTest, HostsTest) {
   }
 }
 
+TEST(ProcessorTest, AddHostsError) {
+  fs::TempDir rootPath("/tmp/AddHostsError.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  // Attempt to register heartbeat
+  const ClusterID kClusterId = 10;
+  {
+    cpp2::HBReq req;
+    req.host_ref() = HostAddr("127.0.0.1", 8987);
+    req.cluster_id_ref() = kClusterId;
+    req.role_ref() = cpp2::HostRole::GRAPH;
+    auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::HBReq req;
+    req.host_ref() = HostAddr("127.0.0.1", 8988);
+    req.cluster_id_ref() = kClusterId;
+    req.role_ref() = cpp2::HostRole::STORAGE_LISTENER;
+    auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts;
+    hosts.emplace_back("127.0.0.1", 8987);
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts;
+    hosts.emplace_back("127.0.0.1", 8988);
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED, resp.get_code());
+  }
+  auto oldVal = FLAGS_heartbeat_interval_secs;
+  FLAGS_heartbeat_interval_secs = 0;
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts;
+    hosts.emplace_back("127.0.0.1", 8987);
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts;
+    hosts.emplace_back("127.0.0.1", 8988);
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  FLAGS_heartbeat_interval_secs = oldVal;
+}
+
 TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());

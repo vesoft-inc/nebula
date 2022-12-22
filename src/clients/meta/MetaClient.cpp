@@ -965,6 +965,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("There are still space on the host");
     case nebula::cpp2::ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS:
       return Status::Error("Related fulltext index exists, please drop it first");
+    case nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED:
+      return Status::Error("Could not add a host, which is not a storage and not expired either");
     default:
       return Status::Error("Unknown error!");
   }
