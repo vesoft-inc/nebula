@@ -11,8 +11,6 @@
 namespace nebula {
 namespace memory {
 
-class MemoryStats;
-
 // Memory stats for each thread.
 struct ThreadMemoryStats {
   ThreadMemoryStats();

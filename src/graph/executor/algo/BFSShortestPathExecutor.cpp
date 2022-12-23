@@ -47,6 +47,12 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
         ds.colNames = pathNode_->colNames();
         ds.rows.swap(currentDs_.rows);
         return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -147,12 +153,20 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
-    return Status::OK();
-  });
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& resps) {
+        for (auto& resp : resps) {
+          currentDs_.append(std::move(resp));
+        }
+        return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
+      });
 }
 
 DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,

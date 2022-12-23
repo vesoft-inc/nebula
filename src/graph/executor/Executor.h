@@ -76,6 +76,11 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   // Throw runtime error to stop whole execution early
   folly::Future<Status> error(Status status) const;
 
+  static Status memoryExceededStatus() {
+    return Status::Error("Graph Error: GRAPH_MEMORY_EXCEEDED(%d)",
+                         static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
+  }
+
  protected:
   static Executor *makeExecutor(const PlanNode *node,
                                 QueryContext *qctx,

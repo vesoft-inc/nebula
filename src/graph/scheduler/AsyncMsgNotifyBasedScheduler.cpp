@@ -16,15 +16,23 @@ AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) :
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
-  auto root = qctx_->plan()->root();
-  if (FLAGS_enable_lifetime_optimize) {
-    // special for root
-    root->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
-                                          std::memory_order_relaxed);
-    analyzeLifetime(root);
+  try {
+    auto root = qctx_->plan()->root();
+    if (FLAGS_enable_lifetime_optimize) {
+      // special for root
+      root->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
+                                            std::memory_order_relaxed);
+      analyzeLifetime(root);
+    }
+    auto executor = Executor::create(root, qctx_);
+    return doSchedule(executor);
+  } catch (std::bad_alloc& e) {
+    return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+  } catch (std::exception& e) {
+    return folly::makeFuture<Status>(std::runtime_error(e.what()));
+  } catch (...) {
+    return folly::makeFuture<Status>(std::runtime_error("unknown exception"));
   }
-  auto executor = Executor::create(root, qctx_);
-  return doSchedule(executor);
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) const {
@@ -83,6 +91,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
 
     scheduleExecutor(std::move(currentExeFutures), exe, runner)
         .thenTry([this, pros = std::move(currentExePromises)](auto&& t) mutable {
+          // any exception or status not ok handled with notifyError
           if (t.hasException()) {
             notifyError(pros, Status::Error(std::move(t).exception().what()));
           } else {

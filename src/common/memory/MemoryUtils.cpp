@@ -42,6 +42,7 @@ DEFINE_string(cgroup_v2_memory_current_path,
 
 DEFINE_bool(memory_purge_enabled, true, "memory purge enabled, default true");
 DEFINE_int32(memory_purge_interval_seconds, 10, "memory purge interval in seconds, default 10");
+DEFINE_bool(memory_stats_detail_log, false, "print memory stats detail log");
 
 using nebula::fs::FileUtils;
 
@@ -120,11 +121,23 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   }
 
   // print system & application level memory stats
-  DLOG(INFO) << " sys_used: " << static_cast<int64_t>(total - available) << " sys_total: " << total
-             << " sys_ratio:" << (1 - available / total)
-             << " usr_used:" << memory::MemoryStats::instance().used()
-             << " usr_total:" << memory::MemoryStats::instance().getLimit()
-             << " usr_ratio:" << memory::MemoryStats::instance().usedRatio();
+  // sys: read from system environment, varies depends on environment:
+  //      container: controlled by cgroup,
+  //                 used: read from memory.current in cgroup path
+  //                 total: read from memory.max in cgroup path
+  //      physical machine: judge by system level memory consumption
+  //                 used: current used memory of the system
+  //                 total: all physical memory installed
+  // usr: record by current process's MemoryStats
+  //                 used: bytes allocated by new operator
+  //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
+  if (FLAGS_memory_stats_detail_log) {
+    LOG(INFO) << " sys_used: " << static_cast<int64_t>(total - available) << " sys_total: " << total
+              << " sys_ratio:" << (1 - available / total)
+              << " usr_used:" << memory::MemoryStats::instance().used()
+              << " usr_total:" << memory::MemoryStats::instance().getLimit()
+              << " usr_ratio:" << memory::MemoryStats::instance().usedRatio();
+  }
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
   LOG_IF_EVERY_N(WARNING, hits, 100)

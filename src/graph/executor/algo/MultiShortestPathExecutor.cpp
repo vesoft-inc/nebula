@@ -57,6 +57,13 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
         ds.colNames = pathNode_->colNames();
         ds.rows.swap(currentDs_.rows);
         return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -290,24 +297,29 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     futures.emplace_back(std::move(future));
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& resps) {
+        for (auto& resp : resps) {
+          currentDs_.append(std::move(resp));
+        }
 
-    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-      if (!iter->second.second) {
-        iter = terminationMap_.erase(iter);
-      } else {
-        ++iter;
-      }
-    }
-    if (terminationMap_.empty()) {
-      ectx_->setValue(terminationVar_, true);
-      return true;
-    }
-    return false;
-  });
+        for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
+          if (!iter->second.second) {
+            iter = terminationMap_.erase(iter);
+          } else {
+            ++iter;
+          }
+        }
+        if (terminationMap_.empty()) {
+          ectx_->setValue(terminationVar_, true);
+          return true;
+        }
+        return false;
+      })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<bool>(std::runtime_error(e.what()));
+      });
 }
 
 void MultiShortestPathExecutor::setNextStepVid(const Interims& paths, const string& var) {

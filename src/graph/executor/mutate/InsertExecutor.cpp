@@ -41,11 +41,9 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
       })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [](const std::bad_alloc &) {
-                   return folly::makeFuture<Status>(std::runtime_error(
-                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
-                 })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
       .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
         return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
@@ -79,11 +77,9 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
       })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [](const std::bad_alloc &) {
-                   return folly::makeFuture<Status>(std::runtime_error(
-                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
-                 })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
       .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
         return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
