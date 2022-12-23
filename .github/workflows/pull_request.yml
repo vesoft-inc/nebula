@@ -181,17 +181,17 @@ jobs:
             case ${{ matrix.os }} in
             centos7)
               # normal cluster
-              make CONTAINERIZED=true up
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' up
               ;;
             ubuntu2004)
               # ssl cluster
-              make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=true CA_SIGNED=true up
               ;;
             esac
             ;;
           clang-*)
             # graph ssl only cluster
-            make CONTAINERIZED=true ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
             ;;
           esac
         working-directory: tests/
@@ -203,7 +203,7 @@ jobs:
         timeout-minutes: 15
       - name: TCK
         run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+          make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=${{ steps.cmake.outputs.j }} tck
         working-directory: tests/
         timeout-minutes: 60
       - name: LDBC
