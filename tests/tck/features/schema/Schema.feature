@@ -516,7 +516,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG t CHANGE (description string NOT NULL)
       """
-    Then the execution should be successful
+    Then a SemanticError should be raised at runtime: Column `description' must have a default value if it's not nullable
     And wait 3 seconds
     # insert
     When executing query:
@@ -532,13 +532,6 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | t.name | t.age | t.description |
       | "N/A"  | -1    | "some one"    |
-    And wait 3 seconds
-    # insert without default prop, failed
-    When executing query:
-      """
-      INSERT VERTEX t() VALUES "1":()
-      """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field doesn't have a default value.
     # test alter edge with default value
     When executing query:
       """
@@ -569,14 +562,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE e CHANGE (description string NOT NULL)
       """
-    Then the execution should be successful
-    And wait 3 seconds
-    # insert without default prop, failed
-    When executing query:
-      """
-      INSERT EDGE e() VALUES "1"->"2":()
-      """
-    Then a SemanticError should be raised at runtime: The property `description' is not nullable and has no default value.
+    Then a SemanticError should be raised at runtime: Column `description' must have a default value if it's not nullable
     # test alter edge with timestamp default
     When executing query:
       """
@@ -850,6 +836,76 @@ Feature: Insert string vid of vertex and edge
       DROP SPACE issue2009;
       """
     Then the execution should be successful
+
+  Scenario: alter a tag to add an column which doesn't have a default value to not nullable
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG person(age int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX person_age_index ON person(age);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX person values "1":(23);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person YIELD properties(VERTEX) AS props;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props     |
+      | {age: 23} |
+    When executing query:
+      """
+      ALTER TAG person ADD (gender bool NOT NULL);
+      """
+    Then a SemanticError should be raised at runtime: Column `gender' must have a default value if it's not nullable
+
+  Scenario: alter a edge to change an column which doesn't have a default value to not nullable
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE EDGE person(age int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX person_age_index ON person(age);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT EDGE person values "1"->"2":(23);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person YIELD properties(EDGE) AS props;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props     |
+      | {age: 23} |
+    When executing query:
+      """
+      ALTER EDGE person ADD (gender bool NOT NULL);
+      """
+    Then a SemanticError should be raised at runtime: Column `gender' must have a default value if it's not nullable
 
   Scenario: Don't allow DOT in schema name
     Given an empty graph
