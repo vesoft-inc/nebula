@@ -90,18 +90,20 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       LOG(ERROR) << "get tag reader failed, tagID " << tagId;
       return;
     }
-    if (ftIndex.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
+    for (auto& index : ftIndex) {
+      if (index.second.get_fields().size() > 1) {
+        LOG(ERROR) << "Only one field will create fulltext index";
+      }
+      auto field = index.second.get_fields().front();
+      auto v = reader->getValueByName(field);
+      if (v.type() != Value::Type::STRING) {
+        LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+      }
+      std::string indexName = index.first;
+      std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
+      std::string text = std::move(v).getStr();
+      callback(type, indexName, vid, "", "", 0, text);
     }
-    auto field = ftIndex.second.get_fields().front();
-    auto v = reader->getValueByName(field);
-    if (v.type() != Value::Type::STRING) {
-      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
-    }
-    std::string indexName = ftIndex.first;
-    std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    std::string text = std::move(v).getStr();
-    callback(type, indexName, vid, "", "", 0, text);
   } else if (nebula::NebulaKeyUtils::isEdge(vIdLen_, key)) {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, edgeType);
@@ -114,20 +116,22 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       LOG(ERROR) << "get edge reader failed, schema ID " << edgeType;
       return;
     }
-    if (ftIndex.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
+    for (auto& index : ftIndex) {
+      if (index.second.get_fields().size() > 1) {
+        LOG(ERROR) << "Only one field will create fulltext index";
+      }
+      auto field = index.second.get_fields().front();
+      auto v = reader->getValueByName(field);
+      if (v.type() != Value::Type::STRING) {
+        LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+      }
+      std::string indexName = index.first;
+      std::string src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
+      std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
+      int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
+      std::string text = std::move(v).getStr();
+      callback(type, indexName, "", src, dst, rank, text);
     }
-    auto field = ftIndex.second.get_fields().front();
-    auto v = reader->getValueByName(field);
-    if (v.type() != Value::Type::STRING) {
-      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
-    }
-    std::string indexName = ftIndex.first;
-    std::string src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
-    std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
-    int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
-    std::string text = std::move(v).getStr();
-    callback(type, indexName, "", src, dst, rank, text);
   }
 }
 

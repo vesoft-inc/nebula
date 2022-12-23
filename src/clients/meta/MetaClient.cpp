@@ -3458,8 +3458,8 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   return indexes;
 }
 
-StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSchemaFromCache(
-    GraphSpaceID spaceId, int32_t schemaId) {
+StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId, const std::string& field) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3469,11 +3469,32 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it.second.get_depend_schema().get_edge_type()
                   : it.second.get_depend_schema().get_tag_id();
-    if (it.second.get_space_id() == spaceId && id == schemaId) {
+    // There will only be one field. However, in order to minimize changes, the IDL was not modified
+    auto f = it.second.fields()->front();
+    if (it.second.get_space_id() == spaceId && id == schemaId && f == field) {
       return std::make_pair(it.first, it.second);
     }
   }
   return Status::IndexNotFound();
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId) {
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  std::unordered_map<std::string, cpp2::FTIndex> ret;
+  for (auto& it : metadata.fulltextIndexMap_) {
+    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it.second.get_depend_schema().get_edge_type()
+                  : it.second.get_depend_schema().get_tag_id();
+    if (it.second.get_space_id() == spaceId && id == schemaId) {
+      ret[it.first] = it.second;
+    }
+  }
+  return ret;
 }
 
 StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID spaceId,

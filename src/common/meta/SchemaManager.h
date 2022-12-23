@@ -91,7 +91,7 @@ class SchemaManager {
   StatusOr<std::pair<bool, int32_t>> getSchemaIDByName(GraphSpaceID space,
                                                        folly::StringPiece schemaName);
 
-  virtual StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
+  virtual StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) = 0;
 
  protected:
