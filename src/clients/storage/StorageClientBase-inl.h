@@ -198,14 +198,19 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
 
         using TransportException = apache::thrift::transport::TTransportException;
         auto ex = exWrapper.get_exception<TransportException>();
-        if (ex && ex->getType() == TransportException::TIMED_OUT) {
-          LOG(ERROR) << "Request to " << host << " time out: " << ex->what();
-          return Status::Error("RPC failure in StorageClient, probably timeout: %s", ex->what());
+        if (ex) {
+          if (ex->getType() == TransportException::TIMED_OUT) {
+            LOG(ERROR) << "Request to " << host << " time out: " << ex->what();
+            return Status::Error("RPC failure in StorageClient with timeout: %s", ex->what());
+          } else {
+            LOG(ERROR) << "Request to " << host << " failed: " << ex->what();
+            return Status::Error("RPC failure in StorageClient: %s", ex->what());
+          }
         } else {
           auto partsId = getReqPartsId(request);
           invalidLeader(spaceId, partsId);
           LOG(ERROR) << "Request to " << host << " failed.";
-          return Status::Error("RPC failure in StorageClient, probably timeout.");
+          return Status::Error("RPC failure in StorageClient.");
         }
       });
 }
