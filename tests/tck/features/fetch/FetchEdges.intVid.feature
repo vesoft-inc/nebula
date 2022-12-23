@@ -198,6 +198,12 @@ Feature: Fetch Int Vid Edges
       | serve.start_year | serve.end_year |
 
   Scenario: Fetch prop Error
+    # fetch on a not existing edgetype
+    When executing query:
+      """
+      FETCH PROP ON not_exist_edge hash("Boris Diaw")->hash("Spurs") YIELD edge as e
+      """
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs") YIELD $^.serve.start_year
