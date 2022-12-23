@@ -155,22 +155,45 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runSelect(
           return doSchedule(select->thenBody());
         }
         return doSchedule(select->elseBody());
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::runExecutor(
     std::vector<folly::Future<Status>>&& futures, Executor* exe, folly::Executor* runner) const {
-  return folly::collect(futures).via(runner).thenValue(
-      [exe, this](auto&& t) mutable -> folly::Future<Status> {
+  return folly::collect(futures)
+      .via(runner)
+      .thenValue([exe, this](auto&& t) mutable -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(checkStatus(std::move(t)));
         // Execute in current thread.
         return execute(exe);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLeafExecutor(Executor* exe,
                                                                     folly::Executor* runner) const {
-  return std::move(execute(exe)).via(runner);
+  return std::move(execute(exe))
+      .via(runner)
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
+      });
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLoop(
@@ -197,6 +220,13 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLoop(
         std::vector<folly::Future<Status>> fs;
         fs.emplace_back(doSchedule(loop->loopBody()));
         return runLoop(std::move(fs), loop, runner);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -227,10 +257,18 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::execute(Executor* executor) 
   if (!status.ok()) {
     return executor->error(std::move(status));
   }
-  return executor->execute().thenValue([executor](Status s) {
-    NG_RETURN_IF_ERROR(s);
-    return executor->close();
-  });
+  return executor->execute()
+      .thenValue([executor](Status s) {
+        NG_RETURN_IF_ERROR(s);
+        return executor->close();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
+      });
 }
 
 }  // namespace graph
