@@ -6,8 +6,8 @@
 
 #include <robin_hood.h>
 
-#include "graph/planner/plan/Algo.h"
 #include "graph/executor/Executor.h"
+#include "graph/planner/plan/Algo.h"
 
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;

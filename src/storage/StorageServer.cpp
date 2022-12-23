@@ -68,8 +68,8 @@ StorageServer::StorageServer(HostAddr localHost,
 
 Status StorageServer::setupMemoryMonitorThread() {
   memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
-  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("graph-memory-monitor")) {
-    return Status::Error("Fail to start query engine background thread.");
+  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("storage-memory-monitor")) {
+    return Status::Error("Fail to start storage server background thread.");
   }
 
   auto updateMemoryWatermark = []() -> Status {
