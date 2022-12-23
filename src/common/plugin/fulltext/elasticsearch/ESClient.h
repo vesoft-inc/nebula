@@ -23,6 +23,9 @@ class ESClient {
            const std::string& user,
            const std::string& password);
   ESClient& operator=(const ESClient& client) {
+    if (&client == this) {
+      return *this;
+    }
     protocol_ = client.protocol_;
     httpClient_ = client.httpClient_;
     address_ = client.address_;
