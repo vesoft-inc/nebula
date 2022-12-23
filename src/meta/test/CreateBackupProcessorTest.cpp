@@ -233,7 +233,7 @@ class CreateBackupProcessorTest : public ::testing::Test {
 
  protected:
   static void SetUpTestCase() {
-    localIp_ = {"127.0.0.1"};
+    localIp_ = "127.0.0.1";
     jobMgr_ = nullptr;
     initStorage();
     initMeta();
