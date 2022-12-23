@@ -132,6 +132,28 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
+            OR true
+      RETURN v.player.name AS Name
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
+            AND true
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name               |
+      | 'Paul Gasol'       |
+      | 'James Harden'     |
+      | 'Jonathon Simmons' |
+      | 'Klay Thompson'    |
+      | 'Dejounte Murray'  |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray', 'Paul Gasol']
             AND (id(v) == 'James Harden' OR v.player.age == 23)
       RETURN v.player.name AS Name
       """
@@ -260,6 +282,11 @@ Feature: Match seek by id
       MATCH (v)
       WHERE id(v) IN ['James Harden', v.player.name]
       RETURN v.player.name AS Name
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == "Tim Duncan" OR id(v) != "Tony Parker" RETURN COUNT(*) AS count
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
