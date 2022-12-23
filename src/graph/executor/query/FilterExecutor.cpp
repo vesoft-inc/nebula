@@ -68,7 +68,7 @@ StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *
       return Status::Error("Failed to evaluate condition: %s. %s%s",
                            condition->toString().c_str(),
                            "For boolean conditions, please write in their full forms like",
-                           " <condition> == <true/false> or <condition> IS NULL.");
+                           " <condition> == <true/false> or <condition> IS [NOT] NULL.");
     }
     if (!(val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool()))) {
       // TODO: Maybe we can move.
