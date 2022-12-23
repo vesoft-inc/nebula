@@ -102,7 +102,7 @@ Status FilterExecutor::handleSingleJobFilter() {
         return Status::Error("Failed to evaluate condition: %s. %s%s",
                              condition->toString().c_str(),
                              "For boolean conditions, please write in their full forms like",
-                             " <condition> == <true/false> or <condition> IS NULL.");
+                             " <condition> == <true/false> or <condition> IS [NOT] NULL.");
       }
       if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
         if (UNLIKELY(filter->needStableFilter())) {
@@ -128,7 +128,7 @@ Status FilterExecutor::handleSingleJobFilter() {
         return Status::Error("Failed to evaluate condition: %s. %s%s",
                              condition->toString().c_str(),
                              "For boolean conditions, please write in their full forms like",
-                             " <condition> == <true/false> or <condition> IS NULL.");
+                             " <condition> == <true/false> or <condition> IS [NOT] NULL.");
       }
       if (val.isImplicitBool() && val.implicitBool()) {
         Row row;
