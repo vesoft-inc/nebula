@@ -21,7 +21,7 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
     paths_.store(paths);
     size_t index = 0;
 
-    // TODO: Add initialize function to avoid using LOG(FATAL) in constructor.
+    // TODO(vee): Add initialize function to avoid using LOG(FATAL) in constructor.
     for (const auto& path : dataPaths) {
       auto absolute = boost::filesystem::absolute(path);
       if (!boost::filesystem::exists(absolute)) {

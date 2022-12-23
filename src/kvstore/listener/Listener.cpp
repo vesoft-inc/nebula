@@ -40,7 +40,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
 
   if (!init()) {
-    // TODO: return bool to avoid using LOG(FATAL)
+    // TODO(vee): return bool to avoid using LOG(FATAL)
     LOG(FATAL) << "Listener init failed";
   }
 

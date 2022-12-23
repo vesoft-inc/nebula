@@ -1092,9 +1092,6 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         }
       } else {
         LOG(DFATAL) << idStr_ << "Failed to commit logs";
-        checkAppendLogResult(code);
-        VLOG(3) << idStr_ << "commitLogs failed";
-        iter.commit(code);
         return;
       }
       VLOG(4) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "

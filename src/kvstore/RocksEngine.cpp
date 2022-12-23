@@ -48,7 +48,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
   }
   auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
 
-  // TODO: Add initialize function to avoid using LOG(FATAL) in constructor.
+  // TODO(vee): Add initialize function to avoid using LOG(FATAL) in constructor.
   if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
     if (readonly) {
       LOG(FATAL) << "Path " << path << " not exist";
