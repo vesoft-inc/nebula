@@ -105,4 +105,3 @@ Feature: FulltextIndexTest
       | prop2    |
       | "Nebula" |
       | "neBula" |
-

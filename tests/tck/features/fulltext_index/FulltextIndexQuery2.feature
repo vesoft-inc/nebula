@@ -58,27 +58,27 @@ Feature: FulltextIndexTest
       LOOKUP ON tag2 where prefix(tag2.prop1,"abc") YIELD id(vertex) as id, tag2.prop1 as prop1, tag2.prop2 as prop2
       """
     Then the result should be, in any order:
-      | id | prop1    | prop2          |
-      | "1"  | "abc"    | "nebula graph" |
-      | "2"  | "abcde"  | "nebula-graph" |
-      | "6"  | "abcxyz" | "nebula graph" |
+      | id  | prop1    | prop2          |
+      | "1" | "abc"    | "nebula graph" |
+      | "2" | "abcde"  | "nebula-graph" |
+      | "6" | "abcxyz" | "nebula graph" |
     When executing query:
       """
       LOOKUP ON tag2 where prefix(tag2.prop2,"nebula") YIELD id(vertex) as id, tag2.prop1 as prop1, tag2.prop2 as prop2
       """
     Then the result should be, in any order:
-      | id   | prop1    | prop2             |
-      | "1"  | "abc"    | "nebula graph"    |
-      | "2"  | "abcde"  | "nebula-graph"    |
-      | "3"  | "bcd"    | "nebula database" |
-      | "6"  | "abcxyz" | "nebula graph"    |
-      | "7"  | "xyz"    | "nebula graph"    |
-      | "8"  | "123456" | "nebula graph"    |
+      | id  | prop1    | prop2             |
+      | "1" | "abc"    | "nebula graph"    |
+      | "2" | "abcde"  | "nebula-graph"    |
+      | "3" | "bcd"    | "nebula database" |
+      | "6" | "abcxyz" | "nebula graph"    |
+      | "7" | "xyz"    | "nebula graph"    |
+      | "8" | "123456" | "nebula graph"    |
     When executing query:
       """
       LOOKUP ON edge2 where prefix(edge2.prop1,"高") YIELD src(edge) as src,dst(edge) as dst,rank(edge) as rank, edge2.prop1 as prop1
       """
     Then the result should be, in any order:
-      | src   | dst   | rank | prop1    |
-      | "3"   | "4"   | 5    | "高性能" |
-      | "4"   | "5"   | 7    | "高吞吐" |
+      | src | dst | rank | prop1    |
+      | "3" | "4" | 5    | "高性能" |
+      | "4" | "5" | 7    | "高吞吐" |
