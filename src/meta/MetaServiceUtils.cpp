@@ -39,8 +39,11 @@ bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
       from.get_type() != nebula::cpp2::PropertyType::FIXED_STRING) {
     return true;
   }
-
-  // fixed string can be converted to string or larger fixed string
+  // For unset type, always return true
+  if (from.get_type() == nebula::cpp2::PropertyType::UNKNOWN) {
+    return true;
+  }
+  // fixed string can be converted to string or wider fixed string
   if (from.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
     if (to.get_type() == nebula::cpp2::PropertyType::STRING) {
       return true;
