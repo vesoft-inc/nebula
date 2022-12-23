@@ -7,6 +7,7 @@
 
 #include <robin_hood.h>
 
+#include "common/memory/MemoryTracker.h"
 #include "common/thread/GenericThreadPool.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
