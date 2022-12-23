@@ -37,7 +37,7 @@ class DiskManager {
    * @brief Construct a new Disk Manager object
    *
    * @param dataPaths `data_path` in configuration
-   * @param bgThread Backgournd thread to refresh remaining spaces of each data path
+   * @param bgThread Background thread to refresh remaining spaces of each data path
    */
   DiskManager(const std::vector<std::string>& dataPaths,
               std::shared_ptr<thread::GenericWorker> bgThread = nullptr);
@@ -66,7 +66,7 @@ class DiskManager {
   StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId) const;
 
   /**
-   * @brief Add a partition to a given path, called when add a partiton in NebulaStore
+   * @brief Add a partition to a given path, called when add a partition in NebulaStore
    * @pre Path is the space path, so it must end with /nebula/spaceId and path must exists
    *
    * @param spaceId
@@ -76,7 +76,7 @@ class DiskManager {
   void addPartToPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path);
 
   /**
-   * @brief Remove a partition form a given path, called when remove a partiton in NebulaStore
+   * @brief Remove a partition form a given path, called when remove a partition in NebulaStore
    * @pre Path is the space path, so it must end with /nebula/spaceId and path must exists
    *
    * @param spaceId

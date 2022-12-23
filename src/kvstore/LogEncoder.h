@@ -205,7 +205,7 @@ class BatchHolder : public boost::noncopyable, public nebula::cpp::NonMovable {
   }
 
   /**
-   * @brief size of key in operaion of the batch, in bytes
+   * @brief size of key in operation of the batch, in bytes
    */
   size_t size() {
     return size_;

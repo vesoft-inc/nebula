@@ -29,7 +29,7 @@ class CreateCheckpointProcessor {
   /**
    * @brief Entry point for creating checkpoint.
    *
-   * @param req Reuqest for creating checkpoint.
+   * @param req Request for creating checkpoint.
    */
   void process(const cpp2::CreateCPRequest& req);
 

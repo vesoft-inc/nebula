@@ -26,7 +26,7 @@ class RaftPart;
 
 /**
  * @brief Host is a class to monitor how many log has been sent to a raft peer. It will send logs or
- * start elelction to the remote peer by rpc
+ * start election to the remote peer by rpc
  */
 class Host final : public std::enable_shared_from_this<Host> {
   friend class RaftPart;

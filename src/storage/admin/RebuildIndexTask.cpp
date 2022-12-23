@@ -164,7 +164,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
         VLOG(1) << "Processing Delete Operation " << opVal;
         batchHolder->remove(opVal.str());
       } else {
-        LOG(INFO) << "Unknow Operation Type";
+        LOG(INFO) << "Unknown Operation Type";
         return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
       }
 

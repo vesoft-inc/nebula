@@ -92,7 +92,7 @@ class Part : public raftex::RaftPart {
   void asyncRemove(folly::StringPiece key, KVCallback cb);
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param key Keys to remove
    * @param cb Callback when has a result

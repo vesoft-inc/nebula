@@ -91,7 +91,7 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
     }
   }
   if (prev != nullptr) {
-    // prev equals to nullptr happend when there are no tags in whole space
+    // prev equals to nullptr happened when there are no tags in whole space
     auto *filter = Filter::make(qctx, scanVertices, prev);
     plan.root = filter;
   }

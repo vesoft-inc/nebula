@@ -88,7 +88,7 @@ class IndexScanNode : public IndexNode {
    * @brief decode all props from index key
    *
    * decodePropFromIndex() will decode props who are defined in tag/edge properties.And,
-   * IndexScanNode sometime needs not only those but alse vid,edge_type,tag_id. decodeFromIndex()
+   * IndexScanNode sometime needs not only those but also vid,edge_type,tag_id. decodeFromIndex()
    * should be override by derived class and decode these special prop and then call
    * decodePropFromIndex() to decode general props.
    *

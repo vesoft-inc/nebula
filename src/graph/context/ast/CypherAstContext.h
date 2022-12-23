@@ -96,7 +96,7 @@ struct Path final {
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
 
-  // True for pattern expresssion, to collect path to list
+  // True for pattern expression, to collect path to list
   bool rollUpApply{false};
   // vector ["v"] in (v)-[:like]->()
   std::vector<std::string> compareVariables;
