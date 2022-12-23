@@ -200,12 +200,13 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         auto ex = exWrapper.get_exception<TransportException>();
         if (ex && ex->getType() == TransportException::TIMED_OUT) {
           LOG(ERROR) << "Request to " << host << " time out: " << ex->what();
+          return Status::Error("RPC failure in StorageClient, probably timeout: %s", ex->what());
         } else {
           auto partsId = getReqPartsId(request);
           invalidLeader(spaceId, partsId);
           LOG(ERROR) << "Request to " << host << " failed.";
+          return Status::Error("RPC failure in StorageClient, probably timeout.");
         }
-        return Status::Error("RPC failure in StorageClient, probably timeout: %s", ex->what());
       });
 }
 
