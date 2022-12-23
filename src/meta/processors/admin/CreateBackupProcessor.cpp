@@ -97,8 +97,8 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
   if (nebula::value(result)) {
-    LOG(INFO) << "Index rebuilding/Compact/Ingest/Balace job is running or queue, not allowed to "
-                 "create backup.";
+    LOG(INFO) << "There is some running or queued job mutating the data, not allowed to "
+                 "create backup now.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_RUNNING_JOBS);
     onFinished();
     return;
