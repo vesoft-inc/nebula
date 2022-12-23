@@ -203,7 +203,7 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         } else {
           auto partsId = getReqPartsId(request);
           invalidLeader(spaceId, partsId);
-          LOG(ERROR) << "Request to " << host << " failed: " << ex->what();
+          LOG(ERROR) << "Request to " << host << " failed.";
         }
         return Status::Error("RPC failure in StorageClient, probably timeout: %s", ex->what());
       });
