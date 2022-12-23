@@ -135,16 +135,12 @@ class TestSchema(NebulaTestSuite):
                   ['age', 'string', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
-        # alter change
-        resp = self.execute('ALTER TAG student change (age int)')
-        self.check_resp_succeeded(resp)
-
         resp = self.execute('DESC TAG student')
         self.check_resp_succeeded(resp)
         expect = [['name', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['birthday', 'timestamp', 'YES', T_EMPTY, T_EMPTY],
-                  ['age', 'int64', 'YES', T_EMPTY, T_EMPTY]]
+                  ['age', 'string', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_tag_failed(self):
@@ -165,6 +161,13 @@ class TestSchema(NebulaTestSuite):
         # alter add existent col
         try:
             resp = self.execute('ALTER TAG student add (email, int)')
+            self.check_resp_failed(resp)
+        except Exception as x:
+            print('failed', x)
+
+        # alter change
+        try:
+            resp = self.execute('ALTER TAG student change (age int)')
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed', x)
@@ -277,16 +280,12 @@ class TestSchema(NebulaTestSuite):
                   ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['start_year', 'string', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
-
-        # alter change
-        resp = self.execute('ALTER EDGE relationship change (start_year int)')
-        self.check_resp_succeeded(resp)
-
+        
         resp = self.execute('DESC EDGE relationship')
         self.check_resp_succeeded(resp)
         expect = [['name', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
-                  ['start_year', 'int64', 'YES', T_EMPTY, T_EMPTY]]
+                  ['start_year', 'string', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_edge_failed(self):
@@ -310,6 +309,14 @@ class TestSchema(NebulaTestSuite):
             self.check_resp_failed(resp)
         except Exception as x:
             print('failed', x)
+
+        # alter change
+        try:
+            resp = self.execute('ALTER EDGE relationship change (start_year int)')
+            self.check_resp_succeeded(resp)
+        except Exception as x:
+            print('failed', x)
+
 
     # Cover https://github.com/vesoft-inc/nebula/issues/1732
     def test_cover_fix_negative_default_value(self):
