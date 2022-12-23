@@ -100,10 +100,10 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           if (!isLegalTypeConversion(it->get_type(), col.get_type())) {
-            LOG(WARNING) << "Update colume type " << colName << " from "
-                         << apache::thrift::util::enumNameSafe(it->get_type().get_type()) << " to "
-                         << apache::thrift::util::enumNameSafe(col.get_type().get_type())
-                         << " is not allowed!";
+            LOG(ERROR) << "Update colume type " << colName << " from "
+                       << apache::thrift::util::enumNameSafe(it->get_type().get_type()) << " to "
+                       << apache::thrift::util::enumNameSafe(col.get_type().get_type())
+                       << " is not allowed!";
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           *it = col;
