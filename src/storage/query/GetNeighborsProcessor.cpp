@@ -5,7 +5,6 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/AggregateNode.h"
 #include "storage/exec/EdgeNode.h"

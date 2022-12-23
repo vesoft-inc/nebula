@@ -5,7 +5,6 @@
 
 #include "storage/query/GetPropProcessor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "storage/exec/GetPropNode.h"
 
 namespace nebula {

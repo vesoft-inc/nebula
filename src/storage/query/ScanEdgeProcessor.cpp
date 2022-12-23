@@ -5,7 +5,6 @@
 
 #include "storage/query/ScanEdgeProcessor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"

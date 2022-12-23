@@ -4,7 +4,6 @@
 
 #include "graph/executor/query/GetDstBySrcExecutor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/Utils.h"
 

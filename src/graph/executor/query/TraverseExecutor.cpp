@@ -5,7 +5,6 @@
 #include "graph/executor/query/TraverseExecutor.h"
 
 #include "clients/storage/StorageClient.h"
-#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"

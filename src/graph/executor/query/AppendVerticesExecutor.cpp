@@ -6,8 +6,6 @@
 
 #include <iterator>
 
-#include "common/memory/MemoryTracker.h"
-
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;

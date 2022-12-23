@@ -4,7 +4,6 @@
 
 #include "graph/executor/mutate/UpdateExecutor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"

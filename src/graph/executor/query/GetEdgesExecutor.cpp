@@ -4,7 +4,6 @@
 
 #include "graph/executor/query/GetEdgesExecutor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 

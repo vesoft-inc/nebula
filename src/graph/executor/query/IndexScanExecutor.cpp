@@ -4,7 +4,6 @@
 
 #include "graph/executor/query/IndexScanExecutor.h"
 
-#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 
 using nebula::storage::StorageClient;
