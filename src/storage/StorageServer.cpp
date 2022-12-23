@@ -37,7 +37,7 @@
 #ifndef BUILD_STANDALONE
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(local_config, true, "meta client will not retrieve latest configuration from meta");
 #else
 DEFINE_int32(storage_port, 44501, "Storage daemon listening port");
 DEFINE_int32(storage_num_worker_threads, 32, "Number of workers");
