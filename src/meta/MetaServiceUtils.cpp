@@ -34,34 +34,38 @@ nebula::cpp2::ErrorCode backupTable(kvstore::KVStore* kvstore,
 }
 
 bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
-  if (from.get_type() == to.get_type()) {
+  // If not type change, return true. Fixed string will be handled separately.
+  if (from.get_type() == to.get_type() &&
+      from.get_type() != nebula::cpp2::PropertyType::FIXED_STRING) {
     return true;
   }
 
   // fixed string can be converted to string or larger fixed string
-  if (from.get_type() == cpp2::PropertyType::FIXED_STRING) {
-    if (to.get_type() == cpp2::PropertyType::STRING) {
+  if (from.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
+    if (to.get_type() == nebula::cpp2::PropertyType::STRING) {
       return true;
-    } else if (to.get_type() == cpp2::PropertyType::FIXED_STRING) {
+    } else if (to.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       return from.get_type_length() <= to.get_type_length();
     } else {
       return false;
     }
   }
   // int is only allowed to convert to wider int
-  if (from.get_type() == cpp2::PropertyType::INT32) {
-    return to.get_type() == cpp2::PropertyType::INT64;
+  if (from.get_type() == nebula::cpp2::PropertyType::INT32) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64;
   }
-  if (from.get_type() == cpp2::PropertyType::INT16) {
-    return to.get_type() == cpp2::PropertyType::INT64 || to.get_type() == cpp2::PropertyType::INT32;
+  if (from.get_type() == nebula::cpp2::PropertyType::INT16) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT32;
   }
-  if (from.get_type() == cpp2::PropertyType::INT8) {
-    return to.get_type() == cpp2::PropertyType::INT64 ||
-           to.get_type() == cpp2::PropertyType::INT32 || to.get_type() == cpp2::PropertyType::INT16;
+  if (from.get_type() == nebula::cpp2::PropertyType::INT8) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT32 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT16;
   }
   // Float is only allowed to convert to double
-  if (from.get_type() == cpp2::PropertyType::FLOAT) {
-    return to.get_type() == cpp2::PropertyType::DOUBLE;
+  if (from.get_type() == nebula::cpp2::PropertyType::FLOAT) {
+    return to.get_type() == nebula::cpp2::PropertyType::DOUBLE;
   }
   // Forbid all the other conversion, as the old data are too different from the new data.
   return false;
@@ -93,8 +97,10 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           if (!isLegalTypeConversion(it->get_type(), col.get_type())) {
-            LOG(INFO) << "Update colume type " << colName << " from " << it->get_type() << " to "
-                      << col.get_type() << " is not allowed!";
+            LOG(INFO) << "Update colume type " << colName << " from "
+                      << apache::thrift::util::enumNameSafe(it->get_type().get_type()) << " to "
+                      << apache::thrift::util::enumNameSafe(col.get_type().get_type())
+                      << " is not allowed!";
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           *it = col;

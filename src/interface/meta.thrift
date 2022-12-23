@@ -84,8 +84,7 @@ struct ColumnDef {
     5: optional binary          comment,
 }
 
-struct 
- {
+struct SchemaProp {
     1: optional i64      ttl_duration,
     2: optional binary   ttl_col,
     3: optional binary   comment,
