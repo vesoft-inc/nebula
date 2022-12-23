@@ -639,48 +639,6 @@ class FulltextIndexScan : public Explore {
     return isEdge_;
   }
 
-  int32_t schemaId() const {
-    return schemaId_;
-  }
-
-  void setSchemaId(int32_t id) {
-    schemaId_ = id;
-  }
-
-  const std::vector<VertexProp>* vertexProps() const {
-    if (vertexProps_ == nullptr) {
-      vertexProps_ = std::make_unique<std::vector<VertexProp>>();
-      VertexProp prop;
-      prop.tag_ref() = schemaId_;
-      for (auto& col : returnCols_) {
-        prop.props_ref()->push_back(col);
-      }
-      vertexProps_->push_back(prop);
-    }
-    return vertexProps_.get();
-  }
-
-  const std::vector<EdgeProp>* edgeProps() const {
-    if (edgeProps_ == nullptr) {
-      edgeProps_ = std::make_unique<std::vector<EdgeProp>>();
-      EdgeProp prop;
-      prop.type_ref() = schemaId_;
-      for (auto& col : returnCols_) {
-        prop.props_ref()->push_back(col);
-      }
-      edgeProps_->push_back(prop);
-    }
-    return edgeProps_.get();
-  }
-
-  const std::vector<std::string>& returnCols() const {
-    return returnCols_;
-  }
-
-  void setReturnCols(const std::vector<std::string>& returnCols) {
-    returnCols_ = returnCols;
-  }
-
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -697,10 +655,6 @@ class FulltextIndexScan : public Explore {
         isEdge_(isEdge) {}
   std::string index_;
   TextSearchExpression* searchExpr_{nullptr};
-  std::vector<std::string> returnCols_;
-  int32_t schemaId_;
-  mutable std::unique_ptr<std::vector<VertexProp>> vertexProps_ = nullptr;
-  mutable std::unique_ptr<std::vector<EdgeProp>> edgeProps_ = nullptr;
   bool isEdge_{false};
 };
 

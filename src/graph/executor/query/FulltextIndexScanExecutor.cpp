@@ -30,29 +30,29 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
   const auto& space = qctx()->rctx()->session()->space();
   if (!isIntVidType(space)) {
     if (ftIndexScan->isEdge()) {
-      DataSet edges({kSrc, kType, kRank, kDst});
+      DataSet edges({kSrc, kRank, kDst});
       for (auto& item : esResultValue.items) {
-        edges.emplace_back(Row({item.src, ftIndexScan->schemaId(), item.rank, item.dst}));
+        edges.emplace_back(Row({item.src, item.rank, item.dst}));
       }
-      return getEdges(ftIndexScan, std::move(edges));
+      finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
       DataSet vertices({kVid});
       for (auto& item : esResultValue.items) {
         vertices.emplace_back(Row({item.vid}));
       }
-      return getTags(ftIndexScan, std::move(vertices));
+      finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
     }
   } else {
     if (ftIndexScan->isEdge()) {
-      DataSet edges({kSrc, kType, kRank, kDst});
+      DataSet edges({kSrc, kRank, kDst});
       for (auto& item : esResultValue.items) {
         std::string srcStr = item.src;
         std::string dstStr = item.dst;
         int64_t src = *reinterpret_cast<int64_t*>(srcStr.data());
         int64_t dst = *reinterpret_cast<int64_t*>(dstStr.data());
-        edges.emplace_back(Row({src, ftIndexScan->schemaId(), item.rank, dst}));
+        edges.emplace_back(Row({src, item.rank, dst}));
       }
-      return getEdges(ftIndexScan, std::move(edges));
+      finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
       DataSet vertices({kVid});
       for (auto& item : esResultValue.items) {
@@ -60,77 +60,10 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
         int64_t vid = *reinterpret_cast<int64_t*>(vidStr.data());
         vertices.emplace_back(Row({vid}));
       }
-      return getTags(ftIndexScan, std::move(vertices));
+      finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
     }
   }
-}
-
-folly::Future<Status> FulltextIndexScanExecutor::getTags(const FulltextIndexScan* scan,
-                                                         DataSet&& vertices) {
-  SCOPED_TIMER(&execTime_);
-  StorageClient* storageClient = qctx()->getStorageClient();
-  if (vertices.rows.empty()) {
-    return finish(ResultBuilder()
-                      .value(Value(DataSet(scan->colNames())))
-                      .iter(Iterator::Kind::kProp)
-                      .build());
-  }
-  time::Duration getPropsTime;
-  StorageClient::CommonRequestParam param(scan->space(),
-                                          qctx()->rctx()->session()->id(),
-                                          qctx()->plan()->id(),
-                                          qctx()->plan()->isProfileEnabled());
-
-  return DCHECK_NOTNULL(storageClient)
-      ->getProps(param,
-                 std::move(vertices),
-                 scan->vertexProps(),
-                 nullptr,
-                 nullptr,
-                 scan->dedup(),
-                 scan->orderBy(),
-                 scan->limit(qctx()),
-                 scan->filter())
-      .via(runner())
-      .ensure([this, getPropsTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
-      })
-      .thenValue([this, scan](StorageRpcResponse<GetPropResponse>&& rpcResp) {
-        SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
-        return handleResp(std::move(rpcResp), scan->colNames());
-      });
-}
-folly::Future<Status> FulltextIndexScanExecutor::getEdges(const FulltextIndexScan* scan,
-                                                          DataSet&& edges) {
-  SCOPED_TIMER(&execTime_);
-  StorageClient* client = qctx()->getStorageClient();
-  time::Duration getPropsTime;
-  StorageClient::CommonRequestParam param(scan->space(),
-                                          qctx()->rctx()->session()->id(),
-                                          qctx()->plan()->id(),
-                                          qctx()->plan()->isProfileEnabled());
-  return DCHECK_NOTNULL(client)
-      ->getProps(param,
-                 std::move(edges),
-                 nullptr,
-                 scan->edgeProps(),
-                 nullptr,
-                 scan->dedup(),
-                 scan->orderBy(),
-                 scan->limit(qctx()),
-                 scan->filter())
-      .via(runner())
-      .ensure([this, getPropsTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
-      })
-      .thenValue([this, scan](StorageRpcResponse<GetPropResponse>&& rpcResp) {
-        SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
-        return handleResp(std::move(rpcResp), scan->colNames());
-      });
+  return Status::OK();
 }
 
 StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
