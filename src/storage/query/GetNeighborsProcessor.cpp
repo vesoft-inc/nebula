@@ -21,56 +21,11 @@ namespace storage {
 ProcessorCounters kGetNeighborsCounters;
 
 void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
-  }
-}
-
-void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
   try {
-    spaceId_ = req.get_space_id();
-    auto retCode = getSpaceVidLen(spaceId_);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-    if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
-      profileDetailFlag_ = true;
-    }
-    this->planContext_ = std::make_unique<PlanContext>(
-        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
-
-    // build TagContext and EdgeContext
-    retCode = checkAndBuildContexts(req);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-
-    int64_t limit = FLAGS_max_edge_returned_per_vertex;
-    bool random = false;
-    if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
-      if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
-        limit = *(*req.traverse_spec_ref()).limit_ref();
-      }
-      if ((*req.traverse_spec_ref()).random_ref().has_value()) {
-        random = *(*req.traverse_spec_ref()).random_ref();
-      }
-    }
-
-    // todo(doodle): specify by each query
-    if (!FLAGS_query_concurrently) {
-      runInSingleThread(req, limit, random);
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() { this->doProcess(req); });
     } else {
-      runInMultipleThread(req, limit, random);
+      doProcess(req);
     }
   } catch (std::bad_alloc& e) {
     memoryExceeded_ = true;
@@ -80,6 +35,51 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
     onError();
   } catch (...) {
     onError();
+  }
+}
+
+void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
+  spaceId_ = req.get_space_id();
+  auto retCode = getSpaceVidLen(spaceId_);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+
+  // build TagContext and EdgeContext
+  retCode = checkAndBuildContexts(req);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+
+  int64_t limit = FLAGS_max_edge_returned_per_vertex;
+  bool random = false;
+  if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
+    if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
+      limit = *(*req.traverse_spec_ref()).limit_ref();
+    }
+    if ((*req.traverse_spec_ref()).random_ref().has_value()) {
+      random = *(*req.traverse_spec_ref()).random_ref();
+    }
+  }
+
+  // todo(doodle): specify by each query
+  if (!FLAGS_query_concurrently) {
+    runInSingleThread(req, limit, random);
+  } else {
+    runInMultipleThread(req, limit, random);
   }
 }
 

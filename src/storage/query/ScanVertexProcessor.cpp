@@ -18,45 +18,11 @@ namespace storage {
 ProcessorCounters kScanVertexCounters;
 
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
-  }
-}
-
-void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
   try {
-    spaceId_ = req.get_space_id();
-    // negative limit number means no limit
-    limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
-    enableReadFollower_ = req.get_enable_read_from_follower();
-
-    auto retCode = getSpaceVidLen(spaceId_);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (const auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-
-    this->planContext_ = std::make_unique<PlanContext>(
-        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
-
-    retCode = checkAndBuildContexts(req);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (const auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-
-    if (!FLAGS_query_concurrently) {
-      runInSingleThread(req);
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() { this->doProcess(req); });
     } else {
-      runInMultipleThread(req);
+      doProcess(req);
     }
   } catch (std::bad_alloc& e) {
     memoryExceeded_ = true;
@@ -66,6 +32,40 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
     onError();
   } catch (...) {
     onError();
+  }
+}
+
+void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
+  spaceId_ = req.get_space_id();
+  // negative limit number means no limit
+  limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
+  enableReadFollower_ = req.get_enable_read_from_follower();
+
+  auto retCode = getSpaceVidLen(spaceId_);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (const auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+
+  retCode = checkAndBuildContexts(req);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (const auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+
+  if (!FLAGS_query_concurrently) {
+    runInSingleThread(req);
+  } else {
+    runInMultipleThread(req);
   }
 }
 

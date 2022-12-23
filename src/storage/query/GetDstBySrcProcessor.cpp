@@ -21,47 +21,11 @@ namespace storage {
 ProcessorCounters kGetDstBySrcCounters;
 
 void GetDstBySrcProcessor::process(const cpp2::GetDstBySrcRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
-  }
-}
-
-void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
   try {
-    if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
-      profileDetailFlag_ = true;
-      profileDetail("GetDstBySrcProcessorTotal", 0);
-      profileDetail("GetDstBySrcProcessorDedup", 0);
-    }
-
-    spaceId_ = req.get_space_id();
-    auto retCode = getSpaceVidLen(spaceId_);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-    this->planContext_ = std::make_unique<PlanContext>(
-        this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
-
-    // check edgetypes exists
-    retCode = checkAndBuildContexts(req);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      for (auto& p : req.get_parts()) {
-        pushResultCode(retCode, p.first);
-      }
-      onFinished();
-      return;
-    }
-
-    if (!FLAGS_query_concurrently) {
-      runInSingleThread(req);
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() { this->doProcess(req); });
     } else {
-      runInMultipleThread(req);
+      doProcess(req);
     }
   } catch (std::bad_alloc& e) {
     memoryExceeded_ = true;
@@ -71,6 +35,42 @@ void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
     onError();
   } catch (...) {
     onError();
+  }
+}
+
+void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+    profileDetail("GetDstBySrcProcessorTotal", 0);
+    profileDetail("GetDstBySrcProcessorDedup", 0);
+  }
+
+  spaceId_ = req.get_space_id();
+  auto retCode = getSpaceVidLen(spaceId_);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+
+  // check edgetypes exists
+  retCode = checkAndBuildContexts(req);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(retCode, p.first);
+    }
+    onFinished();
+    return;
+  }
+
+  if (!FLAGS_query_concurrently) {
+    runInSingleThread(req);
+  } else {
+    runInMultipleThread(req);
   }
 }
 
