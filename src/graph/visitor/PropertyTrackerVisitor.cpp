@@ -317,7 +317,8 @@ void PropertyTrackerVisitor::visit(AggregateExpression *expr) {
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (funName == "count") {
     auto kind = expr->arg()->kind();
-    if (kind == Expression::Kind::kConstant) {
+    if (kind == Expression::Kind::kVarProperty || kind == Expression::Kind::kConstant ||
+        kind == Expression::Kind::kInputProperty) {
       return;
     }
   }

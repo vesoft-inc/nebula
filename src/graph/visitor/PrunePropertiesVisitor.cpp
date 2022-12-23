@@ -125,11 +125,6 @@ void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
     }
   }
   for (auto *groupItem : node->groupItems()) {
-    if (groupItem->kind() == Expression::Kind::kVarProperty ||
-        groupItem->kind() == Expression::Kind::kInputProperty ||
-        groupItem->kind() == Expression::Kind::kConstant) {
-      continue;
-    }
     status_ = extractPropsFromExpr(groupItem);
     if (!status_.ok()) {
       return;

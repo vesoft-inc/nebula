@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: Prune Properties rule
 
   # The schema id is not fixed in standalone cluster, so we skip it
@@ -393,6 +394,24 @@ Feature: Prune Properties rule
     Given a graph with space named "nba"
     When profiling query:
       """
+      MATCH (v1)-[:like]->(v2)
+      WHERE id(v1) == "Tim Duncan"
+      RETURN count(v2), v1
+      """
+    Then the result should be, in order:
+      | count(v2) | v1                                                                                                          |
+      | 2         | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                             |
+      | 7  | Aggregate      | 6            |                                                                                                                                                                                                                                                                           |
+      | 6  | Project        | 5            |                                                                                                                                                                                                                                                                           |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\": 3}, {\"props\":[\"_tag\"],\"tagId\": 4}, {\"props\":[\"_tag\"],\"tagId\": 5}]" }                                                                                                                                           |
+      | 4  | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\": 3}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\": 5}, {\"props\":[\"name\", \"_tag\"],\"tagId\": 4}]" , "edgeProps": "[{\"type\": 6, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                           |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                           |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                                           |
+    When profiling query:
+      """
       MATCH (v1)-[e:like*1..5]->(v2)
       WHERE id(v1) == "Tim Duncan"
       RETURN count(v2.player.age)
@@ -419,14 +438,14 @@ Feature: Prune Properties rule
       | count(v2) |
       | 24        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                          |
-      | 7  | Aggregate      | 6            |                                                                                                                                                                                        |
-      | 6  | Project        | 5            |                                                                                                                                                                                        |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\", \"name\", \"speciality\"],\"tagId\": 5}, {\"props\":[\"_tag\", \"name\", \"age\"],\"tagId\": 3}, {\"props\":[\"_tag\", \"name\"],\"tagId\": 4}]" } |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 6, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                                                     |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                        |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                        |
-      | 3  | Start          |              |                                                                                                                                                                                        |
+      | id | name           | dependencies | operator info                                                                                                                   |
+      | 7  | Aggregate      | 6            |                                                                                                                                 |
+      | 6  | Project        | 5            |                                                                                                                                 |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\": 5}, {\"props\":[\"_tag\"],\"tagId\": 3}, {\"props\":[\"_tag\"],\"tagId\": 4}]" } |
+      | 4  | Traverse       | 2            | {"vertexProps": "" , "edgeProps": "[{\"type\": 6, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                             |
+      | 2  | Dedup          | 1            |                                                                                                                                 |
+      | 1  | PassThrough    | 3            |                                                                                                                                 |
+      | 3  | Start          |              |                                                                                                                                 |
     When profiling query:
       """
       MATCH p = (v1)-[e:like*1..5]->(v2)
