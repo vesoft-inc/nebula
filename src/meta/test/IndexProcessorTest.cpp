@@ -1580,7 +1580,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   baton.wait();
 }
 
-TEST(IndexProcessorTest, CreateFTIndexTest) {
+TEST(IndexProcessorTest, DISABLED_CreateFTIndexTest) {
   fs::TempDir rootPath("/tmp/CreateFTIndexTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
@@ -1899,7 +1899,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   }
 }
 
-TEST(IndexProcessorTest, DropWithFTIndexTest) {
+TEST(IndexProcessorTest, DISABLED_DropWithFTIndexTest) {
   fs::TempDir rootPath("/tmp/DropWithFTIndexTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
@@ -1950,7 +1950,7 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
   }
 }
 
-TEST(IndexProcessorTest, AlterWithFTIndexTest) {
+TEST(IndexProcessorTest, DISABLED_AlterWithFTIndexTest) {
   fs::TempDir rootPath("/tmp/AlterWithFTIndexTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
