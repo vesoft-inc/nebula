@@ -109,8 +109,19 @@ namespace graph {
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
     case Sentence::Kind::kDeleteTags:
-    case Sentence::Kind::kDeleteEdges:
+    case Sentence::Kind::kDeleteEdges: {
+      return PermissionManager::canWriteData(session, vctx);
+    }
     case Sentence::Kind::kAdminJob: {
+      auto *adminJobSentence = dynamic_cast<AdminJobSentence *>(sentence);
+      if (adminJobSentence == nullptr) {
+        // should not happend.
+        LOG(WARNING) << "sentence is not AdminJobSentence";
+        return Status::PermissionError("No permission to write space.");
+      }
+      if (adminJobSentence->needWriteSpace()) {
+        return PermissionManager::canWriteSpace(session);
+      }
       return PermissionManager::canWriteData(session, vctx);
     }
     case Sentence::Kind::kDescribeTag:
