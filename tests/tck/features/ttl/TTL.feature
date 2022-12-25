@@ -112,7 +112,7 @@ Feature: TTLTest
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG woman(name string, email string, age int32, gender string, row_timestamp timestamp) ttl_duration = 0, ttl_col = "row_timestamp";
+      CREATE TAG woman(name string, email string, age int, gender string, row_timestamp timestamp) ttl_duration = 0, ttl_col = "row_timestamp";
       """
     Then the execution should be successful
     When executing query:
@@ -126,7 +126,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Tag     | Create Tag                                                                                                                                       |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       ALTER TAG woman ttl_duration = 100, ttl_col = "age";
@@ -138,7 +138,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Tag     | Create Tag                                                                                                                                            |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
     When executing query:
       """
       ALTER TAG woman CHANGE (age int64);
@@ -155,7 +155,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Tag     | Create Tag                                                                                                                                       |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       ALTER TAG woman CHANGE (age int64);
@@ -227,7 +227,7 @@ Feature: TTLTest
     Then a ExecutionError should be raised at runtime:
     When executing query:
       """
-      CREATE EDGE work2(name string, email string,  age int32, gender string, start_time timestamp) ttl_duration = 0, ttl_col = "start_time";
+      CREATE EDGE work2(name string, email string,  age int, gender string, start_time timestamp) ttl_duration = 0, ttl_col = "start_time";
       """
     Then the execution should be successful
     When executing query:
@@ -236,7 +236,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                                                                                |
-      | "work2" | 'CREATE EDGE `work2` (\n `name` string NULL,\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 0, ttl_col = "start_time"' |
+      | "work2" | 'CREATE EDGE `work2` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 0, ttl_col = "start_time"' |
     When executing query:
       """
       CREATE EDGE edge_only_ttl_col(name string, email string, age int, gender string, row_timestamp timestamp) ttl_col = "row_timestamp";
@@ -260,7 +260,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                                                                                 |
-      | "work2" | 'CREATE EDGE `work2` (\n `name` string NULL,\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 50, ttl_col = "start_time"' |
+      | "work2" | 'CREATE EDGE `work2` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 50, ttl_col = "start_time"' |
     When executing query:
       """
       ALTER EDGE work2 ttl_col = "name";
@@ -277,7 +277,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                                                            |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 200, ttl_col = "start_time"' |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL,\n `start_time` timestamp NULL\n) ttl_duration = 200, ttl_col = "start_time"' |
     When executing query:
       """
       ALTER EDGE work2 Drop (start_time);
@@ -289,7 +289,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                 |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       ALTER Edge work2  ttl_duration = 100, ttl_col = "age";
@@ -301,7 +301,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                      |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
     When executing query:
       """
       ALTER EDGE work2  CHANGE (age int64);
@@ -318,7 +318,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                 |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int32 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       ALTER EDGE work2 CHANGE (age int64);
