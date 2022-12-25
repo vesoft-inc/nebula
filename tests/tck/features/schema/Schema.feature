@@ -124,7 +124,7 @@ Feature: Insert string vid of vertex and edge
     # alter tag
     When executing query:
       """
-      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age string), DROP (gender)
+      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age int), DROP (gender)
       """
     Then the execution should be successful
     # drop not exist prop
