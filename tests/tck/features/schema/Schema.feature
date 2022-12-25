@@ -142,7 +142,7 @@ Feature: Insert string vid of vertex and edge
       | Field           | Type        | Null  | Default | Comment |
       | "name"          | "string"    | "YES" | EMPTY   | EMPTY   |
       | "email"         | "string"    | "YES" | "NULL"  | EMPTY   |
-      | "age"           | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "age"           | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "row_timestamp" | "timestamp" | "YES" | 2020    | EMPTY   |
       | "col1"          | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "col2"          | "string"    | "YES" | EMPTY   | EMPTY   |
