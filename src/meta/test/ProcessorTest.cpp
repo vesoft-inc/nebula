@@ -1454,7 +1454,7 @@ TEST(ProcessorTest, AlterTagTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_10";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
@@ -2042,7 +2042,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_10";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
