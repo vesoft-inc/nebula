@@ -172,7 +172,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Tag     | Create Tag                                                                                                                                        |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""'  |
     When executing query:
       """
       CREATE EDGE work(number string, start_time timestamp);
@@ -335,7 +335,7 @@ Feature: TTLTest
       """
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                  |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""'  |
     When executing query:
       """
       CREATE EDGE player(id int, name string, age int, address string, score float);
@@ -378,7 +378,7 @@ Feature: TTLTest
       SHOW CREATE EDGE player;
       """
     Then the result should be, in any order:
-      | Edge     | Create Edge                                                                                                                                    |
+      | Edge     | Create Edge                                                                                                                                     |
       | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `age` int64 NULL,\n `address` string NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
     And drop the used space
 
