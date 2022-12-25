@@ -171,8 +171,8 @@ Feature: TTLTest
       SHOW CREATE TAG woman;
       """
     Then the result should be, in any order:
-      | Tag     | Create Tag                                                                                                                                        |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""'  |
+      | Tag     | Create Tag                                                                                                                                       |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       CREATE EDGE work(number string, start_time timestamp);
@@ -334,8 +334,8 @@ Feature: TTLTest
       SHOW CREATE EDGE work2;
       """
     Then the result should be, in any order:
-      | Edge    | Create Edge                                                                                                                  |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""'  |
+      | Edge    | Create Edge                                                                                                                 |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       CREATE EDGE player(id int, name string, age int, address string, score float);
