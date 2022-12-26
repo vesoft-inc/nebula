@@ -28,7 +28,8 @@ namespace graph {
 // Validate columns of schema.
 // Check validity of columns and fill to thrift structure.
 static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
-                              meta::cpp2::Schema &schema) {
+                              meta::cpp2::Schema &schema,
+                              bool isAlter = false) {
   for (auto &spec : columnSpecs) {
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
@@ -58,6 +59,12 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     }
     if (!column.nullable_ref().has_value()) {
       column.nullable_ref() = true;
+    }
+    // Should report an error when altering the column
+    // which doesn't have default value to not nullable
+    if (isAlter && !column.nullable_ref().value() && !column.default_value_ref().has_value()) {
+      return Status::SemanticError("Column `%s' must have a default value if it's not nullable",
+                                   spec->name()->c_str());
     }
     schema.columns_ref().value().emplace_back(std::move(column));
   }
@@ -92,7 +99,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
           return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
         }
       }
-      NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
+      NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema, true));
     }
 
     schemaItem.schema_ref() = std::move(schema);
