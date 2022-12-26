@@ -75,7 +75,7 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *
  * * Must implement in derived class
  *   // extra initialize work could do here
- *   bool init()
+ *   void init()
  *
  *   // Main interface to process logs, listener need to apply the committed log entry to their
  *   // state machine. Once apply succeeded, user should call persist() to make their progress
@@ -166,7 +166,7 @@ class Listener : public raftex::RaftPart {
   /**
    * @brief extra initialize work could do here
    */
-  virtual bool init() = 0;
+  virtual void init() = 0;
 
   /**
    * @brief Get last apply id from persistence storage, used in initialization
@@ -194,7 +194,7 @@ class Listener : public raftex::RaftPart {
    */
   void onLostLeadership(TermID term) override {
     UNUSED(term);
-    LOG(DFATAL) << "Should not reach here";
+    LOG(FATAL) << "Should not reach here";
   }
 
   /**
@@ -204,7 +204,7 @@ class Listener : public raftex::RaftPart {
    */
   void onElected(TermID term) override {
     UNUSED(term);
-    LOG(DFATAL) << "Should not reach here";
+    LOG(FATAL) << "Should not reach here";
   }
 
   /**
@@ -214,7 +214,7 @@ class Listener : public raftex::RaftPart {
    */
   void onLeaderReady(TermID term) override {
     UNUSED(term);
-    LOG(DFATAL) << "Should not reach here";
+    LOG(FATAL) << "Should not reach here";
   }
 
   /**

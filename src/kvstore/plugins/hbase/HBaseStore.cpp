@@ -212,8 +212,7 @@ ResultCode HBaseStore::rangeWithPrefix(GraphSpaceID spaceId,
 ResultCode HBaseStore::sync(GraphSpaceID spaceId, PartitionID partId) {
   UNUSED(spaceId);
   UNUSED(partId);
-  LOG(DFATAL) << "Unimplement";
-  return ResultCode::ERR_UNSUPPORTED;
+  LOG(FATAL) << "Unimplement";
 }
 
 ResultCode HBaseStore::multiRemove(GraphSpaceID spaceId, std::vector<std::string>& keys) {
@@ -404,13 +403,11 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
 }
 
 ResultCode HBaseStore::ingest(GraphSpaceID) {
-  LOG(DFATAL) << "Unimplement";
-  return ResultCode::ERR_UNSUPPORTED;
+  LOG(FATAL) << "Unimplement";
 }
 
 int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID, std::vector<PartitionID>>&) {
-  LOG(DFATAL) << "Unimplement";
-  return 0;
+  LOG(FATAL) << "Unimplement";
 }
 
 }  // namespace kvstore

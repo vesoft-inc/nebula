@@ -181,11 +181,11 @@ class HBaseStore : public KVStore {
                          KVCallback cb);
 
   void asyncAtomicOp(GraphSpaceID, PartitionID, raftex::AtomicOp, KVCallback) override {
-    LOG(DFATAL) << "Not supported yet!";
+    LOG(FATAL) << "Not supported yet!";
   }
 
   void asyncAtomicOp(GraphSpaceID, PartitionID, std::string&& multiValues, KVCallback) override {
-    LOG(DFATAL) << "Not supported yet!";
+    LOG(FATAL) << "Not supported yet!";
   }
 
   ResultCode ingest(GraphSpaceID spaceId) override;

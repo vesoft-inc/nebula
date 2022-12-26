@@ -20,8 +20,6 @@ DiskManager::DiskManager(const std::vector<std::string>& dataPaths,
     Paths* paths = new Paths();
     paths_.store(paths);
     size_t index = 0;
-
-    // TODO(vee): Add initialize function to avoid using LOG(FATAL) in constructor.
     for (const auto& path : dataPaths) {
       auto absolute = boost::filesystem::absolute(path);
       if (!boost::filesystem::exists(absolute)) {
@@ -95,7 +93,7 @@ void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const 
     paths_.store(newPaths, std::memory_order_release);
     folly::rcu_retire(oldPaths, std::default_delete<Paths>());
   } catch (boost::filesystem::filesystem_error& e) {
-    LOG(DFATAL) << "Invalid path: " << e.what();
+    LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
 
@@ -116,7 +114,7 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
     paths_.store(newPaths, std::memory_order_release);
     folly::rcu_retire(oldPaths, std::default_delete<Paths>());
   } catch (boost::filesystem::filesystem_error& e) {
-    LOG(DFATAL) << "Invalid path: " << e.what();
+    LOG(FATAL) << "Invalid path: " << e.what();
   }
 }
 

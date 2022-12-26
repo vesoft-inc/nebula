@@ -46,7 +46,7 @@ class ESListener : public Listener {
   /**
    * @brief Init work: get vid length, get es client
    */
-  bool init() override;
+  void init() override;
 
   /**
    * @brief Send data by es client

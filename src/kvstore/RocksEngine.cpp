@@ -47,8 +47,6 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
     walPath_ = folly::stringPrintf("%s/nebula/%d", walPath.c_str(), spaceId);
   }
   auto path = folly::stringPrintf("%s/data", dataPath_.c_str());
-
-  // TODO(vee): Add initialize function to avoid using LOG(FATAL) in constructor.
   if (FileUtils::fileType(path.c_str()) == FileType::NOTEXIST) {
     if (readonly) {
       LOG(FATAL) << "Path " << path << " not exist";

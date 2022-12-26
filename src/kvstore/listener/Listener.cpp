@@ -39,10 +39,7 @@ Listener::Listener(GraphSpaceID spaceId,
 void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
 
-  if (!init()) {
-    // TODO(vee): return bool to avoid using LOG(FATAL)
-    LOG(FATAL) << "Listener init failed";
-  }
+  init();
 
   lastLogId_ = wal_->lastLogId();
   lastLogTerm_ = wal_->lastLogTerm();

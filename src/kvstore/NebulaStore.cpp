@@ -343,7 +343,7 @@ std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
     return std::make_unique<RocksEngine>(
         spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
   } else {
-    LOG(DFATAL) << "Unknown engine type " << FLAGS_engine_type;
+    LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
     return nullptr;
   }
 }
@@ -627,7 +627,7 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
     listener = std::make_shared<ESListener>(
         spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
   } else {
-    LOG(DFATAL) << "Should not reach here";
+    LOG(FATAL) << "Should not reach here";
     return nullptr;
   }
   raftService_->addPartition(listener);

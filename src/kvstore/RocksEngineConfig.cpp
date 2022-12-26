@@ -248,8 +248,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
     auto walDir = folly::stringPrintf("%s/rocksdb_wal/%d", FLAGS_rocksdb_wal_dir.c_str(), spaceId);
     if (fs::FileUtils::fileType(walDir.c_str()) == fs::FileType::NOTEXIST) {
       if (!fs::FileUtils::makeDir(walDir)) {
-        LOG(DFATAL) << "makeDir " << walDir << " failed";
-        return rocksdb::Status::InvalidArgument();
+        LOG(FATAL) << "makeDir " << walDir << " failed";
       }
     }
     LOG(INFO) << "set rocksdb wal of space " << spaceId << " to " << walDir;
