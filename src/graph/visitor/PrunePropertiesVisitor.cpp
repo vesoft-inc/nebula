@@ -441,7 +441,11 @@ void PrunePropertiesVisitor::visit(Unwind *node) {
 
 void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
   const auto &alias = node->alias();
-  if (propsUsed_.hasAlias(alias)) {
+  auto expr = node->unwindExpr();
+  auto kind = expr->kind();
+  // unwind e.start_year as a
+  if (propsUsed_.hasAlias(alias) ||
+      (kind != Expression::Kind::kVarProperty && kind != Expression::Kind::kInputProperty)) {
     status_ = extractPropsFromExpr(node->unwindExpr());
     if (!status_.ok()) {
       return;
