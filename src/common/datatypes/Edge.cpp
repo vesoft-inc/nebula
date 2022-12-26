@@ -107,13 +107,7 @@ bool Edge::operator<(const Edge& rhs) const {
 }
 
 bool Edge::operator==(const Edge& rhs) const {
-  if (type != rhs.type && type != -rhs.type) {
-    return false;
-  }
-  if (type == rhs.type) {
-    return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking && props == rhs.props;
-  }
-  return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking && props == rhs.props;
+  return keyEqual(rhs);
 }
 
 void Edge::reverse() {

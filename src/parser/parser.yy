@@ -2969,6 +2969,9 @@ match_sentences
         s->setDistinct();
         $$ = s;
     }
+    | match_sentences KW_INTERSECT match_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | match_sentences KW_MINUS match_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    ;
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
