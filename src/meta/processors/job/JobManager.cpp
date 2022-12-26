@@ -42,7 +42,8 @@ JobManager* JobManager::getInstance() {
   return &inst;
 }
 
-bool JobManager::init(nebula::kvstore::KVStore* store) {
+bool JobManager::init(nebula::kvstore::KVStore* store, AdminClient* adminClient) {
+  adminClient_ = adminClient;
   if (store == nullptr) {
     return false;
   }
@@ -542,7 +543,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::list<TaskDescription>> JobManager::getAllT
   return taskDescriptions;
 }
 
-nebula::cpp2::ErrorCode JobManager::addJob(JobDescription jobDesc, AdminClient* client) {
+nebula::cpp2::ErrorCode JobManager::addJob(JobDescription jobDesc) {
   auto mutexIter = muJobFinished_.find(jobDesc.getSpace());
   if (mutexIter == muJobFinished_.end()) {
     mutexIter =
@@ -569,7 +570,6 @@ nebula::cpp2::ErrorCode JobManager::addJob(JobDescription jobDesc, AdminClient* 
     }
     return rc;
   }
-  adminClient_ = client;
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -815,7 +815,7 @@ nebula::cpp2::ErrorCode JobManager::stopJob(GraphSpaceID spaceId, JobID jobId) {
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
-    GraphSpaceID spaceId, AdminClient* client, const std::vector<int32_t>& jobIds) {
+    GraphSpaceID spaceId, const std::vector<int32_t>& jobIds) {
   auto muIter = muJobFinished_.find(spaceId);
   if (muIter == muJobFinished_.end()) {
     muIter = muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
@@ -823,7 +823,6 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
   std::lock_guard<std::recursive_mutex> lk(*(muIter->second));
   std::set<JobID> jobIdSet(jobIds.begin(), jobIds.end());
   std::map<JobID, JobDescription> allJobs;
-  adminClient_ = client;
   std::unique_ptr<kvstore::KVIterator> iter;
   auto jobPre = MetaKeyUtils::jobPrefix(spaceId);
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobPre, &iter);

@@ -80,7 +80,7 @@ class JobManagerTest : public ::testing::Test {
         });
     jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
     jobMgr->kvStore_ = kv_.get();
-    jobMgr->init(kv_.get());
+    jobMgr->init(kv_.get(), adminClient_.get());
     return jobMgr;
   }
 
@@ -106,7 +106,7 @@ TEST_F(JobManagerTest, AddJob) {
   GraphSpaceID spaceId = 1;
   JobID jobId = 2;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::COMPACT);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   // If there is a failed data balance job, a new job cannot be added
@@ -135,7 +135,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
   GraphSpaceID spaceId = 1;
   JobID jobId = 11;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_TAG_INDEX, paras);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -150,7 +150,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   GraphSpaceID spaceId = 1;
   JobID jobId = 11;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_EDGE_INDEX, paras);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -213,7 +213,7 @@ TEST_F(JobManagerTest, StatsJob) {
   GraphSpaceID spaceId = 1;
   JobID jobId = 12;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::STATS);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -247,18 +247,18 @@ TEST_F(JobManagerTest, JobPriority) {
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 13;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
-  auto rc1 = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc1 = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   JobID jobId2 = 14;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::LEADER_BALANCE);
-  auto rc2 = jobMgr->addJob(jobDesc2, adminClient_.get());
+  auto rc2 = jobMgr->addJob(jobDesc2);
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   GraphSpaceID spaceId2 = 2;
   JobID jobId3 = 15;
   JobDescription jobDesc3(spaceId2, jobId3, cpp2::JobType::STATS);
-  auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
+  auto rc3 = jobMgr->addJob(jobDesc3);
   ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   ASSERT_EQ(3, jobMgr->jobSize());
@@ -307,12 +307,12 @@ TEST_F(JobManagerTest, JobDeduplication) {
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 15;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
-  auto rc1 = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc1 = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   JobID jobId2 = 16;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::LEADER_BALANCE);
-  auto rc2 = jobMgr->addJob(jobDesc2, adminClient_.get());
+  auto rc2 = jobMgr->addJob(jobDesc2);
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   ASSERT_EQ(2, jobMgr->jobSize());
@@ -323,7 +323,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   auto jobExist =
       jobMgr->checkOnRunningJobExist(spaceId, jobDesc3.getJobType(), jobDesc3.getParas(), jId3);
   if (!jobExist) {
-    auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
+    auto rc3 = jobMgr->addJob(jobDesc3);
     ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -333,7 +333,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   jobExist =
       jobMgr->checkOnRunningJobExist(spaceId, jobDesc4.getJobType(), jobDesc4.getParas(), jId4);
   if (!jobExist) {
-    auto rc4 = jobMgr->addJob(jobDesc4, adminClient_.get());
+    auto rc4 = jobMgr->addJob(jobDesc4);
     ASSERT_NE(rc4, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -360,7 +360,7 @@ TEST_F(JobManagerTest, LoadJobDescription) {
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
   jobDesc1.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc1.setStatus(cpp2::JobStatus::FINISHED);
-  auto rc = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   ASSERT_EQ(jobDesc1.getSpace(), 1);
   ASSERT_EQ(jobDesc1.getJobId(), 1);
@@ -387,13 +387,13 @@ TEST_F(JobManagerTest, ShowJobs) {
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
   jobDesc1.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc1.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jobDesc1, adminClient_.get());
+  jobMgr->addJob(jobDesc1);
 
   JobID jobId2 = 2;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::FLUSH);
   jobDesc2.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc2.setStatus(cpp2::JobStatus::FAILED);
-  jobMgr->addJob(jobDesc2, adminClient_.get());
+  jobMgr->addJob(jobDesc2);
 
   auto statusOrShowResult = jobMgr->showJobs(spaceId);
   LOG(INFO) << "after show jobs";
@@ -424,14 +424,14 @@ TEST_F(JobManagerTest, ShowJobsFromMultiSpace) {
   JobDescription jd1(spaceId1, jobId1, cpp2::JobType::COMPACT);
   jd1.setStatus(cpp2::JobStatus::RUNNING);
   jd1.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd1, adminClient_.get());
+  jobMgr->addJob(jd1);
 
   GraphSpaceID spaceId2 = 2;
   JobID jobId2 = 2;
   JobDescription jd2(spaceId2, jobId2, cpp2::JobType::FLUSH);
   jd2.setStatus(cpp2::JobStatus::RUNNING);
   jd2.setStatus(cpp2::JobStatus::FAILED);
-  jobMgr->addJob(jd2, adminClient_.get());
+  jobMgr->addJob(jd2);
 
   auto statusOrShowResult = jobMgr->showJobs(spaceId2);
   LOG(INFO) << "after show jobs";
@@ -456,7 +456,7 @@ TEST_F(JobManagerTest, ShowJob) {
   JobDescription jd(spaceId, jobId1, cpp2::JobType::COMPACT);
   jd.setStatus(cpp2::JobStatus::RUNNING);
   jd.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd, adminClient_.get());
+  jobMgr->addJob(jd);
 
   JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
@@ -522,7 +522,7 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
   JobDescription jd(spaceId1, jobId1, cpp2::JobType::COMPACT);
   jd.setStatus(cpp2::JobStatus::RUNNING);
   jd.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd, adminClient_.get());
+  jobMgr->addJob(jd);
 
   JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
@@ -601,7 +601,7 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
+    auto nJobRecovered = jobMgr->recoverJob(spaceId);
     ASSERT_EQ(nebula::value(nJobRecovered), 3);
     std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
     while (jobMgr->jobSize() != 0) {
@@ -650,14 +650,14 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, {base + 1});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 2});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + 2});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 3});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + 3});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + nJob + 4});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + nJob + 4});
     ASSERT_EQ(nebula::value(nJobRecovered), 1);
 
     std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
@@ -724,10 +724,10 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, {base + 1});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
+    nJobRecovered = jobMgr->recoverJob(spaceId);
     ASSERT_EQ(nebula::value(nJobRecovered), 1);
   }
 }
@@ -771,7 +771,7 @@ TEST_F(JobManagerTest, NotStoppableJob) {
     }
 
     JobDescription jobDesc(spaceId, jobId, type);
-    auto code = jobMgr->addJob(jobDesc, adminClient_.get());
+    auto code = jobMgr->addJob(jobDesc);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun
@@ -852,7 +852,7 @@ TEST_F(JobManagerTest, StoppableJob) {
     }
 
     JobDescription jobDesc(spaceId, jobId, type);
-    auto code = jobMgr->addJob(jobDesc, adminClient_.get());
+    auto code = jobMgr->addJob(jobDesc);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun
