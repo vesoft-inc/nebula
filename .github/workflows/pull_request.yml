@@ -57,7 +57,7 @@ jobs:
       matrix:
         os:
           - centos7
-          - ubuntu2004
+        #  - ubuntu2004
         compiler:
           - gcc-9.3
           - clang-10
