@@ -395,6 +395,8 @@ class RowParser {
           row.emplace_back(std::numeric_limits<double>::quiet_NaN());
         } else if (values[i] == "<-NaN>") {
           row.emplace_back(-std::numeric_limits<double>::quiet_NaN());
+        } else if (values[i] == "<now>") {
+          row.emplace_back(Value(time::WallClock::fastNowInSec()));
         } else {
           row.emplace_back(transformMap[typeList_[i]](values[i]));
         }
@@ -454,6 +456,7 @@ class RowParser {
       {"string", [](const std::string& str) { return Value(str); }},
       {"float", [](const std::string& str) { return Value(folly::to<double>(str)); }},
       {"bool", [](const std::string& str) { return Value(str == "true" ? true : false); }},
+      {"fixed_string", [](const std::string& str) { return Value(str); }},
       {"date", [this](const std::string& str) { return Value(stringToDate(str)); }},
       {"time", [this](const std::string& str) { return Value(stringToTime(str)); }},
       {"datetime", [this](const std::string& str) { return Value(stringToDateTime(str)); }},
@@ -514,6 +517,7 @@ class SchemaParser {
       {"int", ::nebula::cpp2::PropertyType::INT64},
       {"double", ::nebula::cpp2::PropertyType::DOUBLE},
       {"string", ::nebula::cpp2::PropertyType::STRING},
+      {"fixed_string", ::nebula::cpp2::PropertyType::FIXED_STRING},
       {"bool", ::nebula::cpp2::PropertyType::BOOL},
       {"date", ::nebula::cpp2::PropertyType::DATE},
       {"time", ::nebula::cpp2::PropertyType::TIME},
