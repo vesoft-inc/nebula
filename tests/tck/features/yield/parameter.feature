@@ -304,15 +304,15 @@ Feature: Parameter
       | "Manu Ginobili1-8422829895182987733" |
       | "Tony Parker1803925327675532371"     |
     # aggregate expressions
-    ## crash and fixed later
-    #When executing query:
-    #  """
-    #  $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
-    #  yield avg($var.likeness)+$p1 as v;
-    #  """
-    #Then the result should be, in any order:
-    #  | v |
-    #  | 2 |
+    # crash and fixed later
+    # When executing query:
+    # """
+    # $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
+    # yield avg($var.likeness)+$p1 as v;
+    # """
+    # Then the result should be, in any order:
+    # | v |
+    # | 2 |
     When executing query:
       """
       go from "Tim Duncan" over like yield like._dst as id
@@ -324,7 +324,7 @@ Feature: Parameter
     # expression nesting
     When executing query:
       """
-      go from "Tim Duncan" over like yield properties($$).age as age 
+      go from "Tim Duncan" over like yield properties($$).age as age
       | yield avg(abs(hash($-.age+$p1)+$p1)) as v
       """
     Then the result should be, in any order:
@@ -333,12 +333,10 @@ Feature: Parameter
     # BAD_TYPE
     When executing query:
       """
-      go from "Tim Duncan" over like yield properties($$).age as age 
+      go from "Tim Duncan" over like yield properties($$).age as age
       | yield abs($-.age+$p3) as v
       """
     Then the result should be, in any order:
       | v        |
       | BAD_TYPE |
       | BAD_TYPE |
-
-      
