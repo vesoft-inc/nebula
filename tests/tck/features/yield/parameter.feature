@@ -47,7 +47,7 @@ Feature: Parameter
       | v                                 |
       | {a: 3, b: false, c: "Tim Duncan"} |
 
-  Scenario: [param-test-004]cypher with parameters
+  Scenario: [param-test-004] cypher with parameters
     # where clause
     When executing query:
       """
@@ -283,3 +283,62 @@ Feature: Parameter
       GO FROM $p1.dst OVER like YIELD DISTINCT $$.player.name AS name
       """
     Then a SyntaxError should be raised at runtime: Variable definition conflicts with a parameter near `$p1'
+
+  Scenario: [param-test-012] expression with parameters
+    When executing query:
+      """
+      go from "Tim Duncan" over like yield like._dst as id
+      | yield $-.id+$p1+hash(abs($p1)+$-.id) as v
+      """
+    Then the result should be, in any order:
+      | v                                    |
+      | "Manu Ginobili1-8422829895182987733" |
+      | "Tony Parker1803925327675532371"     |
+    When executing query:
+      """
+      $var=go from "Tim Duncan" over like yield like._dst as id;
+      yield $var.id+$p1+hash(abs($p1)+$var.id) as v
+      """
+    Then the result should be, in any order:
+      | v                                    |
+      | "Manu Ginobili1-8422829895182987733" |
+      | "Tony Parker1803925327675532371"     |
+    # aggregate expressions
+    ## crash and fixed later
+    #When executing query:
+    #  """
+    #  $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
+    #  yield avg($var.likeness)+$p1 as v;
+    #  """
+    #Then the result should be, in any order:
+    #  | v |
+    #  | 2 |
+    When executing query:
+      """
+      go from "Tim Duncan" over like yield like._dst as id
+      | yield count(distinct abs($p1)+$-.id) as v
+      """
+    Then the result should be, in any order:
+      | v |
+      | 2 |
+    # expression nesting
+    When executing query:
+      """
+      go from "Tim Duncan" over like yield properties($$).age as age 
+      | yield avg(abs(hash($-.age+$p1)+$p1)) as v
+      """
+    Then the result should be, in any order:
+      | v    |
+      | 40.5 |
+    # BAD_TYPE
+    When executing query:
+      """
+      go from "Tim Duncan" over like yield properties($$).age as age 
+      | yield abs($-.age+$p3) as v
+      """
+    Then the result should be, in any order:
+      | v        |
+      | BAD_TYPE |
+      | BAD_TYPE |
+
+      
