@@ -79,6 +79,10 @@
 namespace nebula {
 namespace meta {
 
+AdminClient* MetaServiceHandler::getAdminClient() {
+  return adminClient_.get();
+}
+
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpace(
     const cpp2::CreateSpaceReq& req) {
   auto* processor = CreateSpaceProcessor::instance(kvstore_);

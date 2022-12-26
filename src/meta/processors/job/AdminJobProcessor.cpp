@@ -96,7 +96,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       for (size_t i = 0; i < paras.size(); i++) {
         jobIds.push_back(std::stoi(paras[i]));
       }
-      auto ret = jobMgr_->recoverJob(spaceId_, adminClient_, jobIds);
+      auto ret = jobMgr_->recoverJob(spaceId_, jobIds);
       if (nebula::ok(ret)) {
         result.recovered_job_num_ref() = nebula::value(ret);
       } else {
@@ -145,7 +145,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
   }
 
   JobDescription jobDesc(spaceId_, nebula::value(jobId), type, paras);
-  auto errorCode = jobMgr_->addJob(std::move(jobDesc), adminClient_);
+  auto errorCode = jobMgr_->addJob(std::move(jobDesc));
   if (errorCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
     result.job_id_ref() = nebula::value(jobId);
   }
