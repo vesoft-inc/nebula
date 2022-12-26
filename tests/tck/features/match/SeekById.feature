@@ -25,6 +25,23 @@ Feature: Match seek by id
       | 'Jonathon Simmons' |
       | 'Klay Thompson'    |
       | 'Dejounte Murray'  |
+    # start vid finder don't support variable currently
+    When executing query:
+      """
+      WITH [1, 2, 3] AS coll
+      UNWIND coll AS vid
+      MATCH (v) WHERE id(v) == vid
+      RETURN v;
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      WITH [1, 2, 3] AS coll
+      UNWIND coll AS vid
+      MATCH (v) WHERE id(v) == "Tony Parker" OR id(v) == vid
+      RETURN v;
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: basic logical not
     When executing query:
