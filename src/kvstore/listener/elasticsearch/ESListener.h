@@ -62,14 +62,14 @@ class ESListener : public Listener {
   bool persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) override;
 
   /**
-   * @brief Get commit log id and commit log term from persistance storage, called in start()
+   * @brief Get commit log id and commit log term from persistence storage, called in start()
    *
    * @return std::pair<LogID, TermID>
    */
   std::pair<LogID, TermID> lastCommittedLogId() override;
 
   /**
-   * @brief Get last apply id from persistance storage, used in initialization
+   * @brief Get last apply id from persistence storage, used in initialization
    *
    * @return LogID Last apply log id
    */

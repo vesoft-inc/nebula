@@ -195,7 +195,7 @@ nebula::cpp2::ErrorCode JobManager::prepareRunJob(JobExecutor* jobExec,
                                                   const JobDescription& jobDesc,
                                                   JbOp op) {
   if (jobExec == nullptr) {
-    LOG(INFO) << "Unreconized job type "
+    LOG(INFO) << "Unrecognized job type "
               << apache::thrift::util::enumNameSafe(jobDesc.getJobType());
     return nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
   }

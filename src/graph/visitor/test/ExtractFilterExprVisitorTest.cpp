@@ -450,7 +450,7 @@ TEST_F(ExtractFilterExprVisitorTest, TestMultiCanNotPush) {
     // expect: can not push
     // expect expr: A1 or (A2 and (A3 or (A4 and B1))) or B2
     // remain: nullptr
-    // comment: has been splitted, however, the total expr can not push
+    // comment: has been split, however, the total expr can not push
     std::vector<Expression*> A, B;
     getExprVec(A, B, 4, 2);
 

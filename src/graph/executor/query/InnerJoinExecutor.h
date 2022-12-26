@@ -58,8 +58,8 @@ class InnerJoinExecutor : public JoinExecutor {
   bool mv_{false};
 };
 
-// No diffrence with inner join in processing data, but the dependencies would be executed in
-// paralell.
+// No difference with inner join in processing data, but the dependencies would be executed in
+// parallel.
 class HashInnerJoinExecutor final : public InnerJoinExecutor {
  public:
   HashInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);

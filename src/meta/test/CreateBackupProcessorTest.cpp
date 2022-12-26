@@ -101,7 +101,7 @@ TEST(ProcessorTest, CreateBackupTest) {
   kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { b.post(); });
   b.wait();
 
-  // resgister active hosts, same with heartbeat
+  // register active hosts, same with heartbeat
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
   std::vector<kvstore::KV> time;

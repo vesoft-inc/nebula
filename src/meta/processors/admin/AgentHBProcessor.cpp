@@ -78,7 +78,7 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
     std::vector<cpp2::ServiceInfo> serviceList;
     for (const auto& [addr, role] : services) {
       if (addr == agentAddr) {
-        // skip iteself
+        // skip itself
         agentCnt++;
         continue;
       }

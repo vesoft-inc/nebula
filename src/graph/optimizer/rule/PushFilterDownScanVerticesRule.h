@@ -19,7 +19,7 @@ namespace opt {
 //  Benefits:
 //   1. Filter data early to optimize performance
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +-------------+-------------+

@@ -21,7 +21,7 @@ extern stats::CounterId kNumActiveQueries;
 extern stats::CounterId kNumSlowQueries;
 extern stats::CounterId kNumQueryErrors;
 extern stats::CounterId kNumQueryErrorsLeaderChanges;
-// A sequential sentence is treated as multiple sentences seperated by `;`
+// A sequential sentence is treated as multiple sentences separated by `;`
 extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;

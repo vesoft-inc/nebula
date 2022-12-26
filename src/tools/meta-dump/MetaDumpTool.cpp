@@ -67,7 +67,7 @@ class MetaDumper {
         }
 
         if (!found) {
-          LOG(INFO) << "Meta version= Unkown";
+          LOG(INFO) << "Meta version= Unknown";
         }
       }
     }

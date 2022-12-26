@@ -218,7 +218,7 @@ Status GraphService::auth(const std::string& username, const std::string& passwo
     return Status::OK();
   }
 
-  // Authenticate via diffrent auth types
+  // Authenticate via different auth types
   if (FLAGS_auth_type == "password") {
     // Auth with PasswordAuthenticator
     auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient);

@@ -1321,7 +1321,7 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
-  // Tag with ttl to creat index on ttl col
+  // Tag with ttl to create index on ttl col
   {
     cpp2::CreateTagIndexReq req;
     req.space_id_ref() = 1;
