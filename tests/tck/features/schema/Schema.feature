@@ -836,6 +836,7 @@ Feature: Insert string vid of vertex and edge
       DROP SPACE issue2009;
       """
     Then the execution should be successful
+    Then drop the used space
 
   Scenario: alter a tag to add an column which doesn't have a default value to not nullable
     Given an empty graph
@@ -906,6 +907,7 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE person ADD (gender bool NOT NULL);
       """
     Then a SemanticError should be raised at runtime: Column `gender' must have a default value if it's not nullable
+    Then drop the used space
 
   Scenario: Don't allow DOT in schema name
     Given an empty graph
@@ -918,3 +920,4 @@ Feature: Insert string vid of vertex and edge
       CREATE TAG `tag.prop`()
       """
     Then a SyntaxError should be raised at runtime: Don't allow DOT in label: near `.prop`()'
+    Then drop the used space
