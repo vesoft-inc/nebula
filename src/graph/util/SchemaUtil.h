@@ -61,10 +61,10 @@ class SchemaUtil final {
   static std::string typeToString(const meta::cpp2::ColumnTypeDef& col);
   static std::string typeToString(const meta::cpp2::ColumnDef& col);
 
-  // Returns the coresponding Value type of the given PropertyType.
+  // Returns the corresponding Value type of the given PropertyType.
   static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
 
-  // Validates wether the value type matches the ColumnTypeDef.
+  // Validates whether the value type matches the ColumnTypeDef.
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
   static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);
   static bool isValidVid(const Value& value);

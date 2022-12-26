@@ -4708,7 +4708,7 @@ TEST(ProcessorTest, DropZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
-    // Drop zone which is droped
+    // Drop zone which is dropped
     cpp2::DropZoneReq req;
     req.zone_name_ref() = "zone_0";
     auto* processor = DropZoneProcessor::instance(kv.get());

@@ -498,12 +498,12 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
   if (colPosMap.empty()) {
     return;
   }
-  // offset is the start posistion of index values
+  // offset is the start position of index values
   size_t offset = sizeof(PartitionID) + sizeof(IndexID);
   std::bitset<16> nullableBit;
   int8_t nullableColPosit = 15;
   if (indexNullable_) {
-    // key has been truncated ouside, it **ONLY** contains partId, indexId, indexValue and
+    // key has been truncated outside, it **ONLY** contains partId, indexId, indexValue and
     // nullableBits. So the last two bytes is the nullableBits
     auto bitOffset = key.size() - sizeof(uint16_t);
     auto v = *reinterpret_cast<const uint16_t*>(key.data() + bitOffset);

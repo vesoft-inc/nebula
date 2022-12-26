@@ -22,9 +22,9 @@ namespace storage {
  * 2. happy_path:
  *      use 3 background thread to run 1, 2, 4, 8 sub tasks
  * 3. gen task failed directly
- *      check task manger will return the right error code
+ *      check task manager will return the right error code
  * 4. some task return error code.
- *      check task manger will return the right error code
+ *      check task manager will return the right error code
  * 5. cancel task in task queue
  *      5.1 cancel_a_running_task_with_only_1_sub_task
  *      5.2 cancel_1_task_in_a_2_tasks_queue

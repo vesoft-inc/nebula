@@ -95,7 +95,7 @@
 #define COMPILER_BARRIER() asm volatile("" ::: "memory")
 #endif  // COMPILER_BARRIER
 
-// Formated logging
+// Formatted logging
 #define FLOG_FATAL(...) LOG(FATAL) << folly::stringPrintf(__VA_ARGS__)
 #define FLOG_ERROR(...) LOG(ERROR) << folly::stringPrintf(__VA_ARGS__)
 #define FLOG_WARN(...) LOG(WARNING) << folly::stringPrintf(__VA_ARGS__)

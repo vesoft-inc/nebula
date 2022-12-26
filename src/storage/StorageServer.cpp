@@ -174,7 +174,7 @@ bool StorageServer::start() {
 
 #ifdef BUILD_STANDALONE
   if (FLAGS_add_local_host) {
-    // meta allready ready when standalone.
+    // meta already ready when standalone.
     auto ret = metaClient_->checkLocalMachineRegistered();
     if (ret.ok()) {
       if (!ret.value()) {

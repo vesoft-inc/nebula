@@ -173,10 +173,10 @@ Status LookupValidator::validateYield() {
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
-    return Status::SemanticError("unsupport input/variable property expression in yield.");
+    return Status::SemanticError("unsupported input/variable property expression in yield.");
   }
   if (exprProps_.hasSrcDstTagProperty()) {
-    return Status::SemanticError("unsupport src/dst property expression in yield.");
+    return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
   extractExprProps();
   return Status::OK();
