@@ -57,6 +57,13 @@ Feature: Predicate
       | False |
     When executing query:
       """
+      RETURN ALL(a IN [2, 3, NULL] WHERE a > 0) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |
+    When executing query:
+      """
       RETURN Any(a IN [2, 3] WHERE a > 1) AS r
       """
     Then the result should be, in any order:

@@ -135,7 +135,7 @@ Feature: Pipe/Variable
       $v1 = YIELD "Tony Parker" AS a;
       LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD player.name AS name, $v1.a
       """
-    Then a SemanticError should be raised at runtime: unsupport input/variable property expression in yield.
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield.
 
   @skip
   Scenario: pipe lookup results
