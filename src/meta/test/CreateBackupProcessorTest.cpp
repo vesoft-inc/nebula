@@ -177,7 +177,7 @@ TEST(ProcessorTest, CreateBackupTest) {
     std::vector<std::string> spaces = {"test_space"};
     req.spaces_ref() = std::move(spaces);
     JobManager* jobMgr = JobManager::getInstance();
-    ASSERT_TRUE(jobMgr->init(kv.get()));
+    ASSERT_TRUE(jobMgr->init(kv.get(), client.get()));
     auto* processor = CreateBackupProcessor::instance(kv.get(), client.get());
     auto f = processor->getFuture();
     processor->process(req);
