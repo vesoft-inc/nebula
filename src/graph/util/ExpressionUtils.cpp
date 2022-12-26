@@ -544,7 +544,8 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
   auto operandMatcher = [](const Expression *operandExpr) -> bool {
     return (operandExpr->kind() == Expression::Kind::kUnaryNot ||
             (operandExpr->isRelExpr() && operandExpr->kind() != Expression::Kind::kRelREG) ||
-            operandExpr->isLogicalExpr());
+            operandExpr->kind() == Expression::Kind::kLogicalAnd ||
+            operandExpr->kind() == Expression::Kind::kLogicalOr);
   };
 
   // Match the root expression
