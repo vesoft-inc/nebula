@@ -65,10 +65,11 @@ using std::string_literals::operator""s;
  * |            | Float     | NoTruncate    | with each type of Value |         |
  * |            | Bool      | INCLUDE_BEGIN |                         |         |
  * |            | String    | INCLUDE_END   |                         |         |
- * |            | Time      | EXCLUDE_BEGIN |                         |         |
- * |            | Date      | EXCLUDE_END   |                         |         |
- * |            | DateTime  | POSITIVE_INF  |                         |         |
- * |            | Compound  | NEGATIVE_INF  |                         |         |
+ * |            | FixString | EXCLUDE_BEGIN |                         |         |
+ * |            | Time      | EXCLUDE_END   |                         |         |
+ * |            | Date      | POSITIVE_INF  |                         |         |
+ * |            | DateTime  | NEGATIVE_INF  |                         |         |
+ * |            | Compound  |               |                         |         |
  * |            | Nullable  |               |                         |         |
  * |            | Geography |               |                         |         |
  * └────────────┴───────────┴───────────────┴─────────────────────────┴─────────┘
@@ -172,13 +173,15 @@ class IndexScanTest : public ::testing::Test {
       auto value = writer.moveEncodedStr();
       CHECK(ret[0].insert({key, value}).second);
       RowReaderWrapper reader(schema.get(), folly::StringPiece(value), schemaVer);
+      auto ttlProperty = CommonUtils::ttlValue(schema.get(), reader.get());
+      auto ttlValue = ttlProperty.ok() ? IndexKeyUtils::indexVal(ttlProperty.value()) : "";
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
         auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index.get()).value();
         auto indexKeys = IndexKeyUtils::vertexIndexKeys(
             8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue));
         for (auto& indexKey : indexKeys) {
-          CHECK(ret[j + 1].insert({indexKey, ""}).second);
+          CHECK(ret[j + 1].insert({indexKey, ttlValue}).second);
         }
       }
     }
@@ -344,15 +347,14 @@ class IndexScanStringType : public IndexScanTest {
       }
       result.emplace_back(std::move(res).row());
     }
-    std::vector<Row> result2(result.size());
+    std::vector<Row> actual(result.size());
     for (size_t j = 0; j < acquiredColumns.size(); j++) {
       int p = initCtx.retColMap[acquiredColumns[j]];
       for (size_t i = 0; i < result.size(); i++) {
-        result2[i].emplace_back(result[i][p]);
+        actual[i].emplace_back(result[i][p]);
       }
     }
-    result = result2;
-    EXPECT_EQ(result, expect) << "Fail at case " << case_;
+    EXPECT_EQ(actual, expect) << "Fail at case " << case_;
   }
 
   std::vector<Row> expect(const std::vector<Row>& rows,
@@ -1999,6 +2001,276 @@ TEST_F(IndexScanStringType, String4) {
   }
 }
 
+TEST_F(IndexScanScalarType, FixedString) {
+  auto rows = R"(
+    fixed_string | fixed_string
+    aaa          | aaa
+    aaaaa        | aaaaa
+    aaaaaaa      | aaaaaaa
+    abc          | abc
+    abcd         | abcd
+    abcde        | <null>
+    abcdef       | abcdef
+    abcdefg      | abcdefg
+    abcdf        | abcdf
+    abd          | abd
+    zoo          | zoo
+  )"_row;
+  auto schema = R"(
+    a | fixed_string | 5 | false
+    b | fixed_string | 5 | true
+  )"_schema;
+  // Since it is a index on fixed_string property, index field length is same as length of
+  // fixed_string property
+  auto indices = R"(
+    TAG(t,0)
+    (ia,1): a(5)
+    (ib,2): b(5)
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (auto& iter : kv) {
+    for (auto& item : iter) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  // Case 1: fixed string in [x, x]
+  std::vector<ColumnHint> columnHints;
+  {
+    columnHints = {makeColumnHint("a", Value("abc"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(3), "case1.1");
+    columnHints = {makeColumnHint("b", Value("abc"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(3), "case1.2");
+    columnHints = {makeColumnHint("a", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(5, 6, 7), "case1.3");
+    columnHints = {makeColumnHint("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(6, 7), "case1.4");
+  }
+  // Case 2: fixed string in [x, INF)
+  {
+    columnHints = {makeBeginColumnHint<true>("a", Value("abc"))};
+    checkTag(
+        kvstore.get(), schema, indices[0], columnHints, expect(3, 4, 5, 6, 7, 8, 9, 10), "case2.1");
+    columnHints = {makeBeginColumnHint<true>("b", Value("abc"))};
+    checkTag(
+        kvstore.get(), schema, indices[1], columnHints, expect(3, 4, 6, 7, 8, 9, 10), "case2.2");
+    columnHints = {makeBeginColumnHint<true>("a", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(5, 6, 7, 8, 9, 10), "case2.3");
+    columnHints = {makeBeginColumnHint<true>("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(6, 7, 8, 9, 10), "case2.4");
+    columnHints = {makeBeginColumnHint<true>("a", Value("well"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(10), "case2.5");
+    columnHints = {makeBeginColumnHint<true>("b", Value("well"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(10), "case2.6");
+  }
+  // Case 3: fixed string in (x, INF)
+  {
+    columnHints = {makeBeginColumnHint<false>("a", Value("abc"))};
+    checkTag(
+        kvstore.get(), schema, indices[0], columnHints, expect(4, 5, 6, 7, 8, 9, 10), "case3.1");
+    columnHints = {makeBeginColumnHint<false>("b", Value("abc"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(4, 6, 7, 8, 9, 10), "case3.2");
+    columnHints = {makeBeginColumnHint<false>("a", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(8, 9, 10), "case3.3");
+    columnHints = {makeBeginColumnHint<false>("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(8, 9, 10), "case3.4");
+    columnHints = {makeBeginColumnHint<false>("a", Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(10), "case3.5");
+    columnHints = {makeBeginColumnHint<false>("b", Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(10), "case3.6");
+  }
+  // Case 4: fixed string in [x, y)
+  {
+    columnHints = {makeColumnHint<true, false>("a", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(1, 2, 3, 4), "case4.1");
+    columnHints = {makeColumnHint<true, false>("b", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(1, 2, 3, 4), "case4.2");
+    columnHints = {makeColumnHint<true, false>("a", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(3, 4, 5, 6, 7, 8), "case4.3");
+    columnHints = {makeColumnHint<true, false>("b", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(3, 4, 6, 7, 8), "case4.4");
+    columnHints = {makeColumnHint<true, false>("a", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(5, 6, 7, 8), "case4.5");
+    columnHints = {makeColumnHint<true, false>("b", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(6, 7, 8), "case4.6");
+  }
+  // Case 5: fixed string in [x, y]
+  {
+    columnHints = {makeColumnHint<true, true>("a", Value("aaaaa"), Value("abcde"))};
+    checkTag(
+        kvstore.get(), schema, indices[0], columnHints, expect(1, 2, 3, 4, 5, 6, 7), "case5.1");
+    columnHints = {makeColumnHint<true, true>("b", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(1, 2, 3, 4, 6, 7), "case5.2");
+    columnHints = {makeColumnHint<true, true>("a", Value("abc"), Value("abd"))};
+    checkTag(
+        kvstore.get(), schema, indices[0], columnHints, expect(3, 4, 5, 6, 7, 8, 9), "case5.3");
+    columnHints = {makeColumnHint<true, true>("b", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(3, 4, 6, 7, 8, 9), "case5.4");
+    columnHints = {makeColumnHint<true, true>("a", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(5, 6, 7, 8, 9), "case5.5");
+    columnHints = {makeColumnHint<true, true>("b", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(6, 7, 8, 9), "case5.6");
+  }
+  // Case 6: fixed string in (x, y]
+  {
+    columnHints = {makeColumnHint<false, true>("a", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(3, 4, 5, 6, 7), "case6.1");
+    columnHints = {makeColumnHint<false, true>("b", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(3, 4, 6, 7), "case6.2");
+    columnHints = {makeColumnHint<false, true>("a", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(4, 5, 6, 7, 8, 9), "case6.3");
+    columnHints = {makeColumnHint<false, true>("b", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(4, 6, 7, 8, 9), "case6.4");
+    columnHints = {makeColumnHint<false, true>("a", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(8, 9), "case6.5");
+    columnHints = {makeColumnHint<false, true>("b", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(8, 9), "case6.6");
+  }
+  // Case 7: fixed string in (x, y)
+  {
+    columnHints = {makeColumnHint<false, false>("a", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(3, 4), "case7.1");
+    columnHints = {makeColumnHint<false, false>("b", Value("aaaaa"), Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(3, 4), "case7.2");
+    columnHints = {makeColumnHint<false, false>("a", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(4, 5, 6, 7, 8), "case7.3");
+    columnHints = {makeColumnHint<false, false>("b", Value("abc"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(4, 6, 7, 8), "case7.4");
+    columnHints = {makeColumnHint<false, false>("a", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(8), "case7.5");
+    columnHints = {makeColumnHint<false, false>("b", Value("abcde"), Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(8), "case7.6");
+  }
+  // Case 8: fixed string in (-INF, y]
+  {
+    columnHints = {makeEndColumnHint<true>("a", Value("aaaaa"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(0, 1, 2), "case8.1");
+    columnHints = {makeEndColumnHint<true>("b", Value("aaaaa"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(0, 1, 2), "case8.2");
+    columnHints = {makeEndColumnHint<true>("a", Value("abcde"))};
+    checkTag(
+        kvstore.get(), schema, indices[0], columnHints, expect(0, 1, 2, 3, 4, 5, 6, 7), "case8.3");
+    columnHints = {makeEndColumnHint<true>("b", Value("abcde"))};
+    checkTag(
+        kvstore.get(), schema, indices[1], columnHints, expect(0, 1, 2, 3, 4, 6, 7), "case8.4");
+    columnHints = {makeEndColumnHint<true>("a", Value("abd"))};
+    checkTag(kvstore.get(),
+             schema,
+             indices[0],
+             columnHints,
+             expect(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+             "case8.5");
+    columnHints = {makeEndColumnHint<true>("b", Value("abd"))};
+    checkTag(kvstore.get(),
+             schema,
+             indices[1],
+             columnHints,
+             expect(0, 1, 2, 3, 4, 6, 7, 8, 9),
+             "case8.6");
+  }
+  // Case 9: fixed string in (-INF, y)
+  {
+    columnHints = {makeEndColumnHint<false>("a", Value("aaaaa"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(0), "case9.1");
+    columnHints = {makeEndColumnHint<false>("b", Value("aaaaa"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(0), "case9.2");
+    columnHints = {makeEndColumnHint<false>("a", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(0, 1, 2, 3, 4), "case9.3");
+    columnHints = {makeEndColumnHint<false>("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[1], columnHints, expect(0, 1, 2, 3, 4), "case9.4");
+    columnHints = {makeEndColumnHint<false>("a", Value("abd"))};
+    checkTag(kvstore.get(),
+             schema,
+             indices[0],
+             columnHints,
+             expect(0, 1, 2, 3, 4, 5, 6, 7, 8),
+             "case9.5");
+    columnHints = {makeEndColumnHint<false>("b", Value("abd"))};
+    checkTag(
+        kvstore.get(), schema, indices[1], columnHints, expect(0, 1, 2, 3, 4, 6, 7, 8), "case9.6");
+  }
+}
+
+TEST_F(IndexScanScalarType, CompoundFixedString) {
+  auto rows = R"(
+    fixed_string | fixed_string
+    aaa          | aaa
+    abc          | aaa
+    abcde        | abcde
+    abcde        | <null>
+    abcde        | abcdef
+    abcde        | abcdefg
+    abcde        | abcdf
+    abcde        | abd
+    abd          | abd
+  )"_row;
+  auto schema = R"(
+    a | fixed_string | 5 | false
+    b | fixed_string | 5 | true
+  )"_schema;
+  // Since it is a index on fixed_string property, index field length is same as length of
+  // fixed_string property
+  auto indices = R"(
+    TAG(t,1)
+    (iab,2): a(5), b(5)
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (auto& iter : kv) {
+    for (auto& item : iter) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  std::vector<ColumnHint> columnHints;
+  // prefix
+  {
+    columnHints = {makeColumnHint("a", Value("abcde"))};
+    // null is ordered at last
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5, 6, 7, 3), "case1.1");
+  }
+  // prefix + prefix
+  {
+    columnHints = {makeColumnHint("a", Value("abcde")), makeColumnHint("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5), "case2.1");
+    columnHints = {makeColumnHint("a", Value("abcde")), makeColumnHint("b", Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(7), "case2.2");
+  }
+  // prefix + range
+  {
+    // where a = "abcde" and b < "abd"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeEndColumnHint<false>("b", Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5, 6), "case3.1");
+    // where a = "abcde" and b <= "abd"
+    columnHints = {makeColumnHint("a", Value("abcde")), makeEndColumnHint<true>("b", Value("abd"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5, 6, 7), "case3.2");
+    // where a = "abcde" and b > "abcde"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeBeginColumnHint<false>("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(6, 7), "case3.3");
+    // where a = "abcde" and b >= "abcde"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeBeginColumnHint<true>("b", Value("abcde"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5, 6, 7), "case3.4");
+    // where a = "abcde" and "abcde" < b < "abcdf"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeColumnHint<false, false>("b", Value("abcde"), Value("abcdf"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(), "case3.5");
+    // where a = "abcde" and "abcde" <= b < "abcdf"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeColumnHint<true, false>("b", Value("abcde"), Value("abcdf"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5), "case3.6");
+    // where a = "abcde" and "abcde" < b <= "abcdf"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeColumnHint<false, true>("b", Value("abcde"), Value("abcdf"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(6), "case3.7");
+    // where a = "abcde" and "abcde" <= b <= "abcdf"
+    columnHints = {makeColumnHint("a", Value("abcde")),
+                   makeColumnHint<true, true>("b", Value("abcde"), Value("abcdf"))};
+    checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2, 4, 5, 6), "case3.8");
+  }
+}
+
 TEST_F(IndexScanScalarType, Nullable) {
   std::shared_ptr<nebula::meta::NebulaSchemaProvider> schema;
   auto kvstore = std::make_unique<MockKVStore>();
@@ -2137,8 +2409,42 @@ TEST_F(IndexScanScalarType, Nullable) {
   }
 }
 
-TEST_F(IndexScanTest, TTL) {
-  // TODO(hs.zhang): add unittest
+TEST_F(IndexScanScalarType, TTL) {
+  auto rows = R"(
+    int
+    1
+    100
+    <now>
+    <null>
+  )"_row;
+  auto schema = R"(
+    a   | int | | true
+  )"_schema;
+  auto indices = R"(
+    TAG(t,1)
+    (i1,2):a
+  )"_index(schema);
+
+  int64_t ttlDuration = 1;
+  // set a ttl property to schema
+  meta::cpp2::SchemaProp schemaProp;
+  schemaProp.ttl_duration_ref() = ttlDuration;
+  schemaProp.ttl_col() = "a";
+  schema->setProp(std::move(schemaProp));
+
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (auto& iter : kv) {
+    for (auto& item : iter) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  std::vector<ColumnHint> columnHints;
+  columnHints = {makeBeginColumnHint<false>("a", Value(100))};
+  checkTag(kvstore.get(), schema, indices[0], columnHints, expect(2), "ttl_not_expired");
+  sleep(ttlDuration + 1);
+  columnHints = {makeBeginColumnHint<false>("a", Value(100))};
+  checkTag(kvstore.get(), schema, indices[0], columnHints, expect(), "ttl_expired");
 }
 
 TEST_F(IndexScanScalarType, Time) {
