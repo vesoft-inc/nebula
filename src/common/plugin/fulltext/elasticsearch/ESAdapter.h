@@ -60,6 +60,11 @@ class ESAdapter {
  public:
   explicit ESAdapter(std::vector<ESClient>&& clients);
   ESAdapter() = default;
+  ESAdapter(const ESAdapter& adapter) : clients_(adapter.clients_) {}
+  ESAdapter& operator=(const ESAdapter& adapter) {
+    clients_ = adapter.clients_;
+    return *this;
+  }
   virtual ~ESAdapter() = default;
   virtual void setClients(std::vector<ESClient>&& clients);
   virtual Status createIndex(const std::string& name);

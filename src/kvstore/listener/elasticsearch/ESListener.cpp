@@ -20,6 +20,11 @@ void ESListener::init() {
     LOG(FATAL) << "vid length error";
   }
   vIdLen_ = vRet.value();
+  auto vidTypeRet = schemaMan_->getSpaceVidType(spaceId_);
+  if (!vidTypeRet.ok()) {
+    LOG(FATAL) << "vid type error:" << vidTypeRet.status().message();
+  }
+  isIntVid_ = vidTypeRet.value() == nebula::cpp2::PropertyType::INT64;
 
   auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!cRet.ok() || cRet.value().empty()) {
@@ -34,7 +39,7 @@ void ESListener::init() {
       password = *c.pwd_ref();
     }
     std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    esClients.emplace_back(HttpClient::instance(), protocol, host.toString(), user, password);
+    esClients.emplace_back(HttpClient::instance(), protocol, host.toRawString(), user, password);
   }
   esAdapter_.setClients(std::move(esClients));
   auto sRet = schemaMan_->toGraphSpaceName(spaceId_);
@@ -82,28 +87,38 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, tagId);
     if (!ftIndexRes.ok()) {
+      LOG(ERROR) << ftIndexRes.status().message();
       return;
     }
     auto ftIndex = std::move(ftIndexRes).value();
+    if (ftIndex.empty()) {
+      return;
+    }
     auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, value);
     if (reader == nullptr) {
       LOG(ERROR) << "get tag reader failed, tagID " << tagId;
       return;
     }
-    if (ftIndex.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
+    for (auto& index : ftIndex) {
+      if (index.second.get_fields().size() > 1) {
+        LOG(ERROR) << "Only one field will create fulltext index";
+      }
+      auto field = index.second.get_fields().front();
+      auto v = reader->getValueByName(field);
+      if (v.type() != Value::Type::STRING) {
+        LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+      }
+      std::string indexName = index.first;
+      std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
+      vid = truncateVid(vid);
+      std::string text = std::move(v).getStr();
+      callback(type, indexName, vid, "", "", 0, text);
     }
-    auto field = ftIndex.second.get_fields().front();
-    auto v = reader->getValueByName(field);
-    if (v.type() != Value::Type::STRING) {
-      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
-    }
-    std::string indexName = ftIndex.first;
-    std::string vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    std::string text = std::move(v).getStr();
-    callback(type, indexName, vid, "", "", 0, text);
   } else if (nebula::NebulaKeyUtils::isEdge(vIdLen_, key)) {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
+    if (edgeType < 0) {
+      return;
+    }
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, edgeType);
     if (!ftIndexRes.ok()) {
       return;
@@ -114,20 +129,24 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       LOG(ERROR) << "get edge reader failed, schema ID " << edgeType;
       return;
     }
-    if (ftIndex.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
+    for (auto& index : ftIndex) {
+      if (index.second.get_fields().size() > 1) {
+        LOG(ERROR) << "Only one field will create fulltext index";
+      }
+      auto field = index.second.get_fields().front();
+      auto v = reader->getValueByName(field);
+      if (v.type() != Value::Type::STRING) {
+        LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+      }
+      std::string indexName = index.first;
+      std::string src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
+      std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
+      int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
+      std::string text = std::move(v).getStr();
+      src = truncateVid(src);
+      dst = truncateVid(dst);
+      callback(type, indexName, "", src, dst, rank, text);
     }
-    auto field = ftIndex.second.get_fields().front();
-    auto v = reader->getValueByName(field);
-    if (v.type() != Value::Type::STRING) {
-      LOG(ERROR) << "Can't create fulltext index on type " << v.type();
-    }
-    std::string indexName = ftIndex.first;
-    std::string src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
-    std::string dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
-    int64_t rank = NebulaKeyUtils::getRank(vIdLen_, key);
-    std::string text = std::move(v).getStr();
-    callback(type, indexName, "", src, dst, rank, text);
   }
 }
 
@@ -224,7 +243,6 @@ void ESListener::processLogs() {
   BatchHolder batch;
   while (iter->valid()) {
     lastApplyId = iter->logId();
-
     auto log = iter->logMsg();
     if (log.empty()) {
       // skip the heartbeat
@@ -267,7 +285,7 @@ void ESListener::processLogs() {
       case OP_BATCH_WRITE: {
         auto batchData = decodeBatchValue(log);
         for (auto& op : batchData) {
-          // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
+          // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is ignored
           switch (op.first) {
             case BatchLogType::OP_BATCH_PUT: {
               batch.put(op.second.first.toString(), op.second.second.toString());
@@ -344,6 +362,13 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
         lastApplyLogId_);
   }
   return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
+}
+
+std::string ESListener::truncateVid(const std::string& vid) {
+  if (!isIntVid_) {
+    return folly::rtrim(folly::StringPiece(vid), [](char c) { return c == '\0'; }).toString();
+  }
+  return vid;
 }
 
 }  // namespace kvstore

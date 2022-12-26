@@ -20,10 +20,6 @@ folly::Future<Status> IndexScanExecutor::execute() {
 folly::Future<Status> IndexScanExecutor::indexScan() {
   StorageClient *storageClient = qctx_->getStorageClient();
   auto *lookup = asNode<IndexScan>(node());
-  if (lookup->isEmptyResultSet()) {
-    DataSet dataSet({"dummy"});
-    return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
-  }
 
   const auto &ictxs = lookup->queryContext();
   auto iter = std::find_if(

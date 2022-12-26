@@ -29,7 +29,7 @@ class StopAdminTaskProcessor {
   /**
    * @brief Entry point of stopping admin task.
    *
-   * @param req Reuqest for stopping admin task.
+   * @param req Request for stopping admin task.
    */
   void process(const cpp2::StopTaskRequest& req);
 

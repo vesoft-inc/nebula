@@ -32,7 +32,7 @@ class CreateSessionProcessor : public BaseProcessor<cpp2::CreateSessionResp> {
 
 /**
  * @brief Update sessions and get killed queries. Then the graph can kill
- *        its queries by the reponse.
+ *        its queries by the response.
  *
  */
 class UpdateSessionsProcessor : public BaseProcessor<cpp2::UpdateSessionsResp> {

@@ -254,7 +254,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @brief Set the Tag Prop object
    *
    * @param tagName Tag name.
-   * @param prop Porperty name.
+   * @param prop Property name.
    * @param value Value to set.
    */
   void setTagProp(const std::string& tagName, const std::string& prop, nebula::Value value) {

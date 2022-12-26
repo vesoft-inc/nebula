@@ -18,7 +18,7 @@ namespace opt {
 //   1. Limit data early to optimize performance
 //  Query example:
 //   GO 2 STEPS FROM "Tim Duncan" over like YIELD like._dst LIMIT [2,3]
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +----------+----------+

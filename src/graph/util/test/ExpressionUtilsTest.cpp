@@ -764,5 +764,68 @@ TEST_F(ExpressionUtilsTest, expandExpression) {
     ASSERT_EQ(expected, target->toString());
   }
 }
+
+TEST_F(ExpressionUtilsTest, simplifyLogicalExpr) {
+  {
+    auto filter = parse("A and true");
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(filter));
+    auto expected = "A";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("A and false");
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(filter));
+    auto expected = "false";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("A or true");
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(filter));
+    auto expected = "true";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("A or false");
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(filter));
+    auto expected = "A";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("A or 2 > 1");
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(filter));
+    auto expected = "(A OR (2>1))";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("true and true and true");
+    auto newFilter = ExpressionUtils::flattenInnerLogicalAndExpr(filter);
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(newFilter));
+    auto expected = "true";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("false or false or false");
+    auto newFilter = ExpressionUtils::flattenInnerLogicalOrExpr(filter);
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(newFilter));
+    auto expected = "false";
+    ASSERT_EQ(expected, target->toString());
+  }
+  {
+    auto filter = parse("(A and B) or (2 > 1) or (C and true) or (D or true)");
+    auto newFilter = ExpressionUtils::flattenInnerLogicalOrExpr(filter);
+    auto target =
+        ExpressionUtils::simplifyLogicalExpr(static_cast<const LogicalExpression *>(newFilter));
+    auto expected = "true";
+    ASSERT_EQ(expected, target->toString());
+  }
+}
+
 }  // namespace graph
 }  // namespace nebula

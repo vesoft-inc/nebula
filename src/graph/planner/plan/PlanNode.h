@@ -42,6 +42,8 @@ class PlanNode {
     kEdgeIndexRangeScan,
     kScanVertices,
     kScanEdges,
+    kFulltextIndexScan,
+
     // ------------------
     kFilter,
     kUnion,

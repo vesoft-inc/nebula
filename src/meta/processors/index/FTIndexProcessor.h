@@ -47,7 +47,7 @@ class DropFTIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
 };
 
 /**
- * @brief Get all the fulltext index info by scaning fulltext index prefix.
+ * @brief Get all the fulltext index info by scanning fulltext index prefix.
  *
  */
 class ListFTIndexesProcessor : public BaseProcessor<cpp2::ListFTIndexesResp> {

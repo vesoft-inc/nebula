@@ -2375,7 +2375,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     return Status::Error("User not exist");
   }
   auto lockedSince = userLoginLockTime_[account];
-  auto passwordAttemtRemain = userPasswordAttemptsRemain_[account];
+  auto passwordAttemptRemain = userPasswordAttemptsRemain_[account];
 
   // If lockedSince is non-zero, it means the account has been locked
   if (lockedSince != 0) {
@@ -2393,7 +2393,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     // Clear lock state and reset attempts
     userLoginLockTime_.assign_if_equal(account, lockedSince, 0);
     userPasswordAttemptsRemain_.assign_if_equal(
-        account, passwordAttemtRemain, FLAGS_failed_login_attempts);
+        account, passwordAttemptRemain, FLAGS_failed_login_attempts);
   }
 
   if (iter->second != password) {
@@ -2402,14 +2402,14 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
       return Status::Error("Invalid password");
     }
 
-    // If the password is not correct and passwordAttemtRemain > 0,
-    // Allow another attemp
-    passwordAttemtRemain = userPasswordAttemptsRemain_[account];
-    if (passwordAttemtRemain > 0) {
-      auto newAttemtRemain = passwordAttemtRemain - 1;
-      userPasswordAttemptsRemain_.assign_if_equal(account, passwordAttemtRemain, newAttemtRemain);
-      if (newAttemtRemain == 0) {
-        // If the remaining attemps is 0, failed to authenticate
+    // If the password is not correct and passwordAttemptRemain > 0,
+    // Allow another attempt
+    passwordAttemptRemain = userPasswordAttemptsRemain_[account];
+    if (passwordAttemptRemain > 0) {
+      auto newAttemptRemain = passwordAttemptRemain - 1;
+      userPasswordAttemptsRemain_.assign_if_equal(account, passwordAttemptRemain, newAttemptRemain);
+      if (newAttemptRemain == 0) {
+        // If the remaining attempts is 0, failed to authenticate
         // Block user login
         userLoginLockTime_.assign_if_equal(account, 0, time::WallClock::fastNowInSec());
         return Status::Error(
@@ -2419,8 +2419,8 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
             account.c_str(),
             FLAGS_password_lock_time_in_secs);
       }
-      LOG(ERROR) << "Invalid password, remaining attempts: " << newAttemtRemain;
-      return Status::Error("Invalid password, remaining attempts: %d", newAttemtRemain);
+      LOG(ERROR) << "Invalid password, remaining attempts: " << newAttemptRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", newAttemptRemain);
     }
   }
 
@@ -2540,7 +2540,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   }
 
   // info used in the agent, only set once
-  // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
+  // TODO(spw): if we could add data path(disk) dynamically in the future, it should be
   // reported every time it changes
   if (!dirInfoReported_) {
     nebula::cpp2::DirInfo dirInfo;
@@ -3458,8 +3458,8 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   return indexes;
 }
 
-StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSchemaFromCache(
-    GraphSpaceID spaceId, int32_t schemaId) {
+StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId, const std::string& field) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3469,11 +3469,32 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it.second.get_depend_schema().get_edge_type()
                   : it.second.get_depend_schema().get_tag_id();
-    if (it.second.get_space_id() == spaceId && id == schemaId) {
+    // There will only be one field. However, in order to minimize changes, the IDL was not modified
+    auto f = it.second.fields()->front();
+    if (it.second.get_space_id() == spaceId && id == schemaId && f == field) {
       return std::make_pair(it.first, it.second);
     }
   }
   return Status::IndexNotFound();
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId) {
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  std::unordered_map<std::string, cpp2::FTIndex> ret;
+  for (auto& it : metadata.fulltextIndexMap_) {
+    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it.second.get_depend_schema().get_edge_type()
+                  : it.second.get_depend_schema().get_tag_id();
+    if (it.second.get_space_id() == spaceId && id == schemaId) {
+      ret[it.first] = it.second;
+    }
+  }
+  return ret;
 }
 
 StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID spaceId,

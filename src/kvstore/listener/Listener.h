@@ -169,7 +169,7 @@ class Listener : public raftex::RaftPart {
   virtual void init() = 0;
 
   /**
-   * @brief Get last apply id from persistance storage, used in initialization
+   * @brief Get last apply id from persistence storage, used in initialization
    *
    * @return LogID Last apply log id
    */

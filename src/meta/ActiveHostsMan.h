@@ -54,7 +54,7 @@ struct HostInfo {
    * int8_t           dataVer
    * int64_t          timestamp
    * sizeof(HostRole) hostRole
-   * size_t           lenth of gitInfoSha
+   * size_t           length of gitInfoSha
    * string           gitInfoSha
    *
    * @param info

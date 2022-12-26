@@ -36,7 +36,7 @@ StatusOr<::nebula::plugin::ESAdapter> FTIndexUtils::getESAdapter(meta::MetaClien
   std::vector<::nebula::plugin::ESClient> clients;
   for (const auto& c : tcs.value()) {
     std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    std::string address = c.host.toString();
+    std::string address = c.host.toRawString();
     std::string user = c.user_ref().has_value() ? *c.user_ref() : "";
     std::string password = c.pwd_ref().has_value() ? *c.pwd_ref() : "";
     clients.emplace_back(HttpClient::instance(), protocol, address, user, password);

@@ -100,7 +100,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   auto ftIdxRet = getFTIndex(spaceId, tagId);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti.get_fields(), tagItems);
+    auto ftStatus = ftIndexCheck(fti, tagItems);
     if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(ftStatus);
       onFinished();
