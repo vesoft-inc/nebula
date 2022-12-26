@@ -109,7 +109,7 @@ class GetStatsTest : public ::testing::Test {
 
     jobMgr = JobManager::getInstance();
     jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
-    jobMgr->init(kv_.get());
+    jobMgr->init(kv_.get(), nullptr);
   }
 
   void TearDown() override {
@@ -443,7 +443,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   // add stats job1
   JobID jobId1 = 1;
   JobDescription job1(spaceId, jobId1, cpp2::JobType::STATS);
-  jobMgr->addJob(job1, &adminClient);
+  jobMgr->addJob(job1);
 
   JobCallBack cb1(jobMgr, spaceId, jobId1, 0, 100);
   JobCallBack cb2(jobMgr, spaceId, 2, 0, 200);
@@ -491,7 +491,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
   // add stats job2 of same space
   JobID jobId2 = 2;
   JobDescription job2(spaceId, jobId2, cpp2::JobType::STATS);
-  jobMgr->addJob(job2, &adminClient);
+  jobMgr->addJob(job2);
 
   // check job result
   {
@@ -560,7 +560,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
   // add stats job
   JobID jobId = 1;
   JobDescription job(spaceId, jobId, cpp2::JobType::STATS);
-  jobMgr->addJob(job, &adminClient);
+  jobMgr->addJob(job);
 
   JobCallBack cb1(jobMgr, spaceId, jobId, 0, 100);
   JobCallBack cb2(jobMgr, spaceId, jobId, 1, 200);

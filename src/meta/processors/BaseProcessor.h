@@ -76,7 +76,7 @@ class BaseProcessor {
   }
 
   /**
-   * @brief Set leader address to reponse.
+   * @brief Set leader address to response.
    *
    */
   void handleLeaderChanged() {
@@ -345,7 +345,7 @@ class BaseProcessor {
                                      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
-   * @brief Check if tag/edge containes full text index when alter it.
+   * @brief Check if tag/edge contains full text index when alter it.
    *
    * @tparam RESP
    * @param cols
@@ -379,7 +379,7 @@ class BaseProcessor {
       GraphSpaceID spaceId, int32_t tagOrEdge);
 
   /**
-   * @brief Check if index on given fields alredy exist.
+   * @brief Check if index on given fields already exist.
    *
    * @tparam RESP
    * @param fields

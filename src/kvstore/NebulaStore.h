@@ -232,8 +232,8 @@ class NebulaStore : public KVStore, public Handler {
    * @param keys Keys to read
    * @param values Pointers of value
    * @param canReadFromFollower Whether check if current kvstore is leader of given partition
-   * @return Return std::vector<Status> when suceeded: Result status of each key, if key[i] does not
-   * exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
+   * @return Return std::vector<Status> when succeeded: Result status of each key, if key[i] does
+   * not exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
    * failed
    */
   std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> multiGet(
@@ -362,7 +362,7 @@ class NebulaStore : public KVStore, public Handler {
                    KVCallback cb) override;
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param spaceId
    * @param partId
@@ -422,7 +422,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partId
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeed,
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeded,
    * else return ErrorCode
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
@@ -513,7 +513,7 @@ class NebulaStore : public KVStore, public Handler {
   nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
   /**
-   * @brief Whether is leader of given partiton or not
+   * @brief Whether is leader of given partition or not
    *
    * @param spaceId
    * @param partId
@@ -525,7 +525,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>> Return space part info
-   * when succeed, return Errorcode when faile
+   * when succeed, return Errorcode when failed
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
@@ -534,7 +534,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>> Return space
-   * listener info when succeed, return Errorcode when faile
+   * listener info when succeed, return Errorcode when failed
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>> spaceListener(
       GraphSpaceID spaceId);
@@ -586,7 +586,7 @@ class NebulaStore : public KVStore, public Handler {
   void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) override;
 
   /**
-   * @brief Retrive the leader distribution
+   * @brief Retrieve the leader distribution
    *
    * @param leaderIds The leader address of all partitions
    * @return int32_t The leader count of all spaces
@@ -698,7 +698,7 @@ class NebulaStore : public KVStore, public Handler {
                                                       std::unique_ptr<WriteBatch> batch) override;
 
   /**
-   * @brief Get the kvstore propery, only used in rocksdb
+   * @brief Get the kvstore property, only used in rocksdb
    *
    * @param spaceId
    * @param property Property name

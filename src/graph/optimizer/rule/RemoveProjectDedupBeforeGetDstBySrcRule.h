@@ -16,7 +16,7 @@ namespace opt {
 //  DataCollect contains only one column that is a deduped vid column which GetDstBySrc needs,
 //  so the following Project and Dedup are useless.
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 // +---------+---------+

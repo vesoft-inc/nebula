@@ -117,6 +117,13 @@ class ExpressionUtils {
   // v.age > 40 + 1  =>  v.age > 41
   static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
 
+  // Simplify logical and/or expr.
+  // e.g. A and true => A
+  //      A or false => A
+  //      A and false => false
+  //      A or true => true
+  static Expression* simplifyLogicalExpr(const LogicalExpression* logicalExpr);
+
   // Clones and reduces unaryNot expression
   // Examples:
   // !!(A and B)  =>  (A and B)
@@ -187,7 +194,7 @@ class ExpressionUtils {
   // Check whether there exists the property of variable expression in `columns'
   static bool checkVarPropIfExist(const std::vector<std::string>& columns, const Expression* e);
 
-  // Uses the picker to split the given experssion expr into two parts: filterPicked and
+  // Uses the picker to split the given expression expr into two parts: filterPicked and
   // filterUnpicked If expr is a non-LogicalAnd expression, applies the picker to expr directly If
   // expr is a logicalAnd expression, applies the picker to all its operands
   static void splitFilter(const Expression* expr,

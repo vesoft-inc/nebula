@@ -27,7 +27,7 @@
 // `paths_` : hash table array, paths_[i] means that the length that paths in the i-th array
 //  element is i
 //    KEY in the hash table   : the vid of the destination Vertex
-//    VALUE in the hash table : collection of paths that destionation vid is `KEY`
+//    VALUE in the hash table : collection of paths that destination vid is `KEY`
 //
 // Functions:
 // `buildRequestDataSet` : constructs the input DataSet for getNeightbors

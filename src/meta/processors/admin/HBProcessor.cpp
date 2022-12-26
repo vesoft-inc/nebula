@@ -38,7 +38,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   if (role == cpp2::HostRole::STORAGE || role == cpp2::HostRole::STORAGE_LISTENER) {
     if (role == cpp2::HostRole::STORAGE) {
       if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
-        LOG(INFO) << "Machine " << host << " is not registed";
+        LOG(INFO) << "Machine " << host << " is not registered";
         handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
         setLeaderInfo();
         onFinished();

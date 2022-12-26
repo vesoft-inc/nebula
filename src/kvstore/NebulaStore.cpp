@@ -618,7 +618,7 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                    const std::vector<HostAddr>& peers) {
   // Lock has been acquired in addListenerPart.
   // todo(doodle): we don't support start multiple type of listener in same process for now. If we
-  // suppport it later, the wal path may or may not need to be separated depending on how we
+  // support it later, the wal path may or may not need to be separated depending on how we
   // implement it.
   auto walPath =
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);

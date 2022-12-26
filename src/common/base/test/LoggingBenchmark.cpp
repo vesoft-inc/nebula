@@ -16,7 +16,7 @@
   for (int64_t i = 0; i < iters; i++) { \
     LOG(INFO) << "Hello"                \
               << " "                    \
-              << "Wolrd"                \
+              << "World"                \
               << "123";                 \
   }
 
@@ -24,7 +24,7 @@
   for (int64_t i = 0; i < iters; i++) { \
     XLOG(INFO) << "Hello"               \
                << " "                   \
-               << "Wolrd"               \
+               << "World"               \
                << "123";                \
   }
 

@@ -123,7 +123,7 @@ void AdminTaskManager::handleUnreportedTasks() {
                                       tId,
                                       fut.value().status().toString());
           if (fut.value().status() == Status::Error("Space not existed!")) {
-            // space has been droped, remove the task status.
+            // space has been dropped, remove the task status.
             keys.emplace_back(key.data(), key.size());
           } else {
             ifAnyUnreported_ = true;

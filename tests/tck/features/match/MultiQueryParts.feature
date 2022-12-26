@@ -286,7 +286,7 @@ Feature: Multi Query Parts
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  Scenario: Some Erros
+  Scenario: Some Errors
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
