@@ -11,7 +11,7 @@ namespace graph {
 /**
  * Read space : kUse, kDescribeSpace
  * Write space : kCreateSpace, kDropSpace, kClearSpace, kCreateSnapshot,
- *               kDropSnapshot, kBalance, kAdmin, kConfig
+ *               kDropSnapshot, kAdminJob(data balance), kConfig
  * Read schema : kDescribeTag, kDescribeEdge,
  *               kDescribeTagIndex, kDescribeEdgeIndex
  * Write schema : kCreateTag, kAlterTag, kCreateEdge,
@@ -24,7 +24,7 @@ namespace graph {
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
  * Write data: kBuildTagIndex, kBuildEdgeIndex,
  *             kInsertVertex, kUpdateVertex, kInsertEdge,
- *             kUpdateEdge, kDeleteVertex, kDeleteEdges
+ *             kUpdateEdge, kDeleteVertex, kDeleteEdges, kAdminJob(other)
  * Special operation : kShow, kChangePassword
  */
 
@@ -117,8 +117,10 @@ namespace graph {
       if (adminJobSentence == nullptr) {
         // should not happend.
         LOG(WARNING) << "sentence is not AdminJobSentence";
-        return Status::PermissionError("No permission to write space.");
+        return Status::PermissionError("Invalid adminjob sentence.");
       }
+      // admin job like data balance need permission to write space
+      // here to restore default permission check before balance is refactored into job
       if (adminJobSentence->needWriteSpace()) {
         return PermissionManager::canWriteSpace(session);
       }
