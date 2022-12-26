@@ -34,11 +34,11 @@ inline ALWAYS_INLINE void* newImpl(std::size_t size, std::align_val_t align) {
   throw std::bad_alloc{};
 }
 
-inline ALWAYS_INLINE void* newNoExept(std::size_t size) noexcept {
+inline ALWAYS_INLINE void* newNoException(std::size_t size) noexcept {
   return malloc(size);
 }
 
-inline ALWAYS_INLINE void* newNoExept(std::size_t size, std::align_val_t align) noexcept {
+inline ALWAYS_INLINE void* newNoException(std::size_t size, std::align_val_t align) noexcept {
   return aligned_alloc(static_cast<size_t>(align), size);
 }
 
@@ -69,11 +69,12 @@ inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size) {
   }
   return actual_size;
 }
+
 inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size, std::align_val_t align) {
   size_t actual_size = size;
-  /// The nallocx() function allocates no memory, but it performs the same size computation as the
-  /// mallocx() function
-  /// @note je_mallocx() != je_malloc(). It's expected they don't differ much in allocation logic.
+  // The nallocx() function allocates no memory, but it performs the same size computation as the
+  // mallocx() function
+  // @note je_mallocx() != je_malloc(). It's expected they don't differ much in allocation logic.
   if (LIKELY(size != 0)) {
     actual_size = nallocx(size, MALLOCX_ALIGN(alignToSizeT(align)));
   }

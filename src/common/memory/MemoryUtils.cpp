@@ -6,14 +6,16 @@
 #include "common/memory/MemoryUtils.h"
 
 #include <gflags/gflags.h>
+#if ENABLE_JEMALLOC
 #include <jemalloc/jemalloc.h>
 
+#include "common/time/WallClock.h"
+#endif
 #include <algorithm>
 #include <fstream>
 
 #include "common/fs/FileUtils.h"
 #include "common/memory/MemoryTracker.h"
-#include "common/time/WallClock.h"
 
 #define STRINGIFY_HELPER(x) #x
 #define STRINGIFY(x) STRINGIFY_HELPER(x)
@@ -42,7 +44,12 @@ DEFINE_string(cgroup_v2_memory_current_path,
 
 DEFINE_bool(memory_purge_enabled, true, "memory purge enabled, default true");
 DEFINE_int32(memory_purge_interval_seconds, 10, "memory purge interval in seconds, default 10");
-DEFINE_bool(memory_stats_detail_log, false, "print memory stats detail log");
+DEFINE_bool(memory_tracker_detail_log, false, "print memory stats detail log");
+DEFINE_double(memory_tracker_untracked_reserved_memory_mb,
+              50,
+              "memory tacker tracks memory of new/delete, this flag defined reserved untracked "
+              "memory (direct call malloc/free)");
+DEFINE_double(memory_tracker_limit_ratio, 1, "memory tacker usable memory ratio to total limit");
 
 using nebula::fs::FileUtils;
 
@@ -103,8 +110,12 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     }
   }
 
-  // set limit
-  memory::MemoryStats::instance().setLimit(total * FLAGS_system_memory_high_watermark_ratio);
+  // MemoryStats depends on jemalloc
+#if ENABLE_JEMALLOC
+  // set MemoryStats limit (MemoryTracker track-able memory)
+  memory::MemoryStats::instance().setLimit(
+      (total - FLAGS_memory_tracker_untracked_reserved_memory_mb) *
+      FLAGS_memory_tracker_limit_ratio);
 
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
@@ -138,6 +149,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
               << " usr_total:" << memory::MemoryStats::instance().getLimit()
               << " usr_ratio:" << memory::MemoryStats::instance().usedRatio();
   }
+#endif
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
   LOG_IF_EVERY_N(WARNING, hits, 100)

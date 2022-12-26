@@ -42,7 +42,7 @@ class MemoryStats {
   inline ALWAYS_INLINE void alloc(int64_t size) {
     int64_t willBe = threadMemoryStats_.reserved - size;
 
-    if UNLIKELY (willBe < 0) {
+    if (UNLIKELY(willBe < 0)) {
       // if local reserved is not enough, calculate how many bytes needed to get from global.
       int64_t getFromGlobal = kLocalReservedLimit_;
       while (willBe + getFromGlobal <= 0) {
