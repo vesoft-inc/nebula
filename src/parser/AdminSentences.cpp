@@ -320,6 +320,13 @@ meta::cpp2::JobType AdminJobSentence::getJobType() const {
   return type_;
 }
 
+bool AdminJobSentence::needWriteSpace() const {
+  if (kind_ == Kind::kAdminJob) {
+    return type_ == meta::cpp2::JobType::DATA_BALANCE || type_ == meta::cpp2::JobType::ZONE_BALANCE;
+  }
+  return false;
+}
+
 const std::vector<std::string> &AdminJobSentence::getParas() const {
   return paras_;
 }
