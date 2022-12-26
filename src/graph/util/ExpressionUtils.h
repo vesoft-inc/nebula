@@ -117,6 +117,13 @@ class ExpressionUtils {
   // v.age > 40 + 1  =>  v.age > 41
   static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
 
+  // Simplify logical and/or expr.
+  // e.g. A and true => A
+  //      A or false => A
+  //      A and false => false
+  //      A or true => true
+  static Expression* simplifyLogicalExpr(const LogicalExpression* logicalExpr);
+
   // Clones and reduces unaryNot expression
   // Examples:
   // !!(A and B)  =>  (A and B)
