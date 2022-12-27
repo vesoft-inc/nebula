@@ -11,9 +11,22 @@ Feature: User & privilege Test
     Then the execution should be successful
     When executing query:
       """
+      DROP USER user1
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
       CREATE USER user1 WITH PASSWORD "pwd1"
       """
     Then the execution should be successful
+    When executing query:
+      """
+      DESC USER user1;
+      """
+    Then the result should be, in any order:
+      | role | space |
+    And wait 6 seconds
+    When login with user "user2" with "pwd1"
     When executing query:
       """
       DROP USER IF EXISTS user2
@@ -21,9 +34,21 @@ Feature: User & privilege Test
     Then the execution should be successful
     When executing query:
       """
-      CREATE USER user2
+      CREATE USER IF NOT EXISTS user2
       """
     Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS user2
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER user2
+      """
+    Then a ExecutionError should be raised at runtime:
+    And wait 6 seconds
+    When login with user "user2"
     When executing query:
       """
       CREATE USER user1 WITH PASSWORD "pwd1"
@@ -43,6 +68,156 @@ Feature: User & privilege Test
       | "root"  |
       | "user1" |
       | "user2" |
+    When executing query:
+      """
+      CREATE USER u
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER u123456789ABCDEF
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER u123456789ABCDEFG
+      """
+    Then a SemanticError should be raised at runtime: Username exceed maximum length 16 characters.
+    When executing query:
+      """
+      CREATE USER 123456
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `123456'
+    When executing query:
+      """
+      CREATE USER u&b
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `&b'
+    When executing query:
+      """
+      CREATE USER `用户A`
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When login with user "用户A"
+    When executing query:
+      """
+      CREATE USER A1;
+      CREATE USER a1;
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When login with user "A1"
+    When login with user "a1"
+    When executing query:
+      """
+      CREATE USER `CREATE`;
+      CREATE USER `ROLE`;
+      """
+    Then the execution should be successful
+    When login with user "CREATE"
+    When login with user "ROLE"
+    When executing query:
+      """
+      CREATE USER u3 WITH PASSWORD "012345678910111213141516";
+      CREATE USER u4 WITH PASSWORD "0";
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When login with user "u3" with "012345678910111213141516"
+    When login with user "u4" with "0"
+    When executing query:
+      """
+      CREATE USER u5 WITH PASSWORD "0123456789101112131415161";
+      """
+    Then a SemanticError should be raised at runtime: Password exceed maximum length 24 characters.
+    When executing query:
+      """
+      CREATE USER u6 WITH PASSWORD "中文密码^*()12";
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When login with user "u6" with "中文密码^*()12"
+    When executing query:
+      """
+      DROP USER IF EXISTS u6;
+      """
+    Then the execution should be successful
+    # TODO(shylock) fix it
+    # When executing query:
+    # """
+    # DESC USER u6;
+    # """
+    # Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DROP USER IF EXISTS u6;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DROP USER u6;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DROP USER root;
+      """
+    Then a SemanticError should be raised at runtime: Can't drop root user.
+
+  Scenario: User roles
+    When executing query:
+      """
+      CREATE USER user_mlt_roles;
+      GRANT ROLE USER ON nba TO user_mlt_roles;
+      GRANT ROLE GUEST ON student TO user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DESC USER user_mlt_roles;
+      """
+    Then the result should be, in any order:
+      | role    | space     |
+      | "USER"  | "nba"     |
+      | "GUEST" | "student" |
+    When executing query:
+      """
+      DROP USER user_mlt_roles;
+      """
+    Then the execution should be successful
+    # TODO(shylock) fix me
+    # When executing query:
+      # """
+      # DESC USER user_mlt_roles
+      # """
+    # Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      CREATE USER user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON nba TO user_mlt_roles;
+      GRANT ROLE ADMIN ON student TO user_mlt_roles;
+      GRANT ROLE GUEST ON nba_int_vid TO user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE DBA ON nba TO user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DESC USER user_mlt_roles;
+      """
+    Then the result should be, in any order:
+      | role    | space         |
+      | "DBA"   | "nba"         |
+      | "ADMIN" | "student"     |
+      | "GUEST" | "nba_int_vid" |
 
   Scenario: Alter user
     When executing query:
@@ -65,6 +240,8 @@ Feature: User & privilege Test
       ALTER USER user2 WITH PASSWORD "pwd1"
       """
     Then the execution should be successful
+    And wait 6 seconds
+    When login with user "user2" with "pwd1"
     When executing query:
       """
       CHANGE PASSWORD user2 FROM "pwd2" TO "pwd1"
@@ -75,6 +252,28 @@ Feature: User & privilege Test
       CHANGE PASSWORD user2 FROM "pwd1" TO "pwd2"
       """
     Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS u7
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER USER u7 WITH PASSWORD "pwd1"
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When login with user "u7" with "pwd1"
+    When executing query:
+      """
+      ALTER USER u7 WITH PASSWORD "0123456789011121314151617"
+      """
+    Then a SemanticError should be raised at runtime: Password exceed maximum length 24 characters.
+    When executing query:
+      """
+      ALTER USER not_exists WITH PASSWORD "pwd1"
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
 
   Scenario: Drop user
     When executing query:
@@ -281,7 +480,6 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
 
-  @skip
   Scenario: Describe User
     When executing query:
       """
@@ -352,6 +550,17 @@ Feature: User & privilege Test
     Then the result should be, in any order, with relax comparison:
       | role    | space              |
       | "ADMIN" | "user_tmp_space_4" |
+    When executing query:
+      """
+      REVOKE ROLE ADMIN ON user_tmp_space_4 FROM user1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DESC USER user1
+      """
+    Then the result should be, in any order:
+      | role | space |
     When executing query with user user1 with password pwd1:
       """
       DESC USER user2
@@ -367,3 +576,9 @@ Feature: User & privilege Test
       DESC USER root
       """
     Then a PermissionError should be raised at runtime:
+    # TODO(shylock) fix it
+    # When executing query:
+      # """
+      # DESCRIBE USER not_exists
+      # """
+    # Then a ExecutionError should be raised at runtime: User not existed!
