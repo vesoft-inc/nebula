@@ -421,6 +421,8 @@ enum ErrorCode {
     E_QUERY_NOT_FOUND                 = -2073,  // Query not found
     E_AGENT_HB_FAILUE                 = -2074,  // Failed to receive heartbeat from agent
 
+    E_ACCESS_ES_FAILURE               = -2080,  // Failed to access elasticsearch
+
     E_GRAPH_MEMORY_EXCEEDED           = -2600,  // Graph memory exceeded
 
     // 3xxx for storaged
