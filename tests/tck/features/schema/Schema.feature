@@ -347,7 +347,7 @@ Feature: Insert string vid of vertex and edge
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment |
-      | "school" | "int64"  | "YES" | EMPTY   | EMPTY   |
+      | "school" | "string"  | "YES" | EMPTY   | EMPTY   |
       | "col1"   | "int64"  | "YES" | EMPTY   | EMPTY   |
       | "col2"   | "string" | "YES" | EMPTY   | EMPTY   |
     # with negative DEFAULT value
