@@ -47,11 +47,17 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  folly::StringPiece iterVal;
-  auto version = MetaKeyUtils::getLatestTagScheInfo(iter, iterVal) + 1;
-  auto schema = MetaKeyUtils::parseSchema(iterVal);
+  std::unordered_map<SchemaVer, folly::StringPiece> schemasRaw;
+  auto maxVersion = MetaKeyUtils::getLatestTagScheInfo(iter, schemasRaw);
+  auto newVersion = maxVersion + 1;
+  auto schema = MetaKeyUtils::parseSchema(schemasRaw[maxVersion]);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
+
+  std::vector<std::vector<cpp2::ColumnDef>> allVersionedColumns;
+  for (auto entry : schemasRaw) {
+    allVersionedColumns.emplace_back(MetaKeyUtils::parseSchema(entry.second).get_columns());
+  }
 
   // Update schema column
   auto& tagItems = req.get_tag_items();
@@ -144,8 +150,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
-  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId << ", new version " << version;
-  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
+  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId << ", new version " << newVersion;
+  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, newVersion),
                     MetaKeyUtils::schemaVal(tagName, schema));
   resp_.id_ref() = to(tagId, EntryType::TAG);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();

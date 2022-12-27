@@ -75,17 +75,21 @@ bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
 }
 }  // namespace
 
-nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
-                                                          cpp2::SchemaProp& prop,
-                                                          const cpp2::ColumnDef col,
-                                                          const cpp2::AlterSchemaOp op,
-                                                          bool isEdge) {
+nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
+    std::vector<cpp2::ColumnDef>& cols,
+    cpp2::SchemaProp& prop,
+    const cpp2::ColumnDef col,
+    const cpp2::AlterSchemaOp op,
+    const std::vector<std::vector<cpp2::ColumnDef>>& allVersionedCols,
+    bool isEdge) {
   switch (op) {
     case cpp2::AlterSchemaOp::ADD:
-      for (auto it = cols.begin(); it != cols.end(); ++it) {
-        if (it->get_name() == col.get_name()) {
-          LOG(INFO) << "Column existing: " << col.get_name();
-          return nebula::cpp2::ErrorCode::E_EXISTED;
+      for (auto& versionedCols : allVersionedCols) {
+        for (auto it = versionedCols.begin(); it != versionedCols.end(); ++it) {
+          if (it->get_name() == col.get_name()) {
+            LOG(ERROR) << "Column currently or previously existing: " << col.get_name();
+            return nebula::cpp2::ErrorCode::E_EXISTED;
+          }
         }
       }
       cols.emplace_back(std::move(col));
