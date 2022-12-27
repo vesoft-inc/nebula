@@ -75,10 +75,12 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
         return false;
       }
     }
-
     auto varProps = graph::ExpressionUtils::collectAll(
         e, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
     if (varProps.empty()) {
+      return false;
+    }
+    if (!graph::ExpressionUtils::isSingleLenExpandExpr(edgeAlias, e)) {
       return false;
     }
     for (auto* expr : varProps) {

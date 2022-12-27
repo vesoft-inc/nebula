@@ -970,3 +970,16 @@ Feature: Basic match
       MATCH (v{name: "Tim Duncan"}) return v
       """
     Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |

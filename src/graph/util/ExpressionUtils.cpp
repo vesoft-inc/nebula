@@ -83,7 +83,7 @@ bool ExpressionUtils::findEdgeDstExpr(const Expression *expr) {
   return false;
 }
 
-// Finds all expressions fit the exprected list
+// Finds all expressions fit the expected list
 // Returns an empty vector if no expression found
 std::vector<const Expression *> ExpressionUtils::collectAll(
     const Expression *self, const std::unordered_set<Expression::Kind> &expected) {
