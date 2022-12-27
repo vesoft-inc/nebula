@@ -48,9 +48,9 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   }
 
   std::unordered_map<SchemaVer, folly::StringPiece> schemasRaw;
-  auto maxVersion = MetaKeyUtils::getLatestTagScheInfo(iter, schemasRaw);
-  auto newVersion = maxVersion + 1;
-  auto schema = MetaKeyUtils::parseSchema(schemasRaw[maxVersion]);
+  auto latestVersion = MetaKeyUtils::getLatestTagScheInfo(iter, schemasRaw);
+  auto newVersion = latestVersion + 1;
+  auto schema = MetaKeyUtils::parseSchema(schemasRaw[latestVersion]);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
 

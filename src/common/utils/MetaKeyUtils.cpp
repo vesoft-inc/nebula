@@ -573,16 +573,17 @@ SchemaVer MetaKeyUtils::parseEdgeVersion(folly::StringPiece key) {
          *reinterpret_cast<const SchemaVer*>(key.begin() + offset);
 }
 
-SchemaVer MetaKeyUtils::getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val) {
+SchemaVer MetaKeyUtils::getLatestEdgeScheInfo(
+    kvstore::KVIterator* iter, std::unordered_map<SchemaVer, folly::StringPiece>& schemasRaw) {
   SchemaVer maxVer = MetaKeyUtils::parseEdgeVersion(iter->key());
-  val = iter->val();
+  schemasRaw.emplace(maxVer, iter->val());
   iter->next();
   while (iter->valid()) {
     SchemaVer curVer = MetaKeyUtils::parseEdgeVersion(iter->key());
     if (curVer > maxVer) {
       maxVer = curVer;
-      val = iter->val();
     }
+    schemasRaw.emplace(curVer, iter->val());
     iter->next();
   }
   return maxVer;

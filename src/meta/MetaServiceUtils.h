@@ -30,6 +30,7 @@ class MetaServiceUtils final {
    * ADD: add col to cols
    * CHANGE: replace the column in cols with col
    * DROP: remove the col from cols
+   * @param allVersionedCols All columns from all versioned schemas
    * @param isEdge Is edge or tag
    * @return
    */
