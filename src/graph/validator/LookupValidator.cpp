@@ -173,10 +173,10 @@ Status LookupValidator::validateYield() {
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
-    return Status::SemanticError("unsupport input/variable property expression in yield.");
+    return Status::SemanticError("unsupported input/variable property expression in yield.");
   }
   if (exprProps_.hasSrcDstTagProperty()) {
-    return Status::SemanticError("unsupport src/dst property expression in yield.");
+    return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
   extractExprProps();
   return Status::OK();
@@ -534,8 +534,8 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
       reversedKind = ExprKind::kRelLE;
       break;
     default:
-      LOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
-      break;
+      LOG(DFATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
+      return expr;
   }
 
   auto left = expr->left();

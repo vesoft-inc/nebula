@@ -171,7 +171,7 @@ class DummyListener : public Listener {
         case OP_BATCH_WRITE: {
           auto batchData = decodeBatchValue(log);
           for (auto& op : batchData) {
-            // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is igored
+            // OP_BATCH_REMOVE and OP_BATCH_REMOVE_RANGE is ignored
             switch (op.first) {
               case BatchLogType::OP_BATCH_PUT: {
                 batch.put(op.second.first.toString(), op.second.second.toString());

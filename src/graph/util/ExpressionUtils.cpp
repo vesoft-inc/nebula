@@ -536,7 +536,65 @@ StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr)
     }
     return foldedExpr;
   }
-  return newExpr;
+
+  auto matcher = [](const Expression *e) {
+    return e->kind() == Expression::Kind::kLogicalAnd || e->kind() == Expression::Kind::kLogicalOr;
+  };
+  auto rewriter = [](const Expression *e) {
+    auto logicalExpr = static_cast<const LogicalExpression *>(e);
+    return simplifyLogicalExpr(logicalExpr);
+  };
+  return RewriteVisitor::transform(newExpr, matcher, rewriter);
+}
+
+Expression *ExpressionUtils::simplifyLogicalExpr(const LogicalExpression *logicalExpr) {
+  auto *expr = static_cast<LogicalExpression *>(logicalExpr->clone());
+  if (expr->kind() == Expression::Kind::kLogicalXor) return expr;
+
+  ObjectPool *objPool = logicalExpr->getObjPool();
+
+  // Simplify logical and/or
+  for (auto iter = expr->operands().begin(); iter != expr->operands().end();) {
+    auto *operand = *iter;
+    if (operand->kind() != Expression::Kind::kConstant) {
+      ++iter;
+      continue;
+    }
+    auto &val = static_cast<ConstantExpression *>(operand)->value();
+    if (!val.isBool()) {
+      ++iter;
+      continue;
+    }
+    if (expr->kind() == Expression::Kind::kLogicalAnd) {
+      if (val.getBool()) {
+        // Remove the true operand
+        iter = expr->operands().erase(iter);
+        continue;
+      }
+      // The whole expression is false
+      return ConstantExpression::make(objPool, false);
+    }
+    // expr->kind() == Expression::Kind::kLogicalOr
+    if (val.getBool()) {
+      // The whole expression is true
+      return ConstantExpression::make(objPool, true);
+    }
+    // Remove the false operand
+    iter = expr->operands().erase(iter);
+  }
+
+  if (expr->operands().empty()) {
+    // true and true and true => true
+    if (expr->kind() == Expression::Kind::kLogicalAnd) {
+      return ConstantExpression::make(objPool, true);
+    }
+    // false or false or false => false
+    return ConstantExpression::make(objPool, false);
+  } else if (expr->operands().size() == 1) {
+    return expr->operands()[0];
+  } else {
+    return expr;
+  }
 }
 
 Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
@@ -544,7 +602,8 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
   auto operandMatcher = [](const Expression *operandExpr) -> bool {
     return (operandExpr->kind() == Expression::Kind::kUnaryNot ||
             (operandExpr->isRelExpr() && operandExpr->kind() != Expression::Kind::kRelREG) ||
-            operandExpr->isLogicalExpr());
+            operandExpr->kind() == Expression::Kind::kLogicalAnd ||
+            operandExpr->kind() == Expression::Kind::kLogicalOr);
   };
 
   // Match the root expression

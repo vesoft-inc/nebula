@@ -60,12 +60,12 @@ class MatchPathPatternExpression final : public Expression {
 
   // This expression contains variable implicitly, so we don't support persist or transform it.
   void writeTo(Encoder&) const override {
-    LOG(FATAL) << "Not implemented";
+    LOG(DFATAL) << "Not implemented";
   }
 
   // This expression contains variable implicitly, so we don't support persist or transform it.
   void resetFrom(Decoder&) override {
-    LOG(FATAL) << "Not implemented";
+    LOG(DFATAL) << "Not implemented";
   }
 
  private:

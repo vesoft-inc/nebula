@@ -118,7 +118,7 @@ std::vector<ScanRange> GeoIndex::dWithin(const Geography& g, double distance) co
       return intersects(gBuffer);
     }
     default:
-      LOG(FATAL)
+      LOG(DFATAL)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
       return {};
   }

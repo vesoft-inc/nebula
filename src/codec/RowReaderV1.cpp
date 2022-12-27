@@ -143,7 +143,8 @@ int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
     }
     default: {
       // TODO
-      LOG(FATAL) << "Unimplemented";
+      LOG(DFATAL) << "Unimplemented";
+      return -1;
     }
   }
 

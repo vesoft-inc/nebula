@@ -933,8 +933,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Task report is out of date!");
     case nebula::cpp2::ErrorCode::E_BACKUP_FAILED:
       return Status::Error("Backup failure!");
-    case nebula::cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX:
-      return Status::Error("Backup building indexes!");
+    case nebula::cpp2::ErrorCode::E_BACKUP_RUNNING_JOBS:
+      return Status::Error("Backup encounter running or queued jobs!");
     case nebula::cpp2::ErrorCode::E_BACKUP_SPACE_NOT_FOUND:
       return Status::Error("The space is not found when backup!");
     case nebula::cpp2::ErrorCode::E_RESTORE_FAILURE:
@@ -2375,7 +2375,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     return Status::Error("User not exist");
   }
   auto lockedSince = userLoginLockTime_[account];
-  auto passwordAttemtRemain = userPasswordAttemptsRemain_[account];
+  auto passwordAttemptRemain = userPasswordAttemptsRemain_[account];
 
   // If lockedSince is non-zero, it means the account has been locked
   if (lockedSince != 0) {
@@ -2393,7 +2393,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     // Clear lock state and reset attempts
     userLoginLockTime_.assign_if_equal(account, lockedSince, 0);
     userPasswordAttemptsRemain_.assign_if_equal(
-        account, passwordAttemtRemain, FLAGS_failed_login_attempts);
+        account, passwordAttemptRemain, FLAGS_failed_login_attempts);
   }
 
   if (iter->second != password) {
@@ -2402,14 +2402,14 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
       return Status::Error("Invalid password");
     }
 
-    // If the password is not correct and passwordAttemtRemain > 0,
-    // Allow another attemp
-    passwordAttemtRemain = userPasswordAttemptsRemain_[account];
-    if (passwordAttemtRemain > 0) {
-      auto newAttemtRemain = passwordAttemtRemain - 1;
-      userPasswordAttemptsRemain_.assign_if_equal(account, passwordAttemtRemain, newAttemtRemain);
-      if (newAttemtRemain == 0) {
-        // If the remaining attemps is 0, failed to authenticate
+    // If the password is not correct and passwordAttemptRemain > 0,
+    // Allow another attempt
+    passwordAttemptRemain = userPasswordAttemptsRemain_[account];
+    if (passwordAttemptRemain > 0) {
+      auto newAttemptRemain = passwordAttemptRemain - 1;
+      userPasswordAttemptsRemain_.assign_if_equal(account, passwordAttemptRemain, newAttemptRemain);
+      if (newAttemptRemain == 0) {
+        // If the remaining attempts is 0, failed to authenticate
         // Block user login
         userLoginLockTime_.assign_if_equal(account, 0, time::WallClock::fastNowInSec());
         return Status::Error(
@@ -2419,8 +2419,8 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
             account.c_str(),
             FLAGS_password_lock_time_in_secs);
       }
-      LOG(ERROR) << "Invalid password, remaining attempts: " << newAttemtRemain;
-      return Status::Error("Invalid password, remaining attempts: %d", newAttemtRemain);
+      LOG(ERROR) << "Invalid password, remaining attempts: " << newAttemptRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", newAttemptRemain);
     }
   }
 
@@ -2540,7 +2540,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   }
 
   // info used in the agent, only set once
-  // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
+  // TODO(spw): if we could add data path(disk) dynamically in the future, it should be
   // reported every time it changes
   if (!dirInfoReported_) {
     nebula::cpp2::DirInfo dirInfo;
@@ -2567,7 +2567,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
           if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(), FLAGS_cluster_id_path)) {
             options_.clusterId_.store(resp.get_cluster_id());
           } else {
-            LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
+            LOG(DFATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
+            return false;
           }
         }
         heartbeatTime_ = time::WallClock::fastNowInMilliSec();

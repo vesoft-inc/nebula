@@ -28,7 +28,7 @@ class DropCheckpointProcessor {
   /**
    * @brief Entry point for dropping checkpoint.
    *
-   * @param req Reuqest for dropping checkpoint.
+   * @param req Request for dropping checkpoint.
    */
   void process(const cpp2::DropCPRequest& req);
 

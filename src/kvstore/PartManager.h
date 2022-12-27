@@ -131,7 +131,7 @@ class Handler {
                                     const std::vector<HostAddr>& remoteListeners) = 0;
 
   /**
-   * @brief Retrive the leader distribution
+   * @brief Retrieve the leader distribution
    *
    * @param leaderIds The leader address of all partitions
    * @return int32_t The leader count of all spaces
@@ -206,13 +206,13 @@ class PartManager {
    *
    * @param spaceId
    * @param partId
-   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener infomations
+   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener information
    */
   virtual StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                             PartitionID partId) = 0;
 
   /**
-   * @brief Register a handler to part mananger, e.g. NebulaStore
+   * @brief Register a handler to part manager, e.g. NebulaStore
    *
    * @param handler
    */
@@ -356,7 +356,7 @@ class MemPartManager final : public PartManager {
    *
    * @param spaceId
    * @param partId
-   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener infomations
+   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener information
    */
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
@@ -368,13 +368,13 @@ class MemPartManager final : public PartManager {
 };
 
 /**
- * @brief Part mananger based on meta client and server, all interfaces will read from meta client
+ * @brief Part manager based on meta client and server, all interfaces will read from meta client
  * cache or meta server
  */
 class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedListener {
  public:
   /**
-   * @brief Construct a new part mananger based on meta
+   * @brief Construct a new part manager based on meta
    *
    * @param host Local address
    * @param client Meta client
@@ -433,11 +433,11 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
    *
    * @param spaceId
    * @param partId
-   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener infomations
+   * @return StatusOr<std::vector<meta::RemoteListenerInfo>> Remote listener information
    */
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
-  // Folloing methods implement the interfaces in MetaChangedListener
+  // Following methods implement the interfaces in MetaChangedListener
   /**
    * @brief Found a new space, call handler's method
    *
@@ -454,7 +454,7 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
   void onSpaceRemoved(GraphSpaceID spaceId) override;
 
   /**
-   * @brief Found space option updated, call handler's methos
+   * @brief Found space option updated, call handler's method
    *
    * @param spaceId
    * @param options Options map
@@ -540,7 +540,7 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
                              meta::cpp2::ListenerType type) override;
 
   /**
-   * @brief Check if a parition has remote listeners, add or remove if necessary
+   * @brief Check if a partition has remote listeners, add or remove if necessary
    *
    * @param spaceId
    * @param partId

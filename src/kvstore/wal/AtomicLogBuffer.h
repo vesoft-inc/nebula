@@ -335,7 +335,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
   Node* seek(LogID logId);
 
   /**
-   * @brief Add a refernce count of how many iterator exists
+   * @brief Add a reference count of how many iterator exists
    *
    * @return int32_t Reference count
    */

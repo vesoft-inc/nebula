@@ -29,6 +29,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
     kAgentHBCounters.init();
   }
 
+  AdminClient* getAdminClient();
+
   /**
    * Parts distribution related operations.
    * */

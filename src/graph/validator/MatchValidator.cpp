@@ -1154,7 +1154,7 @@ bool extractMultiPathPredicate(Expression *expr, std::vector<MatchPath> &pathPre
         iter++;
       }
     }
-    // Alread remove inner predicate operands
+    // Already remove inner predicate operands
     return false;
   } else {
     return extractSinglePathPredicate(expr, pathPreds);

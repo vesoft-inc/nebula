@@ -397,7 +397,7 @@ Feature: Multi Line Multi Query Parts
       | count |
       | 12    |
 
-  Scenario: Multi Line Some Erros
+  Scenario: Multi Line Some Errors
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"

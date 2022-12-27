@@ -76,7 +76,7 @@ std::string SpaceOptItem::toString() const {
     case OptionType::GROUP_NAME:
       return "";
   }
-  DLOG(FATAL) << "Space parameter illegal";
+  LOG(DFATAL) << "Space parameter illegal";
   return "Unknown";
 }
 
@@ -215,8 +215,8 @@ std::string AddListenerSentence::toString() const {
       buf += "ELASTICSEARCH ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
-      LOG(FATAL) << "Unknown listener type.";
-      break;
+      LOG(DFATAL) << "Unknown listener type.";
+      return "Unknown";
   }
   buf += listeners_->toString();
   return buf;
@@ -231,8 +231,8 @@ std::string RemoveListenerSentence::toString() const {
       buf += "ELASTICSEARCH ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
-      DLOG(FATAL) << "Unknown listener type.";
-      break;
+      LOG(DFATAL) << "Unknown listener type.";
+      return "Unknown";
   }
   return buf;
 }
@@ -309,7 +309,8 @@ std::string AdminJobSentence::toString() const {
         return str;
       }
   }
-  LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
+  LOG(DFATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
+  return "Unknown";
 }
 
 meta::cpp2::JobOp AdminJobSentence::getOp() const {
@@ -318,6 +319,13 @@ meta::cpp2::JobOp AdminJobSentence::getOp() const {
 
 meta::cpp2::JobType AdminJobSentence::getJobType() const {
   return type_;
+}
+
+bool AdminJobSentence::needWriteSpace() const {
+  if (kind_ == Kind::kAdminJob) {
+    return type_ == meta::cpp2::JobType::DATA_BALANCE || type_ == meta::cpp2::JobType::ZONE_BALANCE;
+  }
+  return false;
 }
 
 const std::vector<std::string> &AdminJobSentence::getParas() const {
@@ -343,7 +351,8 @@ std::string ShowServiceClientsSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SHOW TEXT SEARCH CLIENTS";
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "Unknown";
   }
 }
 
@@ -355,7 +364,8 @@ std::string SignInServiceSentence::toString() const {
       buf += "SIGN IN TEXT SERVICE ";
       break;
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "Unknown";
   }
 
   for (auto &client : clients_->clients()) {
@@ -394,7 +404,8 @@ std::string SignOutServiceSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SIGN OUT TEXT SERVICE";
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "Unknown";
   }
 }
 

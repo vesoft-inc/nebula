@@ -46,7 +46,7 @@ TEST(KVClientTest, SimpleTest) {
   cluster.initMetaClient(options);
   auto* metaClient = cluster.metaClient_.get();
   {
-    LOG(INFO) << "registed " << storageAddr;
+    LOG(INFO) << "registered " << storageAddr;
     std::vector<HostAddr> hosts = {storageAddr};
     auto result = metaClient->addHosts(std::move(hosts)).get();
     EXPECT_TRUE(result.ok());

@@ -195,7 +195,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
       break;
     }
     default:
-      LOG(FATAL) << "Unknown type: " << kind_;
+      LOG(DFATAL) << "Unknown type: " << kind_;
+      result_ = Value::kNullBadType;
   }
   return result_;
 }
@@ -249,6 +250,7 @@ std::string RelationalExpression::toString() const {
       op = " NOT ENDS WITH ";
       break;
     default:
+      LOG(DFATAL) << "Illegal kind for relational expression: " << static_cast<int>(kind());
       op = " illegal symbol ";
   }
   std::stringstream out;

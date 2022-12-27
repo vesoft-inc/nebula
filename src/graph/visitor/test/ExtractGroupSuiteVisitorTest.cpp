@@ -170,7 +170,7 @@ TEST_F(ExtractGroupSuiteVisitorTest, TestArithmeticExpression2) {
 }
 
 TEST_F(ExtractGroupSuiteVisitorTest, TestRelationalExpression) {
-  // e.egde + count(a) + avg(b.name)
+  // e.edge + count(a) + avg(b.name)
   auto* e1 = laExpr("e", "edge");
   auto* e2 = aggExpr("count", labelExpr("a"), false);
   auto* e3 = aggExpr("avg", laExpr("b", "name"), false);

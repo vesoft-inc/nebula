@@ -113,7 +113,7 @@
   X(E_INVALID_JOB, -2065)                                                     \
                                                                               \
   /* Backup Failure */                                                        \
-  X(E_BACKUP_BUILDING_INDEX, -2066)                                           \
+  X(E_BACKUP_RUNNING_JOBS, -2066)                                             \
   X(E_BACKUP_SPACE_NOT_FOUND, -2067)                                          \
                                                                               \
   /* RESTORE Failure */                                                       \
