@@ -131,6 +131,7 @@ inline ALWAYS_INLINE void untrackMemory(void* ptr) noexcept {
 inline ALWAYS_INLINE void untrackMemory(void* ptr, std::size_t size) noexcept {
   try {
 #if ENABLE_JEMALLOC
+    UNUSED(size);
     if (LIKELY(ptr != nullptr)) {
       MemoryTracker::free(sallocx(ptr, 0));
     }
