@@ -163,7 +163,7 @@ class QueryUtils final {
         }
       }
       default:
-        LOG(FATAL) << "Should not read here";
+        LOG(DFATAL) << "Should not read here";
     }
     return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
   }
@@ -191,7 +191,7 @@ class QueryUtils final {
         return tag;
       }
       default:
-        LOG(FATAL) << "Should not read here";
+        LOG(DFATAL) << "Should not read here";
     }
     return Status::Error(folly::stringPrintf("Invalid property %s", prop.name_.c_str()));
   }

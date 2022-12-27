@@ -473,7 +473,6 @@ def executing_query(
     exec_query(request, ngql, exec_ctx, sess)
     sess.release()
 
-
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, exec_ctx, request):
     ngql = "PROFILE {" + combine_query(query) + "}"
@@ -825,7 +824,6 @@ def drop_used_space(exec_ctx):
         stmt = space_desc.drop_stmt()
         session = exec_ctx.get('current_session')
         response(session, stmt)
-
 
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(request, plan, exec_ctx):

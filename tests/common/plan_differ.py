@@ -189,15 +189,22 @@ class PlanDiffer:
 
         def _try_convert_json(j):
             try:
-                return json.loads(j)
+              res = json.loads(j)
+              if isinstance(res, list):
+                for m in res:
+                  if isinstance(m, dict):
+                    if 'tagId' in m:
+                      m.pop('tagId')
+                    if 'type' in m:
+                      m.pop('type')
+              return res
             except:
                 return j
 
         extracted_resp_dict = {}
         if len(key_list) == 1:
-
-            for k in resp:
-                extracted_resp_dict[k] = _try_convert_json(resp[k])
+          for k in resp:
+            extracted_resp_dict[k] = _try_convert_json(resp[k])
         else:
             extracted_resp_dict = self._convert_jsonStr_to_dict(resp, key_list)
 

@@ -63,7 +63,9 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
       header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
       headerLen_ = 8;
     } else {
-      LOG(FATAL) << "Schema version too big";
+      LOG(DFATAL) << "Schema version too big";
+      header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+      headerLen_ = 8;
     }
     buf_.append(&header, 1);
     buf_.append(reinterpret_cast<char*>(&ver), buf_[0] & 0x07);
@@ -137,7 +139,9 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
         set(i, v.moveDuration());
         break;
       default:
-        LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
+        LOG(DFATAL) << "Invalid data: " << v << ", type: " << v.typeName();
+        isSet_[i] = false;
+        continue;
     }
     isSet_[i] = true;
   }
@@ -852,9 +856,10 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             r = write(i, defVal.getDuration());
             break;
           default:
-            LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()
-                       << ", default value: " << defVal
-                       << ", default value expr: " << field->defaultValue();
+            LOG(DFATAL) << "Unsupported default value type: " << defVal.typeName()
+                        << ", default value: " << defVal
+                        << ", default value expr: " << field->defaultValue();
+            return WriteResult::TYPE_MISMATCH;
         }
       } else {
         // Set NULL

@@ -93,7 +93,8 @@ void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
       break;
     }
     default: {
-      LOG(FATAL) << "Invalid Kind " << expr->kind();
+      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      reportError(expr);
     }
   }
 }
@@ -110,7 +111,9 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      LOG(FATAL) << "Invalid Kind " << expr->kind();
+      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      reportError(expr);
+      return;
     }
   }
   auto found = propExprColMap_.find(propExpr->toString());
@@ -162,7 +165,9 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      LOG(FATAL) << "Invalid Kind " << expr->kind();
+      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      reportError(expr);
+      return;
     }
   }
   auto found = propExprColMap_.find(propExpr->toString());
