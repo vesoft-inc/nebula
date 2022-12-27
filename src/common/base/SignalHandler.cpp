@@ -87,7 +87,7 @@ void SignalHandler::doHandle(int sig, siginfo_t *info, void *uctx) {
     case SIGABRT:  // abort
     case SIGILL:   // ill instruction
     case SIGFPE:   // floating point error, e.g. divide by zero
-    case SIGBUS:   // I/O error in mmaped memory, mce error, etc.
+    case SIGBUS:   // I/O error in mmapped memory, mce error, etc.
       handleFatalSignal(sig, info, uctx);
       break;
     case SIGCHLD:

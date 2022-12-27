@@ -76,7 +76,7 @@ class BaseProcessor {
   }
 
   /**
-   * @brief Set leader address to reponse.
+   * @brief Set leader address to response.
    *
    */
   void handleLeaderChanged() {
@@ -345,15 +345,16 @@ class BaseProcessor {
                                      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
-   * @brief Check if tag/edge containes full text index when alter it.
+   * @brief Check if tag/edge contains full text index when alter it.
    *
    * @tparam RESP
    * @param cols
    * @param alterItems
    * @return ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS if contains
    */
-  nebula::cpp2::ErrorCode ftIndexCheck(const std::vector<std::string>& cols,
-                                       const std::vector<cpp2::AlterSchemaItem>& alterItems);
+  nebula::cpp2::ErrorCode ftIndexCheck(
+      const std::unordered_map<std::string, cpp2::FTIndex>& ftIndices,
+      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
    * @brief List all tag/edge index for given space and tag/edge id.
@@ -374,11 +375,11 @@ class BaseProcessor {
    * @param tagOrEdge
    * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex>
    */
-  ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> getFTIndex(GraphSpaceID spaceId,
-                                                             int32_t tagOrEdge);
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<std::string, cpp2::FTIndex>> getFTIndex(
+      GraphSpaceID spaceId, int32_t tagOrEdge);
 
   /**
-   * @brief Check if index on given fields alredy exist.
+   * @brief Check if index on given fields already exist.
    *
    * @tparam RESP
    * @param fields

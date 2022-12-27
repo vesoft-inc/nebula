@@ -730,7 +730,7 @@ Status UpdateValidator::getUpdateProps() {
   return status;
 }
 
-// Rewrite symbol expresion to fit semantic.
+// Rewrite symbol expression to fit semantic.
 Status UpdateValidator::checkAndResetSymExpr(Expression *inExpr,
                                              const std::string &symName,
                                              std::string &encodeStr) {

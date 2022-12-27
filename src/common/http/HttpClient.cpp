@@ -99,7 +99,9 @@ HttpResponse HttpClient::sendRequest(const std::string& url,
   setRespHeader(curl, resp.header);
   setRespBody(curl, resp.body);
   setTimeout(curl);
-  setAuth(curl, username, password);
+  if (!username.empty()) {
+    setAuth(curl, username, password);
+  }
   resp.curlCode = curl_easy_perform(curl);
   if (resp.curlCode != 0) {
     resp.curlMessage = std::string(curl_easy_strerror(resp.curlCode));

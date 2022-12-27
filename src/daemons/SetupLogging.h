@@ -11,7 +11,7 @@
 #include "common/base/Status.h"
 /**
  * \param exe: program name.
- * \return wether successfully setupLogging.
+ * \return whether successfully setupLogging.
  *
  */
 nebula::Status setupLogging(const std::string &exe);

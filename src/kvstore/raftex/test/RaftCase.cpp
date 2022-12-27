@@ -143,8 +143,8 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   LOG(INFO) << "<===== Done LeaderNetworkFailure test";
 }
 
-TEST_F(ThreeRaftTest, Persistance) {
-  LOG(INFO) << "=====> Start persistance test";
+TEST_F(ThreeRaftTest, Persistence) {
+  LOG(INFO) << "=====> Start persistence test";
 
   LOG(INFO) << "=====> Now let's kill random copy";
   std::vector<std::string> msgs;
@@ -164,7 +164,7 @@ TEST_F(ThreeRaftTest, Persistance) {
   }
   sleep(FLAGS_raft_heartbeat_interval_secs);
   checkConsensus(copies_, 0, 9, msgs);
-  LOG(INFO) << "<===== Done persistance test";
+  LOG(INFO) << "<===== Done persistence test";
 }
 
 // this ut will lead to crash in some case, see issue #685

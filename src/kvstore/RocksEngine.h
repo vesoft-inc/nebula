@@ -177,7 +177,7 @@ class RocksEngine : public KVEngine {
    * @brief Construct a new rocksdb instance
    *
    * @param spaceId
-   * @param vIdLen Vertex id length, used for perfix bloom filter
+   * @param vIdLen Vertex id length, used for prefix bloom filter
    * @param dataPath Rocksdb data path
    * @param walPath Rocksdb wal path
    * @param mergeOp Rocksdb merge operation
@@ -392,7 +392,7 @@ class RocksEngine : public KVEngine {
    * Non-data operation
    ********************/
   /**
-   * @brief Write the part key into rocksdb for persistance
+   * @brief Write the part key into rocksdb for persistence
    *
    * @param partId
    * @param raftPeers partition raft peers, including peers created during balance which are not in
@@ -424,7 +424,7 @@ class RocksEngine : public KVEngine {
   std::vector<PartitionID> allParts() override;
 
   /**
-   * @brief Retrun all the balancing part->raft peers in rocksdb engine by scanning system part key.
+   * @brief Return all the balancing part->raft peers in rocksdb engine by scanning system part key.
    *
    * @return std::map<Partition, Peers>
    */

@@ -182,6 +182,7 @@ def preload_space(
     load_nba_int_vid_data,
     load_student_data,
     load_ldbc_v0_3_3,
+    load_test_data,
     exec_ctx,
 ):
     space = normalize_outline_scenario(request, space)
@@ -193,6 +194,8 @@ def preload_space(
         exec_ctx["space_desc"] = load_student_data
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
+    elif space == "test":
+        exec_ctx["test"] = load_test_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
@@ -235,6 +238,21 @@ def new_space(request, options, exec_ctx):
     exec_ctx["space_desc"] = space_desc
     exec_ctx["drop_space"] = True
 
+
+@given(parse("add listeners to space"))
+def add_listeners(request, exec_ctx):
+    show_listener = "show hosts storage listener"
+    exec_query(request, show_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
+    values = result.row_values(0)
+    host = values[0]
+    port = values[1]
+    add_listener = f"ADD LISTENER ELASTICSEARCH  {host}:{port}"
+    exec_ctx['result_set'] = []
+    exec_query(request, add_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
 
 @given(parse("Any graph"))
 def new_space(request, exec_ctx):
@@ -454,7 +472,6 @@ def executing_query(
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx, sess)
     sess.release()
-
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, exec_ctx, request):
@@ -807,7 +824,6 @@ def drop_used_space(exec_ctx):
         stmt = space_desc.drop_stmt()
         session = exec_ctx.get('current_session')
         response(session, stmt)
-
 
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(request, plan, exec_ctx):

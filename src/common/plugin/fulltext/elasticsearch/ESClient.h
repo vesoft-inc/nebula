@@ -16,12 +16,23 @@ namespace nebula::plugin {
 
 class ESClient {
  public:
+  ESClient(const ESClient& client) = default;
   ESClient(HttpClient& httpClient,
            const std::string& protocol,
            const std::string& address,
            const std::string& user,
            const std::string& password);
-
+  ESClient& operator=(const ESClient& client) {
+    if (&client == this) {
+      return *this;
+    }
+    protocol_ = client.protocol_;
+    httpClient_ = client.httpClient_;
+    address_ = client.address_;
+    username_ = client.username_;
+    password_ = client.password_;
+    return *this;
+  }
   StatusOr<folly::dynamic> createIndex(const std::string& name, const folly::dynamic& object);
   StatusOr<folly::dynamic> dropIndex(const std::string& name);
 

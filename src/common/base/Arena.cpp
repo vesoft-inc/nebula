@@ -16,7 +16,7 @@ void* Arena::allocateAligned(const std::size_t alloc) {
       kAlignment - (reinterpret_cast<uintptr_t>(currentPtr_) & (kAlignment - 1));
   const std::size_t consumption = alloc + pad;
   if (UNLIKELY(consumption > kMaxChunkSize)) {
-    DLOG(FATAL) << "Arena can't allocate so large memory.";
+    LOG(DFATAL) << "Arena can't allocate so large memory.";
     return nullptr;
   }
   if (LIKELY(consumption <= availableSize_)) {

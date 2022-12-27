@@ -1505,7 +1505,8 @@ folly::dynamic Value::toJson() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 folly::dynamic Value::getMetaData() const {
@@ -1550,7 +1551,8 @@ folly::dynamic Value::getMetaData() const {
       break;
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 std::string Value::toString() const {
@@ -1575,7 +1577,8 @@ std::string Value::toString() const {
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
       }
-      LOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      LOG(DFATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      return "__NULL_BAD_TYPE__";
     }
     case Value::Type::BOOL: {
       return getBool() ? "true" : "false";
@@ -1628,7 +1631,8 @@ std::string Value::toString() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  return "__NULL_BAD_TYPE__";
 }
 
 Value Value::toBool() const {
@@ -1850,7 +1854,7 @@ Value Value::lessThan(const Value& v) const {
       return kNullBadType;
     }
   }
-  DLOG(FATAL) << "Unknown type " << static_cast<int>(v.type());
+  LOG(DFATAL) << "Unknown type " << static_cast<int>(v.type());
   return Value::kNullBadType;
 }
 
@@ -1949,7 +1953,7 @@ Value Value::equal(const Value& v) const {
       return false;
     }
   }
-  DLOG(FATAL) << "Unknown type " << static_cast<int>(v.type());
+  LOG(DFATAL) << "Unknown type " << static_cast<int>(v.type());
   return Value::kNullBadType;
 }
 
@@ -1971,7 +1975,8 @@ bool Value::implicitBool() const {
     case Type::LIST:
       return !getList().empty();
     default:
-      LOG(FATAL) << "Impossible to reach here!";
+      LOG(DFATAL) << "Impossible to reach here!";
+      return false;
   }
 }
 
@@ -2253,7 +2258,8 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return Value::kNullValue;
         }
       }
-      LOG(FATAL) << "Unknown type: " << rhs.type();
+      LOG(DFATAL) << "Unknown type: " << rhs.type();
+      return Value::kNullBadType;
     }
     case Value::Type::VERTEX: {
       switch (rhs.type()) {
@@ -2686,7 +2692,7 @@ bool operator<(const Value& lhs, const Value& rhs) {
       return lhs.getGeography() < rhs.getGeography();
     }
     case Value::Type::DURATION: {
-      DLOG(FATAL) << "Duration is not comparable.";
+      LOG(DFATAL) << "Duration is not comparable.";
       return false;
     }
     case Value::Type::NULLVALUE:
@@ -2694,7 +2700,7 @@ bool operator<(const Value& lhs, const Value& rhs) {
       return false;
     }
   }
-  DLOG(FATAL) << "Unknown type " << static_cast<int>(lType);
+  LOG(DFATAL) << "Unknown type " << static_cast<int>(lType);
   return false;
 }
 
@@ -2790,7 +2796,7 @@ bool Value::equals(const Value& rhs) const {
       return false;
     }
   }
-  DLOG(FATAL) << "Unknown type " << static_cast<int>(type());
+  LOG(DFATAL) << "Unknown type " << static_cast<int>(type());
   return false;
 }
 
@@ -2848,12 +2854,13 @@ std::size_t Value::hash() const {
       return std::hash<Duration>()(getDuration());
     }
     case Type::DATASET: {
-      LOG(FATAL) << "Hash for DATASET has not been implemented";
+      LOG(DFATAL) << "Hash for DATASET has not been implemented";
     }
     default: {
-      LOG(FATAL) << "Unknown type";
+      LOG(DFATAL) << "Unknown type";
     }
   }
+  return ~0UL;
 }
 
 bool operator!=(const Value& lhs, const Value& rhs) {
