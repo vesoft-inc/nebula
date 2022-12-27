@@ -258,10 +258,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing
-      DLOG(FATAL) << "Unimplemented sentence " << kind;
+      LOG(DFATAL) << "Unimplemented sentence " << kind;
     }
   }
-  DLOG(FATAL) << "Unknown sentence " << static_cast<int>(kind);
+  LOG(DFATAL) << "Unknown sentence " << static_cast<int>(kind);
   return std::make_unique<ReportError>(sentence, context);
 }
 

@@ -41,7 +41,10 @@ bool GraphServer::start() {
   }
 
   // Init worker id for snowflake generating unique id
-  nebula::Snowflake::initWorkerId(interface->metaClient_.get());
+  if (!nebula::Snowflake::initWorkerId(interface->metaClient_.get())) {
+    LOG(ERROR) << "WorkerId init failed";
+    return false;
+  }
 
   graphThread_ = std::make_unique<std::thread>([&] {
     thriftServer_->setPort(localHost_.port);

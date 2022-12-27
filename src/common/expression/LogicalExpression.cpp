@@ -19,7 +19,8 @@ const Value &LogicalExpression::eval(ExpressionContext &ctx) {
     case Kind::kLogicalXor:
       return evalXor(ctx);
     default:
-      LOG(FATAL) << "Illegal kind for logical expression: " << static_cast<int>(kind());
+      LOG(DFATAL) << "Illegal kind for logical expression: " << static_cast<int>(kind());
+      return Value::kNullBadType;
   }
 }
 
@@ -115,7 +116,8 @@ std::string LogicalExpression::toString() const {
       op = " XOR ";
       break;
     default:
-      LOG(FATAL) << "Illegal kind for logical expression: " << static_cast<int>(kind());
+      LOG(DFATAL) << "Illegal kind for logical expression: " << static_cast<int>(kind());
+      op = " illegal symbol ";
   }
   std::string buf;
   buf.reserve(256);
