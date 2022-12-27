@@ -139,6 +139,7 @@ nebula::cpp2::ErrorCode AdminJobProcessor::addJobProcess(const cpp2::AdminJobReq
   }
 
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
+  folly::SharedMutex::ReadHolder snapHolder(LockUtils::snapshotLock());
   auto jobId = autoIncrementId();
   if (!nebula::ok(jobId)) {
     return nebula::error(jobId);

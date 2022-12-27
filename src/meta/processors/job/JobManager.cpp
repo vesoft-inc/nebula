@@ -1011,6 +1011,10 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
 
       auto status = jobDesc.getStatus();
       if (status == cpp2::JobStatus::QUEUE || status == cpp2::JobStatus::RUNNING) {
+        LOG(INFO) << folly::sformat("The {} job is {} in space {}",
+                                    apache::thrift::util::enumNameSafe(jType),
+                                    apache::thrift::util::enumNameSafe(status),
+                                    spaceId);
         return true;
       }
     }

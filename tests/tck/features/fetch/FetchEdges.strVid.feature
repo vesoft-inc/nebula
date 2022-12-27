@@ -231,30 +231,30 @@ Feature: Fetch String Vid Edges
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $^.serve.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `serve`
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $$.serve.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `serve`
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD abc.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: EdgeNotFound: EdgeName `abc`
     # Fetch prop on illegal input
     When executing query:
       """
       GO FROM 'Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS src |
       FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `$-.dst', not exist prop `dst'
     # Fetch prop returns not existing property
     When executing query:
       """
       FETCH PROP ON serve 'Boris Diaw'->'Hawks' YIELD serve.not_exist_prop
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `serve.not_exist_prop', not found the property `not_exist_prop'.
 
   Scenario: yield edge
     When executing query:

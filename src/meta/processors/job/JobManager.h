@@ -29,6 +29,7 @@ extern stats::CounterId kNumRunningJobs;
 class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
   friend class GetStatsTest;
+  friend class CreateBackupProcessorTest;
   FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, JobPriority);
