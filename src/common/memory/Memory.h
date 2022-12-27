@@ -89,8 +89,7 @@ inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size) {
 #endif
   return actual_size;
 }
-inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size,
-                                                    std::align_val_t align) {
+inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size, std::align_val_t align) {
   size_t actual_size = size;
 
 #if ENABLE_JEMALLOC
@@ -146,10 +145,9 @@ inline ALWAYS_INLINE void untrackMemory(void* ptr, std::size_t size) noexcept {
   }
 }
 
-inline ALWAYS_INLINE void untrackMemory(
-    void* ptr,
-    std::size_t size,
-    std::align_val_t align) noexcept {
+inline ALWAYS_INLINE void untrackMemory(void* ptr,
+                                        std::size_t size,
+                                        std::align_val_t align) noexcept {
   try {
 #if ENABLE_JEMALLOC
     UNUSED(size);
