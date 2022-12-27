@@ -119,9 +119,11 @@ class ESListener : public Listener {
                           const PickFunc& func);
 
   std::string truncateVid(const std::string& vid);
+
+  StatusOr<::nebula::plugin::ESAdapter> getESAdapter();
+
   std::unique_ptr<std::string> lastApplyLogFile_{nullptr};
   std::unique_ptr<std::string> spaceName_{nullptr};
-  ::nebula::plugin::ESAdapter esAdapter_;
   int32_t vIdLen_;
   bool isIntVid_{false};
 };

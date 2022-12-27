@@ -26,22 +26,6 @@ void ESListener::init() {
   }
   isIntVid_ = vidTypeRet.value() == nebula::cpp2::PropertyType::INT64;
 
-  auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
-  if (!cRet.ok() || cRet.value().empty()) {
-    LOG(FATAL) << "elasticsearch clients error";
-  }
-  std::vector<nebula::plugin::ESClient> esClients;
-  for (const auto& c : cRet.value()) {
-    auto host = c.host;
-    std::string user, password;
-    if (c.user_ref().has_value()) {
-      user = *c.user_ref();
-      password = *c.pwd_ref();
-    }
-    std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    esClients.emplace_back(HttpClient::instance(), protocol, host.toRawString(), user, password);
-  }
-  esAdapter_.setClients(std::move(esClients));
   auto sRet = schemaMan_->toGraphSpaceName(spaceId_);
   if (!sRet.ok()) {
     LOG(FATAL) << "space name error";
@@ -70,7 +54,13 @@ bool ESListener::apply(const BatchHolder& batch) {
     pickTagAndEdgeData(std::get<0>(log), std::get<1>(log), std::get<2>(log), callback);
   }
   if (!bulk.empty()) {
-    auto status = esAdapter_.bulk(bulk);
+    auto esAdapterRes = getESAdapter();
+    if (!esAdapterRes.ok()) {
+      LOG(ERROR) << esAdapterRes.status();
+      return false;
+    }
+    auto esAdapter = std::move(esAdapterRes).value();
+    auto status = esAdapter.bulk(bulk);
     if (!status.ok()) {
       LOG(ERROR) << status;
       return false;
@@ -369,6 +359,30 @@ std::string ESListener::truncateVid(const std::string& vid) {
     return folly::rtrim(folly::StringPiece(vid), [](char c) { return c == '\0'; }).toString();
   }
   return vid;
+}
+
+StatusOr<::nebula::plugin::ESAdapter> ESListener::getESAdapter() {
+  auto cRet = schemaMan_->getServiceClients(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
+  if (!cRet.ok()) {
+    LOG(ERROR) << cRet.status().message();
+    return cRet.status();
+  }
+  if (cRet.value().empty()) {
+    LOG(ERROR) << "There is no elasticsearch service";
+    return ::nebula::Status::Error("There is no elasticsearch service");
+  }
+  std::vector<nebula::plugin::ESClient> esClients;
+  for (const auto& c : cRet.value()) {
+    auto host = c.host;
+    std::string user, password;
+    if (c.user_ref().has_value()) {
+      user = *c.user_ref();
+      password = *c.pwd_ref();
+    }
+    std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
+    esClients.emplace_back(HttpClient::instance(), protocol, host.toRawString(), user, password);
+  }
+  return ::nebula::plugin::ESAdapter(std::move(esClients));
 }
 
 }  // namespace kvstore
