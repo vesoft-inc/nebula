@@ -209,3 +209,13 @@ Feature: Parameter
       """
     Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
     Then clear the used parameters
+
+  Scenario: expression with parameters
+    When executing query:
+      """
+      $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
+      yield avg($var.likeness)+1 as v;
+      """
+    Then the result should be, in any order:
+      | v    |
+      | 96.0 |
