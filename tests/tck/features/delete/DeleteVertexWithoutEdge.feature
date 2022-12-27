@@ -25,7 +25,7 @@ Feature: delete vertex without edge
     Then the execution should be successful
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id;
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id;
       """
     Then the result should be, in any order:
       | dst | id |
@@ -50,7 +50,7 @@ Feature: delete vertex without edge
       | e |
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id
       """
     Then the result should be, in any order:
       | dst | id |
@@ -61,7 +61,7 @@ Feature: delete vertex without edge
     Then the execution should be successful
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id;
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS dst, $^.t.id as id;
       """
     Then the result should be, in any order:
       | dst | id |
@@ -82,7 +82,7 @@ Feature: delete vertex without edge
     Then the execution should be successful
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS a, $^.t.id AS id;
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS a, $^.t.id AS id;
       """
     Then the result should be, in any order:
       | a | id |
@@ -108,7 +108,7 @@ Feature: delete vertex without edge
       | [:e 1->2 @0 {}] |
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS b, $^.t.id as id;
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS b, $^.t.id as id;
       """
     Then the result should be, in any order:
       | b | id    |
@@ -121,7 +121,7 @@ Feature: delete vertex without edge
     Then the execution should be successful
     When executing query:
       """
-      GO 1 STEP FROM 1 OVER e YIELD e._dst AS c, $^.t.id as id;
+      GO 1 STEPS FROM 1 OVER e YIELD e._dst AS c, $^.t.id as id;
       """
     Then the result should be, in any order:
       | c | id |
