@@ -695,7 +695,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with wrong type default value of time when change
     When executing query:
       """
-      ALTER TAG tag_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
+      ALTER TAG tag_not_null_default1 CHANGE (name string DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of string when add
