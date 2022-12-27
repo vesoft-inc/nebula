@@ -275,7 +275,7 @@ Feature: Set Test
     Then the result should be, in any order:
       | $var.serve.start_year | $var.$$.team.name |
 
-  Scenario: Diffrent column
+  Scenario: Different column
     Given a graph with space named "nba"
     When executing query:
       """

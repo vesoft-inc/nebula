@@ -42,6 +42,8 @@ class PlanNode {
     kEdgeIndexRangeScan,
     kScanVertices,
     kScanEdges,
+    kFulltextIndexScan,
+
     // ------------------
     kFilter,
     kUnion,
@@ -348,7 +350,7 @@ class SingleDependencyNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    LOG(DFATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 
@@ -370,7 +372,7 @@ class SingleInputNode : public SingleDependencyNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    LOG(DFATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 
@@ -420,7 +422,7 @@ class BinaryInputNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method for " << kind_;
+    LOG(DFATAL) << "Shouldn't call the unimplemented method for " << kind_;
     return nullptr;
   }
 
@@ -442,7 +444,7 @@ class VariableDependencyNode : public PlanNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    LOG(DFATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 

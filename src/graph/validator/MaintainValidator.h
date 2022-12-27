@@ -419,6 +419,8 @@ class CreateFTIndexValidator final : public Validator {
 
  private:
   meta::cpp2::FTIndex index_;
+  const std::string kFulltextIndexNamePrefix = "nebula_";
+  const size_t kFulltextIndexNameLength = 256;
 };
 
 class DropFTIndexValidator final : public Validator {

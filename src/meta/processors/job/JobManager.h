@@ -29,6 +29,7 @@ extern stats::CounterId kNumRunningJobs;
 class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
   friend class GetStatsTest;
+  friend class CreateBackupProcessorTest;
   FRIEND_TEST(JobManagerTest, AddJob);
   FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, JobPriority);
@@ -74,11 +75,11 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
 
   /**
    * @brief Init task queue, kvStore and schedule thread
-   *
    * @param store
+   * @param adminClient
    * @return true if the init is successful
    */
-  bool init(nebula::kvstore::KVStore* store);
+  bool init(nebula::kvstore::KVStore* store, AdminClient* adminClient);
 
   /**
    * @brief Called when receive a system signal
@@ -89,10 +90,9 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @brief Load job description from kvstore
    *
    * @param jobDesc
-   * @param client
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode addJob(JobDescription jobDesc, AdminClient* client);
+  nebula::cpp2::ErrorCode addJob(JobDescription jobDesc);
 
   /**
    * @brief The same job in inFlightJobs_.
@@ -157,7 +157,6 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @return Return error/recovered job num
    */
   ErrorOr<nebula::cpp2::ErrorCode, uint32_t> recoverJob(GraphSpaceID spaceId,
-                                                        AdminClient* client,
                                                         const std::vector<int32_t>& jobIds = {});
 
   /**

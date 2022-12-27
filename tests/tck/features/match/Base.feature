@@ -817,7 +817,7 @@ Feature: Basic match
       """
       MATCH (v:player) where v.player.name return v
       """
-    Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY, BOOL
+    Then a ExecutionError should be raised at runtime: Failed to evaluate condition: v.player.name. For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
 
   Scenario: Unimplemented features
     When executing query:

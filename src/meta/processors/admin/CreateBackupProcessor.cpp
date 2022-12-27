@@ -84,17 +84,22 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
   // make sure there is no index job
   std::unordered_set<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
-                                             cpp2::JobType::REBUILD_EDGE_INDEX};
+                                             cpp2::JobType::REBUILD_EDGE_INDEX,
+                                             cpp2::JobType::COMPACT,
+                                             cpp2::JobType::INGEST,
+                                             cpp2::JobType::DATA_BALANCE,
+                                             cpp2::JobType::LEADER_BALANCE};
   auto result = jobMgr->checkTypeJobRunning(jobTypes);
   if (!nebula::ok(result)) {
-    LOG(INFO) << "Get Index status failed, not allowed to create backup.";
+    LOG(INFO) << "Get running job status failed, not allowed to create backup.";
     handleErrorCode(nebula::error(result));
     onFinished();
     return;
   }
   if (nebula::value(result)) {
-    LOG(INFO) << "Index is rebuilding, not allowed to create backup.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX);
+    LOG(INFO) << "There is some running or queued job mutating the data, not allowed to "
+                 "create backup now.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_RUNNING_JOBS);
     onFinished();
     return;
   }

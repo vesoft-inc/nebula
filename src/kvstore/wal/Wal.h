@@ -46,7 +46,7 @@ class Wal {
    * @param term Log term to append
    * @param cluster Cluster id in log to append
    * @param msg Log messgage to append
-   * @return Wheter append succeed
+   * @return  Whether append succeed
    */
   virtual bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) = 0;
 
@@ -55,7 +55,7 @@ class Wal {
    * @brief Append a list of log messages to the WAL.
    *
    * @param iter Log iterator to append
-   * @return Wheter append succeed
+   * @return  Whether append succeed
    */
   virtual bool appendLogs(LogIterator& iter) = 0;
 

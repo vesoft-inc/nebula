@@ -284,13 +284,13 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   folly::Future<nebula::cpp2::ErrorCode> sendCommandAsync(std::string log);
 
   /**
-   * @brief Check if the peer has catched up data from leader. If leader is sending the
+   * @brief Check if the peer has caught up data from leader. If leader is sending the
    * snapshot, the method will return false.
    *
-   * @param peer The peer to check if it has catched up
+   * @param peer The peer to check if it has caught up
    * @return nebula::cpp2::ErrorCode
    */
-  nebula::cpp2::ErrorCode isCatchedUp(const HostAddr& peer);
+  nebula::cpp2::ErrorCode isCaughtUp(const HostAddr& peer);
 
   /**
    * @brief Hard link the wal files to a new path
@@ -601,7 +601,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Verify if the request can be accepted when receiving a AppendLog or Heartbeat request
    *
    * @tparam REQ AppendLogRequest or HeartbeatRequest
-   * @param req RPC requeset
+   * @param req RPC request
    * @return nebula::cpp2::ErrorCode
    */
   template <typename REQ>
@@ -752,7 +752,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    *
    * @param resps Responses of peers
    * @param eb The eventbase when sent request, used for retry and continue as well
-   * @param iter Log iterator, also used for continue to replicate remaing logs
+   * @param iter Log iterator, also used for continue to replicate remaining logs
    * @param currTerm The term when building the iterator
    * @param lastLogId The last log id in iterator
    * @param committedId The commit log id

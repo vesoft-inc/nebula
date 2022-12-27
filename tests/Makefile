@@ -14,7 +14,8 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
-ENABLE_ES ?= false
+ENABLE_FT_INDEX ?= false
+ES_ADDRESS ?= "locahost:9200"
 ENABLE_SSL ?= false
 ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
@@ -29,9 +30,10 @@ QUERY_CONCURRENTLY ?= false
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
 
-ifeq ($(ENABLE_ES),false)
+ifeq ($(ENABLE_FT_INDEX),false)
 	PYTEST_MARKEXPR="not skip and not ft_index"
 else
+	export NEBULA_TEST_ES_ADDRESS=${ES_ADDRESS}
 	PYTEST_MARKEXPR="not skip"
 endif
 

@@ -20,7 +20,7 @@ namespace opt {
 //  Benefits:
 //   1. Remove unnecessary Project node
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 // +---------+---------+

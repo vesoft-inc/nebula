@@ -75,7 +75,7 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   // return: ClientSession which will be found.
   std::shared_ptr<ClientSession> findSessionFromCache(SessionID id);
 
-  // Gets all seesions from the local cache.
+  // Gets all sessions from the local cache.
   // return: All sessions of the local cache.
   std::vector<meta::cpp2::Session> getSessionFromLocalCache() const;
 

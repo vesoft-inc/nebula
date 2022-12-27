@@ -176,7 +176,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
     case Expression::Kind::kVarProperty: {  // $e.name
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
       auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
+      propsUsed_.insertEdgeProp(edgeAlias, unknownType_, propName);
       break;
     }
     case Expression::Kind::kCase: {  // (case xxx).name
@@ -200,7 +200,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       if (kind == Expression::Kind::kInputProperty || kind == Expression::Kind::kVarProperty) {
         auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
         auto &edgeAlias = propExpr->prop();
-        propsUsed_.insertEdgeProp(edgeAlias, unKnowType_, propName);
+        propsUsed_.insertEdgeProp(edgeAlias, unknownType_, propName);
       } else if (kind == Expression::Kind::kListComprehension) {
         //  match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v) return e[0].start_year
         auto *listExpr = static_cast<ListComprehensionExpression *>(subLeftExpr);
@@ -208,7 +208,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
         if (collectExpr->kind() == Expression::Kind::kInputProperty) {
           auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
           auto &aliasName = inputPropExpr->prop();
-          propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+          propsUsed_.insertEdgeProp(aliasName, unknownType_, propName);
         }
       } else {
         // normal path
@@ -235,7 +235,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
           //  match (v) return properties(v).name
           auto *inputPropExpr = static_cast<InputPropertyExpression *>(argExpr);
           auto &aliasName = inputPropExpr->prop();
-          propsUsed_.insertVertexProp(aliasName, unKnowType_, propName);
+          propsUsed_.insertVertexProp(aliasName, unknownType_, propName);
           break;
         }
         case Expression::Kind::kCase: {  // properties(case xxx).name
@@ -261,7 +261,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
             //  match (v)-[e]->(b) return properties(e).start_year
             auto *propExpr = static_cast<PropertyExpression *>(subLeftExpr);
             auto &aliasName = propExpr->prop();
-            propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+            propsUsed_.insertEdgeProp(aliasName, unknownType_, propName);
           } else if (leftKind == Expression::Kind::kListComprehension) {
             //  match (v)-[c*2]->(b) return properties(c[0]).start_year
             //  properties([e IN $-.c WHERE is_edge($e)][0]).start_year
@@ -270,7 +270,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
             if (collectExpr->kind() == Expression::Kind::kInputProperty) {
               auto *inputPropExpr = static_cast<InputPropertyExpression *>(collectExpr);
               auto &aliasName = inputPropExpr->prop();
-              propsUsed_.insertEdgeProp(aliasName, unKnowType_, propName);
+              propsUsed_.insertEdgeProp(aliasName, unknownType_, propName);
             }
           } else {
             // normal path
@@ -317,7 +317,8 @@ void PropertyTrackerVisitor::visit(AggregateExpression *expr) {
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);
   if (funName == "count") {
     auto kind = expr->arg()->kind();
-    if (kind == Expression::Kind::kConstant) {
+    if (kind == Expression::Kind::kVarProperty || kind == Expression::Kind::kConstant ||
+        kind == Expression::Kind::kInputProperty) {
       return;
     }
   }

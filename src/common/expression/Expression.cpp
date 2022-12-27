@@ -395,7 +395,7 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kInputProperty: {
-      LOG(FATAL) << "Should not decode input property expression";
+      LOG(DFATAL) << "Should not decode input property expression";
       return exp;
     }
     case Expression::Kind::kVarProperty: {
@@ -459,7 +459,7 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kVersionedVar: {
-      LOG(FATAL) << "Should not decode version variable expression";
+      LOG(DFATAL) << "Should not decode version variable expression";
       return exp;
     }
     case Expression::Kind::kUUID: {
@@ -516,17 +516,18 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
     case Expression::Kind::kTSWildcard:
     case Expression::Kind::kTSRegexp:
     case Expression::Kind::kTSFuzzy: {
-      LOG(FATAL) << "Should not decode text search expression";
+      LOG(DFATAL) << "Should not decode text search expression";
       return exp;
     }
     case Expression::Kind::kMatchPathPattern: {
-      LOG(FATAL) << "Should not decode match path pattern expression.";
+      LOG(DFATAL) << "Should not decode match path pattern expression.";
       return exp;
     }
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown expression: " << decoder.getHexStr();
+  LOG(DFATAL) << "Unknown expression: " << decoder.getHexStr();
+  return exp;
 }
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {

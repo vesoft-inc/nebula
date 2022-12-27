@@ -29,7 +29,7 @@ class SendBlockSignProcessor {
   /**
    * @brief Entry point for sending block sign.
    *
-   * @param req Reuqest for sending block sign.
+   * @param req Request for sending block sign.
    */
   void process(const cpp2::BlockingSignRequest& req);
 

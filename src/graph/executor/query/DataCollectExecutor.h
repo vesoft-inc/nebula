@@ -11,7 +11,7 @@
 //
 // Member:
 //  `colNames_` : save the column name of the result of the DataCollect
-// Funcitons:
+// Functions:
 //  `collectSubgraph` : receive result from GetNeighbors, collect vertices & edges by calling
 //   GetNeighborIter's getVertices & getEdges interface
 //
