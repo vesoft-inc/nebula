@@ -421,6 +421,8 @@ enum ErrorCode {
     E_QUERY_NOT_FOUND                 = -2073,  // Query not found
     E_AGENT_HB_FAILUE                 = -2074,  // Failed to receive heartbeat from agent
 
+    E_ACCESS_ES_FAILURE               = -2080,  // Failed to access elasticsearch
+
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,  // Consensus cannot be reached during an election
     E_KEY_HAS_EXISTS                  = -3002,  // Key already exists
