@@ -267,15 +267,6 @@ Feature: Parameter
     Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
     Then clear the used parameters
 
-  Scenario: expression with parameters
-    When executing query:
-      """
-      $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
-      yield avg($var.likeness)+1 as v;
-      """
-    Then the result should be, in any order:
-      | v    |
-      | 96.0 |
   Scenario: [param-test-011] conflict name
     When executing query:
       """
@@ -304,15 +295,14 @@ Feature: Parameter
       | "Manu Ginobili1-8422829895182987733" |
       | "Tony Parker1803925327675532371"     |
     # aggregate expressions
-    # crash and fixed later
-    # When executing query:
-    # """
-    # $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
-    # yield avg($var.likeness)+$p1 as v;
-    # """
-    # Then the result should be, in any order:
-    # | v |
-    # | 2 |
+    When executing query:
+      """
+      $var=go from "Tim Duncan" over like yield like._dst as id, like.likeness as likeness;
+      yield avg($var.likeness)+$p1 as v;
+      """
+    Then the result should be, in any order:
+      | v    |
+      | 96.0 |
     When executing query:
       """
       go from "Tim Duncan" over like yield like._dst as id
