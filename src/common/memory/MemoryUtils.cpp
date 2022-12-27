@@ -142,7 +142,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   // usr: record by current process's MemoryStats
   //                 used: bytes allocated by new operator
   //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
-  if (FLAGS_memory_stats_detail_log) {
+  if (FLAGS_memory_tracker_detail_log) {
     LOG(INFO) << " sys_used: " << static_cast<int64_t>(total - available) << " sys_total: " << total
               << " sys_ratio:" << (1 - available / total)
               << " usr_used:" << memory::MemoryStats::instance().used()
