@@ -311,7 +311,7 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
       statResults.emplace_back(std::move(statResult));
     }
     DLOG(INFO) << "finish";
-    // IndexAggregateNode has been copyed and each part get it's own aggregate info,
+    // IndexAggregateNode has been copied and each part get it's own aggregate info,
     // we need to merge it
     this->mergeStatsResult(statResults);
     this->onProcessFinished();

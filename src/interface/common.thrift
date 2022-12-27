@@ -374,6 +374,7 @@ enum ErrorCode {
     E_NO_VALID_HOST                   = -2026,  // Lack of valid hosts
     E_CORRUPTED_BALANCE_PLAN          = -2027,  // A data balancing plan that has been corrupted
     E_NO_INVALID_BALANCE_PLAN         = -2028,  // No invalid balance plan
+    E_HOST_CAN_NOT_BE_ADDED           = -2029,  // the host can not be added for it's not a storage host
 
 
     // Authentication Failure
@@ -404,7 +405,7 @@ enum ErrorCode {
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure
-    E_BACKUP_BUILDING_INDEX           = -2066,  // Backup terminated (index being created)
+    E_BACKUP_RUNNING_JOBS             = -2066,  // Backup terminated (some data modification jobs running)
     E_BACKUP_SPACE_NOT_FOUND          = -2067,  // Graph space does not exist at the time of backup
 
     // RESTORE Failure

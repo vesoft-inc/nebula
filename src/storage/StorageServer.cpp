@@ -85,9 +85,11 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     }
     return nbStore;
   } else if (FLAGS_store_type == "hbase") {
-    LOG(FATAL) << "HBase store has not been implemented";
+    LOG(DFATAL) << "HBase store has not been implemented";
+    return nullptr;
   } else {
-    LOG(FATAL) << "Unknown store type \"" << FLAGS_store_type << "\"";
+    LOG(DFATAL) << "Unknown store type \"" << FLAGS_store_type << "\"";
+    return nullptr;
   }
   return nullptr;
 }
@@ -139,7 +141,8 @@ int32_t StorageServer::getAdminStoreSeqId() {
   newVal.append(reinterpret_cast<char*>(&curSeqId), sizeof(int32_t));
   auto ret = env_->adminStore_->put(key, newVal);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(FATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
+    LOG(DFATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
+    return -1;
   }
   return curSeqId;
 }
@@ -174,7 +177,7 @@ bool StorageServer::start() {
 
 #ifdef BUILD_STANDALONE
   if (FLAGS_add_local_host) {
-    // meta allready ready when standalone.
+    // meta already ready when standalone.
     auto ret = metaClient_->checkLocalMachineRegistered();
     if (ret.ok()) {
       if (!ret.value()) {
@@ -259,6 +262,11 @@ bool StorageServer::start() {
   env_->edgesML_ = std::make_unique<EdgesMemLock>();
   env_->adminStore_ = getAdminStoreInstance();
   env_->adminSeqId_ = getAdminStoreSeqId();
+  if (env_->adminSeqId_ < 0) {
+    LOG(ERROR) << "Get admin store seq id failed!";
+    return false;
+  }
+
   taskMgr_ = AdminTaskManager::instance(env_.get());
   if (!taskMgr_->init()) {
     LOG(ERROR) << "Init task manager failed!";

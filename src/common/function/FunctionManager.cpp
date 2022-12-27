@@ -1692,7 +1692,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1732,7 +1733,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1773,7 +1775,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -2789,8 +2792,8 @@ FunctionManager::FunctionManager() {
       const auto &p = args[0].get().getPath();
       const std::size_t nodeIndex = args[1].get().getInt();
       if (nodeIndex < 0 || nodeIndex >= (1 + p.steps.size())) {
-        DLOG(FATAL) << "Out of range node index.";
-        return Value::kNullBadData;
+        LOG(DFATAL) << "Out of range node index.";
+        return Value::kNullOutOfRange;
       }
       if (nodeIndex == 0) {
         return p.src.vid;

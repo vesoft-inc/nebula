@@ -101,7 +101,7 @@ StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::JobOp jobOp,
     }
       // no default so the compiler will warning when lack
   }
-  DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
+  LOG(DFATAL) << "Unknown job operation " << static_cast<int>(jobOp);
   return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
 }
 

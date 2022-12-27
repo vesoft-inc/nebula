@@ -271,7 +271,7 @@ Feature: Integer Vid Set Test
     Then the result should be, in any order:
       | $var.serve.start_year | $var.$$.team.name |
 
-  Scenario: Integer Vid Diffrent column
+  Scenario: Integer Vid Different column
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER serve YIELD $^.player.name as name, $$.team.name as player

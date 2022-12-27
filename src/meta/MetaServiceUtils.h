@@ -42,7 +42,7 @@ class MetaServiceUtils final {
   /**
    * @brief Change schema property, mainly set ttl_col
    *
-   * @param cols Column infomartion, mainly used to check if the colType is INT64 or TIMESTAMP
+   * @param cols Column information, mainly used to check if the colType is INT64 or TIMESTAMP
    * @param schemaProp Which schema property to change
    * @param alterSchemaProp Where to get ttl_col
    * @param existIndex If the column has index
@@ -74,7 +74,7 @@ class MetaServiceUtils final {
    * @brief Make a function that filter spaces
    *
    * @param spaces Be used to filter keys don't contained
-   * @param parseSpace Funtion that parse the key to space id
+   * @param parseSpace Function that parse the key to space id
    * @return
    */
   static std::function<bool(const folly::StringPiece& key)> spaceFilter(

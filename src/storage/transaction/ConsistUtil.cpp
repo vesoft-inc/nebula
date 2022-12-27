@@ -72,7 +72,8 @@ RequestType ConsistUtil::parseType(folly::StringPiece val) {
     case 'd':
       return RequestType::DELETE;
     default:
-      LOG(FATAL) << "should not happen, identifier is " << identifier;
+      LOG(DFATAL) << "should not happen, identifier is " << identifier;
+      return RequestType::UNKNOWN;
   }
 }
 

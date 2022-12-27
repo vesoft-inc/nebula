@@ -63,7 +63,7 @@ class IndexExprContext : public ExpressionContext {
   StatusOr<std::size_t> getVarPropIndex(const std::string &var,
                                         const std::string &prop) const override {
     UNUSED(var), UNUSED(prop);
-    DLOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
   Value getSrcProp(const std::string &tag, const std::string &prop) const override {
@@ -80,7 +80,7 @@ class IndexExprContext : public ExpressionContext {
   }
   StatusOr<std::size_t> getInputPropIndex(const std::string &prop) const override {
     UNUSED(prop);
-    DLOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
   Value getVertex(const std::string &) const override {

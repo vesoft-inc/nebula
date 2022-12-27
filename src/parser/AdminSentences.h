@@ -667,6 +667,8 @@ class AdminJobSentence final : public Sentence {
   meta::cpp2::JobType getJobType() const;
   const std::vector<std::string>& getParas() const;
 
+  bool needWriteSpace() const;
+
  private:
   meta::cpp2::JobOp op_;
   meta::cpp2::JobType type_;

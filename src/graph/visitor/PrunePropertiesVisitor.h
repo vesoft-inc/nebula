@@ -84,7 +84,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   GraphSpaceID spaceID_;
   Status status_;
   bool rootNode_{true};
-  const int unKnowType_ = 0;
+  const int unknownType_ = 0;
 };
 
 }  // namespace graph

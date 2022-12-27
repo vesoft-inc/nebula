@@ -396,70 +396,70 @@ Feature: Fetch String Vertices
       """
       FETCH PROP ON player 'Boris Diaw' YIELD $^.player.name, player.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: unsupported src/dst property expression in yield.
     # Fetch Vertices not support get dst property
     When executing query:
       """
       FETCH PROP ON player 'Boris Diaw' YIELD $$.player.name, player.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: unsupported src/dst property expression in yield.
     # Fetch vertex yields not existing tag
     When executing query:
       """
       FETCH PROP ON player 'Boris Diaw' YIELD not_exist_tag.name, player.age
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `not_exist_tag`
     When executing query:
       """
       FETCH PROP ON * "Tim Duncan", "Boris Diaw" YIELD not_exist_tag.name
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `not_exist_tag`
     # Fetch prop no not existing tag
     When executing query:
       """
       FETCH PROP ON not_exist_tag 'Boris Diaw'
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `not_exist_tag`
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._dst as id, like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     When executing query:
       """
       GO FROM "11" over like YIELD like._dst as id | FETCH PROP ON player "11" YIELD $-.id
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield.
     # Fetch on existing vertex, and yield not existing property
     When executing query:
       """
       FETCH PROP ON player 'Boris Diaw' YIELD player.not_exist_prop
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `player.not_exist_prop', not found the property `not_exist_prop'.
     When executing query:
       """
       FETCH PROP ON * "Tim Duncan", "Boris Diaw" YIELD player.not_exist_prop
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `player.not_exist_prop', not found the property `not_exist_prop'.
     # only constant list or single column of data is allowed in piped FETCH clause
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst;
       """
-    Then a SyntaxError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime: syntax error near `, $-.dst'
 
   Scenario: Different from v1.x
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age, $-.*
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `$-.*', not exist prop `*'
     # Different from 1.x $- is not supported
     When executing query:
       """
       GO FROM 'NON EXIST VERTEX ID' OVER serve | FETCH PROP ON team $-
       """
-    Then a SyntaxError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime: syntax error near `$-'
 
   Scenario: format yield
     When executing query:

@@ -50,6 +50,22 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
     spaceIter->next();
   }
   for (auto& host : hosts) {
+    auto hostKey = MetaKeyUtils::hostKey(host.host, host.port);
+    auto hostRes = doGet(hostKey);
+    // check if the host is storage, if it is not storage, it should be found in host table not
+    // expired, so it can't be added
+    if (nebula::ok(hostRes)) {
+      auto now = time::WallClock::fastNowInMilliSec();
+      auto hostInfo = HostInfo::decode(nebula::value(hostRes));
+      if (hostInfo.role_ != cpp2::HostRole::STORAGE &&
+          now - hostInfo.lastHBTimeInMilliSec_ <
+              FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
+        LOG(ERROR) << "The host " << host << " is not storage";
+        code = nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED;
+        break;
+      }
+    }
+
     // Ensure that the node is not registered.
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
     if (machineExist(machineKey) == nebula::cpp2::ErrorCode::SUCCEEDED) {

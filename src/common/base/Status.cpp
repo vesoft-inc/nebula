@@ -100,7 +100,7 @@ const char *Status::toString(Code code) {
     case kSessionNotFound:
       return "SessionNotFound";
   }
-  DLOG(FATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
+  LOG(DFATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
   return "";
 }
 

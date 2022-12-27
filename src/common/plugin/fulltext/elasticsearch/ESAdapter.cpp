@@ -39,7 +39,8 @@ void ESBulk::put(const std::string& indexName,
   body["dst"] = dst;
   body["rank"] = rank;
   body["text"] = text;
-  documents_[docId] = {std::move(action), std::move(body)};
+  documents_[indexName].emplace_back(std::move(action));
+  documents_[indexName].emplace_back(std::move(body));
 }
 
 void ESBulk::delete_(const std::string& indexName,
@@ -54,7 +55,7 @@ void ESBulk::delete_(const std::string& indexName,
   metadata["_type"] = "_doc";
   metadata["_index"] = indexName;
   action["delete"] = std::move(metadata);
-  documents_[docId] = {std::move(action)};
+  documents_[indexName].emplace_back(std::move(action));
 }
 
 bool ESBulk::empty() {

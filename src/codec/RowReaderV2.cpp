@@ -208,7 +208,9 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
     case PropertyType::UNKNOWN:
       break;
   }
-  LOG(FATAL) << "Should not reach here";
+  LOG(DFATAL) << "Should not reach here, illegal property type: "
+              << static_cast<int>(field->type());
+  return Value::kNullBadType;
 }
 
 int64_t RowReaderV2::getTimestamp() const noexcept {

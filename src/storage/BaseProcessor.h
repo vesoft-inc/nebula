@@ -70,6 +70,8 @@ class BaseProcessor {
       return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
     isIntId_ = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
+    DCHECK(vIdType.value() == nebula::cpp2::PropertyType::INT64 ||
+           vIdType.value() == nebula::cpp2::PropertyType::FIXED_STRING);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }

@@ -34,7 +34,7 @@ class LabelAttributeExpression final : public Expression {
   }
 
   const Value& eval(ExpressionContext&) override {
-    DLOG(FATAL) << "LabelAttributeExpression has to be rewritten";
+    DLOG(DFATAL) << "LabelAttributeExpression has to be rewritten";
     return Value::kNullBadData;
   }
 
@@ -76,11 +76,11 @@ class LabelAttributeExpression final : public Expression {
   }
 
   void writeTo(Encoder&) const override {
-    LOG(FATAL) << "LabelAttributeExpression not supported to encode.";
+    LOG(DFATAL) << "LabelAttributeExpression not supported to encode.";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(FATAL) << "LabelAttributeExpression not supported to decode.";
+    LOG(DFATAL) << "LabelAttributeExpression not supported to decode.";
   }
 
  private:
