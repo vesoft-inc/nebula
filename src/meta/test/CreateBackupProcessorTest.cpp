@@ -280,7 +280,7 @@ TEST_F(CreateBackupProcessorTest, RunningJobs) {
   for (auto jobType : jobTypes) {
     auto currJobId = jobId++;
     JobDescription job(spacesIds_.front(), currJobId, jobType);
-    jobMgr_->addJob(job, client_.get());
+    jobMgr_->addJob(job);
 
     cpp2::CreateBackupReq req;
     auto processor = CreateBackupProcessor::instance(metaKv_.get(), client_.get());
