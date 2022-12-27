@@ -331,7 +331,7 @@ Feature: Insert string vid of vertex and edge
     # alter edge
     When executing query:
       """
-      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school int), DROP (id, time_)
+      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school string), DROP (id, time_)
       """
     Then the execution should be successful
     # drop not exist prop, failed
