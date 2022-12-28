@@ -60,6 +60,12 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
           otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         return handleResponse(resp, this->gd_->colNames());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

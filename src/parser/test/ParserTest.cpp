@@ -283,14 +283,14 @@ TEST_F(ParserTest, SpaceOperation) {
         "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
         "atomic_edge=true)";
     auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
+    EXPECT_FALSE(result.ok()) << result.status();
   }
   {
     std::string query =
         "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
         "atomic_edge=FALSE)";
     auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
+    EXPECT_FALSE(result.ok()) << result.status();
   }
   {
     std::string query = "USE default_space";

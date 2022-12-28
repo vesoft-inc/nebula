@@ -11,7 +11,6 @@ nebula_add_library(
     ExtractPropExprVisitor.cpp
     ExtractFilterExprVisitor.cpp
     FoldConstantExprVisitor.cpp
-    RewriteSymExprVisitor.cpp
     RewriteVisitor.cpp
     FindVisitor.cpp
     VidExtractVisitor.cpp

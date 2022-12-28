@@ -405,7 +405,7 @@ enum ErrorCode {
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure
-    E_BACKUP_BUILDING_INDEX           = -2066,  // Backup terminated (index being created)
+    E_BACKUP_RUNNING_JOBS             = -2066,  // Backup terminated (some data modification jobs running)
     E_BACKUP_SPACE_NOT_FOUND          = -2067,  // Graph space does not exist at the time of backup
 
     // RESTORE Failure
@@ -420,6 +420,10 @@ enum ErrorCode {
 
     E_QUERY_NOT_FOUND                 = -2073,  // Query not found
     E_AGENT_HB_FAILUE                 = -2074,  // Failed to receive heartbeat from agent
+
+    E_ACCESS_ES_FAILURE               = -2080,  // Failed to access elasticsearch
+
+    E_GRAPH_MEMORY_EXCEEDED           = -2600,  // Graph memory exceeded
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,  // Consensus cannot be reached during an election
@@ -510,6 +514,8 @@ enum ErrorCode {
     E_RAFT_BUFFER_OVERFLOW            = -3529,  // Cache overflow
     E_RAFT_ATOMIC_OP_FAILED           = -3530,  // Atomic operation failed
     E_LEADER_LEASE_FAILED             = -3531,  // Leader lease expired
+
+    E_STORAGE_MEMORY_EXCEEDED         = -3600,  // Storage memory exceeded
 
     E_UNKNOWN                         = -8000,  // Unknown error
 } (cpp.enum_strict)

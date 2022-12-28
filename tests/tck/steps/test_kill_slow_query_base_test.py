@@ -4,4 +4,4 @@
 
 from pytest_bdd import scenarios
 
-scenarios('slowquery/PermissionViaDifferentService.feature')
+scenarios('slowquery/KillSlowQueryBaseTest.feature')

@@ -139,9 +139,8 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   plugin::ESAdapter esAdapter(std::move(esClients));
   auto createIndexresult = esAdapter.createIndex(name);
   if (!createIndexresult.ok()) {
-    // TODO(hs.zhang): fix error code
     LOG(ERROR) << createIndexresult.message();
-    handleErrorCode(nebula::cpp2::ErrorCode::E_UNKNOWN);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);
     onFinished();
     return;
   }
@@ -209,9 +208,8 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
   plugin::ESAdapter esAdapter(std::move(esClients));
   auto dropIndexresult = esAdapter.dropIndex(req.get_fulltext_index_name());
   if (!dropIndexresult.ok()) {
-    // TODO(hs.zhang): fix error code
     LOG(ERROR) << dropIndexresult.message();
-    handleErrorCode(nebula::cpp2::ErrorCode::E_UNKNOWN);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);
     onFinished();
     return;
   }
