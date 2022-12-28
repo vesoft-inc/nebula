@@ -188,9 +188,9 @@ Feature: User & privilege Test
     Then the execution should be successful
     # TODO(shylock) fix me
     # When executing query:
-      # """
-      # DESC USER user_mlt_roles
-      # """
+    # """
+    # DESC USER user_mlt_roles
+    # """
     # Then a ExecutionError should be raised at runtime: User not existed!
     When executing query:
       """
@@ -218,6 +218,161 @@ Feature: User & privilege Test
       | "DBA"   | "nba"         |
       | "ADMIN" | "student"     |
       | "GUEST" | "nba_int_vid" |
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON nba TO user_mlt_roles;
+      GRANT ROLE GUEST ON nba TO user_mlt_roles;
+      GRANT ROLE USER ON nba TO user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      SHOW ROLES IN nba
+      """
+    Then the result should be, in any order:
+      | Account           | Role Type |
+      | "test_permission" | "USER"    |
+      | "user_mlt_roles"  | "USER"    |
+    When executing query:
+      """
+      DESC USER user_mlt_roles;
+      """
+    Then the result should be, in any order:
+      | role    | space         |
+      | "USER"  | "nba"         |
+      | "ADMIN" | "student"     |
+      | "GUEST" | "nba_int_vid" |
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON not_exists TO user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: SpaceNotFound: SpaceName `not_exists`
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON nba TO not_exists;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      GRANT not_exists ADMIN ON nba TO user_mlt_roles;
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `not_exists'
+    When executing query:
+      """
+      GRANT GOD ON nba TO user_mlt_roles;
+      """
+    Then a PermissionError should be raised at runtime: No permission to grant/revoke god user.
+    When executing query:
+      """
+      REVOKE ROLE USER ON nba FROM user_mlt_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DESC USER user_mlt_roles;
+      """
+    Then the result should be, in any order:
+      | role    | space         |
+      | "ADMIN" | "student"     |
+      | "GUEST" | "nba_int_vid" |
+    When executing query:
+      """
+      REVOKE ROLE GUEST ON student FROM user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: Improper role!
+    When executing query:
+      """
+      REVOKE ROLE ADMIN ON nba FROM user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: Role not existed!
+    When executing query:
+      """
+      REVOKE ROLE not_exists ON nba FROM user_mlt_roles;
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `not_exists'
+    When executing query:
+      """
+      REVOKE ROLE GOD ON nba FROM root;
+      """
+    Then a PermissionError should be raised at runtime: Permission denied
+    When executing query:
+      """
+      REVOKE ROLE USER ON not_exists FROM user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: SpaceNotFound: SpaceName `not_exists`
+    When executing query:
+      """
+      REVOKE ROLE USER ON nba FROM not_exists;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DROP USER user_mlt_roles
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      SHOW ROLES IN nba
+      """
+    Then the result should be, in any order:
+      | Account           | Role Type |
+      | "test_permission" | "USER"    |
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON nba TO user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      REVOKE ROLE ADMIN ON nba FROM user_mlt_roles;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      GRANT GUEST ON nba TO root;
+      """
+    Then a SemanticError should be raised at runtime: User 'root' is GOD, cannot be granted.
+    When executing query:
+      """
+      SHOW ROLES IN not_exists
+      """
+    Then a ExecutionError should be raised at runtime: SpaceNotFound: SpaceName `not_exists`
+
+  Scenario: Recreate space roles
+    When executing query:
+      """
+      CREATE SPACE test_roles(partition_num=1, replica_factor=1, vid_type=int64);
+      CREATE USER IF NOT EXISTS user_roles WITH PASSWORD "pwd";
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON test_roles TO user_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DROP SPACE test_roles;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE SPACE test_roles(partition_num=1, replica_factor=1, vid_type=int64);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      SHOW ROLES IN test_roles
+      """
+    Then the result should be, in any order:
+      | Account           | Role Type |
+    When executing query:
+      """
+      DROP SPACE test_roles
+      """
+    Then the execution should be successful
 
   Scenario: Alter user
     When executing query:
@@ -249,6 +404,11 @@ Feature: User & privilege Test
     Then a ExecutionError should be raised at runtime: Invalid password!
     When executing query:
       """
+      CHANGE PASSWORD user2 FROM "pwd1" TO "01234567890111213141516171"
+      """
+    Then a SemanticError should be raised at runtime: New password exceed maximum length 24 characters.
+    When executing query:
+      """
       CHANGE PASSWORD user2 FROM "pwd1" TO "pwd2"
       """
     Then the execution should be successful
@@ -271,9 +431,39 @@ Feature: User & privilege Test
     Then a SemanticError should be raised at runtime: Password exceed maximum length 24 characters.
     When executing query:
       """
+      DROP USER IF EXISTS u7
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CHANGE PASSWORD u7 FROM "pwd1" TO "nebula"
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
       ALTER USER not_exists WITH PASSWORD "pwd1"
       """
     Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      CHANGE PASSWORD root FROM "nebula" TO "root"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CHANGE PASSWORD root FROM "root" TO "nebula"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS u8
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CHANGE PASSWORD u8 FROM "" TO "pwd2"
+      """
+    Then the execution should be successful
 
   Scenario: Drop user
     When executing query:
@@ -576,9 +766,10 @@ Feature: User & privilege Test
       DESC USER root
       """
     Then a PermissionError should be raised at runtime:
-    # TODO(shylock) fix it
-    # When executing query:
-      # """
-      # DESCRIBE USER not_exists
-      # """
-    # Then a ExecutionError should be raised at runtime: User not existed!
+
+# TODO(shylock) fix it
+# When executing query:
+# """
+# DESCRIBE USER not_exists
+# """
+# Then a ExecutionError should be raised at runtime: User not existed!
