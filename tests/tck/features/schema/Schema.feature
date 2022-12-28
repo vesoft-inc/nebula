@@ -124,7 +124,7 @@ Feature: Insert string vid of vertex and edge
     # alter tag
     When executing query:
       """
-      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age string), DROP (gender)
+      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age int), DROP (gender)
       """
     Then the execution should be successful
     # drop not exist prop
@@ -142,7 +142,7 @@ Feature: Insert string vid of vertex and edge
       | Field           | Type        | Null  | Default | Comment |
       | "name"          | "string"    | "YES" | EMPTY   | EMPTY   |
       | "email"         | "string"    | "YES" | "NULL"  | EMPTY   |
-      | "age"           | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "age"           | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "row_timestamp" | "timestamp" | "YES" | 2020    | EMPTY   |
       | "col1"          | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "col2"          | "string"    | "YES" | EMPTY   | EMPTY   |
@@ -331,7 +331,7 @@ Feature: Insert string vid of vertex and edge
     # alter edge
     When executing query:
       """
-      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school int), DROP (id, time_)
+      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school string), DROP (id, time_)
       """
     Then the execution should be successful
     # drop not exist prop, failed
@@ -347,7 +347,7 @@ Feature: Insert string vid of vertex and edge
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment |
-      | "school" | "int64"  | "YES" | EMPTY   | EMPTY   |
+      | "school" | "string" | "YES" | EMPTY   | EMPTY   |
       | "col1"   | "int64"  | "YES" | EMPTY   | EMPTY   |
       | "col2"   | "string" | "YES" | EMPTY   | EMPTY   |
     # with negative DEFAULT value
@@ -695,7 +695,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with wrong type default value of time when change
     When executing query:
       """
-      ALTER TAG tag_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
+      ALTER TAG tag_not_null_default1 CHANGE (name string DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of string when add
@@ -752,7 +752,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with wrong type default value of time when change
     When executing query:
       """
-      ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
+      ALTER EDGE edge_not_null_default1 CHANGE (name string DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
     # chinese tag without quote mark

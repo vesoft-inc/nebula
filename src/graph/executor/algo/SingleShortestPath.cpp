@@ -32,6 +32,13 @@ folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
           result->append(std::move(ds));
         }
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -75,6 +82,13 @@ folly::Future<Status> SingleShortestPath::shortestPath(size_t rowNum, size_t ste
           }
         }
         return handleResponse(rowNum, stepNum);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -110,6 +124,13 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
       .thenValue([this, rowNum, stepNum, getNbrTime, reverse](auto&& resp) {
         addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -189,6 +210,13 @@ folly::Future<Status> SingleShortestPath::handleResponse(size_t rowNum, size_t s
           return folly::makeFuture<Status>(Status::OK());
         }
         return shortestPath(rowNum, stepNum + 1);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -249,33 +277,37 @@ void SingleShortestPath::buildOddPath(size_t rowNum, const std::vector<Value>& m
 folly::Future<bool> SingleShortestPath::buildEvenPath(size_t rowNum,
                                                       const std::vector<Value>& meetVids) {
   auto future = getMeetVidsProps(meetVids);
-  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum](auto&& vertices) {
-    if (vertices.empty()) {
-      return false;
-    }
-    for (auto& meetVertex : vertices) {
-      if (!meetVertex.isVertex()) {
-        continue;
-      }
-      auto meetVid = meetVertex.getVertex().vid;
-      auto leftPaths = createLeftPath(rowNum, meetVid);
-      auto rightPaths = createRightPath(rowNum, meetVid, false);
-      for (auto& leftPath : leftPaths) {
-        for (auto& rightPath : rightPaths) {
-          Row path = leftPath;
-          auto& steps = path.values.back().mutableList().values;
-          steps.emplace_back(meetVertex);
-          steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
-          path.emplace_back(rightPath.values.back());
-          resultDs_[rowNum].rows.emplace_back(std::move(path));
-          if (singleShortest_) {
-            return true;
+  return future.via(qctx_->rctx()->runner())
+      .thenValue([this, rowNum](auto&& vertices) {
+        if (vertices.empty()) {
+          return false;
+        }
+        for (auto& meetVertex : vertices) {
+          if (!meetVertex.isVertex()) {
+            continue;
+          }
+          auto meetVid = meetVertex.getVertex().vid;
+          auto leftPaths = createLeftPath(rowNum, meetVid);
+          auto rightPaths = createRightPath(rowNum, meetVid, false);
+          for (auto& leftPath : leftPaths) {
+            for (auto& rightPath : rightPaths) {
+              Row path = leftPath;
+              auto& steps = path.values.back().mutableList().values;
+              steps.emplace_back(meetVertex);
+              steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+              path.emplace_back(rightPath.values.back());
+              resultDs_[rowNum].rows.emplace_back(std::move(path));
+              if (singleShortest_) {
+                return true;
+              }
+            }
           }
         }
-      }
-    }
-    return true;
-  });
+        return true;
+      })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<bool>(std::runtime_error(e.what()));
+      });
 }
 
 std::vector<Row> SingleShortestPath::createLeftPath(size_t rowNum, const Value& meetVid) {

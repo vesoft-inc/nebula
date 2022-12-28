@@ -2179,12 +2179,42 @@ Feature: IndexTest_Vid_String
     Then a ExecutionError should be raised at runtime:
     When executing query:
       """
+      CREATE TAG INDEX string_index_with_length_0 ON t1(col4(0));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX string_index_with_length_0 ON e1(col4(0));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
       CREATE TAG INDEX string_index_too_long ON t1(col4(257));
       """
     Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       CREATE EDGE INDEX string_index_too_long ON e1(col4(257));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX fixed_string_index_with_length_0 ON t1(col8(0));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX fixed_string_index_with_length_0 ON e1(col8(0));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX fixed_string_index_with_length_10 ON t1(col8(10));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX fixed_string_index_with_length_10 ON e1(col8(10));
       """
     Then a ExecutionError should be raised at runtime:
     When executing query:

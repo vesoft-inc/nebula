@@ -7,6 +7,7 @@
 
 #include <robin_hood.h>
 
+#include "common/memory/MemoryTracker.h"
 #include "common/thread/GenericThreadPool.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
@@ -20,10 +21,20 @@ namespace storage {
 ProcessorCounters kGetDstBySrcCounters;
 
 void GetDstBySrcProcessor::process(const cpp2::GetDstBySrcRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
+  try {
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() { this->doProcess(req); });
+    } else {
+      doProcess(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -124,7 +135,10 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
     // flatResult_.reserve(sum);
 
     for (size_t j = 0; j < tries.size(); j++) {
-      DCHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       const auto& [code, partId] = tries[j].value();
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         handleErrorCode(code, spaceId_, partId);
@@ -168,7 +182,19 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
                         }
                       }
                       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
-                    });
+                    })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
+      });
 }
 
 StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,

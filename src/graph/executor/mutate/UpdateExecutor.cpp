@@ -81,6 +81,12 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
                             .build());
         }
         return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -132,6 +138,12 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
                             .build());
         }
         return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

@@ -1301,7 +1301,9 @@ TEST(ProcessorTest, AlterTagTest) {
     for (auto i = 0; i < 2; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("tag_0_col_%d", i);
-      column.type.type_ref() = i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE;
+      // Column 0 is type int64 and is only allowed to chagne to int64.
+      // Column 1 is type fixed string with maximal length, so is only allowed to change to string.
+      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
       (*changeSch.columns_ref()).emplace_back(std::move(column));
     }
     cpp2::Schema dropSch;
@@ -1351,7 +1353,7 @@ TEST(ProcessorTest, AlterTagTest) {
 
     cpp2::ColumnDef column;
     column.name = "tag_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "tag_0_col_10";
@@ -1422,7 +1424,7 @@ TEST(ProcessorTest, AlterTagTest) {
 
     cpp2::ColumnDef column;
     column.name = "tag_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "tag_0_col_10";
@@ -1452,7 +1454,7 @@ TEST(ProcessorTest, AlterTagTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_10";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
@@ -1473,7 +1475,7 @@ TEST(ProcessorTest, AlterTagTest) {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
     schemaProp.ttl_duration_ref() = 100;
-    schemaProp.ttl_col_ref() = "tag_0_col_11";
+    schemaProp.ttl_col_ref() = "tag_0_col_11";  // Type string is not allowed to set ttl
 
     req.space_id_ref() = 1;
     req.tag_name_ref() = "tag_0";
@@ -1536,7 +1538,7 @@ TEST(ProcessorTest, AlterTagTest) {
 
     cpp2::ColumnDef column;
     column.name = "tag_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "tag_0_col_11";
@@ -1646,7 +1648,7 @@ TEST(ProcessorTest, AlterTagTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
-  // Add col with out of range of fixed string
+  // Add col of fixed string
   {
     cpp2::AlterTagReq req;
     std::vector<cpp2::AlterSchemaItem> items;
@@ -1696,6 +1698,96 @@ TEST(ProcessorTest, AlterTagTest) {
       }
     }
     ASSERT_TRUE(expected);
+  }
+
+  // Verify illegal type conversion from string to int
+  {
+    cpp2::AlterTagReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema changeSch;
+    cpp2::ColumnDef column;
+    column.name = "tag_0_col_1";
+    column.type.type_ref() = PropertyType::INT64;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
+    auto* processor = AlterTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+  }
+
+  // Verify illegal type conversion from int to string
+  {
+    // add a int column first
+    cpp2::AlterTagReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema schema;
+    cpp2::ColumnDef column;
+    column.name = "add_col_int32_type";
+    column.type.type_ref() = PropertyType::INT32;
+    (*schema.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(schema);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
+    auto* processor = AlterTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+
+    // try to convert the type
+    cpp2::Schema changeSch;
+    items.clear();
+    column.name = "add_col_int32_type";
+    column.type.type_ref() = PropertyType::STRING;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
+    auto* changeSchProcessor = AlterTagProcessor::instance(kv.get());
+    auto changeSchF = changeSchProcessor->getFuture();
+    changeSchProcessor->process(req);
+    resp = std::move(changeSchF).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+  }
+
+  // Verify illegal type conversion from wider fixed string to thinner fixed string
+  {
+    cpp2::AlterTagReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema changeSch;
+    cpp2::ColumnDef column;
+    column.name = "add_col_fixed_string_type";
+    column.type.type_ref() = PropertyType::FIXED_STRING;
+    column.type.type_length_ref() = 4;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
+    auto* processor = AlterTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
   }
 }
 
@@ -1751,7 +1843,10 @@ TEST(ProcessorTest, AlterEdgeTest) {
     for (int32_t i = 0; i < 2; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_0_col_%d", i);
-      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::FIXED_STRING;
+      if (i == 1) {
+        column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
+      }
       (*addSch.columns_ref()).emplace_back(std::move(column));
     }
 
@@ -1781,7 +1876,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     for (auto i = 0; i < 2; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_%d_col_%d", 0, i);
-      column.type.type_ref() = i < 1 ? PropertyType::BOOL : PropertyType::DOUBLE;
+      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
       (*changeSch.columns_ref()).emplace_back(std::move(column));
     }
     cpp2::Schema dropSch;
@@ -1840,7 +1935,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     cpp2::ColumnDef column;
     column.name = "edge_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "edge_0_col_10";
@@ -1917,7 +2012,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     cpp2::ColumnDef column;
     column.name = "edge_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "edge_0_col_10";
@@ -1947,7 +2042,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_10";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
@@ -2032,7 +2127,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     cpp2::ColumnDef column;
     column.name = "edge_0_col_1";
-    column.type.type_ref() = PropertyType::DOUBLE;
+    column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
     column.name = "edge_0_col_11";
@@ -2145,7 +2240,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
-  // Add col with out of range of fixed string
+  // Add col of fixed string
   {
     cpp2::AlterEdgeReq req;
     std::vector<cpp2::AlterSchemaItem> items;
@@ -2195,6 +2290,96 @@ TEST(ProcessorTest, AlterEdgeTest) {
       }
     }
     ASSERT_TRUE(expected);
+  }
+
+  // Verify illegal type conversion from string to int
+  {
+    cpp2::AlterEdgeReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema changeSch;
+    cpp2::ColumnDef column;
+    column.name = "edge_0_col_1";
+    column.type.type_ref() = PropertyType::INT64;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
+    auto* processor = AlterEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+  }
+
+  // Verify illegal type conversion from int to string
+  {
+    // add a int column first
+    cpp2::AlterEdgeReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema schema;
+    cpp2::ColumnDef column;
+    column.name = "add_col_int32_type";
+    column.type.type_ref() = PropertyType::INT32;
+    (*schema.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(schema);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
+    auto* processor = AlterEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+
+    // try to convert the type
+    cpp2::Schema changeSch;
+    items.clear();
+    column.name = "add_col_int32_type";
+    column.type.type_ref() = PropertyType::STRING;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
+    auto* changeSchProcessor = AlterEdgeProcessor::instance(kv.get());
+    auto changeSchF = changeSchProcessor->getFuture();
+    changeSchProcessor->process(req);
+    resp = std::move(changeSchF).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+  }
+
+  // Verify illegal type conversion from wider fixed string to thinner fixed string
+  {
+    cpp2::AlterEdgeReq req;
+    std::vector<cpp2::AlterSchemaItem> items;
+    cpp2::Schema changeSch;
+    cpp2::ColumnDef column;
+    column.name = "add_col_fixed_string_type";
+    column.type.type_ref() = PropertyType::FIXED_STRING;
+    column.type.type_length_ref() = 4;
+    (*changeSch.columns_ref()).emplace_back(std::move(column));
+
+    items.emplace_back();
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
+    auto* processor = AlterEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
   }
 }
 
@@ -2283,7 +2468,7 @@ TEST(ProcessorTest, AlterTagForMoreThan256TimesTest) {
   {
     for (auto i = 1; i <= times; i++) {
       auto col_name = folly::stringPrintf("tag_0_a_%d", i);
-      auto col_type = PropertyType::INT64;
+      auto col_type = PropertyType::INT32;
       alterTagFunc(cpp2::AlterSchemaOp::ADD, col_name, col_type);
       totalScheVer++;
 
@@ -2301,7 +2486,7 @@ TEST(ProcessorTest, AlterTagForMoreThan256TimesTest) {
   {
     for (auto i = 3; i < times; i += 2) {
       auto col_name = expectedCols[i].get_name();
-      auto new_col_type = PropertyType::BOOL;
+      auto new_col_type = PropertyType::INT64;
       expectedCols[i].type.type_ref() = new_col_type;
       alterTagFunc(cpp2::AlterSchemaOp::CHANGE, col_name, new_col_type);
       totalScheVer++;
@@ -2410,7 +2595,7 @@ TEST(ProcessorTest, AlterEdgeForMoreThan256TimesTest) {
   {
     for (auto i = 1; i <= times; i++) {
       auto col_name = folly::stringPrintf("edge_0_a_%d", i);
-      auto col_type = PropertyType::INT64;
+      auto col_type = PropertyType::INT32;
       alterEdgeFunc(cpp2::AlterSchemaOp::ADD, col_name, col_type);
       totalScheVer++;
 
@@ -2428,7 +2613,7 @@ TEST(ProcessorTest, AlterEdgeForMoreThan256TimesTest) {
   {
     for (auto i = 3; i < times; i += 2) {
       auto col_name = expectedCols[i].get_name();
-      auto new_col_type = PropertyType::BOOL;
+      auto new_col_type = PropertyType::INT64;
       expectedCols[i].type.type_ref() = new_col_type;
       alterEdgeFunc(cpp2::AlterSchemaOp::CHANGE, col_name, new_col_type);
       totalScheVer++;
