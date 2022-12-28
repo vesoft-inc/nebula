@@ -82,7 +82,7 @@ folly::dynamic toJson(const Value &value) {
       // TODO store to object or array
       return value.toString();
   }
-  DLOG(FATAL) << "Impossible reach.";
+  LOG(DFATAL) << "Impossible reach.";
   return folly::dynamic::object();
 }
 

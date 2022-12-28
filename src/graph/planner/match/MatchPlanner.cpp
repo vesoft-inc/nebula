@@ -72,23 +72,18 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
   for (auto& alias : matchCtx->aliasesGenerated) {
     auto it = matchCtx->aliasesAvailable.find(alias.first);
     if (it != matchCtx->aliasesAvailable.end()) {
-      // Joined type should be same,
-      // If any type is kRuntime, leave the type check to runtime,
-      // Primitive types (Integer, String, etc.) or composite types(List, Map etc.)
-      // are deduced to kRuntime when cannot be deduced during planning.
-      if (it->second != alias.second && it->second != AliasType::kRuntime &&
-          alias.second != AliasType::kRuntime) {
+      interAliases.insert(alias.first);
+      // If any type is kRuntime, leave the type check to runtime
+      if (it->second == AliasType::kRuntime || alias.second == AliasType::kRuntime) {
+        continue;
+      }
+      // Non-runtime joined types should be the same
+      if (it->second != alias.second) {
         return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
                                                  alias.first,
                                                  AliasTypeName::get(alias.second),
                                                  AliasTypeName::get(it->second)));
       }
-      // Joined On EdgeList is not supported
-      if (alias.second == AliasType::kEdgeList) {
-        return Status::SemanticError("`%s' defined with type EdgeList, which cannot be joined on",
-                                     alias.first.c_str());
-      }
-      interAliases.insert(alias.first);
     }
   }
   if (!interAliases.empty()) {

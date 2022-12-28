@@ -68,7 +68,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
   // Currently, only --session_idle_timeout_secs has a gflag validtor
   if (module == meta::cpp2::ConfigModule::GRAPH) {
     // Update local cache before sending request
-    // Gflag value will be checked in SetCommandLineOption() if the flag validtor is registed
+    // Gflag value will be checked in SetCommandLineOption() if the flag validtor is registered
     auto valueStr = meta::GflagsManager::ValueToGflagString(value);
     if (value.isMap() && value.getMap().kvs.empty()) {
       // Be compatible with previous configuration

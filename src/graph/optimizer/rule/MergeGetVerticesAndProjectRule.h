@@ -18,7 +18,7 @@ namespace opt {
 //  expression of GetVertices Benefits:
 //   1. Delete unnecessary node
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +------+-------+

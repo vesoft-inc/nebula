@@ -23,6 +23,8 @@ SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
   for (auto& alias : intersectedAliases) {
     auto* args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, alias));
+    // TODO(czp): We should not do that for all data types,
+    // the InputPropertyExpression may be any data type
     auto* expr = FunctionCallExpression::make(pool, "_joinkey", args);
     hashKeys.emplace_back(expr);
     probeKeys.emplace_back(expr->clone());
@@ -140,7 +142,7 @@ SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, b
     siLeft->setLeftDep(const_cast<PlanNode*>(right.root));
     siLeft->setLeftVar(right.root->outputVar());
   } else {
-    DLOG(FATAL) << "Unsupported plan node: " << left.tail->kind();
+    LOG(DFATAL) << "Unsupported plan node: " << left.tail->kind();
     return newPlan;
   }
   newPlan.tail = right.tail;

@@ -60,6 +60,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ScanVertices";
     case Kind::kScanEdges:
       return "ScanEdges";
+    case Kind::kFulltextIndexScan:
+      return "FulltextIndexScan";
     case Kind::kFilter:
       return "Filter";
     case Kind::kUnion:
@@ -305,7 +307,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "GetDstBySrc";
       // no default so the compiler will warning when lack
   }
-  LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  LOG(DFATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  return "Unknown";
 }
 
 std::string PlanNode::toString() const {

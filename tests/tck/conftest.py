@@ -182,6 +182,7 @@ def preload_space(
     load_nba_int_vid_data,
     load_student_data,
     load_ldbc_v0_3_3,
+    load_test_data,
     exec_ctx,
 ):
     space = normalize_outline_scenario(request, space)
@@ -193,6 +194,8 @@ def preload_space(
         exec_ctx["space_desc"] = load_student_data
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
+    elif space == "test":
+        exec_ctx["test"] = load_test_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
@@ -469,7 +472,6 @@ def executing_query(
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx, sess)
     sess.release()
-
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, exec_ctx, request):
@@ -822,7 +824,6 @@ def drop_used_space(exec_ctx):
         stmt = space_desc.drop_stmt()
         session = exec_ctx.get('current_session')
         response(session, stmt)
-
 
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(request, plan, exec_ctx):

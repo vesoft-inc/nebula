@@ -4,6 +4,7 @@
 
 #include "graph/executor/algo/SubgraphExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/Utils.h"
 
@@ -65,6 +66,12 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
         }
         vids_.clear();
         return handleResponse(std::move(resp));
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

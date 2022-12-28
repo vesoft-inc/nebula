@@ -61,7 +61,7 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * @param dir Directory to save wal
    * @param info Wal info
    * @param policy Wal config
-   * @param preProcessor The pre-process fuction
+   * @param preProcessor The pre-process function
    * @param diskMan Disk manager to monitor remaining spaces
    * @return std::shared_ptr<FileBasedWal>
    */
@@ -111,7 +111,7 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * @param term Log term to append
    * @param cluster Cluster id in log to append
    * @param msg Log messgage to append
-   * @return Wheter append succeed
+   * @return Whether append succeed
    */
   bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) override;
 
@@ -120,7 +120,7 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * NOT** expect multiple threads will append logs simultaneously
    *
    * @param iter Log iterator to append
-   * @return Wheter append succeed
+   * @return Whether append succeed
    */
   bool appendLogs(LogIterator& iter) override;
 
@@ -196,7 +196,7 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
    * @param dir Directory to save wal
    * @param info Wal info
    * @param policy Wal config
-   * @param preProcessor The pre-process fuction
+   * @param preProcessor The pre-process function
    * @param diskMan Disk manager to monitor remaining spaces
    */
   FileBasedWal(const folly::StringPiece dir,
@@ -239,13 +239,13 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   void rollbackInFile(WalFileInfoPtr info, LogID logId);
 
   /**
-   * @brief The actaul implementation of appendLog()
+   * @brief The actual implementation of appendLog()
    *
    * @param id Log id to append
    * @param term Log term to append
    * @param cluster Cluster id in log to append
    * @param msg Log messgage to append
-   * @return Wheter append succeed
+   * @return Whether append succeed
    */
   bool appendLogInternal(LogID id, TermID term, ClusterID cluster, folly::StringPiece msg);
 

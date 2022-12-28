@@ -22,7 +22,7 @@ class FTIndexUtils final {
 
   static StatusOr<::nebula::plugin::ESAdapter> getESAdapter(meta::MetaClient* client);
 
-  // Converts TextSearchExpression into a relational expresion that could be pushed down
+  // Converts TextSearchExpression into a relational expression that could be pushed down
   static StatusOr<Expression*> rewriteTSFilter(ObjectPool* pool,
                                                bool isEdge,
                                                Expression* expr,

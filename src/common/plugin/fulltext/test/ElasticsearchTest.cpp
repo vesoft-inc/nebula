@@ -150,7 +150,9 @@ TEST_F(ESTest, createIndex) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  std::vector<plugin::ESClient> clients;
+  clients.push_back(client);
+  plugin::ESAdapter adapter(std::move(clients));
   {
     auto result = adapter.createIndex("nebula_index_1");
     ASSERT_TRUE(result.ok());
@@ -179,7 +181,7 @@ TEST_F(ESTest, dropIndex) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.dropIndex("nebula_index_1");
     ASSERT_TRUE(result.ok());
@@ -229,7 +231,7 @@ content-length: 78
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.isIndexExist("nebula_index_1");
     ASSERT_TRUE(result.ok());
@@ -282,7 +284,7 @@ content-length: 78
       .WillOnce(Return(curlErrorResp_));
 
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.clearIndex("nebula_index_1");
     ASSERT_TRUE(result.ok());
@@ -322,7 +324,7 @@ TEST_F(ESTest, prefix) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.prefix("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
@@ -366,7 +368,7 @@ TEST_F(ESTest, wildcard) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.wildcard("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
@@ -410,7 +412,7 @@ TEST_F(ESTest, regexp) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.regexp("nebula_index_1", "abc", -1, -1);
     ASSERT_TRUE(result.ok());
@@ -452,7 +454,7 @@ TEST_F(ESTest, bulk) {
       .Times(1)
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   plugin::ESBulk bulk;
   bulk.put("nebula_index_1", "1", "", "", 0, "vertex text");
   bulk.delete_("nebula_index_2", "", "a", "b", 10);
@@ -498,7 +500,7 @@ TEST_F(ESTest, fuzzy) {
       .WillOnce(Return(esErrorResp_))
       .WillOnce(Return(curlErrorResp_));
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.fuzzy("nebula_index_1", "abc", "2", -1, -1);
     ASSERT_TRUE(result.ok());
@@ -524,7 +526,7 @@ class RealESTest : public ::testing::Test {};
 
 TEST_F(RealESTest, DISABLED_CREATE_DROP_INDEX) {
   plugin::ESClient client(HttpClient::instance(), "http", FLAGS_es_address, "", "");
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.createIndex("nebula_index_1");
     ASSERT_TRUE(result.ok()) << result.message();
@@ -548,7 +550,7 @@ TEST_F(RealESTest, DISABLED_CREATE_DROP_INDEX) {
 TEST_F(RealESTest, DISABLED_QUERY) {
   plugin::ESClient client(HttpClient::instance(), "http", FLAGS_es_address, "", "");
   std::string indexName = "nebula_index_2";
-  plugin::ESAdapter adapter({client});
+  plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   {
     auto result = adapter.createIndex(indexName);
     ASSERT_TRUE(result.ok()) << result.message();

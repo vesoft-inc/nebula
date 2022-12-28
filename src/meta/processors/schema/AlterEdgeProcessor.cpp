@@ -30,7 +30,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
   // Check the edge belongs to the space
   // Because there are many edge types with same type and different versions, we should get
-  // latest edge type by prefix scaning.
+  // latest edge type by prefix scanning.
   auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto retPre = doPrefix(edgePrefix);
   if (!nebula::ok(retPre)) {
@@ -103,7 +103,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti.get_fields(), edgeItems);
+    auto ftStatus = ftIndexCheck(fti, edgeItems);
     if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(ftStatus);
       onFinished();

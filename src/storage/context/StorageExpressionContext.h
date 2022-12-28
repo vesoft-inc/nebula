@@ -89,7 +89,7 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // Get index of property in variable tuple
   StatusOr<std::size_t> getVarPropIndex(const std::string&, const std::string&) const override {
-    DLOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
 
@@ -114,7 +114,7 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // Get index of property in input tuple
   StatusOr<std::size_t> getInputPropIndex(const std::string&) const override {
-    DLOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
 
@@ -192,7 +192,7 @@ class StorageExpressionContext final : public ExpressionContext {
    */
   Value getVertex(const std::string& name = "") const override {
     UNUSED(name);
-    LOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Value::kNullBadData;
   }
 
@@ -202,7 +202,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @return Value
    */
   Value getEdge() const override {
-    LOG(FATAL) << "Unimplemented";
+    LOG(DFATAL) << "Unimplemented";
     return Value::kNullBadData;
   }
 
@@ -254,7 +254,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @brief Set the Tag Prop object
    *
    * @param tagName Tag name.
-   * @param prop Porperty name.
+   * @param prop Property name.
    * @param value Value to set.
    */
   void setTagProp(const std::string& tagName, const std::string& prop, nebula::Value value) {

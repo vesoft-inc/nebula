@@ -311,44 +311,44 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD not_exist_tag.name, player.age
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `not_exist_tag`
     # Fetch prop no not existing tag
     When executing query:
       """
       FETCH PROP ON not_exist_tag hash('Boris Diaw')
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `not_exist_tag`
     # yield not existing property
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD player.not_existing_prop
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `player.not_existing_prop', not found the property `not_existing_prop'.
     # duplicate input
     When executing query:
       """
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id, like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     # only constant list or single column of data is allowed in piped FETCH clause
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst YIELD vertex as node;
       """
-    Then a SyntaxError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime: syntax error near `, $-.dst'
 
   Scenario: Different from v1.x
     When executing query:
       """
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age, $-.*
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `$-.*', not exist prop `*'
     # $- is not supported
     When executing query:
       """
       GO FROM hash('NON EXIST VERTEX ID') OVER serve YIELD dst(edge) as id | FETCH PROP ON team $- YIELD vertex as node
       """
-    Then a SyntaxError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime: syntax error near `YIELD'
 
   Scenario: format yield
     When executing query:

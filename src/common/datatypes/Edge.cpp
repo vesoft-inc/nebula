@@ -144,6 +144,7 @@ bool Edge::keyEqual(const Edge& rhs) const {
 
 std::string Edge::id() const {
   std::string s;
+  // FIXME(czp): How to distinguish between `11->2@90` and `1->12@90`?
   if (src.type() == Value::Type::INT) {
     EdgeType t = type > 0 ? type : -type;
     const int64_t& srcId = type > 0 ? src.getInt() : dst.getInt();

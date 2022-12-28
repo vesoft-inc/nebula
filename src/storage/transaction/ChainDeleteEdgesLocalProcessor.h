@@ -53,7 +53,7 @@ class ChainDeleteEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   void hookFunc(HookFuncPara& para);
 
   /**
-   * @brief if remote side explicit reported faild, called this
+   * @brief if remote side explicit reported failed, called this
    */
   folly::SemiFuture<Code> abort();
 

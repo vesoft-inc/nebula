@@ -124,7 +124,7 @@ Feature: Insert string vid of vertex and edge
     # alter tag
     When executing query:
       """
-      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age string), DROP (gender)
+      ALTER TAG person ADD (col1 int, col2 string), CHANGE (age int), DROP (gender)
       """
     Then the execution should be successful
     # drop not exist prop
@@ -142,7 +142,7 @@ Feature: Insert string vid of vertex and edge
       | Field           | Type        | Null  | Default | Comment |
       | "name"          | "string"    | "YES" | EMPTY   | EMPTY   |
       | "email"         | "string"    | "YES" | "NULL"  | EMPTY   |
-      | "age"           | "string"    | "YES" | EMPTY   | EMPTY   |
+      | "age"           | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "row_timestamp" | "timestamp" | "YES" | 2020    | EMPTY   |
       | "col1"          | "int64"     | "YES" | EMPTY   | EMPTY   |
       | "col2"          | "string"    | "YES" | EMPTY   | EMPTY   |
@@ -331,7 +331,7 @@ Feature: Insert string vid of vertex and edge
     # alter edge
     When executing query:
       """
-      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school int), DROP (id, time_)
+      ALTER EDGE education ADD (col1 int, col2 string), CHANGE (school string), DROP (id, time_)
       """
     Then the execution should be successful
     # drop not exist prop, failed
@@ -347,7 +347,7 @@ Feature: Insert string vid of vertex and edge
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment |
-      | "school" | "int64"  | "YES" | EMPTY   | EMPTY   |
+      | "school" | "string" | "YES" | EMPTY   | EMPTY   |
       | "col1"   | "int64"  | "YES" | EMPTY   | EMPTY   |
       | "col2"   | "string" | "YES" | EMPTY   | EMPTY   |
     # with negative DEFAULT value
@@ -516,7 +516,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG t CHANGE (description string NOT NULL)
       """
-    Then the execution should be successful
+    Then a SemanticError should be raised at runtime: Column `description' must have a default value if it's not nullable
     And wait 3 seconds
     # insert
     When executing query:
@@ -532,13 +532,6 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | t.name | t.age | t.description |
       | "N/A"  | -1    | "some one"    |
-    And wait 3 seconds
-    # insert without default prop, failed
-    When executing query:
-      """
-      INSERT VERTEX t() VALUES "1":()
-      """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field doesn't have a default value.
     # test alter edge with default value
     When executing query:
       """
@@ -569,14 +562,7 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER EDGE e CHANGE (description string NOT NULL)
       """
-    Then the execution should be successful
-    And wait 3 seconds
-    # insert without default prop, failed
-    When executing query:
-      """
-      INSERT EDGE e() VALUES "1"->"2":()
-      """
-    Then a SemanticError should be raised at runtime: The property `description' is not nullable and has no default value.
+    Then a SemanticError should be raised at runtime: Column `description' must have a default value if it's not nullable
     # test alter edge with timestamp default
     When executing query:
       """
@@ -709,7 +695,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with wrong type default value of time when change
     When executing query:
       """
-      ALTER TAG tag_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
+      ALTER TAG tag_not_null_default1 CHANGE (name string DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
     # test alter edge with wrong type default value of string when add
@@ -766,7 +752,7 @@ Feature: Insert string vid of vertex and edge
     # test alter tag with wrong type default value of time when change
     When executing query:
       """
-      ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
+      ALTER EDGE edge_not_null_default1 CHANGE (name string DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
     # chinese tag without quote mark
@@ -850,6 +836,78 @@ Feature: Insert string vid of vertex and edge
       DROP SPACE issue2009;
       """
     Then the execution should be successful
+    Then drop the used space
+
+  Scenario: alter a tag to add an column which doesn't have a default value to not nullable
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG person(age int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG INDEX person_age_index ON person(age);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX person values "1":(23);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person YIELD properties(VERTEX) AS props;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props     |
+      | {age: 23} |
+    When executing query:
+      """
+      ALTER TAG person ADD (gender bool NOT NULL);
+      """
+    Then a SemanticError should be raised at runtime: Column `gender' must have a default value if it's not nullable
+
+  Scenario: alter a edge to change an column which doesn't have a default value to not nullable
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE EDGE person(age int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX person_age_index ON person(age);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT EDGE person values "1"->"2":(23);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person YIELD properties(EDGE) AS props;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props     |
+      | {age: 23} |
+    When executing query:
+      """
+      ALTER EDGE person ADD (gender bool NOT NULL);
+      """
+    Then a SemanticError should be raised at runtime: Column `gender' must have a default value if it's not nullable
+    Then drop the used space
 
   Scenario: Don't allow DOT in schema name
     Given an empty graph
@@ -862,3 +920,4 @@ Feature: Insert string vid of vertex and edge
       CREATE TAG `tag.prop`()
       """
     Then a SyntaxError should be raised at runtime: Don't allow DOT in label: near `.prop`()'
+    Then drop the used space

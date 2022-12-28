@@ -41,6 +41,9 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
       .thenValue([this, getPropsTime](PropRpcResponse&& resp) {
         addStats(resp, getPropsTime.elapsedInUSec());
         return handlePropResp(std::move(resp));
+      })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<std::vector<Value>>(std::runtime_error(e.what()));
       });
 }
 
