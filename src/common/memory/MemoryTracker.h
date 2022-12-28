@@ -13,9 +13,9 @@ namespace memory {
 
 constexpr size_t
 #if defined(__cpp_lib_hardware_interference_size)
-    L1_CACHE_LINE_SIZE = hardware_destructive_interference_size;
+    CACHE_LINE_SIZE = hardware_destructive_interference_size;
 #else
-    L1_CACHE_LINE_SIZE = 64;
+    CACHE_LINE_SIZE = 64;
 #endif
 
 // Memory stats for each thread.
@@ -121,7 +121,7 @@ class MemoryStats {
 
  private:
   // Global
-  alignas(L1_CACHE_LINE_SIZE) int64_t limit_{std::numeric_limits<int64_t>::max()};
+  alignas(CACHE_LINE_SIZE) int64_t limit_{std::numeric_limits<int64_t>::max()};
   std::atomic<int64_t> used_{0};
   // Thread Local
   static thread_local ThreadMemoryStats threadMemoryStats_;
