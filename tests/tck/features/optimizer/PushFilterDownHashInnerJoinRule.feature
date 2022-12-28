@@ -258,7 +258,8 @@ Feature: Push Filter down HashInnerJoin rule
       | 9  | Start          |              |                                                                    |
 
   Scenario: push filter down hash join bug fix
-    Given a graph with space named "test"
+    Given an empty graph
+    And load "test" csv data to a new space
     When profiling query:
       """
       MATCH (v1:Label_6:Label_3)<-[e2:Rel_1]-(:Label_5)-[e3]->(v2)
