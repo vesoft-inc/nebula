@@ -101,7 +101,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
                      selectFilter(),
-                     nullptr)
+                     currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         vids_.clear();
