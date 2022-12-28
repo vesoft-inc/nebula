@@ -93,11 +93,9 @@ Status QueryInstance::validateAndOptimize() {
   // Optimize the query, and get the execution plan. We should not pass the optimizer errors to user
   // since the message is often not easy to understand. Logging them is enough.
   if (auto status = findBestPlan(); !status.ok()) {
-    LOG(ERROR) << "Error found in optimization stage for query: " << rctx->query()
-               << ", error: " << status.message();
-    return Status::Error(
-        "There are some errors found in optimizer, "
-        "please contact to the admin to learn more details");
+    return Status::Error("Error found in optimization stage for query: %s, error: %s",
+                         rctx->query().c_str(),
+                         status.message().c_str());
   }
   stats::StatsManager::addValue(kOptimizerLatencyUs, *(qctx_->plan()->optimizeTimeInUs()));
   if (FLAGS_enable_space_level_metrics && spaceName != "") {

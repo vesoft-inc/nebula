@@ -132,6 +132,26 @@ Feature: Groupby & limit Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | name |
+    When executing query:
+      """
+      GO FROM "Danny Green" OVER serve YIELD $$.team.name AS name | LIMIT 3.0, 2
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `3.0'
+    When executing query:
+      """
+      GO FROM "Danny Green" OVER serve YIELD $$.team.name AS name | LIMIT 3, 2.0
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `2.0'
+    When executing query:
+      """
+      GO FROM "Danny Green" OVER serve YIELD $$.team.name AS name | LIMIT 1+2
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `+2'
+    When executing query:
+      """
+      GO FROM "Danny Green" OVER serve YIELD $$.team.name AS name | LIMIT 3, 1+1
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `+1'
 
   Scenario: OFFSET 0
     When executing query:

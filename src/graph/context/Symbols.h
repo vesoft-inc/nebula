@@ -56,6 +56,8 @@ class SymbolTable final {
   explicit SymbolTable(ObjectPool* objPool, ExecutionContext* ectx)
       : objPool_(DCHECK_NOTNULL(objPool)), ectx_(DCHECK_NOTNULL(ectx)) {}
 
+  bool existsVar(const std::string& varName) const;
+
   Variable* newVariable(const std::string& name);
 
   bool readBy(const std::string& varName, PlanNode* node);
