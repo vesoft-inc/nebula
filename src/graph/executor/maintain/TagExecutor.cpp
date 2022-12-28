@@ -26,6 +26,12 @@ folly::Future<Status> CreateTagExecutor::execute() {
           return resp.status();
         }
         return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -52,6 +58,12 @@ folly::Future<Status> DescTagExecutor::execute() {
         }
         return finish(
             ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -71,6 +83,12 @@ folly::Future<Status> DropTagExecutor::execute() {
           return resp.status();
         }
         return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -78,8 +96,11 @@ folly::Future<Status> ShowTagsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listTagSchemas(spaceId).via(runner()).thenValue(
-      [this, spaceId](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
+  return qctx()
+      ->getMetaClient()
+      ->listTagSchemas(spaceId)
+      .via(runner())
+      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show tags failed: " << resp.status();
           return resp.status();
@@ -101,6 +122,12 @@ folly::Future<Status> ShowTagsExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -127,6 +154,12 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
         }
         return finish(
             ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -146,6 +179,12 @@ folly::Future<Status> AlterTagExecutor::execute() {
           return resp.status();
         }
         return Status::OK();
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

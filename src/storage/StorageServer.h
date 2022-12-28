@@ -48,6 +48,8 @@ class StorageServer final {
   enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };
 
  private:
+  Status setupMemoryMonitorThread();
+
   std::unique_ptr<kvstore::KVStore> getStoreInstance();
 
   /**
@@ -126,6 +128,8 @@ class StorageServer final {
   ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
   std::mutex muStop_;
   std::condition_variable cvStop_;
+
+  std::unique_ptr<thread::GenericWorker> memoryMonitorThread_;
 };
 
 }  // namespace storage

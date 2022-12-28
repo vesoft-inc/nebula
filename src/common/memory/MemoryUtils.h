@@ -31,6 +31,9 @@ class MemoryUtils final {
   void operator=(const MemoryUtils &) = delete;
 
   static StatusOr<uint64_t> readSysContents(const std::string &path);
+
+ private:
+  static int64_t kLastPurge_;
 };
 
 }  // namespace nebula
