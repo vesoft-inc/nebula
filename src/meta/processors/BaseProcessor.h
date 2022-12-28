@@ -447,7 +447,7 @@ class BaseProcessor {
   getAllParts(GraphSpaceID spaceId);
 
   /**
-   * @brief Get the all registed machines by command: ADD HOSTS
+   * @brief Get the all registered machines by command: ADD HOSTS
    *
    * @param machines
    * @return nebula::cpp2::ErrorCode

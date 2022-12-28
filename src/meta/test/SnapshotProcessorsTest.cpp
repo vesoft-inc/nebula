@@ -66,6 +66,11 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
       resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     }
     pro.setValue(std::move(resp));
+
+    LOG(INFO) << folly::sformat("Create checkpint on 127.0.0.1:{}, disabled: {}, blocked:{}",
+                                port_,
+                                isDisabled_,
+                                isBlocked_);
     return f;
   }
 
@@ -81,6 +86,9 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
       resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     }
     pro.setValue(std::move(resp));
+
+    LOG(INFO) << folly::sformat(
+        "Drop checkpint on 127.0.0.1:{}, disabled: {}, blocked:{}", port_, isDisabled_, isBlocked_);
     return f;
   }
 
@@ -97,6 +105,11 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::BlockingSignResp resp;
     resp.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     pro.setValue(std::move(resp));
+
+    LOG(INFO) << folly::sformat("Blocking writes on 127.0.0.1:{}, disabled: {}, blocked:{}",
+                                port_,
+                                isDisabled_,
+                                isBlocked_);
     return f;
   }
 
@@ -110,10 +123,14 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
   void enableSnapshot() {
     isDisabled_ = false;
   }
+  void setPort(Port port) {
+    port_ = port;
+  }
 
  private:
   bool isBlocked_{false};
   bool isDisabled_{false};
+  Port port_;
 };
 
 class SnapshotProcessorsTest : public ::testing::Test {
@@ -128,7 +145,10 @@ class SnapshotProcessorsTest : public ::testing::Test {
 
       storaged->start("storage-admin", 0, handler);
       LOG(INFO) << "Start storage server on " << storaged->port_;
-      hosts_.emplace_back(HostAddr(localIp_, storaged->port_));
+
+      auto storeAddr = Utils::getStoreAddrFromAdminAddr(HostAddr(localIp_, storaged->port_);
+      handler->setPort(storeAddr);
+      hosts_.emplace_back(storeAddr);
     }
   }
 
@@ -180,17 +200,12 @@ class SnapshotProcessorsTest : public ::testing::Test {
   }
 
   static void mockPartition(std::vector<GraphSpaceID> graphIds) {
-    std::vector<HostAddr> allHosts;
-    for (auto host : hosts_) {
-      HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
-      allHosts.emplace_back(storageHost);
-    }
     std::vector<nebula::kvstore::KV> data;
     for (auto partId = 1; partId <= 1; partId++) {
       size_t idx = partId;
       std::vector<HostAddr> hosts;
       for (size_t i = 0; i < storageNum; i++, idx++) {  // 3 replications
-        hosts.emplace_back(allHosts[idx % storageNum]);
+        hosts.emplace_back(hosts_[idx % storageNum]);
       }
 
       for (auto graphId : graphIds) {

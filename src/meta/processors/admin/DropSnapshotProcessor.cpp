@@ -14,7 +14,7 @@ namespace meta {
 
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   auto& snapshots = req.get_names();
-  if (snapshots.size() == 0) {
+  if (snapshots.empty()) {
     LOG(INFO) << "The snapshots to remove must be given";
     handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     onFinished();
@@ -23,7 +23,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
 
   auto snapshot = snapshots[0];
   if (snapshots.size() > 1) {
-    LOG(INFO) << "There are more than one snapshots are given"
+    LOG(INFO) << "There are more than one snapshot are given"
               << "only the first one will be dropped, name=" << snapshot;
   }
   folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
