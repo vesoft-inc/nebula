@@ -146,8 +146,8 @@ class SnapshotProcessorsTest : public ::testing::Test {
       storaged->start("storage-admin", 0, handler);
       LOG(INFO) << "Start storage server on " << storaged->port_;
 
-      auto storeAddr = Utils::getStoreAddrFromAdminAddr(HostAddr(localIp_, storaged->port_);
-      handler->setPort(storeAddr);
+      auto storeAddr = Utils::getStoreAddrFromAdminAddr(HostAddr(localIp_, storaged->port_));
+      handler->setPort(storeAddr.port);
       hosts_.emplace_back(storeAddr);
     }
   }
