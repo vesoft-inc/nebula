@@ -47,6 +47,10 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
   std::unordered_map<nebula::SessionID,
                      std::unordered_map<nebula::ExecutionPlanID, cpp2::QueryDesc>>
       killedQueries;
+
+  // If the session requested to be updated can not be found in meta, the session has been killed
+  std::vector<SessionID> killedSessions;
+
   for (auto& session : req.get_sessions()) {
     auto sessionId = session.get_session_id();
     auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
@@ -55,11 +59,10 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
       auto errCode = nebula::error(ret);
       LOG(INFO) << "Session id '" << sessionId << "' not found";
       if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-        errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
+        // errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
+        killedSessions.emplace_back(sessionId);
+        continue;
       }
-      handleErrorCode(errCode);
-      onFinished();
-      return;
     }
 
     // update sessions to be saved if query is being killed, and return them to
@@ -103,6 +106,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
   }
 
   resp_.killed_queries_ref() = std::move(killedQueries);
+  resp_.killed_sessions_ref() = std::move(killedSessions);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }
@@ -157,22 +161,26 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
 
 void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
   folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
-  auto sessionId = req.get_session_id();
-  auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
-  auto ret = doGet(sessionKey);
-  if (!nebula::ok(ret)) {
-    auto errCode = nebula::error(ret);
-    LOG(INFO) << "Session id `" << sessionId << "' not found";
-    if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
-    }
-    handleErrorCode(errCode);
-    onFinished();
-    return;
-  }
+  auto removedSessionNum = 0;
 
+  auto sessionIds = req.get_session_ids();
+  std::vector<std::string> keys;
+
+  for (auto sessionId : sessionIds) {
+    auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
+    auto ret = doGet(sessionKey);
+
+    // If the session is not found, we should continue to remove other sessions.
+    if (!nebula::ok(ret)) {
+      LOG(INFO) << "Session id `" << sessionId << "' not found";
+      continue;
+    }
+    keys.emplace_back(sessionKey);
+    ++removedSessionNum;
+  }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  doRemove(sessionKey);
+  resp_.removed_session_num_ref() = removedSessionNum;
+  doMultiRemove(std::move(keys));
 }
 
 void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {

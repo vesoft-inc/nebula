@@ -174,7 +174,7 @@ class BaseProcessor {
    * @tparam RESP
    * @param key
    */
-  void doMultiRemove(const std::string& key);
+  void doMultiRemove(std::vector<std::string>&& keys);
 
   /**
    * @brief Range remove.

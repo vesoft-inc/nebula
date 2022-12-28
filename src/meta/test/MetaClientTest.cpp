@@ -9,6 +9,7 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/conf/Configuration.h"
+#include "common/datatypes/HostAddr.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/fs/TempDir.h"
@@ -2799,6 +2800,32 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
   }
   cluster.stop();
+}
+
+TEST(MetaClientTest, SessionTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/MetaClientSessionTest.XXXXXX");
+
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+  // create sessions
+  {
+    auto createSessionRes =
+        client->createSession("nebula", HostAddr("localhost", 9919), "localhost").get();
+    ASSERT_TRUE(createSessionRes.ok());
+  }
+  // remove session
+  {
+    auto getSessionsRes = client->listSessions().get();
+    ASSERT_TRUE(getSessionsRes.ok());
+    ASSERT_EQ(1, getSessionsRes.value().get_sessions().size());
+    auto sessionID = getSessionsRes.value().get_sessions()[0].get_session_id();
+
+    auto removeSessionRes = client->removeSessions({sessionID}).get();
+    ASSERT_TRUE(removeSessionRes.ok());
+  }
 }
 
 }  // namespace meta

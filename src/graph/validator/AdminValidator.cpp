@@ -8,7 +8,6 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/charset/Charset.h"
-#include "common/datatypes/Value.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
@@ -631,6 +630,18 @@ Status ShowSessionsValidator::toPlan() {
 }
 
 Status KillSessionValidator::validateImpl() {
+  auto sentence = static_cast<KillSessionSentence *>(sentence_);
+  auto sessionExpr = sentence->getSessionID();
+  auto sessionTypeStatus = deduceExprType(sessionExpr);
+  if (!sessionTypeStatus.ok()) {
+    return sessionTypeStatus.status();
+  }
+  if (sessionTypeStatus.value() != Value::Type::INT) {
+    std::stringstream ss;
+    ss << sessionExpr->toString() << ", Session ID must be an integer but was "
+       << sessionTypeStatus.value();
+    return Status::SemanticError(ss.str());
+  }
   return Status::OK();
 }
 

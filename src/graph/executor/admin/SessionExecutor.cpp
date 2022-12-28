@@ -97,6 +97,76 @@ void ShowSessionsExecutor::addSessions(const meta::cpp2::Session &session, DataS
   dataSet.emplace_back(std::move(row));
 }
 
+folly::Future<Status> KillSessionExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto *killNode = asNode<KillSession>(node());
+  auto inputVar = killNode->inputVar();
+  auto iter = ectx_->getResult(inputVar).iter();
+  QueryExpressionContext ctx(ectx_);
+  auto sessionExpr = killNode->getSessionId();
+
+  // Collect all session ids
+  std::vector<SessionID> sessionIds;
+  for (; iter->valid(); iter->next()) {
+    auto &sessionVal = sessionExpr->eval(ctx(iter.get()));
+    if (!sessionVal.isInt()) {
+      std::stringstream ss;
+      ss << "Session `" << sessionExpr->toString() << "' is not kind of"
+         << " int, but was " << sessionVal.type();
+      return Status::Error(ss.str());
+    }
+
+    auto sessionId = sessionVal.getInt();
+    sessionIds.emplace_back(sessionId);
+  }
+
+  auto sessionMgr = qctx_->rctx()->sessionMgr();
+  auto killedSessionNum = sessionMgr->removeMultiSessions(sessionIds);
+
+  // Construct result column names
+  DataSet result({
+      "Number of session killed",
+  });
+  Row row;
+  row.emplace_back(killedSessionNum);
+  result.emplace_back(std::move(row));
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
+}
+
+StatusOr<std::vector<SessionID>> KillSessionExecutor::collectSessions() {
+  auto *killNode = asNode<KillSession>(node());
+  std::vector<SessionID> sessionIds;
+
+  auto inputVar = killNode->inputVar();
+  auto iter = ectx_->getValue(inputVar);
+  auto inputVal = iter.getDataSet();
+
+  // kill session only accepts input with zero or one column
+  if (inputVal.colSize() > 1) {
+    return Status::Error("Kill session only accepts input with zero or one column, got %lu",
+                         inputVal.colSize());
+  }
+
+  sessionIds.reserve(inputVal.rows.size() + 1);
+  // iterate over input rows
+  for (auto &row : inputVal.rows) {
+    if (row.values.empty()) {
+      // empty row, skip
+      return Status::Error("Empty row in input");
+    }
+
+    // check input value type
+    if (!row.values[0].isInt()) {
+      return Status::Error("Session id should be int, got %s",
+                           Value::toString(row.values[0].type()).c_str());
+    }
+    sessionIds.emplace_back(row.values[0].getInt());
+  }
+
+  return sessionIds;
+}
+
 folly::Future<Status> UpdateSessionExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *updateNode = asNode<UpdateSession>(node());

@@ -3837,10 +3837,10 @@ kill_query_sentence
     ;
 
 kill_session_sentence
-    : KW_KILL KW_SESSIONS legal_integer {
+    : KW_KILL KW_SESSIONS expression {
         $$ = new KillSessionSentence($3);
     }
-    | KW_KILL KW_SESSION legal_integer {
+    | KW_KILL KW_SESSION expression {
         $$ = new KillSessionSentence($3);
     }
     ;

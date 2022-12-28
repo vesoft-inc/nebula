@@ -283,3 +283,10 @@ class TestSession(NebulaTestSuite):
         resp = self.execute('UPDATE CONFIGS graph:max_sessions_per_ip_per_user = 300')
         self.check_resp_succeeded(resp)
         time.sleep(3)
+
+    def test_kill_session_basic(self):
+        resp = self.execute('SHOW SESSIONS')
+        self.check_resp_succeeded(resp)
+        session_num = len(resp.rows())
+
+        # log in as root user

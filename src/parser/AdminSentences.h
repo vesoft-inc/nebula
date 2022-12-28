@@ -868,19 +868,19 @@ class KillQuerySentence final : public Sentence {
 
 class KillSessionSentence final : public Sentence {
  public:
-  explicit KillSessionSentence(SessionID sessionId) {
+  explicit KillSessionSentence(Expression* sessionId) {
     kind_ = Kind::kKillSession;
     sessionId_ = sessionId;
   }
 
-  SessionID getSessionID() const {
+  Expression* getSessionID() const {
     return sessionId_;
   }
 
   std::string toString() const override;
 
  private:
-  SessionID sessionId_{-1};
+  Expression* sessionId_{nullptr};
 };
 
 }  // namespace nebula

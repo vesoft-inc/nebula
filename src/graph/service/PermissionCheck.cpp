@@ -197,7 +197,8 @@ namespace graph {
     case Sentence::Kind::kShowUsers:
     case Sentence::Kind::kShowSnapshots:
     case Sentence::Kind::kShowServiceClients:
-    case Sentence::Kind::kShowSessions: {
+    case Sentence::Kind::kShowSessions:
+    case Sentence::Kind::kKillSession: {
       /**
        * Only GOD role can be show.
        */

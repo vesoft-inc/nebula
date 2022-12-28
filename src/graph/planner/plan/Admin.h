@@ -1289,21 +1289,25 @@ class ShowSessions final : public SingleInputNode {
 
 class KillSession final : public SingleInputNode {
  public:
-  static KillSession* make(QueryContext* qctx, PlanNode* input, SessionID sessionId) {
+  static KillSession* make(QueryContext* qctx, PlanNode* input, Expression* sessionId) {
     return qctx->objPool()->makeAndAdd<KillSession>(qctx, input, sessionId);
   }
 
-  SessionID getSessionId() const {
+  Expression* getSessionId() const {
     return sessionId_;
+  }
+
+  bool isSetSessionID() const {
+    return sessionId_ != nullptr;
   }
 
  private:
   friend ObjectPool;
-  KillSession(QueryContext* qctx, PlanNode* input, SessionID sessionId)
+  KillSession(QueryContext* qctx, PlanNode* input, Expression* sessionId)
       : SingleInputNode(qctx, Kind::kKillSession, input), sessionId_(sessionId) {}
 
  private:
-  SessionID sessionId_{-1};
+  Expression* sessionId_{nullptr};
 };
 
 class UpdateSession final : public SingleInputNode {
