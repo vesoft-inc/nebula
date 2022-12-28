@@ -121,7 +121,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   for (auto& tagItem : tagItems) {
     auto& cols = tagItem.get_schema().get_columns();
     for (auto& col : cols) {
-      auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, *tagItem.op_ref());
+      auto retCode = MetaServiceUtils::alterColumnDefs(
+          columns, prop, col, *tagItem.op_ref(), std::move(allVersionedColumns));
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
