@@ -1240,7 +1240,7 @@ type_spec
         $$->type_ref() = nebula::cpp2::PropertyType::STRING;
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -2645,7 +2645,7 @@ index_field
         delete $1;
     }
     | name_label L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             delete $1;
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }

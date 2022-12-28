@@ -921,3 +921,26 @@ Feature: Insert string vid of vertex and edge
       """
     Then a SyntaxError should be raised at runtime: Don't allow DOT in label: near `.prop`()'
     Then drop the used space
+
+  Scenario: Forbid out of range length of fixed_string
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG tag1(name fixed_string(0))
+      """
+    Then an SyntaxError should be raised at runtime: Out of range: near `0))'
+    When executing query:
+      """
+      CREATE EDGE edge1(name fixed_string(32))
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER EDGE edge1 CHANGE(name fixed_string(0))
+      """
+    Then an SyntaxError should be raised at runtime: Out of range: near `0))'
+    Then drop the used space
