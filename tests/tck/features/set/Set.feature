@@ -3,6 +3,98 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: Set Test
 
+  Scenario: Basic
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION ALL
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION DISTINCT
+      RETURN 3 AS a, 4 AS c
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS a, 4 AS c
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION
+      RETURN 3 AS b, 4 AS a
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS b, 4 AS a
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      UNION ALL
+      UNWIND [2] AS a RETURN a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 1 |
+      | 2 |
+      | 2 |
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      UNION
+      UNWIND [2] AS a RETURN a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 1 |
+      | 2 |
+
+  # cypher doesn't support intersect
+  # When executing query:
+  # """
+  # UNWIND [1,2] AS a RETURN a
+  # INTERSECT
+  # RETURN 2 AS a
+  # """
+  # Then the result should be, in any order:
+  # | a |
+  # | 1 |
+  # When executing query:
+  # """
+  # UNWIND [1,2,3] AS a RETURN a, 100
+  # INTERSECT
+  # RETURN 2 AS a, 100
+  # """
+  # Then the result should be, in any order:
+  # | a | 100 |
+  # | 2 | 100 |
   Scenario: Union All
     Given a graph with space named "nba"
     When executing query:

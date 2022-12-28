@@ -94,10 +94,11 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
+        if (filterVal.empty() || filterVal.isNull()) {
+          return Value::kNullValue;
+        } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
-        }
-        if (filterVal.empty() || filterVal.isNull() || !filterVal.implicitBool()) {
+        } else if (!filterVal.implicitBool()) {
           result_ = false;
           return result_;
         }
@@ -110,10 +111,11 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
+        if (filterVal.empty() || filterVal.isNull()) {
+          result_ = Value::kNullValue;
+        } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
-        }
-        if (filterVal.isBool() && filterVal.implicitBool()) {
+        } else if (filterVal.implicitBool()) {
           result_ = true;
           return result_;
         }
@@ -121,22 +123,29 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       return result_;
     }
     case Type::SINGLE: {
-      result_ = false;
+      bool hasNull = false;
+      // If there are more than one satisfied, the result is false
+      bool hasSatisfied = false;
       for (size_t i = 0; i < list.size(); ++i) {
         auto& v = list[i];
         ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
+        if (filterVal.empty() || filterVal.isNull()) {
+          hasNull = true;
+        } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
-        }
-        if (filterVal.isBool() && filterVal.implicitBool()) {
-          if (result_ == false) {
-            result_ = true;
-          } else {
+        } else if (filterVal.implicitBool()) {
+          if (hasSatisfied) {
             result_ = false;
             return result_;
           }
+          hasSatisfied = true;
         }
+      }
+      if (hasNull) {
+        result_ = Value::kNullValue;
+      } else {
+        result_ = hasSatisfied;
       }
       return result_;
     }
@@ -146,10 +155,12 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
         auto& v = list[i];
         ctx.setInnerVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
-        if (!filterVal.empty() && !filterVal.isNull() && !filterVal.isImplicitBool()) {
+        if (filterVal.empty() || filterVal.isNull()) {
+          result_ = Value::kNullValue;
+          return result_;
+        } else if (!filterVal.isImplicitBool()) {
           return Value::kNullBadType;
-        }
-        if (filterVal.isBool() && filterVal.implicitBool()) {
+        } else if (filterVal.implicitBool()) {
           result_ = false;
           return result_;
         }
@@ -159,7 +170,6 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
       // no default so the compiler will warning when lack
   }
 
-  result_ = Value::kNullBadType;
   return result_;
 }
 

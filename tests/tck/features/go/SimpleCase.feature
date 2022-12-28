@@ -310,7 +310,7 @@ Feature: Simple case
       | 0  | Start       |              |                   |
     When profiling query:
       """
-      GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
+      GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
       """
     Then the result should be, in any order, with relax comparison:
       | id($$)          | age | $$.player.name  |
@@ -452,7 +452,7 @@ Feature: Simple case
       | 0  | Start       |              |               |
     When profiling query:
       """
-      GO 1 STEP FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 3 STEP FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
+      GO 1 STEPS FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 3 STEPS FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
@@ -550,7 +550,7 @@ Feature: Simple case
       | 0  | Start        |              |               |
     When profiling query:
       """
-      GO 1 STEP FROM "Tony Parker" OVER like, serve REVERSELY WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$)  | YIELD  count(*)
+      GO 1 STEPS FROM "Tony Parker" OVER like, serve REVERSELY WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$)  | YIELD  count(*)
       """
     Then the result should be, in any order, with relax comparison:
       | count(*) |
@@ -592,7 +592,7 @@ Feature: Simple case
       | 0  | Start        |              |                   |
     When profiling query:
       """
-      GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
+      GO 1 to 3 STEPS FROM "Tony Parker" OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
       """
     Then the result should be, in any order, with relax comparison:
       | id($$)              | age | $$.player.name      |
@@ -618,7 +618,7 @@ Feature: Simple case
       | 0  | Start        |              |                    |
     When profiling query:
       """
-      GO FROM "Yao Ming" OVER like YIELD DISTINCT id($$) AS aa | GO 1 to 3 STEP FROM $-.aa OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
+      GO FROM "Yao Ming" OVER like YIELD DISTINCT id($$) AS aa | GO 1 to 3 STEPS FROM $-.aa OVER like WHERE id($$) != "Tim Duncan" YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
       """
     Then the result should be, in any order, with relax comparison:
       | id($$)              | age | $$.player.name      |
