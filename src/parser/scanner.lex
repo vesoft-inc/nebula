@@ -115,7 +115,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "LOOKUP"                    { return TokenType::KW_LOOKUP; }
 "ALTER"                     { return TokenType::KW_ALTER; }
 "STEPS"                     { return TokenType::KW_STEPS; }
-"STEP"                      { return TokenType::KW_STEPS; }
 "OVER"                      { return TokenType::KW_OVER; }
 "UPTO"                      { return TokenType::KW_UPTO; }
 "REVERSELY"                 { return TokenType::KW_REVERSELY; }
