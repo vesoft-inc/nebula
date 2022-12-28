@@ -75,6 +75,71 @@ Feature: Basic Aggregate and GroupBy
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
       | 56       |
+    When executing query:
+      """
+      UNWIND [1,2,NULL] AS a
+      RETURN COUNT(*), COUNT(a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) | COUNT(a) |
+      | 3        | 2        |
+    When executing query:
+      """
+      UNWIND [1,2,NULL] AS a
+      RETURN SUM(a), AVG(a), MIN(a), MAX(a), COLLECT(a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | SUM(a) | AVG(a) | MIN(a) | MAX(a) | COLLECT(a) |
+      | 3      | 1.5    | 1      | 2      | [1,2]      |
+    When executing query:
+      """
+      UNWIND [1,2,NULL,2] AS a
+      RETURN COLLECT(a), COLLECT(DISTINCT a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COLLECT(a) | COLLECT(distinct a) |
+      | [1,2,2]    | [1,2]               |
+    When executing query:
+      """
+      UNWIND [NULL,NULL,NULL] AS a
+      RETURN SUM(a), AVG(a), MIN(a), MAX(a), COLLECT(a), COLLECT(DISTINCT a)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | SUM(a) | AVG(a) | MIN(a) | MAX(a) | COLLECT(a) | COLLECT(distinct a) |
+      | 0      | NULL   | NULL   | NULL   | []         | []                  |
+    # one group key
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2) WHERE id(v) IN ["Tony Parker", "Tim Duncan", "LaMarcus Aldridge"]
+      RETURN v, COUNT(*), COUNT(v2), COUNT(DISTINCT v2), MIN(v2.player.age), MAX(e.likeness), SUM(e.likeness), COLLECT(v2), COLLECT(DISTINCT v2)
+      ORDER BY v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                     | COUNT(*) | COUNT(v2) | COUNT(distinct v2) | MIN(v2.player.age) | MAX(e.likeness) | SUM(e.likeness) | COLLECT(v2)                                                | COLLECT(distinct v2)                                       |
+      | ("LaMarcus Aldridge") | 2        | 2         | 2                  | 36                 | 75              | 150             | [("Tim Duncan"), ("Tony Parker")]                          | [("Tim Duncan"), ("Tony Parker")]                          |
+      | ("Tim Duncan")        | 2        | 2         | 2                  | 36                 | 95              | 190             | [("Manu Ginobili"), ("Tony Parker") ]                      | [("Manu Ginobili"), ("Tony Parker")]                       |
+      | ("Tony Parker")       | 3        | 3         | 3                  | 33                 | 95              | 280             | [("LaMarcus Aldridge"), ("Manu Ginobili"), ("Tim Duncan")] | [("LaMarcus Aldridge"), ("Manu Ginobili"), ("Tim Duncan")] |
+    # multi group keys
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(v2)-[e2:like]->(v3) WHERE id(v) IN ["Tony Parker", "Tim Duncan", "LaMarcus Aldridge"]
+      RETURN v, v2, COUNT(*), COUNT(id(v3)), COUNT(DISTINCT id(v3)), MIN(v3.player.age), MAX(e2.likeness), SUM(e2.likeness), COLLECT(id(v3)), COLLECT(DISTINCT id(v3))
+      ORDER BY v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                     | v2                    | COUNT(*) | COUNT(id(v3)) | COUNT(distinct id(v3)) | MIN(v3.player.age) | MAX(e2.likeness) | SUM(e2.likeness) | COLLECT(id(v3))                                                                                                                                                  | COLLECT(distinct id(v3))                             |
+      | ("LaMarcus Aldridge") | ("LaMarcus Aldridge") | 2        | 2             | 2                      | 36                 | 75               | 150              | ["Tim Duncan", "Tony Parker"]                                                                                                                                    | ["Tim Duncan", "Tony Parker"]                        |
+      | ("LaMarcus Aldridge") | ("Manu Ginobili")     | 4        | 4             | 1                      | 42                 | 90               | 360              | ["Tim Duncan", "Tim Duncan", "Tim Duncan", "Tim Duncan"]                                                                                                         | ["Tim Duncan"]                                       |
+      | ("LaMarcus Aldridge") | ("Tony Parker")       | 8        | 8             | 3                      | 33                 | 95               | 745              | ["LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili"]                   | ["LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan"] |
+      | ("LaMarcus Aldridge") | ("Tim Duncan")        | 10       | 10            | 2                      | 36                 | 95               | 950              | ["Manu Ginobili", "Tony Parker", "Manu Ginobili", "Tony Parker", "Tony Parker", "Manu Ginobili", "Manu Ginobili", "Tony Parker", "Manu Ginobili", "Tony Parker"] | ["Manu Ginobili", "Tony Parker"]                     |
+      | ("Tim Duncan")        | ("Manu Ginobili")     | 3        | 3             | 1                      | 42                 | 90               | 270              | ["Tim Duncan", "Tim Duncan", "Tim Duncan"]                                                                                                                       | ["Tim Duncan"]                                       |
+      | ("Tim Duncan")        | ("LaMarcus Aldridge") | 2        | 2             | 2                      | 36                 | 75               | 150              | ["Tim Duncan", "Tony Parker"]                                                                                                                                    | ["Tim Duncan", "Tony Parker"]                        |
+      | ("Tim Duncan")        | ("Tim Duncan")        | 4        | 4             | 2                      | 36                 | 95               | 380              | ["Tony Parker", "Manu Ginobili", "Manu Ginobili", "Manu Ginobili"]                                                                                               | ["Tony Parker", "Manu Ginobili"]                     |
+      | ("Tim Duncan")        | ("Tony Parker")       | 8        | 8             | 3                      | 33                 | 95               | 750              | ["LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan", "Manu Ginobili", "Tim Duncan"]                          | ["LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan"] |
+      | ("Tony Parker")       | ("LaMarcus Aldridge") | 4        | 4             | 2                      | 36                 | 75               | 300              | ["Tim Duncan", "Tony Parker", "Tim Duncan", "Tony Parker"]                                                                                                       | ["Tim Duncan", "Tony Parker"]                        |
+      | ("Tony Parker")       | ("Tim Duncan")        | 9        | 9             | 2                      | 36                 | 95               | 855              | ["Manu Ginobili", "Tony Parker", "Manu Ginobili", "Tony Parker", "Manu Ginobili", "Tony Parker", "Manu Ginobili", "Tony Parker", "Tony Parker"]                  | ["Manu Ginobili", "Tony Parker"]                     |
+      | ("Tony Parker")       | ("Tony Parker")       | 8        | 8             | 3                      | 33                 | 95               | 750              | ["Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge", "Tim Duncan"]                          | ["Manu Ginobili", "Tim Duncan", "LaMarcus Aldridge"] |
+      | ("Tony Parker")       | ("Manu Ginobili")     | 5        | 5             | 1                      | 42                 | 90               | 450              | ["Tim Duncan", "Tim Duncan", "Tim Duncan", "Tim Duncan", "Tim Duncan"]                                                                                           | ["Tim Duncan"]                                       |
 
   Scenario: [1] Basic GroupBy
     When executing query:

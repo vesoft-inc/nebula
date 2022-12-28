@@ -34,6 +34,10 @@ std::string SymbolTable::toString() const {
   return ss.str();
 }
 
+bool SymbolTable::existsVar(const std::string& varName) const {
+  return vars_.find(varName) != vars_.end();
+}
+
 Variable* SymbolTable::newVariable(const std::string& name) {
   VLOG(1) << "New variable for: " << name;
   DCHECK(vars_.find(name) == vars_.end());
