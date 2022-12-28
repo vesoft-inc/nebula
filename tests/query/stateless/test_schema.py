@@ -124,7 +124,7 @@ class TestSchema(NebulaTestSuite):
         self.check_result(resp, expect)
 
         # alter add
-        resp = self.execute('ALTER TAG student add (age string)')
+        resp = self.execute('ALTER TAG student add (age_str string)')
         self.check_resp_succeeded(resp)
 
         resp = self.execute('DESC TAG student')
@@ -132,15 +132,7 @@ class TestSchema(NebulaTestSuite):
         expect = [['name', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['birthday', 'timestamp', 'YES', T_EMPTY, T_EMPTY],
-                  ['age', 'string', 'YES', T_EMPTY, T_EMPTY]]
-        self.check_result(resp, expect)
-
-        resp = self.execute('DESC TAG student')
-        self.check_resp_succeeded(resp)
-        expect = [['name', 'string', 'YES', T_EMPTY, T_EMPTY],
-                  ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
-                  ['birthday', 'timestamp', 'YES', T_EMPTY, T_EMPTY],
-                  ['age', 'string', 'YES', T_EMPTY, T_EMPTY]]
+                  ['age_str', 'string', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_tag_failed(self):
