@@ -256,19 +256,11 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
         DataSet dataSet({"Space", "Create Space"});
         Row row;
         row.values.emplace_back(properties.get_space_name());
-        std::string sAtomicEdge{"false"};
-        if (properties.isolation_level_ref().has_value() &&
-            (*properties.isolation_level_ref() == meta::cpp2::IsolationLevel::TOSS)) {
-          sAtomicEdge = "true";
-        }
         auto fmt = properties.comment_ref().has_value()
                        ? "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ") ON %s"
-                         " comment = '%s'"
+                         "charset = %s, collate = %s, vid_type = %s) ON %s comment = '%s'"
                        : "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ") ON %s";
+                         "charset = %s, collate = %s, vid_type = %s) ON %s";
         auto zoneNames = folly::join(",", properties.get_zone_names());
         if (properties.comment_ref().has_value()) {
           row.values.emplace_back(
@@ -279,7 +271,6 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
                                   SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  sAtomicEdge.c_str(),
                                   zoneNames.c_str(),
                                   properties.comment_ref()->c_str()));
         } else {
@@ -291,7 +282,6 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
                                   SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  sAtomicEdge.c_str(),
                                   zoneNames.c_str()));
         }
         dataSet.rows.emplace_back(std::move(row));

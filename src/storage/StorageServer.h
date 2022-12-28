@@ -100,7 +100,6 @@ class StorageServer final {
   std::shared_ptr<GraphStorageLocalServer> storageServer_;
 #endif
   std::unique_ptr<apache::thrift::ThriftServer> adminServer_;
-  std::unique_ptr<apache::thrift::ThriftServer> internalStorageServer_;
 
   std::unique_ptr<nebula::WebService> webSvc_;
   std::unique_ptr<meta::MetaClient> metaClient_;
@@ -119,9 +118,6 @@ class StorageServer final {
   std::string listenerPath_;
 
   AdminTaskManager* taskMgr_{nullptr};
-  std::unique_ptr<TransactionManager> txnMan_{nullptr};
-  // used for communicate between one storaged to another
-  std::unique_ptr<InternalStorageClient> interClient_;
 
   std::unique_ptr<LogMonitor> logMonitor_;
 
