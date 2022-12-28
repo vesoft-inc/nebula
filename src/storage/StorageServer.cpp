@@ -11,6 +11,7 @@
 
 #include "clients/storage/InternalStorageClient.h"
 #include "common/hdfs/HdfsCommandHelper.h"
+#include "common/memory/MemoryUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
@@ -49,6 +50,7 @@ DECLARE_string(local_ip);
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
+DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds");
 
 namespace nebula {
 namespace storage {
@@ -63,6 +65,28 @@ StorageServer::StorageServer(HostAddr localHost,
       dataPaths_(std::move(dataPaths)),
       walPath_(std::move(walPath)),
       listenerPath_(std::move(listenerPath)) {}
+
+Status StorageServer::setupMemoryMonitorThread() {
+  memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
+  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("storage-memory-monitor")) {
+    return Status::Error("Fail to start storage server background thread.");
+  }
+
+  auto updateMemoryWatermark = []() -> Status {
+    auto status = MemoryUtils::hitsHighWatermark();
+    NG_RETURN_IF_ERROR(status);
+    MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+    return Status::OK();
+  };
+
+  // Just to test whether to get the right memory info
+  NG_RETURN_IF_ERROR(updateMemoryWatermark());
+
+  auto ms = FLAGS_check_memory_interval_in_secs * 1000;
+  memoryMonitorThread_->addRepeatTask(ms, updateMemoryWatermark);
+
+  return Status::OK();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;
@@ -288,7 +312,8 @@ bool StorageServer::start() {
     }
     serverStatus_ = STATUS_RUNNING;
   }
-  return true;
+
+  return setupMemoryMonitorThread().ok();
 }
 
 void StorageServer::waitUntilStop() {

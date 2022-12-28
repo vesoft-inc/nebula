@@ -423,6 +423,8 @@ enum ErrorCode {
 
     E_ACCESS_ES_FAILURE               = -2080,  // Failed to access elasticsearch
 
+    E_GRAPH_MEMORY_EXCEEDED           = -2600,  // Graph memory exceeded
+
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,  // Consensus cannot be reached during an election
     E_KEY_HAS_EXISTS                  = -3002,  // Key already exists
@@ -512,6 +514,8 @@ enum ErrorCode {
     E_RAFT_BUFFER_OVERFLOW            = -3529,  // Cache overflow
     E_RAFT_ATOMIC_OP_FAILED           = -3530,  // Atomic operation failed
     E_LEADER_LEASE_FAILED             = -3531,  // Leader lease expired
+
+    E_STORAGE_MEMORY_EXCEEDED         = -3600,  // Storage memory exceeded
 
     E_UNKNOWN                         = -8000,  // Unknown error
 } (cpp.enum_strict)
