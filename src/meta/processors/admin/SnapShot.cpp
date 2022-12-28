@@ -83,9 +83,10 @@ nebula::cpp2::ErrorCode Snapshot::dropSnapshot(const std::string& name,
 
     auto result = client_->dropSnapshot(spaces, name, host).get();
     if (!result.ok()) {
-      auto msg = "failed drop checkpoint : \"%s\". on host %s. error %s";
-      LOG(INFO) << folly::stringPrintf(
-          msg, name.c_str(), host.toString().c_str(), result.status().toString().c_str());
+      LOG(INFO) << folly::sformat("failed to drop checkpoint: {} on host: {}, error: {}",
+                                  name,
+                                  host.toString(),
+                                  result.status().toString());
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -104,15 +105,25 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
   auto hostSpaces = nebula::value(hostSpacesRet);
   auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (const auto& [host, spaces] : hostSpaces) {
-    LOG(INFO) << "will block write host: " << host;
+    if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
+      LOG(INFO) << "will block write host: " << host;
+    } else {
+      LOG(INFO) << "will unblock write host: " << host;
+    }
+
     auto result = client_->blockingWrites(spaces, sign, host).get();
-    LOG(INFO) << "after block write host";
     if (!result.ok()) {
       LOG(INFO) << "Send blocking sign error on host " << host
                 << ", errorcode: " << result.status().toString();
       ret = nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE;
       if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
         break;
+      }
+    } else {
+      if (sign == storage::cpp2::EngineSignType::BLOCK_ON) {
+        LOG(INFO) << "finished blocking write host: " << host;
+      } else {
+        LOG(INFO) << "finished unblocking write host: " << host;
       }
     }
   }

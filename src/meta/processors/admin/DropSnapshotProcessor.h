@@ -15,6 +15,10 @@ namespace meta {
 /**
  * @brief Drop snapshot for all spaces. It could drop snapshots
  *        created by CreateBackupProcessor or CreateCheckpointProcessor.
+ *        It will drop the snapshots as possible as it can, but there maybe some snapshots left
+ *        in some hosts since:
+ *        1. the storaged may not exist in the cluster already.
+ *        2. the metad may change leader if it have multi-replications.
  *
  */
 class DropSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {

@@ -446,6 +446,14 @@ class BaseProcessor {
   ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
   getAllParts(GraphSpaceID spaceId);
 
+  /**
+   * @brief Get the all registed machines by command: ADD HOSTS
+   *
+   * @param machines
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode getAllMachines(std::unordered_set<HostAddr>& machines);
+
  protected:
   kvstore::KVStore* kvstore_ = nullptr;
   RESP resp_;
