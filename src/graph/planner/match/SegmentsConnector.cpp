@@ -23,6 +23,8 @@ SubPlan SegmentsConnector::innerJoin(QueryContext* qctx,
   for (auto& alias : intersectedAliases) {
     auto* args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, alias));
+    // TODO(czp): We should not do that for all data types,
+    // the InputPropertyExpression may be any data type
     auto* expr = FunctionCallExpression::make(pool, "_joinkey", args);
     hashKeys.emplace_back(expr);
     probeKeys.emplace_back(expr->clone());
