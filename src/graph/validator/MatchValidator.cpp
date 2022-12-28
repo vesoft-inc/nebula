@@ -338,8 +338,12 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
-  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(
-      transformRes.value(), whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
+                                                        whereClauseCtx.aliasesAvailable);
+  newFilter =
+      ExpressionUtils::rewriteRankFunc2LabelAttribute(newFilter, whereClauseCtx.aliasesAvailable);
+
+  whereClauseCtx.filter = newFilter;
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);

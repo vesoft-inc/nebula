@@ -1,6 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jie
 Feature: Basic match
 
   Background:
@@ -963,6 +964,107 @@ Feature: Basic match
       """
     Then the result should be, in any order, with relax comparison:
       | id(v) |
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) != 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v | e |
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) == 0
+      return rank(e)
+      limit 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) != 0
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) != 0 and e.start_year > 2010
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) == 1 and e.start_year == 2016
+      return e
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                           |
+      | [:serve "Marco Belinelli"->"Hornets" @1 {end_year: 2017, start_year: 2016}] |
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != "jack"
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != 0  or abs(rank(e)) != 0
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: match_with_wrong_syntax
     When executing query:
