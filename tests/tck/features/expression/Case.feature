@@ -298,7 +298,7 @@ Feature: Case Expression
   Scenario: Using the return value of case expr as an input
     When executing query:
       """
-      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
+      YIELD CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
       """
     Then the result should be, in order:
       | like._dst       |
