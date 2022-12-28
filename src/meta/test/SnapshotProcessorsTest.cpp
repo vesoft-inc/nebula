@@ -392,6 +392,7 @@ TEST_F(SnapshotProcessorsTest, BadStoraged) {
 
   for (auto& handler : handlers_) {
     ASSERT(!handler->isBlocked());
+    UNUSED(handler);
   }
 }
 
