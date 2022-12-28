@@ -114,7 +114,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 #if ENABLE_JEMALLOC
   // set MemoryStats limit (MemoryTracker track-able memory)
   memory::MemoryStats::instance().setLimit(
-      (total - FLAGS_memory_tracker_untracked_reserved_memory_mb) *
+      (total - FLAGS_memory_tracker_untracked_reserved_memory_mb * 1024 * 1024) *
       FLAGS_memory_tracker_limit_ratio);
 
   // purge if enabled
