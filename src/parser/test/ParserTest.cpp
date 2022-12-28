@@ -3203,12 +3203,7 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
   }
-  // Error session id type
-  {
-    std::string query = "KILL SESSIONS \"123\"";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
+  // Error session id type will be checked during wrong time
 }
 
 TEST_F(ParserTest, JobTest) {

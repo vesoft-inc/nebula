@@ -1141,9 +1141,9 @@ struct RemoveSessionReq {
 }
 
 struct RemoveSessionResp {
-    1: common.ErrorCode     code,
-    2: common.HostAddr      leader,
-    3: i32                  removed_session_num,
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<common.SessionID>   removed_session_ids,
 }
 
 struct KillQueryReq {

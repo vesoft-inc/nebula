@@ -134,39 +134,6 @@ folly::Future<Status> KillSessionExecutor::execute() {
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
-StatusOr<std::vector<SessionID>> KillSessionExecutor::collectSessions() {
-  auto *killNode = asNode<KillSession>(node());
-  std::vector<SessionID> sessionIds;
-
-  auto inputVar = killNode->inputVar();
-  auto iter = ectx_->getValue(inputVar);
-  auto inputVal = iter.getDataSet();
-
-  // kill session only accepts input with zero or one column
-  if (inputVal.colSize() > 1) {
-    return Status::Error("Kill session only accepts input with zero or one column, got %lu",
-                         inputVal.colSize());
-  }
-
-  sessionIds.reserve(inputVal.rows.size() + 1);
-  // iterate over input rows
-  for (auto &row : inputVal.rows) {
-    if (row.values.empty()) {
-      // empty row, skip
-      return Status::Error("Empty row in input");
-    }
-
-    // check input value type
-    if (!row.values[0].isInt()) {
-      return Status::Error("Session id should be int, got %s",
-                           Value::toString(row.values[0].type()).c_str());
-    }
-    sessionIds.emplace_back(row.values[0].getInt());
-  }
-
-  return sessionIds;
-}
-
 folly::Future<Status> UpdateSessionExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *updateNode = asNode<UpdateSession>(node());

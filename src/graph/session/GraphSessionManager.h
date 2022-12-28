@@ -100,7 +100,7 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
 
   // Removes a session from the local cache.
   // All queries within the expired session will be marked as killed and stats will be updated.
-  void removeSessionFromLocalCache(SessionID id);
+  void removeSessionFromLocalCache(const std::vector<SessionID>& ids);
 
   // Reclaims expired sessions.
   // All queries within the expired session will be marked as killed.

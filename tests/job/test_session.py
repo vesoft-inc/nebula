@@ -4,19 +4,11 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-import re
 import sys
 import time
-import pytest
 import concurrent
 
-from nebula3.fbthrift.transport import TSocket
-from nebula3.fbthrift.transport import TTransport
-from nebula3.fbthrift.protocol import TBinaryProtocol
-
-
 from nebula3.gclient.net import Connection
-from nebula3.graph import GraphService
 from nebula3.common import ttypes
 from nebula3.data.ResultSet import ResultSet
 from tests.common.nebula_test_suite import NebulaTestSuite
@@ -167,17 +159,9 @@ class TestSession(NebulaTestSuite):
         time.sleep(3)
 
     def test_the_same_id_to_different_graphd(self):
-        def get_connection(ip, port):
-            ssl_config = self.client_pool._ssl_configs
-            try:
-                conn = Connection()
-                conn.open_SSL(ip, port, 0, ssl_config)
-            except Exception as ex:
-                assert False, 'Create connection to {}:{} failed'.format(ip, port)
-            return conn
 
-        conn1 = get_connection(self.addr_host1, self.addr_port1)
-        conn2 = get_connection(self.addr_host2, self.addr_port2)
+        conn1 = self.get_connection(self.addr_host1, self.addr_port1)
+        conn2 = self.get_connection(self.addr_host2, self.addr_port2)
 
         resp = conn1.authenticate('root', 'nebula')
         session_id = resp.get_session_id()
@@ -213,7 +197,7 @@ class TestSession(NebulaTestSuite):
             for i in range(0, 3):
                 future = executor.submit(
                     do_test,
-                    get_connection(self.addr_host2, self.addr_port2),
+                    self.get_connection(self.addr_host2, self.addr_port2),
                     session_id,
                     i,
                 )
@@ -311,9 +295,157 @@ class TestSession(NebulaTestSuite):
         time.sleep(3)
 
     def test_kill_session_basic(self):
+        # find all sessions
         resp = self.execute('SHOW SESSIONS')
         self.check_resp_succeeded(resp)
         total_session_num = len(resp.rows())
+        assert total_session_num > 0
 
-        # log in as root user
-        root_session = self.client_pool.get_session('root', 'nebula')
+        # kill the newest session
+        resp = self.execute(
+            'SHOW SESSIONS | YIELD $-.SessionId AS sid, $-.CreateTime as CreateTime | ORDER BY $-.CreateTime DESC | LIMIT  1 | KILL SESSION  $-.sid'
+        )
+        self.check_resp_succeeded(resp)
+        assert not resp.is_empty()
+        # check the number of session is killed
+        assert resp.rows()[0].values[0].get_iVal() == 1
+
+        # check the total number sessions left
+        resp = self.execute('SHOW SESSIONS')
+        self.check_resp_succeeded(resp)
+        total_session_num_after_kill_session = len(resp.rows())
+        assert total_session_num_after_kill_session == total_session_num - 1
+
+        # wrong type of session id
+        resp = self.execute('KILL SESSION "123"')
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_SEMANTIC_ERROR)
+
+        # execute as non root user
+        try:
+            non_root_session = self.client_pool.get_session('session_user', '123456')
+            assert non_root_session is not None
+            resp = non_root_session.execute('KILL SESSION 123')
+            self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+        except Exception as e:
+            assert False, e.message
+
+        # kill current session
+        try:
+            cur_session = self.client_pool.get_session('root', 'nebula')
+            assert cur_session is not None
+
+            # kill the newest session which is also the current session
+            resp = cur_session.execute(
+                'SHOW SESSIONS | YIELD $-.SessionId AS sid, $-.CreateTime as CreateTime | ORDER BY $-.CreateTime DESC | LIMIT  1 | KILL SESSION  $-.sid'
+            )
+            self.check_resp_succeeded(resp)
+
+            # execute after kill current session
+            resp = cur_session.execute('SHOW HOSTS')
+            self.check_resp_failed(resp, ttypes.ErrorCode.E_SESSION_INVALID)
+        except Exception as e:
+            assert False, e.message
+
+        # kill invalid/non-existed session
+        try:
+            resp = self.execute('KILL SESSION 100')
+            self.check_resp_succeeded(resp)
+            # the result should indicate 0 session is killed
+            assert resp.rows()[0].values[0].get_iVal() == 0
+        except Exception as e:
+            assert False, e.message
+
+        # kill multiple sessions at once
+        resp = self.execute(
+            'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1"'
+        )
+        self.check_resp_succeeded(resp)
+        user1_session_num = len(resp.rows())
+
+        # create a total of 100 sessions for user1
+        while user1_session_num < 100:
+            conn1 = self.get_connection(self.addr_host1, self.addr_port1)
+            try:
+                # get session from host1
+                conn1.authenticate('session_user1', '123456')
+            except Exception as e:
+                assert False, e.message
+            user1_session_num += 1
+
+        resp = self.execute(
+            'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1"'
+        )
+        self.check_resp_succeeded(resp)
+        assert len(resp.rows()) == 100
+
+        # kill all sessions of user1
+        resp = self.execute(
+            'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1" | KILL SESSION $-.sid'
+        )
+        self.check_resp_succeeded(resp)
+        assert resp.rows()[0].values[0].get_iVal() == 100
+
+        # check the sessions left for user1
+        resp = self.execute(
+            'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1"'
+        )
+        self.check_resp_succeeded(resp)
+        assert len(resp.rows()) == 0
+
+    # kill a session in another host
+    def test_kill_session_multi_graph(self):
+        conn1 = self.get_connection(self.addr_host1, self.addr_port1)
+        conn2 = self.get_connection(self.addr_host2, self.addr_port2)
+
+        try:
+            # get session from host1
+            auth_resp = conn1.authenticate('root', 'nebula')
+            session_id1 = auth_resp.get_session_id()
+
+            # get session from host2
+            auth_resp = conn2.authenticate('session_user1', '123456')
+            session_id2 = auth_resp.get_session_id()
+
+            # check the number of sessions for user1
+            resp = conn1.execute(
+                session_id1,
+                'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1"',
+            )
+            self.check_resp_succeeded(ResultSet(resp, 0))
+            user1_session_num = len(ResultSet(resp, 0).rows())
+
+            # kill the session created in host2 from host1
+            resp = conn1.execute(
+                session_id1,
+                'KILL SESSION {}'.format(session_id2),
+            )
+            self.check_resp_succeeded(ResultSet(resp, 0))
+            assert ResultSet(resp, 0).rows()[0].values[0].get_iVal() == 1
+
+            # check the number of sessions for user1 remained
+            resp = conn1.execute(
+                session_id1,
+                'SHOW SESSIONS | YIELD $-.SessionId as sid WHERE $-.UserName == "session_user1"',
+            )
+            self.check_resp_succeeded(ResultSet(resp, 0))
+            assert user1_session_num == len(ResultSet(resp, 0).rows()) + 1
+
+            # execute query with the killed session
+            resp = conn2.execute(
+                session_id2,
+                'SHOW HOSTS',
+            )
+            # the session has not been synced to host2, so the query should succeed
+            self.check_resp_succeeded(ResultSet(resp, 0))
+
+            # wait for the session to be synced (in test session_reclaim_interval_secs=2)
+            time.sleep(4)
+            resp = conn2.execute(
+                session_id2,
+                'SHOW HOSTS',
+            )
+            self.check_resp_failed(
+                ResultSet(resp, 0), ttypes.ErrorCode.E_SESSION_INVALID
+            )
+        except Exception as e:
+            assert False, e

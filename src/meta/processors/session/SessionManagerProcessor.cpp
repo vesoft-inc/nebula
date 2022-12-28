@@ -161,10 +161,9 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
 
 void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
   folly::SharedMutex::WriteHolder holder(LockUtils::sessionLock());
-  auto removedSessionNum = 0;
+  std::vector<SessionID> killedSessions;
 
   auto sessionIds = req.get_session_ids();
-  std::vector<std::string> keys;
 
   for (auto sessionId : sessionIds) {
     auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
@@ -175,12 +174,33 @@ void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
       LOG(INFO) << "Session id `" << sessionId << "' not found";
       continue;
     }
-    keys.emplace_back(sessionKey);
-    ++removedSessionNum;
+
+    // Remove session key from kvstore
+    folly::Baton<true, std::atomic> baton;
+    nebula::cpp2::ErrorCode errorCode;
+    kvstore_->asyncRemove(kDefaultSpaceId,
+                          kDefaultPartId,
+                          sessionKey,
+                          [this, &baton, &errorCode](nebula::cpp2::ErrorCode code) {
+                            this->handleErrorCode(code);
+                            errorCode = code;
+                            baton.post();
+                          });
+    baton.wait();
+
+    // continue if the session is not removed successfully
+    if (errorCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Remove session key failed, error code: " << static_cast<int32_t>(errorCode);
+      continue;
+    }
+
+    // record the removed session id
+    killedSessions.emplace_back(sessionId);
   }
+
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.removed_session_num_ref() = removedSessionNum;
-  doMultiRemove(std::move(keys));
+  resp_.removed_session_ids_ref() = std::move(killedSessions);
+  onFinished();
 }
 
 void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {

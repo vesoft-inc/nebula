@@ -2802,32 +2802,6 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
   cluster.stop();
 }
 
-TEST(MetaClientTest, SessionTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/MetaClientSessionTest.XXXXXX");
-
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path());
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  // create sessions
-  {
-    auto createSessionRes =
-        client->createSession("nebula", HostAddr("localhost", 9919), "localhost").get();
-    ASSERT_TRUE(createSessionRes.ok());
-  }
-  // remove session
-  {
-    auto getSessionsRes = client->listSessions().get();
-    ASSERT_TRUE(getSessionsRes.ok());
-    ASSERT_EQ(1, getSessionsRes.value().get_sessions().size());
-    auto sessionID = getSessionsRes.value().get_sessions()[0].get_session_id();
-
-    auto removeSessionRes = client->removeSessions({sessionID}).get();
-    ASSERT_TRUE(removeSessionRes.ok());
-  }
-}
-
 }  // namespace meta
 }  // namespace nebula
 
