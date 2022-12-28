@@ -75,26 +75,26 @@ Feature: Set Test
       | a |
       | 1 |
       | 2 |
+    # cypher doesn't support intersect
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      INTERSECT
+      RETURN 2 AS a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 2 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a, 100
+      INTERSECT
+      RETURN 2 AS a, 100
+      """
+    Then the result should be, in any order:
+      | a | 100 |
+      | 2 | 100 |
 
-  # cypher doesn't support intersect
-  # When executing query:
-  # """
-  # UNWIND [1,2] AS a RETURN a
-  # INTERSECT
-  # RETURN 2 AS a
-  # """
-  # Then the result should be, in any order:
-  # | a |
-  # | 1 |
-  # When executing query:
-  # """
-  # UNWIND [1,2,3] AS a RETURN a, 100
-  # INTERSECT
-  # RETURN 2 AS a, 100
-  # """
-  # Then the result should be, in any order:
-  # | a | 100 |
-  # | 2 | 100 |
   Scenario: Union All
     Given a graph with space named "nba"
     When executing query:
@@ -264,10 +264,7 @@ Feature: Set Test
       MATCH (v:player) RETURN v ORDER BY v LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
-      | v                     |
-      | ("Amar'e Stoudemire") |
-      | ("Aron Baynes")       |
-      | ("Ben Simmons")       |
+      | v |
     When executing query:
       """
       MATCH (v:player)
@@ -278,18 +275,39 @@ Feature: Set Test
       RETURN v
       """
     Then the result should be, in any order, with relax comparison:
-      | v                     |
-      | ("Amar'e Stoudemire") |
-      | ("Aron Baynes")       |
+      | v                   |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
     When executing query:
       """
       UNWIND [1,2,3] AS a RETURN a
       MINUS
-      UNWIND [2,3,4] AS b RETURN a
+      UNWIND [2,3,4] AS a RETURN a
       """
     Then the result should be, in any order, with relax comparison:
       | a |
       | 1 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      RETURN 4 AS a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 2 |
+      | 3 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      RETURN 2 AS a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 3 |
 
   Scenario: Intersect
     Given a graph with space named "nba"
@@ -348,7 +366,7 @@ Feature: Set Test
       """
       UNWIND [1,2,3] AS a RETURN a
       INTERSECT
-      UNWIND [2,3,4] AS b RETURN a
+      UNWIND [2,3,4] AS a RETURN a
       """
     Then the result should be, in any order, with relax comparison:
       | a |

@@ -1644,14 +1644,6 @@ yield_sentence
         s->setWhereClause($4);
         $$ = s;
     }
-    | KW_RETURN yield_columns {
-        auto *s = new YieldSentence($2);
-        $$ = s;
-    }
-    | KW_RETURN KW_DISTINCT yield_columns {
-        auto *s = new YieldSentence($3, true);
-        $$ = s;
-    }
     ;
 
 unwind_clause
@@ -1728,7 +1720,10 @@ reading_with_clauses
     ;
 
 match_sentence
-    : reading_clauses match_return {
+    : match_return {
+        $$ = new MatchSentence(new MatchClauseList(), $1);
+    }
+    | reading_clauses match_return {
         $$ = new MatchSentence($1, $2);
     }
     | reading_with_clauses match_return {
