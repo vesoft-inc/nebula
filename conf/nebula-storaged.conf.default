@@ -105,7 +105,7 @@
 
 ############### misc ####################
 # Whether turn on query in multiple thread
---query_concurrently=false
+--query_concurrently=true
 # Whether remove outdated space data
 --auto_remove_invalid_space=true
 # Network IO threads number
