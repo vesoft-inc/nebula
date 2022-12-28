@@ -9,7 +9,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include "clients/storage/InternalStorageClient.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/memory/MemoryUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
@@ -25,7 +24,6 @@
 #include "storage/CompactionFilter.h"
 #include "storage/GraphStorageLocalServer.h"
 #include "storage/GraphStorageServiceHandler.h"
-#include "storage/InternalStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/StorageFlags.h"
 #include "storage/http/StorageHttpAdminHandler.h"
@@ -39,7 +37,7 @@
 #ifndef BUILD_STANDALONE
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(local_config, true, "meta client will not retrieve latest configuration from meta");
 #else
 DEFINE_int32(storage_port, 44501, "Storage daemon listening port");
 DEFINE_int32(storage_num_worker_threads, 32, "Number of workers");
@@ -265,22 +263,12 @@ bool StorageServer::start() {
     return false;
   }
 
-  interClient_ = std::make_unique<InternalStorageClient>(ioThreadPool_, metaClient_.get());
-
   env_ = std::make_unique<storage::StorageEnv>();
   env_->kvstore_ = kvstore_.get();
   env_->indexMan_ = indexMan_.get();
   env_->schemaMan_ = schemaMan_.get();
   env_->rebuildIndexGuard_ = std::make_unique<IndexGuard>();
   env_->metaClient_ = metaClient_.get();
-  env_->interClient_ = interClient_.get();
-
-  txnMan_ = std::make_unique<TransactionManager>(env_.get());
-  if (!txnMan_->start()) {
-    LOG(ERROR) << "Start transaction manager failed!";
-    return false;
-  }
-  env_->txnMan_ = txnMan_.get();
 
   env_->verticesML_ = std::make_unique<VerticesMemLock>();
   env_->edgesML_ = std::make_unique<EdgesMemLock>();
@@ -299,8 +287,7 @@ bool StorageServer::start() {
 
   storageServer_ = getStorageServer();
   adminServer_ = getAdminServer();
-  internalStorageServer_ = getInternalServer();
-  if (!storageServer_ || !adminServer_ || !internalStorageServer_) {
+  if (!storageServer_ || !adminServer_) {
     return false;
   }
 
@@ -342,16 +329,13 @@ void StorageServer::stop() {
   // Stop http service
   webSvc_.reset();
 
-  // Stop all thrift server: raft/storage/admin/internal
+  // Stop all thrift server: raft/storage/admin
   if (kvstore_) {
     // stop kvstore background job and raft services
     kvstore_->stop();
   }
   if (adminServer_) {
     adminServer_->cleanUp();
-  }
-  if (internalStorageServer_) {
-    internalStorageServer_->cleanUp();
   }
   if (storageServer_) {
 #ifndef BUILD_STANDALONE
@@ -360,10 +344,6 @@ void StorageServer::stop() {
   }
 
   // Stop all interface related to kvstore
-  if (txnMan_) {
-    txnMan_->stop();
-    txnMan_->join();
-  }
   if (taskMgr_) {
     taskMgr_->shutdown();
   }
@@ -430,30 +410,6 @@ std::unique_ptr<apache::thrift::ThriftServer> StorageServer::getAdminServer() {
     return nullptr;
   } catch (...) {
     LOG(ERROR) << "Start amdin server failed";
-    return nullptr;
-  }
-}
-
-std::unique_ptr<apache::thrift::ThriftServer> StorageServer::getInternalServer() {
-  try {
-    auto handler = std::make_shared<InternalStorageServiceHandler>(env_.get());
-    auto internalAddr = Utils::getInternalAddrFromStoreAddr(localHost_);
-    auto server = std::make_unique<apache::thrift::ThriftServer>();
-    server->setPort(internalAddr.port);
-    server->setIdleTimeout(std::chrono::seconds(0));
-    server->setIOThreadPool(ioThreadPool_);
-    server->setThreadManager(workers_);
-    if (FLAGS_enable_ssl) {
-      server->setSSLConfig(nebula::sslContextConfig());
-    }
-    server->setInterface(std::move(handler));
-    server->setup();
-    return server;
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Start internal storage server failed: " << e.what();
-    return nullptr;
-  } catch (...) {
-    LOG(ERROR) << "Start internal storage server failed";
     return nullptr;
   }
 }

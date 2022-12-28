@@ -83,6 +83,7 @@ TEST(StorageHttpPropertyHandlerTest, ValidRequest) {
 ])";
     EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.is-write-stopped"));
   }
+  { EXPECT_TRUE(!request("/rocksdb_property?space=1").empty()); }
 }
 
 }  // namespace storage

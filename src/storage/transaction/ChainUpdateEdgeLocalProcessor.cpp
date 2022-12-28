@@ -16,12 +16,17 @@ namespace nebula {
 namespace storage {
 
 void ChainUpdateEdgeLocalProcessor::process(const cpp2::UpdateEdgeRequest& req) {
+  // toss is turned off
+  pushResultCode(Code::E_UNSUPPORTED, req.get_part_id());
+  onFinished();
+  /*
   if (!prepareRequest(req)) {
     pushResultCode(rcPrepare_, localPartId_);
     onFinished();
   }
 
   env_->txnMan_->addChainTask(this);
+  */
 }
 
 bool ChainUpdateEdgeLocalProcessor::prepareRequest(const cpp2::UpdateEdgeRequest& req) {
