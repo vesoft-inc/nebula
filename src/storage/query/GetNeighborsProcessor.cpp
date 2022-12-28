@@ -5,6 +5,7 @@
 
 #include "storage/query/GetNeighborsProcessor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/AggregateNode.h"
 #include "storage/exec/EdgeNode.h"
@@ -20,10 +21,20 @@ namespace storage {
 ProcessorCounters kGetNeighborsCounters;
 
 void GetNeighborsProcessor::process(const cpp2::GetNeighborsRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
+  try {
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() { this->doProcess(req); });
+    } else {
+      doProcess(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 
@@ -132,7 +143,10 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);
@@ -158,27 +172,40 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
     int64_t limit,
     bool random) {
   return folly::via(
-      executor_, [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
-        auto plan = buildPlan(context, expCtx, result, limit, random);
-        for (const auto& vid : input) {
-          auto vId = vid.getStr();
+             executor_,
+             [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
+               auto plan = buildPlan(context, expCtx, result, limit, random);
+               for (const auto& vid : input) {
+                 auto vId = vid.getStr();
 
-          if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
-            LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
-                      << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
-            return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
-          }
+                 if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vId)) {
+                   LOG(INFO) << "Space " << spaceId_ << ", vertex length invalid, "
+                             << " space vid len: " << spaceVidLen_ << ",  vid is " << vId;
+                   return std::make_pair(nebula::cpp2::ErrorCode::E_INVALID_VID, partId);
+                 }
 
-          // the first column of each row would be the vertex id
-          auto ret = plan.go(partId, vId);
-          if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            return std::make_pair(ret, partId);
-          }
-        }
-        if (UNLIKELY(this->profileDetailFlag_)) {
-          profilePlan(plan);
-        }
-        return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+                 // the first column of each row would be the vertex id
+                 auto ret = plan.go(partId, vId);
+                 if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                   return std::make_pair(ret, partId);
+                 }
+               }
+               if (UNLIKELY(this->profileDetailFlag_)) {
+                 profilePlan(plan);
+               }
+               return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+             })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
       });
 }
 

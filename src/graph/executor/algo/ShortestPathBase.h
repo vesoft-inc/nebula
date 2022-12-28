@@ -6,6 +6,7 @@
 
 #include <robin_hood.h>
 
+#include "graph/executor/Executor.h"
 #include "graph/planner/plan/Algo.h"
 
 using nebula::storage::StorageRpcResponse;

@@ -1868,7 +1868,8 @@ FunctionManager::FunctionManager() {
           return value.getEdge().id();
         }
         default: {
-          return Value::kNullBadType;
+          // Join on the origin type
+          return args[0];
         }
       }
     };

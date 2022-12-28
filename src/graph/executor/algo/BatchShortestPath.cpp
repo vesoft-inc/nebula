@@ -33,6 +33,13 @@ folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
           result->append(std::move(ds));
         }
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -106,6 +113,13 @@ folly::Future<Status> BatchShortestPath::shortestPath(size_t rowNum, size_t step
           }
         }
         return handleResponse(rowNum, stepNum);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -139,6 +153,13 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t step
       .thenValue([this, rowNum, reverse, stepNum, getNbrTime](auto&& resp) {
         addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -294,6 +315,13 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
         leftPathMap.clear();
         rightPathMap.clear();
         return shortestPath(rowNum, stepNum + 1);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -347,58 +375,63 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
   }
 
   auto future = getMeetVids(rowNum, oddStep, meetVids);
-  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum, oddStep](auto&& vertices) {
-    if (vertices.empty()) {
-      return false;
-    }
-    robin_hood::unordered_flat_map<Value, Value, std::hash<Value>> verticesMap;
-    for (auto& vertex : vertices) {
-      verticesMap[vertex.getVertex().vid] = std::move(vertex);
-    }
-    auto& terminationMap = terminationMaps_[rowNum];
-    auto& leftPathMaps = currentLeftPathMaps_[rowNum];
-    auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
-    for (const auto& leftPathMap : leftPathMaps) {
-      auto findCommonVid = rightPathMaps.find(leftPathMap.first);
-      if (findCommonVid == rightPathMaps.end()) {
-        continue;
-      }
-      auto findCommonVertex = verticesMap.find(findCommonVid->first);
-      if (findCommonVertex == verticesMap.end()) {
-        continue;
-      }
-      auto& rightPaths = findCommonVid->second;
-      for (const auto& srcPaths : leftPathMap.second) {
-        auto range = terminationMap.equal_range(srcPaths.first);
-        if (range.first == range.second) {
-          continue;
+  return future.via(qctx_->rctx()->runner())
+      .thenValue([this, rowNum, oddStep](auto&& vertices) {
+        if (vertices.empty()) {
+          return false;
         }
-        for (const auto& dstPaths : rightPaths) {
-          for (auto found = range.first; found != range.second; ++found) {
-            if (found->second.first == dstPaths.first) {
-              if (singleShortest_ && !found->second.second) {
-                break;
+        robin_hood::unordered_flat_map<Value, Value, std::hash<Value>> verticesMap;
+        for (auto& vertex : vertices) {
+          verticesMap[vertex.getVertex().vid] = std::move(vertex);
+        }
+        auto& terminationMap = terminationMaps_[rowNum];
+        auto& leftPathMaps = currentLeftPathMaps_[rowNum];
+        auto& rightPathMaps = oddStep ? preRightPathMaps_[rowNum] : currentRightPathMaps_[rowNum];
+        for (const auto& leftPathMap : leftPathMaps) {
+          auto findCommonVid = rightPathMaps.find(leftPathMap.first);
+          if (findCommonVid == rightPathMaps.end()) {
+            continue;
+          }
+          auto findCommonVertex = verticesMap.find(findCommonVid->first);
+          if (findCommonVertex == verticesMap.end()) {
+            continue;
+          }
+          auto& rightPaths = findCommonVid->second;
+          for (const auto& srcPaths : leftPathMap.second) {
+            auto range = terminationMap.equal_range(srcPaths.first);
+            if (range.first == range.second) {
+              continue;
+            }
+            for (const auto& dstPaths : rightPaths) {
+              for (auto found = range.first; found != range.second; ++found) {
+                if (found->second.first == dstPaths.first) {
+                  if (singleShortest_ && !found->second.second) {
+                    break;
+                  }
+                  doConjunctPath(
+                      srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
+                  found->second.second = false;
+                }
               }
-              doConjunctPath(srcPaths.second, dstPaths.second, findCommonVertex->second, rowNum);
-              found->second.second = false;
             }
           }
         }
-      }
-    }
-    // update terminationMap
-    for (auto iter = terminationMap.begin(); iter != terminationMap.end();) {
-      if (!iter->second.second) {
-        iter = terminationMap.erase(iter);
-      } else {
-        ++iter;
-      }
-    }
-    if (terminationMap.empty()) {
-      return true;
-    }
-    return false;
-  });
+        // update terminationMap
+        for (auto iter = terminationMap.begin(); iter != terminationMap.end();) {
+          if (!iter->second.second) {
+            iter = terminationMap.erase(iter);
+          } else {
+            ++iter;
+          }
+        }
+        if (terminationMap.empty()) {
+          return true;
+        }
+        return false;
+      })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<bool>(std::runtime_error(e.what()));
+      });
 }
 
 void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
