@@ -182,8 +182,8 @@ Feature: Multi Query Parts
     Then the result should be, in any order, with relax comparison:
       | v1              | v2                | e3                                            | v4                    | v3             | e5                                             |
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"LaMarcus Aldridge" @0] | ("LaMarcus Aldridge") | ("Tim Duncan") | [:like "LaMarcus Aldridge"->"Tony Parker" @0]  |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0 ]       | ("Tony Parker")       | __NULL__       | __NULL__                                       |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0]        | ("Tony Parker")       | __NULL__       | __NULL__                                       |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0 ]       | ("Tony Parker")       | NULL           | NULL                                           |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0]        | ("Tony Parker")       | NULL           | NULL                                           |
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Tim Duncan" @0 ]       | ("Tim Duncan")        | ("Tim Duncan") | [:teammate "Tim Duncan"->"Tony Parker" @0]     |
       | ("Tony Parker") | ("Manu Ginobili") | [:like "Manu Ginobili"->"Tim Duncan" @0 ]     | ("Tim Duncan")        | ("Tim Duncan") | [:teammate "Tim Duncan"->"Tony Parker" @0]     |
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0]     | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0]  |

@@ -199,11 +199,11 @@ Value RowReaderV1::getValueByName(const std::string& prop) const noexcept {
 
 Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
-    return Value(NullType::__NULL__);
+    return Value(NullType::UNKNOWN_PROP);
   }
   auto vType = getSchema()->getFieldType(index);
   if (PropertyType::UNKNOWN == vType) {
-    return Value(NullType::__NULL__);
+    return Value(NullType::UNKNOWN_PROP);
   }
   switch (vType) {
     case PropertyType::BOOL:
