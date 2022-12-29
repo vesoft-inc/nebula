@@ -2808,7 +2808,10 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
-      std::move(promise));
+      std::move(promise),
+      true,
+      0,
+      1);
   return future;
 }
 

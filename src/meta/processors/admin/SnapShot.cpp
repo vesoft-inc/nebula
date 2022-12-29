@@ -33,6 +33,7 @@ Snapshot::createSnapshot(const std::string& name) {
   for (auto const& [host, spaces] : hostSpaces) {
     auto snapshotRet = client_->createSnapshot(spaces, name, host).get();
     if (!snapshotRet.ok()) {
+      LOG(INFO) << "create snapshot failed:" << snapshotRet.status().toString();
       return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
     }
     auto backupInfo = snapshotRet.value();

@@ -126,7 +126,12 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     }
   }
 
-  LOG(INFO) << "Create snapshot " << snapshot << " successfully";
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create snapshot " << snapshot
+              << " failed: " << apache::thrift::util::enumNameSafe(code);
+  } else {
+    LOG(INFO) << "Create snapshot " << snapshot << " successfully";
+  }
   handleErrorCode(code);
   onFinished();
 }
