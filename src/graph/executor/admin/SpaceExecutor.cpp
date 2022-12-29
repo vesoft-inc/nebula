@@ -258,9 +258,9 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
         row.values.emplace_back(properties.get_space_name());
         auto fmt = properties.comment_ref().has_value()
                        ? "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s) ON %s comment = '%s'"
+                         "charset = %s, collate = %s, vid_type = %s) comment = '%s'"
                        : "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s) ON %s";
+                         "charset = %s, collate = %s, vid_type = %s)";
         auto zoneNames = folly::join(",", properties.get_zone_names());
         if (properties.comment_ref().has_value()) {
           row.values.emplace_back(
@@ -271,7 +271,6 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
                                   SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  zoneNames.c_str(),
                                   properties.comment_ref()->c_str()));
         } else {
           row.values.emplace_back(
@@ -281,8 +280,7 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_replica_factor(),
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
-                                  SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  zoneNames.c_str()));
+                                  SchemaUtil::typeToString(properties.get_vid_type()).c_str()));
         }
         dataSet.rows.emplace_back(std::move(row));
         return finish(ResultBuilder()

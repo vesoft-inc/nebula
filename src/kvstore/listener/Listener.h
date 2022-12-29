@@ -275,6 +275,7 @@ class Listener : public raftex::RaftPart {
   LogID leaderCommitId_ = 0;
   LogID lastApplyLogId_ = 0;
   std::set<HostAddr> peers_;
+  std::unique_ptr<folly::IOThreadPoolExecutor> applyPool_;
 };
 
 }  // namespace kvstore
