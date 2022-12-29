@@ -355,6 +355,7 @@ Feature: Basic match
       """
     Then a SemanticError should be raised at runtime: `like_not_exists': Unknown edge type
 
+  @hello
   Scenario: two steps
     When executing query:
       """
@@ -375,10 +376,10 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | Player           | Friend              | FoF            | NotExists |
-      | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   | __NULL__  |
-      | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  | __NULL__  |
-      | "Paul George"    | "Russell Westbrook" | "James Harden" | __NULL__  |
-      | "Paul George"    | "Russell Westbrook" | "Paul George"  | __NULL__  |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   | NULL      |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "James Harden" | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "Paul George"  | NULL      |
     When executing query:
       """
       MATCH (v1) -[:like]-> (v2:player{age: 28}) -[:like]-> (v3)
@@ -435,8 +436,8 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | Player       | Friend          | TYPE    | FoF          | FoT       |
-      | "Paul Gasol" | "Marc Gasol"    | "like"  | "Paul Gasol" | __NULL__  |
-      | "Yao Ming"   | "Tracy McGrady" | "serve" | __NULL__     | "Rockets" |
+      | "Paul Gasol" | "Marc Gasol"    | "like"  | "Paul Gasol" | NULL      |
+      | "Yao Ming"   | "Tracy McGrady" | "serve" | NULL         | "Rockets" |
     When executing query:
       """
       MATCH (v1) -[e1:like]-> (v2) -[e2]-> (v3)
