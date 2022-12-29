@@ -82,7 +82,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownHashInnerJoinRule::transform(
     newGroupNode->dependsOn(const_cast<OptGroup*>(newJoinGroup));
   } else {
     newInnerJoinNode->setOutputVar(oldFilterNode->outputVar());
-    newInnerJoinNode->setColNames(oldFilterNode->colNames());
+    newInnerJoinNode->setColNames(oldInnerJoinNode->colNames());
   }
 
   TransformResult result;

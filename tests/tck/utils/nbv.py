@@ -42,7 +42,7 @@ tokens = (
     'BAD_DATA',
     'BAD_TYPE',
     'OVERFLOW',
-    '__NULL__',
+    'UNKNOWN_PROP',
     'DIV_BY_ZERO',
     'OUT_OF_RANGE',
     'FLOAT',
@@ -100,9 +100,9 @@ def t_OVERFLOW(t):
     return t
 
 
-def t___NULL__(t):
-    r'__NULL__'
-    t.value = Value(nVal=NullType.__NULL__)
+def t_UNKNOWN_PROP(t):
+    r'UNKNOWN_PROP'
+    t.value = Value(nVal=NullType.UNKNOWN_PROP)
     return t
 
 
@@ -239,7 +239,7 @@ def p_expr(p):
              | BAD_DATA
              | BAD_TYPE
              | OVERFLOW
-             | __NULL__
+             | UNKNOWN_PROP
              | DIV_BY_ZERO
              | OUT_OF_RANGE
              | INT
@@ -587,7 +587,7 @@ if __name__ == '__main__':
     expected['BAD_DATA'] = Value(nVal=NullType.BAD_DATA)
     expected['BAD_TYPE'] = Value(nVal=NullType.BAD_TYPE)
     expected['OVERFLOW'] = Value(nVal=NullType.ERR_OVERFLOW)
-    expected['__NULL__'] = Value(nVal=NullType.__NULL__)
+    expected['UNKNOWN_PROP'] = Value(nVal=NullType.UNKNOWN_PROP)
     expected['DIV_BY_ZERO'] = Value(nVal=NullType.DIV_BY_ZERO)
     expected['OUT_OF_RANGE'] = Value(nVal=NullType.OUT_OF_RANGE)
     expected['123'] = Value(iVal=123)

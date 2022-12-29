@@ -204,7 +204,7 @@ StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(RowReader* reader,
                                                        const std::string propName,
                                                        const meta::SchemaProviderIf* latestSchema) {
   auto value = reader->getValueByName(propName);
-  if (latestSchema == nullptr || !value.isNull() || value.getNull() != NullType::__NULL__) {
+  if (latestSchema == nullptr || !value.isNull() || value.getNull() != NullType::UNKNOWN_PROP) {
     return value;
   }
   auto field = latestSchema->field(propName);
@@ -230,6 +230,9 @@ Status IndexKeyUtils::checkValue(const Value& v, bool isNullable) {
   }
 
   switch (v.getNull()) {
+    case nebula::NullType::UNKNOWN_PROP: {
+      return Status::Error("Unknown prop");
+    }
     case nebula::NullType::__NULL__: {
       if (!isNullable) {
         return Status::Error("Not allowed to be null");

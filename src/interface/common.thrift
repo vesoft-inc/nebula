@@ -95,7 +95,7 @@ enum NullType {
     BAD_DATA = 2,
     BAD_TYPE = 3,
     ERR_OVERFLOW = 4,
-    UNKNOWN_PROP = 5,  // deprecated but not to be deleted
+    UNKNOWN_PROP = 5,
     DIV_BY_ZERO = 6,
     OUT_OF_RANGE = 7,
 } (cpp.enum_strict, cpp.type = "nebula::NullType")
