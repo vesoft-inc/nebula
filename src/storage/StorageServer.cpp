@@ -71,9 +71,9 @@ Status StorageServer::setupMemoryMonitorThread() {
   }
 
   auto updateMemoryWatermark = []() -> Status {
-    auto status = MemoryUtils::hitsHighWatermark();
+    auto status = memory::MemoryUtils::hitsHighWatermark();
     NG_RETURN_IF_ERROR(status);
-    MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+    memory::MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
     return Status::OK();
   };
 
