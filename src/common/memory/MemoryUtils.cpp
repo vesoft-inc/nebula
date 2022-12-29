@@ -170,6 +170,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
                                ReadableSize(MemoryStats::instance().used()),
                                ReadableSize(MemoryStats::instance().getLimit()),
                                MemoryStats::instance().usedRatio() * 100);
+      kLastPrintMemoryTrackerStats_ = now;
     }
   }
 
