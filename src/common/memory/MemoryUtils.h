@@ -35,6 +35,7 @@ class MemoryUtils final {
 
  private:
   static int64_t kLastPurge_;
+  static int64_t kLastPrintMemoryTrackerStats_;
 };
 
 }  // namespace memory

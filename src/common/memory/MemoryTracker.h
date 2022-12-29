@@ -11,12 +11,20 @@
 namespace nebula {
 namespace memory {
 
-constexpr size_t KiB_ = 1024;
-constexpr size_t MiB_ = 1024 * KiB_;
-constexpr size_t GiB_ = 1024 * MiB_;
+constexpr int64_t KiB_ = 1024;
+constexpr int64_t MiB_ = 1024 * KiB_;
+constexpr int64_t GiB_ = 1024 * MiB_;
 
-static std::string MiB(int64_t size) {
-  return fmt::format("{}, MiB", size / MiB_);
+static std::string ReadableSize(double size) {
+  if (size < KiB_) {
+    return fmt::format("{}B", size);
+  } else if (size < MiB_) {
+    return fmt::format("{:.3f}KiB", size / KiB_);
+  } else if (size < GiB_) {
+    return fmt::format("{:.3f}MiB", size / MiB_);
+  } else {
+    return fmt::format("{:.3f}GiB", size / GiB_);
+  }
 }
 
 constexpr size_t
@@ -95,7 +103,7 @@ class MemoryStats {
   void setLimit(int64_t limit) {
     if (this->limit_ != limit) {
       LOG(INFO) << fmt::format(
-          "MemoryTracker update limit {} -> {}", MiB(this->limit_), MiB(limit));
+          "MemoryTracker update limit {} -> {}", ReadableSize(this->limit_), ReadableSize(limit));
       this->limit_ = limit;
     }
   }
@@ -116,7 +124,7 @@ class MemoryStats {
   }
 
   std::string toString() {
-    return fmt::format("MemoryStats, limit: {}, used: {}", MiB(limit_), MiB(used_));
+    return fmt::format("MemoryStats: {}/{}", ReadableSize(limit_), ReadableSize(used_));
   }
 
  private:

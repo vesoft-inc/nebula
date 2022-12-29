@@ -45,6 +45,10 @@ DEFINE_string(cgroup_v2_memory_current_path,
 DEFINE_bool(memory_purge_enabled, true, "memory purge enabled, default true");
 DEFINE_int32(memory_purge_interval_seconds, 10, "memory purge interval in seconds, default 10");
 DEFINE_bool(memory_tracker_detail_log, false, "print memory stats detail log");
+DEFINE_int32(memory_tracker_detail_log_interval_ms,
+             1000,
+             "print memory stats detail log interval in ms");
+
 DEFINE_double(memory_tracker_untracked_reserved_memory_mb,
               50,
               "memory tacker tracks memory of new/delete, this flag defined reserved untracked "
@@ -65,6 +69,7 @@ static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)")
 
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
 int64_t MemoryUtils::kLastPurge_{0};
+int64_t MemoryUtils::kLastPrintMemoryTrackerStats_{0};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
@@ -130,10 +135,14 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     int64_t now = time::WallClock::fastNowInSec();
     if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
       // mallctl seems has issue with address_sanitizer, do purge only when address_sanitizer is off
+#if defined(__clang)
 #if defined(__has_feature)
 #if not __has_feature(address_sanitizer)
       mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
 #endif
+#endif
+#else  // gcc
+      mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
 #endif
       kLastPurge_ = now;
     }
@@ -150,21 +159,19 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   // usr: record by current process's MemoryStats
   //                 used: bytes allocated by new operator
   //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
+  int64_t now = time::WallClock::fastNowInMilliSec();
   if (FLAGS_memory_tracker_detail_log) {
-    // do not lose precision,
-    LOG(INFO) << " sys_used: " << static_cast<int64_t>(total - available) << " sys_total: " << total
-              << " sys_ratio:" << (1 - available / total)
-              << " usr_used:" << MemoryStats::instance().used()
-              << " usr_total:" << MemoryStats::instance().getLimit()
-              << " usr_ratio:" << MemoryStats::instance().usedRatio();
+    if (now - kLastPrintMemoryTrackerStats_ >= FLAGS_memory_tracker_detail_log_interval_ms) {
+      LOG(INFO) << fmt::format("sys:{}/{} {:.2f}%",
+                               ReadableSize(static_cast<int64_t>(total - available)),
+                               ReadableSize(total),
+                               (1 - available / total) * 100)
+                << fmt::format(" usr:{}/{} {:.2f}%",
+                               ReadableSize(MemoryStats::instance().used()),
+                               ReadableSize(MemoryStats::instance().getLimit()),
+                               MemoryStats::instance().usedRatio() * 100);
+    }
   }
-  // print some memory stat in readable format every 60 seconds
-  LOG_EVERY_N(INFO, 60) << " sys_used: " << MiB(static_cast<int64_t>(total - available))
-                        << " sys_total: " << MiB(total)
-                        << " sys_ratio:" << (1 - available / total)
-                        << " usr_used:" << MiB(MemoryStats::instance().used())
-                        << " usr_total:" << MiB(MemoryStats::instance().getLimit())
-                        << " usr_ratio:" << MemoryStats::instance().usedRatio();
 
 #endif
 
