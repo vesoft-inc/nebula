@@ -1644,14 +1644,6 @@ yield_sentence
         s->setWhereClause($4);
         $$ = s;
     }
-    | KW_RETURN yield_columns {
-        auto *s = new YieldSentence($2);
-        $$ = s;
-    }
-    | KW_RETURN KW_DISTINCT yield_columns {
-        auto *s = new YieldSentence($3, true);
-        $$ = s;
-    }
     ;
 
 unwind_clause
@@ -1728,7 +1720,10 @@ reading_with_clauses
     ;
 
 match_sentence
-    : reading_clauses match_return {
+    : match_return {
+        $$ = new MatchSentence(new MatchClauseList(), $1);
+    }
+    | reading_clauses match_return {
         $$ = new MatchSentence($1, $2);
     }
     | reading_with_clauses match_return {
@@ -2969,6 +2964,9 @@ match_sentences
         s->setDistinct();
         $$ = s;
     }
+    | match_sentences KW_INTERSECT match_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | match_sentences KW_MINUS match_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    ;
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {

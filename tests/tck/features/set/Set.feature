@@ -75,26 +75,26 @@ Feature: Set Test
       | a |
       | 1 |
       | 2 |
+    # cypher doesn't support intersect
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      INTERSECT
+      RETURN 2 AS a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 2 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a, 100
+      INTERSECT
+      RETURN 2 AS a, 100
+      """
+    Then the result should be, in any order:
+      | a | 100 |
+      | 2 | 100 |
 
-  # cypher doesn't support intersect
-  # When executing query:
-  # """
-  # UNWIND [1,2] AS a RETURN a
-  # INTERSECT
-  # RETURN 2 AS a
-  # """
-  # Then the result should be, in any order:
-  # | a |
-  # | 1 |
-  # When executing query:
-  # """
-  # UNWIND [1,2,3] AS a RETURN a, 100
-  # INTERSECT
-  # RETURN 2 AS a, 100
-  # """
-  # Then the result should be, in any order:
-  # | a | 100 |
-  # | 2 | 100 |
   Scenario: Union All
     Given a graph with space named "nba"
     When executing query:
@@ -257,6 +257,57 @@ Feature: Set Test
     Then the result should be, in any order:
       | $^.player.name  | serve.start_year | $$.team.name |
       | "Manu Ginobili" | 2002             | "Spurs"      |
+    When executing query:
+      """
+      MATCH (v:player) RETURN v ORDER BY v LIMIT 3
+      MINUS
+      MATCH (v:player) RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      MINUS
+      UNWIND ["Tony Parker", "Ben Simmons"] AS v
+      RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                   |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      UNWIND [2,3,4] AS a RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      RETURN 4 AS a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 2 |
+      | 3 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      RETURN 2 AS a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 3 |
 
   Scenario: Intersect
     Given a graph with space named "nba"
@@ -271,6 +322,56 @@ Feature: Set Test
       | $^.player.name | serve.start_year | $$.team.name |
       | "Tony Parker"  | 1999             | "Spurs"      |
       | "Tony Parker"  | 2018             | "Hornets"    |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                   |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
+      | "Ben Simmons"       |
+    When executing query:
+      """
+      MATCH (v:player)
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      MATCH (v:player)
+      RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                     |
+      | ("Amar'e Stoudemire") |
+      | ("Aron Baynes")       |
+      | ("Ben Simmons")       |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      UNWIND ["Tony Parker", "Ben Simmons"] AS v
+      RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v             |
+      | "Ben Simmons" |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      INTERSECT
+      UNWIND [2,3,4] AS a RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 2 |
+      | 3 |
 
   Scenario: Mix
     Given a graph with space named "nba"
