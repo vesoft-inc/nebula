@@ -64,6 +64,10 @@ class ExpressionUtils {
   static Expression* rewriteAttr2LabelTagProp(
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
+  // rewrite rank(e) to e._rank
+  static Expression* rewriteRankFunc2LabelAttribute(
+      const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
+
   // rewrite LabelAttr to tagProp
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
@@ -239,7 +243,7 @@ class ExpressionUtils {
   static bool isVidPredication(const Expression* expr);
 
   // Check if the expr looks like `$-.e[0].likeness`
-  static bool isSingleLenExpandExpr(const std::string& edgeAlias, const Expression* expr);
+  static bool isOneStepEdgeProp(const std::string& edgeAlias, const Expression* expr);
 
   static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
                                                const std::string& edgeAlias,

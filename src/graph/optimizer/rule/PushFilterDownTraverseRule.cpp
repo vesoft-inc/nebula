@@ -67,26 +67,34 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
   auto pool = qctx->objPool();
 
   // Pick the expr looks like `$-.e[0].likeness
-  auto picker = [&edgeAlias](const Expression* e) -> bool {
-    // TODO(jie): Handle the strange exists expr. e.g. exists(e.likeness)
-    auto exprs = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kPredicate});
-    for (auto* expr : exprs) {
-      if (static_cast<const PredicateExpression*>(expr)->name() == "exists") {
+  auto picker = [&edgeAlias](const Expression* expr) -> bool {
+    bool shouldNotPick = false;
+    auto finder = [&shouldNotPick, &edgeAlias](const Expression* e) -> bool {
+      // When visiting the expression tree and find an expession node is a one step edge property
+      // expression, stop visiting its children and return true.
+      if (graph::ExpressionUtils::isOneStepEdgeProp(edgeAlias, e)) return true;
+      // Otherwise, continue visiting its children. And if the following two conditions are met,
+      // mark the expression as shouldNotPick and return false.
+      if (e->kind() == Expression::Kind::kInputProperty ||
+          e->kind() == Expression::Kind::kVarProperty) {
+        shouldNotPick = true;
         return false;
       }
-    }
-
-    auto varProps = graph::ExpressionUtils::collectAll(
-        e, {Expression::Kind::kInputProperty, Expression::Kind::kVarProperty});
-    if (varProps.empty()) {
+      // TODO(jie): Handle the strange exists expr. e.g. exists(e.likeness)
+      if (e->kind() == Expression::Kind::kPredicate &&
+          static_cast<const PredicateExpression*>(e)->name() == "exists") {
+        shouldNotPick = true;
+        return false;
+      }
       return false;
+    };
+    graph::FindVisitor visitor(finder, true, true);
+    const_cast<Expression*>(expr)->accept(&visitor);
+    if (shouldNotPick) return false;
+    if (!visitor.results().empty()) {
+      return true;
     }
-    for (auto* expr : varProps) {
-      DCHECK(graph::ExpressionUtils::isPropertyExpr(expr));
-      auto& propName = static_cast<const PropertyExpression*>(expr)->prop();
-      if (propName != edgeAlias) return false;
-    }
-    return true;
+    return false;
   };
   Expression* filterPicked = nullptr;
   Expression* filterUnpicked = nullptr;
