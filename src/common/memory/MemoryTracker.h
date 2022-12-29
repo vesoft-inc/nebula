@@ -11,19 +11,19 @@
 namespace nebula {
 namespace memory {
 
-constexpr int64_t KiB_ = 1024;
-constexpr int64_t MiB_ = 1024 * KiB_;
-constexpr int64_t GiB_ = 1024 * MiB_;
+constexpr int64_t KiB = 1024;
+constexpr int64_t MiB = 1024 * KiB;
+constexpr int64_t GiB = 1024 * MiB;
 
 static std::string ReadableSize(double size) {
-  if (size < KiB_) {
+  if (size < KiB) {
     return fmt::format("{}B", size);
-  } else if (size < MiB_) {
-    return fmt::format("{:.3f}KiB", size / KiB_);
-  } else if (size < GiB_) {
-    return fmt::format("{:.3f}MiB", size / MiB_);
+  } else if (size < MiB) {
+    return fmt::format("{:.3f}KiB", size / KiB);
+  } else if (size < GiB) {
+    return fmt::format("{:.3f}MiB", size / MiB);
   } else {
-    return fmt::format("{:.3f}GiB", size / GiB_);
+    return fmt::format("{:.3f}GiB", size / GiB);
   }
 }
 
@@ -144,7 +144,7 @@ class MemoryStats {
   // Thread Local
   static thread_local ThreadMemoryStats threadMemoryStats_;
   // Each thread reserves this amount of memory
-  static constexpr int64_t kLocalReservedLimit_ = 1 * MiB_;
+  static constexpr int64_t kLocalReservedLimit_ = 1 * MiB;
 };
 
 // A global static memory tracker enable tracking every memory allocation and deallocation.

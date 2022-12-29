@@ -121,7 +121,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   // MemoryStats depends on jemalloc
 #if ENABLE_JEMALLOC
   // set MemoryStats limit (MemoryTracker track-able memory)
-  int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB_;
+  int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB;
   if (trackable > 0) {
     MemoryStats::instance().setLimit(trackable * FLAGS_memory_tracker_limit_ratio);
   } else {
