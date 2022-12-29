@@ -2859,6 +2859,7 @@ std::size_t Value::hash() const {
     }
     case Type::DATASET: {
       LOG(DFATAL) << "Hash for DATASET has not been implemented";
+      break;
     }
     default: {
       LOG(DFATAL) << "Unknown type";
