@@ -97,6 +97,7 @@
                                                                               \
   /* Admin Failure */                                                         \
   X(E_SNAPSHOT_FAILURE, -2040)                                                \
+  X(E_SNAPSHOT_RUNNING_JOBS, -2056)                                           \
   X(E_BLOCK_WRITE_FAILURE, -2041)                                             \
   X(E_REBUILD_INDEX_FAILURE, -2042)                                           \
   X(E_INDEX_WITH_TTL, -2043)                                                  \
