@@ -970,3 +970,43 @@ Feature: Basic match
       MATCH (v{name: "Tim Duncan"}) return v
       """
     Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
+
+  Scenario: match with tag filter
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) == 'Tim Duncan' return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..0]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b         |
+      | ('Spurs') |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b                     |
+      | ("Spurs")             |
+      | ("Aron Baynes")       |
+      | ("Boris Diaw")        |
+      | ("Cory Joseph")       |
+      | ("Danny Green")       |
+      | ("David West")        |
+      | ("Dejounte Murray")   |
+      | ("Jonathon Simmons")  |
+      | ("Kyle Anderson")     |
+      | ("LaMarcus Aldridge") |
+      | ("Manu Ginobili")     |
+      | ("Marco Belinelli")   |
+      | ("Paul Gasol")        |
+      | ("Rudy Gay")          |
+      | ("Tiago Splitter")    |
+      | ("Tim Duncan")        |
+      | ("Tony Parker")       |
+      | ("Tracy McGrady")     |
+      | ("Marco Belinelli")   |

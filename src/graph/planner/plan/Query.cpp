@@ -783,6 +783,9 @@ void Traverse::cloneMembers(const Traverse& g) {
   if (g.firstStepFilter_ != nullptr) {
     setFirstStepFilter(g.firstStepFilter_->clone());
   }
+  if (g.tagFilter_ != nullptr) {
+    setTagFilter(g.tagFilter_->clone());
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -794,6 +797,7 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("first step filter",
                  firstStepFilter_ != nullptr ? firstStepFilter_->toString() : "",
                  desc.get());
+  addDescription("tag filter", tagFilter_ != nullptr ? tagFilter_->toString() : "", desc.get());
   return desc;
 }
 

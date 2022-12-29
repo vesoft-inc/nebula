@@ -1641,6 +1641,14 @@ class Traverse final : public GetNeighbors {
     firstStepFilter_ = filter;
   }
 
+  Expression* tagFilter() const {
+    return tagFilter_;
+  }
+
+  void setTagFilter(Expression* tagFilter) {
+    tagFilter_ = tagFilter;
+  }
+
  private:
   friend ObjectPool;
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
@@ -1657,6 +1665,7 @@ class Traverse final : public GetNeighbors {
   bool trackPrevPath_{true};
   // Push down filter in first step
   Expression* firstStepFilter_{nullptr};
+  Expression* tagFilter_{nullptr};
 };
 
 // Append vertices to a path.
