@@ -94,11 +94,11 @@ struct Vertex {
   Vertex& operator=(const Vertex& rhs);
 
   bool operator==(const Vertex& rhs) const {
-    return vid == rhs.vid && tags == rhs.tags;
+    return vid == rhs.vid;
   }
 
   bool operator!=(const Vertex& rhs) const {
-    return vid != rhs.vid || tags != rhs.tags;
+    return !(*this == rhs);
   }
 
   bool operator<(const Vertex& rhs) const;

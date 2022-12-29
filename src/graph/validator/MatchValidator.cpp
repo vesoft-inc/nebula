@@ -338,8 +338,12 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
-  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(
-      transformRes.value(), whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
+                                                        whereClauseCtx.aliasesAvailable);
+  newFilter =
+      ExpressionUtils::rewriteRankFunc2LabelAttribute(newFilter, whereClauseCtx.aliasesAvailable);
+
+  whereClauseCtx.filter = newFilter;
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -1063,13 +1067,17 @@ Status MatchValidator::checkAlias(
 
 // Validate yield columns.
 // Fill outputs of whole sentence.
-Status MatchValidator::buildOutputs(const YieldColumns *yields) {
+Status MatchValidator::buildOutputs(YieldColumns *yields) {
   for (auto *col : yields->columns()) {
     auto colName = col->name();
     auto typeStatus = deduceExprType(col->expr());
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(colName, type);
+
+    auto foldStatus = ExpressionUtils::foldConstantExpr(col->expr());
+    NG_RETURN_IF_ERROR(foldStatus);
+    col->setExpr(foldStatus.value());
   }
   return Status::OK();
 }

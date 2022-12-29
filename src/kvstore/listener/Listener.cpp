@@ -77,8 +77,11 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
   status_ = Status::RUNNING;
   role_ = Role::LEARNER;
 
-  size_t delayMS = 100 + folly::Random::rand32(900);
-  bgWorkers_->addDelayTask(delayMS, &Listener::doApply, this);
+  applyPool_ = std::make_unique<folly::IOThreadPoolExecutor>(
+      1,
+      std::make_shared<folly::NamedThreadFactory>(
+          folly::stringPrintf("ListenerApplyPool-%d-%d", spaceId_, partId_)));
+  applyPool_->add(std::bind(&Listener::doApply, this));
 }
 
 void Listener::stop() {
@@ -88,6 +91,8 @@ void Listener::stop() {
     status_ = Status::STOPPED;
     leader_ = {"", 0};
   }
+  applyPool_->stop();
+  applyPool_->join();
 }
 
 bool Listener::preProcessLog(LogID logId,
@@ -138,21 +143,14 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Listener::commitLogs(
 }
 
 void Listener::doApply() {
-  if (isStopped()) {
-    return;
-  }
-
-  if (needToCleanupSnapshot()) {
-    cleanupSnapshot();
-  }
-  // todo(doodle): only put is handled, all remove is ignored for now
-  folly::via(executor_.get(), [this] {
-    SCOPE_EXIT {
-      bgWorkers_->addDelayTask(
-          FLAGS_listener_commit_interval_secs * 1000, &Listener::doApply, this);
-    };
+  while (!isStopped()) {
+    if (needToCleanupSnapshot()) {
+      cleanupSnapshot();
+    }
+    // todo(doodle): only put is handled, all remove is ignored for now
     processLogs();
-  });
+    sleep(FLAGS_listener_commit_interval_secs);
+  }
 }
 
 void Listener::resetListener() {

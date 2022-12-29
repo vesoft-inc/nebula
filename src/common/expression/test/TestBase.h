@@ -60,7 +60,7 @@ class ExpressionTest : public ::testing::Test {
 
  protected:
   void testExpr(const std::string &exprSymbol, Value expected) {
-    std::string query = "RETURN " + exprSymbol;
+    std::string query = "YIELD " + exprSymbol;
     nebula::graph::QueryContext queryCtxt;
     nebula::GQLParser gParser(&queryCtxt);
     auto result = gParser.parse(query);
@@ -86,7 +86,7 @@ class ExpressionTest : public ::testing::Test {
   }
 
   void testToString(const std::string &exprSymbol, const char *expected) {
-    std::string query = "RETURN " + exprSymbol;
+    std::string query = "YIELD " + exprSymbol;
     nebula::graph::QueryContext queryCtxt;
     nebula::GQLParser gParser(&queryCtxt);
     auto result = gParser.parse(query);
@@ -106,7 +106,7 @@ class ExpressionTest : public ::testing::Test {
   }
 
   void testFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
-    std::string query = "RETURN " + std::string(name) + "(";
+    std::string query = "YIELD " + std::string(name) + "(";
     for (const auto &i : args) {
       query += i.toString() + ",";
     }

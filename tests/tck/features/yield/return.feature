@@ -4,7 +4,7 @@
 Feature: Return
 
   Background:
-    Given an empty graph
+    Given a graph with space named "nba"
 
   Scenario: base
     When executing query:
@@ -79,4 +79,4 @@ Feature: Return
       """
       RETURN name
       """
-    Then a SemanticError should be raised at runtime: Invalid label identifiers: name
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `name'
