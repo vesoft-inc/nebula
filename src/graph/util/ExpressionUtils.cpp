@@ -152,6 +152,38 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+// rewrite rank(e) to e._rank
+Expression *ExpressionUtils::rewriteRankFunc2LabelAttribute(
+    const Expression *expr, const std::unordered_map<std::string, AliasType> &aliasTypeMap) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [&aliasTypeMap](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kFunctionCall) return false;
+
+    auto *funcExpr = static_cast<const FunctionCallExpression *>(e);
+    auto funcName = funcExpr->name();
+    std::transform(funcName.begin(), funcName.end(), funcName.begin(), ::tolower);
+    if (funcName != "rank") return false;
+    auto args = funcExpr->args()->args();
+    if (args.size() != 1) return false;
+    if (args[0]->kind() != Expression::Kind::kLabel) return false;
+
+    auto &label = static_cast<const LabelExpression *>(args[0])->name();
+    auto iter = aliasTypeMap.find(label);
+    if (iter == aliasTypeMap.end() || iter->second != AliasType::kEdge) {
+      return false;
+    }
+    return true;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    auto funcExpr = static_cast<const FunctionCallExpression *>(e);
+    auto args = funcExpr->args()->args();
+    return LabelAttributeExpression::make(
+        pool, static_cast<LabelExpression *>(args[0]), ConstantExpression::make(pool, "_rank"));
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
 Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
@@ -1518,7 +1550,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
 }
 
 /*static*/
-bool ExpressionUtils::isSingleLenExpandExpr(const std::string &edgeAlias, const Expression *expr) {
+bool ExpressionUtils::isOneStepEdgeProp(const std::string &edgeAlias, const Expression *expr) {
   if (expr->kind() != Expression::Kind::kAttribute) {
     return false;
   }
@@ -1562,7 +1594,7 @@ bool ExpressionUtils::isSingleLenExpandExpr(const std::string &edgeAlias, const 
                                                                   const std::string &edgeAlias,
                                                                   Expression *expr) {
   graph::RewriteVisitor::Matcher matcher = [&edgeAlias](const Expression *e) -> bool {
-    return isSingleLenExpandExpr(edgeAlias, e);
+    return isOneStepEdgeProp(edgeAlias, e);
   };
   graph::RewriteVisitor::Rewriter rewriter = [pool](const Expression *e) -> Expression * {
     DCHECK_EQ(e->kind(), Expression::Kind::kAttribute);
