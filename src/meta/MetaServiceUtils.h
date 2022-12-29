@@ -30,14 +30,17 @@ class MetaServiceUtils final {
    * ADD: add col to cols
    * CHANGE: replace the column in cols with col
    * DROP: remove the col from cols
+   * @param allVersionedCols All columns from all versioned schemas
    * @param isEdge Is edge or tag
    * @return
    */
-  static nebula::cpp2::ErrorCode alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
-                                                 cpp2::SchemaProp& prop,
-                                                 const cpp2::ColumnDef col,
-                                                 const cpp2::AlterSchemaOp op,
-                                                 bool isEdge = false);
+  static nebula::cpp2::ErrorCode alterColumnDefs(
+      std::vector<cpp2::ColumnDef>& cols,
+      cpp2::SchemaProp& prop,
+      const cpp2::ColumnDef col,
+      const cpp2::AlterSchemaOp op,
+      const std::vector<std::vector<cpp2::ColumnDef>>& allVersionedCols,
+      bool isEdge = false);
 
   /**
    * @brief Change schema property, mainly set ttl_col
