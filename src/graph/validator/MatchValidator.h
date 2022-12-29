@@ -87,7 +87,7 @@ class MatchValidator final : public Validator {
   Status checkAlias(const Expression *refExpr,
                     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const;
 
-  Status buildOutputs(const YieldColumns *yields);
+  Status buildOutputs(YieldColumns *yields);
 
   StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
 
