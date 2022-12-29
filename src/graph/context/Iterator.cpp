@@ -25,7 +25,7 @@ bool Iterator::hitsSysMemoryHighWatermark() const {
       numRowsModN_ -= FLAGS_num_rows_to_check_memory;
     }
     if (UNLIKELY(numRowsModN_ == 0)) {
-      if (MemoryUtils::kHitMemoryHighWatermark.load()) {
+      if (memory::MemoryUtils::kHitMemoryHighWatermark.load()) {
         throw std::runtime_error(
             folly::sformat("Used memory hits the high watermark({}) of total system memory.",
                            FLAGS_system_memory_high_watermark_ratio));

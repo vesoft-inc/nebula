@@ -11,6 +11,22 @@
 namespace nebula {
 namespace memory {
 
+constexpr int64_t KiB = 1024;
+constexpr int64_t MiB = 1024 * KiB;
+constexpr int64_t GiB = 1024 * MiB;
+
+static std::string ReadableSize(double size) {
+  if (size < KiB) {
+    return fmt::format("{}B", size);
+  } else if (size < MiB) {
+    return fmt::format("{:.3f}KiB", size / KiB);
+  } else if (size < GiB) {
+    return fmt::format("{:.3f}MiB", size / MiB);
+  } else {
+    return fmt::format("{:.3f}GiB", size / GiB);
+  }
+}
+
 constexpr size_t
 #if defined(__cpp_lib_hardware_interference_size)
     CACHE_LINE_SIZE = hardware_destructive_interference_size;
@@ -86,6 +102,8 @@ class MemoryStats {
   /// Set limit (maximum usable bytes) of memory
   void setLimit(int64_t limit) {
     if (this->limit_ != limit) {
+      LOG(INFO) << fmt::format(
+          "MemoryTracker update limit {} -> {}", ReadableSize(this->limit_), ReadableSize(limit));
       this->limit_ = limit;
     }
   }
@@ -106,7 +124,7 @@ class MemoryStats {
   }
 
   std::string toString() {
-    return fmt::format("MemoryStats, limit:{}, used:{}", limit_, used_);
+    return fmt::format("MemoryStats: {}/{}", ReadableSize(limit_), ReadableSize(used_));
   }
 
  private:
@@ -126,7 +144,7 @@ class MemoryStats {
   // Thread Local
   static thread_local ThreadMemoryStats threadMemoryStats_;
   // Each thread reserves this amount of memory
-  static constexpr int64_t kLocalReservedLimit_ = 1 * 1024 * 1024;
+  static constexpr int64_t kLocalReservedLimit_ = 1 * MiB;
 };
 
 // A global static memory tracker enable tracking every memory allocation and deallocation.
