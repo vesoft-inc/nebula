@@ -49,11 +49,14 @@ DEFINE_double(memory_tracker_untracked_reserved_memory_mb,
               50,
               "memory tacker tracks memory of new/delete, this flag defined reserved untracked "
               "memory (direct call malloc/free)");
-DEFINE_double(memory_tracker_limit_ratio, 1, "memory tacker usable memory ratio to total limit");
+DEFINE_double(memory_tracker_limit_ratio,
+              0.8,
+              "memory tacker usable memory ratio to (total_available - untracked_reserved_memory)");
 
 using nebula::fs::FileUtils;
 
 namespace nebula {
+namespace memory {
 
 static const std::regex reMemAvailable(
     R"(^Mem(Available|Free|Total):\s+(\d+)\skB$)");  // when can't use MemAvailable, use MemFree
@@ -113,9 +116,14 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   // MemoryStats depends on jemalloc
 #if ENABLE_JEMALLOC
   // set MemoryStats limit (MemoryTracker track-able memory)
-  memory::MemoryStats::instance().setLimit(
-      (total - FLAGS_memory_tracker_untracked_reserved_memory_mb * 1024 * 1024) *
-      FLAGS_memory_tracker_limit_ratio);
+  int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB_;
+  if (trackable > 0) {
+    MemoryStats::instance().setLimit(trackable * FLAGS_memory_tracker_limit_ratio);
+  } else {
+    // Do not set limit, keep previous set limit or default limit
+    LOG(ERROR) << "Total available memory less than "
+               << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
+  }
 
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
@@ -143,12 +151,21 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   //                 used: bytes allocated by new operator
   //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
   if (FLAGS_memory_tracker_detail_log) {
+    // do not lose precision,
     LOG(INFO) << " sys_used: " << static_cast<int64_t>(total - available) << " sys_total: " << total
               << " sys_ratio:" << (1 - available / total)
-              << " usr_used:" << memory::MemoryStats::instance().used()
-              << " usr_total:" << memory::MemoryStats::instance().getLimit()
-              << " usr_ratio:" << memory::MemoryStats::instance().usedRatio();
+              << " usr_used:" << MemoryStats::instance().used()
+              << " usr_total:" << MemoryStats::instance().getLimit()
+              << " usr_ratio:" << MemoryStats::instance().usedRatio();
   }
+  // print some memory stat in readable format every 60 seconds
+  LOG_EVERY_N(INFO, 60) << " sys_used: " << MiB(static_cast<int64_t>(total - available))
+                        << " sys_total: " << MiB(total)
+                        << " sys_ratio:" << (1 - available / total)
+                        << " usr_used:" << MiB(MemoryStats::instance().used())
+                        << " usr_total:" << MiB(MemoryStats::instance().getLimit())
+                        << " usr_ratio:" << MemoryStats::instance().usedRatio();
+
 #endif
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
@@ -168,4 +185,5 @@ StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
   return value;
 }
 
+}  // namespace memory
 }  // namespace nebula

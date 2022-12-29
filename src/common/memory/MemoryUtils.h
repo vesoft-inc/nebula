@@ -13,6 +13,7 @@
 #include "common/base/StatusOr.h"
 
 namespace nebula {
+namespace memory {
 
 /**
  * MemoryUtils will compute the memory consumption of containerization and physical machine
@@ -36,5 +37,6 @@ class MemoryUtils final {
   static int64_t kLastPurge_;
 };
 
+}  // namespace memory
 }  // namespace nebula
 #endif
