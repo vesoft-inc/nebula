@@ -209,6 +209,7 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
+    traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
     traverse->setStepRange(edge.range);
@@ -275,6 +276,7 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
+    traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
     traverse->setStepRange(edge.range);
