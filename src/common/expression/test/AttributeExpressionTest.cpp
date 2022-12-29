@@ -134,7 +134,7 @@ TEST_F(AttributeExpressionTest, DateTimeAttribute) {
     auto *right = LabelExpression::make(&pool, "not exist attribute");
     auto expr = AttributeExpression::make(&pool, left, right);
     auto value = Expression::eval(expr, gExpCtxt);
-    ASSERT_EQ(Value::kNullValue, value);
+    ASSERT_EQ(Value::kNullUnknownProp, value);
   }
   {
     auto *left = ConstantExpression::make(&pool, Value(dt));
@@ -148,7 +148,7 @@ TEST_F(AttributeExpressionTest, DateTimeAttribute) {
     auto *right = LabelExpression::make(&pool, "not exist attribute");
     auto expr = AttributeExpression::make(&pool, left, right);
     auto value = Expression::eval(expr, gExpCtxt);
-    ASSERT_EQ(Value::kNullValue, value);
+    ASSERT_EQ(Value::kNullUnknownProp, value);
   }
   {
     auto *left = ConstantExpression::make(&pool, Value(d));
@@ -162,7 +162,7 @@ TEST_F(AttributeExpressionTest, DateTimeAttribute) {
     auto *right = LabelExpression::make(&pool, "not exist attribute");
     auto expr = AttributeExpression::make(&pool, left, right);
     auto value = Expression::eval(expr, gExpCtxt);
-    ASSERT_EQ(Value::kNullValue, value);
+    ASSERT_EQ(Value::kNullUnknownProp, value);
   }
   {
     auto *left = ConstantExpression::make(&pool, Value(t));
