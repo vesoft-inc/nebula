@@ -48,7 +48,6 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
                      std::unordered_map<nebula::ExecutionPlanID, cpp2::QueryDesc>>
       killedQueries;
 
-  // If the session requested to be updated can not be found in meta, the session has been killed
   std::vector<SessionID> killedSessions;
 
   for (auto& session : req.get_sessions()) {
@@ -58,8 +57,9 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
       LOG(INFO) << "Session id '" << sessionId << "' not found";
+      // If the session requested to be updated can not be found in meta, the session has been
+      // killed
       if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-        // errCode = nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND;
         killedSessions.emplace_back(sessionId);
         continue;
       }

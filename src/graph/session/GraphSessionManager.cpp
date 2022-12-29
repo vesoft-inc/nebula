@@ -5,7 +5,6 @@
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
-#include "common/base/Status.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"

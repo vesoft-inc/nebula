@@ -1297,10 +1297,6 @@ class KillSession final : public SingleInputNode {
     return sessionId_;
   }
 
-  bool isSetSessionID() const {
-    return sessionId_ != nullptr;
-  }
-
  private:
   friend ObjectPool;
   KillSession(QueryContext* qctx, PlanNode* input, Expression* sessionId)

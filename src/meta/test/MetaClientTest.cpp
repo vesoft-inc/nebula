@@ -9,7 +9,6 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/conf/Configuration.h"
-#include "common/datatypes/HostAddr.h"
 #include "common/expression/ArithmeticExpression.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/fs/TempDir.h"
