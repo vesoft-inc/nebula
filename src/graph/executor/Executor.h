@@ -159,6 +159,7 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
     futures.emplace_back(folly::via(
         runner(),
         [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {
+          memory::MemoryCheckGuard guard;
           // Since not all iterators are linear, so iterates to the begin pos
           size_t tmp = 0;
           for (; tmpIter->valid() && tmp < begin; ++tmp) {

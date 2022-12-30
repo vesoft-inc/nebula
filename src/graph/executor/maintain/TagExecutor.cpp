@@ -20,6 +20,7 @@ folly::Future<Status> CreateTagExecutor::execute() {
       ->createTagSchema(spaceId, ctNode->getName(), ctNode->getSchema(), ctNode->getIfNotExists())
       .via(runner())
       .thenValue([ctNode, spaceId](StatusOr<TagID> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create tag `" << ctNode->getName()
                        << "' failed: " << resp.status();
@@ -45,6 +46,7 @@ folly::Future<Status> DescTagExecutor::execute() {
       ->getTagSchema(spaceId, dtNode->getName())
       .via(runner())
       .thenValue([this, dtNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag `" << dtNode->getName()
                        << "' failed: " << resp.status();
@@ -77,6 +79,7 @@ folly::Future<Status> DropTagExecutor::execute() {
       ->dropTagSchema(spaceId, dtNode->getName(), dtNode->getIfExists())
       .via(runner())
       .thenValue([dtNode, spaceId](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop tag `" << dtNode->getName()
                        << "' failed: " << resp.status();
@@ -101,6 +104,7 @@ folly::Future<Status> ShowTagsExecutor::execute() {
       ->listTagSchemas(spaceId)
       .via(runner())
       .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::TagItem>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show tags failed: " << resp.status();
           return resp.status();
@@ -141,6 +145,7 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
       ->getTagSchema(spaceId, sctNode->getName())
       .via(runner())
       .thenValue([this, sctNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag `" << sctNode->getName()
                        << "' failed: " << resp.status();
@@ -173,6 +178,7 @@ folly::Future<Status> AlterTagExecutor::execute() {
           aeNode->space(), aeNode->getName(), aeNode->getSchemaItems(), aeNode->getSchemaProp())
       .via(runner())
       .thenValue([aeNode](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << aeNode->space() << ", Alter tag `" << aeNode->getName()
                        << "' failed: " << resp.status();

@@ -484,7 +484,7 @@ TEST_F(SnapshotProcessorsTest, DropNotExist) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(resp.code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(resp.code(), nebula::cpp2::ErrorCode::E_SNAPSHOT_NOT_FOUND);
 
     ASSERT_EQ(getAllSnapshots().size(), 1);
   }

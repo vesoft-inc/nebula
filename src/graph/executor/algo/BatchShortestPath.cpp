@@ -25,6 +25,7 @@ folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
   return folly::collect(futures)
       .via(qctx_->rctx()->runner())
       .thenValue([this, result](auto&& resps) {
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           NG_RETURN_IF_ERROR(resp);
         }
@@ -107,6 +108,7 @@ folly::Future<Status> BatchShortestPath::shortestPath(size_t rowNum, size_t step
   return folly::collect(futures)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, stepNum](auto&& resps) {
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           if (!resp.ok()) {
             return folly::makeFuture<Status>(std::move(resp));
@@ -151,6 +153,7 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t step
                      nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, reverse, stepNum, getNbrTime](auto&& resp) {
+        memory::MemoryCheckGuard guard;
         addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       })
@@ -280,6 +283,7 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
   return folly::makeFuture(Status::OK())
       .via(qctx_->rctx()->runner())
       .thenValue([this, rowNum](auto&& status) {
+        memory::MemoryCheckGuard guard;
         // odd step
         UNUSED(status);
         return conjunctPath(rowNum, true);
@@ -377,6 +381,7 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
   auto future = getMeetVids(rowNum, oddStep, meetVids);
   return future.via(qctx_->rctx()->runner())
       .thenValue([this, rowNum, oddStep](auto&& vertices) {
+        memory::MemoryCheckGuard guard;
         if (vertices.empty()) {
           return false;
         }

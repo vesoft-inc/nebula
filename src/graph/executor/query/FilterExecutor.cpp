@@ -34,6 +34,7 @@ folly::Future<Status> FilterExecutor::execute() {
 
     auto gather =
         [this, result = std::move(ds), kind = iter->kind()](auto &&results) mutable -> Status {
+      memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         if (!r.ok()) {
           return r.status();

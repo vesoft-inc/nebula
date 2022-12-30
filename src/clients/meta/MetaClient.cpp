@@ -906,6 +906,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Snapshot failure!");
     case nebula::cpp2::ErrorCode::E_SNAPSHOT_RUNNING_JOBS:
       return Status::Error("Snapshot failed encounter running jobs!");
+    case nebula::cpp2::ErrorCode::E_SNAPSHOT_NOT_FOUND:
+      return Status::Error("Snapshot not found!");
     case nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE:
       return Status::Error("Block write failure!");
     case nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED:

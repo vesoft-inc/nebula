@@ -19,6 +19,7 @@ folly::Future<Status> CreateFTIndexExecutor::execute() {
       ->createFTIndex(inode->getIndexName(), inode->getIndex())
       .via(runner())
       .thenValue([inode](StatusOr<IndexID> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "Create fulltext index `" << inode->getIndexName()
                        << "' failed: " << resp.status();
@@ -42,6 +43,7 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
       ->dropFTIndex(spaceId, inode->getName())
       .via(runner())
       .thenValue([this, inode, spaceId](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
                        << "' failed: " << resp.status();
@@ -75,6 +77,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
       .via(runner())
       .thenValue(
           [this, spaceId](StatusOr<std::unordered_map<std::string, meta::cpp2::FTIndex>> resp) {
+            memory::MemoryCheckGuard guard;
             if (!resp.ok()) {
               LOG(WARNING) << "SpaceId: " << spaceId << ", Show fulltext indexes failed"
                            << resp.status();
