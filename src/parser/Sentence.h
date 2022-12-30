@@ -127,6 +127,7 @@ class Sentence {
     kCreateFTIndex,
     kDropFTIndex,
     kShowSessions,
+    kKillSession,
     kShowQueries,
     kKillQuery,
     kShowMetaLeader,

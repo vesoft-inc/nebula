@@ -1114,6 +1114,7 @@ struct UpdateSessionsResp {
     2: common.HostAddr      leader,
     3: map<common.SessionID, map<common.ExecutionPlanID, QueryDesc> (cpp.template = "std::unordered_map")>
         (cpp.template = "std::unordered_map") killed_queries,
+    4: list<common.SessionID>       killed_sessions,
 }
 
 struct ListSessionsReq {
@@ -1136,7 +1137,13 @@ struct GetSessionResp {
 }
 
 struct RemoveSessionReq {
-    1: common.SessionID      session_id,
+    1: list<common.SessionID>      session_ids,
+}
+
+struct RemoveSessionResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: list<common.SessionID>   removed_session_ids,
 }
 
 struct KillQueryReq {
@@ -1288,7 +1295,7 @@ service MetaService {
     UpdateSessionsResp updateSessions(1: UpdateSessionsReq req);
     ListSessionsResp listSessions(1: ListSessionsReq req);
     GetSessionResp getSession(1: GetSessionReq req);
-    ExecResp removeSession(1: RemoveSessionReq req);
+    RemoveSessionResp removeSession(1: RemoveSessionReq req);
     ExecResp killQuery(1: KillQueryReq req);
 
     ExecResp reportTaskFinish(1: ReportTaskReq req);
