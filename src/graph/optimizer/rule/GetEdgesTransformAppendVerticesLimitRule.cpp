@@ -61,6 +61,14 @@ bool GetEdgesTransformAppendVerticesLimitRule::match(OptContext *ctx,
   if (traverse->stepRange() != nullptr) {
     return false;
   }
+  // Can't apply vertex filter in GetEdges
+  if (traverse->vFilter() != nullptr) {
+    return false;
+  }
+  // If edge filter is not null, means it's can't be pushed down to storage
+  if (traverse->eFilter() != nullptr) {
+    return false;
+  }
   for (auto yieldColumn : project->columns()->columns()) {
     // exclude p=()-[e]->() return p limit 10
     if (yieldColumn->expr()->kind() == nebula::Expression::Kind::kPathBuild) {
