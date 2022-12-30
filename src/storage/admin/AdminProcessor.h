@@ -426,7 +426,7 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     part->checkAndResetPeers(peers);
 
-    for (auto p : peers) {
+    for (const auto& p : peers) {
       // change the promoted peer to the normal peer when finish balancing
       part->engine()->updatePart(partId, kvstore::Peer(p, kvstore::Peer::Status::kNormalPeer));
     }

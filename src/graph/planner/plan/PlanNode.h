@@ -180,6 +180,7 @@ class PlanNode {
     kSignOutService,
     kShowSessions,
     kUpdateSession,
+    kKillSession,
 
     kShowQueries,
     kKillQuery,

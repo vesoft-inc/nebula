@@ -373,11 +373,22 @@ class ShowSessionsValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override {
-    return Status::OK();
+  Status validateImpl() override;
+  Status toPlan() override;
+};
+
+class KillSessionValidator final : public Validator {
+ public:
+  KillSessionValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
   }
 
+ private:
+  Status validateImpl() override;
   Status toPlan() override;
+
+ private:
+  SessionID sessionId_{-1};
 };
 
 class GetSessionValidator final : public Validator {
