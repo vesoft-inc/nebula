@@ -3185,6 +3185,25 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ(result.value()->toString(), "SHOW SESSION 123");
   }
+  {
+    std::string query = "KILL SESSION 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  // Error session id type will be checked during wrong time
 }
 
 TEST_F(ParserTest, JobTest) {
@@ -3324,4 +3343,11 @@ TEST_F(ParserTest, TestNameLabel) {
   }
 }
 
+TEST_F(ParserTest, TestShowSentenceWithPipe) {
+  {
+    std::string query = "SHOW sessions | YIELD $-.SessionId AS sid";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
 }  // namespace nebula

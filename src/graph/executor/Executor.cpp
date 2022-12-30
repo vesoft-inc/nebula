@@ -523,6 +523,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kUpdateSession: {
       return pool->makeAndAdd<UpdateSessionExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kKillSession: {
+      return pool->makeAndAdd<KillSessionExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kShowQueries: {
       return pool->makeAndAdd<ShowQueriesExecutor>(node, qctx);
     }
