@@ -381,7 +381,7 @@ using namespace nebula;
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
-%type <sentence> show_queries_sentence kill_query_sentence
+%type <sentence> show_queries_sentence kill_query_sentence kill_session_sentence
 %type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
@@ -2926,6 +2926,8 @@ traverse_sentence
     | kill_query_sentence { $$ = $1; }
     | describe_user_sentence { $$ = $1; }
     | unwind_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
+    | kill_session_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -3832,6 +3834,16 @@ kill_query_sentence
     : KW_KILL KW_QUERY L_PAREN query_unique_identifier R_PAREN {
         $$ = new KillQuerySentence($4);
     }
+    ;
+
+kill_session_sentence
+    : KW_KILL KW_SESSIONS expression {
+        $$ = new KillSessionSentence($3);
+    }
+    | KW_KILL KW_SESSION expression {
+        $$ = new KillSessionSentence($3);
+    }
+    ;
 
 query_unique_identifier_value
     : legal_integer {
@@ -3898,7 +3910,6 @@ maintain_sentence
     | divide_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }

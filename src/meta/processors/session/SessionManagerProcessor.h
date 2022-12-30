@@ -86,7 +86,7 @@ class GetSessionProcessor : public BaseProcessor<cpp2::GetSessionResp> {
  * @brief Remove session by specified session id.
  *
  */
-class RemoveSessionProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RemoveSessionProcessor : public BaseProcessor<cpp2::RemoveSessionResp> {
  public:
   static RemoveSessionProcessor* instance(kvstore::KVStore* kvstore) {
     return new RemoveSessionProcessor(kvstore);
@@ -96,7 +96,7 @@ class RemoveSessionProcessor : public BaseProcessor<cpp2::ExecResp> {
 
  private:
   explicit RemoveSessionProcessor(kvstore::KVStore* kvstore)
-      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+      : BaseProcessor<cpp2::RemoveSessionResp>(kvstore) {}
 };
 
 /**
