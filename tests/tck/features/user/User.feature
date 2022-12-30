@@ -367,7 +367,7 @@ Feature: User & privilege Test
       SHOW ROLES IN test_roles
       """
     Then the result should be, in any order:
-      | Account           | Role Type |
+      | Account | Role Type |
     When executing query:
       """
       DROP SPACE test_roles
