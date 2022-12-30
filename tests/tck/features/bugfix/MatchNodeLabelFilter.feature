@@ -54,7 +54,7 @@ Feature: match node label filter
     When executing query:
       """
       MATCH (v:bachelor)<-[e*2..2]-()<-[e1]-()
-      WHERE id(v0) in ['Tony Parker', 'Spurs', 'Tim Duncan']
+      WHERE id(v) in ['Tony Parker', 'Spurs', 'Tim Duncan']
       return labels(v), count(*)
       """
     Then the result should be, in any order:
