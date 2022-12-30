@@ -15,7 +15,7 @@
 ///   2. address_sanitizer is off
 ///      sanitizer has already override the new/delete operator,
 ///      only override new/delete operator only when address_sanitizer is off
-#if defined(__clang)
+#if defined(__clang__)
 #if defined(__has_feature)
 #if not __has_feature(address_sanitizer)
 #define ENABLE_MEMORY_TRACKER

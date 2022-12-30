@@ -386,9 +386,6 @@ class KillSessionValidator final : public Validator {
  private:
   Status validateImpl() override;
   Status toPlan() override;
-
- private:
-  SessionID sessionId_{-1};
 };
 
 class GetSessionValidator final : public Validator {
