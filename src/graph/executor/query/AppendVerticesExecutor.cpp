@@ -213,7 +213,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
 
     auto gather =
         [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) -> folly::Future<Status> {
-      memory::MemoryCheckGuard guard;
+      memory::MemoryCheckGuard guard1;
       UNUSED(prepareResult);
 
       auto scatterInput =
@@ -222,7 +222,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
       };
 
       auto gatherFinal = [this](auto &&results) -> Status {
-        memory::MemoryCheckGuard guard;
+        memory::MemoryCheckGuard guard2;
         for (auto &r : results) {
           auto &&rows = std::move(r).value();
           result_.rows.insert(result_.rows.end(),
