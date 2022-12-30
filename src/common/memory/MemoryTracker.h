@@ -128,10 +128,12 @@ class MemoryStats {
     return fmt::format("MemoryStats: {}/{}", ReadableSize(limit_), ReadableSize(used_));
   }
 
+  // turn on current thread's throwOnMemoryExceeded
   static void turnOnThrow() {
     threadMemoryStats_.throwOnMemoryExceeded = true;
   }
 
+  // turn off current thread's throwOnMemoryExceeded
   static void turnOffThrow() {
     threadMemoryStats_.throwOnMemoryExceeded = false;
   }
@@ -156,7 +158,7 @@ class MemoryStats {
   static constexpr int64_t kLocalReservedLimit_ = 1 * MiB;
 };
 
-// A guard to enable memory check (throw on memory exceed)
+// A guard to only enable memory check (throw when memory exceed) during its lifetime.
 struct MemoryCheckGuard {
   MemoryCheckGuard() {
     MemoryStats::turnOnThrow();
