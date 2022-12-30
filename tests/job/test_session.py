@@ -326,6 +326,7 @@ class TestSession(NebulaTestSuite):
             assert non_root_session is not None
             resp = non_root_session.execute('KILL SESSION 123')
             self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
+            assert resp.error_msg().find('No permission to kill session') > 0
         except Exception as e:
             assert False, e.message
 
