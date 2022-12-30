@@ -865,6 +865,24 @@ class KillQuerySentence final : public Sentence {
 
   std::unique_ptr<QueryUniqueIdentifier> identifier_;
 };
+
+class KillSessionSentence final : public Sentence {
+ public:
+  explicit KillSessionSentence(Expression* sessionId) {
+    kind_ = Kind::kKillSession;
+    sessionId_ = sessionId;
+  }
+
+  Expression* getSessionID() const {
+    return sessionId_;
+  }
+
+  std::string toString() const override;
+
+ private:
+  Expression* sessionId_{nullptr};
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_ADMINSENTENCES_H_

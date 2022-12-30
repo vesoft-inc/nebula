@@ -417,6 +417,10 @@ std::string ShowSessionsSentence::toString() const {
   return "SHOW SESSIONS";
 }
 
+std::string KillSessionSentence::toString() const {
+  return folly::stringPrintf("KILL SESSION %s", sessionId_->toString().c_str());
+}
+
 std::string ShowQueriesSentence::toString() const {
   std::string buf = "SHOW";
   if (!isAll()) {
