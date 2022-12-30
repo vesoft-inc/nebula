@@ -63,6 +63,13 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   // id: The id of the session which will be removed.
   void removeSession(SessionID id) override;
 
+  // Remove multi sessions from both local and meta server.
+  // ids: The list of the session which will be removed.
+  // return: The number of sessions which are removed.
+  // TODO(Aiee) This method is used in kill session command for now, maybe we could replace
+  // removeSession() with it
+  int32_t removeMultiSessions(const std::vector<SessionID>& ids);
+
   // Finds an existing session. If it is not found locally, it will be searched from the meta
   // server. id: The id of the session which will be found.
   // runner: Ensure that the corresponding callback function is executed on the runner.
@@ -90,6 +97,10 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   // Entry function of the background thread.
   // It will reclaim expired sessions and update sessions info to meta.
   void threadFunc();
+
+  // Removes a session from the local cache.
+  // All queries within the expired session will be marked as killed and stats will be updated.
+  void removeSessionFromLocalCache(const std::vector<SessionID>& ids);
 
   // Reclaims expired sessions.
   // All queries within the expired session will be marked as killed.

@@ -207,6 +207,16 @@ namespace graph {
         return Status::PermissionError("No permission to show users/snapshots/serviceClients");
       }
     }
+    case Sentence::Kind::kKillSession: {
+      /**
+       * Only GOD role can be kill session.
+       */
+      if (session->isGod()) {
+        return Status::OK();
+      } else {
+        return Status::PermissionError("No permission to kill session");
+      }
+    }
     case Sentence::Kind::kChangePassword: {
       if (!FLAGS_enable_authorize) {
         return Status::OK();
@@ -226,6 +236,7 @@ namespace graph {
     }
     case Sentence::Kind::kKillQuery:
       // Only GOD could kill all queries, other roles only could kill own queries.
+      // Permission check will be done in the executor.
       return Status::OK();
     case Sentence::Kind::kShowQueries: {
       return Status::OK();
