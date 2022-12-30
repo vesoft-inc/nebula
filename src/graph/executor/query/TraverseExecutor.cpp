@@ -169,30 +169,20 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
     // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
     // the attributes of v1 will be obtained in the second traverse operator
     // If the conditions are not met, the path in the previous step needs to be filtered out
-    if (!dst2PathsMap_.empty()) {
-      std::unordered_set<Value, VertexHash, VertexEqual> existVids;
-      existVids.reserve(iter->numRows());
-      auto vertices = iter->getVertices();
-      for (auto& vertex : vertices.values) {
-        if (vertex.isVertex()) {
-          existVids.emplace(vertex);
-        }
+    std::unordered_set<Value, VertexHash, VertexEqual> existVids;
+    existVids.reserve(iter->numRows());
+    auto vertices = iter->getVertices();
+    for (auto& vertex : vertices.values) {
+      if (vertex.isVertex()) {
+        existVids.emplace(vertex);
       }
-      auto dst2PathIter = dst2PathsMap_.begin();
-      while (dst2PathIter != dst2PathsMap_.end()) {
-        if (existVids.find(dst2PathIter->first) == existVids.end()) {
-          dst2PathIter = dst2PathsMap_.erase(dst2PathIter);
-        } else {
-          dst2PathIter++;
-        }
-      }
-      auto initVidIter = initVids_.begin();
-      while (initVidIter != initVids_.end()) {
-        if (existVids.find(*initVidIter) == existVids.end()) {
-          initVidIter = initVids_.erase(initVidIter);
-        } else {
-          initVidIter++;
-        }
+    }
+    auto initVidIter = initVids_.begin();
+    while (initVidIter != initVids_.end()) {
+      if (existVids.find(*initVidIter) == existVids.end()) {
+        initVidIter = initVids_.erase(initVidIter);
+      } else {
+        initVidIter++;
       }
     }
   }
