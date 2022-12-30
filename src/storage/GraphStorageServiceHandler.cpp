@@ -5,6 +5,7 @@
 
 #include "storage/GraphStorageServiceHandler.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/kv/GetProcessor.h"
 #include "storage/kv/PutProcessor.h"
@@ -26,6 +27,7 @@
 #include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
+  memory::MemoryCheckGuard guard;  \
   auto f = processor->getFuture(); \
   processor->process(req);         \
   return f;

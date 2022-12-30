@@ -141,6 +141,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanVertexProcess
   return folly::via(
              executor_,
              [this, context, result, cursorsOfPart, partId, input = std::move(cursor), expCtx]() {
+               memory::MemoryCheckGuard guard;
                auto plan = buildPlan(context, result, cursorsOfPart, expCtx);
 
                auto ret = plan.go(partId, input);
@@ -206,6 +207,7 @@ void ScanVertexProcessor::runInMultipleThread(const cpp2::ScanVertexRequest& req
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;

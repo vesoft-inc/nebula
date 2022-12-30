@@ -29,6 +29,7 @@ ProcessorCounters kLookupCounters;
 inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
   try {
+    memory::MemoryCheckGuard guard;
     if (executor_ != nullptr) {
       executor_->add([req, this]() { this->doProcess(req); });
     } else {
@@ -281,6 +282,7 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
     futures.emplace_back(
         folly::via(executor_,
                    [this, plan = std::move(planCopy[i]), part = parts[i]]() -> ReturnType {
+                     memory::MemoryCheckGuard guard;
                      ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
                      std::deque<Row> dataset;
                      plan->execute(part);
@@ -323,6 +325,7 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
             }));
   }
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     std::vector<Row> statResults;

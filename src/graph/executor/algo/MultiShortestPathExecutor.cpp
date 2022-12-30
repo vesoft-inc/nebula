@@ -17,19 +17,27 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
   }
 
   std::vector<folly::Future<Status>> futures;
-  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
-  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  auto leftFuture = folly::via(runner(), [this]() {
+    memory::MemoryCheckGuard guard;
+    return buildPath(false);
+  });
+  auto rightFuture = folly::via(runner(), [this]() {
+    memory::MemoryCheckGuard guard;
+    return buildPath(true);
+  });
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         // oddStep
         UNUSED(status);
         return conjunctPath(true);
       })
       .thenValue([this](auto&& termination) {
+        memory::MemoryCheckGuard guard;
         // termination is true, all paths has found
         if (termination || step_ * 2 > pathNode_->steps()) {
           return folly::makeFuture<bool>(true);
@@ -266,8 +274,10 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
       }
       pathIters.emplace_back(leftIter, rightIter);
       if (++i == batchSize) {
-        auto future = folly::via(
-            runner(), [this, iters = std::move(pathIters)]() { return doConjunct(iters); });
+        auto future = folly::via(runner(), [this, iters = std::move(pathIters)]() {
+          memory::MemoryCheckGuard guard;
+          return doConjunct(iters);
+        });
         futures.emplace_back(std::move(future));
         pathIters.reserve(batchSize);
         i = 0;
@@ -283,8 +293,10 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
       }
       pathIters.emplace_back(leftIter, rightIter);
       if (++i == batchSize) {
-        auto future = folly::via(
-            runner(), [this, iters = std::move(pathIters)]() { return doConjunct(iters); });
+        auto future = folly::via(runner(), [this, iters = std::move(pathIters)]() {
+          memory::MemoryCheckGuard guard;
+          return doConjunct(iters);
+        });
         futures.emplace_back(std::move(future));
         pathIters.reserve(batchSize);
         i = 0;
@@ -292,14 +304,17 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     }
   }
   if (i != 0) {
-    auto future =
-        folly::via(runner(), [this, iters = std::move(pathIters)]() { return doConjunct(iters); });
+    auto future = folly::via(runner(), [this, iters = std::move(pathIters)]() {
+      memory::MemoryCheckGuard guard;
+      return doConjunct(iters);
+    });
     futures.emplace_back(std::move(future));
   }
 
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& resps) {
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           currentDs_.append(std::move(resp));
         }
