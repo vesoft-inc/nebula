@@ -19,7 +19,6 @@
 #if defined(__has_feature)
 #if not __has_feature(address_sanitizer)
 #define ENABLE_MEMORY_TRACKER
-#warning "enable memory tracker compiled with clang"
 #endif
 #endif
 
