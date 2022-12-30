@@ -199,6 +199,8 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("update", TokenType::KW_UPDATE),
       CHECK_SEMANTIC_TYPE("ALTER", TokenType::KW_ALTER),
       CHECK_SEMANTIC_TYPE("alter", TokenType::KW_ALTER),
+      CHECK_SEMANTIC_TYPE("STEP", TokenType::KW_STEPS),
+      CHECK_SEMANTIC_TYPE("step", TokenType::KW_STEPS),
       CHECK_SEMANTIC_TYPE("STEPS", TokenType::KW_STEPS),
       CHECK_SEMANTIC_TYPE("steps", TokenType::KW_STEPS),
       CHECK_SEMANTIC_TYPE("OVER", TokenType::KW_OVER),
