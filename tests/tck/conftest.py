@@ -195,7 +195,7 @@ def preload_space(
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
     elif space == "test":
-        exec_ctx["test"] = load_test_data
+        exec_ctx["space_desc"] = load_test_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
