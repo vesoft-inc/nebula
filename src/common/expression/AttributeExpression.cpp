@@ -67,7 +67,7 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
           }
         }
       }
-      return Value::kNullValue;
+      return Value::kNullUnknownProp;
     }
     case Value::Type::EDGE: {
       DCHECK(!rvalue.getStr().empty());

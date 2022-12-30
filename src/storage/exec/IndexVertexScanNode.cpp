@@ -99,7 +99,7 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
       case QueryUtils::ReturnColType::kOther: {
         auto field = tag_.back()->field(col);
         if (field == nullptr) {
-          values[col] = Value::kNullValue;
+          values[col] = Value::kNullUnknownProp;
         } else {
           auto retVal = QueryUtils::readValue(reader.get(), col, field);
           if (!retVal.ok()) {

@@ -613,7 +613,7 @@ Status Executor::close() {
 }
 
 Status Executor::checkMemoryWatermark() {
-  if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+  if (node_->isQueryNode() && memory::MemoryUtils::kHitMemoryHighWatermark.load()) {
     stats::StatsManager::addValue(kNumQueriesHitMemoryWatermark);
     auto &spaceName = qctx()->rctx() ? qctx()->rctx()->session()->spaceName() : "";
     if (FLAGS_enable_space_level_metrics && spaceName != "") {

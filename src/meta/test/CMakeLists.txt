@@ -257,6 +257,22 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        snapshot_processors_test
+    SOURCES
+        SnapshotProcessorsTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
         list_meta_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
