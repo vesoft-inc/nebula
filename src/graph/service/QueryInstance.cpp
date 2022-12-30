@@ -38,7 +38,7 @@ QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *opti
 
 void QueryInstance::execute() {
   try {
-    memory::MemoryCheckGuard guard;
+    memory::MemoryCheckGuard guard1;
     Status status = validateAndOptimize();
     if (!status.ok()) {
       onError(std::move(status));
@@ -55,6 +55,7 @@ void QueryInstance::execute() {
     // series of Executors through the Scheduler to drive the execution of the Executors.
     scheduler_->schedule()
         .thenValue([this](Status s) {
+          memory::MemoryCheckGuard guard2;
           if (s.ok()) {
             this->onFinish();
           } else {
