@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "common/utils/MetaKeyUtils.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
 
@@ -83,6 +84,11 @@ cpp2::JobDesc JobDescription::toJobDesc() {
 }
 
 bool JobDescription::setStatus(Status newStatus, bool force) {
+  if (status_ == cpp2::JobStatus::FINISHED) {
+    // no one should change the status of a finished job
+    // in case that recovered job running again, but set finished to finished should be ok
+    return newStatus == cpp2::JobStatus::FINISHED;
+  }
   if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }
