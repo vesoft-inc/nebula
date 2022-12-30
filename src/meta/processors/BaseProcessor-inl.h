@@ -572,6 +572,26 @@ BaseProcessor<RESP>::getAllParts(GraphSpaceID spaceId) {
   return partHostsMap;
 }
 
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::getAllMachines(
+    std::unordered_set<HostAddr>& machines) {
+  const auto& machinePrefix = MetaKeyUtils::machinePrefix();
+  std::unique_ptr<kvstore::KVIterator> machineIter;
+  auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, machinePrefix, &machineIter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Failed to get machines, error " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  while (machineIter->valid()) {
+    auto machine = MetaKeyUtils::parseMachineKey(machineIter->key());
+    machines.emplace(std::move(machine));
+    machineIter->next();
+  }
+
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 }  // namespace meta
 }  // namespace nebula
 #endif
