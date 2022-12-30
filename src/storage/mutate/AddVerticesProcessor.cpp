@@ -8,8 +8,8 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
@@ -22,40 +22,51 @@ namespace storage {
 ProcessorCounters kAddVerticesCounters;
 
 void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
-  spaceId_ = req.get_space_id();
-  const auto& partVertices = req.get_parts();
-  ifNotExists_ = req.get_if_not_exists();
-  CHECK_NOTNULL(env_->schemaMan_);
-  auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
-  if (!ret.ok()) {
-    LOG(ERROR) << ret.status();
-    for (auto& part : partVertices) {
-      pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+  try {
+    memory::MemoryCheckGuard guard;
+    spaceId_ = req.get_space_id();
+    const auto& partVertices = req.get_parts();
+    ifNotExists_ = req.get_if_not_exists();
+    CHECK_NOTNULL(env_->schemaMan_);
+    auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
+    if (!ret.ok()) {
+      LOG(ERROR) << ret.status();
+      for (auto& part : partVertices) {
+        pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
-  spaceVidLen_ = ret.value();
-  callingNum_ = partVertices.size();
+    spaceVidLen_ = ret.value();
+    callingNum_ = partVertices.size();
 
-  CHECK_NOTNULL(env_->indexMan_);
-  auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
-  if (!iRet.ok()) {
-    LOG(ERROR) << iRet.status();
-    for (auto& part : partVertices) {
-      pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+    CHECK_NOTNULL(env_->indexMan_);
+    auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
+    if (!iRet.ok()) {
+      LOG(ERROR) << iRet.status();
+      for (auto& part : partVertices) {
+        pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
+      }
+      onFinished();
+      return;
     }
-    onFinished();
-    return;
-  }
-  indexes_ = std::move(iRet).value();
-  ignoreExistedIndex_ = req.get_ignore_existed_index();
+    indexes_ = std::move(iRet).value();
+    ignoreExistedIndex_ = req.get_ignore_existed_index();
 
-  CHECK_NOTNULL(env_->kvstore_);
-  if (indexes_.empty()) {
-    doProcess(req);
-  } else {
-    doProcessWithIndex(req);
+    CHECK_NOTNULL(env_->kvstore_);
+    if (indexes_.empty()) {
+      doProcess(req);
+    } else {
+      doProcessWithIndex(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 

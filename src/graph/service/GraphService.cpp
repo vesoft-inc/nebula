@@ -11,6 +11,7 @@
 
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
 #include "common/time/TimezoneInfo.h"

@@ -136,6 +136,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
     StorageExpressionContext* expCtx) {
   return folly::via(executor_,
                     [this, context, result, cursors, partId, input = std::move(cursor), expCtx]() {
+                      memory::MemoryCheckGuard guard;
                       auto plan = buildPlan(context, result, cursors, expCtx);
 
                       auto ret = plan.go(partId, input);
@@ -201,6 +202,7 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;

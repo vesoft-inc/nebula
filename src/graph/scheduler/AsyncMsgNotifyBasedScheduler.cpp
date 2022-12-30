@@ -16,7 +16,6 @@ AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) :
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
-  try {
     auto root = qctx_->plan()->root();
     if (FLAGS_enable_lifetime_optimize) {
       // special for root
@@ -26,13 +25,6 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
     }
     auto executor = Executor::create(root, qctx_);
     return doSchedule(executor);
-  } catch (std::bad_alloc& e) {
-    return folly::makeFuture<Status>(Executor::memoryExceededStatus());
-  } catch (std::exception& e) {
-    return folly::makeFuture<Status>(std::runtime_error(e.what()));
-  } catch (...) {
-    return folly::makeFuture<Status>(std::runtime_error("unknown exception"));
-  }
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) const {

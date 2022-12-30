@@ -139,6 +139,7 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;
@@ -174,6 +175,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
   return folly::via(
              executor_,
              [this, context, expCtx, result, partId, input = std::move(vids), limit, random]() {
+               memory::MemoryCheckGuard guard;
                auto plan = buildPlan(context, expCtx, result, limit, random);
                for (const auto& vid : input) {
                  auto vId = vid.getStr();
