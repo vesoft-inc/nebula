@@ -138,6 +138,7 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;
@@ -169,6 +170,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
     const std::vector<nebula::Row>& rows) {
   return folly::via(executor_,
                     [this, context, result, partId, input = std::move(rows)]() {
+                      memory::MemoryCheckGuard guard;
                       if (!isEdge_) {
                         auto plan = buildTagPlan(context, result);
                         for (const auto& row : input) {

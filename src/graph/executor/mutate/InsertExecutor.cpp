@@ -36,6 +36,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         VLOG(1) << "Add vertices time: " << addVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -72,6 +73,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
       .ensure(
           [addEdgeTime]() { VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us"; })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();

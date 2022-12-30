@@ -53,6 +53,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+        memory::MemoryCheckGuard guard;
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {

@@ -29,6 +29,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     };
 
     auto gather = [this, result = std::move(ds)](auto &&results) mutable {
+      memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result.rows.insert(result.rows.end(),

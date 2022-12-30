@@ -62,6 +62,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {

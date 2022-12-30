@@ -39,6 +39,7 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
                  nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, getPropsTime](PropRpcResponse&& resp) {
+        memory::MemoryCheckGuard guard;
         addStats(resp, getPropsTime.elapsedInUSec());
         return handlePropResp(std::move(resp));
       })

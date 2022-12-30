@@ -104,6 +104,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+        memory::MemoryCheckGuard guard;
         vids_.clear();
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
@@ -337,6 +338,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
   };
 
   auto gather = [this](std::vector<std::vector<Row>> resp) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     for (auto& rows : resp) {
       if (rows.empty()) {
         continue;
