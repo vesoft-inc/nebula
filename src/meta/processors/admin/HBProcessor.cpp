@@ -37,7 +37,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
   if (role == cpp2::HostRole::STORAGE || role == cpp2::HostRole::STORAGE_LISTENER) {
     if (role == cpp2::HostRole::STORAGE) {
-      if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
+      if (!ActiveHostsMan::machineRegistered(kvstore_, host)) {
         LOG(INFO) << "Machine " << host << " is not registered";
         handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
         setLeaderInfo();

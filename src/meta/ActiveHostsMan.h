@@ -141,7 +141,7 @@ class ActiveHostsMan final {
    * @param hostAddr Which host to register
    * @return
    */
-  static bool machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr);
+  static bool machineRegistered(kvstore::KVStore* kv, const HostAddr& hostAddr);
 
   /**
    * @brief Get all registered host
