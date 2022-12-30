@@ -28,7 +28,7 @@ Feature: insert vertex without tag
     Then the execution should be successful
     When executing query:
       """
-      GO 2 STEPS FROM 1 OVER e yield e._dst AS dst;
+      GO 2 STEP FROM 1 OVER e yield e._dst AS dst;
       """
     Then the result should be, in any order:
       | dst |
