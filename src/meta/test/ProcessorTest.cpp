@@ -1840,11 +1840,12 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::AlterEdgeReq req;
     cpp2::Schema addSch;
     std::vector<cpp2::AlterSchemaItem> items;
-    for (int32_t i = 0; i < 2; i++) {
+    // The newly added columns should have names different from the dropped columns
+    for (int32_t i = 2; i < 4; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_0_col_%d", i);
-      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::FIXED_STRING;
-      if (i == 1) {
+      column.type.type_ref() = i < 3 ? PropertyType::INT64 : PropertyType::FIXED_STRING;
+      if (i == 3) {
         column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
       }
       (*addSch.columns_ref()).emplace_back(std::move(column));
@@ -1866,22 +1867,22 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::AlterEdgeReq req;
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema addSch;
-    for (auto i = 0; i < 2; i++) {
+    for (auto i = 2; i < 4; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_%d_col_%d", 0, i + 10);
-      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+      column.type.type_ref() = i < 3 ? PropertyType::INT64 : PropertyType::STRING;
       (*addSch.columns_ref()).emplace_back(std::move(column));
     }
     cpp2::Schema changeSch;
-    for (auto i = 0; i < 2; i++) {
+    for (auto i = 2; i < 4; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_%d_col_%d", 0, i);
-      column.type.type_ref() = i < 1 ? PropertyType::INT64 : PropertyType::STRING;
+      column.type.type_ref() = i < 3 ? PropertyType::INT64 : PropertyType::STRING;
       (*changeSch.columns_ref()).emplace_back(std::move(column));
     }
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_0";
+    column.name = "edge_0_col_2";
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
@@ -1934,15 +1935,15 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::ColumnDef> cols;
 
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_1";
+    column.name = "edge_0_col_3";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
-    column.name = "edge_0_col_10";
+    column.name = "edge_0_col_12";
     column.type.type_ref() = PropertyType::INT64;
     cols.emplace_back(std::move(column));
 
-    column.name = "edge_0_col_11";
+    column.name = "edge_0_col_13";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
     schema.columns_ref() = std::move(cols);
@@ -1969,7 +1970,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
     schemaProp.ttl_duration_ref() = 100;
-    schemaProp.ttl_col_ref() = "edge_0_col_10";
+    schemaProp.ttl_col_ref() = "edge_0_col_12";
 
     req.space_id_ref() = 1;
     req.edge_name_ref() = "edge_0";
@@ -2011,15 +2012,15 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::ColumnDef> cols;
 
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_1";
+    column.name = "edge_0_col_3";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
-    column.name = "edge_0_col_10";
+    column.name = "edge_0_col_12";
     column.type.type_ref() = PropertyType::INT64;
     cols.emplace_back(std::move(column));
 
-    column.name = "edge_0_col_11";
+    column.name = "edge_0_col_13";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
@@ -2027,7 +2028,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
 
     cpp2::SchemaProp schemaProp;
     schemaProp.ttl_duration_ref() = 100;
-    schemaProp.ttl_col_ref() = "edge_0_col_10";
+    schemaProp.ttl_col_ref() = "edge_0_col_12";
     schema.schema_prop_ref() = std::move(schemaProp);
     EXPECT_EQ(schema.get_columns(), edge.get_schema().get_columns());
     EXPECT_EQ(*schema.get_schema_prop().get_ttl_duration(),
@@ -2041,7 +2042,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_10";
+    column.name = "edge_0_col_12";
     column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
@@ -2063,7 +2064,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
     schemaProp.ttl_duration_ref() = 100;
-    schemaProp.ttl_col_ref() = "edge_0_col_11";
+    schemaProp.ttl_col_ref() = "edge_0_col_13";
 
     req.space_id_ref() = 1;
     req.edge_name_ref() = "edge_0";
@@ -2080,7 +2081,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_10";
+    column.name = "edge_0_col_12";
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
@@ -2126,11 +2127,11 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::ColumnDef> cols;
 
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_1";
+    column.name = "edge_0_col_3";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
-    column.name = "edge_0_col_11";
+    column.name = "edge_0_col_13";
     column.type.type_ref() = PropertyType::STRING;
     cols.emplace_back(std::move(column));
 
@@ -2153,7 +2154,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema addSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_1";
+    column.name = "edge_0_col_3";
     column.type.type_ref() = PropertyType::INT64;
     (*addSch.columns_ref()).emplace_back(std::move(column));
 
@@ -2176,7 +2177,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_2";
+    column.name = "edge_0_col_4";
     column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
@@ -2199,7 +2200,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_2";
+    column.name = "edge_0_col_4";
     column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
@@ -2298,7 +2299,7 @@ TEST(ProcessorTest, AlterEdgeTest) {
     std::vector<cpp2::AlterSchemaItem> items;
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
-    column.name = "edge_0_col_1";
+    column.name = "edge_0_col_3";
     column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
@@ -2869,7 +2870,7 @@ TEST(ProcessorTest, SessionManagerTest) {
   // delete session
   {
     cpp2::RemoveSessionReq delReq;
-    delReq.session_id_ref() = sessionId;
+    delReq.session_ids_ref() = {sessionId};
 
     auto* dProcessor = RemoveSessionProcessor::instance(kv.get());
     auto delFut = dProcessor->getFuture();

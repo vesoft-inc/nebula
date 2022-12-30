@@ -79,6 +79,20 @@ void BaseProcessor<RESP>::doRemove(const std::string& key) {
 }
 
 template <typename RESP>
+void BaseProcessor<RESP>::doMultiRemove(std::vector<std::string>&& keys) {
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                             kDefaultPartId,
+                             std::move(keys),
+                             [this, &baton](nebula::cpp2::ErrorCode code) {
+                               this->handleErrorCode(code);
+                               baton.post();
+                             });
+  baton.wait();
+  this->onFinished();
+}
+
+template <typename RESP>
 void BaseProcessor<RESP>::doBatchOperation(std::string batchOp) {
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncAppendBatch(kDefaultSpaceId,
@@ -556,6 +570,26 @@ BaseProcessor<RESP>::getAllParts(GraphSpaceID spaceId) {
   }
 
   return partHostsMap;
+}
+
+template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::getAllMachines(
+    std::unordered_set<HostAddr>& machines) {
+  const auto& machinePrefix = MetaKeyUtils::machinePrefix();
+  std::unique_ptr<kvstore::KVIterator> machineIter;
+  auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, machinePrefix, &machineIter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Failed to get machines, error " << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  while (machineIter->valid()) {
+    auto machine = MetaKeyUtils::parseMachineKey(machineIter->key());
+    machines.emplace(std::move(machine));
+    machineIter->next();
+  }
+
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta

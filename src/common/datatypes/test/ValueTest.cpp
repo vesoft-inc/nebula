@@ -1565,6 +1565,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
   EXPECT_EQ("BAD_TYPE", Value::kNullBadType.typeName());
   EXPECT_EQ("ERR_OVERFLOW", Value::kNullOverflow.typeName());
+  EXPECT_EQ("UNKNOWN_PROP", Value::kNullUnknownProp.typeName());
   EXPECT_EQ("DIV_BY_ZERO", Value::kNullDivByZero.typeName());
 }
 
@@ -1581,6 +1582,7 @@ TEST(Value, DecodeEncode) {
       Value(NullType::BAD_DATA),
       Value(NullType::ERR_OVERFLOW),
       Value(NullType::OUT_OF_RANGE),
+      Value(NullType::UNKNOWN_PROP),
 
       // int
       Value(0),

@@ -88,7 +88,7 @@ Feature: FulltextIndexTest
     Then the execution should be successful
     When executing query:
       """
-      ALTER TAG ddl_tag ADD (prop1 string);
+      ALTER TAG ddl_tag ADD (prop1_new string);
       """
     Then the execution should be successful
     When executing query:

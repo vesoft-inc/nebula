@@ -166,6 +166,17 @@ class BaseProcessor {
   void doRemove(const std::string& key);
 
   /**
+   * @brief Remove multiple given keys from kv store.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param key
+   */
+  void doMultiRemove(std::vector<std::string>&& keys);
+
+  /**
    * @brief Range remove.
    *        Note that it has side effect: it will set the code to the resp_,
    *        and delete the processor instance. So, it could be only used
@@ -445,6 +456,14 @@ class BaseProcessor {
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
   getAllParts(GraphSpaceID spaceId);
+
+  /**
+   * @brief Get the all registered machines by command: ADD HOSTS
+   *
+   * @param machines
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode getAllMachines(std::unordered_set<HostAddr>& machines);
 
  protected:
   kvstore::KVStore* kvstore_ = nullptr;

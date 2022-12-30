@@ -904,6 +904,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Charset and collate not match!");
     case nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE:
       return Status::Error("Snapshot failure!");
+    case nebula::cpp2::ErrorCode::E_SNAPSHOT_RUNNING_JOBS:
+      return Status::Error("Snapshot failed encounter running jobs!");
     case nebula::cpp2::ErrorCode::E_BLOCK_WRITE_FAILURE:
       return Status::Error("Block write failure!");
     case nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED:
@@ -2806,7 +2808,10 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
-      std::move(promise));
+      std::move(promise),
+      true,
+      0,
+      1);
   return future;
 }
 
@@ -3569,15 +3574,16 @@ folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID s
   return future;
 }
 
-folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sessionId) {
+folly::Future<StatusOr<cpp2::RemoveSessionResp>> MetaClient::removeSessions(
+    const std::vector<SessionID>& sessionIds) {
   cpp2::RemoveSessionReq req;
-  req.session_id_ref() = sessionId;
-  folly::Promise<StatusOr<cpp2::ExecResp>> promise;
+  req.session_ids_ref() = sessionIds;
+  folly::Promise<StatusOr<cpp2::RemoveSessionResp>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_removeSession(request); },
-      [](cpp2::ExecResp&& resp) -> decltype(auto) { return std::move(resp); },
+      [](cpp2::RemoveSessionResp&& resp) -> decltype(auto) { return std::move(resp); },
       std::move(promise),
       true);
   return future;

@@ -1,6 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jie
 Feature: Basic match
 
   Background:
@@ -354,6 +355,7 @@ Feature: Basic match
       """
     Then a SemanticError should be raised at runtime: `like_not_exists': Unknown edge type
 
+  @hello
   Scenario: two steps
     When executing query:
       """
@@ -374,10 +376,10 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | Player           | Friend              | FoF            | NotExists |
-      | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   | __NULL__  |
-      | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  | __NULL__  |
-      | "Paul George"    | "Russell Westbrook" | "James Harden" | __NULL__  |
-      | "Paul George"    | "Russell Westbrook" | "Paul George"  | __NULL__  |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   | NULL      |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "James Harden" | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "Paul George"  | NULL      |
     When executing query:
       """
       MATCH (v1) -[:like]-> (v2:player{age: 28}) -[:like]-> (v3)
@@ -434,8 +436,8 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | Player       | Friend          | TYPE    | FoF          | FoT       |
-      | "Paul Gasol" | "Marc Gasol"    | "like"  | "Paul Gasol" | __NULL__  |
-      | "Yao Ming"   | "Tracy McGrady" | "serve" | __NULL__     | "Rockets" |
+      | "Paul Gasol" | "Marc Gasol"    | "like"  | "Paul Gasol" | NULL      |
+      | "Yao Ming"   | "Tracy McGrady" | "serve" | NULL         | "Rockets" |
     When executing query:
       """
       MATCH (v1) -[e1:like]-> (v2) -[e2]-> (v3)
@@ -964,9 +966,150 @@ Feature: Basic match
     Then the result should be, in any order, with relax comparison:
       | id(v) |
 
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) != 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v | e |
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) == 0
+      return rank(e)
+      limit 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) != 0
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) != 0 and e.start_year > 2010
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) == 1 and e.start_year == 2016
+      return e
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                           |
+      | [:serve "Marco Belinelli"->"Hornets" @1 {end_year: 2017, start_year: 2016}] |
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != "jack"
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != 0  or abs(rank(e)) != 0
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
   Scenario: match_with_wrong_syntax
     When executing query:
       """
       MATCH (v{name: "Tim Duncan"}) return v
       """
     Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
+
+  Scenario: match with tag filter
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) == 'Tim Duncan' return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..0]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b         |
+      | ('Spurs') |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b                     |
+      | ("Spurs")             |
+      | ("Aron Baynes")       |
+      | ("Boris Diaw")        |
+      | ("Cory Joseph")       |
+      | ("Danny Green")       |
+      | ("David West")        |
+      | ("Dejounte Murray")   |
+      | ("Jonathon Simmons")  |
+      | ("Kyle Anderson")     |
+      | ("LaMarcus Aldridge") |
+      | ("Manu Ginobili")     |
+      | ("Marco Belinelli")   |
+      | ("Paul Gasol")        |
+      | ("Rudy Gay")          |
+      | ("Tiago Splitter")    |
+      | ("Tim Duncan")        |
+      | ("Tony Parker")       |
+      | ("Tracy McGrady")     |
+      | ("Marco Belinelli")   |

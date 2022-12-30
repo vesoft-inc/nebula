@@ -122,7 +122,7 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
       case QueryUtils::ReturnColType::kOther: {
         auto field = edge_.back()->field(col);
         if (field == nullptr) {
-          values[col] = Value::kNullValue;
+          values[col] = Value::kNullUnknownProp;
         } else {
           auto retVal = QueryUtils::readValue(reader.get(), col, field);
           if (!retVal.ok()) {

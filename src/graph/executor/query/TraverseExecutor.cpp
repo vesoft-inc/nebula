@@ -101,7 +101,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
                      selectFilter(),
-                     nullptr)
+                     currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         vids_.clear();
@@ -162,8 +162,29 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
   }
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
-  if (currentStep_ == 1 && range_ && range_->min() == 0) {
-    result_.rows = buildZeroStepPath(iter.get());
+  if (currentStep_ == 1) {
+    if (range_ && range_->min() == 0) {
+      result_.rows = buildZeroStepPath(iter.get());
+    }
+    // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
+    // the attributes of v1 will be obtained in the second traverse operator
+    // If the conditions are not met, the path in the previous step needs to be filtered out
+    std::unordered_set<Value, VertexHash, VertexEqual> existVids;
+    existVids.reserve(iter->numRows());
+    auto vertices = iter->getVertices();
+    for (auto& vertex : vertices.values) {
+      if (vertex.isVertex()) {
+        existVids.emplace(vertex);
+      }
+    }
+    auto initVidIter = initVids_.begin();
+    while (initVidIter != initVids_.end()) {
+      if (existVids.find(*initVidIter) == existVids.end()) {
+        initVidIter = initVids_.erase(initVidIter);
+      } else {
+        initVidIter++;
+      }
+    }
   }
   expand(iter.get());
   if (!isFinalStep()) {

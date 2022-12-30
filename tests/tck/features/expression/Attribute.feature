@@ -61,8 +61,8 @@ Feature: Attribute
       RETURN {k1 : 1, k2: true}.K1 AS k
       """
     Then the result should be, in any order:
-      | k        |
-      | __NULL__ |
+      | k            |
+      | UNKNOWN_PROP |
     When executing query:
       """
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name
@@ -101,28 +101,28 @@ Feature: Attribute
       """
     Then the result should be, in any order:
       | not_exists_attr |
-      | __NULL__        |
+      | UNKNOWN_PROP    |
     When executing query:
       """
       RETURN time("02:59:40").not_exists_attr AS not_exists_attr
       """
     Then the result should be, in any order:
       | not_exists_attr |
-      | __NULL__        |
+      | UNKNOWN_PROP    |
     When executing query:
       """
       RETURN datetime("2021-07-19T02:59:40").not_exists_attr AS not_exists_attr
       """
     Then the result should be, in any order:
       | not_exists_attr |
-      | __NULL__        |
+      | UNKNOWN_PROP    |
     When executing query:
       """
       RETURN {k1 : 1, k2: true}.not_exists_attr AS not_exists_attr
       """
     Then the result should be, in any order:
       | not_exists_attr |
-      | __NULL__        |
+      | UNKNOWN_PROP    |
     When executing query:
       """
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.not_exists_attr

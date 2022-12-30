@@ -158,7 +158,7 @@ struct YieldClauseContext final : CypherClauseContextBase {
   std::vector<Path> paths;
 
   bool distinct{false};
-  const YieldColumns* yieldColumns{nullptr};
+  YieldColumns* yieldColumns{nullptr};
 
   bool hasAgg_{false};
   bool needGenProject_{false};

@@ -84,7 +84,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
     }
   });
   auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
-  if (timeout > 0) {
+  if (timeout >= 0) {
     clientChannel->setTimeout(timeout);
   }
   if (compatibility) {

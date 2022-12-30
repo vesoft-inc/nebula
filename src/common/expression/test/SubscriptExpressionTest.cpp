@@ -338,6 +338,7 @@ TEST_F(SubscriptExpressionTest, MapSubscript) {
     auto expr = SubscriptExpression::make(&pool, map, key);
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_TRUE(value.isNull());
+    ASSERT_TRUE(value.isBadNull());
   }
   // {"key1":1,"key2":2, "key3":3}[0]
   {

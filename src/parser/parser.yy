@@ -381,7 +381,7 @@ using namespace nebula;
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
-%type <sentence> show_queries_sentence kill_query_sentence
+%type <sentence> show_queries_sentence kill_query_sentence kill_session_sentence
 %type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
@@ -1240,7 +1240,7 @@ type_spec
         $$->type_ref() = nebula::cpp2::PropertyType::STRING;
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -1644,14 +1644,6 @@ yield_sentence
         s->setWhereClause($4);
         $$ = s;
     }
-    | KW_RETURN yield_columns {
-        auto *s = new YieldSentence($2);
-        $$ = s;
-    }
-    | KW_RETURN KW_DISTINCT yield_columns {
-        auto *s = new YieldSentence($3, true);
-        $$ = s;
-    }
     ;
 
 unwind_clause
@@ -1728,7 +1720,10 @@ reading_with_clauses
     ;
 
 match_sentence
-    : reading_clauses match_return {
+    : match_return {
+        $$ = new MatchSentence(new MatchClauseList(), $1);
+    }
+    | reading_clauses match_return {
         $$ = new MatchSentence($1, $2);
     }
     | reading_with_clauses match_return {
@@ -2645,7 +2640,7 @@ index_field
         delete $1;
     }
     | name_label L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             delete $1;
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
@@ -2931,6 +2926,8 @@ traverse_sentence
     | kill_query_sentence { $$ = $1; }
     | describe_user_sentence { $$ = $1; }
     | unwind_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
+    | kill_session_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -2969,6 +2966,9 @@ match_sentences
         s->setDistinct();
         $$ = s;
     }
+    | match_sentences KW_INTERSECT match_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | match_sentences KW_MINUS match_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    ;
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
@@ -3834,6 +3834,16 @@ kill_query_sentence
     : KW_KILL KW_QUERY L_PAREN query_unique_identifier R_PAREN {
         $$ = new KillQuerySentence($4);
     }
+    ;
+
+kill_session_sentence
+    : KW_KILL KW_SESSIONS expression {
+        $$ = new KillSessionSentence($3);
+    }
+    | KW_KILL KW_SESSION expression {
+        $$ = new KillSessionSentence($3);
+    }
+    ;
 
 query_unique_identifier_value
     : legal_integer {
@@ -3900,7 +3910,6 @@ maintain_sentence
     | divide_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }

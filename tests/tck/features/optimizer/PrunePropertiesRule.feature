@@ -756,9 +756,9 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | __NULL__             | "Dejounte Murray" | "男"             | 2022         | 29               |
+      | 41                    | UNKNOWN_PROP         | "Dejounte Murray" | "男"             | 2022         | 29               |
       | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
-      | 41                    | __NULL__             | "Tiago Splitter"  | "男"             | 2022         | 34               |
+      | 41                    | UNKNOWN_PROP         | "Tiago Splitter"  | "男"             | 2022         | 34               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
@@ -775,16 +775,16 @@ Feature: Prune Properties rule
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v)
-        return properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
+        return distinct properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
         order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | degree   | name          | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
-      | "男"                  | __NULL__ | "Aron Baynes" | 41  | 2022            | 32               |
+      | properties(src_v).sex | degree       | name              | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | UNKNOWN_PROP | "Aron Baynes"     | 41  | 2022            | 32               |
+      | "男"                  | UNKNOWN_PROP | "Blake Griffin"   | 41  | 2022            | 30               |
+      | "男"                  | UNKNOWN_PROP | "Boris Diaw"      | 41  | 2022            | 36               |
+      | "男"                  | UNKNOWN_PROP | "Carmelo Anthony" | 41  | 2022            | 34               |
+      | "男"                  | UNKNOWN_PROP | "Chris Paul"      | 41  | 2022            | 33               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
@@ -860,11 +860,11 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
-      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
-      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
-      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
-      | __NULL__              | __NULL__              | NULL | NULL         | NULL              | __NULL__                |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
     Then drop the used space
 
   Scenario: Project on not exist tag
@@ -874,9 +874,9 @@ Feature: Prune Properties rule
       MATCH (v:player)-[e:like]->(t) WHERE v.player.name=='Tim Duncan'  RETURN v.player.name, v.x.y, v.player.age
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.name | v.x.y    | v.player.age |
-      | "Tim Duncan"  | __NULL__ | 42           |
-      | "Tim Duncan"  | __NULL__ | 42           |
+      | v.player.name | v.x.y | v.player.age |
+      | "Tim Duncan"  | NULL  | 42           |
+      | "Tim Duncan"  | NULL  | 42           |
     When executing query:
       """
       MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, properties(v), t
@@ -891,8 +891,8 @@ Feature: Prune Properties rule
       """
     Then the result should be, in any order, with relax comparison:
       | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
-      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
-      | "Tim Duncan"  | __NULL__        | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | "Tim Duncan"  | NULL            | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | NULL            | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
 
   Scenario: no pruning on agg after unwind
     Given a graph with space named "nba"
