@@ -51,3 +51,12 @@ Feature: match node label filter
     Then the result should be, in any order:
       | labels(v1)             | count(*) |
       | ["bachelor", "player"] | 34       |
+    When executing query:
+      """
+      MATCH (v:bachelor)<-[e*2..2]-()<-[e1]-()
+      WHERE id(v0) in ['Tony Parker', 'Spurs', 'Tim Duncan']
+      return labels(v), count(*)
+      """
+    Then the result should be, in any order:
+      | labels(v)              | count(*) |
+      | ["bachelor", "player"] | 184      |
