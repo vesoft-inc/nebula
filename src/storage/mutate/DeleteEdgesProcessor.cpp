@@ -21,7 +21,6 @@ ProcessorCounters kDelEdgesCounters;
 
 void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
   try {
-    memory::MemoryCheckGuard guard;
     spaceId_ = req.get_space_id();
     const auto& partEdges = req.get_parts();
 

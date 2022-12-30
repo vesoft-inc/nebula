@@ -29,7 +29,6 @@ ProcessorCounters kLookupCounters;
 inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
   try {
-    memory::MemoryCheckGuard guard;
     if (executor_ != nullptr) {
       executor_->add([req, this]() { this->doProcess(req); });
     } else {
