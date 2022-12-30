@@ -99,6 +99,10 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
       result_ = time::TimeUtils::getDateTimeAttr(lvalue.getDateTime(), rvalue.getStr());
       return result_;
     default:
+      if (lvalue.isNull() && lvalue.getNull() == NullType::UNKNOWN_PROP) {
+        // return UNKNOWN_PROP as plain null values, instead of bad type.
+        return Value::kNullValue;
+      }
       return Value::kNullBadType;
   }
 }
