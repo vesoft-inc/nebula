@@ -431,11 +431,82 @@ Feature: ttl
       | ("12" :ttl_tag07{a: /\d+/, b: 10}) |
       | ("13" :ttl_tag07{a: /\d+/, b: 20}) |
 
-# # TODO: Increase the ttl expiration time (the ttl_duration value is
-# # increased or the ttl is deleted). If you do not perform a compaction
-# # before alter, the expired data will reappear.
-#
-# Then the result should be, in any order, with relax comparison:
-# | v                                  |
-# | ("12" :ttl_tag07{a: /\d+/, b: 20}) |
-# | ("13" :ttl_tag07{a: /\d+/, b: 20}) |
+  # # TODO: Increase the ttl expiration time (the ttl_duration value is
+  # # increased or the ttl is deleted). If you do not perform a compaction
+  # # before alter, the expired data will reappear.
+  #
+  # Then the result should be, in any order, with relax comparison:
+  # | v                                  |
+  # | ("12" :ttl_tag07{a: /\d+/, b: 20}) |
+  # | ("13" :ttl_tag07{a: /\d+/, b: 20}) |
+  Scenario: ttl multi tag
+    When executing query:
+      """
+      CREATE TAG ttl_m_tag1(a timestamp, b int) ttl_duration=10, ttl_col="a";
+      CREATE TAG ttl_m_tag2(a timestamp, b int) ttl_duration=5, ttl_col="a";
+      CREATE TAG ttl_m_tag3(a timestamp, b int) ttl_duration=5, ttl_col="a";
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX ttl_m_tag1(a,b) VALUES "m-t-1":(now(),10);
+      INSERT VERTEX ttl_m_tag2(a,b) VALUES "m-t-1":(now(),10);
+      INSERT VERTEX ttl_m_tag3(a,b) VALUES "m-t-1":(now(),10);
+      """
+    Then the execution should be successful
+    And wait 7 seconds
+    When executing query:
+      """
+      MATCH (v) where id(v)=="m-t-1" return v limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                      |
+      | ("m-t-1" :ttl_m_tag1{a: /\d+/, b: 10}) |
+    And wait 4 seconds
+    When executing query:
+      """
+      MATCH (v) where id(v)=="m-t-1" return v limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
+
+  Scenario: ttl multi edge
+    When executing query:
+      """
+      CREATE TAG ttl_m_tag2();
+      CREATE EDGE ttl_m_edge1(a timestamp, b int) ttl_duration=5, ttl_col="a";
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX ttl_m_tag2() VALUES "m-e-1":(),"m-e-2":();
+      INSERT EDGE ttl_m_edge1(a,b) VALUES "m-e-1"->"m-e-2"@1:(now(),10);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT EDGE ttl_m_edge1(a,b) VALUES "m-e-1"->"m-e-2"@2:(now(),10);
+      INSERT EDGE ttl_m_edge1(a,b) VALUES "m-e-1"->"m-e-2"@3:(now(),10);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      MATCH ()-[e:ttl_m_edge1]->() return e limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                    |
+      | [:ttl_m_edge1 "m-e-1"->"m-e-2" @1 {a: /\d+/, b: 10}] |
+      | [:ttl_m_edge1 "m-e-1"->"m-e-2" @2 {a: /\d+/, b: 10}] |
+      | [:ttl_m_edge1 "m-e-1"->"m-e-2" @3 {a: /\d+/, b: 10}] |
+    And wait 3 seconds
+    When executing query:
+      """
+      MATCH ()-[e:ttl_m_edge1]->() return e limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                    |
+      | [:ttl_m_edge1 "m-e-1"->"m-e-2" @2 {a: /\d+/, b: 10}] |
+      | [:ttl_m_edge1 "m-e-1"->"m-e-2" @3 {a: /\d+/, b: 10}] |
