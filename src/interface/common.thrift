@@ -388,6 +388,7 @@ enum ErrorCode {
     // Admin Failure
     E_SNAPSHOT_FAILURE                = -2040,  // Failed to generate a snapshot
     E_SNAPSHOT_RUNNING_JOBS           = -2056,  // Failed to generate a snapshot because encounter running jobs
+    E_SNAPSHOT_NOT_FOUND              = -2057,  // Snapshot not found when try to drop it
     E_BLOCK_WRITE_FAILURE             = -2041,  // Failed to write block data
     E_REBUILD_INDEX_FAILURE           = -2042,
     E_INDEX_WITH_TTL                  = -2043,  
