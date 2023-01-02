@@ -51,6 +51,8 @@ class ShortestPathBase {
 
   void addStats(PropRpcResponse& resp, int64_t timeInUSec) const;
 
+  folly::Executor* runner() const;
+
   template <typename Resp>
   StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,
                                              bool isPartialSuccessAccepted) const {

@@ -101,14 +101,19 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
   return folly::collectAll(respFutures)
       .deferValue([this, requests = std::move(requests), totalLatencies, hosts](
                       std::vector<folly::Try<StatusOr<Response>>>&& resps) {
+        // throw in MemoryCheckGuard verified
         memory::MemoryCheckGuard guard;
         StorageRpcResponse<Response> rpcResp(resps.size());
         for (size_t i = 0; i < resps.size(); i++) {
           auto& host = hosts->at(i);
-          auto& tryResp = resps[i];
-          std::optional<std::string> errMsg;
+          folly::Try<StatusOr<Response>>& tryResp = resps[i];
           if (tryResp.hasException()) {
-            errMsg = std::string(tryResp.exception().what().c_str());
+            std::string errMsg = tryResp.exception().what().toStdString();
+            rpcResp.markFailure();
+            LOG(ERROR) << "There some RPC errors: " << errMsg;
+            auto req = requests.at(host);
+            auto parts = getReqPartsId(req);
+            rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           } else {
             auto status = std::move(tryResp).value();
             if (status.ok()) {
@@ -128,16 +133,15 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
               // Keep the response
               rpcResp.addResponse(std::move(resp));
             } else {
-              errMsg = std::move(status).status().message();
+              rpcResp.markFailure();
+              nebula::cpp2::ErrorCode errorCode =
+                  std::move(status).status().code() == Status::Code::kGraphMemoryExceeded
+                      ? nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED
+                      : nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+              auto req = requests.at(host);
+              auto parts = getReqPartsId(req);
+              rpcResp.appendFailedParts(parts, errorCode);
             }
-          }
-
-          if (errMsg) {
-            rpcResp.markFailure();
-            LOG(ERROR) << "There some RPC errors: " << errMsg.value();
-            auto req = requests.at(host);
-            auto parts = getReqPartsId(req);
-            rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           }
         }
 
@@ -160,12 +164,16 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
   auto spaceId = request.get_space_id();
   return folly::via(evb)
       .thenValue([remoteFunc = std::move(remoteFunc), request, evb, host, this](auto&&) {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+        // Encoding invoke Cpp2Ops::write the request to protocol is in current thread,
+        // do not need to turn on in Cpp2Ops::write
         return remoteFunc(client.get(), request);
       })
       .thenValue([spaceId, this](Response&& resp) mutable -> StatusOr<Response> {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         auto& result = resp.get_result();
         for (auto& part : result.get_failed_parts()) {
@@ -196,14 +204,12 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         }
         return std::move(resp);
       })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [](const std::bad_alloc&) {
-                   return folly::makeFuture<StatusOr<Response>>(std::bad_alloc());
-                 })
-      .thenError(folly::tag_t<std::exception>{},
-                 [](const std::exception& e) {
-                   return folly::makeFuture<StatusOr<Response>>(std::runtime_error(e.what()));
-                 })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) {
+            return folly::makeFuture<StatusOr<Response>>(Status::GraphMemoryExceeded(
+                "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
+          })
       .thenError([request, host, spaceId, this](
                      folly::exception_wrapper&& exWrapper) mutable -> StatusOr<Response> {
         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);

@@ -128,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
@@ -153,6 +154,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>

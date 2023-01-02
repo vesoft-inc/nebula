@@ -11,6 +11,7 @@ DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> ProduceAllPathsExecutor::execute() {
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<ProduceAllPaths>(node());
   noLoop_ = pathNode_->noLoop();
@@ -28,10 +29,12 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
   }
   std::vector<folly::Future<Status>> futures;
   auto leftFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
     return buildPath(false);
   });
   auto rightFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
     return buildPath(true);
   });
@@ -156,12 +159,14 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
       auto endIter = leftIter;
       endIter++;
       auto oddStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         return doConjunct(startIter, endIter, true);
       });
       futures.emplace_back(std::move(oddStepFuture));
       if (step_ * 2 <= pathNode_->steps()) {
         auto evenStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+          // MemoryTrackerVerified
           memory::MemoryCheckGuard guard;
           return doConjunct(startIter, endIter, false);
         });
@@ -175,12 +180,14 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
   if (i != 0) {
     auto endIter = leftPaths_.end();
     auto oddStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+      // MemoryTrackerVerified
       memory::MemoryCheckGuard guard;
       return doConjunct(startIter, endIter, true);
     });
     futures.emplace_back(std::move(oddStepFuture));
     if (step_ * 2 <= pathNode_->steps()) {
       auto evenStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         return doConjunct(startIter, endIter, false);
       });
@@ -200,12 +207,6 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
         leftPaths_.clear();
         rightPaths_.clear();
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

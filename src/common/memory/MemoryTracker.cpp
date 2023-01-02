@@ -38,6 +38,10 @@ void MemoryTracker::free(int64_t size) {
   MemoryStats::instance().free(size);
 }
 
+bool MemoryTracker::isOn() {
+  return MemoryStats::instance().throwOnMemoryExceeded();
+}
+
 void MemoryTracker::allocImpl(int64_t size, bool) {
   MemoryStats::instance().alloc(size);
 }

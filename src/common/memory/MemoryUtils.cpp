@@ -119,7 +119,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   }
 
   // MemoryStats depends on jemalloc
-#if ENABLE_JEMALLOC
+#ifdef ENABLE_JEMALLOC
   // set MemoryStats limit (MemoryTracker track-able memory)
   int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB;
   if (trackable > 0) {
@@ -130,23 +130,18 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
                << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
   }
 
+#ifndef ENABLE_ASAN
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
     int64_t now = time::WallClock::fastNowInSec();
     if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
-      // mallctl seems has issue with address_sanitizer, do purge only when address_sanitizer is off
-#if defined(__clang__)
-#if defined(__has_feature)
-#if not __has_feature(address_sanitizer)
+      // jemalloc seems has issue with address_sanitizer, do purge only when address_sanitizer is
+      // off
       mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
-#endif
-#endif
-#else  // gcc
-      mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
-#endif
       kLastPurge_ = now;
     }
   }
+#endif
 
   // print system & application level memory stats
   // sys: read from system environment, varies depends on environment:

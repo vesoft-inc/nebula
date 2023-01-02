@@ -103,6 +103,7 @@ template <class Protocol>
 uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj) {
   uint32_t xfer = 0;
   xfer += proto->writeStructBegin("Value");
+  // MemoryTrackerVerified: throw bad_alloc verified
 
   switch (obj->type()) {
     case nebula::Value::Type::NULLVALUE: {

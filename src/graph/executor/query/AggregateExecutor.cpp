@@ -11,6 +11,9 @@ namespace graph {
 
 folly::Future<Status> AggregateExecutor::execute() {
   SCOPED_TIMER(&execTime_);
+  // MemoryTrackerVerified
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
+
   auto* agg = asNode<Aggregate>(node());
   auto groupKeys = agg->groupKeys();
   auto groupItems = agg->groupItems();

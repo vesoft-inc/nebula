@@ -9,6 +9,7 @@ namespace graph {
 
 folly::Future<Status> StartExecutor::execute() {
   SCOPED_TIMER(&execTime_);
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
 
   return start();
 }

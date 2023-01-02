@@ -10,6 +10,9 @@ DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
+  // MemoryTrackerVerified
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
+
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
@@ -30,10 +33,12 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
 
   std::vector<folly::Future<Status>> futures;
   auto leftFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
     return buildPath(false);
   });
   auto rightFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
     return buildPath(true);
   });
@@ -111,6 +116,7 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
       currentEdges.emplace(std::move(dst), std::move(edge));
     }
   }
+
   // set nextVid
   const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
   ectx_->setResult(nextVidVar, ResultBuilder().value(std::move(nextStepVids)).build());
@@ -170,12 +176,6 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
           currentDs_.append(std::move(resp));
         }
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

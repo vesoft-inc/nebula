@@ -13,6 +13,9 @@ ArgumentExecutor::ArgumentExecutor(const PlanNode *node, QueryContext *qctx)
     : Executor("ArgumentExecutor", node, qctx) {}
 
 folly::Future<Status> ArgumentExecutor::execute() {
+  // MemoryTrackerVerified
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
+
   auto *argNode = asNode<Argument>(node());
   auto &alias = argNode->getAlias();
   auto iter = ectx_->getResult(argNode->inputVar()).iter();

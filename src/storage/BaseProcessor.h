@@ -30,11 +30,14 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
+  void memoryExceeded() {
+    memoryExceeded_ = true;
+  }
+
   folly::Future<RESP> getFuture() {
     return promise_.getFuture();
   }
 
- protected:
   virtual void onFinished() {
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
@@ -83,6 +86,7 @@ class BaseProcessor {
     delete this;
   }
 
+ protected:
   nebula::cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
     auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
     if (!len.ok()) {
@@ -158,6 +162,31 @@ class BaseProcessor {
   std::mutex profileMut_;
   bool profileDetailFlag_{false};
   bool memoryExceeded_{false};
+};
+
+/// Helper class wrap the passed in Func in a MemoryTracker turned on scope.
+template <typename RESP, typename Func>
+struct MemoryCheckScope {
+  MemoryCheckScope(BaseProcessor<RESP>* processor, Func f)
+      : processor_(processor), f_(std::move(f)) {}
+
+  ~MemoryCheckScope() {
+    memory::MemoryCheckGuard guard;
+    try {
+      f_();
+    } catch (std::bad_alloc& e) {
+      processor_->memoryExceeded();
+      processor_->onError();
+    } catch (std::exception& e) {
+      LOG(ERROR) << e.what();
+      processor_->onError();
+    } catch (...) {
+      processor_->onError();
+    }
+  }
+
+  BaseProcessor<RESP>* processor_;
+  Func f_;
 };
 
 }  // namespace storage

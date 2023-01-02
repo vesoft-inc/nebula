@@ -10,7 +10,10 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> DedupExecutor::execute() {
+  // MemoryTrackerVerified
+  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
   SCOPED_TIMER(&execTime_);
+
   auto* dedup = asNode<Dedup>(node());
   DCHECK(!dedup->inputVar().empty());
   Result result = ectx_->getResult(dedup->inputVar());

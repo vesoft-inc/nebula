@@ -15,6 +15,7 @@ if(ENABLE_ASAN)
     add_compile_options(-fsanitize=address)
     add_compile_options(-g)
     add_compile_options(-fno-omit-frame-pointer)
+    add_definitions(-DENABLE_ASAN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif()
 
