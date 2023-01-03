@@ -989,7 +989,7 @@ def login_without_password(conn_pool, user):
     except Exception as e:
         assert e
 
-@when(parse('login with user "{user}" with "{password}"'))
+@when(parse('login with user "{user}" and "{password}"'))
 def login_with_password(conn_pool, user, password):
     sess = None
     try:
