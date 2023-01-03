@@ -150,6 +150,7 @@ folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& pr
   };
 
   auto gather = [this](auto&& results) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();
@@ -180,6 +181,7 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Ite
   };
 
   auto gather = [this](auto&& results) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();

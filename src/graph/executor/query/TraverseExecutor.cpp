@@ -36,7 +36,6 @@ Status TraverseExecutor::buildRequestVids() {
   auto iter = static_cast<SequentialIter*>(inputIter);
   size_t iterSize = iter->size();
   vids_.reserve(iterSize);
-  initVids_.reserve(iterSize);
   auto* src = traverse_->src();
   QueryExpressionContext ctx(ectx_);
 
@@ -56,11 +55,9 @@ Status TraverseExecutor::buildRequestVids() {
       }
       if (uniqueVid.emplace(vid).second) {
         vids_.emplace_back(vid);
-        initVids_.emplace_back(vid);
       }
     }
   } else {
-    initVids_.reserve(iterSize);
     const auto& spaceInfo = qctx()->rctx()->session()->space();
     const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
     auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
@@ -71,7 +68,6 @@ Status TraverseExecutor::buildRequestVids() {
         continue;
       }
       vids_.emplace_back(vid);
-      initVids_.emplace_back(vid);
     }
   }
   return Status::OK();
@@ -104,6 +100,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+        memory::MemoryCheckGuard guard;
         vids_.clear();
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
@@ -163,27 +160,18 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
   if (currentStep_ == 1) {
-    if (range_ && range_->min() == 0) {
-      result_.rows = buildZeroStepPath(iter.get());
-    }
-    // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
-    // the attributes of v1 will be obtained in the second traverse operator
-    // If the conditions are not met, the path in the previous step needs to be filtered out
-    std::unordered_set<Value, VertexHash, VertexEqual> existVids;
-    existVids.reserve(iter->numRows());
+    initVertices_.reserve(iter->numRows());
     auto vertices = iter->getVertices();
+    // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
+    // save the vertex that meets the filter conditions as the starting vertex of the current
+    // traverse
     for (auto& vertex : vertices.values) {
       if (vertex.isVertex()) {
-        existVids.emplace(vertex);
+        initVertices_.emplace_back(vertex);
       }
     }
-    auto initVidIter = initVids_.begin();
-    while (initVidIter != initVids_.end()) {
-      if (existVids.find(*initVidIter) == existVids.end()) {
-        initVidIter = initVids_.erase(initVidIter);
-      } else {
-        initVidIter++;
-      }
+    if (range_ && range_->min() == 0) {
+      result_.rows = buildZeroStepPath();
     }
   }
   expand(iter.get());
@@ -247,15 +235,14 @@ void TraverseExecutor::expand(GetNeighborsIter* iter) {
   }
 }
 
-std::vector<Row> TraverseExecutor::buildZeroStepPath(GetNeighborsIter* iter) {
-  if (!iter || iter->numRows() == 0) {
+std::vector<Row> TraverseExecutor::buildZeroStepPath() {
+  if (initVertices_.empty()) {
     return std::vector<Row>();
   }
   std::vector<Row> result;
-  result.reserve(iter->size());
-  auto vertices = iter->getVertices();
+  result.reserve(initVertices_.size());
   if (traverse_->trackPrevPath()) {
-    for (auto& vertex : vertices.values) {
+    for (auto& vertex : initVertices_) {
       auto dstIter = dst2PathsMap_.find(vertex);
       if (dstIter == dst2PathsMap_.end()) {
         continue;
@@ -271,7 +258,7 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath(GetNeighborsIter* iter) {
       }
     }
   } else {
-    for (auto& vertex : vertices.values) {
+    for (auto& vertex : initVertices_) {
       Row row;
       List edgeList;
       edgeList.values.emplace_back(vertex);
@@ -296,8 +283,8 @@ folly::Future<Status> TraverseExecutor::buildResult() {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
   if (FLAGS_max_job_size <= 1) {
-    for (const auto& vid : initVids_) {
-      auto paths = buildPath(vid, minStep, maxStep);
+    for (const auto& initVertex : initVertices_) {
+      auto paths = buildPath(initVertex, minStep, maxStep);
       if (paths.empty()) {
         continue;
       }
@@ -311,22 +298,22 @@ folly::Future<Status> TraverseExecutor::buildResult() {
 }
 
 folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_t maxStep) {
-  DataSet vids;
-  vids.rows.reserve(initVids_.size());
-  for (auto& vid : initVids_) {
+  DataSet vertices;
+  vertices.rows.reserve(initVertices_.size());
+  for (auto& initVertex : initVertices_) {
     Row row;
-    row.values.emplace_back(std::move(vid));
-    vids.rows.emplace_back(std::move(row));
+    row.values.emplace_back(std::move(initVertex));
+    vertices.rows.emplace_back(std::move(row));
   }
-  auto val = std::make_shared<Value>(std::move(vids));
+  auto val = std::make_shared<Value>(std::move(vertices));
   auto iter = std::make_unique<SequentialIter>(val);
 
   auto scatter = [this, minStep, maxStep](
                      size_t begin, size_t end, Iterator* tmpIter) mutable -> std::vector<Row> {
     std::vector<Row> rows;
     for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
-      auto& vid = tmpIter->getColumn(0);
-      auto paths = buildPath(vid, minStep, maxStep);
+      auto& initVertex = tmpIter->getColumn(0);
+      auto paths = buildPath(initVertex, minStep, maxStep);
       if (paths.empty()) {
         continue;
       }
@@ -337,6 +324,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
   };
 
   auto gather = [this](std::vector<std::vector<Row>> resp) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     for (auto& rows : resp) {
       if (rows.empty()) {
         continue;
@@ -353,8 +341,10 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
 }
 
 // build path based on BFS through adjancency list
-std::vector<Row> TraverseExecutor::buildPath(const Value& vid, size_t minStep, size_t maxStep) {
-  auto vidIter = adjList_.find(vid);
+std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
+                                             size_t minStep,
+                                             size_t maxStep) {
+  auto vidIter = adjList_.find(initVertex);
   if (vidIter == adjList_.end()) {
     return std::vector<Row>();
   }
@@ -378,7 +368,7 @@ std::vector<Row> TraverseExecutor::buildPath(const Value& vid, size_t minStep, s
   if (maxStep == 1) {
     if (traverse_->trackPrevPath()) {
       std::vector<Row> newResult;
-      auto dstIter = dst2PathsMap_.find(vid);
+      auto dstIter = dst2PathsMap_.find(initVertex);
       if (dstIter == dst2PathsMap_.end()) {
         return std::vector<Row>();
       }
@@ -459,7 +449,7 @@ std::vector<Row> TraverseExecutor::buildPath(const Value& vid, size_t minStep, s
   }
   if (traverse_->trackPrevPath()) {
     std::vector<Row> newPaths;
-    auto dstIter = dst2PathsMap_.find(vid);
+    auto dstIter = dst2PathsMap_.find(initVertex);
     if (dstIter != dst2PathsMap_.end()) {
       auto& prevPaths = dstIter->second;
       for (auto& prevPath : prevPaths) {

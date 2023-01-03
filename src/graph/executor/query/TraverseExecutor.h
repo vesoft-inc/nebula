@@ -62,7 +62,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> buildResult();
 
-  std::vector<Row> buildPath(const Value& vid, size_t minStep, size_t maxStep);
+  std::vector<Row> buildPath(const Value& initVertex, size_t minStep, size_t maxStep);
 
   folly::Future<Status> buildPathMultiJobs(size_t minStep, size_t maxStep);
 
@@ -77,7 +77,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   bool hasSameEdge(const std::vector<Value>& edgeList, const Edge& edge);
 
-  std::vector<Row> buildZeroStepPath(GetNeighborsIter* iter);
+  std::vector<Row> buildZeroStepPath();
 
   Expression* selectFilter();
 
@@ -127,7 +127,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   ObjectPool objPool_;
 
   std::vector<Value> vids_;
-  std::vector<Value> initVids_;
+  std::vector<Value> initVertices_;
   DataSet result_;
   // Key : vertex  Value : adjacent edges
   std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> adjList_;

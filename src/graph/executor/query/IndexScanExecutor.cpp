@@ -42,6 +42,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
                     lookup->limit(qctx_))
       .via(runner())
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
+        memory::MemoryCheckGuard guard;
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp));
       })

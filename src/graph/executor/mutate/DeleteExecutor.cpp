@@ -69,6 +69,7 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -130,6 +131,7 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
         VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -222,6 +224,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
         VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
