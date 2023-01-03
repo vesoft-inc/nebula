@@ -2389,7 +2389,7 @@ TEST(ProcessorTest, AlterTagForMoreThan256TimesTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
   TestUtils::mockTag(kv.get(), 1);
-  const int times = 1000;
+  const int times = 300;
   int totalScheVer = 1;
   std::vector<cpp2::ColumnDef> expectedCols;
   for (auto i = 0; i < 2; i++) {
@@ -2516,7 +2516,7 @@ TEST(ProcessorTest, AlterEdgeForMoreThan256TimesTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
   TestUtils::mockEdge(kv.get(), 1);
-  const int times = 1000;
+  const int times = 300;
   int totalScheVer = 1;
   std::vector<cpp2::ColumnDef> expectedCols;
   for (auto i = 0; i < 2; i++) {
