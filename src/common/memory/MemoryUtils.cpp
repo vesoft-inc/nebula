@@ -135,7 +135,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     int64_t now = time::WallClock::fastNowInSec();
     if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
       // mallctl seems has issue with address_sanitizer, do purge only when address_sanitizer is off
-#if defined(__clang)
+#if defined(__clang__)
 #if defined(__has_feature)
 #if not __has_feature(address_sanitizer)
       mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);

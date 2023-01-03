@@ -281,6 +281,7 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
     futures.emplace_back(
         folly::via(executor_,
                    [this, plan = std::move(planCopy[i]), part = parts[i]]() -> ReturnType {
+                     memory::MemoryCheckGuard guard;
                      ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
                      std::deque<Row> dataset;
                      plan->execute(part);
@@ -323,6 +324,7 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
             }));
   }
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     std::vector<Row> statResults;

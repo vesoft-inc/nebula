@@ -17,6 +17,7 @@
 #include "common/base/Logging.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/HostAddr.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
 #include "common/thrift/ThriftTypes.h"
@@ -100,6 +101,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
   return folly::collectAll(respFutures)
       .deferValue([this, requests = std::move(requests), totalLatencies, hosts](
                       std::vector<folly::Try<StatusOr<Response>>>&& resps) {
+        memory::MemoryCheckGuard guard;
         StorageRpcResponse<Response> rpcResp(resps.size());
         for (size_t i = 0; i < resps.size(); i++) {
           auto& host = hosts->at(i);
@@ -158,11 +160,13 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
   auto spaceId = request.get_space_id();
   return folly::via(evb)
       .thenValue([remoteFunc = std::move(remoteFunc), request, evb, host, this](auto&&) {
+        memory::MemoryCheckGuard guard;
         // NOTE: Create new channel on each thread to avoid TIMEOUT RPC error
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         return remoteFunc(client.get(), request);
       })
       .thenValue([spaceId, this](Response&& resp) mutable -> StatusOr<Response> {
+        memory::MemoryCheckGuard guard;
         auto& result = resp.get_result();
         for (auto& part : result.get_failed_parts()) {
           auto partId = part.get_part_id();
@@ -192,6 +196,14 @@ folly::Future<StatusOr<Response>> StorageClientBase<ClientType, ClientManagerTyp
         }
         return std::move(resp);
       })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<StatusOr<Response>>(std::bad_alloc());
+                 })
+      .thenError(folly::tag_t<std::exception>{},
+                 [](const std::exception& e) {
+                   return folly::makeFuture<StatusOr<Response>>(std::runtime_error(e.what()));
+                 })
       .thenError([request, host, spaceId, this](
                      folly::exception_wrapper&& exWrapper) mutable -> StatusOr<Response> {
         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);

@@ -20,6 +20,7 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
       ->createEdgeSchema(spaceId, ceNode->getName(), ceNode->getSchema(), ceNode->getIfNotExists())
       .via(runner())
       .thenValue([ceNode, spaceId](StatusOr<EdgeType> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
                        << "' failed: " << resp.status();
@@ -45,6 +46,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
       ->getEdgeSchema(spaceId, deNode->getName())
       .via(runner())
       .thenValue([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
                        << "' failed: " << resp.status();
@@ -79,6 +81,7 @@ folly::Future<Status> DropEdgeExecutor::execute() {
       ->dropEdgeSchema(spaceId, deNode->getName(), deNode->getIfExists())
       .via(runner())
       .thenValue([deNode, spaceId](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge `" << deNode->getName()
                        << "' failed: " << resp.status();
@@ -103,6 +106,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
       ->listEdgeSchemas(spaceId)
       .via(runner())
       .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edges failed: " << resp.status();
           return resp.status();
@@ -143,6 +147,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
       ->getEdgeSchema(spaceId, sceNode->getName())
       .via(runner())
       .thenValue([this, sceNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", ShowCreate edge `" << sceNode->getName()
                        << "' failed: " << resp.status();
@@ -175,6 +180,7 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
           aeNode->space(), aeNode->getName(), aeNode->getSchemaItems(), aeNode->getSchemaProp())
       .via(runner())
       .thenValue([this, aeNode](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << aeNode->space() << ", Alter edge `" << aeNode->getName()
                        << "' failed: " << resp.status();

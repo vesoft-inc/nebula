@@ -61,6 +61,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         if (FLAGS_max_job_size <= 1) {
@@ -193,6 +194,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
     };
 
     auto gather = [this](auto &&results) -> Status {
+      memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result_.rows.insert(result_.rows.end(),
@@ -211,6 +213,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
 
     auto gather =
         [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) -> folly::Future<Status> {
+      memory::MemoryCheckGuard guard1;
       UNUSED(prepareResult);
 
       auto scatterInput =
@@ -219,6 +222,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
       };
 
       auto gatherFinal = [this](auto &&results) -> Status {
+        memory::MemoryCheckGuard guard2;
         for (auto &r : results) {
           auto &&rows = std::move(r).value();
           result_.rows.insert(result_.rows.end(),

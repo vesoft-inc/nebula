@@ -6,6 +6,7 @@
 #include "storage/mutate/UpdateEdgeProcessor.h"
 
 #include "common/base/Base.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/FilterNode.h"
@@ -18,10 +19,23 @@ namespace storage {
 ProcessorCounters kUpdateEdgeCounters;
 
 void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
-  if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
-  } else {
-    doProcess(req);
+  try {
+    if (executor_ != nullptr) {
+      executor_->add([req, this]() {
+        memory::MemoryCheckGuard guard;
+        this->doProcess(req);
+      });
+    } else {
+      doProcess(req);
+    }
+  } catch (std::bad_alloc& e) {
+    memoryExceeded_ = true;
+    onError();
+  } catch (std::exception& e) {
+    LOG(ERROR) << e.what();
+    onError();
+  } catch (...) {
+    onError();
   }
 }
 

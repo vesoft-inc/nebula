@@ -29,18 +29,26 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   }
 
   std::vector<folly::Future<Status>> futures;
-  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
-  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  auto leftFuture = folly::via(runner(), [this]() {
+    memory::MemoryCheckGuard guard;
+    return buildPath(false);
+  });
+  auto rightFuture = folly::via(runner(), [this]() {
+    memory::MemoryCheckGuard guard;
+    return buildPath(true);
+  });
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         step_++;
         DataSet ds;
@@ -147,6 +155,7 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     batchVids.push_back(vid);
     if (++i == totalSize || batchVids.size() == batchSize) {
       auto future = folly::via(runner(), [this, vids = std::move(batchVids), oddStep]() {
+        memory::MemoryCheckGuard guard;
         return doConjunct(vids, oddStep);
       });
       futures.emplace_back(std::move(future));
@@ -156,6 +165,7 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& resps) {
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           currentDs_.append(std::move(resp));
         }

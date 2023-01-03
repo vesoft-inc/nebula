@@ -35,6 +35,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     auto retCode = nebula::error(ret);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       LOG(INFO) << "Snapshot " << snapshot << " does not exist or already dropped.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_NOT_FOUND);
       onFinished();
       return;
     }

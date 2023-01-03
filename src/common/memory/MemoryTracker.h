@@ -41,6 +41,7 @@ struct ThreadMemoryStats {
 
   // reserved bytes size in current thread
   int64_t reserved;
+  bool throwOnMemoryExceeded{false};
 };
 
 /**
@@ -127,10 +128,20 @@ class MemoryStats {
     return fmt::format("MemoryStats: {}/{}", ReadableSize(limit_), ReadableSize(used_));
   }
 
+  // turn on current thread's throwOnMemoryExceeded
+  static void turnOnThrow() {
+    threadMemoryStats_.throwOnMemoryExceeded = true;
+  }
+
+  // turn off current thread's throwOnMemoryExceeded
+  static void turnOffThrow() {
+    threadMemoryStats_.throwOnMemoryExceeded = false;
+  }
+
  private:
   inline ALWAYS_INLINE void allocGlobal(int64_t size) {
     int64_t willBe = size + used_.fetch_add(size, std::memory_order_relaxed);
-    if (willBe > limit_) {
+    if (threadMemoryStats_.throwOnMemoryExceeded && willBe > limit_) {
       // revert
       used_.fetch_sub(size, std::memory_order_relaxed);
       throw std::bad_alloc();
@@ -145,6 +156,17 @@ class MemoryStats {
   static thread_local ThreadMemoryStats threadMemoryStats_;
   // Each thread reserves this amount of memory
   static constexpr int64_t kLocalReservedLimit_ = 1 * MiB;
+};
+
+// A guard to only enable memory check (throw when memory exceed) during its lifetime.
+struct MemoryCheckGuard {
+  MemoryCheckGuard() {
+    MemoryStats::turnOnThrow();
+  }
+
+  ~MemoryCheckGuard() {
+    MemoryStats::turnOffThrow();
+  }
 };
 
 // A global static memory tracker enable tracking every memory allocation and deallocation.

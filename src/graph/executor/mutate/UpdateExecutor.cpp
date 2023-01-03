@@ -61,6 +61,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
         VLOG(1) << "Update vertice time: " << updateVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           LOG(WARNING) << "Update vertices fail: " << resp.status();
@@ -118,6 +119,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
         VLOG(1) << "Update edge time: " << updateEdgeTime.elapsedInUSec() << "us";
       })
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           LOG(WARNING) << "Update edge failed: " << resp.status();

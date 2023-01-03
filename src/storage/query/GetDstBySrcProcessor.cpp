@@ -122,6 +122,7 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
 
@@ -162,6 +163,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
     const std::vector<Value>& srcIds) {
   return folly::via(executor_,
                     [this, context, result, partId, input = std::move(srcIds)]() mutable {
+                      memory::MemoryCheckGuard guard;
                       auto plan = buildPlan(context, result);
                       for (const auto& src : input) {
                         auto& vId = src.getStr();
