@@ -55,8 +55,8 @@ std::string ArithmeticExpression::toString() const {
       op = "%";
       break;
     default:
-      LOG(DFATAL) << "Illegal kind for arithmetic expression: " << static_cast<int>(kind());
-      op = "illegal symbol ";
+      DLOG(FATAL) << "Illegal kind for arithmetic expression: " << static_cast<int>(kind());
+      op = " Invalid arithmetic expression ";
   }
   std::stringstream out;
   out << "(" << (lhs_ ? lhs_->toString() : "") << op << (rhs_ ? rhs_->toString() : "") << ")";
