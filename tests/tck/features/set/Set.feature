@@ -75,12 +75,21 @@ Feature: Set Test
       | a |
       | 1 |
       | 2 |
-    # cypher doesn't support intersect
+    # The standalone return statement is not a cypher statement but a ngql statement in nebula...
+    # So it can't be mixed with other cypher statements
     When executing query:
       """
       UNWIND [1,2] AS a RETURN a
       INTERSECT
-      RETURN 2 AS a
+      RETURN a
+      """
+    Then a SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      INTERSECT
+      WITH 2 AS a
+      RETURN a
       """
     Then the result should be, in any order:
       | a |
@@ -89,7 +98,8 @@ Feature: Set Test
       """
       UNWIND [1,2,3] AS a RETURN a, 100
       INTERSECT
-      RETURN 2 AS a, 100
+      WITH 2 AS a
+      RETURN a, 100
       """
     Then the result should be, in any order:
       | a | 100 |
@@ -291,7 +301,8 @@ Feature: Set Test
       """
       UNWIND [1,2,3] AS a RETURN a
       MINUS
-      RETURN 4 AS a
+      WITH 4 AS a
+      RETURN a
       """
     Then the result should be, in any order, with relax comparison:
       | a |
@@ -302,7 +313,8 @@ Feature: Set Test
       """
       UNWIND [1,2,3] AS a RETURN a
       MINUS
-      RETURN 2 AS a
+      WITH 2 AS a
+      RETURN a
       """
     Then the result should be, in any order, with relax comparison:
       | a |

@@ -1,7 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: Return
+Feature: Return. A standalone return sentence is actually a yield sentence
 
   Background:
     Given a graph with space named "nba"
@@ -21,6 +21,22 @@ Feature: Return
     Then the result should be, in any order:
       | (1+1) | "1+1" | (INT)3.14 | (STRING)(1+1) | (STRING)true |
       | 2     | "1+1" | 3         | "2"           | "true"       |
+    When executing query:
+      """
+      GO FROM "Tony Parker" OVER like YIELD id($$) AS vid | RETURN $-.vid AS dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 |
+      | "LaMarcus Aldridge" |
+      | "Manu Ginobili"     |
+      | "Tim Duncan"        |
+    When executing query:
+      """
+      FETCH PROP ON player "Tony Parker" YIELD player.age as age | RETURN $-.age + 100 AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 136 |
 
   Scenario: hash call
     When executing query:
@@ -79,4 +95,4 @@ Feature: Return
       """
       RETURN name
       """
-    Then a SemanticError should be raised at runtime: Alias used but not defined: `name'
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: name
