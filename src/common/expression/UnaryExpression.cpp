@@ -87,7 +87,7 @@ const Value& UnaryExpression::eval(ExpressionContext& ctx) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Unknown type: " << kind_;
+      DLOG(FATAL) << "Unknown type: " << kind_;
       result_ = Value::kNullBadType;
     }
   }

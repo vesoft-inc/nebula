@@ -30,7 +30,7 @@ const Value& ArithmeticExpression::eval(ExpressionContext& ctx) {
       result_ = lhs % rhs;
       break;
     default:
-      LOG(DFATAL) << "Unknown type: " << kind_;
+      DLOG(FATAL) << "Unknown type: " << kind_;
       result_ = Value::kNullBadType;
   }
   return result_;
