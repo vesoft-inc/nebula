@@ -774,7 +774,7 @@ class MetaClient : public BaseMetaClient {
   std::atomic<int64_t> metadLastUpdateTime_{0};
 
   int64_t metaServerVersion_{-1};
-  static constexpr int64_t EXPECT_META_VERSION = 3;
+  static constexpr int64_t EXPECT_META_VERSION = 4;
 
   // leadersLock_ is used to protect leadersInfo
   folly::SharedMutex leadersLock_;
