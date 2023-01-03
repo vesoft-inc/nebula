@@ -48,7 +48,10 @@ bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
     if (to.get_type() == nebula::cpp2::PropertyType::STRING) {
       return true;
     } else if (to.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
-      return from.get_type_length() <= to.get_type_length();
+      if (!from.type_length_ref().has_value() || !to.type_length_ref().has_value()) {
+        return false;
+      }
+      return *from.type_length_ref() <= *to.type_length_ref();
     } else {
       return false;
     }

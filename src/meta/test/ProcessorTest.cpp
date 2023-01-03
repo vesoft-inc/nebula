@@ -1783,11 +1783,28 @@ TEST(ProcessorTest, AlterTagTest) {
     req.space_id_ref() = 1;
     req.tag_name_ref() = "tag_0";
     req.tag_items_ref() = items;
-    auto* processor = AlterTagProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+
+    {
+      auto* processor = AlterTagProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    }
+    {
+      req.tag_items_ref()
+          ->back()
+          .schema_ref()
+          ->columns_ref()
+          ->back()
+          .type_ref()
+          ->type_length_ref() = 6;
+      auto* processor = AlterTagProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
   }
 }
 
@@ -2376,11 +2393,27 @@ TEST(ProcessorTest, AlterEdgeTest) {
     req.space_id_ref() = 1;
     req.edge_name_ref() = "edge_0";
     req.edge_items_ref() = items;
-    auto* processor = AlterEdgeProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    {
+      auto* processor = AlterEdgeProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    }
+    {
+      req.edge_items_ref()
+          ->back()
+          .schema_ref()
+          ->columns_ref()
+          ->back()
+          .type_ref()
+          ->type_length_ref() = 6;
+      auto* processor = AlterEdgeProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
   }
 }
 
