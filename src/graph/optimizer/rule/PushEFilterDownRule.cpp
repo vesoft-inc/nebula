@@ -175,8 +175,6 @@ std::string PushEFilterDownRule::toString() const {
       break;
     default:
       DLOG(FATAL) << "Unexpected expr: " << exp->kind();
-      // in case the exp cannot be rewritten, return the original exp
-      ret = exp;
   }
   return ret;
 }
