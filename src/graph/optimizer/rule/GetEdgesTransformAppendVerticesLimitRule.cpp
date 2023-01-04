@@ -58,7 +58,8 @@ bool GetEdgesTransformAppendVerticesLimitRule::match(OptContext *ctx,
   if (colNames[colSize - 2][0] != '_') {  // src
     return false;
   }
-  if (traverse->stepRange() != nullptr) {
+  const auto &stepRange = traverse->stepRange();
+  if (stepRange.min() != 1 || stepRange.max() != 1) {
     return false;
   }
   // Can't apply vertex filter in GetEdges

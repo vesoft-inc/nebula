@@ -234,7 +234,7 @@ static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias
 static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
   Expression* expr = nullptr;
   auto pool = qctx->objPool();
-  if (edge.range == nullptr) {
+  if (edge.range.min() == 1 && edge.range.max() == 1) {
     expr = SubscriptExpression::make(
         pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
   } else {

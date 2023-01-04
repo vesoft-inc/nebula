@@ -56,10 +56,10 @@ class MatchEdgeProp final {
  public:
   MatchEdgeProp(const std::string& alias,
                 MatchEdgeTypeList* types,
-                MatchStepRange* range,
+                const MatchStepRange& range,
                 Expression* props = nullptr) {
     alias_ = alias;
-    range_.reset(range);
+    range_ = range;
     props_ = static_cast<MapExpression*>(props);
     if (types != nullptr) {
       types_ = std::move(*types).items();
@@ -76,7 +76,7 @@ class MatchEdgeProp final {
   std::string alias_;
   std::vector<std::unique_ptr<std::string>> types_;
   MapExpression* props_{nullptr};
-  std::unique_ptr<MatchStepRange> range_;
+  MatchStepRange range_;
 };
 
 class MatchEdge final {
@@ -111,8 +111,8 @@ class MatchEdge final {
     return props_;
   }
 
-  auto* range() const {
-    return range_.get();
+  const MatchStepRange& range() const {
+    return range_;
   }
 
   std::string toString() const;
@@ -121,11 +121,9 @@ class MatchEdge final {
     auto me = MatchEdge();
     me.direction_ = direction_;
     me.alias_ = alias_;
+    me.range_ = range_;
     for (const auto& type : types_) {
       me.types_.emplace_back(std::make_unique<std::string>(*DCHECK_NOTNULL(type)));
-    }
-    if (range_ != nullptr) {
-      me.range_ = std::make_unique<MatchStepRange>(*range_);
     }
     if (props_ != nullptr) {
       me.props_ = static_cast<MapExpression*>(props_->clone());
@@ -137,7 +135,7 @@ class MatchEdge final {
   Direction direction_;
   std::string alias_;
   std::vector<std::unique_ptr<std::string>> types_;
-  std::unique_ptr<MatchStepRange> range_;
+  MatchStepRange range_;
   MapExpression* props_{nullptr};
 };
 

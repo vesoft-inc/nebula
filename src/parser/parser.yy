@@ -1852,12 +1852,14 @@ match_edge_prop
         $$ = nullptr;
     }
     | L_BRACKET match_alias opt_match_edge_type_list match_step_range R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, nullptr);
+        $$ = new MatchEdgeProp(*$2, $3, *$4, nullptr);
         delete $2;
+        delete $4;
     }
     | L_BRACKET match_alias opt_match_edge_type_list match_step_range map_expression R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, $5);
+        $$ = new MatchEdgeProp(*$2, $3, *$4, $5);
         delete $2;
+        delete $4;
     }
     ;
 
@@ -1872,7 +1874,7 @@ opt_match_edge_type_list
 
 match_step_range
     : %empty {
-        $$ = nullptr;
+        $$ = new MatchStepRange(1, 1);
     }
     | STAR {
         $$ = new MatchStepRange(1);

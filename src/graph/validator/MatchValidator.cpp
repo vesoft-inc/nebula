@@ -161,7 +161,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
       return Status::SemanticError(
           "`shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)");
     }
-    auto min = edgeInfos.front().range->min();
+    auto min = edgeInfos.front().range.min();
     if (min != 0 && min != 1) {
       return Status::SemanticError(
           "`shortestPath(...)' does not support a minimal length different from 0 or 1");
@@ -296,14 +296,12 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
       }
     }
     AliasType aliasType = AliasType::kEdge;
-    auto *stepRange = edge->range();
-    if (stepRange != nullptr) {
-      NG_RETURN_IF_ERROR(validateStepRange(stepRange));
-      edgeInfos[i].range = stepRange;
-      // Type of [e*1..2], [e*2] should be inference to EdgeList
-      if (stepRange->max() > stepRange->min() || stepRange->min() > 1) {
-        aliasType = AliasType::kEdgeList;
-      }
+    const auto &stepRange = edge->range();
+    NG_RETURN_IF_ERROR(validateStepRange(stepRange));
+    edgeInfos[i].range = stepRange;
+    // Type of [e*1..2], [e*2] should be inference to EdgeList
+    if (stepRange.max() > stepRange.min() || stepRange.min() > 1) {
+      aliasType = AliasType::kEdgeList;
     }
     if (alias.empty()) {
       anonymous = true;
@@ -531,9 +529,9 @@ Status MatchValidator::validateAliases(
 }
 
 // Check validity of step number. e.g. match (v)-[e*2..3]->()
-Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
-  auto min = range->min();
-  auto max = range->max();
+Status MatchValidator::validateStepRange(const MatchStepRange &range) const {
+  auto min = range.min();
+  auto max = range.max();
   if (min > max) {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);

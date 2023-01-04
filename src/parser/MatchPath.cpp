@@ -27,7 +27,7 @@ std::string MatchEdge::toString() const {
     end = "-";
   }
 
-  if (!alias_.empty() || !types_.empty() || range_ != nullptr || props_ != nullptr) {
+  if (!alias_.empty() || !types_.empty() || props_ != nullptr) {
     buf += '[';
     if (!alias_.empty()) {
       buf += alias_;
@@ -40,22 +40,20 @@ std::string MatchEdge::toString() const {
         buf += *types_[i];
       }
     }
-    if (range_ != nullptr) {
-      buf += "*";
-      if (range_->min() == range_->max()) {
-        buf += folly::to<std::string>(range_->min());
-      } else if (range_->max() == std::numeric_limits<size_t>::max()) {
-        if (range_->min() != 1) {
-          buf += folly::to<std::string>(range_->min());
-          buf += "..";
-        }
-      } else {
-        if (range_->min() != 1) {
-          buf += folly::to<std::string>(range_->min());
-        }
+    buf += "*";
+    if (range_.min() == range_.max()) {
+      buf += folly::to<std::string>(range_.min());
+    } else if (range_.max() == std::numeric_limits<size_t>::max()) {
+      if (range_.min() != 1) {
+        buf += folly::to<std::string>(range_.min());
         buf += "..";
-        buf += folly::to<std::string>(range_->max());
       }
+    } else {
+      if (range_.min() != 1) {
+        buf += folly::to<std::string>(range_.min());
+      }
+      buf += "..";
+      buf += folly::to<std::string>(range_.max());
     }
     if (props_ != nullptr) {
       buf += props_->toString();

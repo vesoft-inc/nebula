@@ -19,7 +19,7 @@ bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
     return false;
   }
 
-  if (edge.range != nullptr && edge.range->min() == 0) {
+  if (edge.range.min() == 0) {
     // The 0 step is NodeScan in fact.
     return false;
   }
