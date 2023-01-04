@@ -4,9 +4,14 @@
 Feature: Return. A standalone return sentence is actually a yield sentence
 
   Background:
-    Given a graph with space named "nba"
+    Given a graph with space named "test"
 
   Scenario: base
+    When executing query:
+      """
+      DESC SPACE test
+      """
+    Then the execution should be successful
     When executing query:
       """
       RETURN 1+1 AS sum
