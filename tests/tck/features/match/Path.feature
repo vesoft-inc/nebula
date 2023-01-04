@@ -162,7 +162,8 @@ Feature: Matching paths
   Scenario: symmetry paths
     When executing query:
       """
-      match p1 = (v1)-[e*1..2]->(v2) where id(v1) in [6]
+      match p1 = (v1)-[e*1..2]->(v2)
+      where id(v1) in [6]
       match p2 = (v2)-[e*1..2]->(v1)
       return count(*)
       """
@@ -171,7 +172,8 @@ Feature: Matching paths
       | 16       |
     When executing query:
       """
-      match p1 = (v1)-[e*1..2]->(v2) where id(v1) in [6]
+      match p1 = (v1)-[e*1..2]->(v2)
+      where id(v1) in [6]
       match p2 = (v2)-[e*1..2]->(v1)
       return size(e)
       """
@@ -193,3 +195,132 @@ Feature: Matching paths
       | 2       |
       | 2       |
       | 2       |
+
+  Scenario: src dst variables in paths
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0]->(v1)
+      return src(e), dst(e)
+      """
+    Then the result should be, in any order:
+      | src(e) | dst(e) |
+      | 97     | 97     |
+      | 47     | 47     |
+      | 6      | 6      |
+      | 79     | 79     |
+      | 19     | 19     |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0]->(v2)
+      where id(v1) == id(v2)
+      return src(e), dst(e)
+      """
+    Then the result should be, in any order:
+      | src(e) | dst(e) |
+      | 97     | 97     |
+      | 47     | 47     |
+      | 6      | 6      |
+      | 79     | 79     |
+      | 19     | 19     |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0]->(v2)
+      where id(v1) != id(v2)
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 185      |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0]->(v2)
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 190      |
+
+  Scenario: edgelist or single edge in paths
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0*2..4]->(v2)
+      where id(v1) in [50]
+      return size(e), count(*)
+      """
+    Then the result should be, in any order:
+      | size(e) | count(*) |
+      | 4       | 4        |
+      | 3       | 2        |
+      | 2       | 1        |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0*2..4]->(v2)
+      where id(v1) in [50]
+      unwind e as x
+      return x.Rel_0_6_datetime, src(x)
+      """
+    Then the result should be, in any order:
+      | x.Rel_0_6_datetime         | src(x) |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.289000 | 39     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.257000 | 39     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.289000 | 39     |
+      | 2023-01-04T03:24:23.172000 | 12     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.289000 | 39     |
+      | 2023-01-04T03:24:22.997000 | 12     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.257000 | 39     |
+      | 2023-01-04T03:24:23.255000 | 76     |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+      | 2023-01-04T03:24:23.257000 | 39     |
+      | 2023-01-04T03:24:23.193000 | 76     |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0*2..2]->(v2)
+      where id(v1) in [50]
+      unwind e as x
+      return x.Rel_0_6_datetime, src(x)
+      """
+    Then the result should be, in any order:
+      | x.Rel_0_6_datetime         | src(x) |
+      | 2023-01-04T03:24:23.222000 | 50     |
+      | 2023-01-04T03:24:23.035000 | 93     |
+    When executing query:
+      """
+      match p = (v1:Label_11)-[e:Rel_0*1..1]->(v2)
+      where id(v1) in [50]
+      unwind e as x
+      return x.Rel_0_6_datetime, src(x)
+      """
+    Then the result should be, in any order:
+      | x.Rel_0_6_datetime         | src(x) |
+      | 2023-01-04T03:24:23.222000 | 50     |
+    When executing query:
+      """
+      match (v1)-[e*1..2]->(v2)
+      where id(v1) in [6]
+      match (v2)-[e*1..2]->(v1)
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 9        |
+    When executing query:
+      """
+      match (v1)-[e*1..2]->(v2)
+      where id(v1) in [6]
+      match (v2)-[e*1..1]->(v1)
+      return count(*)
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
