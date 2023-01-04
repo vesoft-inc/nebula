@@ -177,6 +177,31 @@ Feature: Matching paths
       | count(*) |
       | 3        |
 
+  Scenario: single vertex
+    When executing query:
+      """
+      match p = (v)
+      where id(v) == 1
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 1        |
+    When executing query:
+      """
+      match p = (v:Label_3)
+      return count(p)
+      """
+    Then the result should be, in any order:
+      | count(p) |
+      | 59       |
+    When executing query:
+      """
+      match p = (v:Label_0)
+      return count(p)
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
   @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5185
   Scenario: conflicting type
     When executing query:
