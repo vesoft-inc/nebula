@@ -404,7 +404,6 @@ Feature: Matching paths
       | count(*) |
       | 190      |
 
-  @xuntaotest
   Scenario: edgelist or single edge in paths
     When executing query:
       """
