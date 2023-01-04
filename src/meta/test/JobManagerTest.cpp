@@ -4,6 +4,7 @@
  */
 
 #include <folly/synchronization/Baton.h>
+#include <gflags/gflags_declare.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <unistd.h>
@@ -24,6 +25,7 @@
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobExecutor.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/TaskDescription.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/MockHdfsHelper.h"
@@ -31,6 +33,7 @@
 #include "webservice/WebService.h"
 
 DECLARE_int32(job_check_intervals);
+DECLARE_double(job_expired_secs);
 
 namespace nebula {
 namespace meta {
@@ -257,6 +260,10 @@ class JobManagerTest : public ::testing::Test {
     req.job_id_ref() = jobId;
     req.task_id_ref() = taskId;
     jobMgr_->reportTaskFinish(req);
+  }
+
+  nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v) {
+    return jobMgr_->save(k, v);
   }
 
   void TearDown() override {
@@ -900,6 +907,260 @@ TEST_F(JobManagerTest, RecoverBalanceJob) {
     ASSERT_TRUE(nebula::ok(recoverRet));
     auto recoverNum = nebula::value(recoverRet);
     ASSERT_EQ(recoverNum, 0);
+  }
+}
+
+TEST_F(JobManagerTest, ExpiredJobTest) {
+  auto jobMgr = initJobManager();
+  // For preventing job schedule in JobManager
+  auto nowTimeInSec = nebula::time::WallClock::fastNowInSec();
+  auto expiredJobTime = std::difftime(nowTimeInSec, FLAGS_job_expired_secs + 1);
+
+  // 1. failed job should be expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 1;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+  // 2. finished job should be expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 2;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FINISHED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+  // 3. stopped job should expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 3;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::STOPPED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_USER_CANCEL);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+
+  // 4. failed job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 4;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 4);
+  }
+  // 5. stop job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 5;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::STOPPED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::E_USER_CANCEL);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 2);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 5);
+    ASSERT_EQ(showJobs[1].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[1].get_job_id(), 4);
+  }
+  // 6. finished job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 6;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FINISHED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 3);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 6);
+  }
+
+  // 7. queue job should stay even timeout
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 7;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::QUEUE,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 4);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_job_id(), 7);
+  }
+  // 8. running job should stay even timeout
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 8;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::RUNNING,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 5);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::RUNNING);
+    ASSERT_EQ(showJobs[0].get_job_id(), 8);
   }
 }
 
