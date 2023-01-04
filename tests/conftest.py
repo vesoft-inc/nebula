@@ -232,8 +232,8 @@ def load_student_data():
     yield load_csv_data_once("student")
 
 @pytest.fixture(scope="session")
-def load_test_data():
-    yield load_csv_data_once("test")
+def load_ngdata_data():
+    yield load_csv_data_once("ngdata")
 
 # TODO(yee): Delete this when we migrate all test cases
 @pytest.fixture(scope="class")

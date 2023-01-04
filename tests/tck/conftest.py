@@ -182,7 +182,7 @@ def preload_space(
     load_nba_int_vid_data,
     load_student_data,
     load_ldbc_v0_3_3,
-    load_test_data,
+    load_ngdata_data,
     exec_ctx,
 ):
     space = normalize_outline_scenario(request, space)
@@ -194,8 +194,8 @@ def preload_space(
         exec_ctx["space_desc"] = load_student_data
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
-    elif space == "test":
-        exec_ctx["space_desc"] = load_test_data
+    elif space == "ngdata":
+        exec_ctx["space_desc"] = load_ngdata_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
