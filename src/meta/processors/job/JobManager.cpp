@@ -852,7 +852,9 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
   for (auto& [id, job] : allJobs) {
     auto status = job.getStatus();
     if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::STOPPED) {
-      jobsMaybeRecover.emplace(id);
+      if (!isExpiredJob(job)) {
+        jobsMaybeRecover.emplace(id);
+      }
     }
   }
   std::set<JobID>::reverse_iterator lastBalaceJobRecoverIt = jobsMaybeRecover.rend();
