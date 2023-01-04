@@ -64,31 +64,27 @@ template <typename U>
 void SamplingExecutor::executeBinarySample(Iterator *iter, size_t index,
                                            size_t count, DataSet &list) {
   auto uIter = static_cast<U *>(iter);
-  std::vector<WeightType> accumulate_weights;
+  std::vector<WeightType> accumulateWeights;
   auto it = uIter->begin();
   WeightType v;
   while (it != uIter->end()) {
     v = 1.0;
-    if ((*it)[index].type() == Value::Type::NULLVALUE) {
-      LOG(WARNING) << "Sampling type is nullvalue";
-    } else if ((*it)[index].type() == Value::Type::FLOAT) {
+    if ((*it)[index].type() == Value::Type::FLOAT) {
       v = (float)((*it)[index].getFloat());
     } else if ((*it)[index].type() == Value::Type::INT) {
       v = (float)((*it)[index].getInt());
-    } else {
-      LOG(WARNING) << "Sampling type is wrong, must be int or float.";
     }
-    if (!accumulate_weights.empty()) {
-      v += accumulate_weights.back();
+    if (!accumulateWeights.empty()) {
+      v += accumulateWeights.back();
     }
-    accumulate_weights.emplace_back(std::move(v));
+    accumulateWeights.emplace_back(std::move(v));
     ++it;
   }
-  nebula::algorithm::Normalization<WeightType>(accumulate_weights);
+  nebula::algorithm::Normalization<WeightType>(accumulateWeights);
   auto beg = uIter->begin();
   for (size_t i = 0; i < count; ++i) {
     auto idx =
-        nebula::algorithm::BinarySampleAcc<WeightType>(accumulate_weights);
+        nebula::algorithm::BinarySampleAcc<WeightType>(accumulateWeights);
     list.emplace_back(*(beg + idx));
   }
   uIter->clear();
@@ -103,17 +99,11 @@ void SamplingExecutor::executeAliasSample(Iterator *iter, size_t index,
   WeightType v;
   while (it != uIter->end()) {
     v = 1.0;
-    if ((*it)[index].type() == Value::Type::NULLVALUE) {
-      LOG(WARNING) << "Sampling type is nullvalue";
-
-    } else if ((*it)[index].type() == Value::Type::FLOAT) {
+    if ((*it)[index].type() == Value::Type::FLOAT) {
       v = (float)((*it)[index].getFloat());
     } else if ((*it)[index].type() == Value::Type::INT) {
       v = (float)((*it)[index].getInt());
-    } else {
-      LOG(WARNING) << "Sampling type is wrong, must be int or float.";
     }
-    LOG(ERROR) << "lyj debug v:" << v;
     weights.emplace_back(std::move(v));
     ++it;
   }
