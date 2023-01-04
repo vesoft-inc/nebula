@@ -5,7 +5,7 @@
 Feature: Matching paths
 
   Background:
-    #Given load "test" csv data to a new space
+    # Given load "test" csv data to a new space
     Given a graph with space named "test"
 
   Scenario: distinct edges and paths
