@@ -139,11 +139,15 @@ def start_nebula(nb, configs):
         spaces = []
         folder = os.path.join(CURR_PATH, "data")
         data_dirs = sorted(os.listdir(folder))  # sort to make sure schema id is created by fixed order
+        print(data_dirs)
         for space in data_dirs:
             if not os.path.exists(os.path.join(folder, space, "config.yaml")):
                 continue
             data_dir = os.path.join(folder, space)
+            print(data_dir)
+            print(space)
             space_desc = load_csv_data(sess, data_dir, space)
+            print(space_desc)
             spaces.append(space_desc.__dict__)
         f.write(json.dumps(spaces))
 
