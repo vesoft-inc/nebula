@@ -39,6 +39,144 @@ Feature: Matching paths
       | count(p) | count(p2) |
       | 966      | 966       |
 
+  Scenario: overlapping aliases variables
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1]-(v1)
+      return count(p)
+      """
+    Then the result should be, in any order:
+      | count(p) |
+      | 25       |
+    When executing query:
+      """
+      match p2 = (v2:Label_5)-[e2]-(v2)
+      return count(p2)
+      """
+    Then the result should be, in any order:
+      | count(p2) |
+      | 37        |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1]-(v1)
+      match p2 = (v2:Label_5)-[e2]-(v2)
+      return count(p), count(p2), count(*)
+      """
+    Then the result should be, in any order:
+      | count(p) | count(p2) | count(*) |
+      | 925      | 925       | 925      |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1) match p2 = (v1:Label_3)-[e2:Rel_1]-(v2) return distinct id(v1)
+      """
+    Then the result should be, in any order:
+      | id(v1) |
+      | 57     |
+      | 47     |
+      | 97     |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1) return distinct id(v1)
+      """
+    Then the result should be, in any order:
+      | id(v1) |
+      | 57     |
+      | 47     |
+      | 97     |
+    When executing query:
+      """
+      match p2 = (v1:Label_3)-[e2:Rel_1]-(v2)
+      where id(v1) in [57, 47, 97]
+      with v1 as v2
+      return id(v2)
+      """
+    Then the result should be, in any order:
+      | id(v2) |
+      | 57     |
+      | 57     |
+      | 57     |
+      | 57     |
+      | 47     |
+      | 47     |
+      | 47     |
+      | 47     |
+      | 47     |
+      | 47     |
+      | 97     |
+      | 97     |
+      | 97     |
+      | 97     |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p2 = (v1:Label_3)-[e2:Rel_1]-(v2)
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 14       |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p2 = (v1:Label_3)-[e1:Rel_0]-(v2)
+      where p != p2
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 0        |
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p2 = (v1:Label_3)-[e1:Rel_0]-(v2)
+      where p == p2
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 3        |
+
+  Scenario: many paths
+    When executing query:
+      """
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p2 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p3 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p4 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p5 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p6 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p7 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p8 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p9 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p10 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p11 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p12 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p13 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p14 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p15 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p16 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p17 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p18 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p19 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p20 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p21 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p22 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p23 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p24 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p25 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p26 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p27 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p28 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p29 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p30 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p31 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p32 = (v1:Label_3)-[e1:Rel_0]-(v1)
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 3        |
+
   @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5185
   Scenario: conflicting type
     When executing query:
