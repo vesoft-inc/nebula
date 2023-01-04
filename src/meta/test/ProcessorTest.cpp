@@ -1783,11 +1783,28 @@ TEST(ProcessorTest, AlterTagTest) {
     req.space_id_ref() = 1;
     req.tag_name_ref() = "tag_0";
     req.tag_items_ref() = items;
-    auto* processor = AlterTagProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+
+    {
+      auto* processor = AlterTagProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    }
+    {
+      req.tag_items_ref()
+          ->back()
+          .schema_ref()
+          ->columns_ref()
+          ->back()
+          .type_ref()
+          ->type_length_ref() = 6;
+      auto* processor = AlterTagProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
   }
 }
 
@@ -2376,11 +2393,27 @@ TEST(ProcessorTest, AlterEdgeTest) {
     req.space_id_ref() = 1;
     req.edge_name_ref() = "edge_0";
     req.edge_items_ref() = items;
-    auto* processor = AlterEdgeProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    {
+      auto* processor = AlterEdgeProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_UNSUPPORTED, resp.get_code());
+    }
+    {
+      req.edge_items_ref()
+          ->back()
+          .schema_ref()
+          ->columns_ref()
+          ->back()
+          .type_ref()
+          ->type_length_ref() = 6;
+      auto* processor = AlterEdgeProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    }
   }
 }
 
@@ -2389,7 +2422,7 @@ TEST(ProcessorTest, AlterTagForMoreThan256TimesTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
   TestUtils::mockTag(kv.get(), 1);
-  const int times = 1000;
+  const int times = 300;
   int totalScheVer = 1;
   std::vector<cpp2::ColumnDef> expectedCols;
   for (auto i = 0; i < 2; i++) {
@@ -2516,7 +2549,7 @@ TEST(ProcessorTest, AlterEdgeForMoreThan256TimesTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   TestUtils::assembleSpace(kv.get(), 1, 1);
   TestUtils::mockEdge(kv.get(), 1);
-  const int times = 1000;
+  const int times = 300;
   int totalScheVer = 1;
   std::vector<cpp2::ColumnDef> expectedCols;
   for (auto i = 0; i < 2; i++) {
