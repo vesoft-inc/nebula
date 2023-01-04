@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@xuntaotest
 Feature: Matching paths
 
   Background:
@@ -47,7 +46,7 @@ Feature: Matching paths
       """
     Then the result should be, in any order:
       | count(p) |
-      | 25       |
+      | 28       |
     When executing query:
       """
       match p2 = (v2:Label_5)-[e2]-(v2)
@@ -55,7 +54,7 @@ Feature: Matching paths
       """
     Then the result should be, in any order:
       | count(p2) |
-      | 37        |
+      | 43        |
     When executing query:
       """
       match p = (v1:Label_3)-[e1]-(v1)
@@ -64,10 +63,12 @@ Feature: Matching paths
       """
     Then the result should be, in any order:
       | count(p) | count(p2) | count(*) |
-      | 925      | 925       | 925      |
+      | 1204     | 1204      | 1204     |
     When executing query:
       """
-      match p = (v1:Label_3)-[e1:Rel_0]-(v1) match p2 = (v1:Label_3)-[e2:Rel_1]-(v2) return distinct id(v1)
+      match p = (v1:Label_3)-[e1:Rel_0]-(v1)
+      match p2 = (v1:Label_3)-[e2:Rel_1]-(v2)
+      return distinct id(v1)
       """
     Then the result should be, in any order:
       | id(v1) |
@@ -403,6 +404,7 @@ Feature: Matching paths
       | count(*) |
       | 190      |
 
+  @xuntaotest
   Scenario: edgelist or single edge in paths
     When executing query:
       """
@@ -420,55 +422,55 @@ Feature: Matching paths
       match p = (v1:Label_11)-[e:Rel_0*2..4]->(v2)
       where id(v1) in [50]
       unwind e as x
-      return x.Rel_0_6_datetime, src(x)
+      return x.Rel_0_7_Double, src(x)
       """
     Then the result should be, in any order:
-      | x.Rel_0_6_datetime         | src(x) |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.289000 | 39     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.257000 | 39     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.289000 | 39     |
-      | 2023-01-04T03:24:23.172000 | 12     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.289000 | 39     |
-      | 2023-01-04T03:24:22.997000 | 12     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.257000 | 39     |
-      | 2023-01-04T03:24:23.255000 | 76     |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
-      | 2023-01-04T03:24:23.257000 | 39     |
-      | 2023-01-04T03:24:23.193000 | 76     |
+      | x.Rel_0_7_Double | src(x) |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.76606          | 39     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.364565         | 39     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.76606          | 39     |
+      | 0.019344         | 12     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.76606          | 39     |
+      | 0.258873         | 12     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.364565         | 39     |
+      | 0.041292         | 76     |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
+      | 0.364565         | 39     |
+      | 0.893019         | 76     |
     When executing query:
       """
       match p = (v1:Label_11)-[e:Rel_0*2..2]->(v2)
       where id(v1) in [50]
       unwind e as x
-      return x.Rel_0_6_datetime, src(x)
+      return x.Rel_0_7_Double, src(x)
       """
     Then the result should be, in any order:
-      | x.Rel_0_6_datetime         | src(x) |
-      | 2023-01-04T03:24:23.222000 | 50     |
-      | 2023-01-04T03:24:23.035000 | 93     |
+      | x.Rel_0_7_Double | src(x) |
+      | 0.917773         | 50     |
+      | 0.266255         | 93     |
     When executing query:
       """
       match p = (v1:Label_11)-[e:Rel_0*1..1]->(v2)
       where id(v1) in [50]
       unwind e as x
-      return x.Rel_0_6_datetime, src(x)
+      return x.Rel_0_7_Double, src(x)
       """
     Then the result should be, in any order:
-      | x.Rel_0_6_datetime         | src(x) |
-      | 2023-01-04T03:24:23.222000 | 50     |
+      | x.Rel_0_7_Double | src(x) |
+      | 0.917773         | 50     |
     When executing query:
       """
       match (v1)-[e*1..2]->(v2)
@@ -478,7 +480,7 @@ Feature: Matching paths
       """
     Then the result should be, in any order:
       | count(*) |
-      | 9        |
+      | 16       |
     When executing query:
       """
       match (v1)-[e*1..2]->(v2)
