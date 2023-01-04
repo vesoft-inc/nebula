@@ -4,7 +4,7 @@
 Feature: Attribute using test
 
   Background:
-    Given load "test" csv data to a new space
+    Given a graph with space named "ngdata"
 
   Scenario: Attribute with null data
     When executing query:
