@@ -686,6 +686,10 @@ bool JobManager::isExpiredJob(JobDescription& jobDesc) {
     return false;
   }
   auto jobStart = jobDesc.getStartTime();
+  if (jobStart == 0) {
+    // should not happend, but just in case keep this job
+    return false;
+  }
   auto duration = std::difftime(nebula::time::WallClock::fastNowInSec(), jobStart);
   return duration > FLAGS_job_expired_secs;
 }
