@@ -42,6 +42,7 @@ class MetaDumper {
         V1 = 1,
         V2 = 2,
         V3 = 3,
+        V3_4 = 4,
       };
 
       prefix = "__meta_version__";
@@ -60,7 +61,7 @@ class MetaDumper {
         while (iter->Valid() && iter->key().starts_with(prefix)) {
           found = true;
           auto v1KeySize = prefix.size() + sizeof(int64_t);
-          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
+          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3_4;
           LOG(INFO) << "Meta version=" << static_cast<int>(version);
           iter->Next();
           break;
