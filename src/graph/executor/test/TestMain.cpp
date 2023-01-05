@@ -19,7 +19,6 @@ int main(int argc, char** argv) {
   // This need the analysis in scheduler so disable it when only test executor
   // itself.
   FLAGS_enable_lifetime_optimize = false;
-  nebula::memory::MemoryCheckGuard guard;
 
   return RUN_ALL_TESTS();
 }
