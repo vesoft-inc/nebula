@@ -123,7 +123,6 @@ Feature: Path expression reference local defined variables
       | "Rajon Rondo"       |
       | "Ray Allen"         |
 
-  @skip
   Scenario: Fix after issue #2045
     When executing query:
       """

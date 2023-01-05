@@ -413,3 +413,25 @@ Feature: Basic match
       | [[:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]          |
       | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]]             |
       | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]               |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*3]->(n), (t:team {name: "Spurs"})
+      WITH v, e, collect(distinct n) AS ns
+        UNWIND [n in ns | ()-[e*3]->(n:player)] AS p
+        RETURN p
+      """
+    Then the result should be, in any order:
+      | p  |
+      | [] |
+      | [] |
+      | [] |
+      | [] |
+      | [] |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n)
+        WHERE (n)-[e*3]->(:player)
+        RETURN v
+      """
+    Then the result should be, in any order:
+      | v |

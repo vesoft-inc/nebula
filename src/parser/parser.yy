@@ -1877,7 +1877,7 @@ match_step_range
         $$ = new MatchStepRange(1, 1);
     }
     | STAR {
-        $$ = new MatchStepRange(1);
+        $$ = new MatchStepRange(1, std::numeric_limits<size_t>::max());
     }
     | STAR legal_integer {
         if ($2 < 0) {
@@ -1898,7 +1898,7 @@ match_step_range
             throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
         }
         auto step = static_cast<size_t>($2);
-        $$ = new MatchStepRange(step);
+        $$ = new MatchStepRange(step, std::numeric_limits<size_t>::max());
     }
     | STAR legal_integer DOT_DOT legal_integer {
         if ($2 < 0) {

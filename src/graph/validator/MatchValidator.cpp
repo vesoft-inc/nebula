@@ -1270,12 +1270,13 @@ Status MatchValidator::validatePathInWhere(
             "PatternExpression are not allowed to introduce new variables: `%s'.",
             edge->alias().c_str());
       }
-      if (!edge->range() && find->second != AliasType::kEdge) {
+      const auto &stepRange = edge->range();
+      if (stepRange.min() == 1 && stepRange.max() == 1 && find->second != AliasType::kEdge) {
         return Status::SemanticError("`%s' is defined with type %s, but referenced with type Edge",
                                      edge->alias().c_str(),
                                      AliasTypeName::get(find->second).c_str());
       }
-      if (edge->range() && find->second != AliasType::kEdgeList) {
+      if ((stepRange.min() != 1 || stepRange.max() != 1) && find->second != AliasType::kEdgeList) {
         return Status::SemanticError(
             "`%s' is defined with type %s, but referenced with type EdgeList",
             edge->alias().c_str(),

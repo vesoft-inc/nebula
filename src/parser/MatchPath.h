@@ -32,10 +32,8 @@ class MatchEdgeTypeList final {
 
 class MatchStepRange final {
  public:
-  explicit MatchStepRange(size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) {
-    min_ = min;
-    max_ = max;
-  }
+  MatchStepRange() = default;
+  MatchStepRange(size_t min, size_t max) : min_(min), max_(max) {}
 
   auto min() const {
     return min_;
