@@ -99,7 +99,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       ueNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->updateEdge(param,

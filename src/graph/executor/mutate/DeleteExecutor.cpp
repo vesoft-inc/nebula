@@ -203,7 +203,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->deleteEdges(param, std::move(edgeKeys))

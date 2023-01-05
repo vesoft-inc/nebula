@@ -55,7 +55,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       ieNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->addEdges(param,
