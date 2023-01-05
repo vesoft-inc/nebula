@@ -115,7 +115,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
             auto parts = getReqPartsId(req);
             rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           } else {
-            auto status = std::move(tryResp).value();
+            StatusOr<Response> status = std::move(tryResp).value();
             if (status.ok()) {
               auto resp = std::move(status).value();
               auto result = resp.get_result();
@@ -134,10 +134,12 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
               rpcResp.addResponse(std::move(resp));
             } else {
               rpcResp.markFailure();
+              Status s = std::move(status).status();
               nebula::cpp2::ErrorCode errorCode =
-                  std::move(status).status().code() == Status::Code::kGraphMemoryExceeded
+                  s.code() == Status::Code::kGraphMemoryExceeded
                       ? nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED
                       : nebula::cpp2::ErrorCode::E_RPC_FAILURE;
+              LOG(ERROR) << "There some RPC errors: " << s.message();
               auto req = requests.at(host);
               auto parts = getReqPartsId(req);
               rpcResp.appendFailedParts(parts, errorCode);

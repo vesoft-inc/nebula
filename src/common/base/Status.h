@@ -173,7 +173,7 @@ class Status final {
     // 3xx, for storage engine errors
     kKeyNotFound = 301,
     kPartialSuccess = 302,
-    kStorageMemoryExceeded = 304,
+    kStorageMemoryExceeded = 303,
     // 4xx, for meta service errors
     kSpaceNotFound = 404,
     kHostNotFound = 405,
