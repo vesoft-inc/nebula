@@ -534,7 +534,7 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
       reversedKind = ExprKind::kRelLE;
       break;
     default:
-      LOG(DFATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
+      DLOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
       return expr;
   }
 

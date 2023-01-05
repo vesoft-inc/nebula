@@ -114,12 +114,12 @@ class TextSearchExpression : public Expression {
   bool operator==(const Expression& rhs) const override;
 
   const Value& eval(ExpressionContext&) override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    DLOG(FATAL) << "TextSearchExpression has to be rewritten";
     return Value::kNullBadData;
   }
 
   void accept(ExprVisitor*) override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    DLOG(FATAL) << "TextSearchExpression has to be rewritten";
   }
 
   std::string toString() const override;
@@ -149,11 +149,11 @@ class TextSearchExpression : public Expression {
   }
 
   void writeTo(Encoder&) const override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    LOG(FATAL) << "TextSearchExpression has to be rewritten";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(DFATAL) << "TextSearchExpression has to be reset";
+    LOG(FATAL) << "TextSearchExpression has to be reset";
   }
 
  private:

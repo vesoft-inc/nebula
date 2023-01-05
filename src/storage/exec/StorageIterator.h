@@ -173,7 +173,7 @@ class SingleEdgeKeyIterator : public SingleEdgeIterator {
   }
 
   RowReader* reader() const override {
-    LOG(DFATAL) << "This iterator should not read value";
+    DLOG(FATAL) << "This iterator should not read value";
     return nullptr;
   }
 };

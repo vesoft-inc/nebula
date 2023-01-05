@@ -309,7 +309,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "GetDstBySrc";
       // no default so the compiler will warning when lack
   }
-  LOG(DFATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  DLOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
   return "Unknown";
 }
 
