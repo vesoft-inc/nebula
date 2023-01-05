@@ -1240,7 +1240,7 @@ Status MatchValidator::validatePathInWhere(
           matchPath.alias()->c_str());
     }
     if (find->second != AliasType::kPath) {
-      return Status::SemanticError("Alias `%s' should be Path, but got type '%s",
+      return Status::SemanticError("`%s' is defined with type %s, but referenced with type Path",
                                    matchPath.alias()->c_str(),
                                    AliasTypeName::get(find->second).c_str());
     }
@@ -1258,7 +1258,7 @@ Status MatchValidator::validatePathInWhere(
             node->alias().c_str());
       }
       if (find->second != AliasType::kNode) {
-        return Status::SemanticError("Alias `%s' should be Node, but got type '%s",
+        return Status::SemanticError("`%s' is defined with type %s, but referenced with type Node",
                                      node->alias().c_str(),
                                      AliasTypeName::get(find->second).c_str());
       }
@@ -1272,10 +1272,16 @@ Status MatchValidator::validatePathInWhere(
             "PatternExpression are not allowed to introduce new variables: `%s'.",
             edge->alias().c_str());
       }
-      if (find->second != AliasType::kEdge) {
-        return Status::SemanticError("Alias `%s' should be Edge, but got type '%s'",
+      if (!edge->range() && find->second != AliasType::kEdge) {
+        return Status::SemanticError("`%s' is defined with type %s, but referenced with type Edge",
                                      edge->alias().c_str(),
                                      AliasTypeName::get(find->second).c_str());
+      }
+      if (edge->range() && find->second != AliasType::kEdgeList) {
+        return Status::SemanticError(
+            "`%s' is defined with type %s, but referenced with type EdgeList",
+            edge->alias().c_str(),
+            AliasTypeName::get(find->second).c_str());
       }
     }
   }
@@ -1288,6 +1294,11 @@ Status MatchValidator::validatePathInWhere(
     // The inner variable of expression will be replaced by anno variable
     if (!node->alias().empty() && node->alias()[0] != '_') {
       pathInfo.compareVariables.emplace_back(node->alias());
+    }
+  }
+  for (const auto &edge : path->edges()) {
+    if (edge->alias()[0] != '_') {
+      pathInfo.compareVariables.emplace_back(edge->alias());
     }
   }
   pathInfo.collectVariable = *path->alias();

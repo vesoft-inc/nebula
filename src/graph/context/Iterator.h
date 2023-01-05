@@ -136,12 +136,12 @@ class Iterator {
   }
 
   virtual const Value& getTagProp(const std::string&, const std::string&) const {
-    LOG(DFATAL) << "Shouldn't call the unimplemented method";
+    DLOG(FATAL) << "Shouldn't call the unimplemented method";
     return Value::kEmpty;
   }
 
   virtual const Value& getEdgeProp(const std::string&, const std::string&) const {
-    LOG(DFATAL) << "Shouldn't call the unimplemented method";
+    DLOG(FATAL) << "Shouldn't call the unimplemented method";
     return Value::kEmpty;
   }
 
@@ -203,11 +203,11 @@ class DefaultIter final : public Iterator {
   }
 
   void select(std::size_t, std::size_t) override {
-    LOG(DFATAL) << "Unimplemented method for default iterator.";
+    DLOG(FATAL) << "Unimplemented method for default iterator.";
   }
 
   void sample(int64_t) override {
-    LOG(DFATAL) << "Unimplemented default iterator.";
+    DLOG(FATAL) << "Unimplemented default iterator.";
   }
 
   void clear() override {
@@ -219,27 +219,27 @@ class DefaultIter final : public Iterator {
   }
 
   const Value& getColumn(const std::string& /* col */) const override {
-    LOG(DFATAL) << "This method should not be invoked";
+    DLOG(FATAL) << "This method should not be invoked";
     return Value::kEmpty;
   }
 
   const Value& getColumn(int32_t) const override {
-    LOG(DFATAL) << "This method should not be invoked";
+    DLOG(FATAL) << "This method should not be invoked";
     return Value::kEmpty;
   }
 
   StatusOr<std::size_t> getColumnIndex(const std::string&) const override {
-    LOG(DFATAL) << "This method should not be invoked";
+    DLOG(FATAL) << "This method should not be invoked";
     return Status::Error("Unimplemented method");
   }
 
   const Row* row() const override {
-    LOG(DFATAL) << "This method should not be invoked";
+    DLOG(FATAL) << "This method should not be invoked";
     return nullptr;
   }
 
   Row moveRow() override {
-    LOG(DFATAL) << "This method should not be invoked";
+    DLOG(FATAL) << "This method should not be invoked";
     return Row{};
   }
 

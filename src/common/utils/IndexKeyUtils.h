@@ -142,11 +142,11 @@ class IndexKeyUtils final {
         return encodeDateTime(v.getDateTime());
       }
       case Value::Type::GEOGRAPHY: {
-        LOG(DFATAL) << "Should call encodeGeography separately";
+        DLOG(FATAL) << "Should call encodeGeography separately";
         return "";
       }
       default:
-        LOG(DFATAL) << "Unsupported default value type";
+        DLOG(FATAL) << "Unsupported default value type";
     }
     return "";
   }

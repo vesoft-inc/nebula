@@ -209,7 +209,7 @@ std::string GflagsManager::ValueToGflagString(const Value& val) {
       return os.str();
     }
     default: {
-      LOG(DFATAL) << "Unsupported type for gflags";
+      DLOG(FATAL) << "Unsupported type for gflags";
       return "";
     }
   }
