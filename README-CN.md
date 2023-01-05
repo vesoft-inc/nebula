@@ -8,12 +8,6 @@
   <a href="https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg">
     <img src="https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen" alt="WeiXin">
   </a>
-  <a href="https://www.zhihu.com/org/nebulagraph/activities">
-    <img src="https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue" alt="Zhihu">
-  </a>
-  <a href="https://segmentfault.com/t/nebula">
-    <img src="https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green" alt="SegmentFault">
-  </a>
   <a href="https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place">
     <img src="https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red" alt="Sina Weibo">
   </a>
@@ -109,8 +103,6 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 * 访问[官网](http://nebula-graph.com.cn/)
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
 * [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
-* [![知乎](https://img.shields.io/badge/Zhihu-%E7%9F%A5%E4%B9%8E-blue)](https://www.zhihu.com/org/nebulagraph/activities)
-* [![SegmentFault](https://img.shields.io/badge/SegmentFault-%E6%80%9D%E5%90%A6-green)](https://segmentfault.com/t/nebula)
 * Email: info@vesoft.com
 
 ## 加入 NebulaGraph 社区
