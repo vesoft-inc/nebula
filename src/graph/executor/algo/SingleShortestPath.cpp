@@ -25,7 +25,6 @@ folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
   }
   return folly::collect(futures).via(runner()).thenValue([this, result](auto&& resps) {
     memory::MemoryCheckGuard guard;
-    throw std::bad_alloc();
     for (auto& resp : resps) {
       NG_RETURN_IF_ERROR(resp);
     }
