@@ -114,7 +114,7 @@ You can also freely deploy **NebulaGraph** as a back-end service to support your
 * [Slack Channel](https://join.slack.com/t/nebulagraph/shared_invite/zt-7ybejuqa-NCZBroh~PCh66d9kOQj45g)
 * [Stack Overflow](https://stackoverflow.com/questions/tagged/nebula-graph)
 * Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
-* [LinkedIn Page](https://www.linkedin.com/company/vesoft-nebula-graph)
+* [LinkedIn Page](https://www.linkedin.com/company/nebula-graph/)
 * Email: info@vesoft.com
 
 ## Community
