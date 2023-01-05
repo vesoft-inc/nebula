@@ -688,6 +688,7 @@ bool JobManager::isExpiredJob(JobDescription& jobDesc) {
   auto jobStart = jobDesc.getStartTime();
   if (jobStart == 0) {
     // should not happend, but just in case keep this job
+    LOG(INFO) << "Job " << jobDesc.getJobId() << " start time is not set, keep it for now";
     return false;
   }
   auto duration = std::difftime(nebula::time::WallClock::fastNowInSec(), jobStart);

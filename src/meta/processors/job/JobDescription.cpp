@@ -83,12 +83,16 @@ cpp2::JobDesc JobDescription::toJobDesc() {
   return ret;
 }
 
+bool JobDescription::notSetable(Status status) {
+  return status == cpp2::JobStatus::FINISHED;
+}
+
 bool JobDescription::setStatus(Status newStatus, bool force) {
-  if (status_ == cpp2::JobStatus::FINISHED) {
-    // no one should change the status of a finished job
-    // in case that recovered job running again, but set finished to finished should be ok
-    return newStatus == cpp2::JobStatus::FINISHED;
+  if (notSetable(status_)) {
+    // no need to change time.
+    return status_ == newStatus;
   }
+
   if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }
