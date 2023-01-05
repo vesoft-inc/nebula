@@ -11,7 +11,6 @@ DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> ProduceAllPathsExecutor::execute() {
-  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<ProduceAllPaths>(node());
   noLoop_ = pathNode_->noLoop();

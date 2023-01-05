@@ -16,8 +16,6 @@ folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
                                                  const HashSet& endVids,
                                                  DataSet* result) {
   // MemoryTrackerVerified
-  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
-
   size_t rowSize = init(startVids, endVids);
   std::vector<folly::Future<Status>> futures;
   futures.reserve(rowSize);

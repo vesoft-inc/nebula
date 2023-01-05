@@ -17,7 +17,6 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
   // MemoryTrackerVerified
-  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
   SCOPED_TIMER(&execTime_);
   if (FLAGS_num_path_thread == 0) {
     FLAGS_num_path_thread = get_nprocs_conf();

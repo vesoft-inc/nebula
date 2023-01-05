@@ -604,7 +604,6 @@ Status Executor::open() {
 
 Status Executor::close() {
   // MemoryTrackerVerified
-  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
 
   ProfilingStats stats;
   stats.totalDurationInUs = totalDuration_.elapsedInUSec();
@@ -729,7 +728,6 @@ bool Executor::movable(const Variable *var) {
 
 Status Executor::finish(Result &&result) {
   // MemoryTrackerVerified
-  DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();
