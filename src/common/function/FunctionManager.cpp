@@ -1867,6 +1867,15 @@ FunctionManager::FunctionManager() {
         case Value::Type::EDGE: {
           return value.getEdge().id();
         }
+        // The root cause is the edge-type data format of Traverse executor
+        case Value::Type::LIST: {
+          auto &edges = value.getList().values;
+          if (edges.size() == 1 && edges[0].isEdge()) {
+            return edges[0].getEdge().id();
+          } else {
+            return args[0];
+          }
+        }
         default: {
           // Join on the origin type
           return args[0];
