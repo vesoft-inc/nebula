@@ -10,7 +10,7 @@ bool Snowflake::initWorkerId(meta::MetaClient* client) {
   const std::string& ip = client->getLocalIp();
   auto result = client->getWorkerId(ip).get();
   if (!result.ok()) {
-    LOG(DFATAL) << "Failed to get workerId from meta server";
+    DLOG(FATAL) << "Failed to get workerId from meta server";
     return false;
   }
   workerId_ = result.value();

@@ -187,7 +187,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       return false;
       // no default so compiler will warning when lack
   }  // switch
-  LOG(DFATAL) << "Unknown property type " << static_cast<int>(column.get_type().get_type());
+  DLOG(FATAL) << "Unknown property type " << static_cast<int>(column.get_type().get_type());
   return false;
 }
 
