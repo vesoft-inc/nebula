@@ -70,7 +70,6 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
-DEFINE_bool(enable_toss, false, "Whether to enable toss feature");
 DEFINE_bool(enable_data_balance, true, "Whether to enable data balance feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
