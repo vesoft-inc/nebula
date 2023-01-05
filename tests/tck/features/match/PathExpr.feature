@@ -50,22 +50,42 @@ Feature: Basic match
       """
       MATCH (v:player) WITH (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) UNWIND (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) WHERE (v)-[v]-() RETURN v
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) RETURN (v)-[v]-()
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge, but got type 'Node'
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e*3]->() RETURN (v)-[e]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e]->() RETURN (v)-[e*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e]->() RETURN (e)-[*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type Node
+    When executing query:
+      """
+      MATCH (v:player)-[e*3]->() RETURN (e)-[*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Node
 
   Scenario: In Where
     When executing query:
