@@ -83,12 +83,8 @@ cpp2::JobDesc JobDescription::toJobDesc() {
   return ret;
 }
 
-bool JobDescription::notSetable(Status status) {
-  return status == cpp2::JobStatus::FINISHED;
-}
-
 bool JobDescription::setStatus(Status newStatus, bool force) {
-  if (notSetable(status_)) {
+  if (JobStatus::notSetable(status_)) {
     // no need to change time.
     return status_ == newStatus;
   }

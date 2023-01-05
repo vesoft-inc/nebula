@@ -171,9 +171,6 @@ class JobDescription {
   }
 
  private:
-  bool notSetable(Status status);
-
- private:
   // Because all jobs are space-level, spaceName is not in paras_.
   GraphSpaceID space_;
   JobID jobId_;
