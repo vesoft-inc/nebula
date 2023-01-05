@@ -122,7 +122,7 @@ void AdminTaskManager::handleUnreportedTasks() {
                                       jId,
                                       tId,
                                       fut.value().status().toString());
-          if (fut.value().status() == Status::Error("Space not existed!")) {
+          if (fut.value().status() == Status::SpaceNotFound("Space not existed!")) {
             // space has been dropped, remove the task status.
             keys.emplace_back(key.data(), key.size());
           } else {
@@ -135,13 +135,10 @@ void AdminTaskManager::handleUnreportedTasks() {
                                     jId,
                                     tId,
                                     apache::thrift::util::enumNameSafe(rc));
-        if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
-            rc == nebula::cpp2::ErrorCode::E_STORE_FAILURE) {
-          ifAnyUnreported_ = true;
-          continue;
-        } else {
+        if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
           keys.emplace_back(key.data(), key.size());
-          break;
+        } else {
+          ifAnyUnreported_ = true;
         }
       }
       env_->adminStore_->multiRemove(keys);
