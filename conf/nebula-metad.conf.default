@@ -19,7 +19,7 @@
 --stdout_log_file=metad-stdout.log
 --stderr_log_file=metad-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
---stderrthreshold=2
+--stderrthreshold=3
 # wether logging files' name contain time stamp, If Using logrotate to rotate logging files, than should set it to true.
 --timestamp_in_logfile_name=true
 
