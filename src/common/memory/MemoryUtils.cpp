@@ -131,7 +131,6 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
                << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
   }
 
-
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
     int64_t now = time::WallClock::fastNowInSec();
