@@ -87,7 +87,7 @@ const Value& UnaryExpression::eval(ExpressionContext& ctx) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Unknown type: " << kind_;
+      DLOG(FATAL) << "Unknown type: " << kind_;
       result_ = Value::kNullBadType;
     }
   }
@@ -121,8 +121,8 @@ std::string UnaryExpression::toString() const {
     case Kind::kIsNotEmpty:
       return (operand_ ? operand_->toString() : "") + " IS NOT EMPTY";
     default:
-      LOG(DFATAL) << "Illegal kind for unary expression: " << static_cast<int>(kind());
-      op = "illegal symbol ";
+      DLOG(FATAL) << "Illegal kind for unary expression: " << static_cast<int>(kind());
+      op = " Invalid unary expression ";
   }
   std::stringstream out;
   out << op << "(" << (operand_ ? operand_->toString() : "") << ")";

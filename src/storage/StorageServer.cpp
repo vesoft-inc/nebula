@@ -107,10 +107,10 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
     }
     return nbStore;
   } else if (FLAGS_store_type == "hbase") {
-    LOG(DFATAL) << "HBase store has not been implemented";
+    DLOG(FATAL) << "HBase store has not been implemented";
     return nullptr;
   } else {
-    LOG(DFATAL) << "Unknown store type \"" << FLAGS_store_type << "\"";
+    DLOG(FATAL) << "Unknown store type \"" << FLAGS_store_type << "\"";
     return nullptr;
   }
   return nullptr;
@@ -163,7 +163,7 @@ int32_t StorageServer::getAdminStoreSeqId() {
   newVal.append(reinterpret_cast<char*>(&curSeqId), sizeof(int32_t));
   auto ret = env_->adminStore_->put(key, newVal);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(DFATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
+    DLOG(FATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
     return -1;
   }
   return curSeqId;

@@ -566,7 +566,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<GetDstBySrcExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
-      LOG(DFATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
+      DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
     }
   }

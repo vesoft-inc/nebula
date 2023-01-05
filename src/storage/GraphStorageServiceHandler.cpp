@@ -160,7 +160,7 @@ folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
 
 folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
     const cpp2::GetUUIDReq&) {
-  LOG(DFATAL) << "Unsupported in version 2.0";
+  DLOG(FATAL) << "Unsupported in version 2.0";
 
   cpp2::GetUUIDResp resp;
   cpp2::ResponseCommon result;
