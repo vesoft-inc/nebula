@@ -219,7 +219,7 @@ void DeduceTypeVisitor::visit(UnaryExpression *expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid unary expression kind: " << static_cast<uint8_t>(expr->kind());
+      DLOG(FATAL) << "Invalid unary expression kind: " << static_cast<uint8_t>(expr->kind());
       std::stringstream ss;
       ss << "`" << expr->toString() << "' is invalid unary expression, kind is "
          << static_cast<uint8_t>(expr->kind()) << ".";
@@ -284,7 +284,7 @@ void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(expr->kind());
+      DLOG(FATAL) << "Invalid arithmetic expression kind: " << static_cast<uint8_t>(expr->kind());
       std::stringstream ss;
       ss << "`" << expr->toString() << "' is invalid arithmetic expression, kind is "
          << static_cast<uint8_t>(expr->kind()) << ".";
@@ -430,7 +430,7 @@ void DeduceTypeVisitor::visit(LogicalExpression *expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid logical expression kind: " << static_cast<uint8_t>(expr->kind());
+      DLOG(FATAL) << "Invalid logical expression kind: " << static_cast<uint8_t>(expr->kind());
       std::stringstream ss;
       ss << "`" << expr->toString() << "' is invalid logical expression, kind is "
          << static_cast<uint8_t>(expr->kind()) << ".";

@@ -142,7 +142,7 @@ SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, b
     siLeft->setLeftDep(const_cast<PlanNode*>(right.root));
     siLeft->setLeftVar(right.root->outputVar());
   } else {
-    LOG(DFATAL) << "Unsupported plan node: " << left.tail->kind();
+    DLOG(FATAL) << "Unsupported plan node: " << left.tail->kind();
     return newPlan;
   }
   newPlan.tail = right.tail;

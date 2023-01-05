@@ -61,7 +61,7 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(DFATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
           return nullptr;
         }
       }
@@ -80,7 +80,7 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(DFATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
           return nullptr;
         }
       }
@@ -99,14 +99,14 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(DFATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
           return nullptr;
         }
       }
       break;
     }
     case RequestType::UNKNOWN: {
-      LOG(DFATAL) << "RequestType::UNKNOWN: not supposed run here";
+      DLOG(FATAL) << "RequestType::UNKNOWN: not supposed run here";
       return nullptr;
     }
   }
