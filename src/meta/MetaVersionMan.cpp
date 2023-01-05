@@ -43,10 +43,10 @@ MetaVersion MetaVersionMan::getVersionByHost(kvstore::KVStore* kv) {
   }
   if (iter->valid()) {
     auto v1KeySize = hostPrefix.size() + sizeof(int64_t);
-    return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
+    return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3_4;
   }
   // No hosts exists, regard as version 3
-  return MetaVersion::V3;
+  return MetaVersion::V3_4;
 }
 
 // static
@@ -58,7 +58,7 @@ bool MetaVersionMan::setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion v
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
+Status MetaVersionMan::updateMetaV3ToV3_4(kvstore::KVEngine* engine) {
   CHECK_NOTNULL(engine);
   auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
 
@@ -75,7 +75,7 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
     return Status::Error("Create snapshot failed");
   }
 
-  auto status = doUpgradeV2ToV3(engine);
+  auto status = doUpgradeV3ToV3_4(engine);
   if (!status.ok()) {
     // rollback by snapshot
     return status;
@@ -89,87 +89,25 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   return Status::OK();
 }
 
-Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
-  MetaDataUpgrade upgrader(engine);
-  // Step 1: Upgrade HeartBeat into machine list
-  {
-    // collect all hosts association with zone
-    std::vector<HostAddr> zoneHosts;
-    const auto& zonePrefix = MetaKeyUtils::zonePrefix();
-    std::unique_ptr<kvstore::KVIterator> zoneIter;
-    auto code = engine->prefix(zonePrefix, &zoneIter);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Get active hosts failed";
-      return Status::Error("Get hosts failed");
-    }
-
-    while (zoneIter->valid()) {
-      auto hosts = MetaKeyUtils::parseZoneHosts(zoneIter->val());
-      if (!hosts.empty()) {
-        zoneHosts.insert(zoneHosts.end(), hosts.begin(), hosts.end());
-      }
-      zoneIter->next();
-    }
-
-    const auto& prefix = MetaKeyUtils::hostPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    code = engine->prefix(prefix, &iter);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Get active hosts failed";
-      return Status::Error("Get hosts failed");
-    }
-
-    std::vector<kvstore::KV> data;
-    while (iter->valid()) {
-      auto info = HostInfo::decode(iter->val());
-
-      if (info.role_ == meta::cpp2::HostRole::STORAGE) {
-        // Save the machine information
-        auto host = MetaKeyUtils::parseHostKey(iter->key());
-        auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
-        data.emplace_back(std::move(machineKey), "");
-
-        auto hostIt = std::find(zoneHosts.begin(), zoneHosts.end(), host);
-        if (hostIt == zoneHosts.end()) {
-          // Save the zone information
-          auto zoneName = folly::stringPrintf("default_zone_%s_%d", host.host.c_str(), host.port);
-          auto zoneKey = MetaKeyUtils::zoneKey(std::move(zoneName));
-          auto zoneVal = MetaKeyUtils::zoneVal({host});
-          data.emplace_back(std::move(zoneKey), std::move(zoneVal));
-        }
-      }
-      iter->next();
-    }
-    auto status = upgrader.saveMachineAndZone(std::move(data));
-    if (!status.ok()) {
-      LOG(INFO) << status;
-      return status;
-    }
+Status MetaVersionMan::doUpgradeV3ToV3_4(kvstore::KVEngine* engine) {
+  std::unique_ptr<kvstore::KVIterator> fulltextIter;
+  auto code = engine->prefix(MetaKeyUtils::fulltextIndexPrefix(), &fulltextIter);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Upgrade meta failed";
+    return Status::Error("Update meta failed");
+  }
+  std::vector<std::string> fulltextList;
+  while (fulltextIter->valid()) {
+    fulltextList.push_back(fulltextIter->key().toString());
+    fulltextIter->next();
+  }
+  code = engine->multiRemove(fulltextList);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Upgrade meta failed";
+    return Status::Error("Upgrade meta failed");
   }
 
-  // Step 2: Update Create space properties about Group
-  {
-    const auto& prefix = MetaKeyUtils::spacePrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto code = engine->prefix(prefix, &iter);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Get spaces failed";
-      return Status::Error("Get spaces failed");
-    }
-
-    while (iter->valid()) {
-      if (FLAGS_print_info) {
-        upgrader.printSpacesV2(iter->val());
-      }
-      auto status = upgrader.rewriteSpacesV2ToV3(iter->key(), iter->val());
-      if (!status.ok()) {
-        LOG(INFO) << status;
-        return status;
-      }
-      iter->next();
-    }
-  }
-  if (!setMetaVersionToKV(engine, MetaVersion::V3)) {
+  if (!setMetaVersionToKV(engine, MetaVersion::V3_4)) {
     return Status::Error("Persist meta version failed");
   } else {
     return Status::OK();
