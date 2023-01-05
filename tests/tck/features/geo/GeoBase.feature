@@ -29,35 +29,35 @@ Feature: Geo base
       """
     Then the result should be, in any order:
       | Field | Type        | Null  | Default | Comment |
-      | "geo" | "geography" | "YES" | EMPTY   | EMPTY   |
+      | "geo" | "geography" | "YES" |         |         |
     When executing query:
       """
       DESC TAG only_point;
       """
     Then the result should be, in any order:
       | Field | Type               | Null  | Default | Comment |
-      | "geo" | "geography(point)" | "YES" | EMPTY   | EMPTY   |
+      | "geo" | "geography(point)" | "YES" |         |         |
     When executing query:
       """
       DESC TAG only_linestring;
       """
     Then the result should be, in any order:
       | Field | Type                    | Null  | Default | Comment |
-      | "geo" | "geography(linestring)" | "YES" | EMPTY   | EMPTY   |
+      | "geo" | "geography(linestring)" | "YES" |         |         |
     When executing query:
       """
       DESC TAG only_polygon;
       """
     Then the result should be, in any order:
       | Field | Type                 | Null  | Default | Comment |
-      | "geo" | "geography(polygon)" | "YES" | EMPTY   | EMPTY   |
+      | "geo" | "geography(polygon)" | "YES" |         |         |
     When executing query:
       """
       DESC EDGE any_shape_edge;
       """
     Then the result should be, in any order:
       | Field | Type        | Null  | Default | Comment |
-      | "geo" | "geography" | "YES" | EMPTY   | EMPTY   |
+      | "geo" | "geography" | "YES" |         |         |
     # Show create geo schema
     When executing query:
       """
