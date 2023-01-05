@@ -120,6 +120,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 
   // MemoryStats depends on jemalloc
 #ifdef ENABLE_JEMALLOC
+#ifndef ENABLE_ASAN
   // set MemoryStats limit (MemoryTracker track-able memory)
   int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB;
   if (trackable > 0) {
@@ -130,7 +131,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
                << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
   }
 
-#ifndef ENABLE_ASAN
+
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
     int64_t now = time::WallClock::fastNowInSec();
@@ -141,7 +142,6 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       kLastPurge_ = now;
     }
   }
-#endif
 
   // print system & application level memory stats
   // sys: read from system environment, varies depends on environment:
@@ -168,7 +168,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       kLastPrintMemoryTrackerStats_ = now;
     }
   }
-
+#endif
 #endif
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
