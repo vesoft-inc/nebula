@@ -14,6 +14,7 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:thrift_obj>

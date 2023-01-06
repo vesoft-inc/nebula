@@ -46,6 +46,7 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
         return conjunctPath(false);
       })
       .thenValue([this](auto&& resp) {
+        memory::MemoryCheckGuard guard;
         UNUSED(resp);
         preRightPaths_ = rightPaths_;
         // update history
@@ -311,30 +312,25 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     futures.emplace_back(std::move(future));
   }
 
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue([this](auto&& resps) {
-        memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
-          currentDs_.append(std::move(resp));
-        }
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
 
-        for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-          if (!iter->second.second) {
-            iter = terminationMap_.erase(iter);
-          } else {
-            ++iter;
-          }
-        }
-        if (terminationMap_.empty()) {
-          ectx_->setValue(terminationVar_, true);
-          return true;
-        }
-        return false;
-      })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<bool>(std::runtime_error(e.what()));
-      });
+    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
+      if (!iter->second.second) {
+        iter = terminationMap_.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+    if (terminationMap_.empty()) {
+      ectx_->setValue(terminationVar_, true);
+      return true;
+    }
+    return false;
+  });
 }
 
 void MultiShortestPathExecutor::setNextStepVid(const Interims& paths, const string& var) {

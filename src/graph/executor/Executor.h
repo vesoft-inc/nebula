@@ -77,8 +77,8 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   folly::Future<Status> error(Status status) const;
 
   static Status memoryExceededStatus() {
-    return Status::Error("Graph Error: GRAPH_MEMORY_EXCEEDED(%d)",
-                         static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
+    return Status::GraphMemoryExceeded(
+        "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
   }
 
  protected:
@@ -159,6 +159,7 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
     futures.emplace_back(folly::via(
         runner(),
         [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {
+          // MemoryTrackerVerified
           memory::MemoryCheckGuard guard;
           // Since not all iterators are linear, so iterates to the begin pos
           size_t tmp = 0;
@@ -173,17 +174,7 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
   }
 
   // Gather all results and do post works
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue(std::move(gather))
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [](const std::bad_alloc &) {
-                   return folly::makeFuture<Status>(std::runtime_error(
-                       "Memory Limit Exceeded, " + memory::MemoryStats::instance().toString()));
-                 })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
-      });
+  return folly::collect(futures).via(runner()).thenValue(std::move(gather));
 }
 }  // namespace graph
 }  // namespace nebula

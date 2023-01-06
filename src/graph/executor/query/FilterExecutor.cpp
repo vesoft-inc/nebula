@@ -29,11 +29,14 @@ folly::Future<Status> FilterExecutor::execute() {
     ds.rows.reserve(iter->size());
     auto scatter = [this](
                        size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+      // MemoryTrackerVerified
+      DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
       return handleJob(begin, end, tmpIter);
     };
 
     auto gather =
         [this, result = std::move(ds), kind = iter->kind()](auto &&results) mutable -> Status {
+      // MemoryTrackerVerified
       memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         if (!r.ok()) {
