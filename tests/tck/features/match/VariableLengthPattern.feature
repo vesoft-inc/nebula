@@ -385,7 +385,7 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | cnt |
-      |   1 |
+      | 1   |
     When executing query:
       """
       MATCH (v)-[e:like*0..2]-(v)
@@ -394,7 +394,7 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | cnt |
-      |   5 |
+      | 5   |
     When executing query:
       """
       MATCH (v)-[e:like*2..3]-(v)
@@ -412,7 +412,7 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | cnt |
-      |   4 |
+      | 4   |
     When executing query:
       """
       MATCH (v)-[e:like*0..]->(v)
@@ -421,4 +421,62 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | cnt |
-      |  13 |
+      | 13  |
+
+  Scenario: variable length pattern and list expression
+    # When executing query:
+    # """
+    # MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+    # WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+    # RETURN count(*) AS cnt
+    # """
+    # Then the result should be, in any order:
+    # | cnt |
+    # | 18  |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE size([i in e WHERE i.likeness>90 | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 18  |
+
+  Scenario: variable pattern in where clause
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e*0..2]-(v2)
+      WHERE NOT (v)-[:like*0..1]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 182 |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e*0..2]-(v2)
+      WHERE NOT (v)-[:like*1..2]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 182 |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE NOT (v)-[:like*0..1]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 56  |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE NOT (v)-[:like*1..2]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 56  |
