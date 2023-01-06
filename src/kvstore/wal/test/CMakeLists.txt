@@ -10,6 +10,7 @@ set(WAL_TEST_LIBS
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:thread_obj>

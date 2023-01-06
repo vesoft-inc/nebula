@@ -53,6 +53,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
         auto& hostLatency = resp.hostLatency();
@@ -67,12 +68,6 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
         }
         vids_.clear();
         return handleResponse(std::move(resp));
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

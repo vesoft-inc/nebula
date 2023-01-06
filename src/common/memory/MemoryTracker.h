@@ -138,6 +138,11 @@ class MemoryStats {
     threadMemoryStats_.throwOnMemoryExceeded = false;
   }
 
+  // return true if current thread's throwOnMemoryExceeded'
+  static bool throwOnMemoryExceeded() {
+    return threadMemoryStats_.throwOnMemoryExceeded;
+  }
+
  private:
   inline ALWAYS_INLINE void allocGlobal(int64_t size) {
     int64_t willBe = size + used_.fetch_add(size, std::memory_order_relaxed);
@@ -181,6 +186,9 @@ struct MemoryTracker {
 
   /// This function should be called after memory deallocation.
   static void free(int64_t size);
+
+  /// Test state of memory tracker, return true if memory tracker is turned on, otherwise false.
+  static bool isOn();
 
  private:
   static void allocImpl(int64_t size, bool throw_if_memory_exceeded);

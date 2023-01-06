@@ -17,107 +17,95 @@ namespace storage {
 ProcessorCounters kDelVerticesCounters;
 
 void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
-  try {
-    spaceId_ = req.get_space_id();
-    const auto& partVertices = req.get_parts();
+  spaceId_ = req.get_space_id();
+  const auto& partVertices = req.get_parts();
 
-    CHECK_NOTNULL(env_->schemaMan_);
-    auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
-    if (!ret.ok()) {
-      LOG(ERROR) << ret.status();
-      for (auto& part : partVertices) {
-        pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
-      }
-      onFinished();
-      return;
+  CHECK_NOTNULL(env_->schemaMan_);
+  auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
+  if (!ret.ok()) {
+    LOG(ERROR) << ret.status();
+    for (auto& part : partVertices) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
     }
-    spaceVidLen_ = ret.value();
-    callingNum_ = partVertices.size();
+    onFinished();
+    return;
+  }
+  spaceVidLen_ = ret.value();
+  callingNum_ = partVertices.size();
 
-    CHECK_NOTNULL(env_->indexMan_);
-    auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
-    if (!iRet.ok()) {
-      LOG(ERROR) << iRet.status();
-      for (auto& part : partVertices) {
-        pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
-      }
-      onFinished();
-      return;
+  CHECK_NOTNULL(env_->indexMan_);
+  auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
+  if (!iRet.ok()) {
+    LOG(ERROR) << iRet.status();
+    for (auto& part : partVertices) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
     }
-    indexes_ = std::move(iRet).value();
+    onFinished();
+    return;
+  }
+  indexes_ = std::move(iRet).value();
 
-    CHECK_NOTNULL(env_->kvstore_);
-    if (indexes_.empty()) {
-      // Operate every part, the graph layer guarantees the unique of the vid
-      std::vector<std::string> keys;
-      keys.reserve(32);
-      for (auto& part : partVertices) {
-        auto partId = part.first;
-        const auto& vertexIds = part.second;
-        keys.clear();
-        auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
-        for (auto& vid : vertexIds) {
-          if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
-            LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
-                       << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
-            code = nebula::cpp2::ErrorCode::E_INVALID_VID;
-            break;
-          }
-          keys.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr()));
-          auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
-          std::unique_ptr<kvstore::KVIterator> iter;
-          code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
-          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            VLOG(3) << "Error! ret = " << static_cast<int32_t>(code) << ", spaceID " << spaceId_;
-            break;
-          }
-          while (iter->valid()) {
-            auto key = iter->key();
-            keys.emplace_back(key.str());
-            iter->next();
-          }
+  CHECK_NOTNULL(env_->kvstore_);
+  if (indexes_.empty()) {
+    // Operate every part, the graph layer guarantees the unique of the vid
+    std::vector<std::string> keys;
+    keys.reserve(32);
+    for (auto& part : partVertices) {
+      auto partId = part.first;
+      const auto& vertexIds = part.second;
+      keys.clear();
+      auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
+      for (auto& vid : vertexIds) {
+        if (!NebulaKeyUtils::isValidVidLen(spaceVidLen_, vid.getStr())) {
+          LOG(ERROR) << "Space " << spaceId_ << ", vertex length invalid, "
+                     << " space vid len: " << spaceVidLen_ << ",  vid is " << vid;
+          code = nebula::cpp2::ErrorCode::E_INVALID_VID;
+          break;
         }
+        keys.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr()));
+        auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
+        std::unique_ptr<kvstore::KVIterator> iter;
+        code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          handleAsync(spaceId_, partId, code);
-          continue;
+          VLOG(3) << "Error! ret = " << static_cast<int32_t>(code) << ", spaceID " << spaceId_;
+          break;
         }
-        doRemove(spaceId_, partId, std::move(keys));
-        stats::StatsManager::addValue(kNumVerticesDeleted, keys.size());
-      }
-    } else {
-      for (auto& pv : partVertices) {
-        IndexCountWrapper wrapper(env_);
-        auto partId = pv.first;
-        std::vector<VMLI> dummyLock;
-        auto batch = deleteVertices(partId, std::move(pv).second, dummyLock);
-        if (!nebula::ok(batch)) {
-          env_->verticesML_->unlockBatch(dummyLock);
-          handleAsync(spaceId_, partId, nebula::error(batch));
-          continue;
+        while (iter->valid()) {
+          auto key = iter->key();
+          keys.emplace_back(key.str());
+          iter->next();
         }
-        DCHECK(!nebula::value(batch).empty());
-        nebula::MemoryLockGuard<VMLI> lg(
-            env_->verticesML_.get(), std::move(dummyLock), false, false);
-        env_->kvstore_->asyncAppendBatch(
-            spaceId_,
-            partId,
-            std::move(nebula::value(batch)),
-            [l = std::move(lg), icw = std::move(wrapper), partId, this](
-                nebula::cpp2::ErrorCode code) {
-              UNUSED(l);
-              UNUSED(icw);
-              handleAsync(spaceId_, partId, code);
-            });
       }
+      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        handleAsync(spaceId_, partId, code);
+        continue;
+      }
+      doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumVerticesDeleted, keys.size());
     }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  } else {
+    for (auto& pv : partVertices) {
+      IndexCountWrapper wrapper(env_);
+      auto partId = pv.first;
+      std::vector<VMLI> dummyLock;
+      auto batch = deleteVertices(partId, std::move(pv).second, dummyLock);
+      if (!nebula::ok(batch)) {
+        env_->verticesML_->unlockBatch(dummyLock);
+        handleAsync(spaceId_, partId, nebula::error(batch));
+        continue;
+      }
+      DCHECK(!nebula::value(batch).empty());
+      nebula::MemoryLockGuard<VMLI> lg(env_->verticesML_.get(), std::move(dummyLock), false, false);
+      env_->kvstore_->asyncAppendBatch(spaceId_,
+                                       partId,
+                                       std::move(nebula::value(batch)),
+                                       [l = std::move(lg), icw = std::move(wrapper), partId, this](
+                                           nebula::cpp2::ErrorCode code) {
+                                         UNUSED(l);
+                                         UNUSED(icw);
+                                         handleAsync(spaceId_, partId, code);
+                                       });
+    }
   }
 }
 
