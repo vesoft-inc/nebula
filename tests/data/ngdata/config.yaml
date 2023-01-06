@@ -33,7 +33,9 @@ schema: |-
     CREATE TAG INDEX Label_5_index ON Label_5 (Label_5_8_Int);
     CREATE TAG INDEX Label_8_index ON Label_8 (Label_8_2_Double, Label_8_0_Bool, Label_8_4_String(64), Label_8_7_String(64), Label_8_5_date, Label_8_1_Bool, Label_8_3_Bool, Label_8_6_timestamp);
     CREATE TAG INDEX Label_11_index ON Label_11 (Label_11_5_Double);
-    CREATE EDGE INDEX Rel_5_index ON Rel_5 (Rel_5_1_Bool, Rel_5_6_Int, Rel_5_2_String(64))
+    CREATE EDGE INDEX Rel_5_index ON Rel_5 (Rel_5_1_Bool, Rel_5_6_Int, Rel_5_2_String(64));
+    CREATE EDGE INDEX Rel_0_index ON Rel_0 (Rel_0_3_Double);
+    CREATE EDGE INDEX Rel_3_index ON Rel_3 (Rel_3_1_geography_point);
 files:
     - path: Label_0.csv
       withHeader: true
