@@ -128,6 +128,9 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
       auto field = index.second.get_fields().front();
       auto v = reader->getValueByName(field);
+      if (v.type() == Value::Type::NULLVALUE) {
+        continue;
+      }
       if (v.type() != Value::Type::STRING) {
         LOG(ERROR) << "Can't create fulltext index on type " << v.type();
       }
