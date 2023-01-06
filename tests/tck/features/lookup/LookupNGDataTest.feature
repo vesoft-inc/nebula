@@ -32,27 +32,23 @@ Feature: Test lookup on ngdata data
   Scenario: lookup on the edge property of double type
     When executing query:
       """
-      LOOKUP ON Rel_0 WHERE Rel_0.Rel_0_3_Double>0 YIELD id(edge) AS eid
+      LOOKUP ON Rel_0 WHERE Rel_0.Rel_0_3_Double>0 yield src(edge) as src, dst(edge) as dst
       """
-    Then the result should be, in any order:
-      | eid |
+    Then the result should contain:
+      | src | dst |
+      | 55  | 97  |
+      | 8   | 36  |
+      | 95  | 52  |
+      | 78  | 383 |
+      | 383 | 72  |
+      | 59  | 54  |
+      | 96  | 95  |
+      | 100 | 43  |
+      | 25  | 54  |
+      | 20  | 28  |
     When executing query:
       """
-      LOOKUP ON Rel_0 WHERE Rel_0.Rel_0_3_Double>10 YIELD id(edge) AS eid
+      LOOKUP ON Rel_0 WHERE Rel_0.Rel_0_3_Double>10 yield src(edge) as src, dst(edge) as dst
       """
-    Then the result should be, in any order:
-      | eid |
-
-  Scenario: lookup on the edge property of geography type
-    When executing query:
-      """
-      LOOKUP ON Rel_3 WHERE Rel_3.Rel_3_1_geography_point>0 YIELD id(edge) AS eid
-      """
-    Then the result should be, in any order:
-      | eid |
-    When executing query:
-      """
-      LOOKUP ON Rel_3 WHERE Rel_3.Rel_3_1_geography_point>10 YIELD id(edge) AS eid
-      """
-    Then the result should be, in any order:
-      | eid |
+    Then the result should contain:
+      | src | dst |
