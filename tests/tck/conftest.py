@@ -699,7 +699,6 @@ def result_should_be_and_hash(request, result, exec_ctx, hashed_columns):
         hashed_columns=parse_list(hashed_columns),
     )
 
-
 @then(parse("the result should be, in any order, with relax comparison:\n{result}"))
 def result_should_be_relax_cmp(request, result, exec_ctx):
     cmp_dataset(request, exec_ctx, result, order=False, strict=False)

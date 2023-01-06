@@ -92,13 +92,13 @@ Feature: test zero steps pattern
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                         | v                |
-      | [[:like 'Tracy McGrady'->'Kobe Bryant']]  | ('Kobe Bryant')  |
-      | [[:like 'Tracy McGrady'->'Grant Hill']]   | ('Grant Hill')   |
-      | [[:like 'Tracy McGrady'->'Rudy Gay']]     | ('Rudy Gay')     |
-      | [[:like 'Tracy McGrady'<-'Vince Carter']] | ('Vince Carter') |
-      | [[:like 'Tracy McGrady'<-'Yao Ming']]     | ('Yao Ming')     |
-      | [[:like 'Tracy McGrady'<-'Grant Hill']]   | ('Grant Hill')   |
+      | e                                       | v                |
+      | [:like 'Tracy McGrady'->'Kobe Bryant']  | ('Kobe Bryant')  |
+      | [:like 'Tracy McGrady'->'Grant Hill']   | ('Grant Hill')   |
+      | [:like 'Tracy McGrady'->'Rudy Gay']     | ('Rudy Gay')     |
+      | [:like 'Tracy McGrady'<-'Vince Carter'] | ('Vince Carter') |
+      | [:like 'Tracy McGrady'<-'Yao Ming']     | ('Yao Ming')     |
+      | [:like 'Tracy McGrady'<-'Grant Hill']   | ('Grant Hill')   |
     When executing query:
       """
       MATCH (:player{name:"Tracy McGrady"})-[e:like*0{likeness: 90}]-(v)
@@ -134,10 +134,10 @@ Feature: test zero steps pattern
       RETURN e, v
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                        | v               |
-      | [[:like 'Tracy McGrady'->'Kobe Bryant']] | ('Kobe Bryant') |
-      | [[:like 'Tracy McGrady'->'Grant Hill']]  | ('Grant Hill')  |
-      | [[:like 'Tracy McGrady'->'Rudy Gay']]    | ('Rudy Gay')    |
+      | e                                      | v               |
+      | [:like 'Tracy McGrady'->'Kobe Bryant'] | ('Kobe Bryant') |
+      | [:like 'Tracy McGrady'->'Grant Hill']  | ('Grant Hill')  |
+      | [:like 'Tracy McGrady'->'Rudy Gay']    | ('Rudy Gay')    |
 
   Scenario Outline: Single edge without properties in both directions
     When executing query:

@@ -251,19 +251,19 @@ Feature: Variable length Pattern match (m to n)
       RETURN e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                           |
-      | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
-      | [[:like "Tim Duncan"->"Tony Parker"]]       |
-      | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
-      | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
-      | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
-      | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |
-      | [[:like "Tim Duncan"<-"Danny Green"]]       |
-      | [[:like "Tim Duncan"<-"Tiago Splitter"]]    |
-      | [[:like "Tim Duncan"<-"Aron Baynes"]]       |
-      | [[:like "Tim Duncan"<-"Tony Parker"]]       |
-      | [[:like "Tim Duncan"<-"LaMarcus Aldridge"]] |
+      | e                                         |
+      | [:like "Tim Duncan"->"Manu Ginobili"]     |
+      | [:like "Tim Duncan"->"Tony Parker"]       |
+      | [:like "Tim Duncan"<-"Dejounte Murray"]   |
+      | [:like "Tim Duncan"<-"Shaquille O'Neal"]  |
+      | [:like "Tim Duncan"<-"Marco Belinelli"]   |
+      | [:like "Tim Duncan"<-"Boris Diaw"]        |
+      | [:like "Tim Duncan"<-"Manu Ginobili"]     |
+      | [:like "Tim Duncan"<-"Danny Green"]       |
+      | [:like "Tim Duncan"<-"Tiago Splitter"]    |
+      | [:like "Tim Duncan"<-"Aron Baynes"]       |
+      | [:like "Tim Duncan"<-"Tony Parker"]       |
+      | [:like "Tim Duncan"<-"LaMarcus Aldridge"] |
 
   Scenario: from one step to one step
     When executing query:
@@ -272,19 +272,19 @@ Feature: Variable length Pattern match (m to n)
       RETURN e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                           |
-      | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
-      | [[:like "Tim Duncan"->"Tony Parker"]]       |
-      | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
-      | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
-      | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
-      | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |
-      | [[:like "Tim Duncan"<-"Danny Green"]]       |
-      | [[:like "Tim Duncan"<-"Tiago Splitter"]]    |
-      | [[:like "Tim Duncan"<-"Aron Baynes"]]       |
-      | [[:like "Tim Duncan"<-"Tony Parker"]]       |
-      | [[:like "Tim Duncan"<-"LaMarcus Aldridge"]] |
+      | e                                         |
+      | [:like "Tim Duncan"->"Manu Ginobili"]     |
+      | [:like "Tim Duncan"->"Tony Parker"]       |
+      | [:like "Tim Duncan"<-"Dejounte Murray"]   |
+      | [:like "Tim Duncan"<-"Shaquille O'Neal"]  |
+      | [:like "Tim Duncan"<-"Marco Belinelli"]   |
+      | [:like "Tim Duncan"<-"Boris Diaw"]        |
+      | [:like "Tim Duncan"<-"Manu Ginobili"]     |
+      | [:like "Tim Duncan"<-"Danny Green"]       |
+      | [:like "Tim Duncan"<-"Tiago Splitter"]    |
+      | [:like "Tim Duncan"<-"Aron Baynes"]       |
+      | [:like "Tim Duncan"<-"Tony Parker"]       |
+      | [:like "Tim Duncan"<-"LaMarcus Aldridge"] |
 
   Scenario: filter by edges
     When executing query:

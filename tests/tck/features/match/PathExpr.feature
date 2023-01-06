@@ -387,7 +387,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v:player)-[e:like]->(b)
-        WHERE (b)-[e:teammate]->(v)
+        WHERE (b)-[:teammate]->(v)
         RETURN e
       """
     Then the result should be, in any order:
@@ -432,6 +432,18 @@ Feature: Basic match
       MATCH (v:player)-[e:like*3]->(n)
         WHERE (n)-[e*3]->(:player)
         RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
       """
     Then the result should be, in any order:
       | v |
