@@ -402,9 +402,9 @@ Feature: Basic match
       | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] |
     When executing query:
       """
-         MATCH (v:player)-[e:like*2]->(b)
-      WHERE id(v) == 'Tony Parker' AND (b)-[*1..2]->(v)
-      RETURN distinct e
+      MATCH (v:player)-[e:like*2]->(b)
+        WHERE id(v) == 'Tony Parker' AND (b)-[*1..2]->(v)
+        RETURN distinct e
       """
     Then the result should be, in any order:
       | e                                                                                                                            |

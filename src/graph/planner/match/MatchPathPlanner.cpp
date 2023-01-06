@@ -202,6 +202,10 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     addNodeAlias(node);
     bool expandInto = isExpandInto(dst.alias);
     auto& edge = edgeInfos[i - 1];
+    MatchStepRange stepRange(1, 1);
+    if (edge.range != nullptr) {
+      stepRange = *edge.range;
+    }
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
     auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
@@ -212,7 +216,7 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(*edge.range);
+    traverse->setStepRange(stepRange);
     traverse->setDedup();
     // If start from end of the path pattern, the first traverse would not
     // track the previous path, otherwise, it should.
@@ -269,6 +273,10 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     bool expandInto = isExpandInto(dst.alias);
 
     auto& edge = edgeInfos[i];
+    MatchStepRange stepRange(1, 1);
+    if (edge.range != nullptr) {
+      stepRange = *edge.range;
+    }
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
     auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
@@ -279,7 +287,7 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(*edge.range);
+    traverse->setStepRange(stepRange);
     traverse->setDedup();
     traverse->setTrackPrevPath(i != startIndex);
     traverse->setColNames(
