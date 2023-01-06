@@ -76,8 +76,8 @@ void Cpp2Ops<nebula::DataSet>::read(Protocol* proto, nebula::DataSet* obj) {
   // by DataSet (see interface/storage.thrift), turn on memory check here.
   //
   // MemoryTrackerVerified:
-  //    throw std::bad_alloc has verified, can be captured in StorageClientBase::getResponse's
-  //    onError
+  //    throw std::bad_alloc has verified, can be captured in
+  //    StorageClientBase::getResponse's onError
   nebula::memory::MemoryCheckGuard guard;
 
   apache::thrift::detail::ProtocolReaderStructReadState<Protocol> readState;
