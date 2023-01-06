@@ -375,3 +375,50 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | v.player.name |
+
+  Scenario: same src and dst for variable length pattern
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..0]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      |   1 |
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..2]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      |   5 |
+    When executing query:
+      """
+      MATCH (v)-[e:like*2..3]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 48  |
+    When executing query:
+      """
+      MATCH (v)-[e:like*2..3]->(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      |   4 |
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..]->(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      |  13 |
