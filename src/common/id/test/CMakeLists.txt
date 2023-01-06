@@ -28,6 +28,7 @@ nebula_add_executable(
       $<TARGET_OBJECTS:agg_function_manager_obj>
       $<TARGET_OBJECTS:time_utils_obj>
       $<TARGET_OBJECTS:datetime_parser_obj>
+      $<TARGET_OBJECTS:memory_obj>
       $<TARGET_OBJECTS:time_obj>
       $<TARGET_OBJECTS:fs_obj>
       $<TARGET_OBJECTS:meta_client_stats_obj>
@@ -67,6 +68,7 @@ nebula_add_test(
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:meta_client_stats_obj>

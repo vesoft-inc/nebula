@@ -18,87 +18,76 @@ namespace storage {
 ProcessorCounters kDelTagsCounters;
 
 void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
-  try {
-    spaceId_ = req.get_space_id();
-    const auto& parts = req.get_parts();
+  spaceId_ = req.get_space_id();
+  const auto& parts = req.get_parts();
 
-    CHECK_NOTNULL(env_->schemaMan_);
-    auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
-    if (!ret.ok()) {
-      LOG(ERROR) << ret.status();
-      for (auto& part : parts) {
-        pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
-      }
-      onFinished();
-      return;
+  CHECK_NOTNULL(env_->schemaMan_);
+  auto ret = env_->schemaMan_->getSpaceVidLen(spaceId_);
+  if (!ret.ok()) {
+    LOG(ERROR) << ret.status();
+    for (auto& part : parts) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_SPACEVIDLEN, part.first);
     }
-    spaceVidLen_ = ret.value();
-    callingNum_ = parts.size();
+    onFinished();
+    return;
+  }
+  spaceVidLen_ = ret.value();
+  callingNum_ = parts.size();
 
-    CHECK_NOTNULL(env_->indexMan_);
-    auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
-    if (!iRet.ok()) {
-      LOG(ERROR) << iRet.status();
-      for (auto& part : parts) {
-        pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
-      }
-      onFinished();
-      return;
+  CHECK_NOTNULL(env_->indexMan_);
+  auto iRet = env_->indexMan_->getTagIndexes(spaceId_);
+  if (!iRet.ok()) {
+    LOG(ERROR) << iRet.status();
+    for (auto& part : parts) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, part.first);
     }
-    indexes_ = std::move(iRet).value();
+    onFinished();
+    return;
+  }
+  indexes_ = std::move(iRet).value();
 
-    CHECK_NOTNULL(env_->kvstore_);
-    if (indexes_.empty()) {
-      std::vector<std::string> keys;
-      keys.reserve(32);
-      for (const auto& part : parts) {
-        auto partId = part.first;
-        const auto& delTags = part.second;
-        keys.clear();
-        for (const auto& entry : delTags) {
-          const auto& vId = entry.get_id().getStr();
-          for (const auto& tagId : entry.get_tags()) {
-            auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
-            keys.emplace_back(std::move(key));
-          }
+  CHECK_NOTNULL(env_->kvstore_);
+  if (indexes_.empty()) {
+    std::vector<std::string> keys;
+    keys.reserve(32);
+    for (const auto& part : parts) {
+      auto partId = part.first;
+      const auto& delTags = part.second;
+      keys.clear();
+      for (const auto& entry : delTags) {
+        const auto& vId = entry.get_id().getStr();
+        for (const auto& tagId : entry.get_tags()) {
+          auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
+          keys.emplace_back(std::move(key));
         }
-        doRemove(spaceId_, partId, std::move(keys));
-        stats::StatsManager::addValue(kNumTagsDeleted, keys.size());
       }
-    } else {
-      for (const auto& part : parts) {
-        IndexCountWrapper wrapper(env_);
-        auto partId = part.first;
-        std::vector<VMLI> lockedKeys;
-        auto batch = deleteTags(partId, part.second, lockedKeys);
-        if (!nebula::ok(batch)) {
-          env_->verticesML_->unlockBatch(lockedKeys);
-          handleAsync(spaceId_, partId, nebula::error(batch));
-          continue;
-        }
-        // keys has been locked in deleteTags
-        nebula::MemoryLockGuard<VMLI> lg(
-            env_->verticesML_.get(), std::move(lockedKeys), false, false);
-        env_->kvstore_->asyncAppendBatch(
-            spaceId_,
-            partId,
-            std::move(nebula::value(batch)),
-            [l = std::move(lg), icw = std::move(wrapper), partId, this](
-                nebula::cpp2::ErrorCode code) {
-              UNUSED(l);
-              UNUSED(icw);
-              handleAsync(spaceId_, partId, code);
-            });
-      }
+      doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumTagsDeleted, keys.size());
     }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  } else {
+    for (const auto& part : parts) {
+      IndexCountWrapper wrapper(env_);
+      auto partId = part.first;
+      std::vector<VMLI> lockedKeys;
+      auto batch = deleteTags(partId, part.second, lockedKeys);
+      if (!nebula::ok(batch)) {
+        env_->verticesML_->unlockBatch(lockedKeys);
+        handleAsync(spaceId_, partId, nebula::error(batch));
+        continue;
+      }
+      // keys has been locked in deleteTags
+      nebula::MemoryLockGuard<VMLI> lg(
+          env_->verticesML_.get(), std::move(lockedKeys), false, false);
+      env_->kvstore_->asyncAppendBatch(spaceId_,
+                                       partId,
+                                       std::move(nebula::value(batch)),
+                                       [l = std::move(lg), icw = std::move(wrapper), partId, this](
+                                           nebula::cpp2::ErrorCode code) {
+                                         UNUSED(l);
+                                         UNUSED(icw);
+                                         handleAsync(spaceId_, partId, code);
+                                       });
+    }
   }
 }
 

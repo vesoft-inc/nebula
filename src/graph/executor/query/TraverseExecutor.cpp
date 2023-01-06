@@ -5,6 +5,7 @@
 #include "graph/executor/query/TraverseExecutor.h"
 
 #include "clients/storage/StorageClient.h"
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
@@ -100,17 +101,12 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         vids_.clear();
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
         return handleResponse(std::move(resp));
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -310,6 +306,9 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
 
   auto scatter = [this, minStep, maxStep](
                      size_t begin, size_t end, Iterator* tmpIter) mutable -> std::vector<Row> {
+    // outside caller should already turn on throwOnMemoryExceeded
+    DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
+    // MemoryTrackerVerified
     std::vector<Row> rows;
     for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
       auto& initVertex = tmpIter->getColumn(0);
@@ -324,6 +323,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
   };
 
   auto gather = [this](std::vector<std::vector<Row>> resp) mutable -> Status {
+    // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
     for (auto& rows : resp) {
       if (rows.empty()) {

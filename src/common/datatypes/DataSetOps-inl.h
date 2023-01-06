@@ -13,6 +13,7 @@
 #include "common/base/Base.h"
 #include "common/datatypes/CommonCpp2Ops.h"
 #include "common/datatypes/DataSet.h"
+#include "common/memory/MemoryTracker.h"
 
 namespace apache {
 namespace thrift {
@@ -47,7 +48,10 @@ inline constexpr protocol::TType Cpp2Ops<nebula::DataSet>::thriftType() {
 
 template <class Protocol>
 uint32_t Cpp2Ops<nebula::DataSet>::write(Protocol* proto, nebula::DataSet const* obj) {
+  // we do not turn on memory tracker here, when the DataSet object is creating & inserting, it is
+  // in Processor::process(), where memory tracker is turned on. so we think that is enough.
   uint32_t xfer = 0;
+
   xfer += proto->writeStructBegin("DataSet");
 
   xfer += proto->writeFieldBegin("column_names", protocol::T_LIST, 1);
@@ -62,11 +66,20 @@ uint32_t Cpp2Ops<nebula::DataSet>::write(Protocol* proto, nebula::DataSet const*
 
   xfer += proto->writeFieldStop();
   xfer += proto->writeStructEnd();
+
   return xfer;
 }
 
 template <class Protocol>
 void Cpp2Ops<nebula::DataSet>::read(Protocol* proto, nebula::DataSet* obj) {
+  // memory usage during decode a StorageResponse should be mostly occupied
+  // by DataSet (see interface/storage.thrift), turn on memory check here.
+  //
+  // MemoryTrackerVerified:
+  //    throw std::bad_alloc has verified, can be captured in
+  //    StorageClientBase::getResponse's onError
+  nebula::memory::MemoryCheckGuard guard;
+
   apache::thrift::detail::ProtocolReaderStructReadState<Protocol> readState;
 
   readState.readStructBegin(proto);

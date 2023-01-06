@@ -11,23 +11,16 @@
 /// Two condition need check before MemoryTracker is on
 ///   1. jemalloc is used
 ///      MemoryTracker need jemalloc API to get accurate size of alloc/free memory.
-#if ENABLE_JEMALLOC
 ///   2. address_sanitizer is off
 ///      sanitizer has already override the new/delete operator,
 ///      only override new/delete operator only when address_sanitizer is off
-#if defined(__clang__)
-#if defined(__has_feature)
-#if not __has_feature(address_sanitizer)
+#ifdef ENABLE_JEMALLOC
+#ifndef ENABLE_ASAN
 #define ENABLE_MEMORY_TRACKER
 #endif
 #endif
 
-#else  // gcc
-#define ENABLE_MEMORY_TRACKER
-#endif
-#endif
-
-#if defined(ENABLE_MEMORY_TRACKER)
+#ifdef ENABLE_MEMORY_TRACKER
 /// new
 void *operator new(std::size_t size) {
   nebula::memory::trackMemory(size);
