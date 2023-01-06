@@ -11,6 +11,6 @@ Feature: Parser
     Then the execution should be successful
     When executing query:
       """
-      RETURN  1 
+      RETURN  1
       """
     Then the execution should be successful
