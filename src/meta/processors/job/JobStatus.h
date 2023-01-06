@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "common/base/Status.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -20,6 +21,7 @@ class JobStatus {
  public:
   static std::string toString(Status st);
   static bool laterThan(Status lhs, Status rhs);
+  static bool notSetable(Status st);
 
  private:
   static int phaseNumber(Status st);

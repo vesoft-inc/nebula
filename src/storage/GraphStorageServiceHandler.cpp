@@ -26,10 +26,25 @@
 #include "storage/transaction/ChainDeleteEdgesGroupProcessor.h"
 #include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
+//  Processor::process's root memory check is turn on here.
+//  if the call stack in current thread,
+//    Processors DO NOT NEED handle error in their logic.
+//  else (do some work in another thread)
+//    Processors need handle error in that thread by itself
 #define RETURN_FUTURE(processor)   \
   memory::MemoryCheckGuard guard;  \
   auto f = processor->getFuture(); \
-  processor->process(req);         \
+  try {                            \
+    processor->process(req);       \
+  } catch (std::bad_alloc & e) {   \
+    processor->memoryExceeded();   \
+    processor->onError();          \
+  } catch (std::exception & e) {   \
+    LOG(ERROR) << e.what();        \
+    processor->onError();          \
+  } catch (...) {                  \
+    processor->onError();          \
+  }                                \
   return f;
 
 namespace nebula {

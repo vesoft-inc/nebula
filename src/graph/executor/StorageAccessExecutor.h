@@ -131,9 +131,11 @@ class StorageAccessExecutor : public Executor {
             "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
       case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
         return Status::Error("Storage Error: Atomic operation failed.");
+        // E_GRAPH_MEMORY_EXCEEDED may happen during rpc response deserialize.
+      case nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED:
+        return Status::GraphMemoryExceeded("(%d)", static_cast<int32_t>(code));
       case nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED:
-        return Status::Error("Storage Error: STORAGE_MEMORY_EXCEEDED(%d)",
-                             static_cast<int32_t>(code));
+        return Status::StorageMemoryExceeded("(%d)", static_cast<int32_t>(code));
       default:
         auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
                                     partId,

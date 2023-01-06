@@ -73,12 +73,6 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -135,12 +129,6 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -228,12 +216,6 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

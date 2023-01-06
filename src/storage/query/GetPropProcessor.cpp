@@ -14,20 +14,11 @@ namespace storage {
 ProcessorCounters kGetPropCounters;
 
 void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
-  try {
-    if (executor_ != nullptr) {
-      executor_->add([req, this]() { this->doProcess(req); });
-    } else {
-      doProcess(req);
-    }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  if (executor_ != nullptr) {
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
+  } else {
+    doProcess(req);
   }
 }
 
