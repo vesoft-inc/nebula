@@ -173,13 +173,6 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     return;
   }
 
-  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
-  batchHolder->remove(std::move(indexKey));
-  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
-  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
-  doBatchOperation(std::move(batch));
-
   const auto& serviceKey = MetaKeyUtils::serviceKey(cpp2::ExternalServiceType::ELASTICSEARCH);
   auto getRet = doGet(serviceKey);
   if (!nebula::ok(getRet)) {
@@ -213,6 +206,13 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     onFinished();
     return;
   }
+
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove(std::move(indexKey));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {
