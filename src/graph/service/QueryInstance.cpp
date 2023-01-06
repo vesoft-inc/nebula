@@ -67,7 +67,8 @@ void QueryInstance::execute() {
         .thenError(folly::tag_t<std::exception>{},
                    [this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
   } catch (std::bad_alloc &e) {
-    onError(Executor::memoryExceededStatus());
+    onError(Status::GraphMemoryExceeded(
+        "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
   } catch (std::exception &e) {
     onError(Status::Error("%s", e.what()));
   } catch (...) {
@@ -191,6 +192,8 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kUserNotFound:
     case Status::Code::kListenerNotFound:
     case Status::Code::kSessionNotFound:
+    case Status::Code::kGraphMemoryExceeded:
+    case Status::Code::kStorageMemoryExceeded:
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }

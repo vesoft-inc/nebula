@@ -4,7 +4,7 @@
 Feature: Push Filter Down Cases Using the test Space
 
   Background:
-    Given load "test" csv data to a new space
+    Given a graph with space named "ngdata"
 
   Scenario: push filter down hash join bug fix
     When profiling query:

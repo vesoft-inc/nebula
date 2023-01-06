@@ -28,20 +28,11 @@ ProcessorCounters kLookupCounters;
 // print Plan for debug
 inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
-  try {
-    if (executor_ != nullptr) {
-      executor_->add([req, this]() { this->doProcess(req); });
-    } else {
-      doProcess(req);
-    }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  if (executor_ != nullptr) {
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
+  } else {
+    doProcess(req);
   }
 }
 

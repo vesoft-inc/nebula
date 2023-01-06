@@ -79,7 +79,7 @@ SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
   std::vector<Expression*> compareProps;
   for (const auto& col : path.compareVariables) {
     compareProps.emplace_back(FunctionCallExpression::make(
-        qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
+        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), col)}));
   }
   InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
   auto* rollUpApply = RollUpApply::make(
@@ -104,7 +104,7 @@ SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
   std::vector<Expression*> keyProps;
   for (const auto& col : path.compareVariables) {
     keyProps.emplace_back(FunctionCallExpression::make(
-        qctx->objPool(), "id", {InputPropertyExpression::make(qctx->objPool(), col)}));
+        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), col)}));
   }
   auto* patternApply = PatternApply::make(
       qctx, left.root, DCHECK_NOTNULL(right.root), std::move(keyProps), path.isAntiPred);
@@ -142,7 +142,7 @@ SubPlan SegmentsConnector::addInput(const SubPlan& left, const SubPlan& right, b
     siLeft->setLeftDep(const_cast<PlanNode*>(right.root));
     siLeft->setLeftVar(right.root->outputVar());
   } else {
-    LOG(DFATAL) << "Unsupported plan node: " << left.tail->kind();
+    DLOG(FATAL) << "Unsupported plan node: " << left.tail->kind();
     return newPlan;
   }
   newPlan.tail = right.tail;

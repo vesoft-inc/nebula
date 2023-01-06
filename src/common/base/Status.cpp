@@ -67,10 +67,14 @@ const char *Status::toString(Code code) {
       return "StatementEmpty: ";
     case kSemanticError:
       return "SemanticError: ";
+    case kGraphMemoryExceeded:
+      return "GraphMemoryExceeded: ";
     case kKeyNotFound:
       return "KeyNotFound: ";
     case kPartialSuccess:
       return "PartialSuccess: ";
+    case kStorageMemoryExceeded:
+      return "StorageMemoryExceeded: ";
     case kSpaceNotFound:
       return "SpaceNotFound: ";
     case kHostNotFound:
@@ -100,7 +104,7 @@ const char *Status::toString(Code code) {
     case kSessionNotFound:
       return "SessionNotFound";
   }
-  LOG(DFATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
+  DLOG(FATAL) << "Invalid status code: " << static_cast<uint16_t>(code);
   return "";
 }
 

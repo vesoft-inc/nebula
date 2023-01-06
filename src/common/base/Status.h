@@ -119,12 +119,15 @@ class Status final {
   // Graph engine errors
   STATUS_GENERATOR(SyntaxError);
   STATUS_GENERATOR(SemanticError);
+  STATUS_GENERATOR(GraphMemoryExceeded);
+
   // Nothing is executed When command is comment
   STATUS_GENERATOR(StatementEmpty);
 
   // Storage engine errors
   STATUS_GENERATOR(KeyNotFound);
   STATUS_GENERATOR(PartialSuccess);
+  STATUS_GENERATOR(StorageMemoryExceeded);
 
   // Meta engine errors
   // TODO(dangleptr) we could use ErrorOr to replace SpaceNotFound here.
@@ -166,9 +169,11 @@ class Status final {
     kSyntaxError = 201,
     kStatementEmpty = 202,
     kSemanticError = 203,
+    kGraphMemoryExceeded = 204,
     // 3xx, for storage engine errors
     kKeyNotFound = 301,
     kPartialSuccess = 302,
+    kStorageMemoryExceeded = 303,
     // 4xx, for meta service errors
     kSpaceNotFound = 404,
     kHostNotFound = 405,

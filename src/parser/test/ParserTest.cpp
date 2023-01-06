@@ -3350,4 +3350,18 @@ TEST_F(ParserTest, TestShowSentenceWithPipe) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
 }
+
+TEST_F(ParserTest, TestSpecialWhiteSpaceChar) {
+  {
+    std::string query = "SHOW\xC2\xA0SPACES";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "SHOW \xC2\xA0SPACES\xC2\xA0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 }  // namespace nebula

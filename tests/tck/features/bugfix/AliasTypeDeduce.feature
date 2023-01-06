@@ -34,7 +34,7 @@ Feature: Test extract filter
       """
     Then the result should be, in any order:
       | count(c) |
-      | 3225     |
+      | 49       |
     When executing query:
       """
       match p=(a:player)-[e:like*1..3]->(b)
@@ -46,4 +46,4 @@ Feature: Test extract filter
       """
     Then the result should be, in any order:
       | count(c) |
-      | 3225     |
+      | 49       |
