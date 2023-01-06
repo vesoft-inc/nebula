@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include "common/utils/MetaKeyUtils.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/KVIterator.h"
 #include "meta/processors/Common.h"
 
@@ -83,6 +84,11 @@ cpp2::JobDesc JobDescription::toJobDesc() {
 }
 
 bool JobDescription::setStatus(Status newStatus, bool force) {
+  if (JobStatus::notSetable(status_)) {
+    // no need to change time.
+    return status_ == newStatus;
+  }
+
   if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }

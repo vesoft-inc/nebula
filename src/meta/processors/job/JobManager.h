@@ -11,6 +11,7 @@
 #include <gtest/gtest_prod.h>
 
 #include <boost/core/noncopyable.hpp>
+#include <memory>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
@@ -18,6 +19,7 @@
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/JobExecutor.h"
 #include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/StorageJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
@@ -80,7 +82,9 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
    * @param adminClient
    * @return true if the init is successful
    */
-  bool init(nebula::kvstore::KVStore* store, AdminClient* adminClient);
+  bool init(nebula::kvstore::KVStore* store,
+            AdminClient* adminClient,
+            std::shared_ptr<JobExecutorFactory> factory = std::make_shared<JobExecutorFactory>());
 
   /**
    * @brief Called when receive a system signal
@@ -331,6 +335,7 @@ class JobManager : public boost::noncopyable, public nebula::cpp::NonMovable {
   std::atomic<JbmgrStatus> status_ = JbmgrStatus::NOT_START;
 
   std::unique_ptr<folly::Executor> executor_;
+  std::shared_ptr<JobExecutorFactory> executorFactory_;
 };
 
 }  // namespace meta
