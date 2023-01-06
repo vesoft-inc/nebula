@@ -46,12 +46,6 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp), sv->colNames());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

@@ -19,23 +19,11 @@ namespace storage {
 ProcessorCounters kUpdateVertexCounters;
 
 void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
-  try {
-    if (executor_ != nullptr) {
-      executor_->add([req, this]() {
-        memory::MemoryCheckGuard guard;
-        this->doProcess(req);
-      });
-    } else {
-      doProcess(req);
-    }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  if (executor_ != nullptr) {
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
+  } else {
+    doProcess(req);
   }
 }
 

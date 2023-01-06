@@ -197,5 +197,12 @@ void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const
   statsLock_.unlock();
 }
 
+folly::Executor* ShortestPathBase::runner() const {
+  if (!qctx_ || !qctx_->rctx() || !qctx_->rctx()->runner()) {
+    return &folly::InlineExecutor::instance();
+  }
+  return qctx_->rctx()->runner();
+}
+
 }  // namespace graph
 }  // namespace nebula
