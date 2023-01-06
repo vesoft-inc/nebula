@@ -12,6 +12,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include <boost/stacktrace.hpp>
+#include <memory>
 
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
@@ -42,7 +43,10 @@ JobManager* JobManager::getInstance() {
   return &inst;
 }
 
-bool JobManager::init(nebula::kvstore::KVStore* store, AdminClient* adminClient) {
+bool JobManager::init(nebula::kvstore::KVStore* store,
+                      AdminClient* adminClient,
+                      std::shared_ptr<JobExecutorFactory> factory) {
+  executorFactory_ = factory;
   adminClient_ = adminClient;
   if (store == nullptr) {
     return false;
@@ -97,7 +101,7 @@ nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
     if (nebula::ok(optJobRet)) {
       auto optJob = nebula::value(optJobRet);
       std::unique_ptr<JobExecutor> je =
-          JobExecutorFactory::createJobExecutor(optJob, kvStore_, adminClient_);
+          executorFactory_->createJobExecutor(optJob, kvStore_, adminClient_);
       // Only balance would change
       if (optJob.getStatus() == cpp2::JobStatus::RUNNING && je->isMetaJob()) {
         jds.emplace_back(std::move(optJob));
@@ -235,7 +239,7 @@ folly::Future<nebula::cpp2::ErrorCode> JobManager::runJobInternal(const JobDescr
       iter = this->muJobFinished_.emplace(spaceId, std::make_unique<std::recursive_mutex>()).first;
     }
     std::lock_guard<std::recursive_mutex> lk(*(iter->second));
-    auto je = JobExecutorFactory::createJobExecutor(jobDesc, kvStore_, adminClient_);
+    auto je = executorFactory_->createJobExecutor(jobDesc, kvStore_, adminClient_);
     jobExec = je.get();
 
     runningJobs_.emplace(jobDesc.getJobId(), std::move(je));
@@ -440,7 +444,7 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   }
 
   auto optJobDesc = nebula::value(optJobDescRet);
-  auto jobExec = JobExecutorFactory::createJobExecutor(optJobDesc, kvStore_, adminClient_);
+  auto jobExec = executorFactory_->createJobExecutor(optJobDesc, kvStore_, adminClient_);
 
   if (!jobExec) {
     LOG(INFO) << folly::sformat("createJobExecutor failed(), jobId={}", jobId);
@@ -682,6 +686,11 @@ bool JobManager::isExpiredJob(JobDescription& jobDesc) {
     return false;
   }
   auto jobStart = jobDesc.getStartTime();
+  if (jobStart == 0) {
+    // should not happend, but just in case keep this job
+    LOG(INFO) << "Job " << jobDesc.getJobId() << " start time is not set, keep it for now";
+    return false;
+  }
   auto duration = std::difftime(nebula::time::WallClock::fastNowInSec(), jobStart);
   return duration > FLAGS_job_expired_secs;
 }
@@ -848,7 +857,9 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
   for (auto& [id, job] : allJobs) {
     auto status = job.getStatus();
     if (status == cpp2::JobStatus::FAILED || status == cpp2::JobStatus::STOPPED) {
-      jobsMaybeRecover.emplace(id);
+      if (!isExpiredJob(job)) {
+        jobsMaybeRecover.emplace(id);
+      }
     }
   }
   std::set<JobID>::reverse_iterator lastBalaceJobRecoverIt = jobsMaybeRecover.rend();
@@ -869,7 +880,8 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
       JobID jid;
       bool jobExist = checkOnRunningJobExist(spaceId, job.getJobType(), job.getParas(), jid);
       if (!jobExist) {
-        job.setStatus(cpp2::JobStatus::QUEUE, true);
+        job.setStatus(cpp2::JobStatus::QUEUE, true);  // which cause the job execute again
+        job.setErrorCode(nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
         auto jobKey = MetaKeyUtils::jobKey(job.getSpace(), jobId);
         auto jobVal = MetaKeyUtils::jobVal(job.getJobType(),
                                            job.getParas(),
@@ -919,9 +931,8 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
     auto jobType = allJobs[*it].getJobType();
     if (jobType == cpp2::JobType::DATA_BALANCE || jobType == cpp2::JobType::ZONE_BALANCE) {
       if (jobIdSet.empty() || jobIdSet.count(*it)) {
-        LOG(INFO) << "can't recover a balance job " << *lastBalaceJobRecoverIt
-                  << " when there's a newer balance job " << *lastBalaceJobRecoverIt
-                  << " stopped or failed";
+        LOG(INFO) << "can't recover a balance job " << *it << " when there's a newer balance job "
+                  << *lastBalaceJobRecoverIt << " stopped or failed";
       }
       it = jobsMaybeRecover.erase(it);
     } else {
@@ -931,7 +942,7 @@ ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
   if (*lastBalaceJobRecoverIt < lastBalanceJobFinished) {
     if (jobIdSet.empty() || jobIdSet.count(*lastBalaceJobRecoverIt)) {
       LOG(INFO) << "can't recover a balance job " << *lastBalaceJobRecoverIt
-                << " that before a finished balance job " << lastBalanceJobFinished;
+                << " when there's a newer balance job " << lastBalanceJobFinished << " finished";
     }
     jobsMaybeRecover.erase(*lastBalaceJobRecoverIt);
   }
