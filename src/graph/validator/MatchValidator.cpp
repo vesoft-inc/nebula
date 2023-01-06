@@ -296,14 +296,14 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
       }
     }
     AliasType aliasType = AliasType::kEdge;
-    auto *stepRange = edge->range();
+    auto stepRange = const_cast<nebula::MatchEdge *>(edge)->range();
     if (stepRange != nullptr) {
-      NG_RETURN_IF_ERROR(validateStepRange(stepRange));
-      edgeInfos[i].range = stepRange;
+      NG_RETURN_IF_ERROR(validateStepRange(stepRange.get()));
       // Type of [e*1..2], [e*2] should be inference to EdgeList
       if (stepRange->max() > stepRange->min() || stepRange->min() > 1) {
         aliasType = AliasType::kEdgeList;
       }
+      edgeInfos[i].range.reset(stepRange.release());
     }
     if (alias.empty()) {
       anonymous = true;

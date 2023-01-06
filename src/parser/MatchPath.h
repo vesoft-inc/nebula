@@ -111,8 +111,8 @@ class MatchEdge final {
     return props_;
   }
 
-  auto* range() const {
-    return range_.get();
+  std::unique_ptr<MatchStepRange> range() {
+    return std::move(range_);
   }
 
   std::string toString() const;

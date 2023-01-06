@@ -212,7 +212,7 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(edge.range);
+    traverse->setStepRange(*edge.range);
     traverse->setDedup();
     // If start from end of the path pattern, the first traverse would not
     // track the previous path, otherwise, it should.
@@ -279,7 +279,7 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(edge.range);
+    traverse->setStepRange(*edge.range);
     traverse->setDedup();
     traverse->setTrackPrevPath(i != startIndex);
     traverse->setColNames(

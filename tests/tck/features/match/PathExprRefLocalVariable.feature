@@ -123,21 +123,6 @@ Feature: Path expression reference local defined variables
       | "Rajon Rondo"       |
       | "Ray Allen"         |
 
-  @skip
-  Scenario: Fix after issue #2045
-    When executing query:
-      """
-      MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
-      """
-    Then the result should be, in any order:
-      | v |
-    When executing query:
-      """
-      MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
-      """
-    Then the result should be, in any order:
-      | v |
-
   Scenario: In With
     When executing query:
       """
