@@ -25,8 +25,8 @@ std::string SchemaPropItem::toString() const {
     case COMMENT:
       return folly::stringPrintf("comment = \"%s\"", std::get<std::string>(propValue_).c_str());
   }
-  LOG(DFATAL) << "Schema property type illegal";
-  return "Unknown";
+  DLOG(FATAL) << "Schema property type illegal";
+  return "";
 }
 
 std::string SchemaPropList::toString() const {
@@ -239,8 +239,8 @@ std::string IndexParamItem::toString() const {
     case S2_MAX_CELLS:
       return folly::stringPrintf("s2_max_cells = \"%ld\"", paramValue_.getInt());
   }
-  LOG(DFATAL) << "Index param type illegal";
-  return "Unknown";
+  DLOG(FATAL) << "Index param type illegal";
+  return "";
 }
 
 std::string IndexParamList::toString() const {

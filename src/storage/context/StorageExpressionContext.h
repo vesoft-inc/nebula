@@ -89,7 +89,7 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // Get index of property in variable tuple
   StatusOr<std::size_t> getVarPropIndex(const std::string&, const std::string&) const override {
-    LOG(DFATAL) << "Unimplemented";
+    DLOG(FATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
 
@@ -114,7 +114,7 @@ class StorageExpressionContext final : public ExpressionContext {
 
   // Get index of property in input tuple
   StatusOr<std::size_t> getInputPropIndex(const std::string&) const override {
-    LOG(DFATAL) << "Unimplemented";
+    DLOG(FATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }
 
@@ -192,7 +192,7 @@ class StorageExpressionContext final : public ExpressionContext {
    */
   Value getVertex(const std::string& name = "") const override {
     UNUSED(name);
-    LOG(DFATAL) << "Unimplemented";
+    DLOG(FATAL) << "Unimplemented";
     return Value::kNullBadData;
   }
 
@@ -202,7 +202,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @return Value
    */
   Value getEdge() const override {
-    LOG(DFATAL) << "Unimplemented";
+    DLOG(FATAL) << "Unimplemented";
     return Value::kNullBadData;
   }
 

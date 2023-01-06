@@ -211,8 +211,7 @@ Status InsertEdgesValidator::check() {
 // Check validity of vertices data.
 // Check edge key type, check properties value, fill to NewEdge structure.
 Status InsertEdgesValidator::prepareEdges() {
-  auto size =
-      FLAGS_enable_experimental_feature && FLAGS_enable_toss ? rows_.size() : rows_.size() * 2;
+  auto size = rows_.size() * 2;
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
@@ -297,7 +296,7 @@ Status InsertEdgesValidator::prepareEdges() {
     edge.key_ref() = key;
     edge.props_ref() = std::move(entirePropValues);
     edges_.emplace_back(edge);
-    if (!(FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
+    {
       // inbound
       key.src_ref() = dstId;
       key.dst_ref() = srcId;
@@ -892,26 +891,21 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  if ((FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
-    root_ = outNode;
-    tail_ = root_;
-  } else {
-    auto *inNode = UpdateEdge::make(qctx_,
-                                    outNode,
-                                    spaceId_,
-                                    std::move(name_),
-                                    std::move(dstId_),
-                                    std::move(srcId_),
-                                    -edgeType_,
-                                    rank_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_));
-    root_ = inNode;
-    tail_ = outNode;
-  }
+  auto *inNode = UpdateEdge::make(qctx_,
+                                  outNode,
+                                  spaceId_,
+                                  std::move(name_),
+                                  std::move(dstId_),
+                                  std::move(srcId_),
+                                  -edgeType_,
+                                  rank_,
+                                  insertable_,
+                                  std::move(updatedProps_),
+                                  std::move(returnProps_),
+                                  std::move(condition_),
+                                  std::move(yieldColNames_));
+  root_ = inNode;
+  tail_ = outNode;
   return Status::OK();
 }
 

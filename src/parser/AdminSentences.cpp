@@ -76,7 +76,7 @@ std::string SpaceOptItem::toString() const {
     case OptionType::GROUP_NAME:
       return "";
   }
-  LOG(DFATAL) << "Space parameter illegal";
+  DLOG(FATAL) << "Space parameter illegal";
   return "Unknown";
 }
 
@@ -215,8 +215,8 @@ std::string AddListenerSentence::toString() const {
       buf += "ELASTICSEARCH ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
-      LOG(DFATAL) << "Unknown listener type.";
-      return "Unknown";
+      DLOG(FATAL) << "Unknown listener type.";
+      return "";
   }
   buf += listeners_->toString();
   return buf;
@@ -231,8 +231,8 @@ std::string RemoveListenerSentence::toString() const {
       buf += "ELASTICSEARCH ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
-      LOG(DFATAL) << "Unknown listener type.";
-      return "Unknown";
+      DLOG(FATAL) << "Unknown listener type.";
+      return "";
   }
   return buf;
 }
@@ -309,8 +309,8 @@ std::string AdminJobSentence::toString() const {
         return str;
       }
   }
-  LOG(DFATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
-  return "Unknown";
+  DLOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
+  return "";
 }
 
 meta::cpp2::JobOp AdminJobSentence::getOp() const {
@@ -351,8 +351,8 @@ std::string ShowServiceClientsSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SHOW TEXT SEARCH CLIENTS";
     default:
-      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
-      return "Unknown";
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 }
 
@@ -364,8 +364,8 @@ std::string SignInServiceSentence::toString() const {
       buf += "SIGN IN TEXT SERVICE ";
       break;
     default:
-      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
-      return "Unknown";
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 
   for (auto &client : clients_->clients()) {
@@ -404,8 +404,8 @@ std::string SignOutServiceSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SIGN OUT TEXT SERVICE";
     default:
-      LOG(DFATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
-      return "Unknown";
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 }
 

@@ -2571,7 +2571,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
           if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(), FLAGS_cluster_id_path)) {
             options_.clusterId_.store(resp.get_cluster_id());
           } else {
-            LOG(DFATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
+            DLOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
             return false;
           }
         }
