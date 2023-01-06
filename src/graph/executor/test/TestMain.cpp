@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include "common/memory/MemoryTracker.h"
 
 DECLARE_bool(enable_lifetime_optimize);
 
