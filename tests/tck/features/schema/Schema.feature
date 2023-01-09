@@ -986,4 +986,4 @@ Feature: Insert string vid of vertex and edge
       """
       ALTER TAG person ADD (age int);
       """
-    Then a ExecutionError should be raised at runtime: Existed
+    Then a ExecutionError should be raised at runtime: Schema exisited before!
