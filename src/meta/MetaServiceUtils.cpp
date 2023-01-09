@@ -95,7 +95,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
         }
       }
       // There won't any two columns having the same name across all schemas. If there is a column
-      // in all schemas having the same name, it must be from history schemas.
+      // having the same name with the intended change, it must be from history schemas.
       for (auto& versionedCols : allVersionedCols) {
         for (auto it = versionedCols.begin(); it != versionedCols.end(); ++it) {
           if (it->get_name() == col.get_name()) {
