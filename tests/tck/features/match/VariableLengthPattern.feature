@@ -455,6 +455,14 @@ Feature: Variable length Pattern match (m to n)
       | cnt |
     When executing query:
       """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+      WHERE size([i in e WHERE (v)-[i:like]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+    When executing query:
+      """
       MATCH (v:player)-[e*2]->(n)
       WHERE size([n in e WHERE (v{name:'Tim Duncan'})-[n]-()])>3
       RETURN v
