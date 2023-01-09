@@ -1,12 +1,20 @@
 # Copyright (c) 2022 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: subgraph with fitler
+Feature: subgraph with filter
 
   Background:
     Given a graph with space named "nba"
 
   Scenario: subgraph with edge filter
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' OUT like WHERE like.likeness > 90 YIELD vertices as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                    |
+      | [("Tim Duncan")]                     |
+      | [("Manu Ginobili"), ("Tony Parker")] |
     When executing query:
       """
       GET SUBGRAPH FROM 'Tim Duncan' OUT like WHERE like.likeness > 90 YIELD vertices as v, edges as e

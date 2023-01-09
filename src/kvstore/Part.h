@@ -92,7 +92,7 @@ class Part : public raftex::RaftPart {
   void asyncRemove(folly::StringPiece key, KVCallback cb);
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param key Keys to remove
    * @param cb Callback when has a result
@@ -274,7 +274,7 @@ class Part : public raftex::RaftPart {
   bool preProcessLog(LogID logId,
                      TermID termId,
                      ClusterID clusterId,
-                     const std::string& log) override;
+                     folly::StringPiece log) override;
 
   /**
    * @brief If a raft peer falls behind way to much than leader, the leader will send all its data

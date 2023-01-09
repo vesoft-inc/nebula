@@ -11,11 +11,11 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> ProjectExecutor::execute() {
+  // throw std::bad_alloc in MemoryCheckGuard verified
   SCOPED_TIMER(&execTime_);
   auto *project = asNode<Project>(node());
   auto iter = ectx_->getResult(project->inputVar()).iter();
   DCHECK(!!iter);
-  QueryExpressionContext ctx(ectx_);
 
   if (FLAGS_max_job_size <= 1) {
     auto ds = handleJob(0, iter->size(), iter.get());
@@ -30,6 +30,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     };
 
     auto gather = [this, result = std::move(ds)](auto &&results) mutable {
+      memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         auto &&rows = std::move(r).value();
         result.rows.insert(result.rows.end(),

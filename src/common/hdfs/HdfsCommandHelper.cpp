@@ -23,7 +23,11 @@ Status HdfsCommandHelper::ls(const std::string& hdfsHost,
     folly::Subprocess proc(std::vector<std::string>({"/bin/bash", "-c", command}));
     auto result = proc.wait();
     if (!result.exited()) {
+      LOG(INFO) << "Failed to ls: " << result.str();
       return Status::Error("Failed to ls hdfs");
+    } else if (result.exitStatus() != 0) {
+      LOG(INFO) << "Failed to ls: " << result.str();
+      return Status::Error("Failed to ls hdfs, errno: %d", result.exitStatus());
     } else {
       return Status::OK();
     }
@@ -46,7 +50,11 @@ Status HdfsCommandHelper::copyToLocal(const std::string& hdfsHost,
     folly::Subprocess proc(std::vector<std::string>({"/bin/bash", "-c", command}));
     auto result = proc.wait();
     if (!result.exited()) {
+      LOG(INFO) << "Failed to download: " << result.str();
       return Status::Error("Failed to download from hdfs");
+    } else if (result.exitStatus() != 0) {
+      LOG(INFO) << "Failed to download: " << result.str();
+      return Status::Error("Failed to download from hdfs, errno: %d", result.exitStatus());
     } else {
       return Status::OK();
     }

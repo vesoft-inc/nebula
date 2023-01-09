@@ -17,10 +17,9 @@
 #include "kvstore/DiskManager.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
-#include "kvstore/Listener.h"
-#include "kvstore/ListenerFactory.h"
 #include "kvstore/Part.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/listener/Listener.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
@@ -233,8 +232,8 @@ class NebulaStore : public KVStore, public Handler {
    * @param keys Keys to read
    * @param values Pointers of value
    * @param canReadFromFollower Whether check if current kvstore is leader of given partition
-   * @return Return std::vector<Status> when suceeded: Result status of each key, if key[i] does not
-   * exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
+   * @return Return std::vector<Status> when succeeded: Result status of each key, if key[i] does
+   * not exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
    * failed
    */
   std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> multiGet(
@@ -363,7 +362,7 @@ class NebulaStore : public KVStore, public Handler {
                    KVCallback cb) override;
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param spaceId
    * @param partId
@@ -423,7 +422,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partId
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeed,
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeded,
    * else return ErrorCode
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
@@ -514,7 +513,7 @@ class NebulaStore : public KVStore, public Handler {
   nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override;
 
   /**
-   * @brief Whether is leader of given partiton or not
+   * @brief Whether is leader of given partition or not
    *
    * @param spaceId
    * @param partId
@@ -526,7 +525,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>> Return space part info
-   * when succeed, return Errorcode when faile
+   * when succeed, return Errorcode when failed
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpacePartInfo>> space(GraphSpaceID spaceId);
 
@@ -535,7 +534,7 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>> Return space
-   * listener info when succeed, return Errorcode when faile
+   * listener info when succeed, return Errorcode when failed
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<SpaceListenerInfo>> spaceListener(
       GraphSpaceID spaceId);
@@ -544,9 +543,8 @@ class NebulaStore : public KVStore, public Handler {
    * @brief Add a space, called from part manager
    *
    * @param spaceId
-   * @param isListener Whether the space is listener
    */
-  void addSpace(GraphSpaceID spaceId, bool isListener = false) override;
+  void addSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief Add a partition, called from part manager
@@ -567,7 +565,7 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param isListener Whether the space is listener
    */
-  void removeSpace(GraphSpaceID spaceId, bool isListener) override;
+  void removeSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief clear space data, but not remove the data dirs.
@@ -588,7 +586,7 @@ class NebulaStore : public KVStore, public Handler {
   void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) override;
 
   /**
-   * @brief Retrive the leader distribution
+   * @brief Retrieve the leader distribution
    *
    * @param leaderIds The leader address of all partitions
    * @return int32_t The leader count of all spaces
@@ -623,6 +621,24 @@ class NebulaStore : public KVStore, public Handler {
                                            const std::vector<std::string>& files) override;
 
   /**
+   * @brief Add a specified type listener to space. Perform extra initialization of given type
+   * listener if necessary. User should call addListenerSpace first then addListenerPart.
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
+   * @brief Remove a specified type listener from space. Perform extra destruction of given type
+   * listener if necessary. User should call removeListenerPart first then removeListenerSpace.
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
    * @brief Add a partition as listener
    *
    * @param spaceId
@@ -630,10 +646,10 @@ class NebulaStore : public KVStore, public Handler {
    * @param type Listener type
    * @param peers Raft peers of listener
    */
-  void addListener(GraphSpaceID spaceId,
-                   PartitionID partId,
-                   meta::cpp2::ListenerType type,
-                   const std::vector<HostAddr>& peers) override;
+  void addListenerPart(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       meta::cpp2::ListenerType type,
+                       const std::vector<HostAddr>& peers) override;
 
   /**
    * @brief Remove a listener partition
@@ -642,9 +658,9 @@ class NebulaStore : public KVStore, public Handler {
    * @param partId
    * @param type Listener type
    */
-  void removeListener(GraphSpaceID spaceId,
-                      PartitionID partId,
-                      meta::cpp2::ListenerType type) override;
+  void removeListenerPart(GraphSpaceID spaceId,
+                          PartitionID partId,
+                          meta::cpp2::ListenerType type) override;
 
   /**
    * @brief Check if the partition's listener state has changed, add/remove if necessary
@@ -682,7 +698,7 @@ class NebulaStore : public KVStore, public Handler {
                                                       std::unique_ptr<WriteBatch> batch) override;
 
   /**
-   * @brief Get the kvstore propery, only used in rocksdb
+   * @brief Get the kvstore property, only used in rocksdb
    *
    * @param spaceId
    * @param property Property name

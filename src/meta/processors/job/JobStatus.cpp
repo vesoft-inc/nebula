@@ -30,6 +30,10 @@ bool JobStatus::laterThan(Status lhs, Status rhs) {
   return phaseNumber(lhs) > phaseNumber(rhs);
 }
 
+bool JobStatus::notSetable(Status st) {
+  return st == Status::FINISHED;
+}
+
 std::string JobStatus::toString(Status st) {
   switch (st) {
     case Status::QUEUE:

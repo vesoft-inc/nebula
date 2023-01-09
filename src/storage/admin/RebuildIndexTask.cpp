@@ -17,6 +17,17 @@ const int32_t kReserveNum = 1024 * 4;
 bool RebuildIndexTask::check() {
   return env_->kvstore_ != nullptr;
 }
+void RebuildIndexTask::finish(nebula::cpp2::ErrorCode rc) {
+  if (changedSpaceGuard_) {
+    auto space = *ctx_.parameters_.space_id_ref();
+    for (auto it = env_->rebuildIndexGuard_->begin(); it != env_->rebuildIndexGuard_->end(); ++it) {
+      if (std::get<0>(it->first) == space) {
+        env_->rebuildIndexGuard_->insert_or_assign(it->first, IndexState::FINISHED);
+      }
+    }
+  }
+  AdminTask::finish(rc);
+}
 
 RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
     : AdminTask(env, std::move(ctx)) {
@@ -71,6 +82,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   for (const auto& part : parts) {
     env_->rebuildIndexGuard_->insert_or_assign(std::make_tuple(space_, part), IndexState::STARTING);
     TaskFunction task = std::bind(&RebuildIndexTask::invoke, this, space_, part, items);
+    changedSpaceGuard_ = true;
     tasks.emplace_back(std::move(task));
   }
   return tasks;
@@ -152,7 +164,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
         VLOG(1) << "Processing Delete Operation " << opVal;
         batchHolder->remove(opVal.str());
       } else {
-        LOG(INFO) << "Unknow Operation Type";
+        LOG(INFO) << "Unknown Operation Type";
         return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
       }
 

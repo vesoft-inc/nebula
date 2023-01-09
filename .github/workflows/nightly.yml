@@ -158,7 +158,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          ninja -j $(nproc)
+          ninja -j $(($(nproc)/2+1))
           ccache -s
         working-directory: build/
       - name: CTest
@@ -189,7 +189,7 @@ jobs:
         timeout-minutes: 2
       - name: coverage
         run: |
-          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
       - uses: codecov/codecov-action@v2
         with:
           files: fastcov.info
@@ -220,6 +220,19 @@ jobs:
       OSS_DIR: nebula-graph/package/nightly
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:

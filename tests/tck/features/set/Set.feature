@@ -3,6 +3,108 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: Set Test
 
+  Scenario: Basic
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION ALL
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS a
+      """
+    Then an SemanticError should be raised at runtime: number of columns to UNION/INTERSECT/MINUS must be same
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION DISTINCT
+      RETURN 3 AS a, 4 AS c
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS a, 4 AS c
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      UNION
+      RETURN 3 AS b, 4 AS a
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      RETURN 1 AS a, 2 AS b
+      INTERSECT
+      RETURN 3 AS b, 4 AS a
+      """
+    Then an SemanticError should be raised at runtime: different column names to UNION/INTERSECT/MINUS are not supported
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      UNION ALL
+      UNWIND [2] AS a RETURN a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 1 |
+      | 2 |
+      | 2 |
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      UNION
+      UNWIND [2] AS a RETURN a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 1 |
+      | 2 |
+    # The standalone return statement is not a cypher statement but a ngql statement in nebula...
+    # So it can't be mixed with other cypher statements
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      INTERSECT
+      RETURN a
+      """
+    Then a SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      UNWIND [1,2] AS a RETURN a
+      INTERSECT
+      WITH 2 AS a
+      RETURN a
+      """
+    Then the result should be, in any order:
+      | a |
+      | 2 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a, 100
+      INTERSECT
+      WITH 2 AS a
+      RETURN a, 100
+      """
+    Then the result should be, in any order:
+      | a | 100 |
+      | 2 | 100 |
+
   Scenario: Union All
     Given a graph with space named "nba"
     When executing query:
@@ -165,6 +267,59 @@ Feature: Set Test
     Then the result should be, in any order:
       | $^.player.name  | serve.start_year | $$.team.name |
       | "Manu Ginobili" | 2002             | "Spurs"      |
+    When executing query:
+      """
+      MATCH (v:player) RETURN v ORDER BY v LIMIT 3
+      MINUS
+      MATCH (v:player) RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      MINUS
+      UNWIND ["Tony Parker", "Ben Simmons"] AS v
+      RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                   |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      UNWIND [2,3,4] AS a RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      WITH 4 AS a
+      RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 2 |
+      | 3 |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      MINUS
+      WITH 2 AS a
+      RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 1 |
+      | 3 |
 
   Scenario: Intersect
     Given a graph with space named "nba"
@@ -179,6 +334,56 @@ Feature: Set Test
       | $^.player.name | serve.start_year | $$.team.name |
       | "Tony Parker"  | 1999             | "Spurs"      |
       | "Tony Parker"  | 2018             | "Hornets"    |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                   |
+      | "Amar'e Stoudemire" |
+      | "Aron Baynes"       |
+      | "Ben Simmons"       |
+    When executing query:
+      """
+      MATCH (v:player)
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      MATCH (v:player)
+      RETURN v ORDER BY v LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                     |
+      | ("Amar'e Stoudemire") |
+      | ("Aron Baynes")       |
+      | ("Ben Simmons")       |
+    When executing query:
+      """
+      MATCH (v:player)
+      WITH v.player.name AS v
+      RETURN v ORDER BY v LIMIT 3
+      INTERSECT
+      UNWIND ["Tony Parker", "Ben Simmons"] AS v
+      RETURN v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v             |
+      | "Ben Simmons" |
+    When executing query:
+      """
+      UNWIND [1,2,3] AS a RETURN a
+      INTERSECT
+      UNWIND [2,3,4] AS a RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+      | 2 |
+      | 3 |
 
   Scenario: Mix
     Given a graph with space named "nba"
@@ -275,7 +480,7 @@ Feature: Set Test
     Then the result should be, in any order:
       | $var.serve.start_year | $var.$$.team.name |
 
-  Scenario: Diffrent column
+  Scenario: Different column
     Given a graph with space named "nba"
     When executing query:
       """

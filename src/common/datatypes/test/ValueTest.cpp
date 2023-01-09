@@ -3,7 +3,10 @@
  * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
+#include <robin_hood.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
+
+#include <cmath>
 
 #include "common/base/Base.h"
 #include "common/datatypes/CommonCpp2Ops.h"
@@ -597,7 +600,8 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ((vFloat1.getFloat() / vFloat2.getFloat()), v.getFloat());
 
     v = vFloat1 / vZero;
-    EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+    EXPECT_EQ(Value::Type::FLOAT, v.type());
+    EXPECT_EQ(std::numeric_limits<double>::infinity(), v.getFloat());
     v = vInt1 / vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
@@ -628,7 +632,8 @@ TEST(Value, Arithmetics) {
     EXPECT_EQ(std::fmod(vFloat1.getFloat(), vFloat2.getFloat()), v.getFloat());
 
     v = vFloat1 % vZero;
-    EXPECT_EQ(Value::Type::NULLVALUE, v.type());
+    EXPECT_EQ(Value::Type::FLOAT, v.type());
+    EXPECT_TRUE(std::isnan(v.getFloat()));
     v = vInt1 % vZero;
     EXPECT_EQ(Value::Type::NULLVALUE, v.type());
   }
@@ -681,6 +686,11 @@ TEST(Value, Comparison) {
   Value vInt2(2);
   Value vFloat1(3.14);
   Value vFloat2(2.67);
+  Value vFloat3(-2.67);
+  Value vFloatNaN(0 / 0.0);
+  Value vFloatPositiveInfinity(1 / 0.0);
+  Value vFloatNegativeInfinity(-1 / 0.0);
+
   Value vStr1("Hello ");
   Value vStr2("World");
   Value vBool1(false);
@@ -808,6 +818,99 @@ TEST(Value, Comparison) {
     EXPECT_EQ(true, v.getBool());
 
     v = vFloat1 <= vFloat2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN comparison
+    // https://en.wikipedia.org/wiki/NaN#Comparison_with_NaN
+    // Comparison between NaN and any floating-point value x (including NaN and ±Inf)
+    // Comparison NaN ≥ x  NaN ≤ x  NaN > x  NaN < x  NaN = x  NaN ≠ x
+    //     Result False    False    False    False    False    True
+    v = vFloatNaN >= vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN > vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN < vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN <= vFloat1;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN >= vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN > vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN < vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN <= vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN != any Value
+    v = vFloatNaN != vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+    v = vFloatNaN == vFloat3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+    v = vFloatNaN.equal(vFloat3);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNaN.equal(Value(0 / 0.0));
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+  }
+
+  {
+    // -Inf
+    Value v = vFloatPositiveInfinity.lessThan(vFloatNegativeInfinity);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vFloatPositiveInfinity);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vInt1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vFloatNegativeInfinity.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    // +Inf
+    v = vFloatPositiveInfinity.lessThan(vInt1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatPositiveInfinity.lessThan(vFloat1);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    // NaN comparison always false
+    v = vFloatNegativeInfinity.lessThan(vFloatNaN);
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vFloatPositiveInfinity.lessThan(vFloatNaN);
     EXPECT_EQ(Value::Type::BOOL, v.type());
     EXPECT_EQ(false, v.getBool());
   }
@@ -1706,6 +1809,72 @@ TEST(Value, DedupByConstRowPointer) {
     unique.emplace(&row);
   }
   ASSERT_EQ(unique.size(), 1);
+}
+
+TEST(Value, Hash) {
+  {
+    std::vector<Row> rows;
+    for (size_t i = 0; i < 128; ++i) {
+      Row row;
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      row.values.emplace_back(m);
+      rows.emplace_back(row);
+    }
+    EXPECT_EQ(rows.size(), 128);
+
+    robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> unique;
+    unique.reserve(rows.size());
+    for (auto& row : rows) {
+      unique.emplace(&row);
+    }
+    EXPECT_EQ(unique.size(), 128);
+  }
+  {
+    std::vector<Map> maps;
+    for (size_t i = 0; i < 128; ++i) {
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      maps.emplace_back(m);
+    }
+    EXPECT_EQ(maps.size(), 128);
+
+    robin_hood::unordered_flat_set<Map, std::hash<Map>> unique;
+    unique.reserve(maps.size());
+    for (auto& m : maps) {
+      unique.emplace(m);
+    }
+    EXPECT_EQ(unique.size(), 128);
+  }
+  {
+    std::vector<Map> maps;
+    for (size_t i = 0; i < 128; ++i) {
+      Map m;
+      m.kvs.emplace("prop1", static_cast<int64_t>(i));
+      maps.emplace_back(m);
+    }
+    EXPECT_EQ(maps.size(), 128);
+
+    struct BadMapHasher {
+      size_t operator()(const Map& m) const {
+        size_t seed = 0;
+        for (auto& v : m.kvs) {
+          // Only the `key` participates in the hash, `value` is ignored.
+          // It's easy to lead to hash collision if the `key` is the same.
+          seed ^= std::hash<std::string>()(v.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
+      }
+    };
+    robin_hood::unordered_flat_set<Map, BadMapHasher> unique;
+    unique.reserve(maps.size());
+    for (size_t i = 0; i < maps.size() - 1; ++i) {
+      unique.emplace(maps[i]);
+    }
+    EXPECT_EQ(unique.size(), 127);
+    // std::overflow_error: robin_hood::map overflow
+    EXPECT_THROW(unique.emplace(maps.back()), std::overflow_error);
+  }
 }
 
 }  // namespace nebula

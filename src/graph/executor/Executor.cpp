@@ -70,6 +70,7 @@
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
 #include "graph/executor/query/FilterExecutor.h"
+#include "graph/executor/query/FulltextIndexScanExecutor.h"
 #include "graph/executor/query/GetDstBySrcExecutor.h"
 #include "graph/executor/query/GetEdgesExecutor.h"
 #include "graph/executor/query/GetNeighborsExecutor.h"
@@ -80,6 +81,7 @@
 #include "graph/executor/query/LeftJoinExecutor.h"
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
+#include "graph/executor/query/PatternApplyExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/query/RollUpApplyExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
@@ -198,6 +200,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kGetNeighbors: {
       return pool->makeAndAdd<GetNeighborsExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kFulltextIndexScan: {
+      return pool->makeAndAdd<FulltextIndexScanExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLimit: {
       return pool->makeAndAdd<LimitExecutor>(node, qctx);
@@ -522,6 +527,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kUpdateSession: {
       return pool->makeAndAdd<UpdateSessionExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kKillSession: {
+      return pool->makeAndAdd<KillSessionExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kShowQueries: {
       return pool->makeAndAdd<ShowQueriesExecutor>(node, qctx);
     }
@@ -534,17 +542,20 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kAppendVertices: {
       return pool->makeAndAdd<AppendVerticesExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiLeftJoin: {
-      return pool->makeAndAdd<BiLeftJoinExecutor>(node, qctx);
+    case PlanNode::Kind::kHashLeftJoin: {
+      return pool->makeAndAdd<HashLeftJoinExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiInnerJoin: {
-      return pool->makeAndAdd<BiInnerJoinExecutor>(node, qctx);
+    case PlanNode::Kind::kHashInnerJoin: {
+      return pool->makeAndAdd<HashInnerJoinExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kBiCartesianProduct: {
-      return pool->makeAndAdd<BiCartesianProductExecutor>(node, qctx);
+    case PlanNode::Kind::kCrossJoin: {
+      return pool->makeAndAdd<CrossJoinExecutor>(node, qctx);
     }
     case PlanNode::Kind::kRollUpApply: {
       return pool->makeAndAdd<RollUpApplyExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kPatternApply: {
+      return pool->makeAndAdd<PatternApplyExecutor>(node, qctx);
     }
     case PlanNode::Kind::kArgument: {
       return pool->makeAndAdd<ArgumentExecutor>(node, qctx);
@@ -559,7 +570,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<GetDstBySrcExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
-      LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
+      DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
     }
   }
@@ -575,9 +586,7 @@ Executor::Executor(const std::string &name, const PlanNode *node, QueryContext *
   // Initialize the position in ExecutionContext for each executor before
   // execution plan starting to run. This will avoid lock something for thread
   // safety in real execution
-  if (!ectx_->exist(node->outputVar())) {
-    ectx_->initVar(node->outputVar());
-  }
+  DCHECK(ectx_->exist(node->outputVar()));
 }
 
 Executor::~Executor() {}
@@ -598,6 +607,8 @@ Status Executor::open() {
 }
 
 Status Executor::close() {
+  // MemoryTrackerVerified
+
   ProfilingStats stats;
   stats.totalDurationInUs = totalDuration_.elapsedInUSec();
   stats.rows = numRows_;
@@ -611,7 +622,7 @@ Status Executor::close() {
 }
 
 Status Executor::checkMemoryWatermark() {
-  if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+  if (node_->isQueryNode() && memory::MemoryUtils::kHitMemoryHighWatermark.load()) {
     stats::StatsManager::addValue(kNumQueriesHitMemoryWatermark);
     auto &spaceName = qctx()->rctx() ? qctx()->rctx()->session()->spaceName() : "";
     if (FLAGS_enable_space_level_metrics && spaceName != "") {
@@ -720,6 +731,7 @@ bool Executor::movable(const Variable *var) {
 }
 
 Status Executor::finish(Result &&result) {
+  // MemoryTrackerVerified
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();

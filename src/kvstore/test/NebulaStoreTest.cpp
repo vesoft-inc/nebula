@@ -23,6 +23,7 @@
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
 DECLARE_bool(auto_remove_invalid_space);
+DECLARE_bool(wal_sync);
 const int32_t kDefaultVidLen = 8;
 using nebula::meta::PartHosts;
 
@@ -38,11 +39,8 @@ void dump(const std::vector<T>& v) {
   VLOG(1) << ss.str();
 }
 
-std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getHandlers() {
-  auto handlersPool =
-      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
-  handlersPool->setNamePrefix("executor");
-  handlersPool->start();
+std::shared_ptr<folly::IOThreadPoolExecutor> getHandlers() {
+  static auto handlersPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   return handlersPool;
 }
 
@@ -733,6 +731,7 @@ TEST(NebulaStoreTest, CheckpointTest) {
 }
 
 TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
+  FLAGS_wal_sync = true;
   fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
   auto initNebulaStore = [](const std::vector<HostAddr>& peers,
                             int32_t index,
@@ -936,6 +935,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
       }
     }
   }
+  FLAGS_wal_sync = false;
 }
 
 TEST(NebulaStoreTest, ReadSnapshotTest) {
@@ -1149,7 +1149,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   for (auto partId = 1; partId <= 6; partId++) {
     store->removePart(1, partId);
   }
-  store->removeSpace(1, false);
+  store->removeSpace(1);
   EXPECT_EQ(1, store->spaces_.size());
   CHECK(!boost::filesystem::exists(space1));
   CHECK(boost::filesystem::exists(space2));
@@ -1159,7 +1159,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   for (auto partId = 1; partId <= 6; partId++) {
     store->removePart(2, partId);
   }
-  store->removeSpace(2, false);
+  store->removeSpace(2);
   EXPECT_EQ(0, store->spaces_.size());
   CHECK(!boost::filesystem::exists(space1));
   CHECK(boost::filesystem::exists(space2));

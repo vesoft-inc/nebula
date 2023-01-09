@@ -69,7 +69,6 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
 StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::string& input) {
   auto* qctx = subgraphCtx_->qctx;
   const auto& space = subgraphCtx_->space;
-  const auto& dstTagProps = subgraphCtx_->exprProps.dstTagProps();
   const auto& steps = subgraphCtx_->steps;
 
   auto vertexProps = buildVertexProps();
@@ -89,9 +88,6 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   subgraph->setEdgeProps(std::move(edgeProps).value());
   subgraph->setInputVar(input);
   subgraph->setBiDirectEdgeTypes(subgraphCtx_->biDirectEdgeTypes);
-  if (subgraphCtx_->getEdgeProp || subgraphCtx_->withProp || !dstTagProps.empty()) {
-    subgraph->setOneMoreStep();
-  }
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(subgraph);

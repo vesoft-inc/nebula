@@ -386,7 +386,7 @@ using namespace nebula;
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
-%type <sentence> show_queries_sentence kill_query_sentence
+%type <sentence> show_queries_sentence kill_query_sentence kill_session_sentence
 %type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
@@ -1247,7 +1247,7 @@ type_spec
         $$->type_ref() = nebula::cpp2::PropertyType::STRING;
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -2691,7 +2691,7 @@ index_field
         delete $1;
     }
     | name_label L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             delete $1;
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
@@ -2739,10 +2739,10 @@ create_edge_index_sentence
     ;
 
 create_fulltext_index_sentence
-    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
         $$ = new CreateFTIndexSentence(false, $5, $7, $9);
     }
-    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
         $$ = new CreateFTIndexSentence(true, $5, $7, $9);
     }
     ;
@@ -2978,6 +2978,8 @@ traverse_sentence
     | kill_query_sentence { $$ = $1; }
     | describe_user_sentence { $$ = $1; }
     | unwind_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
+    | kill_session_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -3016,6 +3018,9 @@ match_sentences
         s->setDistinct();
         $$ = s;
     }
+    | match_sentences KW_INTERSECT match_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | match_sentences KW_MINUS match_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    ;
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
@@ -3517,6 +3522,7 @@ list_host_type
     | KW_META       { $$ = meta::cpp2::ListHostType::META; }
     | KW_STORAGE    { $$ = meta::cpp2::ListHostType::STORAGE; }
     | KW_AGENT      { $$ = meta::cpp2::ListHostType::AGENT; }
+    | KW_STORAGE KW_LISTENER { $$ = meta::cpp2::ListHostType::STORAGE_LISTENER; }
     ;
 
 config_module_enum
@@ -3675,9 +3681,6 @@ space_opt_item
     | KW_VID_TYPE ASSIGN type_spec {
         $$ = new SpaceOptItem(SpaceOptItem::VID_TYPE, *$3);
         delete $3;
-    }
-    | KW_ATOMIC_EDGE ASSIGN BOOL {
-        $$ = new SpaceOptItem(SpaceOptItem::ATOMIC_EDGE, $3);
     }
     // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN name_label
@@ -3883,6 +3886,16 @@ kill_query_sentence
     : KW_KILL KW_QUERY L_PAREN query_unique_identifier R_PAREN {
         $$ = new KillQuerySentence($4);
     }
+    ;
+
+kill_session_sentence
+    : KW_KILL KW_SESSIONS expression {
+        $$ = new KillSessionSentence($3);
+    }
+    | KW_KILL KW_SESSION expression {
+        $$ = new KillSessionSentence($3);
+    }
+    ;
 
 query_unique_identifier_value
     : legal_integer {
@@ -3949,7 +3962,6 @@ maintain_sentence
     | divide_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }

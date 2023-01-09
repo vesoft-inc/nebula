@@ -20,6 +20,7 @@ nebula_add_test(
         TestMain.cpp
         FoldConstantExprVisitorTest.cpp
         DeduceTypeVisitorTest.cpp
+        DeduceAliasTypeVisitorTest.cpp
         RewriteUnaryNotExprVisitorTest.cpp
         RewriteRelExprVisitorTest.cpp
         FilterTransformTest.cpp
@@ -39,6 +40,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
+        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
@@ -65,12 +67,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:conf_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:graph_obj>
-        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:es_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
@@ -80,4 +81,5 @@ nebula_add_test(
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        curl
 )

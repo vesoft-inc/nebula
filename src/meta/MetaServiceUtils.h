@@ -30,19 +30,22 @@ class MetaServiceUtils final {
    * ADD: add col to cols
    * CHANGE: replace the column in cols with col
    * DROP: remove the col from cols
+   * @param allVersionedCols All columns from all versioned schemas
    * @param isEdge Is edge or tag
    * @return
    */
-  static nebula::cpp2::ErrorCode alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
-                                                 cpp2::SchemaProp& prop,
-                                                 const cpp2::ColumnDef col,
-                                                 const cpp2::AlterSchemaOp op,
-                                                 bool isEdge = false);
+  static nebula::cpp2::ErrorCode alterColumnDefs(
+      std::vector<cpp2::ColumnDef>& cols,
+      cpp2::SchemaProp& prop,
+      const cpp2::ColumnDef col,
+      const cpp2::AlterSchemaOp op,
+      const std::vector<std::vector<cpp2::ColumnDef>>& allVersionedCols,
+      bool isEdge = false);
 
   /**
    * @brief Change schema property, mainly set ttl_col
    *
-   * @param cols Column infomartion, mainly used to check if the colType is INT64 or TIMESTAMP
+   * @param cols Column information, mainly used to check if the colType is INT64 or TIMESTAMP
    * @param schemaProp Which schema property to change
    * @param alterSchemaProp Where to get ttl_col
    * @param existIndex If the column has index
@@ -74,7 +77,7 @@ class MetaServiceUtils final {
    * @brief Make a function that filter spaces
    *
    * @param spaces Be used to filter keys don't contained
-   * @param parseSpace Funtion that parse the key to space id
+   * @param parseSpace Function that parse the key to space id
    * @return
    */
   static std::function<bool(const folly::StringPiece& key)> spaceFilter(

@@ -133,7 +133,7 @@ Feature: Match By Id
       | 'serve' | 'Lakers'    |
     When executing query:
       """
-      MATCH (v1) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1) -[r:serve]-> (v2:team{name: "Cavaliers"})
       WHERE id(v1) == "LeBron James"
       RETURN type(r) AS Type, v2.team.name AS Name
       """
@@ -1015,6 +1015,21 @@ Feature: Match By Id
       MATCH (a)--(b)
       WHERE id(a) == 'Tim Duncan' OR id(b) == 'Tony Parker'
       RETURN id(a) as src, id(b) as dst
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      OPTIONAL MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      OPTIONAL MATCH (n) OPTIONAL MATCH (n) WHERE id(n) == 'James Harden' RETURN n
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:

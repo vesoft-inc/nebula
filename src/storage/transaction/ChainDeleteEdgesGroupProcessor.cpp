@@ -16,6 +16,12 @@ using ChainID = std::pair<PartitionID, PartitionID>;
 using SplitedRequest = std::unordered_map<ChainID, cpp2::DeleteEdgesRequest>;
 
 void ChainDeleteEdgesGroupProcessor::process(const cpp2::DeleteEdgesRequest& req) {
+  // toss is turned off
+  for (const auto& partEntry : req.get_parts()) {
+    pushResultCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED, partEntry.first);
+  }
+  onFinished();
+  /*
   auto spaceId = req.get_space_id();
   auto localPartId = req.get_parts().begin()->first;
   auto stSplitRequest = splitRequest(req);
@@ -41,6 +47,7 @@ void ChainDeleteEdgesGroupProcessor::process(const cpp2::DeleteEdgesRequest& req
   };
 
   std::for_each(splitedRequest.begin(), splitedRequest.end(), fnSplit);
+  */
 }
 
 StatusOr<SplitedRequest> ChainDeleteEdgesGroupProcessor::splitRequest(

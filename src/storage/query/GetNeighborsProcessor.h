@@ -27,12 +27,12 @@ class GetNeighborsProcessor
 
  public:
   /**
-   * @brief Consturct instance of GetNeighborsProcessor
+   * @brief Construct instance of GetNeighborsProcessor
    *
    * @param env Related environment variables for storage.
    * @param counters Statistic counter pointer for getting neighbors.
    * @param executor Expected executor for this processor, running directly if nullptr.
-   * @return GetNeighborsProcessor* Consturcted instance.
+   * @return GetNeighborsProcessor* Constructed instance.
    */
   static GetNeighborsProcessor* instance(StorageEnv* env,
                                          const ProcessorCounters* counters = &kGetNeighborsCounters,
@@ -83,7 +83,6 @@ class GetNeighborsProcessor
       const std::vector<nebula::Value>& vids,
       int64_t limit,
       bool random);
-  void profilePlan(StoragePlan<VertexID>& plan);
 
  private:
   std::vector<RuntimeContext> contexts_;

@@ -15,15 +15,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE <space_name>;
       """
     Then the result should be, in any order:
-      | Space          | Create Space                                                                                                                                                                                                  |
-      | "<space_name>" | /[CREATE SPACE `<space_name>` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), atomic_edge = false\) ON]+\s(\w*)\s[comment = `<space_comment>`]+/ |
+      | Space          | Create Space                                                                                                                                                                                                |
+      | "<space_name>" | /[CREATE SPACE `<space_name>` \(partition_num = 1, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), atomic_edge = false\) ON]+\s(\w*)\s[comment = `<space_comment>`]+/ |
     When executing query:
       """
       DESC SPACE <space_name>;
       """
     Then the result should be, in any order:
       | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment           |
-      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | "<space_comment>" |
+      | /\d+/ | "<space_name>" | 1                | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | "<space_comment>" |
     When executing query:
       """
       DROP SPACE <space_name>;
@@ -47,15 +47,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | Space                  | Create Space                                                                                                                                                       |
-      | "test_comment_not_set" | /[CREATE SPACE `test_comment_not_set` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)/ |
+      | Space                  | Create Space                                                                                                                                                     |
+      | "test_comment_not_set" | /[CREATE SPACE `test_comment_not_set` \(partition_num = 1, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)/ |
     When executing query:
       """
       DESC SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
       | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
-      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | EMPTY   |
+      | /\d+/ | "test_comment_not_set" | 1                | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | EMPTY   |
     When executing query:
       """
       DROP SPACE test_comment_not_set;
@@ -74,15 +74,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | Space                | Create Space                                                                                                                                                                      |
-      | "test_comment_empty" | /[CREATE SPACE `test_comment_empty` \(partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)\s[comment = '']+/ |
+      | Space                | Create Space                                                                                                                                                                    |
+      | "test_comment_empty" | /[CREATE SPACE `test_comment_empty` \(partition_num = 1, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING\(8\), \) ON]+\s(\w*)\s[comment = '']+/ |
     When executing query:
       """
       DESC SPACE test_comment_empty;
       """
     Then the result should be, in any order:
       | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Comment |
-      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | ""      |
+      | /\d+/ | "test_comment_empty" | 1                | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | ""      |
     When executing query:
       """
       DROP SPACE test_comment_empty;
@@ -92,7 +92,7 @@ Feature: Schema Comment
   Scenario Outline: schema comment
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     When try to execute query:
@@ -124,7 +124,7 @@ Feature: Schema Comment
       """
       ALTER TAG test_comment_tag comment = <tag_of_person_comment_modified>;
       ALTER TAG test_comment_tag ADD (gender string COMMENT 'The gender.');
-      ALTER TAG test_comment_tag CHANGE (name string NOT NULL);
+      ALTER TAG test_comment_tag CHANGE (name string NOT NULL DEFAULT "jack");
       ALTER TAG test_comment_tag DROP (age);
       """
     Then the execution should be successful
@@ -134,15 +134,15 @@ Feature: Schema Comment
       SHOW CREATE tag test_comment_tag;
       """
     Then the result should be, in any order:
-      | Tag                | Create Tag                                                                                                                                                                             |
-      | "test_comment_tag" | 'CREATE TAG `test_comment_tag` (\n `name` string NOT NULL,\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <tag_of_person_comment_modified>' |
+      | Tag                | Create Tag                                                                                                                                                                                              |
+      | "test_comment_tag" | 'CREATE TAG `test_comment_tag` (\n `name` string NOT NULL DEFAULT \"jack\",\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <tag_of_person_comment_modified>' |
     When executing query:
       """
       DESC tag test_comment_tag;
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment       |
-      | "name"   | "string" | "NO"  | EMPTY   | EMPTY         |
+      | "name"   | "string" | "NO"  | "jack"  | EMPTY         |
       | "gender" | "string" | "YES" | EMPTY   | "The gender." |
     # tag index
     When executing query:
@@ -188,7 +188,7 @@ Feature: Schema Comment
       """
       ALTER EDGE test_comment_edge comment = <edge_of_person_comment_modified>;
       ALTER EDGE test_comment_edge ADD (gender string COMMENT 'The gender.');
-      ALTER EDGE test_comment_edge CHANGE (name string NOT NULL);
+      ALTER EDGE test_comment_edge CHANGE (name string NOT NULL DEFAULT "jack");
       ALTER EDGE test_comment_edge DROP (age);
       """
     Then the execution should be successful
@@ -198,15 +198,15 @@ Feature: Schema Comment
       SHOW CREATE edge test_comment_edge;
       """
     Then the result should be, in any order:
-      | Edge                | Create Edge                                                                                                                                                                               |
-      | "test_comment_edge" | 'CREATE EDGE `test_comment_edge` (\n `name` string NOT NULL,\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <edge_of_person_comment_modified>' |
+      | Edge                | Create Edge                                                                                                                                                                                                |
+      | "test_comment_edge" | 'CREATE EDGE `test_comment_edge` (\n `name` string NOT NULL DEFAULT \"jack\",\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <edge_of_person_comment_modified>' |
     When executing query:
       """
       DESC edge test_comment_edge;
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment       |
-      | "name"   | "string" | "NO"  | EMPTY   | EMPTY         |
+      | "name"   | "string" | "NO"  | "jack"  | EMPTY         |
       | "gender" | "string" | "YES" | EMPTY   | "The gender." |
     # edge index
     When executing query:

@@ -9,8 +9,8 @@ Feature: Admin hosts
       SHOW HOSTS;
       """
     Then the result should contain:
-      | Host  | Port  | HTTP port | Status   | Leader count | Leader distribution | Partition distribution | Version |
-      | /\w+/ | /\d+/ | /\d+/     | "ONLINE" | /\d+/        | /.*/                | /.*/                   | /.*/    |
+      | Host  | Port  | Status   | Leader count | Leader distribution | Partition distribution | Version |
+      | /\w+/ | /\d+/ | "ONLINE" | /\d+/        | /.*/                | /.*/                   | /.*/    |
     When executing query:
       """
       SHOW HOSTS GRAPH;
@@ -41,12 +41,12 @@ Feature: Admin hosts
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:
       """
-      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3);
+      CREATE SPACE space_without_vid_type(partition_num=1, replica_factor=3);
       """
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:
       """
-      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3) on default_zone;
+      CREATE SPACE space_without_vid_type(partition_num=1, replica_factor=3) on default_zone;
       """
     Then a SemanticError should be raised at runtime: Create space with zone is unsupported
     When executing query:
@@ -56,7 +56,7 @@ Feature: Admin hosts
     Then a SemanticError should be raised at runtime: Create space with zone is unsupported
     When executing query:
       """
-      CREATE SPACE space_specify_vid_type(partition_num=9, replica_factor=1, vid_type=FIXED_STRING(8));
+      CREATE SPACE space_specify_vid_type(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8));
       DROP SPACE space_specify_vid_type
       """
     Then the execution should be successful

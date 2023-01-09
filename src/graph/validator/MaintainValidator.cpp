@@ -10,6 +10,7 @@
 #include "common/base/Status.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/planner/plan/Query.h"
@@ -27,7 +28,8 @@ namespace graph {
 // Validate columns of schema.
 // Check validity of columns and fill to thrift structure.
 static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
-                              meta::cpp2::Schema &schema) {
+                              meta::cpp2::Schema &schema,
+                              bool isAlter = false) {
   for (auto &spec : columnSpecs) {
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
@@ -57,6 +59,12 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     }
     if (!column.nullable_ref().has_value()) {
       column.nullable_ref() = true;
+    }
+    // Should report an error when altering the column
+    // which doesn't have default value to not nullable
+    if (isAlter && !column.nullable_ref().value() && !column.default_value_ref().has_value()) {
+      return Status::SemanticError("Column `%s' must have a default value if it's not nullable",
+                                   spec->name()->c_str());
     }
     schema.columns_ref().value().emplace_back(std::move(column));
   }
@@ -91,7 +99,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
           return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
         }
       }
-      NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
+      NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema, true));
     }
 
     schemaItem.schema_ref() = std::move(schema);
@@ -590,23 +598,33 @@ Status AddHostsIntoZoneValidator::toPlan() {
 // Validate creating test search index.
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
-  auto name = *sentence->indexName();
-  if (name.substr(0, sizeof(FULLTEXT_INDEX_NAME_PREFIX) - 1) != FULLTEXT_INDEX_NAME_PREFIX) {
-    return Status::SyntaxError("Index name must begin with \"%s\"", FULLTEXT_INDEX_NAME_PREFIX);
+  folly::StringPiece name = folly::StringPiece(*sentence->indexName());
+  if (!name.startsWith(kFulltextIndexNamePrefix)) {
+    return Status::SyntaxError("Index name must begin with \"%s\"",
+                               kFulltextIndexNamePrefix.c_str());
   }
-  bool containUpper = false;
+  if (name.size() > kFulltextIndexNameLength) {
+    return Status::SyntaxError(fmt::format("Fulltext index name's length must less equal than {}",
+                                           kFulltextIndexNameLength));
+  }
+  bool ok = true;
   for (auto c : name) {
-    containUpper |= std::isupper(c);
+    if (std::islower(c) || std::isdigit(c) || c == '_') {
+      continue;
+    }
+    ok = false;
+    break;
   }
-  if (containUpper) {
-    return Status::SyntaxError("Fulltext index names cannot contain uppercase letters");
+  if (!ok) {
+    return Status::SyntaxError("Fulltext index name can only contain [_0-9a-z].");
   }
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
-  auto tsIndex = FTIndexUtils::checkTSIndex(std::move(tsRet).value(), name);
-  NG_RETURN_IF_ERROR(tsIndex);
-  if (tsIndex.value()) {
-    return Status::Error("text search index exist : %s", name.c_str());
+  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
+  NG_RETURN_IF_ERROR(esAdapterRet);
+  auto esAdapter = std::move(esAdapterRet).value();
+  auto existResult = esAdapter.isIndexExist(name.toString());
+  NG_RETURN_IF_ERROR(existResult);
+  if (existResult.value()) {
+    return Status::Error(fmt::format("text search index exist : {}", name));
   }
   auto space = vctx_->whichSpace();
   auto status = sentence->isEdge()
@@ -621,7 +639,7 @@ Status CreateFTIndexValidator::validateImpl() {
   }
   index_.space_id_ref() = space.id;
   index_.depend_schema_ref() = std::move(id);
-  index_.fields_ref() = sentence->fields();
+  index_.fields_ref()->push_back(sentence->field());
   return Status::OK();
 }
 
@@ -634,8 +652,6 @@ Status CreateFTIndexValidator::toPlan() {
 }
 
 Status DropFTIndexValidator::validateImpl() {
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
   return Status::OK();
 }
 

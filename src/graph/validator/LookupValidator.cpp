@@ -173,10 +173,10 @@ Status LookupValidator::validateYield() {
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
-    return Status::SemanticError("unsupport input/variable property expression in yield.");
+    return Status::SemanticError("unsupported input/variable property expression in yield.");
   }
   if (exprProps_.hasSrcDstTagProperty()) {
-    return Status::SemanticError("unsupport src/dst property expression in yield.");
+    return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
   extractExprProps();
   return Status::OK();
@@ -192,26 +192,26 @@ Status LookupValidator::validateWhere() {
 
   auto* filter = whereClause->filter();
   if (FTIndexUtils::needTextSearch(filter)) {
-    auto retFilter = genTsFilter(filter);
-    NG_RETURN_IF_ERROR(retFilter);
-    auto filterExpr = std::move(retFilter).value();
-    if (filterExpr == nullptr) {
-      // return empty result direct.
-      lookupCtx_->isEmptyResultSet = true;
-      return Status::OK();
-    }
-    lookupCtx_->filter = filterExpr;
+    lookupCtx_->isFulltextIndex = true;
+    lookupCtx_->fulltextExpr = filter;
+    auto tsExpr = static_cast<TextSearchExpression*>(filter);
+    auto prop = tsExpr->arg()->prop();
+    auto metaClient = qctx_->getMetaClient();
+    auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
+    NG_RETURN_IF_ERROR(tsi);
+    auto tsName = tsi.value().first;
+    lookupCtx_->fulltextIndex = tsName;
   } else {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
     // Make sure the type of the rewritten filter expr is right
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
-  }
-  if (lookupCtx_->isEdge) {
-    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, nullptr, &schemaIds_));
-  } else {
-    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, &schemaIds_));
+    if (lookupCtx_->isEdge) {
+      NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, nullptr, &schemaIds_));
+    } else {
+      NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, &schemaIds_));
+    }
   }
   return Status::OK();
 }
@@ -446,10 +446,11 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   // TODO(Aiee) extract the type cast logic as a method if we decide to support
   // more cross-type comparisons.
 
+  auto propType = SchemaUtil::propTypeToValueType(type);
   // Allow different numeric type to compare
-  if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::FLOAT && v.isInt()) {
+  if (propType == Value::Type::FLOAT && v.isInt()) {
     return ConstantExpression::make(pool, v.toFloat());
-  } else if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::INT && v.isFloat()) {
+  } else if (propType == Value::Type::INT && v.isFloat()) {
     // col1 < 10.5 range: [min, 11), col1 < 10 range: [min, 10)
     double f = v.getFloat();
     int iCeil = ceil(f);
@@ -462,10 +463,34 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
       return ConstantExpression::make(pool, iCeil);
     }
     return ConstantExpression::make(pool, iFloor);
+  } else if (kind == ExprKind::kRelIn || kind == ExprKind::kRelNotIn) {
+    if (v.isList()) {
+      auto items = v.getList().values;
+      for (const auto& item : items) {
+        if (item.type() != propType) {
+          std::stringstream ss;
+          ss << "Column type of " << prop.c_str() << " mismatched. Expected " << propType
+             << " but was " << item.type();
+          return Status::SemanticError(ss.str());
+        }
+      }
+      return ConstantExpression::make(pool, std::move(v));
+    } else if (v.isSet()) {
+      auto items = v.getSet().values;
+      for (const auto& item : items) {
+        if (item.type() != propType) {
+          std::stringstream ss;
+          ss << "Column type of " << prop.c_str() << " mismatched. Expected " << propType
+             << " but was " << item.type();
+          return Status::SemanticError(ss.str());
+        }
+      }
+      return ConstantExpression::make(pool, std::move(v));
+    }
   }
 
   // Check prop type
-  if (v.type() != SchemaUtil::propTypeToValueType(type)) {
+  if (v.type() != propType) {
     // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
@@ -476,23 +501,12 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
 // Check does test search contains properties search in test search expression
 StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
-  auto metaClient = qctx_->getMetaClient();
-  auto tsi = metaClient->getFTIndexBySpaceSchemaFromCache(spaceId(), schemaId());
-  NG_RETURN_IF_ERROR(tsi);
-  auto tsName = tsi.value().first;
-  auto ret = FTIndexUtils::checkTSIndex(tsClients_, tsName);
-  NG_RETURN_IF_ERROR(ret);
-  if (!ret.value()) {
-    return Status::SemanticError("text search index not found : %s", tsName.c_str());
-  }
-  auto ftFields = tsi.value().second.get_fields();
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
   auto prop = tsExpr->arg()->prop();
-
-  auto iter = std::find(ftFields.begin(), ftFields.end(), prop);
-  if (iter == ftFields.end()) {
-    return Status::SemanticError("Column %s not found in %s", prop.c_str(), tsName.c_str());
-  }
+  auto metaClient = qctx_->getMetaClient();
+  auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
+  NG_RETURN_IF_ERROR(tsi);
+  auto tsName = tsi.value().first;
   return tsName;
 }
 
@@ -520,8 +534,8 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
       reversedKind = ExprKind::kRelLE;
       break;
     default:
-      LOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
-      break;
+      DLOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
+      return expr;
   }
 
   auto left = expr->left();
@@ -581,13 +595,13 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
 
 // Generate text search filter, check validity and rewrite
 StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
-  auto tsRet = FTIndexUtils::getTSClients(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(tsRet);
-  tsClients_ = std::move(tsRet).value();
+  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
+  NG_RETURN_IF_ERROR(esAdapterRet);
+  auto esAdapter = std::move(esAdapterRet).value();
   auto tsIndex = checkTSExpr(filter);
   NG_RETURN_IF_ERROR(tsIndex);
   return FTIndexUtils::rewriteTSFilter(
-      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), tsClients_);
+      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), esAdapter);
 }
 
 }  // namespace graph

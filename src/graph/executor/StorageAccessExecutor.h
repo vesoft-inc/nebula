@@ -9,6 +9,7 @@
 
 #include "clients/storage/StorageClientBase.h"
 #include "graph/executor/Executor.h"
+#include "graph/util/Utils.h"
 
 namespace nebula {
 
@@ -55,6 +56,8 @@ class StorageAccessExecutor : public Executor {
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
     switch (code) {
+      case nebula::cpp2::ErrorCode::E_RPC_FAILURE:
+        return Status::Error("Storage Error: RPC failure, probably timeout.");
       case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
         return Status::Error("Storage Error: Vertex or edge not found.");
       case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
@@ -128,6 +131,11 @@ class StorageAccessExecutor : public Executor {
             "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
       case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
         return Status::Error("Storage Error: Atomic operation failed.");
+        // E_GRAPH_MEMORY_EXCEEDED may happen during rpc response deserialize.
+      case nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED:
+        return Status::GraphMemoryExceeded("(%d)", static_cast<int32_t>(code));
+      case nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED:
+        return Status::StorageMemoryExceeded("(%d)", static_cast<int32_t>(code));
       default:
         auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
                                     partId,
@@ -140,21 +148,14 @@ class StorageAccessExecutor : public Executor {
   }
 
   template <typename RESP>
-  void addStats(RESP &resp, std::unordered_map<std::string, std::string> &stats) const {
+  void addStats(storage::StorageRpcResponse<RESP> &resp,
+                std::unordered_map<std::string, std::string> &stats) const {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
-      auto &info = hostLatency[i];
-      stats.emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
-                    folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
-      auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
-      if (!detail.empty()) {
-        stats.emplace("storage_detail", detail);
-      }
+      auto info = util::collectRespProfileData(resp.responses()[i].get_result(), hostLatency[i]);
+      stats.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
     }
   }
-
-  std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t> &> ref) const;
 
   bool isIntVidType(const SpaceInfo &space) const;
 

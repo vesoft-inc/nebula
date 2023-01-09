@@ -93,12 +93,10 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
-  // true when yield clause only yield distinct dst id
-  bool onlyYieldDistinctDstId{false};
-  // true when edge props only use dst id
-  bool edgePropsOnlyUseDstId{false};
   // Optimize for some simple go sentence which only need dst id.
   bool isSimple{false};
+  // The column name used by plan node`GetDstBySrc`
+  std::string dstIdColName{kDst};
 
   ExpressionProps exprProps;
 
@@ -117,12 +115,17 @@ struct GoContext final : AstContext {
 struct LookupContext final : public AstContext {
   bool isEdge{false};
   bool dedup{false};
-  bool isEmptyResultSet{false};
   int32_t schemaId{-1};
   Expression* filter{nullptr};
   YieldColumns* yieldExpr{nullptr};
   std::vector<std::string> idxReturnCols;
   std::vector<std::string> idxColNames;
+
+  // fulltext index
+  bool isFulltextIndex{false};
+  std::string fulltextIndex;
+  Expression* fulltextExpr{nullptr};
+
   // order by
 };
 
@@ -134,6 +137,7 @@ struct SubgraphContext final : public AstContext {
   Expression* tagFilter{nullptr};
   Expression* edgeFilter{nullptr};
   std::vector<std::string> colNames;
+  std::unordered_set<std::string> edgeNames;
   std::unordered_set<EdgeType> edgeTypes;
   std::unordered_set<EdgeType> biDirectEdgeTypes;
   std::vector<Value::Type> colType;

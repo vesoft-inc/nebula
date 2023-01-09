@@ -52,19 +52,16 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   if (varProps.empty()) {
     return TransformResult::noTransform();
   }
-  std::vector<std::string> propNames;
-  for (auto* expr : varProps) {
-    DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
-    propNames.emplace_back(static_cast<const VariablePropertyExpression*>(expr)->prop());
-  }
   std::unordered_map<std::string, Expression*> rewriteMap;
   auto colNames = newAggNode->colNames();
+  DCHECK_EQ(newAggNode->colNames().size(), newAggNode->groupItems().size());
   for (size_t i = 0; i < colNames.size(); ++i) {
     auto& colName = colNames[i];
-    auto iter = std::find_if(propNames.begin(), propNames.end(), [&colName](const auto& name) {
-      return !colName.compare(name);
+    auto iter = std::find_if(varProps.begin(), varProps.end(), [&colName](const auto* expr) {
+      DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
+      return !colName.compare(static_cast<const VariablePropertyExpression*>(expr)->prop());
     });
-    if (iter == propNames.end()) continue;
+    if (iter == varProps.end()) continue;
     if (graph::ExpressionUtils::findAny(groupItems[i], {Expression::Kind::kAggregate})) {
       return TransformResult::noTransform();
     }
@@ -89,11 +86,17 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   newFilterNode->setCondition(newCondition);
 
   // Exchange planNode
+  // newAggNode shall inherit the output of the oldFilterNode
   newAggNode->setOutputVar(oldFilterNode->outputVar());
+  // as the new agg node now inherits the output var ptr from a filter node, the action of
+  // which alters its own colNames, its colNames need to be explicitly preserved.
+  newAggNode->setColNames(oldAggNode->colNames());
+  // newFilterNode shall inherit the input of the oldAggNode
   newFilterNode->setInputVar(oldAggNode->inputVar());
   DCHECK_EQ(oldAggNode->outputVar(), oldFilterNode->inputVar());
-  newAggNode->setInputVar(oldAggNode->outputVar());
-  newFilterNode->setOutputVar(oldAggNode->outputVar());
+  // newAggNode shall inherit oldFilterNode's inputs
+  newAggNode->setInputVar(oldFilterNode->inputVar());
+  newFilterNode->setOutputVar(newAggNode->inputVar());
 
   // Push down filter's optGroup and embed newAggGroupNode into old filter's
   // Group

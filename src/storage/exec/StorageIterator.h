@@ -65,7 +65,6 @@ class StorageIterator {
  */
 class SingleEdgeIterator : public StorageIterator {
  public:
-  SingleEdgeIterator() = default;
   /**
    * @brief Construct a new Single Edge Iterator object
    *
@@ -91,6 +90,9 @@ class SingleEdgeIterator : public StorageIterator {
       iter_->next();
     }
   }
+
+  SingleEdgeIterator(std::unique_ptr<kvstore::KVIterator> iter, EdgeType edgeType)
+      : iter_(std::move(iter)), edgeType_(edgeType) {}
 
   bool valid() const override {
     return reader_ != nullptr;
@@ -153,6 +155,27 @@ class SingleEdgeIterator : public StorageIterator {
   RowReaderWrapper reader_;
   EdgeRanking lastRank_ = 0;
   VertexID lastDstId_ = "";
+};
+
+class SingleEdgeKeyIterator : public SingleEdgeIterator {
+ public:
+  // A simplified iterator that only iterates keys, we can use this iterator when no ttl exists and
+  // no property need to be read from value
+  SingleEdgeKeyIterator(std::unique_ptr<kvstore::KVIterator> iter, EdgeType edgeType)
+      : SingleEdgeIterator(std::move(iter), edgeType) {}
+
+  bool valid() const override {
+    return iter_->valid();
+  }
+
+  void next() override {
+    iter_->next();
+  }
+
+  RowReader* reader() const override {
+    DLOG(FATAL) << "This iterator should not read value";
+    return nullptr;
+  }
 };
 
 /**

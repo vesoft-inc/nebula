@@ -407,9 +407,11 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      ret = checkExp(predExp->filter(), returned, filtered, updated, allowNoexistentProp);
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
+      if (predExp->hasFilter()) {
+        ret = checkExp(predExp->filter(), returned, filtered, updated, allowNoexistentProp);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        }
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
@@ -667,6 +669,16 @@ void QueryBaseProcessor<REQ, RESP>::addPropContextIfNotExists(
         iter->addStat(statInfo);
       }
     }
+  }
+}
+
+template <typename REQ, typename RESP>
+template <typename IdType>
+void QueryBaseProcessor<REQ, RESP>::profilePlan(const StoragePlan<IdType>& plan) {
+  auto& nodes = plan.getNodes();
+  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profileMut_);
+  for (auto& node : nodes) {
+    BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
   }
 }
 

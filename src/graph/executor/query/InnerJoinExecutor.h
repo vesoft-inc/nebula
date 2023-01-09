@@ -48,9 +48,6 @@ class InnerJoinExecutor : public JoinExecutor {
                    Row rRow,
                    DataSet& ds) const;
 
-  // concat rows
-  Row newRow(Row left, Row right) const;
-
   const std::string& leftVar() const;
 
   const std::string& rightVar() const;
@@ -61,11 +58,11 @@ class InnerJoinExecutor : public JoinExecutor {
   bool mv_{false};
 };
 
-// No diffrence with inner join in processing data, but the dependencies would be executed in
-// paralell.
-class BiInnerJoinExecutor final : public InnerJoinExecutor {
+// No difference with inner join in processing data, but the dependencies would be executed in
+// parallel.
+class HashInnerJoinExecutor final : public InnerJoinExecutor {
  public:
-  BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);
+  HashInnerJoinExecutor(const PlanNode* node, QueryContext* qctx);
 
   folly::Future<Status> execute() override;
 };

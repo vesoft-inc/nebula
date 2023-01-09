@@ -407,7 +407,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        LOG(ERROR) << "Add field failed ";
+        VLOG(2) << "Add field failed ";
         return std::nullopt;
       }
     }
@@ -416,7 +416,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Add field failed ";
+      VLOG(2) << "Add field failed ";
       return std::nullopt;
     }
 
@@ -488,6 +488,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       }
     }
     // step 3, insert new vertex data
+    if (FLAGS_use_vertex_key) {
+      batchHolder->put(NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId), "");
+    }
     batchHolder->put(std::move(key_), std::move(nVal));
     return encodeBatchValue(batchHolder->getBatch());
   }
@@ -757,7 +760,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        VLOG(1) << "Add field failed ";
+        VLOG(2) << "Add field failed ";
         return std::nullopt;
       }
     }
@@ -766,7 +769,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      VLOG(1) << "Add field failed ";
+      VLOG(2) << "Add field failed ";
       return std::nullopt;
     }
 

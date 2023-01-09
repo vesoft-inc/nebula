@@ -76,7 +76,7 @@ class BaseProcessor {
   }
 
   /**
-   * @brief Set leader address to reponse.
+   * @brief Set leader address to response.
    *
    */
   void handleLeaderChanged() {
@@ -164,6 +164,17 @@ class BaseProcessor {
    * @param key
    */
   void doRemove(const std::string& key);
+
+  /**
+   * @brief Remove multiple given keys from kv store.
+   *        Note that it has side effect: it will set the code to the resp_,
+   *        and delete the processor instance. So, it could be only used
+   *        in the Processor:process() end.
+   *
+   * @tparam RESP
+   * @param key
+   */
+  void doMultiRemove(std::vector<std::string>&& keys);
 
   /**
    * @brief Range remove.
@@ -339,21 +350,22 @@ class BaseProcessor {
    * @tparam RESP
    * @param items
    * @param alterItems
-   * @return ErrorCode::E_CONFLICT if contains
+   * @return ErrorCode::E_RELATED_INDEX_EXISTS if contains
    */
   nebula::cpp2::ErrorCode indexCheck(const std::vector<cpp2::IndexItem>& items,
                                      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
-   * @brief Check if tag/edge containes full text index when alter it.
+   * @brief Check if tag/edge contains full text index when alter it.
    *
    * @tparam RESP
    * @param cols
    * @param alterItems
-   * @return nebula::cpp2::ErrorCode
+   * @return ErrorCode::E_RELATED_FULLTEXT_INDEX_EXISTS if contains
    */
-  nebula::cpp2::ErrorCode ftIndexCheck(const std::vector<std::string>& cols,
-                                       const std::vector<cpp2::AlterSchemaItem>& alterItems);
+  nebula::cpp2::ErrorCode ftIndexCheck(
+      const std::unordered_map<std::string, cpp2::FTIndex>& ftIndices,
+      const std::vector<cpp2::AlterSchemaItem>& alterItems);
 
   /**
    * @brief List all tag/edge index for given space and tag/edge id.
@@ -374,11 +386,11 @@ class BaseProcessor {
    * @param tagOrEdge
    * @return ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex>
    */
-  ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> getFTIndex(GraphSpaceID spaceId,
-                                                             int32_t tagOrEdge);
+  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<std::string, cpp2::FTIndex>> getFTIndex(
+      GraphSpaceID spaceId, int32_t tagOrEdge);
 
   /**
-   * @brief Check if index on given fields alredy exist.
+   * @brief Check if index on given fields already exist.
    *
    * @tparam RESP
    * @param fields
@@ -444,6 +456,14 @@ class BaseProcessor {
    */
   ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<PartitionID, std::vector<HostAddr>>>
   getAllParts(GraphSpaceID spaceId);
+
+  /**
+   * @brief Get the all registered machines by command: ADD HOSTS
+   *
+   * @param machines
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode getAllMachines(std::unordered_set<HostAddr>& machines);
 
  protected:
   kvstore::KVStore* kvstore_ = nullptr;

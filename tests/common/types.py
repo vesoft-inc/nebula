@@ -7,7 +7,7 @@ class SpaceDesc:
     def __init__(self,
                  name: str,
                  vid_type: str = "FIXED_STRING(32)",
-                 partition_num: int = 7,
+                 partition_num: int = 1,
                  replica_factor: int = 1,
                  charset: str = "utf8",
                  collate: str = "utf8_bin"):
@@ -26,7 +26,7 @@ class SpaceDesc:
         return SpaceDesc(
             name=obj.get('name', None),
             vid_type=obj.get('vid_type', 'FIXED_STRING(32)'),
-            partition_num=obj.get('partition_num', 7),
+            partition_num=obj.get('partition_num', 1),
             replica_factor=obj.get('replica_factor', 1),
             charset=obj.get('charset', 'utf8'),
             collate=obj.get('collate', 'utf8_bin'),
@@ -98,7 +98,7 @@ class Prop(Column):
     def __init__(self, index: int, name: str, ptype: str):
         super().__init__(index)
         self._name = name
-        if ptype not in ['string', 'int', 'double']:
+        if ptype not in ['string', 'int', 'double', 'bool', 'date', 'time', 'datetime', 'timestamp', 'geography']:
             raise ValueError(f'Invalid prop type: {ptype}')
         self._type = ptype
 

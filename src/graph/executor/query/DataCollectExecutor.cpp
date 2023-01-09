@@ -50,7 +50,8 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
       break;
     }
     default:
-      LOG(FATAL) << "Unknown data collect type: " << static_cast<int64_t>(dc->kind());
+      DLOG(FATAL) << "Unknown data collect type: " << static_cast<int32_t>(dc->kind());
+      return Status::Error("Unknown data collect type: %d.", static_cast<int32_t>(dc->kind()));
   }
   ResultBuilder builder;
   builder.value(Value(std::move(result_))).iter(Iterator::Kind::kSequential);

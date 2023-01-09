@@ -16,6 +16,13 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
+      GO FROM "Tim Duncan" OVER serve YIELD DISTINCT properties(edge) | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 1        |
+    When executing query:
+      """
       GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > 9223372036854775807+1 YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
@@ -142,6 +149,16 @@ Feature: Go Sentence
       | "Spurs"         |
       | "Hornets"       |
       | "Trail Blazers" |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like WHERE like._rank<10 YIELD like._src AS src, like._dst AS dst, like._rank AS rank
+      | YIELD $-.src AS src, $-.dst AS dst, max($-.rank) AS maxRank
+      | FETCH PROP ON like $-.src -> $-.dst@$-.maxRank YIELD edge AS e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
 
   Scenario: In expression
     When executing query:
@@ -339,7 +356,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NOT NULL
+      WHERE $$.player.name IS NOT EMPTY
       YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
@@ -349,7 +366,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Paul Gasol" OVER *
-      WHERE $$.player.name IS NULL
+      WHERE $$.player.name IS EMPTY
       YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
@@ -561,7 +578,7 @@ Feature: Go Sentence
       | "Chris Paul" | "Dwyane Wade"     | "Carmelo Anthony"   |
 
   @skip
-  Scenario: all prop(reson = $-.* over * $var.* not implement)
+  Scenario: all prop(reason = $-.* over * $var.* not implement)
     When executing query:
       """
       GO FROM 'Tim Duncan', 'Chris Paul' OVER like YIELD $^.player.name AS name, like._dst AS id
@@ -1467,14 +1484,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1483,14 +1500,14 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | serve.start_year | like.likeness | $$.player.name      |
-      | "Thunders" | EMPTY               | 2008             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2008             | EMPTY         | EMPTY               |
       | EMPTY      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
       | EMPTY      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
-      | "Pacers"   | EMPTY               | 2010             | EMPTY         | NULL                |
-      | "Thunders" | EMPTY               | 2017             | EMPTY         | NULL                |
+      | "Pacers"   | EMPTY               | 2010             | EMPTY         | EMPTY               |
+      | "Thunders" | EMPTY               | 2017             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
-      | "Thunders" | EMPTY               | 2009             | EMPTY         | NULL                |
-      | "Rockets"  | EMPTY               | 2012             | EMPTY         | NULL                |
+      | "Thunders" | EMPTY               | 2009             | EMPTY         | EMPTY               |
+      | "Rockets"  | EMPTY               | 2012             | EMPTY         | EMPTY               |
       | EMPTY      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
     When executing query:
       """
@@ -1564,8 +1581,8 @@ Feature: Go Sentence
       GO FROM 'Tim Duncan' OVER serve YIELD $$.player.name as name
       """
     Then the result should be, in any order, with relax comparison:
-      | name |
-      | NULL |
+      | name  |
+      | EMPTY |
 
   Scenario: zero step
     When executing query:

@@ -3,6 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/executor/algo/ShortestPathExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/executor/algo/BatchShortestPath.h"
 #include "graph/executor/algo/SingleShortestPath.h"
 #include "graph/service/GraphFlags.h"
@@ -15,6 +16,7 @@ DEFINE_uint32(num_path_thread, 0, "number of concurrent threads when do shortest
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
+  // MemoryTrackerVerified
   SCOPED_TIMER(&execTime_);
   if (FLAGS_num_path_thread == 0) {
     FLAGS_num_path_thread = get_nprocs_conf();

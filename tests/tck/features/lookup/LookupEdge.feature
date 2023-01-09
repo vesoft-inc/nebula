@@ -30,7 +30,7 @@ Feature: Test lookup on edge index
   Scenario Outline: [edge] different condition and yield test for string vid
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | fixed_string(16) |
     And having executed:
@@ -79,7 +79,7 @@ Feature: Test lookup on edge index
   Scenario Outline: [edge] different condition and yield test for int vid
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9     |
+      | partition_num  | 1     |
       | replica_factor | 1     |
       | vid_type       | int64 |
     And having executed:

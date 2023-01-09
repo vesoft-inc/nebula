@@ -5,7 +5,10 @@
 
 #include "FunctionManager.h"
 
+#include <folly/json.h>
+
 #include <boost/algorithm/string/replace.hpp>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
@@ -39,6 +42,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
     {"coalesce", Value::Type::__EMPTY__},
+    {"_any", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -421,6 +425,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
+    {"json_extract",
+     {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
+      TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
 };
 
 // static
@@ -587,16 +594,10 @@ FunctionManager::FunctionManager() {
         }
         case Value::Type::INT: {
           auto val = args[0].get().getInt();
-          if (val < 0) {
-            return Value::kNullValue;
-          }
           return std::sqrt(val);
         }
         case Value::Type::FLOAT: {
           auto val = args[0].get().getFloat();
-          if (val < 0) {
-            return Value::kNullValue;
-          }
           return std::sqrt(val);
         }
         default: {
@@ -1691,7 +1692,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1731,7 +1733,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1772,7 +1775,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1838,6 +1842,43 @@ FunctionManager::FunctionManager() {
         }
         default: {
           return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["_joinkey"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      const Value &value = args[0].get();
+      switch (value.type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          return value.getVertex().vid;
+        }
+        // NOTE:
+        // id() on Edge is designed to be used get a Join key when
+        // Join operator performed on edge, the returned id is a
+        // string encoded the {src, dst, type, ranking} tuple
+        case Value::Type::EDGE: {
+          return value.getEdge().id();
+        }
+        // The root cause is the edge-type data format of Traverse executor
+        case Value::Type::LIST: {
+          auto &edges = value.getList().values;
+          if (edges.size() == 1 && edges[0].isEdge()) {
+            return edges[0].getEdge().id();
+          } else {
+            return args[0];
+          }
+        }
+        default: {
+          // Join on the origin type
+          return args[0];
         }
       }
     };
@@ -1976,6 +2017,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    // `none_direct_dst` always return the dstId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -2757,13 +2803,56 @@ FunctionManager::FunctionManager() {
       const std::size_t nodeIndex = args[1].get().getInt();
       if (nodeIndex < 0 || nodeIndex >= (1 + p.steps.size())) {
         DLOG(FATAL) << "Out of range node index.";
-        return Value::kNullBadData;
+        return Value::kNullOutOfRange;
       }
       if (nodeIndex == 0) {
         return p.src.vid;
       } else {
         return p.steps[nodeIndex - 1].dst.vid;
       }
+    };
+  }
+  {
+    auto &attr = functions_["json_extract"];
+    // note, we don't support second argument(path) like MySQL JSON_EXTRACT for now
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto json = args[0].get().getStr();
+
+      // invalid string to json will be caught and returned as null
+      try {
+        auto obj = folly::parseJson(json);
+        if (!obj.isObject()) {
+          return Value::kNullBadData;
+        }
+        // if obj is empty, i.e. "{}", return empty map
+        if (obj.empty()) {
+          return Map();
+        }
+        return Map(obj);
+      } catch (const std::exception &e) {
+        return Value::kNullBadData;
+      }
+    };
+  }
+  // Get any argument which is not empty/null
+  {
+    auto &attr = functions_["_any"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      for (const auto &arg : args) {
+        if (!arg.get().isNull() && !arg.get().empty()) {
+          return arg.get();
+        }
+      }
+      return Value::kNullValue;
     };
   }
 }  // NOLINT

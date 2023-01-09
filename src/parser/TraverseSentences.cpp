@@ -124,7 +124,8 @@ std::string OrderFactor::toString() const {
     case DESCEND:
       return folly::stringPrintf("%s DESC,", expr_->toString().c_str());
     default:
-      LOG(FATAL) << "Unknown Order Type: " << orderType_;
+      DLOG(FATAL) << "Unknown Order Type: " << orderType_;
+      return "";
   }
 }
 

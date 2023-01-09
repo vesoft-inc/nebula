@@ -41,6 +41,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
@@ -205,6 +206,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age

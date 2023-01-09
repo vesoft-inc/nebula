@@ -33,7 +33,13 @@ class JoinExecutor : public Executor {
 
   std::unique_ptr<Iterator> lhsIter_;
   std::unique_ptr<Iterator> rhsIter_;
+  // colSize_ is the size of the output columns of join executor.
+  // If the join is natural join, which means the left and right columns have duplicated names,
+  // the output columns will be a intersection of the left and right columns.
   size_t colSize_{0};
+  // If the join is natural join, rhsOutputColIdxs_ will be used to record the output column index
+  // of the right. If not, rhsOutputColIdxs_ will be empty.
+  std::vector<size_t> rhsOutputColIdxs_;
   std::unordered_map<Value, std::vector<const Row*>> hashTable_;
   std::unordered_map<List, std::vector<const Row*>> listHashTable_;
 };

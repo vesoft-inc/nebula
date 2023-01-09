@@ -225,6 +225,10 @@ class MatchNode final {
   }
   MatchNode() = default;
 
+  void setAlias(const std::string& alias) {
+    alias_ = alias;
+  }
+
   const std::string& alias() const {
     return alias_;
   }
@@ -297,6 +301,10 @@ class MatchPath final {
     return alias_.get();
   }
 
+  auto& nodes() {
+    return nodes_;
+  }
+
   const auto& nodes() const {
     return nodes_;
   }
@@ -327,6 +335,23 @@ class MatchPath final {
     pathType_ = type;
   }
 
+  bool isPredicate() const {
+    return isPred_;
+  }
+
+  void setPredicate() {
+    isPred_ = true;
+  }
+
+  bool isAntiPredicate() const {
+    return isPred_ && isAntiPred_;
+  }
+
+  void setAntiPredicate() {
+    isPred_ = true;
+    isAntiPred_ = true;
+  }
+
   std::string toString() const;
 
   MatchPath clone() const {
@@ -345,6 +370,9 @@ class MatchPath final {
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
   PathType pathType_{PathType::kDefault};
+
+  bool isPred_{false};
+  bool isAntiPred_{false};
 };
 
 }  // namespace nebula

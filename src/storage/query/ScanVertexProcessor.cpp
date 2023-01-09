@@ -7,6 +7,7 @@
 
 #include <limits>
 
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"
@@ -18,7 +19,8 @@ ProcessorCounters kScanVertexCounters;
 
 void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
   if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
   } else {
     doProcess(req);
   }
@@ -128,15 +130,28 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanVertexProcess
     Cursor cursor,
     StorageExpressionContext* expCtx) {
   return folly::via(
-      executor_,
-      [this, context, result, cursorsOfPart, partId, input = std::move(cursor), expCtx]() {
-        auto plan = buildPlan(context, result, cursorsOfPart, expCtx);
+             executor_,
+             [this, context, result, cursorsOfPart, partId, input = std::move(cursor), expCtx]() {
+               memory::MemoryCheckGuard guard;
+               auto plan = buildPlan(context, result, cursorsOfPart, expCtx);
 
-        auto ret = plan.go(partId, input);
-        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return std::make_pair(ret, partId);
-        }
-        return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+               auto ret = plan.go(partId, input);
+               if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                 return std::make_pair(ret, partId);
+               }
+               return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
+             })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+                       std::runtime_error("Memory Limit Exceeded, " +
+                                          memory::MemoryStats::instance().toString()));
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        LOG(ERROR) << e.what();
+        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
+            std::runtime_error(e.what()));
       });
 }
 
@@ -183,11 +198,15 @@ void ScanVertexProcessor::runInMultipleThread(const cpp2::ScanVertexRequest& req
   }
 
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
+    memory::MemoryCheckGuard guard;
     CHECK(!t.hasException());
     const auto& tries = t.value();
     size_t sum = 0;
     for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
+      if (tries[j].hasException()) {
+        onError();
+        return;
+      }
       sum += results_[j].size();
     }
     resultDataSet_.rows.reserve(sum);

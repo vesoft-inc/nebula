@@ -30,7 +30,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
   // Check the edge belongs to the space
   // Because there are many edge types with same type and different versions, we should get
-  // latest edge type by prefix scaning.
+  // latest edge type by prefix scanning.
   auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto retPre = doPrefix(edgePrefix);
   if (!nebula::ok(retPre)) {
@@ -50,11 +50,17 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   }
 
   // Parse version from edge type key
-  folly::StringPiece iterVal;
-  auto version = MetaKeyUtils::getLatestEdgeScheInfo(iter, iterVal) + 1;
-  auto schema = MetaKeyUtils::parseSchema(iterVal);
+  std::unordered_map<SchemaVer, folly::StringPiece> schemasRaw;
+  auto latestVersion = MetaKeyUtils::getLatestEdgeScheInfo(iter, schemasRaw);
+  auto newVersion = latestVersion + 1;
+  auto schema = MetaKeyUtils::parseSchema(schemasRaw[latestVersion]);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
+
+  std::vector<std::vector<cpp2::ColumnDef>> allVersionedColumns;
+  for (auto entry : schemasRaw) {
+    allVersionedColumns.emplace_back(MetaKeyUtils::parseSchema(entry.second).get_columns());
+  }
 
   // Update schema column
   auto& edgeItems = req.get_edge_items();
@@ -103,7 +109,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti.get_fields(), edgeItems);
+    auto ftStatus = ftIndexCheck(fti, edgeItems);
     if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(ftStatus);
       onFinished();
@@ -118,8 +124,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   for (auto& edgeItem : edgeItems) {
     auto& cols = edgeItem.get_schema().get_columns();
     for (auto& col : cols) {
-      auto retCode =
-          MetaServiceUtils::alterColumnDefs(columns, prop, col, *edgeItem.op_ref(), true);
+      auto retCode = MetaServiceUtils::alterColumnDefs(
+          columns, prop, col, *edgeItem.op_ref(), allVersionedColumns, true);
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "Alter edge column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
@@ -150,8 +156,8 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter edge " << edgeName << ", edgeType " << edgeType << ", new version "
-            << version;
-  data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, version),
+            << newVersion;
+  data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, newVersion),
                     MetaKeyUtils::schemaVal(edgeName, schema));
   resp_.id_ref() = to(edgeType, EntryType::EDGE);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();

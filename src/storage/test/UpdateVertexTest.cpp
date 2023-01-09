@@ -167,11 +167,11 @@ TEST(UpdateVertexTest, No_Filter_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
@@ -286,11 +286,11 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   // Note: If filtered out, the result is old
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
@@ -390,11 +390,11 @@ TEST(UpdateVertexTest, Insertable_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
@@ -689,11 +689,11 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(true, (*resp.props_ref()).rows[0].values[0].getBool());
@@ -937,11 +937,11 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
@@ -1056,11 +1056,11 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(6, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ("1.country", (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[4]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[5]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ("$^.1.country", (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[5]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(6, (*resp.props_ref()).rows[0].values.size());
@@ -1072,7 +1072,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
-  // Get player from kvstore directly, ttl expired data can be readded
+  // Get player from kvstore directly, ttl expired data can be read
   // First record is inserted record data
   // Second record is expired ttl data
   auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -1242,10 +1242,10 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
   EXPECT_EQ(0, (*resp.result_ref()).failed_parts.size());
   EXPECT_EQ(5, (*resp.props_ref()).colNames.size());
   EXPECT_EQ("_inserted", (*resp.props_ref()).colNames[0]);
-  EXPECT_EQ("1.name", (*resp.props_ref()).colNames[1]);
-  EXPECT_EQ("1.age", (*resp.props_ref()).colNames[2]);
-  EXPECT_EQ(std::string("1.").append(kVid), (*resp.props_ref()).colNames[3]);
-  EXPECT_EQ(std::string("1.").append(kTag), (*resp.props_ref()).colNames[4]);
+  EXPECT_EQ("$^.1.name", (*resp.props_ref()).colNames[1]);
+  EXPECT_EQ("$^.1.age", (*resp.props_ref()).colNames[2]);
+  EXPECT_EQ(std::string("$^.1.").append(kVid), (*resp.props_ref()).colNames[3]);
+  EXPECT_EQ(std::string("$^.1.").append(kTag), (*resp.props_ref()).colNames[4]);
 
   EXPECT_EQ(1, (*resp.props_ref()).rows.size());
   EXPECT_EQ(5, (*resp.props_ref()).rows[0].values.size());

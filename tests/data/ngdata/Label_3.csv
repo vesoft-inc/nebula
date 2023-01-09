@@ -1,0 +1,60 @@
+:VID(int),Label_3.Label_3_2_datetime:datetime,Label_3.Label_3_6_Int:int,Label_3.Label_3_5_Double:double,Label_3.Label_3_3_geography_linestring:geography(linestring),Label_3.Label_3_4_String:string,Label_3.Label_3_7_Double:double,Label_3.Label_3_1_Bool:bool,Label_3.Label_3_0_Double:double
+1,datetime(),17,0.905683,"ST_GeogFromText(""LINESTRING(0 89, 87 60)"")",'Tracy McGrady',0.048361,true,0.965258
+2,datetime(),91,0.184040,"ST_GeogFromText(""LINESTRING(31 44, 10 19)"")",'Dwyane Wade',0.063714,true,0.444353
+3,datetime(),24,0.946027,"ST_GeogFromText(""LINESTRING(43 8, 49 54)"")",'Kevin Durant',0.413910,false,0.344693
+4,datetime(),88,0.293879,"ST_GeogFromText(""LINESTRING(54 33, 71 8)"")",'Dwyane Wade',0.371025,true,0.351284
+7,datetime(),83,0.183504,"ST_GeogFromText(""LINESTRING(59 77, 59 51)"")",'LeBron James',0.832883,false,0.216684
+11,datetime(),2,0.119609,"ST_GeogFromText(""LINESTRING(61 66, 41 72)"")",'Ricky Rubio',0.558323,false,0.133005
+12,datetime(),1,0.417388,"ST_GeogFromText(""LINESTRING(46 46, 21 68)"")",'Russell Westbrook',0.670592,false,0.801488
+15,datetime(),63,0.407148,"ST_GeogFromText(""LINESTRING(75 7, 60 76)"")",'Dirk Nowitzki',0.599240,true,0.858298
+16,datetime(),80,0.472760,"ST_GeogFromText(""LINESTRING(47 23, 75 38)"")",'Tiago Splitter',0.381431,false,0.201602
+20,datetime(),40,0.268166,"ST_GeogFromText(""LINESTRING(84 0, 79 37)"")",'Null1',0.836344,false,0.166118
+21,datetime(),84,0.364958,"ST_GeogFromText(""LINESTRING(79 47, 63 30)"")",'Dwyane Wade',0.628771,false,0.500179
+22,datetime(),41,0.481851,"ST_GeogFromText(""LINESTRING(67 15, 35 25)"")",'Russell Westbrook',0.743154,false,0.521220
+23,datetime(),45,0.128053,"ST_GeogFromText(""LINESTRING(54 59, 39 8)"")",'Dwight Howard',0.503045,false,0.965518
+24,datetime(),24,0.677799,"ST_GeogFromText(""LINESTRING(43 42, 24 19)"")",'Dirk Nowitzki',0.994813,true,0.726697
+27,datetime(),96,0.908743,"ST_GeogFromText(""LINESTRING(36 16, 15 47)"")",'Paul George',0.208238,true,0.816477
+28,datetime(),58,0.245117,"ST_GeogFromText(""LINESTRING(52 30, 10 4)"")",'Ray Allen',0.773084,false,0.867921
+30,datetime(),3,0.530178,"ST_GeogFromText(""LINESTRING(46 86, 26 84)"")",'Joel Embiid',0.316383,true,0.166884
+31,datetime(),16,0.317969,"ST_GeogFromText(""LINESTRING(61 74, 12 75)"")",'Chris Paul',0.327967,false,0.286209
+32,datetime(),88,0.744362,"ST_GeogFromText(""LINESTRING(85 23, 33 77)"")",'Kobe Bryant',0.228772,false,0.894134
+33,datetime(),9,0.005229,"ST_GeogFromText(""LINESTRING(69 49, 87 14)"")",'LeBron James',0.123169,false,0.646599
+36,datetime(),47,0.085781,"ST_GeogFromText(""LINESTRING(12 26, 69 19)"")",'Russell Westbrook',0.152950,false,0.531298
+38,datetime(),81,0.718672,"ST_GeogFromText(""LINESTRING(27 41, 36 71)"")",'Amar\'e Stoudemire',0.209370,true,0.826219
+39,datetime(),63,0.714119,"ST_GeogFromText(""LINESTRING(58 30, 49 30)"")",'Nobody',0.887354,false,0.030932
+40,datetime(),85,0.448156,"ST_GeogFromText(""LINESTRING(54 22, 33 79)"")",'Ben Simmons',0.345765,true,0.001121
+41,datetime(),90,0.465239,"ST_GeogFromText(""LINESTRING(53 16, 31 57)"")",'Boris Diaw',0.084185,false,0.076937
+45,datetime(),80,0.541931,"ST_GeogFromText(""LINESTRING(24 87, 26 69)"")",'Null2',0.988791,true,0.511490
+46,datetime(),57,0.596830,"ST_GeogFromText(""LINESTRING(32 30, 43 21)"")",'Luka Doncic',0.921002,false,0.215543
+47,datetime(),48,0.869962,"ST_GeogFromText(""LINESTRING(67 17, 42 78)"")",'Jason Kidd',0.852827,false,0.932772
+51,datetime(),67,0.658240,"ST_GeogFromText(""LINESTRING(59 51, 2 59)"")",'Damian Lillard',0.832307,false,0.729985
+57,datetime(),57,0.227512,"ST_GeogFromText(""LINESTRING(59 65, 70 21)"")",'Shaquile O\'Neal',0.897185,false,0.411099
+58,datetime(),88,0.933097,"ST_GeogFromText(""LINESTRING(12 26, 0 33)"")",'Ricky Rubio',0.419574,false,0.628050
+59,datetime(),33,0.786323,"ST_GeogFromText(""LINESTRING(68 34, 10 41)"")",'Jonathon Simmons',0.272557,false,0.204297
+60,datetime(),65,0.826922,"ST_GeogFromText(""LINESTRING(82 31, 53 19)"")",'Ben Simmons',0.051825,false,0.815864
+64,datetime(),13,0.557738,"ST_GeogFromText(""LINESTRING(68 59, 68 31)"")",'Marc Gasol',0.940874,false,0.528481
+65,datetime(),93,0.580872,"ST_GeogFromText(""LINESTRING(24 28, 74 67)"")",'Luka Doncic',0.748972,false,0.377243
+66,datetime(),60,0.603552,"ST_GeogFromText(""LINESTRING(80 25, 29 34)"")",'Manu Ginobili',0.383860,true,0.077391
+68,datetime(),78,0.277754,"ST_GeogFromText(""LINESTRING(30 29, 30 83)"")",'Carmelo Anthony',0.751524,true,0.488069
+69,datetime(),26,0.212557,"ST_GeogFromText(""LINESTRING(12 83, 33 9)"")",'Joel Embiid',0.876550,false,0.866736
+70,datetime(),73,0.409955,"ST_GeogFromText(""LINESTRING(20 61, 54 2)"")",'Paul Gasol',0.730871,true,0.987285
+71,datetime(),21,0.875827,"ST_GeogFromText(""LINESTRING(74 47, 8 53)"")",'Rudy Gay',0.879392,false,0.314944
+72,datetime(),10,0.826665,"ST_GeogFromText(""LINESTRING(27 62, 16 12)"")",'David West',0.333189,false,0.990196
+77,datetime(),6,0.630775,"ST_GeogFromText(""LINESTRING(21 1, 19 46)"")",'Dwight Howard',0.328830,true,0.380745
+80,datetime(),53,0.091921,"ST_GeogFromText(""LINESTRING(21 52, 55 32)"")",'Null2',0.954746,true,0.628279
+81,datetime(),99,0.549379,"ST_GeogFromText(""LINESTRING(84 70, 9 80)"")",'Damian Lillard',0.584195,false,0.314076
+82,datetime(),53,0.352593,"ST_GeogFromText(""LINESTRING(88 46, 10 39)"")",'LaMarcus Aldridge',0.577817,true,0.384929
+83,datetime(),16,0.070988,"ST_GeogFromText(""LINESTRING(69 80, 24 75)"")",'Kyrie Irving',0.613725,true,0.403946
+85,datetime(),62,0.176219,"ST_GeogFromText(""LINESTRING(45 44, 17 1)"")",'Klay Thompson',0.448503,false,0.446761
+90,datetime(),45,0.572458,"ST_GeogFromText(""LINESTRING(27 84, 8 52)"")",'Kyrie Irving',0.306215,false,0.016694
+97,datetime(),22,0.602538,"ST_GeogFromText(""LINESTRING(5 77, 18 75)"")",'Kobe Bryant',0.861587,true,0.368149
+98,datetime(),23,0.023464,"ST_GeogFromText(""LINESTRING(55 76, 82 45)"")",'Rudy Gay',0.458611,true,0.586122
+99,datetime(),9,0.254788,"ST_GeogFromText(""LINESTRING(33 18, 87 13)"")",'Rajon Rondo',0.377246,true,0.958532
+100,datetime(),76,0.445338,"ST_GeogFromText(""LINESTRING(46 81, 65 13)"")",'Giannis Antetokounmpo',0.408320,true,0.922039
+101,datetime(),52,0.203190,"ST_GeogFromText(""LINESTRING(38 35, 72 49)"")",'Rudy Gay',0.369444,true,0.538356
+102,datetime(),62,0.323275,"ST_GeogFromText(""LINESTRING(42 80, 83 3)"")",'Amar\'e Stoudemire',0.017070,true,0.485211
+103,datetime(),32,0.413526,"ST_GeogFromText(""LINESTRING(26 31, 59 25)"")",'Marc Gasol',0.053346,false,0.437661
+104,datetime(),56,0.639812,"ST_GeogFromText(""LINESTRING(52 84, 65 89)"")",'David West',0.911687,false,0.346545
+105,datetime(),76,0.301031,"ST_GeogFromText(""LINESTRING(1 5, 52 88)"")",'Jason Kidd',0.852028,true,0.705601
+108,datetime(),88,0.717079,"ST_GeogFromText(""LINESTRING(81 38, 84 21)"")",'DeAndre Jordan',0.770510,false,0.811057
+383,datetime(),18,0.329167,"ST_GeogFromText(""LINESTRING(38 87, 51 83)"")",'Tony Parker',0.630408,true,0.691915

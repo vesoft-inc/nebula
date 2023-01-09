@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * @brief Get all edge index items by scaning index prefix and then filter out the
+ * @brief Get all edge index items by scanning index prefix and then filter out the
  *        indexes with edge type.
  *
  */

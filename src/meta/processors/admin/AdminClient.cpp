@@ -325,7 +325,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         } else {
           auto v = std::move(t).value();
           for (auto& resp : v) {
-            // The exception has been catched inside getResponseFromPart.
+            // The exception has been caught inside getResponseFromPart.
             CHECK(!resp.hasException());
             auto st = std::move(resp).value();
             if (!st.ok()) {
@@ -464,7 +464,7 @@ void AdminClient::getResponseFromHost(const HostAddr& host,
               auto&& result = std::move(t).value();
               if (result.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
                 p.setValue(
-                    Status::Error("Operattion failed in AdminClient: %s",
+                    Status::Error("Operation failed in AdminClient: %s",
                                   apache::thrift::util::enumNameSafe(result.get_code()).c_str()));
               } else {
                 p.setValue(respGen(std::move(result)));

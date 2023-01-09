@@ -23,6 +23,7 @@ folly::Future<nebula::cpp2::ErrorCode> DataBalanceJobExecutor::executeInternal()
         jobDescription_.setStatus(meta::cpp2::JobStatus::FINISHED, true);
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
+      LOG(INFO) << "Build balance plan: " << status;
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }

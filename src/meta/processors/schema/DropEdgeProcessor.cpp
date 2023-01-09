@@ -57,14 +57,14 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 
   auto ftIdxRet = getFTIndex(spaceId, edgeType);
   if (nebula::ok(ftIdxRet)) {
-    LOG(INFO) << "Drop edge error, fulltext index conflict, "
-              << "please delete fulltext index first.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS);
-    onFinished();
-    return;
-  }
-
-  if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
+    if (!nebula::value(ftIdxRet).empty()) {
+      LOG(INFO) << "Drop edge error, fulltext index conflict, "
+                << "please delete fulltext index first.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_RELATED_INDEX_EXISTS);
+      onFinished();
+      return;
+    }
+  } else {
     handleErrorCode(nebula::error(ftIdxRet));
     onFinished();
     return;

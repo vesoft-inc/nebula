@@ -97,6 +97,8 @@
                                                                               \
   /* Admin Failure */                                                         \
   X(E_SNAPSHOT_FAILURE, -2040)                                                \
+  X(E_SNAPSHOT_RUNNING_JOBS, -2056)                                           \
+  X(E_SNAPSHOT_NOT_FOUND, -2057)                                              \
   X(E_BLOCK_WRITE_FAILURE, -2041)                                             \
   X(E_REBUILD_INDEX_FAILURE, -2042)                                           \
   X(E_INDEX_WITH_TTL, -2043)                                                  \
@@ -113,7 +115,7 @@
   X(E_INVALID_JOB, -2065)                                                     \
                                                                               \
   /* Backup Failure */                                                        \
-  X(E_BACKUP_BUILDING_INDEX, -2066)                                           \
+  X(E_BACKUP_RUNNING_JOBS, -2066)                                             \
   X(E_BACKUP_SPACE_NOT_FOUND, -2067)                                          \
                                                                               \
   /* RESTORE Failure */                                                       \

@@ -66,10 +66,10 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   // prune properties in AppendVertices according to the used properties collected previous
   void pruneCurrent(AppendVertices *node);
 
-  void visit(BiJoin *node) override;
+  void visit(HashJoin *node) override;
 
   void visit(Union *node) override;
-  void visit(BiCartesianProduct *node) override;
+  void visit(CrossJoin *node) override;
 
   void visit(Unwind *node) override;
   void visitCurrent(Unwind *node);
@@ -84,7 +84,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   GraphSpaceID spaceID_;
   Status status_;
   bool rootNode_{true};
-  const int unKnowType_ = 0;
+  const int unknownType_ = 0;
 };
 
 }  // namespace graph

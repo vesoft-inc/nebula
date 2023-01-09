@@ -4,7 +4,9 @@
 
 #include "graph/executor/algo/SubgraphExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/util/Utils.h"
 
 using nebula::storage::StorageClient;
 namespace nebula {
@@ -51,6 +53,8 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {
@@ -59,14 +63,8 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
           if (result.vertices_ref().has_value()) {
             size = (*result.vertices_ref()).size();
           }
-          auto& info = hostLatency[i];
-          otherStats_.emplace(
-              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
-              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
-          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
-          if (!detail.empty()) {
-            otherStats_.emplace("storage_detail", detail);
-          }
+          auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
+          otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
         }
         vids_.clear();
         return handleResponse(std::move(resp));
@@ -92,12 +90,7 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
 
-  auto steps = totalSteps_;
-  if (!subgraph_->oneMoreStep()) {
-    --steps;
-  }
-
-  if (!process(std::move(iter)) || ++currentStep_ > steps) {
+  if (!process(std::move(iter)) || ++currentStep_ > totalSteps_) {
     filterEdges(0);
     return folly::makeFuture<Status>(Status::OK());
   } else {

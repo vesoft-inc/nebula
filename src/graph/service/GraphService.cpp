@@ -11,6 +11,7 @@
 
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
 #include "common/time/TimezoneInfo.h"
@@ -218,7 +219,7 @@ Status GraphService::auth(const std::string& username, const std::string& passwo
     return Status::OK();
   }
 
-  // Authenticate via diffrent auth types
+  // Authenticate via different auth types
   if (FLAGS_auth_type == "password") {
     // Auth with PasswordAuthenticator
     auto authenticator = std::make_unique<PasswordAuthenticator>(metaClient);

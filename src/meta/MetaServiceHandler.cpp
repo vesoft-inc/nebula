@@ -79,6 +79,10 @@
 namespace nebula {
 namespace meta {
 
+AdminClient* MetaServiceHandler::getAdminClient() {
+  return adminClient_.get();
+}
+
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpace(
     const cpp2::CreateSpaceReq& req) {
   auto* processor = CreateSpaceProcessor::instance(kvstore_);
@@ -523,7 +527,7 @@ folly::Future<cpp2::GetSessionResp> MetaServiceHandler::future_getSession(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeSession(
+folly::Future<cpp2::RemoveSessionResp> MetaServiceHandler::future_removeSession(
     const cpp2::RemoveSessionReq& req) {
   auto* processor = RemoveSessionProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);

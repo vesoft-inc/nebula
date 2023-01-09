@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.:
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -39,14 +39,14 @@ class ScanEdgeProcessor : public QueryBaseProcessor<cpp2::ScanEdgeRequest, cpp2:
   /**
    * @brief Entry point of edge scan.
    *
-   * @param req Reuqest for edge scan.
+   * @param req Request for edge scan.
    */
   void process(const cpp2::ScanEdgeRequest& req) override;
 
   /**
    * @brief Logic part of edge scan.
    *
-   * @param req Reuqest for edge scan.
+   * @param req Request for edge scan.
    */
   void doProcess(const cpp2::ScanEdgeRequest& req);
 

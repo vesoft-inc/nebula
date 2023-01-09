@@ -54,7 +54,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
                                                                               bool dependentOnZone,
                                                                               HostParts& hostParts,
                                                                               int32_t& totalParts) {
-  // has been locked ouside
+  // has been locked outside
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -240,6 +240,7 @@ folly::Future<nebula::cpp2::ErrorCode> LeaderBalanceJobExecutor::executeInternal
     auto status = adminClient_->getLeaderDist(hostLeaderMap_.get()).get();
     if (!status.ok() || hostLeaderMap_->empty()) {
       inLeaderBalance_ = false;
+      LOG(INFO) << "Get leader distribution: " << status;
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
 

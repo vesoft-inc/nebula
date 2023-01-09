@@ -9,7 +9,6 @@ nebula_add_executable(
       $<TARGET_OBJECTS:base_obj>
       $<TARGET_OBJECTS:snowflake_obj>
       $<TARGET_OBJECTS:meta_client_obj>
-      $<TARGET_OBJECTS:http_client_obj>
       $<TARGET_OBJECTS:thrift_obj>
       $<TARGET_OBJECTS:meta_obj>
       $<TARGET_OBJECTS:ssl_obj>
@@ -29,6 +28,7 @@ nebula_add_executable(
       $<TARGET_OBJECTS:agg_function_manager_obj>
       $<TARGET_OBJECTS:time_utils_obj>
       $<TARGET_OBJECTS:datetime_parser_obj>
+      $<TARGET_OBJECTS:memory_obj>
       $<TARGET_OBJECTS:time_obj>
       $<TARGET_OBJECTS:fs_obj>
       $<TARGET_OBJECTS:meta_client_stats_obj>
@@ -49,7 +49,6 @@ nebula_add_test(
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:snowflake_obj>
     $<TARGET_OBJECTS:meta_client_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:ssl_obj>
@@ -69,6 +68,7 @@ nebula_add_test(
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:meta_client_stats_obj>

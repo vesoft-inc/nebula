@@ -214,7 +214,6 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   returnCols_ = g.returnCols_;
   isEdge_ = g.isEdge();
   schemaId_ = g.schemaId();
-  isEmptyResultSet_ = g.isEmptyResultSet();
   yieldColumns_ = g.yieldColumns();
 }
 
@@ -542,6 +541,15 @@ void Sample::cloneMembers(const Sample& l) {
   count_ = l.count_->clone();
 }
 
+Aggregate::Aggregate(QueryContext* qctx,
+                     PlanNode* input,
+                     std::vector<Expression*>&& groupKeys,
+                     std::vector<Expression*>&& groupItems)
+    : SingleInputNode(qctx, Kind::kAggregate, input) {
+  groupKeys_ = std::move(groupKeys);
+  groupItems_ = std::move(groupItems);
+}
+
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("groupKeys", folly::toJson(util::toJson(groupKeys_)), desc.get());
@@ -798,6 +806,9 @@ void Traverse::cloneMembers(const Traverse& g) {
   if (g.firstStepFilter_ != nullptr) {
     setFirstStepFilter(g.firstStepFilter_->clone());
   }
+  if (g.tagFilter_ != nullptr) {
+    setTagFilter(g.tagFilter_->clone());
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -809,6 +820,7 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   addDescription("first step filter",
                  firstStepFilter_ != nullptr ? firstStepFilter_->toString() : "",
                  desc.get());
+  addDescription("tag filter", tagFilter_ != nullptr ? tagFilter_->toString() : "", desc.get());
   return desc;
 }
 
@@ -844,18 +856,18 @@ void AppendVertices::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
+std::unique_ptr<PlanNodeDescription> HashJoin::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
   addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
   return desc;
 }
 
-void BiJoin::accept(PlanNodeVisitor* visitor) {
+void HashJoin::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-void BiJoin::cloneMembers(const BiJoin& j) {
+void HashJoin::cloneMembers(const HashJoin& j) {
   BinaryInputNode::cloneMembers(j);
 
   std::vector<Expression*> hKeys;
@@ -871,51 +883,56 @@ void BiJoin::cloneMembers(const BiJoin& j) {
   probeKeys_ = std::move(pKeys);
 }
 
-BiJoin::BiJoin(QueryContext* qctx,
-               Kind kind,
-               PlanNode* left,
-               PlanNode* right,
-               std::vector<Expression*> hashKeys,
-               std::vector<Expression*> probeKeys)
+HashJoin::HashJoin(QueryContext* qctx,
+                   Kind kind,
+                   PlanNode* left,
+                   PlanNode* right,
+                   std::vector<Expression*> hashKeys,
+                   std::vector<Expression*> probeKeys)
     : BinaryInputNode(qctx, kind, left, right),
       hashKeys_(std::move(hashKeys)),
       probeKeys_(std::move(probeKeys)) {
-  auto lColNames = left->colNames();
-  auto rColNames = right->colNames();
-  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
-  setColNames(lColNames);
+  if (left && right) {
+    auto lColNames = left->colNames();
+    for (auto& rColName : right->colNames()) {
+      if (std::find(lColNames.begin(), lColNames.end(), rColName) == lColNames.end()) {
+        lColNames.emplace_back(rColName);
+      }
+    }
+    setColNames(lColNames);
+  }
 }
 
-std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
-  auto desc = BiJoin::explain();
+std::unique_ptr<PlanNodeDescription> HashLeftJoin::explain() const {
+  auto desc = HashJoin::explain();
   addDescription("kind", "LeftJoin", desc.get());
   return desc;
 }
 
-PlanNode* BiLeftJoin::clone() const {
-  auto* newLeftJoin = BiLeftJoin::make(qctx_, nullptr, nullptr);
+PlanNode* HashLeftJoin::clone() const {
+  auto* newLeftJoin = HashLeftJoin::make(qctx_, nullptr, nullptr);
   newLeftJoin->cloneMembers(*this);
   return newLeftJoin;
 }
 
-void BiLeftJoin::cloneMembers(const BiLeftJoin& l) {
-  BiJoin::cloneMembers(l);
+void HashLeftJoin::cloneMembers(const HashLeftJoin& l) {
+  HashJoin::cloneMembers(l);
 }
 
-std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
-  auto desc = BiJoin::explain();
+std::unique_ptr<PlanNodeDescription> HashInnerJoin::explain() const {
+  auto desc = HashJoin::explain();
   addDescription("kind", "InnerJoin", desc.get());
   return desc;
 }
 
-PlanNode* BiInnerJoin::clone() const {
-  auto* newInnerJoin = BiInnerJoin::make(qctx_, nullptr, nullptr);
+PlanNode* HashInnerJoin::clone() const {
+  auto* newInnerJoin = HashInnerJoin::make(qctx_, nullptr, nullptr);
   newInnerJoin->cloneMembers(*this);
   return newInnerJoin;
 }
 
-void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
-  BiJoin::cloneMembers(l);
+void HashInnerJoin::cloneMembers(const HashInnerJoin& l) {
+  HashJoin::cloneMembers(l);
 }
 
 std::unique_ptr<PlanNodeDescription> RollUpApply::explain() const {
@@ -951,6 +968,55 @@ PlanNode* RollUpApply::clone() const {
   auto* newRollUpApply = RollUpApply::make(qctx_, nullptr, nullptr, {}, nullptr);
   newRollUpApply->cloneMembers(*this);
   return newRollUpApply;
+}
+
+std::unique_ptr<PlanNodeDescription> PatternApply::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("keyCols", folly::toJson(util::toJson(keyCols_)), desc.get());
+  return desc;
+}
+
+void PatternApply::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
+PatternApply::PatternApply(QueryContext* qctx,
+                           Kind kind,
+                           PlanNode* left,
+                           PlanNode* right,
+                           std::vector<Expression*> keyCols,
+                           bool isAntiPred)
+    : BinaryInputNode(qctx, kind, left, right),
+      keyCols_(std::move(keyCols)),
+      isAntiPred_(isAntiPred) {}
+
+void PatternApply::cloneMembers(const PatternApply& r) {
+  BinaryInputNode::cloneMembers(r);
+  for (const auto* col : r.keyCols_) {
+    keyCols_.emplace_back(col->clone());
+  }
+  isAntiPred_ = r.isAntiPred_;
+}
+
+PlanNode* PatternApply::clone() const {
+  auto* lnode = left() ? left()->clone() : nullptr;
+  auto* rnode = right() ? right()->clone() : nullptr;
+  auto* newPatternApply = PatternApply::make(qctx_, lnode, rnode, {});
+  newPatternApply->cloneMembers(*this);
+  return newPatternApply;
+}
+
+PlanNode* FulltextIndexScan::clone() const {
+  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_, isEdge_);
+  ret->cloneMembers(*this);
+  return ret;
+}
+
+std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
+  auto desc = Explore::explain();
+  addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
+  // TODO(hs.zhang): add all infomation
+  return desc;
 }
 
 }  // namespace graph

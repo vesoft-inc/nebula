@@ -29,11 +29,15 @@ folly::Future<Status> FilterExecutor::execute() {
     ds.rows.reserve(iter->size());
     auto scatter = [this](
                        size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
+      // MemoryTrackerVerified
+      DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
       return handleJob(begin, end, tmpIter);
     };
 
     auto gather =
         [this, result = std::move(ds), kind = iter->kind()](auto &&results) mutable -> Status {
+      // MemoryTrackerVerified
+      memory::MemoryCheckGuard guard;
       for (auto &r : results) {
         if (!r.ok()) {
           return r.status();
@@ -65,7 +69,10 @@ StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *
   for (; iter->valid() && begin++ < end; iter->next()) {
     auto val = condition->eval(ctx(iter));
     if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
-      return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
+      return Status::Error("Failed to evaluate condition: %s. %s%s",
+                           condition->toString().c_str(),
+                           "For boolean conditions, please write in their full forms like",
+                           " <condition> == <true/false> or <condition> IS [NOT] NULL.");
     }
     if (!(val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool()))) {
       // TODO: Maybe we can move.
@@ -96,7 +103,10 @@ Status FilterExecutor::handleSingleJobFilter() {
     while (iter->valid()) {
       auto val = condition->eval(ctx(iter));
       if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
-        return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
+        return Status::Error("Failed to evaluate condition: %s. %s%s",
+                             condition->toString().c_str(),
+                             "For boolean conditions, please write in their full forms like",
+                             " <condition> == <true/false> or <condition> IS [NOT] NULL.");
       }
       if (val.empty() || val.isNull() || (val.isImplicitBool() && !val.implicitBool())) {
         if (UNLIKELY(filter->needStableFilter())) {
@@ -119,7 +129,10 @@ Status FilterExecutor::handleSingleJobFilter() {
     for (; iter->valid(); iter->next()) {
       auto val = condition->eval(ctx(iter));
       if (val.isBadNull() || (!val.empty() && !val.isImplicitBool() && !val.isNull())) {
-        return Status::Error("Wrong type result, the type should be NULL, EMPTY, BOOL");
+        return Status::Error("Failed to evaluate condition: %s. %s%s",
+                             condition->toString().c_str(),
+                             "For boolean conditions, please write in their full forms like",
+                             " <condition> == <true/false> or <condition> IS [NOT] NULL.");
       }
       if (val.isImplicitBool() && val.implicitBool()) {
         Row row;

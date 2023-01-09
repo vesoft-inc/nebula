@@ -47,7 +47,7 @@ class GeoUtils final {
         return std::make_unique<S2Polygon>(std::move(s2Loops), S2Debug::DISABLE);
       }
       default:
-        LOG(FATAL)
+        DLOG(FATAL)
             << "Geography shapes other than Point/LineString/Polygon are not currently supported";
         return nullptr;
     }

@@ -6,6 +6,7 @@
 
 #include <robin_hood.h>
 
+#include "graph/executor/Executor.h"
 #include "graph/planner/plan/Algo.h"
 
 using nebula::storage::StorageRpcResponse;
@@ -50,6 +51,8 @@ class ShortestPathBase {
 
   void addStats(PropRpcResponse& resp, int64_t timeInUSec) const;
 
+  folly::Executor* runner() const;
+
   template <typename Resp>
   StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,
                                              bool isPartialSuccessAccepted) const {
@@ -73,9 +76,6 @@ class ShortestPathBase {
     }
     return Result::State::kSuccess;
   }
-
-  std::string getStorageDetail(
-      apache::thrift::optional_field_ref<const std::map<std::string, int32_t>&> ref) const;
 
  protected:
   const ShortestPath* pathNode_{nullptr};

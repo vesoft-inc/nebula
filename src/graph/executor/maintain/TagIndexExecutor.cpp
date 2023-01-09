@@ -26,6 +26,7 @@ folly::Future<Status> CreateTagIndexExecutor::execute() {
                        ctiNode->getComment())
       .via(runner())
       .thenValue([ctiNode, spaceId](StatusOr<IndexID> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create index `" << ctiNode->getIndexName()
                        << "' at tag: `" << ctiNode->getSchemaName()
@@ -46,6 +47,7 @@ folly::Future<Status> DropTagIndexExecutor::execute() {
       ->dropTagIndex(spaceId, dtiNode->getIndexName(), dtiNode->getIfExists())
       .via(runner())
       .thenValue([dtiNode, spaceId](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop tag index `" << dtiNode->getIndexName()
                        << "' failed: " << resp.status();
@@ -65,6 +67,7 @@ folly::Future<Status> DescTagIndexExecutor::execute() {
       ->getTagIndex(spaceId, dtiNode->getIndexName())
       .via(runner())
       .thenValue([this, dtiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Desc tag index `" << dtiNode->getIndexName()
                        << "' failed: " << resp.status();
@@ -92,6 +95,7 @@ folly::Future<Status> ShowCreateTagIndexExecutor::execute() {
       ->getTagIndex(spaceId, sctiNode->getIndexName())
       .via(runner())
       .thenValue([this, sctiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show create tag index `"
                        << sctiNode->getIndexName() << "' failed: " << resp.status();
@@ -115,6 +119,7 @@ folly::Future<Status> ShowTagIndexesExecutor::execute() {
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()->getMetaClient()->listTagIndexes(spaceId).via(runner()).thenValue(
       [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show tag indexes failed" << resp.status();
           return resp.status();
@@ -168,6 +173,7 @@ folly::Future<Status> ShowTagIndexStatusExecutor::execute() {
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()->getMetaClient()->listTagIndexStatus(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId
                        << ", Show tag index status failed: " << resp.status();

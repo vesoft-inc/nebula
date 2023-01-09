@@ -30,7 +30,7 @@ DEFINE_string(meta_server_addrs,
               "",
               "list of meta server addresses,"
               "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(local_config, true, "meta client will not retrieve latest configuration from meta");
 
 DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
 DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
@@ -70,6 +70,7 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
+DEFINE_bool(enable_data_balance, true, "Whether to enable data balance feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
 DEFINE_int32(max_sessions_per_ip_per_user,

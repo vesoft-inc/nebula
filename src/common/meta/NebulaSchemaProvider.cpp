@@ -176,7 +176,8 @@ std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixed
     case PropertyType::UNKNOWN:
       break;
   }
-  LOG(FATAL) << "Incorrect field type " << static_cast<int>(type);
+  DLOG(FATAL) << "Incorrect field type " << static_cast<int>(type);
+  return 0;
 }
 
 void NebulaSchemaProvider::setProp(cpp2::SchemaProp schemaProp) {

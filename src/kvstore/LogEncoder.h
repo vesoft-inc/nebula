@@ -200,12 +200,12 @@ class BatchHolder : public boost::noncopyable, public nebula::cpp::NonMovable {
    *
    * @return const std::vector<std::tuple<BatchLogType, std::string, std::string>>&
    */
-  const std::vector<std::tuple<BatchLogType, std::string, std::string>>& getBatch() {
+  const std::vector<std::tuple<BatchLogType, std::string, std::string>>& getBatch() const {
     return batch_;
   }
 
   /**
-   * @brief size of key in operaion of the batch, in bytes
+   * @brief size of key in operation of the batch, in bytes
    */
   size_t size() {
     return size_;

@@ -46,7 +46,8 @@ void PropertyExpression::resetFrom(Decoder& decoder) {
 const Value& PropertyExpression::eval(ExpressionContext& ctx) {
   // TODO maybe cypher need it.
   UNUSED(ctx);
-  LOG(FATAL) << "Unimplemented";
+  DLOG(FATAL) << "Unimplemented";
+  return Value::kNullBadType;
 }
 
 const Value& EdgePropertyExpression::eval(ExpressionContext& ctx) {
@@ -209,8 +210,20 @@ void LabelTagPropertyExpression::accept(ExprVisitor* visitor) {
 }
 
 std::string LabelTagPropertyExpression::toString() const {
-  std::string labelStr = label_ != nullptr ? label_->toString().erase(0, 1) : "";
-  return labelStr + "." + sym_ + "." + prop_;
+  std::string labelStr;
+  if (label_ != nullptr) {
+    labelStr = label_->toString();
+    // Remove the leading '$' character for variable except '$-/$$/$^'
+    if (labelStr.find(kInputRef) != 0 && labelStr.find(kSrcRef) != 0 &&
+        labelStr.find(kDstRef) != 0) {
+      labelStr.erase(0, 1);
+    }
+    labelStr += ".";
+  }
+  if (!sym_.empty()) {
+    labelStr += sym_ + ".";
+  }
+  return labelStr + prop_;
 }
 
 bool LabelTagPropertyExpression::operator==(const Expression& rhs) const {

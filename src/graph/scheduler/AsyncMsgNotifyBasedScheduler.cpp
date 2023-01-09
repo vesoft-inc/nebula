@@ -82,7 +82,16 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
     auto currentExePromises = std::move(currentPromisesFound->second);
 
     scheduleExecutor(std::move(currentExeFutures), exe, runner)
+        // This is the root catch of bad_alloc for Executors,
+        // all chained returned future is checked here
+        .thenError(
+            folly::tag_t<std::bad_alloc>{},
+            [](const std::bad_alloc&) {
+              return folly::makeFuture<Status>(Status::GraphMemoryExceeded(
+                  "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
+            })
         .thenTry([this, pros = std::move(currentExePromises)](auto&& t) mutable {
+          // any exception or status not ok handled with notifyError
           if (t.hasException()) {
             notifyError(pros, Status::Error(std::move(t).exception().what()));
           } else {
@@ -134,6 +143,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runSelect(
         return execute(select);
       })
       .thenValue([select, this](auto&& selectStatus) mutable -> folly::Future<Status> {
+        memory::MemoryCheckGuard guard;
         NG_RETURN_IF_ERROR(selectStatus);
         auto val = qctx_->ectx()->getValue(select->node()->outputVar());
         if (!val.isBool()) {
@@ -175,6 +185,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLoop(
         return execute(loop);
       })
       .thenValue([loop, runner, this](auto&& loopStatus) mutable -> folly::Future<Status> {
+        memory::MemoryCheckGuard guard;
         NG_RETURN_IF_ERROR(loopStatus);
         auto val = qctx_->ectx()->getValue(loop->node()->outputVar());
         if (!val.isBool()) {
@@ -214,11 +225,13 @@ void AsyncMsgNotifyBasedScheduler::notifyError(std::vector<folly::Promise<Status
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::execute(Executor* executor) const {
+  memory::MemoryCheckGuard guard1;
   auto status = executor->open();
   if (!status.ok()) {
     return executor->error(std::move(status));
   }
   return executor->execute().thenValue([executor](Status s) {
+    memory::MemoryCheckGuard guard2;
     NG_RETURN_IF_ERROR(s);
     return executor->close();
   });

@@ -417,7 +417,7 @@ def load_csv_data(
         space_desc = SpaceDesc(
             name=space_name,
             vid_type=space.get('vidType', 'FIXED_STRING(32)'),
-            partition_num=space.get('partitionNum', 7),
+            partition_num=space.get('partitionNum', 1),
             replica_factor=space.get('replicaFactor', 1),
             charset=space.get('charset', 'utf8'),
             collate=space.get('collate', 'utf8_bin'),
@@ -426,12 +426,12 @@ def load_csv_data(
         create_space(space_desc, sess)
 
         schemas = config['schema']
-        sorted_schema_lines = sorted(schemas.splitlines()) # sort to make sure schema is created in fixed order
-        for line in sorted_schema_lines:
+        schema_lines = schemas.splitlines() # sort to make sure schema is created in fixed order
+        for line in schema_lines:
             resp_ok(sess, line.strip(), True)
 
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization
-        time.sleep(2)
+        time.sleep(3)
 
         if config["files"] is not None:
             for fd in config["files"]:
@@ -442,7 +442,7 @@ def load_csv_data(
 
 def get_conn_pool(host: str, port: int, ssl_config: SSL_config):
     config = Config()
-    config.max_connection_pool_size = 20
+    config.max_connection_pool_size = 30
     config.timeout = 180000
     # init connection pool
     pool = ConnectionPool()

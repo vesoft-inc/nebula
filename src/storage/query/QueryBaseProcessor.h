@@ -29,6 +29,9 @@
 namespace nebula {
 namespace storage {
 
+template <typename IdType>
+class StoragePlan;
+
 /**
  * @brief The PropContext stores the info about property to be returned or filtered
  *
@@ -199,6 +202,9 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
                                  bool returned,
                                  bool filtered,
                                  const std::pair<size_t, cpp2::StatType>* statInfo = nullptr);
+
+  template <typename IdType>
+  void profilePlan(const StoragePlan<IdType>& plan);
 
  protected:
   GraphSpaceID spaceId_;

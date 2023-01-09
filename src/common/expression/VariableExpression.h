@@ -11,10 +11,15 @@
 namespace nebula {
 class VariableExpression final : public Expression {
  public:
-  static VariableExpression* make(ObjectPool* pool,
-                                  const std::string& var = "",
-                                  bool isInner = false) {
-    return pool->makeAndAdd<VariableExpression>(pool, var, isInner);
+  // Make a non-inner variable expression
+  static VariableExpression* make(ObjectPool* pool, const std::string& var = "") {
+    return pool->makeAndAdd<VariableExpression>(pool, var, false);
+  }
+
+  // Make a inner variable expression. Inner variable is a variable defined in an expression.
+  // e.g. ListComprehensionExpression [i IN range(1, 10) | i+1]
+  static VariableExpression* makeInner(ObjectPool* pool, const std::string& var = "") {
+    return pool->makeAndAdd<VariableExpression>(pool, var, true);
   }
 
   const std::string& var() const {
@@ -39,7 +44,7 @@ class VariableExpression final : public Expression {
   void accept(ExprVisitor* visitor) override;
 
   Expression* clone() const override {
-    return VariableExpression::make(pool_, var(), isInner_);
+    return pool_->makeAndAdd<VariableExpression>(pool_, var(), isInner_);
   }
 
  private:

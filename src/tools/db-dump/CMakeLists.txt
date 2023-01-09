@@ -15,17 +15,18 @@ nebula_add_executable(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        curl
 )
 
-install(
-    TARGETS
-        db_dump
-    PERMISSIONS
-        OWNER_EXECUTE OWNER_WRITE OWNER_READ
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ
-    DESTINATION
-        bin
-    COMPONENT
-        tool
-)
+#install(
+#    TARGETS
+#        db_dump
+#    PERMISSIONS
+#        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+#        GROUP_EXECUTE GROUP_READ
+#        WORLD_EXECUTE WORLD_READ
+#    DESTINATION
+#        bin
+#    COMPONENT
+#        tool
+#)

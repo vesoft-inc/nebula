@@ -6,14 +6,16 @@
 #include "common/id/Snowflake.h"
 
 namespace nebula {
-void Snowflake::initWorkerId(meta::MetaClient* client) {
+bool Snowflake::initWorkerId(meta::MetaClient* client) {
   const std::string& ip = client->getLocalIp();
   auto result = client->getWorkerId(ip).get();
   if (!result.ok()) {
-    LOG(FATAL) << "Failed to get workerId from meta server";
+    DLOG(FATAL) << "Failed to get workerId from meta server";
+    return false;
   }
   workerId_ = result.value();
   LOG(INFO) << "WorkerId init success: " << workerId_;
+  return true;
 }
 
 int64_t Snowflake::getId() {

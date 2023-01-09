@@ -10,6 +10,8 @@ DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
+  // MemoryTrackerVerified
+
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
@@ -29,24 +31,40 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   }
 
   std::vector<folly::Future<Status>> futures;
-  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
-  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  auto leftFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    return buildPath(false);
+  });
+  auto rightFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    return buildPath(true);
+  });
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
         ds.rows.swap(currentDs_.rows);
         return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      })
+      .thenError(
+          folly::tag_t<std::bad_alloc>{},
+          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -97,6 +115,7 @@ Status BFSShortestPathExecutor::buildPath(bool reverse) {
       currentEdges.emplace(std::move(dst), std::move(edge));
     }
   }
+
   // set nextVid
   const auto& nextVidVar = reverse ? pathNode_->rightVidVar() : pathNode_->leftVidVar();
   ectx_->setResult(nextVidVar, ResultBuilder().value(std::move(nextStepVids)).build());
@@ -141,18 +160,22 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     batchVids.push_back(vid);
     if (++i == totalSize || batchVids.size() == batchSize) {
       auto future = folly::via(runner(), [this, vids = std::move(batchVids), oddStep]() {
+        memory::MemoryCheckGuard guard;
         return doConjunct(vids, oddStep);
       });
       futures.emplace_back(std::move(future));
     }
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
-    return Status::OK();
-  });
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& resp : resps) {
+          currentDs_.append(std::move(resp));
+        }
+        return Status::OK();
+      });
 }
 
 DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,

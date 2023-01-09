@@ -6,7 +6,7 @@ Feature: Index selecting for match statement
   Background: Prepare a new space
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
@@ -54,6 +54,35 @@ Feature: Index selecting for match statement
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
       | 6  | Project        | 2            |                                                     |
+      | 2  | AppendVertices | 5            |                                                     |
+      | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.player.name in ["Yao Ming"] RETURN v.player.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name       |
+      | "Yao Ming" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 6  | Project        | 2            |                                                     |
+      | 2  | Filter         | 5            |                                                     |
+      | 2  | AppendVertices | 5            |                                                     |
+      | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
+    When profiling query:
+      """
+      MATCH (v:player) WHERE v.player.name in ["Yao Ming", "Tim Duncan"] RETURN v.player.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name         |
+      | "Tim Duncan" |
+      | "Yao Ming"   |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                       |
+      | 6  | Project        | 2            |                                                     |
+      | 2  | Filter         | 5            |                                                     |
       | 2  | AppendVertices | 5            |                                                     |
       | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |

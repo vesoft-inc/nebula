@@ -8,6 +8,7 @@
 #include <boost/core/noncopyable.hpp>
 
 #include "common/cpp/helpers.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/time/Duration.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
@@ -74,6 +75,11 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
 
   // Throw runtime error to stop whole execution early
   folly::Future<Status> error(Status status) const;
+
+  static Status memoryExceededStatus() {
+    return Status::GraphMemoryExceeded(
+        "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
+  }
 
  protected:
   static Executor *makeExecutor(const PlanNode *node,
@@ -153,6 +159,8 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
     futures.emplace_back(folly::via(
         runner(),
         [begin, end, tmpIter = iter->copy(), f = std::move(scatter)]() mutable -> ScatterResult {
+          // MemoryTrackerVerified
+          memory::MemoryCheckGuard guard;
           // Since not all iterators are linear, so iterates to the begin pos
           size_t tmp = 0;
           for (; tmpIter->valid() && tmp < begin; ++tmp) {

@@ -21,7 +21,8 @@ class GetTagPropNode : public QueryNode<VertexID> {
                  std::vector<TagNode*> tagNodes,
                  nebula::DataSet* resultDataSet,
                  Expression* filter,
-                 std::size_t limit)
+                 std::size_t limit,
+                 TagContext* tagContext)
       : context_(context),
         tagNodes_(std::move(tagNodes)),
         resultDataSet_(resultDataSet),
@@ -29,7 +30,8 @@ class GetTagPropNode : public QueryNode<VertexID> {
                     ? nullptr
                     : new StorageExpressionContext(context->vIdLen(), context->isIntId())),
         filter_(filter),
-        limit_(limit) {
+        limit_(limit),
+        tagContext_(tagContext) {
     name_ = "GetTagPropNode";
   }
 
@@ -42,8 +44,10 @@ class GetTagPropNode : public QueryNode<VertexID> {
       return ret;
     }
 
-    // If none of the tag node valid, will check vertex key if use_vertex_key is true,
-    // do not emplace the row if the flag is false
+    // If none of the tag node valid, will check if vertex exists:
+    // 1. if use_vertex_key is true, check it by vertex key
+    // 2. if use_vertex_key is false, check it by scanning vertex prefix
+    // If vertex does not exists, do not emplace the row.
     if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
           return tagNode->valid();
         })) {
@@ -58,7 +62,45 @@ class GetTagPropNode : public QueryNode<VertexID> {
           return ret;
         }
       } else {
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
+        // check if vId has any valid tag by prefix scan
+        std::unique_ptr<kvstore::KVIterator> iter;
+        auto tagPrefix = NebulaKeyUtils::tagPrefix(context_->vIdLen(), partId, vId);
+        ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, tagPrefix, &iter);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        } else if (!iter->valid()) {
+          return nebula::cpp2::ErrorCode::SUCCEEDED;
+        }
+
+        bool hasValidTag = false;
+        for (; iter->valid(); iter->next()) {
+          // check if tag schema exists
+          auto key = iter->key();
+          auto tagId = NebulaKeyUtils::getTagId(context_->vIdLen(), key);
+          auto schemaIter = tagContext_->schemas_.find(tagId);
+          if (schemaIter == tagContext_->schemas_.end()) {
+            continue;
+          }
+          // check if ttl expired
+          auto schemas = &(schemaIter->second);
+          RowReaderWrapper reader;
+          reader.reset(*schemas, iter->val());
+          if (!reader) {
+            continue;
+          }
+          auto ttl = QueryUtils::getTagTTLInfo(tagContext_, tagId);
+          if (ttl.has_value() &&
+              CommonUtils::checkDataExpiredForTTL(
+                  schemas->back().get(), reader.get(), ttl.value().first, ttl.value().second)) {
+            continue;
+          }
+          hasValidTag = true;
+          break;
+        }
+        if (!hasValidTag) {
+          return nebula::cpp2::ErrorCode::SUCCEEDED;
+        }
+        // if has any valid tag, will emplace a row with vId
       }
     }
 
@@ -120,6 +162,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
   std::unique_ptr<StorageExpressionContext> expCtx_{nullptr};
   Expression* filter_{nullptr};
   const std::size_t limit_{std::numeric_limits<std::size_t>::max()};
+  TagContext* tagContext_;
 };
 
 class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {

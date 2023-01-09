@@ -32,7 +32,7 @@ class CreateSessionProcessor : public BaseProcessor<cpp2::CreateSessionResp> {
 
 /**
  * @brief Update sessions and get killed queries. Then the graph can kill
- *        its queries by the reponse.
+ *        its queries by the response.
  *
  */
 class UpdateSessionsProcessor : public BaseProcessor<cpp2::UpdateSessionsResp> {
@@ -86,7 +86,7 @@ class GetSessionProcessor : public BaseProcessor<cpp2::GetSessionResp> {
  * @brief Remove session by specified session id.
  *
  */
-class RemoveSessionProcessor : public BaseProcessor<cpp2::ExecResp> {
+class RemoveSessionProcessor : public BaseProcessor<cpp2::RemoveSessionResp> {
  public:
   static RemoveSessionProcessor* instance(kvstore::KVStore* kvstore) {
     return new RemoveSessionProcessor(kvstore);
@@ -96,7 +96,7 @@ class RemoveSessionProcessor : public BaseProcessor<cpp2::ExecResp> {
 
  private:
   explicit RemoveSessionProcessor(kvstore::KVStore* kvstore)
-      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+      : BaseProcessor<cpp2::RemoveSessionResp>(kvstore) {}
 };
 
 /**

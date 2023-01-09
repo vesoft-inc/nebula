@@ -150,6 +150,7 @@ folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& pr
   };
 
   auto gather = [this](auto&& results) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();
@@ -180,6 +181,7 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Ite
   };
 
   auto gather = [this](auto&& results) mutable -> Status {
+    memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();
@@ -221,14 +223,14 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
   }
 }
 
-BiLeftJoinExecutor::BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
+HashLeftJoinExecutor::HashLeftJoinExecutor(const PlanNode* node, QueryContext* qctx)
     : LeftJoinExecutor(node, qctx) {
-  name_ = "BiLeftJoinExecutor";
+  name_ = "HashLeftJoinExecutor";
 }
 
-folly::Future<Status> BiLeftJoinExecutor::execute() {
+folly::Future<Status> HashLeftJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto* joinNode = asNode<BiJoin>(node());
+  auto* joinNode = asNode<HashJoin>(node());
   auto& rhsResult = ectx_->getResult(joinNode->rightInputVar());
   rightColSize_ = rhsResult.valuePtr()->getDataSet().colNames.size();
   NG_RETURN_IF_ERROR(checkBiInputDataSets());

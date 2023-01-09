@@ -61,11 +61,19 @@ struct Tag {
 struct Vertex {
   Value vid;
   std::vector<Tag> tags;
+  std::atomic<size_t> refcnt{1};
 
   Vertex() = default;
   Vertex(const Vertex& v) : vid(v.vid), tags(v.tags) {}
   Vertex(Vertex&& v) noexcept : vid(std::move(v.vid)), tags(std::move(v.tags)) {}
   Vertex(Value id, std::vector<Tag> t) : vid(std::move(id)), tags(std::move(t)) {}
+
+  size_t ref() {
+    return ++refcnt;
+  }
+  size_t unref() {
+    return --refcnt;
+  }
 
   void clear() {
     vid.clear();
@@ -86,7 +94,11 @@ struct Vertex {
   Vertex& operator=(const Vertex& rhs);
 
   bool operator==(const Vertex& rhs) const {
-    return vid == rhs.vid && tags == rhs.tags;
+    return vid == rhs.vid;
+  }
+
+  bool operator!=(const Vertex& rhs) const {
+    return !(*this == rhs);
   }
 
   bool operator<(const Vertex& rhs) const;

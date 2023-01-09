@@ -215,8 +215,8 @@ std::string AddListenerSentence::toString() const {
       buf += "ELASTICSEARCH ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
-      LOG(FATAL) << "Unknown listener type.";
-      break;
+      DLOG(FATAL) << "Unknown listener type.";
+      return "";
   }
   buf += listeners_->toString();
   return buf;
@@ -232,7 +232,7 @@ std::string RemoveListenerSentence::toString() const {
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
       DLOG(FATAL) << "Unknown listener type.";
-      break;
+      return "";
   }
   return buf;
 }
@@ -309,7 +309,8 @@ std::string AdminJobSentence::toString() const {
         return str;
       }
   }
-  LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
+  DLOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
+  return "";
 }
 
 meta::cpp2::JobOp AdminJobSentence::getOp() const {
@@ -318,6 +319,13 @@ meta::cpp2::JobOp AdminJobSentence::getOp() const {
 
 meta::cpp2::JobType AdminJobSentence::getJobType() const {
   return type_;
+}
+
+bool AdminJobSentence::needWriteSpace() const {
+  if (kind_ == Kind::kAdminJob) {
+    return type_ == meta::cpp2::JobType::DATA_BALANCE || type_ == meta::cpp2::JobType::ZONE_BALANCE;
+  }
+  return false;
 }
 
 const std::vector<std::string> &AdminJobSentence::getParas() const {
@@ -343,7 +351,8 @@ std::string ShowServiceClientsSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SHOW TEXT SEARCH CLIENTS";
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 }
 
@@ -355,7 +364,8 @@ std::string SignInServiceSentence::toString() const {
       buf += "SIGN IN TEXT SERVICE ";
       break;
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 
   for (auto &client : clients_->clients()) {
@@ -394,7 +404,8 @@ std::string SignOutServiceSentence::toString() const {
     case meta::cpp2::ExternalServiceType::ELASTICSEARCH:
       return "SIGN OUT TEXT SERVICE";
     default:
-      LOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      DLOG(FATAL) << "Unknown service type " << static_cast<uint8_t>(type_);
+      return "";
   }
 }
 
@@ -404,6 +415,10 @@ std::string ShowSessionsSentence::toString() const {
   }
   if (isLocalCommand()) return "SHOW LOCAL SESSIONS";
   return "SHOW SESSIONS";
+}
+
+std::string KillSessionSentence::toString() const {
+  return folly::stringPrintf("KILL SESSION %s", sessionId_->toString().c_str());
 }
 
 std::string ShowQueriesSentence::toString() const {

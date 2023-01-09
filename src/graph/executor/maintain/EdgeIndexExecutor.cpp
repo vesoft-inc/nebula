@@ -26,6 +26,8 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
                         ceiNode->getComment())
       .via(runner())
       .thenValue([ceiNode, spaceId](StatusOr<IndexID> resp) {
+        memory::MemoryCheckGuard guard;
+        // MemoryTrackerVerified
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create index `" << ceiNode->getIndexName()
                        << "' at edge: `" << ceiNode->getSchemaName()
@@ -46,6 +48,7 @@ folly::Future<Status> DropEdgeIndexExecutor::execute() {
       ->dropEdgeIndex(spaceId, deiNode->getIndexName(), deiNode->getIfExists())
       .via(runner())
       .thenValue([deiNode, spaceId](StatusOr<IndexID> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge index`" << deiNode->getIndexName()
                        << "' failed: " << resp.status();
@@ -65,6 +68,7 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
       ->getEdgeIndex(spaceId, deiNode->getIndexName())
       .via(runner())
       .thenValue([this, deiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge index`" << deiNode->getIndexName()
                        << "' failed: " << resp.status();
@@ -92,6 +96,7 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
       ->getEdgeIndex(spaceId, sceiNode->getIndexName())
       .via(runner())
       .thenValue([this, sceiNode, spaceId](StatusOr<meta::cpp2::IndexItem> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show create edge index `"
                        << sceiNode->getIndexName() << "' failed: " << resp.status();
@@ -113,8 +118,12 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
   auto *iNode = asNode<ShowEdgeIndexes>(node());
   const auto &bySchema = iNode->name();
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listEdgeIndexes(spaceId).via(runner()).thenValue(
-      [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+  return qctx()
+      ->getMetaClient()
+      ->listEdgeIndexes(spaceId)
+      .via(runner())
+      .thenValue([this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge indexes failed" << resp.status();
           return resp.status();
@@ -165,8 +174,12 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->listEdgeIndexStatus(spaceId).via(runner()).thenValue(
-      [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+  return qctx()
+      ->getMetaClient()
+      ->listEdgeIndexStatus(spaceId)
+      .via(runner())
+      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge index status failed"
                        << resp.status();

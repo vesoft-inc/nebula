@@ -128,7 +128,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
@@ -137,7 +137,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       WHERE r.start_year <= 2005 AND r.end_year >= 2005
       RETURN r.start_year AS Start_Year, r.end_year AS Start_Year
       """
@@ -516,11 +516,6 @@ Feature: Basic match
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
-      MATCH (v{name: "Tim Duncan"}) return v
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
       MATCH (v:player:bachelor) RETURN v
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
@@ -598,3 +593,43 @@ Feature: Basic match
     Then the result should be, in any order:
       | v                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  Scenario: match with tag filter
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) == hash('Tim Duncan') return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..0]-(b) where id(a) in [hash('Tim Duncan'), hash('Spurs')] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b         |
+      | ('Spurs') |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) in [hash('Tim Duncan'), hash('Spurs')] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b                     |
+      | ("Spurs")             |
+      | ("Aron Baynes")       |
+      | ("Boris Diaw")        |
+      | ("Cory Joseph")       |
+      | ("Danny Green")       |
+      | ("David West")        |
+      | ("Dejounte Murray")   |
+      | ("Jonathon Simmons")  |
+      | ("Kyle Anderson")     |
+      | ("LaMarcus Aldridge") |
+      | ("Manu Ginobili")     |
+      | ("Marco Belinelli")   |
+      | ("Paul Gasol")        |
+      | ("Rudy Gay")          |
+      | ("Tiago Splitter")    |
+      | ("Tim Duncan")        |
+      | ("Tony Parker")       |
+      | ("Tracy McGrady")     |
+      | ("Marco Belinelli")   |

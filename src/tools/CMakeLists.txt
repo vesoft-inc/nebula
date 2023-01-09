@@ -17,6 +17,7 @@ set(tools_test_deps
     $<TARGET_OBJECTS:storage_common_obj>
     $<TARGET_OBJECTS:kvstore_obj>
     $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:listener_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:codec_obj>
@@ -27,7 +28,6 @@ set(tools_test_deps
     $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
     $<TARGET_OBJECTS:ws_common_obj>
-    $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
@@ -37,6 +37,7 @@ set(tools_test_deps
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>
@@ -57,10 +58,11 @@ set(tools_test_deps
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
-    $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:http_client_obj>
 )
 
 if(NOT ENABLE_STANDALONE_VERSION)
@@ -69,3 +71,4 @@ nebula_add_subdirectory(simple-kv-verify)
 endif()
 nebula_add_subdirectory(meta-dump)
 nebula_add_subdirectory(db-dump)
+nebula_add_subdirectory(db-upgrade)

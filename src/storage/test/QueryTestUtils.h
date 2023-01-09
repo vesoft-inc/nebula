@@ -379,7 +379,7 @@ class QueryTestUtils {
       } else {
         ASSERT_EQ(Value::Type::__EMPTY__, row.values[1].type());
       }
-      // the last column is yeild expression
+      // the last column is yield expression
       ASSERT_EQ(Value::Type::__EMPTY__, row.values[expectColumnCount - 1].type());
       checkRowProps(row, dataSet.colNames, tags, edges);
     }

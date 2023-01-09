@@ -162,15 +162,11 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   }
   {
     std::string query = "YIELD (int)\"123abc\"";
-    auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `(INT)\"123abc\"' is not a valid expression ");
+    EXPECT_TRUE(checkResult(query));
   }
   {
     std::string query = "YIELD (int)\"abc123\"";
-    auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `(INT)\"abc123\"' is not a valid expression ");
+    EXPECT_TRUE(checkResult(query));
   }
   {
     std::string query = "YIELD (doublE)\"123\"";
@@ -182,9 +178,7 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   }
   {
     std::string query = "YIELD (doublE)\".a123\"";
-    auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `(FLOAT)\".a123\"' is not a valid expression ");
+    EXPECT_TRUE(checkResult(query));
   }
   {
     std::string query = "YIELD (STRING)1.23";
@@ -200,15 +194,15 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   }
   {
     std::string query = "YIELD (BOOL)123";
-    EXPECT_FALSE(checkResult(query, expected_));
+    EXPECT_TRUE(checkResult(query, expected_));
   }
   {
     std::string query = "YIELD (BOOL)0";
-    EXPECT_FALSE(checkResult(query, expected_));
+    EXPECT_TRUE(checkResult(query, expected_));
   }
   {
     std::string query = "YIELD (BOOL)\"12\"";
-    EXPECT_FALSE(checkResult(query, expected_));
+    EXPECT_TRUE(checkResult(query, expected_));
   }
   {
     std::string query = "YIELD (MAP)(\"12\")";

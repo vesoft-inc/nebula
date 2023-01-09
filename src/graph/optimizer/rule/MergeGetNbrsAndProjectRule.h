@@ -18,7 +18,7 @@ namespace opt {
 //  expression of GetNeighbors Benefits:
 //   1. Delete unnecessary node
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +------+-------+

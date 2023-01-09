@@ -46,6 +46,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 
 // Create query context and query instance and execute it
 void QueryEngine::execute(RequestContextPtr rctx) {
+  memory::MemoryCheckGuard guard;
   auto qctx = std::make_unique<QueryContext>(std::move(rctx),
                                              schemaManager_.get(),
                                              indexManager_.get(),
@@ -63,9 +64,9 @@ Status QueryEngine::setupMemoryMonitorThread() {
   }
 
   auto updateMemoryWatermark = []() -> Status {
-    auto status = MemoryUtils::hitsHighWatermark();
+    auto status = memory::MemoryUtils::hitsHighWatermark();
     NG_RETURN_IF_ERROR(status);
-    MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+    memory::MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
     return Status::OK();
   };
 

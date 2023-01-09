@@ -10,6 +10,7 @@
 #include "common/time/TimeUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/job/JobDescription.h"
 
 DEFINE_string(path, "", "rocksdb instance path");
 
@@ -41,6 +42,7 @@ class MetaDumper {
         V1 = 1,
         V2 = 2,
         V3 = 3,
+        V3_4 = 4,
       };
 
       prefix = "__meta_version__";
@@ -59,14 +61,14 @@ class MetaDumper {
         while (iter->Valid() && iter->key().starts_with(prefix)) {
           found = true;
           auto v1KeySize = prefix.size() + sizeof(int64_t);
-          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
+          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3_4;
           LOG(INFO) << "Meta version=" << static_cast<int>(version);
           iter->Next();
           break;
         }
 
         if (!found) {
-          LOG(INFO) << "Meta version= Unkown";
+          LOG(INFO) << "Meta version= Unknown";
         }
       }
     }
@@ -270,6 +272,26 @@ class MetaDumper {
           ss << host << " ";
         }
         LOG(INFO) << folly::sformat("zone name: {}, contain hosts: {}", zone, ss.str());
+        iter->Next();
+      }
+    }
+    {
+      LOG(INFO) << "------------------------------------------\n\n";
+      LOG(INFO) << "Job info:";
+      prefix = MetaKeyUtils::jobPrefix();
+      iter->Seek(rocksdb::Slice(prefix));
+      while (iter->Valid() && iter->key().starts_with(prefix)) {
+        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
+        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
+        if (MetaKeyUtils::isJobKey(key)) {
+          auto jobRet = JobDescription::makeJobDescription(key, val);
+          auto job = nebula::value(jobRet);
+          LOG(INFO) << folly::sformat("space id: {}, job id: {}, status: {}",
+                                      job.getSpace(),
+                                      job.getJobId(),
+                                      JobStatus::toString(job.getStatus()));
+        }
+
         iter->Next();
       }
     }

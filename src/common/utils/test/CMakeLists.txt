@@ -21,6 +21,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
@@ -47,6 +50,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
@@ -76,6 +82,9 @@ nebula_add_test(
         $<TARGET_OBJECTS:ast_match_path_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>        
     LIBRARIES
@@ -94,13 +103,15 @@ nebula_add_test(
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+        # $<TARGET_OBJECTS:es_adapter_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}

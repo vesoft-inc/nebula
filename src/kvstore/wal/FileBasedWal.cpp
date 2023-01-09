@@ -389,7 +389,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (id != curLogId) {
-      LOG(WARNING) << "LogId is not consistent" << id << " " << curLogId;
+      LOG(WARNING) << "LogId is not consistent " << id << " " << curLogId;
       break;
     }
 
@@ -439,7 +439,10 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
   close(fd);
 }
 
-bool FileBasedWal::appendLogInternal(LogID id, TermID term, ClusterID cluster, std::string msg) {
+bool FileBasedWal::appendLogInternal(LogID id,
+                                     TermID term,
+                                     ClusterID cluster,
+                                     folly::StringPiece msg) {
   if (lastLogId_ != 0 && firstLogId_ != 0 && id != lastLogId_ + 1) {
     VLOG(3) << idStr_ << "There is a gap in the log id. The last log id is " << lastLogId_
             << ", and the id being appended is " << id;
@@ -493,7 +496,7 @@ bool FileBasedWal::appendLogInternal(LogID id, TermID term, ClusterID cluster, s
     firstLogId_ = id;
   }
 
-  logBuffer_->push(id, term, cluster, std::move(msg));
+  logBuffer_->push(id, term, cluster, msg);
   return true;
 }
 
@@ -502,7 +505,7 @@ bool FileBasedWal::appendLog(LogID id, TermID term, ClusterID cluster, std::stri
     VLOG_EVERY_N(2, 1000) << idStr_ << "Failed to appendLogs because of no more space";
     return false;
   }
-  if (!appendLogInternal(id, term, cluster, std::move(msg))) {
+  if (!appendLogInternal(id, term, cluster, folly::StringPiece(msg))) {
     VLOG(3) << "Failed to append log for logId " << id;
     return false;
   }
@@ -515,8 +518,7 @@ bool FileBasedWal::appendLogs(LogIterator& iter) {
     return false;
   }
   for (; iter.valid(); ++iter) {
-    if (!appendLogInternal(
-            iter.logId(), iter.logTerm(), iter.logSource(), iter.logMsg().toString())) {
+    if (!appendLogInternal(iter.logId(), iter.logTerm(), iter.logSource(), iter.logMsg())) {
       VLOG(3) << idStr_ << "Failed to append log for logId " << iter.logId();
       return false;
     }

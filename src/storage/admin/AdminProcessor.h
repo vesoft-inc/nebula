@@ -37,7 +37,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   /**
    * @brief Entry point for trans leader.
    *
-   * @param req  Reuqest for trans leader.
+   * @param req  Request for trans leader.
    */
   void process(const cpp2::TransLeaderReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
@@ -193,7 +193,7 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   /**
    * @brief Entry point for removing part.
    *
-   * @param req Reuqest for removing part.
+   * @param req Request for removing part.
    */
   void process(const cpp2::RemovePartReq& req) {
     auto spaceId = req.get_space_id();
@@ -285,7 +285,7 @@ class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   /**
    * @brief Entry point for adding learner.
    *
-   * @param req Reuqest for adding learner.
+   * @param req Request for adding learner.
    */
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
@@ -332,7 +332,7 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
   /**
    * @brief Entry point to wait data catching up data for space.
    *
-   * @param req Reuqest for waiting data catching up.
+   * @param req Request for waiting data catching up.
    */
   void process(const cpp2::CatchUpDataReq& req) {
     auto spaceId = req.get_space_id();
@@ -351,7 +351,7 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
     folly::async([this, part, peer, spaceId, partId] {
       int retry = FLAGS_waiting_catch_up_retry_times;
       while (retry-- > 0) {
-        auto res = part->isCatchedUp(peer);
+        auto res = part->isCaughtUp(peer);
         LOG(INFO) << "Waiting for catching up data, peer " << peer << ", space " << spaceId
                   << ", part " << partId << ", remaining " << retry << " retry times"
                   << ", result " << static_cast<int32_t>(res);
@@ -426,7 +426,7 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     part->checkAndResetPeers(peers);
 
-    for (auto p : peers) {
+    for (const auto& p : peers) {
       // change the promoted peer to the normal peer when finish balancing
       part->engine()->updatePart(partId, kvstore::Peer(p, kvstore::Peer::Status::kNormalPeer));
     }

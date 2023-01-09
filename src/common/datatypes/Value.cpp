@@ -465,9 +465,9 @@ void Value::setVertex(Vertex&& v) {
   setV(std::move(v));
 }
 
-void Value::setVertex(std::unique_ptr<Vertex>&& v) {
+void Value::setVertex(Vertex* v) {
   clear();
-  setV(std::move(v));
+  setV(v);
 }
 
 void Value::setEdge(const Edge& v) {
@@ -480,9 +480,9 @@ void Value::setEdge(Edge&& v) {
   setE(std::move(v));
 }
 
-void Value::setEdge(std::unique_ptr<Edge>&& v) {
+void Value::setEdge(Edge* v) {
   clear();
-  setE(std::move(v));
+  setE(v);
 }
 
 void Value::setPath(const Path& v) {
@@ -622,7 +622,7 @@ const Vertex& Value::getVertex() const {
 
 const Vertex* Value::getVertexPtr() const {
   CHECK_EQ(type_, Type::VERTEX);
-  return value_.vVal.get();
+  return value_.vVal;
 }
 
 const Edge& Value::getEdge() const {
@@ -632,7 +632,7 @@ const Edge& Value::getEdge() const {
 
 const Edge* Value::getEdgePtr() const {
   CHECK_EQ(type_, Type::EDGE);
-  return value_.eVal.get();
+  return value_.eVal;
 }
 
 const Path& Value::getPath() const {
@@ -947,11 +947,23 @@ void Value::clearSlow() {
       break;
     }
     case Type::VERTEX: {
-      destruct(value_.vVal);
+      if (value_.vVal) {
+        if (value_.vVal->unref() == 0) {
+          delete value_.vVal;
+        }
+        value_.vVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::EDGE: {
-      destruct(value_.eVal);
+      if (value_.eVal) {
+        if (value_.eVal->unref() == 0) {
+          delete value_.eVal;
+        }
+        value_.eVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::PATH: {
@@ -1028,12 +1040,18 @@ Value& Value::operator=(Value&& rhs) noexcept {
       break;
     }
     case Type::VERTEX: {
-      setV(std::move(rhs.value_.vVal));
-      break;
+      value_.vVal = rhs.value_.vVal;
+      type_ = Type::VERTEX;
+      rhs.value_.vVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::EDGE: {
-      setE(std::move(rhs.value_.eVal));
-      break;
+      value_.eVal = rhs.value_.eVal;
+      type_ = Type::EDGE;
+      rhs.value_.eVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::PATH: {
       setP(std::move(rhs.value_.pVal));
@@ -1248,44 +1266,36 @@ void Value::setDT(DateTime&& v) {
   new (std::addressof(value_.dtVal)) DateTime(std::move(v));
 }
 
-void Value::setV(const std::unique_ptr<Vertex>& v) {
+void Value::setV(Vertex* v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(*v));
-}
-
-void Value::setV(std::unique_ptr<Vertex>&& v) {
-  type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(std::move(v));
+  value_.vVal = v;
+  value_.vVal->ref();
 }
 
 void Value::setV(const Vertex& v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(v));
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(v));
 }
 
 void Value::setV(Vertex&& v) {
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(std::move(v)));
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(std::move(v)));
 }
 
-void Value::setE(const std::unique_ptr<Edge>& v) {
+void Value::setE(Edge* v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(*v));
-}
-
-void Value::setE(std::unique_ptr<Edge>&& v) {
-  type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(std::move(v));
+  value_.eVal = v;
+  value_.eVal->ref();
 }
 
 void Value::setE(const Edge& v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(v));
+  new (std::addressof(value_.eVal)) Edge*(new Edge(v));
 }
 
 void Value::setE(Edge&& v) {
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(std::move(v)));
+  new (std::addressof(value_.eVal)) Edge*(new Edge(std::move(v)));
 }
 
 void Value::setP(const std::unique_ptr<Path>& v) {
@@ -1497,7 +1507,8 @@ folly::dynamic Value::toJson() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 folly::dynamic Value::getMetaData() const {
@@ -1542,7 +1553,8 @@ folly::dynamic Value::getMetaData() const {
       break;
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 std::string Value::toString() const {
@@ -1569,7 +1581,8 @@ std::string Value::toString() const {
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
       }
-      LOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      DLOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      return "__NULL_BAD_TYPE__";
     }
     case Value::Type::BOOL: {
       return getBool() ? "true" : "false";
@@ -1622,7 +1635,8 @@ std::string Value::toString() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return "__NULL_BAD_TYPE__";
 }
 
 Value Value::toBool() const {
@@ -1906,9 +1920,15 @@ Value Value::equal(const Value& v) const {
       return getDateTime() == v.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == v.value_.vVal) {
+        return true;
+      }
       return getVertex() == v.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == v.value_.eVal) {
+        return true;
+      }
       return getEdge() == v.getEdge();
     }
     case Value::Type::PATH: {
@@ -1959,7 +1979,8 @@ bool Value::implicitBool() const {
     case Type::LIST:
       return !getList().empty();
     default:
-      LOG(FATAL) << "Impossible to reach here!";
+      DLOG(FATAL) << "Impossible to reach here!";
+      return false;
   }
 }
 
@@ -2241,7 +2262,8 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return Value::kNullValue;
         }
       }
-      LOG(FATAL) << "Unknown type: " << rhs.type();
+      DLOG(FATAL) << "Unknown type: " << rhs.type();
+      return Value::kNullBadType;
     }
     case Value::Type::VERTEX: {
       switch (rhs.type()) {
@@ -2487,12 +2509,7 @@ Value operator/(const Value& lhs, const Value& rhs) {
           return lVal / denom;
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return lhs.getInt() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getInt() / rhs.getFloat();
         }
         default: {
           return Value::kNullBadType;
@@ -2502,20 +2519,10 @@ Value operator/(const Value& lhs, const Value& rhs) {
     case Value::Type::FLOAT: {
       switch (rhs.type()) {
         case Value::Type::INT: {
-          int64_t denom = rhs.getInt();
-          if (denom != 0) {
-            return lhs.getFloat() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getFloat() / rhs.getInt();
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return lhs.getFloat() / denom;
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return lhs.getFloat() / rhs.getFloat();
         }
         default: {
           return Value::kNullBadType;
@@ -2548,12 +2555,7 @@ Value operator%(const Value& lhs, const Value& rhs) {
           }
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return std::fmod(lhs.getInt(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getInt(), rhs.getFloat());
         }
         default: {
           return Value::kNullBadType;
@@ -2563,20 +2565,10 @@ Value operator%(const Value& lhs, const Value& rhs) {
     case Value::Type::FLOAT: {
       switch (rhs.type()) {
         case Value::Type::INT: {
-          int64_t denom = rhs.getInt();
-          if (denom != 0) {
-            return std::fmod(lhs.getFloat(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getFloat(), rhs.getInt());
         }
         case Value::Type::FLOAT: {
-          double denom = rhs.getFloat();
-          if (std::abs(denom) > kEpsilon) {
-            return std::fmod(lhs.getFloat(), denom);
-          } else {
-            return Value::kNullDivByZero;
-          }
+          return std::fmod(lhs.getFloat(), rhs.getFloat());
         }
         default: {
           return Value::kNullBadType;
@@ -2771,9 +2763,15 @@ bool Value::equals(const Value& rhs) const {
       return getDateTime() == rhs.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == rhs.value_.vVal) {
+        return true;
+      }
       return getVertex() == rhs.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == rhs.value_.eVal) {
+        return true;
+      }
       return getEdge() == rhs.getEdge();
     }
     case Value::Type::PATH: {
@@ -2860,12 +2858,14 @@ std::size_t Value::hash() const {
       return std::hash<Duration>()(getDuration());
     }
     case Type::DATASET: {
-      LOG(FATAL) << "Hash for DATASET has not been implemented";
+      DLOG(FATAL) << "Hash for DATASET has not been implemented";
+      break;
     }
     default: {
-      LOG(FATAL) << "Unknown type";
+      DLOG(FATAL) << "Unknown type";
     }
   }
+  return ~0UL;
 }
 
 bool operator!=(const Value& lhs, const Value& rhs) {
@@ -2877,11 +2877,11 @@ bool operator>(const Value& lhs, const Value& rhs) {
 }
 
 bool operator<=(const Value& lhs, const Value& rhs) {
-  return !(rhs < lhs);
+  return lhs < rhs || lhs == rhs;
 }
 
 bool operator>=(const Value& lhs, const Value& rhs) {
-  return !(lhs < rhs);
+  return lhs > rhs || lhs == rhs;
 }
 
 Value operator&&(const Value& lhs, const Value& rhs) {

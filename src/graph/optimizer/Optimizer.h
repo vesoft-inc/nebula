@@ -47,6 +47,10 @@ class Optimizer final {
                           OptGroupNode *gnode,
                           std::unordered_map<int64_t, OptGroup *> *visited);
 
+  static Status rewriteArgumentInputVar(graph::PlanNode *root);
+
+  Status checkPlanDepth(const graph::PlanNode *root) const;
+
   static constexpr int8_t kMaxIterationRound = 5;
 
   std::vector<const RuleSet *> ruleSets_;

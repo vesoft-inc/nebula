@@ -25,13 +25,13 @@ CmpType = Enum('CmpType', ('EQUAL', 'CONTAINS', 'NOT_CONTAINS'))
 
 class DataSetComparator:
     def __init__(
-        self,
-        strict=True,
-        order=False,
-        contains=CmpType.EQUAL,
-        first_n_records=-1,
-        decode_type='utf-8',
-        vid_fn=None,
+            self,
+            strict=True,
+            order=False,
+            contains=CmpType.EQUAL,
+            first_n_records=-1,
+            decode_type='utf-8',
+            vid_fn=None,
     ):
         self._strict = strict
         self._order = order
@@ -51,9 +51,9 @@ class DataSetComparator:
 
     def _whether_return(self, cmp: bool) -> bool:
         return (
-            (self._contains == CmpType.EQUAL and not cmp)
-            or (self._contains == CmpType.CONTAINS and not cmp)
-            or (self._contains == CmpType.NOT_CONTAINS and cmp)
+                (self._contains == CmpType.EQUAL and not cmp)
+                or (self._contains == CmpType.CONTAINS and not cmp)
+                or (self._contains == CmpType.NOT_CONTAINS and cmp)
         )
 
     def compare(self, resp: DataSet, expect: DataSet):
@@ -73,7 +73,7 @@ class DataSetComparator:
         if self._order and self._contains == CmpType.EQUAL:
             if self._first_n_records > 0:
                 # just compare the first n records
-                resp_rows = resp.rows[0 : self._first_n_records]
+                resp_rows = resp.rows[0: self._first_n_records]
             else:
                 resp_rows = resp.rows
 
@@ -107,6 +107,11 @@ class DataSetComparator:
         if lhs.getType() == Value.FVAL:
             if not rhs.getType() == Value.FVAL:
                 return False
+            # handle nan & inf
+            if math.isnan(lhs.get_fVal()):
+                return math.isnan(rhs.get_fVal())
+            if math.isinf(lhs.get_fVal()):
+                return math.isinf(rhs.get_fVal())
             return math.fabs(lhs.get_fVal() - rhs.get_fVal()) < 1.0e-8
         if lhs.getType() == Value.SVAL:
             if not rhs.getType() == Value.SVAL:
@@ -236,7 +241,7 @@ class DataSetComparator:
                 return False
             rsrc, rdst = self.eid(rhs, lhs.type)
             if not (
-                self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
+                    self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
             ):
                 return False
             if rhs.props is None or len(lhs.props) != len(rhs.props):
@@ -245,7 +250,7 @@ class DataSetComparator:
             if rhs.src is not None and rhs.dst is not None:
                 rsrc, rdst = self.eid(rhs, lhs.type)
                 if not (
-                    self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
+                        self.compare_vid(lhs.src, rsrc) and self.compare_vid(lhs.dst, rdst)
                 ):
                     return False
             if rhs.ranking is not None:
@@ -262,9 +267,9 @@ class DataSetComparator:
         return self.b(vid) if type(vid) == str else vid
 
     def _compare_vid(
-        self,
-        lid: Union[int, bytes],
-        rid: Union[int, bytes, str],
+            self,
+            lid: Union[int, bytes],
+            rid: Union[int, bytes, str],
     ) -> bool:
         if type(lid) is bytes:
             return type(rid) in [str, bytes] and lid == self.bstr(rid)

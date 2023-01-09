@@ -298,9 +298,185 @@ Feature: Case Expression
   Scenario: Using the return value of case expr as an input
     When executing query:
       """
-      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
+      YIELD CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
       """
     Then the result should be, in order:
       | like._dst       |
       | "Manu Ginobili" |
       | "Tony Parker"   |
+
+  Scenario: use generic case in match
+    When executing query:
+      """
+      match (a:player)-[e:like]->(b) with case when e.likeness > 90 then e else {likeness:13} end as n return n.likeness;
+      """
+    Then the result should be, in any order:
+      | n.likeness |
+      | 100        |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 95         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 99         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 100        |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+    When executing query:
+      """
+      match (a:player)-[e:like]->(b) with properties(case when e.likeness > 90 then e else {likeness:13} end) as n return n.likeness;
+      """
+    Then the result should be, in any order:
+      | n.likeness |
+      | 100        |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 95         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 99         |
+      | 99         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 100        |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 95         |
+      | 13         |
+      | 95         |
+      | 99         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |
+      | 13         |

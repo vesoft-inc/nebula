@@ -90,6 +90,8 @@ RowReaderWrapper::RowReaderWrapper(const meta::SchemaProviderIf* schema,
     currReader_ = &readerV2_;
   } else {
     LOG(FATAL) << "Should not reach here";
+    readerV2_.resetImpl(schema, row);
+    currReader_ = &readerV2_;
   }
 }
 

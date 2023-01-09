@@ -50,31 +50,36 @@ def pytest_runtest_logreport(report):
 
 def pytest_addoption(parser):
     for config in all_configs:
-        parser.addoption(config,
-                         dest=all_configs[config][0],
-                         default=all_configs[config][1],
-                         help=all_configs[config][2])
+        parser.addoption(
+            config,
+            dest=all_configs[config][0],
+            default=all_configs[config][1],
+            help=all_configs[config][2],
+        )
 
-    parser.addoption("--build_dir",
-                     dest="build_dir",
-                     default=BUILD_DIR,
-                     help="NebulaGraph CMake build directory")
-    parser.addoption("--src_dir",
-                     dest="src_dir",
-                     default=NEBULA_HOME,
-                     help="NebulaGraph workspace")
+    parser.addoption(
+        "--build_dir",
+        dest="build_dir",
+        default=BUILD_DIR,
+        help="NebulaGraph CMake build directory",
+    )
+    parser.addoption(
+        "--src_dir", dest="src_dir", default=NEBULA_HOME, help="NebulaGraph workspace"
+    )
 
 
 def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func_args):
-    logging.info("=== more error information ===")
-    logging.info("feature is {}".format(feature.filename))
-    logging.info("step line number is {}".format(step.line_number))
-    logging.info("step name is {}".format(step.name))
-    if step_func_args.get("graph_spaces") is not None:
+    logging.error("Location: {}:{}".format(feature.filename, step.line_number))
+    logging.error("Step: {}".format(step.name))
+    graph_spaces = None
+    if graph_spaces is None and step_func_args.get("graph_spaces") is not None:
         graph_spaces = step_func_args.get("graph_spaces")
-        if graph_spaces.get("space_desc") is not None:
-            logging.info("error space is {}".format(
-                graph_spaces.get("space_desc")))
+
+    if graph_spaces is None and step_func_args.get("exec_ctx") is not None:
+        graph_spaces = step_func_args.get("exec_ctx")
+
+    if graph_spaces is not None and graph_spaces.get("space_desc") is not None:
+        logging.error("Space: {}".format(graph_spaces.get("space_desc")))
 
 
 def pytest_configure(config):
@@ -125,8 +130,7 @@ def get_ssl_config_from_tmp():
 
 @pytest.fixture(scope="class")
 def class_fixture_variables():
-    """save class scope fixture, used for session update.
-    """
+    """save class scope fixture, used for session update."""
     # cluster is the instance of NebulaService
     # current_session is the session currently using
     # sessions is a list of all sessions in the cluster
@@ -227,10 +231,13 @@ def load_ldbc_v0_3_3():
 def load_student_data():
     yield load_csv_data_once("student")
 
+@pytest.fixture(scope="session")
+def load_ngdata_data():
+    yield load_csv_data_once("ngdata")
 
 # TODO(yee): Delete this when we migrate all test cases
 @pytest.fixture(scope="class")
-def workarround_for_class(
+def workaround_for_class(
     request, pytestconfig, conn_pool, session, load_nba_data, load_student_data
 ):
     if request.cls is None:

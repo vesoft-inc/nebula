@@ -527,6 +527,7 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
   }
 
   LOG(FATAL) << "Unknown expression: " << decoder.getHexStr();
+  return exp;
 }
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {

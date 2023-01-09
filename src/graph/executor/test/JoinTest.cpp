@@ -9,6 +9,7 @@
 #include "graph/executor/query/InnerJoinExecutor.h"
 #include "graph/executor/query/LeftJoinExecutor.h"
 #include "graph/executor/test/QueryTestBase.h"
+#include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -67,6 +68,43 @@ class JoinTest : public QueryTestBase {
       ds.colNames = {"src", "dst"};
       qctx_->symTable()->newVariable("empty_var2");
       qctx_->ectx()->setResult("empty_var2", ResultBuilder().value(Value(std::move(ds))).build());
+    }
+    {
+      DataSet ds;
+      ds.colNames = {"v1", "e1", "v2", "v3"};
+      Row row1;
+      row1.values.emplace_back(1);
+      row1.values.emplace_back(2);
+      row1.values.emplace_back(3);
+      row1.values.emplace_back(4);
+      ds.rows.emplace_back(std::move(row1));
+
+      Row row2;
+      row2.values.emplace_back(11);
+      row2.values.emplace_back(12);
+      row2.values.emplace_back(3);
+      row2.values.emplace_back(4);
+      ds.rows.emplace_back(std::move(row2));
+
+      qctx_->symTable()->newVariable("var4");
+      qctx_->ectx()->setResult("var4", ResultBuilder().value(Value(std::move(ds))).build());
+    }
+    {
+      DataSet ds;
+      ds.colNames = {"v2", "e2", "v3"};
+      Row row1;
+      row1.values.emplace_back(3);
+      row1.values.emplace_back(0);
+      row1.values.emplace_back(4);
+      ds.rows.emplace_back(std::move(row1));
+
+      Row row2;
+      row2.values.emplace_back(3);
+      row2.values.emplace_back(0);
+      row2.values.emplace_back(5);
+      ds.rows.emplace_back(std::move(row2));
+      qctx_->symTable()->newVariable("var5");
+      qctx_->ectx()->setResult("var5", ResultBuilder().value(Value(std::move(ds))).build());
     }
   }
 
@@ -169,6 +207,66 @@ TEST_F(JoinTest, InnerJoin) {
 
   // $var1 inner join $var2 on $var2.dst = $var1._vid
   testInnerJoin("var2", "var1", expected, __LINE__);
+}
+
+TEST_F(JoinTest, HashInnerJoin) {
+  DataSet expected;
+  expected.colNames = {"v1", "e1", "v2", "v3", "e2"};
+  Row row1;
+  row1.values.emplace_back(1);
+  row1.values.emplace_back(2);
+  row1.values.emplace_back(3);
+  row1.values.emplace_back(4);
+  row1.values.emplace_back(0);
+  expected.rows.emplace_back(std::move(row1));
+
+  Row row2;
+  row2.values.emplace_back(11);
+  row2.values.emplace_back(12);
+  row2.values.emplace_back(3);
+  row2.values.emplace_back(4);
+  row2.values.emplace_back(0);
+  expected.rows.emplace_back(std::move(row2));
+
+  // $var4 inner join $var5 on $var4.v2 = $var5.v2, $var4.v3 = $var4.v3
+  auto key1 = VariablePropertyExpression::make(pool_, "var4", "v2");
+  auto key2 = VariablePropertyExpression::make(pool_, "var4", "v3");
+  std::vector<Expression*> hashKeys = {key1, key2};
+  auto probe1 = VariablePropertyExpression::make(pool_, "var5", "v2");
+  auto probe2 = VariablePropertyExpression::make(pool_, "var5", "v3");
+  std::vector<Expression*> probeKeys = {probe1, probe2};
+
+  auto lhs = Project::make(qctx_.get(), nullptr, nullptr);
+  lhs->setOutputVar("var4");
+  lhs->setColNames({"v1", "e1", "v2", "v3"});
+  auto rhs = Project::make(qctx_.get(), nullptr, nullptr);
+  rhs->setOutputVar("var5");
+  rhs->setColNames({"v2", "e2", "v3"});
+
+  auto* join =
+      HashInnerJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
+
+  auto joinExe = std::make_unique<HashInnerJoinExecutor>(join, qctx_.get());
+  auto future = joinExe->execute();
+  auto status = std::move(future).get();
+  EXPECT_TRUE(status.ok());
+  auto& result = qctx_->ectx()->getResult(join->outputVar());
+
+  DataSet resultDs;
+  resultDs.colNames = {"v1", "e1", "v2", "v3", "e2"};
+  auto iter = result.iter();
+  for (; iter->valid(); iter->next()) {
+    const auto& cols = *iter->row();
+    Row row;
+    for (size_t i = 0; i < cols.size(); ++i) {
+      Value col = cols[i];
+      row.values.emplace_back(std::move(col));
+    }
+    resultDs.rows.emplace_back(std::move(row));
+  }
+
+  EXPECT_EQ(resultDs, expected);
+  EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
 
 TEST_F(JoinTest, InnerJoinTwice) {
@@ -281,6 +379,73 @@ TEST_F(JoinTest, LeftJoin) {
 
   // $var1 left join $var2 on $var1._vid = $var2.dst
   testLeftJoin("var1", "var2", expected, __LINE__);
+}
+
+TEST_F(JoinTest, HashLeftJoin) {
+  DataSet expected;
+  expected.colNames = {"v2", "e2", "v3", "v1", "e1"};
+  Row row1;
+  row1.values.emplace_back(3);
+  row1.values.emplace_back(0);
+  row1.values.emplace_back(4);
+  row1.values.emplace_back(1);
+  row1.values.emplace_back(2);
+  expected.rows.emplace_back(std::move(row1));
+
+  Row row2;
+  row2.values.emplace_back(3);
+  row2.values.emplace_back(0);
+  row2.values.emplace_back(4);
+  row2.values.emplace_back(11);
+  row2.values.emplace_back(12);
+  expected.rows.emplace_back(std::move(row2));
+
+  Row row3;
+  row3.values.emplace_back(3);
+  row3.values.emplace_back(0);
+  row3.values.emplace_back(5);
+  row3.values.emplace_back(Value::kNullValue);
+  row3.values.emplace_back(Value::kNullValue);
+  expected.rows.emplace_back(std::move(row3));
+
+  // $var5 left join $var4 on $var5.v2 = $var4.v2, $var5.v3 = $var4.v3
+  auto key1 = VariablePropertyExpression::make(pool_, "var5", "v2");
+  auto key2 = VariablePropertyExpression::make(pool_, "var5", "v3");
+  std::vector<Expression*> hashKeys = {key1, key2};
+  auto probe1 = VariablePropertyExpression::make(pool_, "var4", "v2");
+  auto probe2 = VariablePropertyExpression::make(pool_, "var4", "v3");
+  std::vector<Expression*> probeKeys = {probe1, probe2};
+
+  auto lhs = Project::make(qctx_.get(), nullptr, nullptr);
+  lhs->setOutputVar("var5");
+  lhs->setColNames({"v2", "e2", "v3"});
+  auto rhs = Project::make(qctx_.get(), nullptr, nullptr);
+  rhs->setOutputVar("var4");
+  rhs->setColNames({"v1", "e1", "v2", "v3"});
+
+  auto* join = HashLeftJoin::make(qctx_.get(), lhs, rhs, std::move(hashKeys), std::move(probeKeys));
+
+  auto joinExe = std::make_unique<HashLeftJoinExecutor>(join, qctx_.get());
+  auto future = joinExe->execute();
+  auto status = std::move(future).get();
+  EXPECT_TRUE(status.ok());
+  auto& result = qctx_->ectx()->getResult(join->outputVar());
+
+  DataSet resultDs;
+  resultDs.colNames = {"v2", "e2", "v3", "v1", "e1"};
+  auto iter = result.iter();
+  for (; iter->valid(); iter->next()) {
+    const auto& cols = *iter->row();
+    Row row;
+    for (size_t i = 0; i < cols.size(); ++i) {
+      Value col = cols[i];
+      row.values.emplace_back(std::move(col));
+    }
+    resultDs.rows.emplace_back(std::move(row));
+  }
+
+  EXPECT_EQ(resultDs, expected);
+  EXPECT_EQ(result.state(), Result::State::kSuccess);
 }
 
 TEST_F(JoinTest, LeftJoinTwice) {

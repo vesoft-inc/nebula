@@ -1,0 +1,775 @@
+space:
+    name: ngdata
+    partitionNum: 1
+    ReplicaFactor: 1
+    vidType: int
+    charset: utf8
+    collate: utf8_bin
+schema: |-
+    CREATE TAG Label_0 (Label_0_1_geography_polygon geography(polygon) NOT NULL, Label_0_2_String String NOT NULL COMMENT "Note of Label_0_2_String", Label_0_3_Bool Bool NOT NULL COMMENT "Note of Label_0_3_Bool", Label_0_8_Double Double NOT NULL COMMENT "Note of Label_0_8_Double", Label_0_9_geography geography NULL, Label_0_0_String String NOT NULL DEFAULT 'Kyle Anderson', Label_0_4_date date NOT NULL DEFAULT date() COMMENT "Note of Label_0_4_date", Label_0_5_Int Int NOT NULL, Label_0_6_geography_polygon geography(polygon) NOT NULL DEFAULT ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))") COMMENT "Note of Label_0_6_geography_polygon", Label_0_7_Int Int NULL DEFAULT 50 COMMENT "Note of Label_0_7_Int", Label_0_10_Int Int NOT NULL DEFAULT 78 COMMENT "Note of Label_0_10_Int") COMMENT = "Note of Label_0";
+    CREATE TAG Label_1 (Label_1_5_Bool Bool NULL DEFAULT true COMMENT "Note of Label_1_5_Bool", Label_1_6_String String NOT NULL DEFAULT 'Rajon Rondo' COMMENT "Note of Label_1_6_String", Label_1_9_Int Int NULL COMMENT "Note of Label_1_9_Int", Label_1_0_Bool Bool NOT NULL DEFAULT true COMMENT "Note of Label_1_0_Bool", Label_1_1_String String NOT NULL DEFAULT 'Russell Westbrook', Label_1_2_Bool Bool NOT NULL DEFAULT true, Label_1_4_String String NOT NULL DEFAULT 'Tony Parker', Label_1_3_String String NOT NULL DEFAULT 'Cory Joseph', Label_1_7_Double Double NOT NULL COMMENT "Note of Label_1_7_Double", Label_1_8_Double Double NOT NULL) COMMENT = "Note of Label_1";
+    CREATE TAG Label_2 (Label_2_2_time time NOT NULL DEFAULT time(), Label_2_3_Double Double NOT NULL DEFAULT 0.051401, Label_2_4_String String NULL DEFAULT 'Ben Simmons', Label_2_5_timestamp timestamp NOT NULL DEFAULT now(), Label_2_0_Double Double NOT NULL DEFAULT 0.406889, Label_2_1_geography_polygon geography(polygon) NOT NULL) COMMENT = "Note of Label_2";
+    CREATE TAG Label_3 (Label_3_0_Double Double NULL, Label_3_1_Bool Bool NOT NULL DEFAULT false COMMENT "Note of Label_3_1_Bool", Label_3_2_datetime datetime NOT NULL DEFAULT datetime() COMMENT "Note of Label_3_2_datetime", Label_3_3_geography_linestring geography(linestring) NOT NULL COMMENT "Note of Label_3_3_geography_linestring", Label_3_4_String String NULL DEFAULT 'Kyle Anderson', Label_3_5_Double Double NOT NULL DEFAULT 0.249527, Label_3_6_Int Int NOT NULL, Label_3_7_Double Double NOT NULL COMMENT "Note of Label_3_7_Double");
+    CREATE TAG Label_4 (Label_4_4_String String NOT NULL COMMENT "Note of Label_4_4_String", Label_4_5_String String NULL DEFAULT 'Marc Gasol', Label_4_6_timestamp timestamp NULL DEFAULT now(), Label_4_7_datetime datetime NOT NULL COMMENT "Note of Label_4_7_datetime", Label_4_0_String String NOT NULL DEFAULT 'Null2', Label_4_1_String String NOT NULL DEFAULT 'Paul George', Label_4_2_Bool Bool NOT NULL DEFAULT true COMMENT "Note of Label_4_2_Bool", Label_4_3_Bool Bool NOT NULL COMMENT "Note of Label_4_3_Bool");
+    CREATE TAG Label_5 (Label_5_6_date date NOT NULL DEFAULT date(), Label_5_4_Int Int NOT NULL DEFAULT 78 COMMENT "Note of Label_5_4_Int", Label_5_1_geography geography NOT NULL COMMENT "Note of Label_5_1_geography", Label_5_2_Int Int NOT NULL, Label_5_3_geography_linestring geography(linestring) NOT NULL DEFAULT ST_GeogFromText("LINESTRING(31 45, 37 3)") COMMENT "Note of Label_5_3_geography_linestring", Label_5_5_String String NOT NULL, Label_5_7_Bool Bool NOT NULL DEFAULT false, Label_5_8_Int Int NOT NULL DEFAULT 85 COMMENT "Note of Label_5_8_Int", Label_5_9_Double Double NOT NULL, Label_5_0_Bool Bool NULL DEFAULT true, Label_5_10_String String NOT NULL DEFAULT 'Chris Paul');
+    CREATE TAG Label_6 (Label_6_8_date date NOT NULL COMMENT "Note of Label_6_8_date", Label_6_0_Double Double NOT NULL DEFAULT 0.443040, Label_6_3_String String NOT NULL DEFAULT 'Shaquile O\'Neal' COMMENT "Note of Label_6_3_String", Label_6_7_geography_linestring geography(linestring) NOT NULL COMMENT "Note of Label_6_7_geography_linestring", Label_6_5_Bool Bool NOT NULL DEFAULT false COMMENT "Note of Label_6_5_Bool", Label_6_6_Int Int NOT NULL DEFAULT 55, Label_6_1_Bool Bool NOT NULL DEFAULT false, Label_6_2_Double Double NOT NULL DEFAULT 0.156155 COMMENT "Note of Label_6_2_Double", Label_6_4_String String NULL) COMMENT = "Note of Label_6";
+    CREATE TAG Label_7 (Label_7_6_timestamp timestamp NOT NULL, Label_7_0_Double Double NOT NULL, Label_7_3_Bool Bool NOT NULL, Label_7_4_Double Double NOT NULL DEFAULT 0.824580, Label_7_5_geography_polygon geography(polygon) NULL, Label_7_7_geography_linestring geography(linestring) NOT NULL DEFAULT ST_GeogFromText("LINESTRING(12 30, 20 8)") COMMENT "Note of Label_7_7_geography_linestring", Label_7_8_geography geography NOT NULL DEFAULT ST_GeogFromText("POINT(13 46)") COMMENT "Note of Label_7_8_geography", Label_7_1_Int Int NOT NULL COMMENT "Note of Label_7_1_Int", Label_7_2_String String NOT NULL COMMENT "Note of Label_7_2_String");
+    CREATE TAG Label_8 (Label_8_0_Bool Bool NOT NULL, Label_8_1_Bool Bool NOT NULL DEFAULT true COMMENT "Note of Label_8_1_Bool", Label_8_2_Double Double NOT NULL DEFAULT 0.166804, Label_8_3_Bool Bool NOT NULL DEFAULT false COMMENT "Note of Label_8_3_Bool", Label_8_4_String String NOT NULL DEFAULT 'Dejounte Murray' COMMENT "Note of Label_8_4_String", Label_8_5_date date NOT NULL DEFAULT date() COMMENT "Note of Label_8_5_date", Label_8_6_timestamp timestamp NOT NULL COMMENT "Note of Label_8_6_timestamp", Label_8_7_String String NOT NULL COMMENT "Note of Label_8_7_String");
+    CREATE TAG Label_9 (Label_9_5_Bool Bool NOT NULL DEFAULT false COMMENT "Note of Label_9_5_Bool", Label_9_6_datetime datetime NOT NULL DEFAULT datetime(), Label_9_0_Bool Bool NULL DEFAULT false COMMENT "Note of Label_9_0_Bool", Label_9_1_String String NOT NULL DEFAULT 'Jonathon Simmons', Label_9_2_Int Int NULL, Label_9_3_String String NOT NULL, Label_9_4_date date NOT NULL DEFAULT date() COMMENT "Note of Label_9_4_date") COMMENT = "Note of Label_9";
+    CREATE TAG Label_10 (Label_10_0_Double Double NOT NULL COMMENT "Note of Label_10_0_Double", Label_10_1_Double Double NOT NULL DEFAULT 0.137961 COMMENT "Note of Label_10_1_Double", Label_10_2_timestamp timestamp NOT NULL DEFAULT now(), Label_10_3_Bool Bool NOT NULL DEFAULT false, Label_10_4_Double Double NULL DEFAULT 0.405764, Label_10_5_Bool Bool NOT NULL DEFAULT true, Label_10_6_Double Double NULL COMMENT "Note of Label_10_6_Double");
+    CREATE TAG Label_11 (Label_11_4_geography geography NULL DEFAULT ST_GeogFromText("POINT(49 8)"), Label_11_5_Double Double NOT NULL DEFAULT 0.264843 COMMENT "Note of Label_11_5_Double", Label_11_0_geography_polygon geography(polygon) NOT NULL, Label_11_1_String String NOT NULL, Label_11_2_Int Int NOT NULL DEFAULT 96, Label_11_3_datetime datetime NOT NULL) COMMENT = "Note of Label_11";
+    CREATE TAG Label_ttl_0 (label_ttl_col timestamp NOT NULL) TTL_COL = "label_ttl_col", TTL_DURATION = 1200, COMMENT = "Note of Label_ttl_0";
+    CREATE TAG Label_same_prop_0 (label_ttl_col Int NOT NULL);
+    CREATE TAG Label_same_prop_1 (label_ttl_col Int NOT NULL COMMENT "Note of label_ttl_col");
+    CREATE EDGE Rel_0 (Rel_0_6_datetime datetime NOT NULL DEFAULT datetime() COMMENT "Note of Rel_0_6_datetime", Rel_0_7_Double Double NULL COMMENT "Note of Rel_0_7_Double", Rel_0_9_geography_point geography(point) NOT NULL, Rel_0_10_geography_linestring geography(linestring) NOT NULL COMMENT "Note of Rel_0_10_geography_linestring", Rel_0_0_geography_polygon geography(polygon) NOT NULL DEFAULT ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))"), Rel_0_3_Double Double NOT NULL DEFAULT 0.531362, Rel_0_5_geography_polygon geography(polygon) NOT NULL DEFAULT ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))"), Rel_0_8_timestamp timestamp NOT NULL DEFAULT now() COMMENT "Note of Rel_0_8_timestamp", Rel_0_1_Bool Bool NOT NULL DEFAULT false COMMENT "Note of Rel_0_1_Bool", Rel_0_2_String String NULL DEFAULT 'Tracy McGrady', Rel_0_4_geography_polygon geography(polygon) NULL DEFAULT ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))")) COMMENT = "Note of Rel_0";
+    CREATE EDGE Rel_1 (Rel_1_2_String String NULL DEFAULT 'Chris Paul', Rel_1_3_Int Int NOT NULL DEFAULT 13, Rel_1_4_Int Int NOT NULL, Rel_1_7_Bool Bool NOT NULL, Rel_1_8_String String NOT NULL COMMENT "Note of Rel_1_8_String", Rel_1_1_Int Int NULL, Rel_1_5_String String NOT NULL DEFAULT 'Rajon Rondo' COMMENT "Note of Rel_1_5_String", Rel_1_6_Int Int NOT NULL DEFAULT 1, Rel_1_9_Double Double NOT NULL DEFAULT 0.740466, Rel_1_10_Bool Bool NOT NULL DEFAULT false, Rel_1_0_date date NOT NULL DEFAULT date()) COMMENT = "Note of Rel_1";
+    CREATE EDGE Rel_2 (Rel_2_5_String String NOT NULL DEFAULT 'Manu Ginobili', Rel_2_6_Bool Bool NOT NULL DEFAULT false, Rel_2_7_time time NOT NULL DEFAULT time(), Rel_2_8_geography_polygon geography(polygon) NOT NULL, Rel_2_10_Double Double NOT NULL, Rel_2_0_Int Int NOT NULL DEFAULT 0 COMMENT "Note of Rel_2_0_Int", Rel_2_1_Double Double NOT NULL DEFAULT 0.409427 COMMENT "Note of Rel_2_1_Double", Rel_2_4_String String NOT NULL DEFAULT 'James Harden', Rel_2_2_String String NULL COMMENT "Note of Rel_2_2_String", Rel_2_3_geography_point geography(point) NOT NULL, Rel_2_9_Double Double NOT NULL DEFAULT 0.332852 COMMENT "Note of Rel_2_9_Double");
+    CREATE EDGE Rel_3 (Rel_3_8_Double Double NOT NULL DEFAULT 0.864351, Rel_3_1_geography_point geography(point) NOT NULL DEFAULT ST_GeogFromText("POINT(75 47)"), Rel_3_2_String String NOT NULL DEFAULT 'Shaquile O\'Neal' COMMENT "Note of Rel_3_2_String", Rel_3_5_Int Int NOT NULL DEFAULT 87 COMMENT "Note of Rel_3_5_Int", Rel_3_6_Bool Bool NOT NULL, Rel_3_7_timestamp timestamp NOT NULL, Rel_3_9_Int Int NOT NULL DEFAULT 3, Rel_3_10_geography_linestring geography(linestring) NOT NULL COMMENT "Note of Rel_3_10_geography_linestring", Rel_3_0_Int Int NOT NULL DEFAULT 0, Rel_3_3_time time NOT NULL DEFAULT time(), Rel_3_4_geography_point geography(point) NOT NULL DEFAULT ST_GeogFromText("POINT(11 75)")) COMMENT = "Note of Rel_3";
+    CREATE EDGE Rel_4 (Rel_4_2_Int Int NULL, Rel_4_3_Int Int NOT NULL DEFAULT 57, Rel_4_4_Int Int NOT NULL, Rel_4_5_Double Double NOT NULL DEFAULT 0.839047 COMMENT "Note of Rel_4_5_Double", Rel_4_6_Int Int NOT NULL DEFAULT 37 COMMENT "Note of Rel_4_6_Int", Rel_4_0_Int Int NOT NULL DEFAULT 3, Rel_4_1_Int Int NOT NULL) COMMENT = "Note of Rel_4";
+    CREATE EDGE Rel_5 (Rel_5_3_Bool Bool NOT NULL, Rel_5_4_Double Double NOT NULL, Rel_5_5_Bool Bool NOT NULL COMMENT "Note of Rel_5_5_Bool", Rel_5_6_Int Int NOT NULL DEFAULT 64 COMMENT "Note of Rel_5_6_Int", Rel_5_7_Double Double NOT NULL COMMENT "Note of Rel_5_7_Double", Rel_5_0_Double Double NOT NULL DEFAULT 0.507633 COMMENT "Note of Rel_5_0_Double", Rel_5_1_Bool Bool NOT NULL DEFAULT true COMMENT "Note of Rel_5_1_Bool", Rel_5_2_String String NOT NULL DEFAULT 'Russell Westbrook');
+    CREATE EDGE Edge_ttl_0 (rel_ttl_col timestamp NOT NULL) TTL_COL = "rel_ttl_col", TTL_DURATION = 1200, COMMENT = "Note of Edge_ttl_0";
+    CREATE EDGE Edge_label_limits (like Int NOT NULL COMMENT "Note of like") COMMENT = "Note of Edge_label_limits";
+    CREATE TAG INDEX Label_3_index ON Label_3 (Label_3_4_String(64), Label_3_2_datetime);
+    CREATE TAG INDEX Label_5_index ON Label_5 (Label_5_8_Int);
+    CREATE TAG INDEX Label_8_index ON Label_8 (Label_8_2_Double, Label_8_0_Bool, Label_8_4_String(64), Label_8_7_String(64), Label_8_5_date, Label_8_1_Bool, Label_8_3_Bool, Label_8_6_timestamp);
+    CREATE TAG INDEX Label_11_index ON Label_11 (Label_11_5_Double);
+    CREATE EDGE INDEX Rel_5_index ON Rel_5 (Rel_5_1_Bool, Rel_5_6_Int, Rel_5_2_String(64))
+files:
+    - path: Label_0.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_0
+              props:
+                - name: Label_0_1_geography_polygon
+                  type: geography(polygon)
+                  index: 4
+                - name: Label_0_2_String
+                  type: string
+                  index: 3
+                - name: Label_0_3_Bool
+                  type: bool
+                  index: 10
+                - name: Label_0_8_Double
+                  type: double
+                  index: 6
+                - name: Label_0_9_geography
+                  type: geography
+                  index: 5
+                - name: Label_0_0_String
+                  type: string
+                  index: 9
+                - name: Label_0_4_date
+                  type: date
+                  index: 11
+                - name: Label_0_5_Int
+                  type: int
+                  index: 8
+                - name: Label_0_6_geography_polygon
+                  type: geography(polygon)
+                  index: 2
+                - name: Label_0_7_Int
+                  type: int
+                  index: 1
+                - name: Label_0_10_Int
+                  type: int
+                  index: 7
+    - path: Label_1.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_1
+              props:
+                - name: Label_1_8_Double
+                  type: double
+                  index: 5
+                - name: Label_1_3_String
+                  type: string
+                  index: 3
+                - name: Label_1_7_Double
+                  type: double
+                  index: 4
+                - name: Label_1_2_Bool
+                  type: bool
+                  index: 9
+                - name: Label_1_4_String
+                  type: string
+                  index: 2
+                - name: Label_1_5_Bool
+                  type: bool
+                  index: 7
+                - name: Label_1_6_String
+                  type: string
+                  index: 8
+                - name: Label_1_9_Int
+                  type: int
+                  index: 1
+                - name: Label_1_0_Bool
+                  type: bool
+                  index: 10
+                - name: Label_1_1_String
+                  type: string
+                  index: 6
+    - path: Label_2.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_2
+              props:
+                - name: Label_2_1_geography_polygon
+                  type: geography(polygon)
+                  index: 4
+                - name: Label_2_2_time
+                  type: time
+                  index: 5
+                - name: Label_2_3_Double
+                  type: double
+                  index: 6
+                - name: Label_2_4_String
+                  type: string
+                  index: 3
+                - name: Label_2_5_timestamp
+                  type: timestamp
+                  index: 2
+                - name: Label_2_0_Double
+                  type: double
+                  index: 1
+    - path: Label_3.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_3
+              props:
+                - name: Label_3_2_datetime
+                  type: datetime
+                  index: 1
+                - name: Label_3_3_geography_linestring
+                  type: geography(linestring)
+                  index: 4
+                - name: Label_3_4_String
+                  type: string
+                  index: 5
+                - name: Label_3_5_Double
+                  type: double
+                  index: 3
+                - name: Label_3_6_Int
+                  type: int
+                  index: 2
+                - name: Label_3_7_Double
+                  type: double
+                  index: 6
+                - name: Label_3_0_Double
+                  type: double
+                  index: 8
+                - name: Label_3_1_Bool
+                  type: bool
+                  index: 7
+    - path: Label_4.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_4
+              props:
+                - name: Label_4_4_String
+                  type: string
+                  index: 5
+                - name: Label_4_5_String
+                  type: string
+                  index: 6
+                - name: Label_4_6_timestamp
+                  type: timestamp
+                  index: 7
+                - name: Label_4_7_datetime
+                  type: datetime
+                  index: 4
+                - name: Label_4_0_String
+                  type: string
+                  index: 1
+                - name: Label_4_1_String
+                  type: string
+                  index: 3
+                - name: Label_4_2_Bool
+                  type: bool
+                  index: 2
+                - name: Label_4_3_Bool
+                  type: bool
+                  index: 8
+    - path: Label_5.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_5
+              props:
+                - name: Label_5_4_Int
+                  type: int
+                  index: 1
+                - name: Label_5_6_date
+                  type: date
+                  index: 5
+                - name: Label_5_5_String
+                  type: string
+                  index: 11
+                - name: Label_5_7_Bool
+                  type: bool
+                  index: 7
+                - name: Label_5_8_Int
+                  type: int
+                  index: 9
+                - name: Label_5_9_Double
+                  type: double
+                  index: 8
+                - name: Label_5_0_Bool
+                  type: bool
+                  index: 2
+                - name: Label_5_1_geography
+                  type: geography
+                  index: 3
+                - name: Label_5_2_Int
+                  type: int
+                  index: 4
+                - name: Label_5_3_geography_linestring
+                  type: geography(linestring)
+                  index: 6
+                - name: Label_5_10_String
+                  type: string
+                  index: 10
+    - path: Label_6.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_6
+              props:
+                - name: Label_6_0_Double
+                  type: double
+                  index: 3
+                - name: Label_6_3_String
+                  type: string
+                  index: 4
+                - name: Label_6_7_geography_linestring
+                  type: geography(linestring)
+                  index: 1
+                - name: Label_6_8_date
+                  type: date
+                  index: 7
+                - name: Label_6_6_Int
+                  type: int
+                  index: 6
+                - name: Label_6_1_Bool
+                  type: bool
+                  index: 2
+                - name: Label_6_2_Double
+                  type: double
+                  index: 8
+                - name: Label_6_4_String
+                  type: string
+                  index: 9
+                - name: Label_6_5_Bool
+                  type: bool
+                  index: 5
+    - path: Label_7.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_7
+              props:
+                - name: Label_7_0_Double
+                  type: double
+                  index: 8
+                - name: Label_7_3_Bool
+                  type: bool
+                  index: 2
+                - name: Label_7_6_timestamp
+                  type: timestamp
+                  index: 5
+                - name: Label_7_7_geography_linestring
+                  type: geography(linestring)
+                  index: 3
+                - name: Label_7_8_geography
+                  type: geography
+                  index: 1
+                - name: Label_7_1_Int
+                  type: int
+                  index: 6
+                - name: Label_7_2_String
+                  type: string
+                  index: 7
+                - name: Label_7_4_Double
+                  type: double
+                  index: 9
+                - name: Label_7_5_geography_polygon
+                  type: geography(polygon)
+                  index: 4
+    - path: Label_8.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_8
+              props:
+                - name: Label_8_4_String
+                  type: string
+                  index: 5
+                - name: Label_8_5_date
+                  type: date
+                  index: 4
+                - name: Label_8_6_timestamp
+                  type: timestamp
+                  index: 3
+                - name: Label_8_7_String
+                  type: string
+                  index: 6
+                - name: Label_8_0_Bool
+                  type: bool
+                  index: 7
+                - name: Label_8_1_Bool
+                  type: bool
+                  index: 2
+                - name: Label_8_2_Double
+                  type: double
+                  index: 8
+                - name: Label_8_3_Bool
+                  type: bool
+                  index: 1
+    - path: Label_9.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_9
+              props:
+                - name: Label_9_6_datetime
+                  type: datetime
+                  index: 5
+                - name: Label_9_0_Bool
+                  type: bool
+                  index: 7
+                - name: Label_9_1_String
+                  type: string
+                  index: 1
+                - name: Label_9_2_Int
+                  type: int
+                  index: 6
+                - name: Label_9_3_String
+                  type: string
+                  index: 4
+                - name: Label_9_4_date
+                  type: date
+                  index: 2
+                - name: Label_9_5_Bool
+                  type: bool
+                  index: 3
+    - path: Label_10.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_10
+              props:
+                - name: Label_10_4_Double
+                  type: double
+                  index: 3
+                - name: Label_10_5_Bool
+                  type: bool
+                  index: 1
+                - name: Label_10_6_Double
+                  type: double
+                  index: 7
+                - name: Label_10_0_Double
+                  type: double
+                  index: 2
+                - name: Label_10_1_Double
+                  type: double
+                  index: 5
+                - name: Label_10_2_timestamp
+                  type: timestamp
+                  index: 4
+                - name: Label_10_3_Bool
+                  type: bool
+                  index: 6
+    - path: Label_11.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_11
+              props:
+                - name: Label_11_4_geography
+                  type: geography
+                  index: 5
+                - name: Label_11_5_Double
+                  type: double
+                  index: 6
+                - name: Label_11_0_geography_polygon
+                  type: geography(polygon)
+                  index: 2
+                - name: Label_11_1_String
+                  type: string
+                  index: 4
+                - name: Label_11_2_Int
+                  type: int
+                  index: 3
+                - name: Label_11_3_datetime
+                  type: datetime
+                  index: 1
+    - path: Label_ttl_0.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_ttl_0
+              props:
+                - name: label_ttl_col
+                  type: timestamp
+                  index: 1
+    - path: Label_same_prop_0.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_same_prop_0
+              props:
+                - name: label_ttl_col
+                  type: int
+                  index: 1
+    - path: Label_same_prop_1.csv
+      withHeader: true
+      type: vertex
+      vertex:
+        vid:
+            index: 0
+            type: int
+        tags:
+            - name: Label_same_prop_1
+              props:
+                - name: label_ttl_col
+                  type: int
+                  index: 1
+    - path: Rel_0.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_0
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_0_0_geography_polygon
+              type: geography(polygon)
+              index: 12
+            - name: Rel_0_3_Double
+              type: double
+              index: 3
+            - name: Rel_0_5_geography_polygon
+              type: geography(polygon)
+              index: 5
+            - name: Rel_0_6_datetime
+              type: datetime
+              index: 6
+            - name: Rel_0_7_Double
+              type: double
+              index: 11
+            - name: Rel_0_9_geography_point
+              type: geography(point)
+              index: 9
+            - name: Rel_0_10_geography_linestring
+              type: geography(linestring)
+              index: 2
+            - name: Rel_0_1_Bool
+              type: bool
+              index: 4
+            - name: Rel_0_2_String
+              type: string
+              index: 7
+            - name: Rel_0_4_geography_polygon
+              type: geography(polygon)
+              index: 8
+            - name: Rel_0_8_timestamp
+              type: timestamp
+              index: 10
+    - path: Rel_1.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_1
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_1_1_Int
+              type: int
+              index: 4
+            - name: Rel_1_2_String
+              type: string
+              index: 8
+            - name: Rel_1_3_Int
+              type: int
+              index: 9
+            - name: Rel_1_4_Int
+              type: int
+              index: 7
+            - name: Rel_1_7_Bool
+              type: bool
+              index: 3
+            - name: Rel_1_8_String
+              type: string
+              index: 11
+            - name: Rel_1_0_date
+              type: date
+              index: 6
+            - name: Rel_1_5_String
+              type: string
+              index: 10
+            - name: Rel_1_6_Int
+              type: int
+              index: 12
+            - name: Rel_1_9_Double
+              type: double
+              index: 5
+            - name: Rel_1_10_Bool
+              type: bool
+              index: 2
+    - path: Rel_2.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_2
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_2_8_geography_polygon
+              type: geography(polygon)
+              index: 10
+            - name: Rel_2_10_Double
+              type: double
+              index: 12
+            - name: Rel_2_0_Int
+              type: int
+              index: 6
+            - name: Rel_2_1_Double
+              type: double
+              index: 11
+            - name: Rel_2_4_String
+              type: string
+              index: 2
+            - name: Rel_2_5_String
+              type: string
+              index: 7
+            - name: Rel_2_6_Bool
+              type: bool
+              index: 4
+            - name: Rel_2_7_time
+              type: time
+              index: 8
+            - name: Rel_2_2_String
+              type: string
+              index: 9
+            - name: Rel_2_3_geography_point
+              type: geography(point)
+              index: 3
+            - name: Rel_2_9_Double
+              type: double
+              index: 5
+    - path: Rel_3.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_3
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_3_4_geography_point
+              type: geography(point)
+              index: 9
+            - name: Rel_3_6_Bool
+              type: bool
+              index: 10
+            - name: Rel_3_7_timestamp
+              type: timestamp
+              index: 5
+            - name: Rel_3_9_Int
+              type: int
+              index: 7
+            - name: Rel_3_10_geography_linestring
+              type: geography(linestring)
+              index: 8
+            - name: Rel_3_0_Int
+              type: int
+              index: 6
+            - name: Rel_3_3_time
+              type: time
+              index: 11
+            - name: Rel_3_5_Int
+              type: int
+              index: 2
+            - name: Rel_3_8_Double
+              type: double
+              index: 12
+            - name: Rel_3_1_geography_point
+              type: geography(point)
+              index: 4
+            - name: Rel_3_2_String
+              type: string
+              index: 3
+    - path: Rel_4.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_4
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_4_3_Int
+              type: int
+              index: 5
+            - name: Rel_4_4_Int
+              type: int
+              index: 6
+            - name: Rel_4_5_Double
+              type: double
+              index: 7
+            - name: Rel_4_6_Int
+              type: int
+              index: 4
+            - name: Rel_4_0_Int
+              type: int
+              index: 8
+            - name: Rel_4_1_Int
+              type: int
+              index: 3
+            - name: Rel_4_2_Int
+              type: int
+              index: 2
+    - path: Rel_5.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Rel_5
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: Rel_5_7_Double
+              type: double
+              index: 7
+            - name: Rel_5_0_Double
+              type: double
+              index: 9
+            - name: Rel_5_1_Bool
+              type: bool
+              index: 2
+            - name: Rel_5_2_String
+              type: string
+              index: 4
+            - name: Rel_5_3_Bool
+              type: bool
+              index: 5
+            - name: Rel_5_4_Double
+              type: double
+              index: 8
+            - name: Rel_5_5_Bool
+              type: bool
+              index: 3
+            - name: Rel_5_6_Int
+              type: int
+              index: 6
+    - path: Edge_ttl_0.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Edge_ttl_0
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: rel_ttl_col
+              type: timestamp
+              index: 2
+    - path: Edge_label_limits.csv
+      withHeader: true
+      type: edge
+      edge:
+        name: Edge_label_limits
+        srcVID:
+            type: int
+            index: 0
+        dstVID:
+            type: int
+            index: 1
+        props:
+            - name: like
+              type: int
+              index: 2

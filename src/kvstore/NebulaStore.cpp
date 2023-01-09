@@ -17,6 +17,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
+#include "kvstore/listener/elasticsearch/ESListener.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs,
@@ -291,10 +292,11 @@ void NebulaStore::loadLocalListenerFromPartManager() {
   auto listenersMap = options_.partMan_->listeners(storeSvcAddr_);
   for (const auto& spaceEntry : listenersMap) {
     auto spaceId = spaceEntry.first;
-    for (const auto& partEntry : spaceEntry.second) {
-      auto partId = partEntry.first;
-      for (const auto& listener : partEntry.second) {
-        addListener(spaceId, partId, std::move(listener.type_), std::move(listener.peers_));
+    for (const auto& typeEntry : spaceEntry.second) {
+      auto type = typeEntry.first;
+      addListenerSpace(spaceId, type);
+      for (const auto& info : typeEntry.second) {
+        addListenerPart(spaceId, info.partId_, type, info.peers_);
       }
     }
   }
@@ -361,43 +363,33 @@ ErrorOr<nebula::cpp2::ErrorCode, HostAddr> NebulaStore::partLeader(GraphSpaceID 
   return getStoreAddr(partIt->second->leader());
 }
 
-void NebulaStore::addSpace(GraphSpaceID spaceId, bool isListener) {
+void NebulaStore::addSpace(GraphSpaceID spaceId) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
-  if (!isListener) {
-    // Iterate over all engines to ensure that each dataPath has an engine
-    if (this->spaces_.find(spaceId) != this->spaces_.end()) {
-      LOG(INFO) << "Data space " << spaceId << " has existed!";
-      for (auto& path : options_.dataPaths_) {
-        bool engineExist = false;
-        auto dataPath = folly::stringPrintf("%s/nebula/%d", path.c_str(), spaceId);
-        for (auto iter = spaces_[spaceId]->engines_.begin();
-             iter != spaces_[spaceId]->engines_.end();
-             iter++) {
-          auto dPath = (*iter)->getDataRoot();
-          if (dataPath.compare(dPath) == 0) {
-            engineExist = true;
-            break;
-          }
-        }
-        if (!engineExist) {
-          spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
+  // Iterate over all engines to ensure that each dataPath has an engine
+  if (this->spaces_.find(spaceId) != this->spaces_.end()) {
+    LOG(INFO) << "Data space " << spaceId << " has existed!";
+    for (auto& path : options_.dataPaths_) {
+      bool engineExist = false;
+      auto dataPath = folly::stringPrintf("%s/nebula/%d", path.c_str(), spaceId);
+      // Check if given data path contain a kv engine of specified spaceId
+      for (auto iter = spaces_[spaceId]->engines_.begin(); iter != spaces_[spaceId]->engines_.end();
+           iter++) {
+        auto dPath = (*iter)->getDataRoot();
+        if (dataPath.compare(dPath) == 0) {
+          engineExist = true;
+          break;
         }
       }
-    } else {
-      LOG(INFO) << "Create data space " << spaceId;
-      this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
-      for (auto& path : options_.dataPaths_) {
-        this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
+      if (!engineExist) {
+        spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
       }
     }
   } else {
-    // listener don't need engine for now
-    if (this->spaceListeners_.find(spaceId) != this->spaceListeners_.end()) {
-      LOG(INFO) << "Listener space " << spaceId << " has existed!";
-      return;
+    LOG(INFO) << "Create data space " << spaceId;
+    this->spaces_[spaceId] = std::make_unique<SpacePartInfo>();
+    for (auto& path : options_.dataPaths_) {
+      this->spaces_[spaceId]->engines_.emplace_back(newEngine(spaceId, path, options_.walPath_));
     }
-    LOG(INFO) << "Create listener space " << spaceId;
-    this->spaceListeners_[spaceId] = std::make_unique<SpaceListenerInfo>();
   }
 }
 
@@ -494,55 +486,44 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
   return part;
 }
 
-void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
+void NebulaStore::removeSpace(GraphSpaceID spaceId) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   if (beforeRemoveSpace_) {
     beforeRemoveSpace_(spaceId);
   }
 
-  if (!isListener) {
-    auto spaceIt = this->spaces_.find(spaceId);
-    if (spaceIt != this->spaces_.end()) {
-      for (auto& [partId, part] : spaceIt->second->parts_) {
-        // before calling removeSpace, meta client would call removePart to remove all parts in
-        // meta cache, which do not contain learners, so we remove them here
-        if (part->isLearner()) {
-          removePart(spaceId, partId, false);
-        }
+  auto spaceIt = this->spaces_.find(spaceId);
+  if (spaceIt != this->spaces_.end()) {
+    for (auto& [partId, part] : spaceIt->second->parts_) {
+      // before calling removeSpace, meta client would call removePart to remove all parts in
+      // meta cache, which do not contain learners, so we remove them here
+      if (part->isLearner()) {
+        removePart(spaceId, partId, false);
       }
-      auto& engines = spaceIt->second->engines_;
+    }
+    auto& engines = spaceIt->second->engines_;
+    for (auto& engine : engines) {
+      auto parts = engine->allParts();
+      for (auto& partId : parts) {
+        engine->removePart(partId);
+      }
+      CHECK_EQ(0, engine->totalPartsNum());
+    }
+    CHECK(spaceIt->second->parts_.empty());
+    std::vector<std::string> enginePaths;
+    if (FLAGS_auto_remove_invalid_space) {
       for (auto& engine : engines) {
-        auto parts = engine->allParts();
-        for (auto& partId : parts) {
-          engine->removePart(partId);
-        }
-        CHECK_EQ(0, engine->totalPartsNum());
-      }
-      CHECK(spaceIt->second->parts_.empty());
-      std::vector<std::string> enginePaths;
-      if (FLAGS_auto_remove_invalid_space) {
-        for (auto& engine : engines) {
-          enginePaths.emplace_back(engine->getDataRoot());
-        }
-      }
-      this->spaces_.erase(spaceIt);
-      if (FLAGS_auto_remove_invalid_space) {
-        for (const auto& path : enginePaths) {
-          removeSpaceDir(path);
-        }
+        enginePaths.emplace_back(engine->getDataRoot());
       }
     }
-    LOG(INFO) << "Data space " << spaceId << " has been removed!";
-  } else {
-    auto spaceIt = this->spaceListeners_.find(spaceId);
-    if (spaceIt != this->spaceListeners_.end()) {
-      for (const auto& partEntry : spaceIt->second->listeners_) {
-        CHECK(partEntry.second.empty());
+    this->spaces_.erase(spaceIt);
+    if (FLAGS_auto_remove_invalid_space) {
+      for (const auto& path : enginePaths) {
+        removeSpaceDir(path);
       }
-      this->spaceListeners_.erase(spaceIt);
     }
-    LOG(INFO) << "Listener space " << spaceId << " has been removed!";
   }
+  LOG(INFO) << "Data space " << spaceId << " has been removed!";
 }
 
 nebula::cpp2::ErrorCode NebulaStore::clearSpace(GraphSpaceID spaceId) {
@@ -584,10 +565,32 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId, bool need
   LOG(INFO) << "Space " << spaceId << ", part " << partId << " has been removed!";
 }
 
-void NebulaStore::addListener(GraphSpaceID spaceId,
-                              PartitionID partId,
-                              meta::cpp2::ListenerType type,
-                              const std::vector<HostAddr>& peers) {
+void NebulaStore::addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
+  UNUSED(type);
+  folly::RWSpinLock::WriteHolder wh(&lock_);
+  if (this->spaceListeners_.find(spaceId) != this->spaceListeners_.end()) {
+    LOG(INFO) << "Listener space " << spaceId << " has existed!";
+  } else {
+    LOG(INFO) << "Create listener space " << spaceId;
+    this->spaceListeners_[spaceId] = std::make_unique<SpaceListenerInfo>();
+  }
+  // Perform extra initialization of given type of listener here
+}
+
+void NebulaStore::removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) {
+  UNUSED(type);
+  folly::RWSpinLock::WriteHolder wh(&lock_);
+  auto spaceIt = this->spaceListeners_.find(spaceId);
+  if (spaceIt != this->spaceListeners_.end()) {
+    // Perform extra destruction of given type of listener here;
+  }
+  LOG(INFO) << "Listener space " << spaceId << " has been removed!";
+}
+
+void NebulaStore::addListenerPart(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  meta::cpp2::ListenerType type,
+                                  const std::vector<HostAddr>& peers) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = spaceListeners_.find(spaceId);
   if (spaceIt == spaceListeners_.end()) {
@@ -603,7 +606,7 @@ void NebulaStore::addListener(GraphSpaceID spaceId,
               << " of [Space: " << spaceId << ", Part: " << partId << "] has existed!";
     return;
   }
-  partIt->second.emplace(type, newListener(spaceId, partId, std::move(type), peers));
+  partIt->second.emplace(type, newListener(spaceId, partId, type, peers));
   LOG(INFO) << "Listener of type " << apache::thrift::util::enumNameSafe(type)
             << " of [Space: " << spaceId << ", Part: " << partId << "] is added";
   return;
@@ -613,22 +616,20 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                    PartitionID partId,
                                                    meta::cpp2::ListenerType type,
                                                    const std::vector<HostAddr>& peers) {
+  // Lock has been acquired in addListenerPart.
+  // todo(doodle): we don't support start multiple type of listener in same process for now. If we
+  // support it later, the wal path may or may not need to be separated depending on how we
+  // implement it.
   auto walPath =
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
-  // snapshot manager and client manager is set to nullptr, listener should
-  // never use them
-  auto listener = ListenerFactory::createListener(type,
-                                                  spaceId,
-                                                  partId,
-                                                  raftAddr_,
-                                                  walPath,
-                                                  ioPool_,
-                                                  bgWorkers_,
-                                                  workers_,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  options_.schemaMan_);
+  std::shared_ptr<Listener> listener;
+  if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
+    listener = std::make_shared<ESListener>(
+        spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
+  } else {
+    LOG(FATAL) << "Should not reach here";
+    return nullptr;
+  }
   raftService_->addPartition(listener);
   // add raft group as learner
   std::vector<HostAddr> raftPeers;
@@ -640,9 +641,9 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
   return listener;
 }
 
-void NebulaStore::removeListener(GraphSpaceID spaceId,
-                                 PartitionID partId,
-                                 meta::cpp2::ListenerType type) {
+void NebulaStore::removeListenerPart(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     meta::cpp2::ListenerType type) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = spaceListeners_.find(spaceId);
   if (spaceIt != spaceListeners_.end()) {

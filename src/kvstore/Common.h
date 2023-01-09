@@ -221,7 +221,7 @@ struct Peers {
     folly::split("\n", str, lines, true);
 
     if (lines.size() < 1) {
-      LOG(INFO) << "Bad format peers data, emtpy data";
+      LOG(INFO) << "Bad format peers data, empty data";
       return peers;
     }
 

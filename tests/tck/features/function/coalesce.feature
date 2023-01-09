@@ -1,7 +1,10 @@
-Feature: Fetch Int Vid Edges
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+Feature: Coalesce Function
 
   Background:
-    Test coalesce function
+    Given a graph with space named "nba"
 
   Scenario: test normal case
     When executing query:

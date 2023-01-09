@@ -6,10 +6,17 @@
 #define GRAPH_UTIL_UTILS_H_
 
 #include <folly/String.h>
+#include <folly/dynamic.h>
 
 #include <iterator>
 #include <string>
 #include <vector>
+
+#include "common/datatypes/HostAddr.h"
+
+namespace nebula::storage::cpp2 {
+class ResponseCommon;
+}
 
 namespace nebula::graph::util {
 
@@ -23,6 +30,13 @@ std::string join(const Container& container, Fn fn, const std::string& delimiter
   }
   return folly::join(delimiter, strs);
 }
+
+folly::dynamic getStorageDetail(const std::map<std::string, int32_t>& profileDetail);
+
+folly::dynamic collectRespProfileData(const storage::cpp2::ResponseCommon& resp,
+                                      const std::tuple<HostAddr, int32_t, int32_t>& info,
+                                      size_t numVertices = 0UL,
+                                      size_t totalRpcTime = 0UL);
 
 }  // namespace nebula::graph::util
 

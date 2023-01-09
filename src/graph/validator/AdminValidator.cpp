@@ -601,6 +601,22 @@ Status SignOutServiceValidator::toPlan() {
   return Status::OK();
 }
 
+Status ShowSessionsValidator::validateImpl() {
+  if (!inputs_.empty()) {
+    return Status::SemanticError("Show sessions sentence do not support input");
+  }
+
+  outputs_.emplace_back("SessionId", Value::Type::INT);
+  outputs_.emplace_back("UserName", Value::Type::STRING);
+  outputs_.emplace_back("SpaceName", Value::Type::STRING);
+  outputs_.emplace_back("CreateTime", Value::Type::DATETIME);
+  outputs_.emplace_back("UpdateTime", Value::Type::DATETIME);
+  outputs_.emplace_back("GraphAddr", Value::Type::STRING);
+  outputs_.emplace_back("Timezone", Value::Type::INT);
+  outputs_.emplace_back("ClientIp", Value::Type::STRING);
+  return Status::OK();
+}
+
 Status ShowSessionsValidator::toPlan() {
   auto sentence = static_cast<ShowSessionsSentence *>(sentence_);
   auto *node = ShowSessions::make(qctx_,
@@ -608,6 +624,30 @@ Status ShowSessionsValidator::toPlan() {
                                   sentence->isSetSessionID(),
                                   sentence->getSessionID(),
                                   sentence->isLocalCommand());
+  root_ = node;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status KillSessionValidator::validateImpl() {
+  auto sentence = static_cast<KillSessionSentence *>(sentence_);
+  auto sessionExpr = sentence->getSessionID();
+  auto sessionTypeStatus = deduceExprType(sessionExpr);
+  if (!sessionTypeStatus.ok()) {
+    return sessionTypeStatus.status();
+  }
+  if (sessionTypeStatus.value() != Value::Type::INT) {
+    std::stringstream ss;
+    ss << sessionExpr->toString() << ", Session ID must be an integer but was "
+       << sessionTypeStatus.value();
+    return Status::SemanticError(ss.str());
+  }
+  return Status::OK();
+}
+
+Status KillSessionValidator::toPlan() {
+  auto sentence = static_cast<KillSessionSentence *>(sentence_);
+  auto *node = KillSession::make(qctx_, nullptr, sentence->getSessionID());
   root_ = node;
   tail_ = root_;
   return Status::OK();

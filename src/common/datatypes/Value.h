@@ -258,10 +258,10 @@ struct Value {
   void setDateTime(DateTime&& v);
   void setVertex(const Vertex& v);
   void setVertex(Vertex&& v);
-  void setVertex(std::unique_ptr<Vertex>&& v);
+  void setVertex(Vertex* v);
   void setEdge(const Edge& v);
   void setEdge(Edge&& v);
-  void setEdge(std::unique_ptr<Edge>&& v);
+  void setEdge(Edge* v);
   void setPath(const Path& v);
   void setPath(Path&& v);
   void setPath(std::unique_ptr<Path>&& v);
@@ -367,8 +367,12 @@ struct Value {
   Value toInt() const;
   Value toSet() const;
 
+  // Expr use this function instead of operator<, because a Value compare to a Null
+  // return null instead of true or false
   Value lessThan(const Value& v) const;
 
+  // Expr use this function instead of operator==, because a Value compare to a Null
+  // return null instead of true or false
   Value equal(const Value& v) const;
 
   // Whether the value can be converted to bool implicitly
@@ -389,8 +393,8 @@ struct Value {
     Date dVal;
     Time tVal;
     DateTime dtVal;
-    std::unique_ptr<Vertex> vVal;
-    std::unique_ptr<Edge> eVal;
+    Vertex* vVal;
+    Edge* eVal;
     std::unique_ptr<Path> pVal;
     std::unique_ptr<List> lVal;
     std::unique_ptr<Map> mVal;
@@ -435,13 +439,11 @@ struct Value {
   void setDT(const DateTime& v);
   void setDT(DateTime&& v);
   // Vertex value
-  void setV(const std::unique_ptr<Vertex>& v);
-  void setV(std::unique_ptr<Vertex>&& v);
+  void setV(Vertex* v);
   void setV(const Vertex& v);
   void setV(Vertex&& v);
   // Edge value
-  void setE(const std::unique_ptr<Edge>& v);
-  void setE(std::unique_ptr<Edge>&& v);
+  void setE(Edge* v);
   void setE(const Edge& v);
   void setE(Edge&& v);
   // Path value

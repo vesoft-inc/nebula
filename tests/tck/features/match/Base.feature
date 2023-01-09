@@ -1,6 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jie
 Feature: Basic match
 
   Background:
@@ -14,6 +15,22 @@ Feature: Basic match
     Then the result should be, in any order, with relax comparison:
       | v            |
       | ("Yao Ming") |
+    When profiling query:
+      """
+      MATCH (v:player) RETURN v.player.age LIMIT 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.age |
+      | /\d+/        |
+      | /\d+/        |
+      | /\d+/        |
+    Then the execution plan should be:
+      | id | name           | dependencies | operator info                 |
+      | 5  | Project        | 4            |                               |
+      | 4  | Limit          | 3            | {"offset": "0", "count": "3"} |
+      | 3  | AppendVertices | 2            |                               |
+      | 2  | IndexScan      | 1            | {"limit": "3"}                |
+      | 1  | Start          |              |                               |
     When executing query:
       """
       MATCH (v:player) WHERE v.player.age < 0 RETURN v
@@ -166,7 +183,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
@@ -175,7 +192,7 @@ Feature: Basic match
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2:team{name: "Cavaliers"})
       WHERE r.start_year <= 2005 AND r.end_year >= 2005
       RETURN r.start_year AS Start_Year, r.end_year AS Start_Year
       """
@@ -192,6 +209,15 @@ Feature: Basic match
       | "Danny Green" | "LeBron James"    |
       | "Danny Green" | "Marco Belinelli" |
       | "Danny Green" | "Tim Duncan"      |
+    When executing query:
+      """
+      MATCH (v1) -[:like]-> (v2:player{name: "Danny Green"})
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
+      """
+    Then the result should be, in any order:
+      | Name              | Friend        |
+      | "Dejounte Murray" | "Danny Green" |
+      | "Marco Belinelli" | "Danny Green" |
     When executing query:
       """
       MATCH (v1:player{name: "Danny Green"}) <-[:like]- (v2)
@@ -227,7 +253,9 @@ Feature: Basic match
       | "Danny Green" | "Tim Duncan"      |
     When executing query:
       """
-      MATCH (v:player)-[e:like]-(v2) where v.player.age == 38 RETURN *
+      MATCH (v:player)-[e:like]-(v2)
+      WHERE v.player.age == 38
+      RETURN *
       """
     Then the result should be, in any order, with relax comparison:
       | v                                                   | e                                                        | v2                                                              |
@@ -238,7 +266,38 @@ Feature: Basic match
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]    | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})       |
     When executing query:
       """
-      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
+      MATCH (v:player)-[e:like]->(v2)
+      WHERE v2.player.age > 45
+      RETURN *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                         | e                                                        | v2                                                              |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})           | [:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}] | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"}) |
+      | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"}) | [:like "Tracy McGrady"->"Grant Hill" @0 {likeness: 90}]  | ("Grant Hill" :player{age: 46, name: "Grant Hill"})             |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2)
+      WHERE v.player.age == 38 and (v2.player.age < 35 or v2.player.age == 40)
+      RETURN *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                   | e                                                     | v2                                                    |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}] | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"}) |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]  | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})   |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2)
+      WHERE v.player.age == 38 and (v2.player.age < 35 or v2.player.age == 40) and e.likeness > 90
+      RETURN *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                   | e                                                    | v2                                                  |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}] | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2)
+      WHERE id(v) == "Tim Duncan"
+      RETURN DISTINCT properties(e) as props, e
       """
     Then the result should be, in any order, with relax comparison:
       | props          | e                                                       |
@@ -246,12 +305,57 @@ Feature: Basic match
       | {likeness: 95} | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
     When executing query:
       """
-      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props
+      MATCH (v:player)-[e:like]->(v2)
+      WHERE id(v) == "Tim Duncan"
+      RETURN DISTINCT properties(e) as props
       """
     Then the result should be, in any order, with relax comparison:
       | props          |
       | {likeness: 95} |
+    When executing query:
+      """
+      MATCH (v1:player)-[e]->(v2)
+      WHERE v2.player.age == 38 or (v2.team.name == 'Rockets' and v1.player.age == 38)
+      RETURN
+        v1.player.name AS Name,
+        type(e) as Type,
+        CASE WHEN v2.player.name IS NOT NULL THEN v2.player.name ELSE v2.team.name END AS FriendOrTeam
+      """
+    Then the result should be, in any order, with relax comparison:
+      | Name         | Type    | FriendOrTeam |
+      | "Yao Ming"   | "serve" | "Rockets"    |
+      | "Marc Gasol" | "like"  | "Paul Gasol" |
+    When executing query:
+      """
+      MATCH (v1:player{name: "Danny Green"}) -[:like]- (v2)
+      WHERE v1.player.age > 1000
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
+      """
+    Then the result should be, in any order:
+      | Name | Friend |
+    When executing query:
+      """
+      MATCH (v1:player{name: "Danny Green"}) -[:like]- (v2:player{name: "Yao Ming"})
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
+      """
+    Then the result should be, in any order:
+      | Name | Friend |
+    When executing query:
+      """
+      MATCH (v1:player{name: "Danny Green"}) -[e1:like]- (v2)
+      WHERE e1.likeness_not_exists > 0
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
+      """
+    Then the result should be, in any order:
+      | Name | Friend |
+    When try to execute query:
+      """
+      MATCH (v1:player{name: "Danny Green"}) -[:like_not_exists]- (v2)
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
+      """
+    Then a SemanticError should be raised at runtime: `like_not_exists': Unknown edge type
 
+  @hello
   Scenario: two steps
     When executing query:
       """
@@ -264,6 +368,105 @@ Feature: Basic match
       | "Paul George"    | "Russell Westbrook" | "Paul George"  |
       | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   |
       | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  |
+    When executing query:
+      """
+      MATCH (v1:player) -[:like]-> (v2) -[:like]-> (v3)
+      WHERE v1.player.age == 28
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF, v3.player.name_not_exists AS NotExists
+      """
+    Then the result should be, in any order:
+      | Player           | Friend              | FoF            | NotExists |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tim Duncan"   | NULL      |
+      | "Damian Lillard" | "LaMarcus Aldridge" | "Tony Parker"  | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "James Harden" | NULL      |
+      | "Paul George"    | "Russell Westbrook" | "Paul George"  | NULL      |
+    When executing query:
+      """
+      MATCH (v1) -[:like]-> (v2:player{age: 28}) -[:like]-> (v3)
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player              | Friend        | FoF                 |
+      | "Russell Westbrook" | "Paul George" | "Russell Westbrook" |
+    When executing query:
+      """
+      MATCH (v1) -[:like]-> (v2) -[:like]-> (v3)
+      WHERE v2.player.age == 28
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player              | Friend        | FoF                 |
+      | "Russell Westbrook" | "Paul George" | "Russell Westbrook" |
+    When executing query:
+      """
+      MATCH (v1) -[:like]-> (v2) -[:like]-> (v3:player{age: 28})
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player            | Friend              | FoF           |
+      | "Dejounte Murray" | "Russell Westbrook" | "Paul George" |
+      | "James Harden"    | "Russell Westbrook" | "Paul George" |
+      | "Paul George"     | "Russell Westbrook" | "Paul George" |
+    When executing query:
+      """
+      MATCH (v1) -[:like]-> (v2) -[:like]-> (v3)
+      WHERE v3.player.age == 28
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player            | Friend              | FoF           |
+      | "Dejounte Murray" | "Russell Westbrook" | "Paul George" |
+      | "James Harden"    | "Russell Westbrook" | "Paul George" |
+      | "Paul George"     | "Russell Westbrook" | "Paul George" |
+    When executing query:
+      """
+      MATCH (v1) -[e1:like]-> (v2) -[e2:like]-> (v3)
+      WHERE v1.player.age > 28 and e1.likeness > 90 and v2.player.age > 40 and e2.likeness > 90 and v3.player.age > 40
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player            | Friend       | FoF             |
+      | "Dejounte Murray" | "Tim Duncan" | "Manu Ginobili" |
+      | "Tony Parker"     | "Tim Duncan" | "Manu Ginobili" |
+    When executing query:
+      """
+      MATCH (v1) -[e1:like]-> (v2) -[e2]-> (v3)
+      WHERE v3.player.age == 38 or (v3.team.name == 'Rockets' and v1.player.age == 38)
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, type(e2) AS TYPE, v3.player.name AS FoF, v3.team.name AS FoT
+      """
+    Then the result should be, in any order:
+      | Player       | Friend          | TYPE    | FoF          | FoT       |
+      | "Paul Gasol" | "Marc Gasol"    | "like"  | "Paul Gasol" | NULL      |
+      | "Yao Ming"   | "Tracy McGrady" | "serve" | NULL         | "Rockets" |
+    When executing query:
+      """
+      MATCH (v1) -[e1:like]-> (v2) -[e2]-> (v3)
+      WHERE v1.player.age > 1000
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player | Friend | FoF |
+    When executing query:
+      """
+      MATCH (v1:player{name: "Danny Green"}) -[:like]-> (v2) -[:like]-> (v3:player{name: "Yao Ming"})
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player | Friend | FoF |
+    When executing query:
+      """
+      MATCH (v1) -[e1:like]-> (v2) -[e2]-> (v3)
+      WHERE e1.likeness_not_exists > 0
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then the result should be, in any order:
+      | Player | Friend | FoF |
+    When try to execute query:
+      """
+      MATCH (v1) -[e1:like]-> (v2) -[e2:like_not_exists]-> (v3)
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
+      """
+    Then a SemanticError should be raised at runtime: `like_not_exists': Unknown edge type
     When executing query:
       """
       MATCH (v1:player{name: 'Tony Parker'}) -[r1:serve]-> (v2) <-[r2:serve]- (v3)
@@ -457,7 +660,7 @@ Feature: Basic match
   Scenario: Match a path in a space which doesn't have edge schema
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
     And having executed:
@@ -616,7 +819,7 @@ Feature: Basic match
       """
       MATCH (v:player) where v.player.name return v
       """
-    Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY, BOOL
+    Then a ExecutionError should be raised at runtime: Failed to evaluate condition: v.player.name. For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
 
   Scenario: Unimplemented features
     When executing query:
@@ -626,12 +829,13 @@ Feature: Basic match
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
-      MATCH (v{name: "Tim Duncan"}) return v
+      MATCH (v:player:bachelor) RETURN v
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    # TODO(jie): Optimize this case
     When executing query:
       """
-      MATCH (v:player:bachelor) RETURN v
+      MATCH (v) WHERE v.player.age == 18 RETURN v LIMIT 3
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
@@ -718,3 +922,194 @@ Feature: Basic match
     Then the result should be, in any order:
       | v                                                   |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"}) |
+
+  Scenario: Match with id when all tag is dropped, ent-#1420
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS player(name string, age int);
+      CREATE TAG IF NOT EXISTS team(name string);
+      CREATE TAG INDEX IF NOT EXISTS player_index_1 on player(name(10), age);
+      """
+    And wait 5 seconds
+    When try to execute query:
+      """
+      INSERT VERTEX player() VALUES "v2":();
+      INSERT VERTEX player(name, age) VALUES "v3":("v3", 18);
+      UPSERT VERTEX ON player "v4" SET name = "v4", age = 18;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) in ["v1", "v2", "v3", "v4"] return id(v) limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id(v) |
+      | "v2"  |
+      | "v3"  |
+      | "v4"  |
+    When try to execute query:
+      """
+      DROP TAG INDEX player_index_1;
+      DROP TAG player;
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) in ["v1", "v2", "v3", "v4"] return id(v) limit 10;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | id(v) |
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) != 0
+      return *
+      """
+    Then the result should be, in any order:
+      | v | e |
+
+  Scenario: match with rank
+    When executing query:
+      """
+      match (v)-[e:like]->()
+      where id(v) == "Tim Duncan"
+      and rank(e) == 0
+      return *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                                           | e                                                       |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) == 0
+      return rank(e)
+      limit 3
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where rank(e) != 0
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) != 0 and e.start_year > 2010
+      return rank(e)
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | rank(e) |
+      | 1       |
+      | 1       |
+      | 1       |
+      | 1       |
+    When executing query:
+      """
+      match ()-[e]->()
+      where abs(rank(e)) == 1 and e.start_year == 2016
+      return e
+      limit 1000
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                           |
+      | [:serve "Marco Belinelli"->"Hornets" @1 {end_year: 2017, start_year: 2016}] |
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != "jack"
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    When executing query:
+      """
+      match ()-[e]->()
+      where src(e) != 0  or abs(rank(e)) != 0
+      return rank(e)
+      limit 10000
+      """
+    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
+  Scenario: match_with_wrong_syntax
+    When executing query:
+      """
+      MATCH (v{name: "Tim Duncan"}) return v
+      """
+    Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
+
+  Scenario: match with tag filter
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) == 'Tim Duncan' return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..0]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b         |
+      | ('Spurs') |
+    When executing query:
+      """
+      MATCH (a:team)-[e*0..1]-(b) where id(a) in ['Tim Duncan', 'Spurs'] return b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | b                     |
+      | ("Spurs")             |
+      | ("Aron Baynes")       |
+      | ("Boris Diaw")        |
+      | ("Cory Joseph")       |
+      | ("Danny Green")       |
+      | ("David West")        |
+      | ("Dejounte Murray")   |
+      | ("Jonathon Simmons")  |
+      | ("Kyle Anderson")     |
+      | ("LaMarcus Aldridge") |
+      | ("Manu Ginobili")     |
+      | ("Marco Belinelli")   |
+      | ("Paul Gasol")        |
+      | ("Rudy Gay")          |
+      | ("Tiago Splitter")    |
+      | ("Tim Duncan")        |
+      | ("Tony Parker")       |
+      | ("Tracy McGrady")     |
+      | ("Marco Belinelli")   |

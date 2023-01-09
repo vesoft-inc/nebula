@@ -23,9 +23,10 @@ TEST_F(ReduceExpressionTest, ReduceEvaluate) {
         FunctionCallExpression::make(&pool, "range", argList),
         ArithmeticExpression::makeAdd(
             &pool,
-            VariableExpression::make(&pool, "totalNum"),
-            ArithmeticExpression::makeMultiply(
-                &pool, VariableExpression::make(&pool, "n"), ConstantExpression::make(&pool, 2))));
+            VariableExpression::makeInner(&pool, "totalNum"),
+            ArithmeticExpression::makeMultiply(&pool,
+                                               VariableExpression::makeInner(&pool, "n"),
+                                               ConstantExpression::make(&pool, 2))));
 
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_EQ(Value::Type::INT, value.type());

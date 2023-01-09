@@ -4,6 +4,7 @@
 
 #include "graph/util/ParserUtil.h"
 
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 
@@ -14,41 +15,60 @@ namespace graph {
 void ParserUtil::rewriteLC(QueryContext *qctx,
                            ListComprehensionExpression *lc,
                            const std::string &oldVarName) {
-  qctx->vctx()->anonVarGen()->createVar(oldVarName);
-  qctx->ectx()->setValue(oldVarName, Value());
+  // The inner variable will be same with other inner variable in other expression,
+  // but the variable is stored in same variable map
+  // So to avoid conflict, we create a global unique anonymous variable name for it
+  // TODO store inner variable in inner
+  const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
     return expr->kind() == Expression::Kind::kLabel ||
-           expr->kind() == Expression::Kind::kLabelAttribute;
+           expr->kind() == Expression::Kind::kLabelAttribute ||
+           expr->kind() == Expression::Kind::kMatchPathPattern;
   };
 
-  auto rewriter = [&, pool, oldVarName](const Expression *expr) {
+  auto rewriter = [&, pool, newVarName](const Expression *expr) {
     Expression *ret = nullptr;
-    if (expr->kind() == Expression::Kind::kLabel) {
-      auto *label = static_cast<const LabelExpression *>(expr);
-      if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, oldVarName, true);
-      } else {
-        ret = label->clone();
-      }
-    } else {
-      DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
-      auto *la = static_cast<const LabelAttributeExpression *>(expr);
-      if (la->left()->name() == oldVarName) {
-        const auto &value = la->right()->value();
-        ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, oldVarName, true),
-                                        ConstantExpression::make(pool, value));
-      } else {
-        ret = la->clone();
-      }
+    switch (expr->kind()) {
+      case Expression::Kind::kLabel: {
+        auto *label = static_cast<const LabelExpression *>(expr);
+        if (label->name() == oldVarName) {
+          ret = VariableExpression::makeInner(pool, newVarName);
+        } else {
+          ret = label->clone();
+        }
+      } break;
+      case Expression::Kind::kLabelAttribute: {
+        DCHECK(expr->kind() == Expression::Kind::kLabelAttribute);
+        auto *la = static_cast<const LabelAttributeExpression *>(expr);
+        if (la->left()->name() == oldVarName) {
+          const auto &value = la->right()->value();
+          ret = AttributeExpression::make(pool,
+                                          VariableExpression::makeInner(pool, newVarName),
+                                          ConstantExpression::make(pool, value));
+        } else {
+          ret = la->clone();
+        }
+      } break;
+      case Expression::Kind::kMatchPathPattern: {
+        auto *mpp = static_cast<MatchPathPatternExpression *>(expr->clone());
+        auto &matchPath = mpp->matchPath();
+        for (auto &node : matchPath.nodes()) {
+          if (node->alias() == oldVarName) {
+            node->setAlias(newVarName);
+          }
+        }
+        return static_cast<Expression *>(mpp);
+      } break;
+      default:
+        DLOG(FATAL) << "Unexpected expression kind: " << expr->kind();
     }
     return ret;
   };
 
   lc->setOriginString(lc->toString());
-  lc->setInnerVar(oldVarName);
+  lc->setInnerVar(newVarName);
   if (lc->hasFilter()) {
     Expression *filter = lc->filter();
     auto *newFilter = RewriteVisitor::transform(filter, matcher, rewriter);
@@ -66,7 +86,6 @@ void ParserUtil::rewritePred(QueryContext *qctx,
                              PredicateExpression *pred,
                              const std::string &oldVarName) {
   const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -79,7 +98,7 @@ void ParserUtil::rewritePred(QueryContext *qctx,
     if (expr->kind() == Expression::Kind::kLabel) {
       auto *label = static_cast<const LabelExpression *>(expr);
       if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, newVarName, true);
+        ret = VariableExpression::makeInner(pool, newVarName);
       } else {
         ret = label->clone();
       }
@@ -89,7 +108,7 @@ void ParserUtil::rewritePred(QueryContext *qctx,
       if (la->left()->name() == oldVarName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newVarName, true),
+                                        VariableExpression::makeInner(pool, newVarName),
                                         ConstantExpression::make(pool, value));
       } else {
         ret = la->clone();
@@ -112,9 +131,7 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
                                const std::string &oldAccName,
                                const std::string &oldVarName) {
   const auto &newAccName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newAccName, Value());
   const auto &newVarName = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(newVarName, Value());
   auto *pool = qctx->objPool();
 
   auto matcher = [](const Expression *expr) -> bool {
@@ -126,9 +143,9 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
     if (expr->kind() == Expression::Kind::kLabel) {
       auto *label = static_cast<const LabelExpression *>(expr);
       if (label->name() == oldAccName) {
-        ret = VariableExpression::make(pool, newAccName, true);
+        ret = VariableExpression::makeInner(pool, newAccName);
       } else if (label->name() == oldVarName) {
-        ret = VariableExpression::make(pool, newVarName, true);
+        ret = VariableExpression::makeInner(pool, newVarName);
       } else {
         ret = label->clone();
       }
@@ -138,12 +155,12 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
       if (la->left()->name() == oldAccName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newAccName, true),
+                                        VariableExpression::makeInner(pool, newAccName),
                                         ConstantExpression::make(pool, value));
       } else if (la->left()->name() == oldVarName) {
         const auto &value = la->right()->value();
         ret = AttributeExpression::make(pool,
-                                        VariableExpression::make(pool, newVarName, true),
+                                        VariableExpression::makeInner(pool, newVarName),
                                         ConstantExpression::make(pool, value));
       } else {
         ret = la->clone();

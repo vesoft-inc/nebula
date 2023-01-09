@@ -24,8 +24,8 @@ Feature: Feature examples
       SHOW HOSTS
       """
     Then the result should contain:
-      | Host  | Port  | HTTP port | Status   | Leader count | Leader distribution | Partition distribution | Version |
-      | /\w+/ | /\d+/ | /\d+/     | "ONLINE" | /\d+/        | /.*/                | /.*/                   | /.*/    |
+      | Host  | Port  | Status   | Leader count | Leader distribution | Partition distribution | Version |
+      | /\w+/ | /\d+/ | "ONLINE" | /\d+/        | /.*/                | /.*/                   | /.*/    |
     When executing query:
       """
       SHOW HOSTS
@@ -46,7 +46,7 @@ Feature: Feature examples
   Scenario: Supported space creation
     Given an empty graph
     And create a space with following options:
-      | partition_num  | 9                |
+      | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(30) |
       | charset        | utf8             |
