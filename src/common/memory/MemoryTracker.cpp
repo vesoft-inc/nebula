@@ -15,7 +15,6 @@ ThreadMemoryStats::~ThreadMemoryStats() {
   // Return to global any reserved bytes on destruction
   if (reserved != 0) {
     MemoryStats::instance().freeGlobal(reserved);
-    DLOG(INFO) << std::this_thread::get_id() << " return reserved " << reserved;
   }
 }
 
