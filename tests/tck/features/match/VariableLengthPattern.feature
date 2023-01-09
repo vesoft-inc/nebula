@@ -453,6 +453,22 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | cnt |
+    When executing query:
+      """
+      MATCH (v:player)-[e*2]->(n)
+      WHERE size([n in e WHERE (v{name:'Tim Duncan'})-[n]-()])>3
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e*2]->()-[n]-()
+      WHERE size([n in e WHERE (v)-[n]-()])>0
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
 
   Scenario: variable pattern in where clause
     When executing query:
