@@ -424,15 +424,6 @@ Feature: Variable length Pattern match (m to n)
       | 13  |
 
   Scenario: variable length pattern and list expression
-    # When executing query:
-    # """
-    # MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
-    # WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
-    # RETURN count(*) AS cnt
-    # """
-    # Then the result should be, in any order:
-    # | cnt |
-    # | 18  |
     When executing query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
@@ -442,6 +433,26 @@ Feature: Variable length Pattern match (m to n)
     Then the result should be, in any order:
       | cnt |
       | 18  |
+
+  @skip
+  # https://github.com/vesoft-inc/nebula/issues/5221
+  Scenario: variable scope test in path pattern
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+      WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
 
   Scenario: variable pattern in where clause
     When executing query:
