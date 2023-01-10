@@ -256,7 +256,11 @@ void GraphSessionManager::updateSessionsToMeta() {
   // There may be expired queries, and the
   // expired queries will be killed here.
   auto handleKilledQueries = [this](auto&& resp) {
-    DCHECK(resp.ok());
+    if (!resp.ok()) {
+      LOG(ERROR) << "Update sessions failed: " << resp;
+      return;
+    }
+
     auto& killedQueriesForEachSession = *resp.value().killed_queries_ref();
     for (auto& killedQueries : killedQueriesForEachSession) {
       auto sessionId = killedQueries.first;
@@ -278,17 +282,16 @@ void GraphSessionManager::updateSessionsToMeta() {
   // The response from meta contains sessions that are marked as killed, so we need to clean the
   // local cache and update statistics
   auto handleKilledSessions = [this](auto&& resp) {
-    DCHECK(resp.ok());
+    if (!resp.ok()) {
+      LOG(ERROR) << "Update sessions failed: " << resp;
+      return;
+    }
+
     auto killSessions = resp.value().get_killed_sessions();
     removeSessionFromLocalCache(killSessions);
   };
 
   auto result = metaClient_->updateSessions(sessions).get();
-  if (!result.ok()) {
-    LOG(ERROR) << "Update sessions failed: " << result;
-    return;
-  }
-
   handleKilledQueries(result);
   handleKilledSessions(result);
 }
