@@ -37,7 +37,7 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
     ASSERT_EQ(expected, value.getList());
   }
   {
-    // [n IN nodes(p) | n.player.age + 5]
+    // [n IN nodes(p) | n.age + 5]
     auto v1 = Vertex("101", {Tag("player", {{"name", "joe"}, {"age", 18}})});
     auto v2 = Vertex("102", {Tag("player", {{"name", "amber"}, {"age", 19}})});
     auto v3 = Vertex("103", {Tag("player", {{"name", "shawdan"}, {"age", 20}})});
@@ -46,25 +46,19 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
     path.steps.emplace_back(Step(v2, 1, "like", 0, {}));
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
-    std::unordered_map<std::string, graph::AliasType> aliasTypeMap = {
-        {"xxx", graph::AliasType::kNode}};
+
     ArgumentList *argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = ListComprehensionExpression::make(
         &pool,
-        "xxx",
+        "n",
         FunctionCallExpression::make(&pool, "nodes", argList),
         nullptr,
         ArithmeticExpression::makeAdd(
             &pool,
-            graph::ExpressionUtils::rewriteAttr2LabelTagProp(
-                AttributeExpression::make(
-                    &pool,
-                    LabelAttributeExpression::make(&pool,
-                                                   LabelExpression::make(&pool, "xxx"),
-                                                   ConstantExpression::make(&pool, "player")),
-                    ConstantExpression::make(&pool, "age")),
-                aliasTypeMap),
+            AttributeExpression::make(&pool,
+                                      VariableExpression::makeInner(&pool, "n"),
+                                      ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 5)));
 
     auto value = Expression::eval(expr, gExpCtxt);
@@ -94,8 +88,6 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionExprToString) {
   {
     ArgumentList *argList = ArgumentList::make(&pool);
     argList->addArgument(LabelExpression::make(&pool, "p"));
-    std::unordered_map<std::string, graph::AliasType> aliasTypeMap = {
-        {"n", graph::AliasType::kNode}};
     auto expr = ListComprehensionExpression::make(
         &pool,
         "n",
@@ -103,16 +95,10 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionExprToString) {
         nullptr,
         ArithmeticExpression::makeAdd(
             &pool,
-            graph::ExpressionUtils::rewriteAttr2LabelTagProp(
-                AttributeExpression::make(
-                    &pool,
-                    LabelAttributeExpression::make(&pool,
-                                                   LabelExpression::make(&pool, "n"),
-                                                   ConstantExpression::make(&pool, "player")),
-                    ConstantExpression::make(&pool, "age")),
-                aliasTypeMap),
+            LabelAttributeExpression::make(
+                &pool, LabelExpression::make(&pool, "n"), ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 10)));
-    ASSERT_EQ("[n IN nodes(p) | (n.player.age+10)]", expr->toString());
+    ASSERT_EQ("[n IN nodes(p) | (n.age+10)]", expr->toString());
   }
   {
     auto listItems = ExpressionList::make(&pool);
