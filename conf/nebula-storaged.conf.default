@@ -122,3 +122,19 @@
 --rebuild_index_part_rate_limit=4194304
 # The amount of data sent in each batch when leader synchronizes rebuilding index
 --rebuild_index_batch_size=1048576
+
+########## memory tracker ##########
+# trackable memory ratio to (total_memory-untracked_reserved_memory)
+--memory_tracker_limit_ratio=0.8
+# untracked reserved memory in Mib
+--memory_tracker_untracked_reserved_memory_mb=50
+
+# enable log memory tacker stats periodically
+--memory_tracker_detail_log=true
+# log memory tacker stats interval in milliseconds
+--memory_tracker_detail_log_interval_ms=60000
+
+# enable memory background purge (if jemalloc is used)
+--memory_purge_enabled=true
+# memory background purge interval in seconds
+--memory_purge_interval_seconds=10
