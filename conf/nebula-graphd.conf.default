@@ -99,7 +99,7 @@
 --max_sessions_per_ip_per_user=300
 
 ########## memory tracker ##########
-# trackable memory ratio to (total_memory-untracked_reserved_memory)
+# trackable memory ratio (trackable_memory / total_memory-untracked_reserved_memory)
 --memory_tracker_limit_ratio=0.8
 # untracked reserved memory in Mib
 --memory_tracker_untracked_reserved_memory_mb=50
