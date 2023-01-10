@@ -70,9 +70,9 @@ void SamplingExecutor::executeBinarySample(Iterator *iter, size_t index,
   while (it != uIter->end()) {
     v = 1.0;
     if ((*it)[index].type() == Value::Type::FLOAT) {
-      v = (float)((*it)[index].getFloat());
+      v = static_cast<float>((*it)[index].getFloat());
     } else if ((*it)[index].type() == Value::Type::INT) {
-      v = (float)((*it)[index].getInt());
+      v = static_cast<float>((*it)[index].getInt());
     }
     if (!accumulateWeights.empty()) {
       v += accumulateWeights.back();
@@ -100,9 +100,9 @@ void SamplingExecutor::executeAliasSample(Iterator *iter, size_t index,
   while (it != uIter->end()) {
     v = 1.0;
     if ((*it)[index].type() == Value::Type::FLOAT) {
-      v = (float)((*it)[index].getFloat());
+      v = static_cast<float>((*it)[index].getFloat());
     } else if ((*it)[index].type() == Value::Type::INT) {
-      v = (float)((*it)[index].getInt());
+      v = static_cast<float>((*it)[index].getInt());
     }
     weights.emplace_back(std::move(v));
     ++it;

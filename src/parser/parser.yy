@@ -398,7 +398,6 @@ using namespace nebula;
 %type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence sampling_sentence
-%type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> set_sentence piped_sentence assignment_sentence match_sentences
 %type <sentence> yield_sentence use_sentence
