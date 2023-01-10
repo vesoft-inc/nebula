@@ -567,8 +567,13 @@ nebula::cpp2::ErrorCode JobManager::addJob(JobDescription jobDesc) {
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     enqueue(spaceId, jobId, JbOp::ADD, jobDesc.getJobType());
     inFlightJobs_.emplace(std::move(jobId), std::move(jobDesc));
+    LOG(INFO) << folly::sformat("Add job successfully, job id={}, job type={}",
+                                jobId,
+                                apache::thrift::util::enumNameSafe(jobDesc.getJobType()));
   } else {
-    LOG(INFO) << "Add Job Failed";
+    LOG(INFO) << folly::sformat("Add job failed, job id={}, job type={}",
+                                jobId,
+                                apache::thrift::util::enumNameSafe(jobDesc.getJobType()));
     if (rc != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       rc = nebula::cpp2::ErrorCode::E_ADD_JOB_FAILURE;
     }
