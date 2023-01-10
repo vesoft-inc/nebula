@@ -566,7 +566,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<GetDstBySrcExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
-      LOG(DFATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
+      DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
     }
   }
@@ -603,6 +603,8 @@ Status Executor::open() {
 }
 
 Status Executor::close() {
+  // MemoryTrackerVerified
+
   ProfilingStats stats;
   stats.totalDurationInUs = totalDuration_.elapsedInUSec();
   stats.rows = numRows_;
@@ -725,6 +727,7 @@ bool Executor::movable(const Variable *var) {
 }
 
 Status Executor::finish(Result &&result) {
+  // MemoryTrackerVerified
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();

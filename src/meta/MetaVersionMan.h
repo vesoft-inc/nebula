@@ -19,6 +19,7 @@ enum class MetaVersion {
   V1 = 1,
   V2 = 2,
   V3 = 3,
+  V3_4 = 4,
 };
 
 /**
@@ -38,12 +39,12 @@ class MetaVersionMan final {
 
   static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
 
-  static Status updateMetaV2ToV3(kvstore::KVEngine* engine);
+  static Status updateMetaV3ToV3_4(kvstore::KVEngine* engine);
 
  private:
   static MetaVersion getVersionByHost(kvstore::KVStore* kv);
 
-  static Status doUpgradeV2ToV3(kvstore::KVEngine* engine);
+  static Status doUpgradeV3ToV3_4(kvstore::KVEngine* engine);
 };
 
 }  // namespace meta

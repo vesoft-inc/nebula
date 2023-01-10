@@ -533,7 +533,7 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_VALUE("label", TokenType::LABEL, "label"),
       CHECK_SEMANTIC_VALUE("label123", TokenType::LABEL, "label123"),
       // \xA0 is white space in UTF-8 too
-      CHECK_SEMANTIC_VALUE("\xA0"
+      CHECK_SEMANTIC_VALUE("\xC2\xA0"
                            "abc",
                            TokenType::LABEL,
                            "abc"),

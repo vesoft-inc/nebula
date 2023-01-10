@@ -19,7 +19,7 @@ namespace meta {
 class JobExecutor {
  public:
   JobExecutor() = default;
-  explicit JobExecutor(kvstore::KVStore* kv, GraphSpaceID space) : kvstore_(kv), space_(space) {}
+  JobExecutor(kvstore::KVStore* kv, GraphSpaceID space) : kvstore_(kv), space_(space) {}
   virtual ~JobExecutor() = default;
 
   /**
@@ -99,9 +99,10 @@ class JobExecutor {
 
 class JobExecutorFactory {
  public:
-  static std::unique_ptr<JobExecutor> createJobExecutor(const JobDescription& jd,
-                                                        kvstore::KVStore* store,
-                                                        AdminClient* client);
+  virtual ~JobExecutorFactory() = default;
+  virtual std::unique_ptr<JobExecutor> createJobExecutor(const JobDescription& jd,
+                                                         kvstore::KVStore* store,
+                                                         AdminClient* client);
 };
 
 }  // namespace meta

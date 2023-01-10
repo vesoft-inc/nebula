@@ -61,6 +61,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+        // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         addStats(rpcResp, otherStats_);
@@ -69,12 +70,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         } else {
           return handleRespMultiJobs(std::move(rpcResp));
         }
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

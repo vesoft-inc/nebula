@@ -1692,7 +1692,7 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
           return Value::kNullBadType;
       }
     };
@@ -1733,7 +1733,7 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
           return Value::kNullBadType;
       }
     };
@@ -1775,7 +1775,7 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(DFATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
           return Value::kNullBadType;
       }
     };
@@ -1866,6 +1866,15 @@ FunctionManager::FunctionManager() {
         // string encoded the {src, dst, type, ranking} tuple
         case Value::Type::EDGE: {
           return value.getEdge().id();
+        }
+        // The root cause is the edge-type data format of Traverse executor
+        case Value::Type::LIST: {
+          auto &edges = value.getList().values;
+          if (edges.size() == 1 && edges[0].isEdge()) {
+            return edges[0].getEdge().id();
+          } else {
+            return args[0];
+          }
         }
         default: {
           // Join on the origin type
@@ -2793,7 +2802,7 @@ FunctionManager::FunctionManager() {
       const auto &p = args[0].get().getPath();
       const std::size_t nodeIndex = args[1].get().getInt();
       if (nodeIndex < 0 || nodeIndex >= (1 + p.steps.size())) {
-        LOG(DFATAL) << "Out of range node index.";
+        DLOG(FATAL) << "Out of range node index.";
         return Value::kNullOutOfRange;
       }
       if (nodeIndex == 0) {

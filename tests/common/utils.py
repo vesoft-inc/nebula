@@ -442,7 +442,7 @@ def load_csv_data(
 
 def get_conn_pool(host: str, port: int, ssl_config: SSL_config):
     config = Config()
-    config.max_connection_pool_size = 20
+    config.max_connection_pool_size = 30
     config.timeout = 180000
     # init connection pool
     pool = ConnectionPool()

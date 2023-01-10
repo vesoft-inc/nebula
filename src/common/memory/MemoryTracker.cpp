@@ -15,7 +15,6 @@ ThreadMemoryStats::~ThreadMemoryStats() {
   // Return to global any reserved bytes on destruction
   if (reserved != 0) {
     MemoryStats::instance().freeGlobal(reserved);
-    DLOG(INFO) << std::this_thread::get_id() << " return reserved " << reserved;
   }
 }
 
@@ -36,6 +35,10 @@ void MemoryTracker::realloc(int64_t old_size, int64_t new_size) {
 
 void MemoryTracker::free(int64_t size) {
   MemoryStats::instance().free(size);
+}
+
+bool MemoryTracker::isOn() {
+  return MemoryStats::instance().throwOnMemoryExceeded();
 }
 
 void MemoryTracker::allocImpl(int64_t size, bool) {

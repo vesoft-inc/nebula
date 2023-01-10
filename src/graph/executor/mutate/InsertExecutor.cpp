@@ -40,12 +40,6 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -61,7 +55,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       ieNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->addEdges(param,
@@ -77,12 +71,6 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph
