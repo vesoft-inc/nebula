@@ -26,7 +26,7 @@ Feature: User & privilege Test
     Then the result should be, in any order:
       | role | space |
     And wait 6 seconds
-    When login with user "user2" and "pwd1"
+    When login with user "user2" and password "pwd1"
     When executing query:
       """
       DROP USER IF EXISTS user2
@@ -124,8 +124,8 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
     And wait 6 seconds
-    When login with user "u3" and "012345678910111213141516"
-    When login with user "u4" and "0"
+    When login with user "u3" and password "012345678910111213141516"
+    When login with user "u4" and password "0"
     When executing query:
       """
       CREATE USER u5 WITH PASSWORD "0123456789101112131415161";
@@ -137,7 +137,7 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
     And wait 6 seconds
-    When login with user "u6" and "中文密码^*()12"
+    When login with user "u6" and password "中文密码^*()12"
     When executing query:
       """
       DROP USER IF EXISTS u6;
@@ -396,7 +396,7 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
     And wait 6 seconds
-    When login with user "user2" and "pwd1"
+    When login with user "user2" and password "pwd1"
     When executing query:
       """
       CHANGE PASSWORD user2 FROM "pwd2" TO "pwd1"
@@ -423,7 +423,7 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
     And wait 6 seconds
-    When login with user "u7" and "pwd1"
+    When login with user "u7" and password "pwd1"
     When executing query:
       """
       ALTER USER u7 WITH PASSWORD "0123456789011121314151617"
