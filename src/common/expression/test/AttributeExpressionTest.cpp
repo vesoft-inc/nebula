@@ -82,6 +82,8 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
   Vertex vertex;
   vertex.vid = "vid";
   vertex.tags.resize(2);
+  vertex.tags[0].name = "tag0";
+  vertex.tags[1].name = "tag1";
   vertex.tags[0].props = {
       {"Venus", "Mars"},
       {"Mull", "Kintyre"},
@@ -92,28 +94,38 @@ TEST_F(AttributeExpressionTest, VertexAttribute) {
       {"Venus", "RocksShow"},
   };
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Mull");
-    auto expr = AttributeExpression::make(&pool, left, right);
+    auto expr = AttributeExpression::make(
+        &pool,
+        AttributeExpression::make(&pool,
+                                  ConstantExpression::make(&pool, Value(vertex)),
+                                  ConstantExpression::make(&pool, "tag0")),
+        ConstantExpression::make(&pool, "Mull"));
+
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("Kintyre", value.getStr());
   }
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Bip");
-    auto expr = AttributeExpression::make(&pool, left, right);
+    auto expr = AttributeExpression::make(
+        &pool,
+        AttributeExpression::make(&pool,
+                                  ConstantExpression::make(&pool, Value(vertex)),
+                                  ConstantExpression::make(&pool, "tag1")),
+        ConstantExpression::make(&pool, "Bip"));
     auto value = Expression::eval(expr, gExpCtxt);
     ASSERT_TRUE(value.isStr());
     ASSERT_EQ("Bop", value.getStr());
   }
   {
-    auto *left = ConstantExpression::make(&pool, Value(vertex));
-    auto *right = LabelExpression::make(&pool, "Venus");
-    auto expr = AttributeExpression::make(&pool, left, right);
+    auto expr = AttributeExpression::make(
+        &pool,
+        AttributeExpression::make(&pool,
+                                  ConstantExpression::make(&pool, Value(vertex)),
+                                  ConstantExpression::make(&pool, "tag2")),
+        ConstantExpression::make(&pool, "Venus"));
+
     auto value = Expression::eval(expr, gExpCtxt);
-    ASSERT_TRUE(value.isStr());
-    ASSERT_EQ("Mars", value.getStr());
+    ASSERT_TRUE(value.isNull());
   }
   {
     auto *left = ConstantExpression::make(&pool, Value(vertex));

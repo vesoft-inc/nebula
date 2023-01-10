@@ -542,34 +542,126 @@ Feature: Basic match
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
-  Scenario: can't get property of vertex
+  Scenario: Get property or tag from a vertex
     When executing query:
       """
-      MATCH (v:player{name:"Tim Duncan"}) return v.name
+      MATCH (v:player{name:"Tim Duncan"}) RETURN v.name AS vname
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.name', should use the format `var.tag.prop'
+    Then the result should be, in any order:
+      | vname |
+      | NULL  |
     When executing query:
       """
-      MATCH (v:player)-[]->(b) WHERE v.age > 30 return v.player.name
+      MATCH (v:player{name:"Tim Duncan"}) RETURN v.player AS vtag
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.age', should use the format `var.tag.prop'
+    Then the result should be, in any order:
+      | vtag                |
+      | {name:"Tim Duncan"} |
     When executing query:
       """
-      MATCH (v:player)-[:like]->(b) WHERE v.player.age > 30 return v.player.name, b.age
+      MATCH (v:player)-[]->(b) WHERE v.age > 30 RETURN v.player.name AS vname
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `b.age', should use the format `var.tag.prop'
+    Then the result should be, in any order:
+      | vname |
     When executing query:
       """
-      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.age) return r
+      MATCH (v:player)-[:like]->(b) WHERE v.player.age > 30 WITH v.player.name AS vname, b.age AS bage RETURN vname, bage
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `m.age', should use the format `var.tag.prop'
+    Then the result should be, in any order:
+      | vname               | bage |
+      | "Rajon Rondo"       | NULL |
+      | "Manu Ginobili"     | NULL |
+      | "Tracy McGrady"     | NULL |
+      | "Tracy McGrady"     | NULL |
+      | "Tracy McGrady"     | NULL |
+      | "Tim Duncan"        | NULL |
+      | "Tim Duncan"        | NULL |
+      | "Chris Paul"        | NULL |
+      | "Chris Paul"        | NULL |
+      | "Chris Paul"        | NULL |
+      | "Rudy Gay"          | NULL |
+      | "Paul Gasol"        | NULL |
+      | "Paul Gasol"        | NULL |
+      | "Boris Diaw"        | NULL |
+      | "Boris Diaw"        | NULL |
+      | "Aron Baynes"       | NULL |
+      | "Carmelo Anthony"   | NULL |
+      | "Carmelo Anthony"   | NULL |
+      | "Carmelo Anthony"   | NULL |
+      | "Danny Green"       | NULL |
+      | "Danny Green"       | NULL |
+      | "Danny Green"       | NULL |
+      | "Vince Carter"      | NULL |
+      | "Vince Carter"      | NULL |
+      | "Jason Kidd"        | NULL |
+      | "Jason Kidd"        | NULL |
+      | "Jason Kidd"        | NULL |
+      | "Marc Gasol"        | NULL |
+      | "Grant Hill"        | NULL |
+      | "Steve Nash"        | NULL |
+      | "Steve Nash"        | NULL |
+      | "Steve Nash"        | NULL |
+      | "Steve Nash"        | NULL |
+      | "Tony Parker"       | NULL |
+      | "Tony Parker"       | NULL |
+      | "Tony Parker"       | NULL |
+      | "Marco Belinelli"   | NULL |
+      | "Marco Belinelli"   | NULL |
+      | "Marco Belinelli"   | NULL |
+      | "Yao Ming"          | NULL |
+      | "Yao Ming"          | NULL |
+      | "Dirk Nowitzki"     | NULL |
+      | "Dirk Nowitzki"     | NULL |
+      | "Dirk Nowitzki"     | NULL |
+      | "Shaquille O'Neal"  | NULL |
+      | "Shaquille O'Neal"  | NULL |
+      | "LaMarcus Aldridge" | NULL |
+      | "LaMarcus Aldridge" | NULL |
+      | "Tiago Splitter"    | NULL |
+      | "Tiago Splitter"    | NULL |
+      | "Ray Allen"         | NULL |
+      | "LeBron James"      | NULL |
+      | "Amar'e Stoudemire" | NULL |
+      | "Dwyane Wade"       | NULL |
+      | "Dwyane Wade"       | NULL |
+      | "Dwyane Wade"       | NULL |
+    When executing query:
+      """
+      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.age) RETURN r
+      """
+    Then the result should be, in any order:
+      | r |
+    When executing query:
+      """
+      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.player.age) RETURN r
+      """
+    Then the result should be, in any order, with relax comparison:
+      | r                                                                                    |
+      | [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]     |
+      | [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}] |
+      | [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]     |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]        |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                         |
     When executing query:
       """
       MATCH (v :player{name:"Tim Duncan"})-[]-(v2)-[]-(v3)
       WITH v3.name as names
-      RETURN count(names)
+      RETURN count(names) AS c
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v3.name', should use the format `var.tag.prop'
+    Then the result should be, in any order:
+      | c |
+      | 0 |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"})-[]-(v2)-[]-(v3)
+      WITH v3.player.name as names
+      RETURN count(distinct names) AS c
+      """
+    Then the result should be, in any order:
+      | c  |
+      | 25 |
 
   Scenario: filter is not a valid expression
     When executing query:
