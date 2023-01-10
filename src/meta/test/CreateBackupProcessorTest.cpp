@@ -272,9 +272,11 @@ TEST_F(CreateBackupProcessorTest, Basic) {
 TEST_F(CreateBackupProcessorTest, RunningJobs) {
   std::vector<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
                                       cpp2::JobType::REBUILD_EDGE_INDEX,
+                                      cpp2::JobType::REBUILD_FULLTEXT_INDEX,
                                       cpp2::JobType::COMPACT,
                                       cpp2::JobType::INGEST,
                                       cpp2::JobType::DATA_BALANCE,
+                                      cpp2::JobType::ZONE_BALANCE,
                                       cpp2::JobType::LEADER_BALANCE};
   JobID jobId = 1;
   for (auto jobType : jobTypes) {

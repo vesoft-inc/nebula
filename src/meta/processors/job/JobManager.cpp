@@ -1002,6 +1002,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkTypeJobRunning(
       auto jobDesc = nebula::value(optJobRet);
       auto jType = jobDesc.getJobType();
       if (jobTypes.find(jType) == jobTypes.end()) {
+        LOG(INFO) << "skip job type:" << apache::thrift::util::enumNameSafe(jType);
         continue;
       }
 
