@@ -129,7 +129,7 @@
 # untracked reserved memory in Mib
 --memory_tracker_untracked_reserved_memory_mb=50
 
-# enable log memory tacker stats periodically
+# enable log memory tracker stats periodically
 --memory_tracker_detail_log=true
 # log memory tacker stats interval in milliseconds
 --memory_tracker_detail_log_interval_ms=60000
