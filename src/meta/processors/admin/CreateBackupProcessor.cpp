@@ -107,6 +107,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
 
   folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
+  LOG(INFO) << "Start to create checkpoints in all hosts.";
   // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
