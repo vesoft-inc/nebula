@@ -198,13 +198,13 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   auto tries = folly::collectAll(std::move(futures)).get();
   if (std::any_of(tries.begin(), tries.end(), [](auto& t) { return t.hasException(); })) {
     LOG(INFO) << "stats job stop() RPC failure.";
-    return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
+    return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
   }
 
   for (const auto& t : tries) {
     if (!t.value().ok()) {
       LOG(INFO) << "Stop stats job Failed";
-      return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
+      return nebula::cpp2::ErrorCode::E_RPC_FAILURE;
     }
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
