@@ -104,7 +104,7 @@
 --memory_tracker_untracked_reserved_memory_mb=50
 
 # enable log memory tracker stats periodically
---memory_tracker_detail_log=true
+--memory_tracker_detail_log=false
 # log memory tacker stats interval in milliseconds
 --memory_tracker_detail_log_interval_ms=60000
 
