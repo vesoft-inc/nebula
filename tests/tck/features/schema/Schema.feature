@@ -956,7 +956,7 @@ Feature: Insert string vid of vertex and edge
       CREATE TAG person(name string, age int);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 10 seconds
     When executing query:
       """
       INSERT VERTEX person values "1":("Tom", 23);
@@ -974,7 +974,7 @@ Feature: Insert string vid of vertex and edge
       ALTER TAG person DROP (age);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 10 seconds
     When executing query:
       """
       FETCH PROP ON person "1" yield properties(vertex) AS props;
