@@ -174,7 +174,7 @@ class ShortestPath final : public SingleInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  MatchStepRange* stepRange() const {
+  MatchStepRange stepRange() const {
     return range_;
   }
 
@@ -202,7 +202,7 @@ class ShortestPath final : public SingleInputNode {
     return singleShortest_;
   }
 
-  void setStepRange(MatchStepRange* range) {
+  void setStepRange(const MatchStepRange& range) {
     range_ = range;
   }
 
@@ -234,7 +234,7 @@ class ShortestPath final : public SingleInputNode {
  private:
   GraphSpaceID space_;
   bool singleShortest_{false};
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
   std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
   std::unique_ptr<std::vector<VertexProp>> vertexProps_;

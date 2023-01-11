@@ -111,7 +111,7 @@ class MatchEdge final {
     return props_;
   }
 
-  auto* range() const {
+  MatchStepRange* range() const {
     return range_.get();
   }
 
