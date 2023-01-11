@@ -5,6 +5,7 @@
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
@@ -257,7 +258,7 @@ void GraphSessionManager::updateSessionsToMeta() {
   // expired queries will be killed here.
   auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
-      LOG(ERROR) << "Update sessions failed: " << resp;
+      LOG(ERROR) << "Update sessions failed: " << resp.status();
       return;
     }
 
@@ -283,7 +284,7 @@ void GraphSessionManager::updateSessionsToMeta() {
   // local cache and update statistics
   auto handleKilledSessions = [this](auto&& resp) {
     if (!resp.ok()) {
-      LOG(ERROR) << "Update sessions failed: " << resp;
+      LOG(ERROR) << "Update sessions failed: " << resp.status();
       return;
     }
 
@@ -292,6 +293,10 @@ void GraphSessionManager::updateSessionsToMeta() {
   };
 
   auto result = metaClient_->updateSessions(sessions).get();
+  if (!result.ok()) {
+    LOG(ERROR) << "Update sessions failed: " << result.status();
+    return;
+  }
   handleKilledQueries(result);
   handleKilledSessions(result);
 }
