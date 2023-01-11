@@ -1100,36 +1100,36 @@ Status MatchValidator::validateMatchPathExpr(
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));
     // Check variables
-    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPathPtr(), availableAliases));
     // Build path alias
-    auto &matchPath = matchPathExprImpl->matchPath();
-    auto pathAlias = matchPath.toString();
-    matchPath.setAlias(new std::string(pathAlias));
+    auto matchPathPtr = matchPathExprImpl->matchPathPtr();
+    auto pathAlias = matchPathPtr->toString();
+    matchPathPtr->setAlias(new std::string(pathAlias));
     if (matchPathExprImpl->genList() == nullptr) {
       // Don't done in expression visitor
       Expression *genList = InputPropertyExpression::make(pool, pathAlias);
       matchPathExprImpl->setGenList(genList);
     }
     paths.emplace_back();
-    NG_RETURN_IF_ERROR(validatePath(&matchPath, paths.back()));
-    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&matchPath, paths.back()));
+    NG_RETURN_IF_ERROR(validatePath(matchPathPtr, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(matchPathPtr, paths.back()));
   }
   return Status::OK();
 }
 
-bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath *> &pathPreds) {
   if (expr->kind() == Expression::Kind::kMatchPathPattern) {
-    auto pred = static_cast<MatchPathPatternExpression *>(expr)->matchPath().clone();
-    pred.setPredicate();
-    pathPreds.emplace_back(std::move(pred));
+    auto pred = static_cast<MatchPathPatternExpression *>(expr)->matchPathPtr();
+    pred->setPredicate();
+    pathPreds.emplace_back(pred);
     // Absorb expression into path predicate
     return true;
   } else if (expr->kind() == Expression::Kind::kUnaryNot) {
     auto *operand = static_cast<UnaryExpression *>(expr)->operand();
     if (operand->kind() == Expression::Kind::kMatchPathPattern) {
-      auto pred = static_cast<MatchPathPatternExpression *>(operand)->matchPath().clone();
-      pred.setAntiPredicate();
-      pathPreds.emplace_back(std::move(pred));
+      auto pred = static_cast<MatchPathPatternExpression *>(operand)->matchPathPtr();
+      pred->setAntiPredicate();
+      pathPreds.emplace_back(pred);
       // Absorb expression into path predicate
       return true;
     } else if (operand->kind() == Expression::Kind::kFunctionCall) {
@@ -1138,9 +1138,9 @@ bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath> &pathPr
         auto args = funcExpr->args()->args();
         DCHECK_EQ(args.size(), 1);
         if (args[0]->kind() == Expression::Kind::kMatchPathPattern) {
-          auto pred = static_cast<MatchPathPatternExpression *>(args[0])->matchPath().clone();
-          pred.setAntiPredicate();
-          pathPreds.emplace_back(std::move(pred));
+          auto pred = static_cast<MatchPathPatternExpression *>(args[0])->matchPathPtr();
+          pred->setAntiPredicate();
+          pathPreds.emplace_back(pred);
           // Absorb expression into path predicate
           return true;
         }
@@ -1151,7 +1151,7 @@ bool extractSinglePathPredicate(Expression *expr, std::vector<MatchPath> &pathPr
   return false;
 }
 
-bool extractMultiPathPredicate(Expression *expr, std::vector<MatchPath> &pathPreds) {
+bool extractMultiPathPredicate(Expression *expr, std::vector<MatchPath *> &pathPreds) {
   if (expr->kind() == Expression::Kind::kLogicalAnd) {
     auto &operands = static_cast<LogicalExpression *>(expr)->operands();
     for (auto iter = operands.begin(); iter != operands.end();) {
@@ -1177,7 +1177,7 @@ Status MatchValidator::validatePathInWhere(
   auto *pool = qctx_->objPool();
   ValidatePatternExpressionVisitor visitor(pool, vctx_);
   expr->accept(&visitor);
-  std::vector<MatchPath> pathPreds;
+  std::vector<MatchPath *> pathPreds;
   // FIXME(czp): Delete this function and add new expression visitor to cover all general cases
   if (extractMultiPathPredicate(expr, pathPreds)) {
     wctx.filter = nullptr;
@@ -1190,11 +1190,11 @@ Status MatchValidator::validatePathInWhere(
   for (auto &pred : pathPreds) {
     NG_RETURN_IF_ERROR(checkMatchPathExpr(pred, availableAliases));
     // Build path alias
-    auto pathAlias = pred.toString();
-    pred.setAlias(new std::string(pathAlias));
+    auto pathAlias = pred->toString();
+    pred->setAlias(new std::string(pathAlias));
     paths.emplace_back();
-    NG_RETURN_IF_ERROR(validatePath(&pred, paths.back()));
-    NG_RETURN_IF_ERROR(buildRollUpPathInfo(&pred, paths.back()));
+    NG_RETURN_IF_ERROR(validatePath(pred, paths.back()));
+    NG_RETURN_IF_ERROR(buildRollUpPathInfo(pred, paths.back()));
   }
 
   // All inside pattern expressions are path predicate
@@ -1211,7 +1211,7 @@ Status MatchValidator::validatePathInWhere(
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));
     // Check variables
-    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPath(), availableAliases));
+    NG_RETURN_IF_ERROR(checkMatchPathExpr(matchPathExprImpl->matchPathPtr(), availableAliases));
     // Build path alias
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
@@ -1230,22 +1230,21 @@ Status MatchValidator::validatePathInWhere(
 }
 
 /*static*/ Status MatchValidator::checkMatchPathExpr(
-    const MatchPath &matchPath,
-    const std::unordered_map<std::string, AliasType> &availableAliases) {
-  if (matchPath.alias() != nullptr) {
-    const auto find = availableAliases.find(*matchPath.alias());
+    MatchPath *matchPath, const std::unordered_map<std::string, AliasType> &availableAliases) {
+  if (matchPath->alias() != nullptr) {
+    const auto find = availableAliases.find(*matchPath->alias());
     if (find == availableAliases.end()) {
       return Status::SemanticError(
           "PatternExpression are not allowed to introduce new variables: `%s'.",
-          matchPath.alias()->c_str());
+          matchPath->alias()->c_str());
     }
     if (find->second != AliasType::kPath) {
       return Status::SemanticError("`%s' is defined with type %s, but referenced with type Path",
-                                   matchPath.alias()->c_str(),
+                                   matchPath->alias()->c_str(),
                                    AliasTypeName::get(find->second).c_str());
     }
   }
-  for (const auto &node : matchPath.nodes()) {
+  for (const auto &node : matchPath->nodes()) {
     if (node->variableDefinedSource() == MatchNode::VariableDefinedSource::kExpression) {
       // Checked in visitor
       continue;
@@ -1264,7 +1263,7 @@ Status MatchValidator::validatePathInWhere(
       }
     }
   }
-  for (const auto &edge : matchPath.edges()) {
+  for (const auto &edge : matchPath->edges()) {
     if (!edge->alias().empty()) {
       const auto find = availableAliases.find(edge->alias());
       if (find == availableAliases.end()) {
