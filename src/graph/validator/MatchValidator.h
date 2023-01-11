@@ -108,8 +108,7 @@ class MatchValidator final : public Validator {
                              std::vector<Path> &paths);
 
   static Status checkMatchPathExpr(
-      const MatchPath &matchPath,
-      const std::unordered_map<std::string, AliasType> &availableAliases);
+      MatchPath *matchPath, const std::unordered_map<std::string, AliasType> &availableAliases);
 
   static Status buildRollUpPathInfo(const MatchPath *path, Path &pathInfo);
 

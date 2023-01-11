@@ -23,7 +23,7 @@ class ShortestPathBase {
                    std::unordered_map<std::string, std::string>* stats)
       : pathNode_(node), qctx_(qctx), stats_(stats) {
     singleShortest_ = node->singleShortest();
-    maxStep_ = node->stepRange()->max();
+    maxStep_ = node->stepRange().max();
   }
 
   virtual ~ShortestPathBase() {}

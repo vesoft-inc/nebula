@@ -1633,17 +1633,17 @@ class Traverse final : public GetNeighbors {
 
   Traverse* clone() const override;
 
-  MatchStepRange* stepRange() const {
+  MatchStepRange stepRange() const {
     return range_;
   }
 
   bool isOneStep() const {
-    return !range_;
+    return range_.min() == 1 && range_.max() == 1;
   }
 
   // Contains zero step
   bool zeroStep() const {
-    return range_ != nullptr && range_->min() == 0;
+    return range_.min() == 0;
   }
 
   Expression* vFilter() const {
@@ -1669,7 +1669,7 @@ class Traverse final : public GetNeighbors {
     return this->colNames().back();
   }
 
-  void setStepRange(MatchStepRange* range) {
+  void setStepRange(const MatchStepRange& range) {
     range_ = range;
   }
 
@@ -1711,7 +1711,7 @@ class Traverse final : public GetNeighbors {
  private:
   void cloneMembers(const Traverse& g);
 
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
   bool trackPrevPath_{true};

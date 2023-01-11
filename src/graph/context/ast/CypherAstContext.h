@@ -47,7 +47,7 @@ struct NodeInfo {
 
 struct EdgeInfo {
   bool anonymous{false};
-  MatchStepRange* range{nullptr};
+  std::unique_ptr<MatchStepRange> range{nullptr};
   std::vector<EdgeType> edgeTypes;
   MatchEdge::Direction direction{MatchEdge::Direction::OUT_EDGE};
   std::vector<std::string> types;
