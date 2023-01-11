@@ -9,8 +9,7 @@
 
 namespace nebula {
 namespace graph {
-StatusOr<SubPlan> SamplingClausePlanner::transform(
-    CypherClauseContextBase* clauseCtx) {
+StatusOr<SubPlan> SamplingClausePlanner::transform(CypherClauseContextBase* clauseCtx) {
   if (clauseCtx->kind != CypherClauseKind::kSampling) {
     return Status::Error("Not a valid context for SamplingClausePlanner.");
   }
@@ -21,11 +20,9 @@ StatusOr<SubPlan> SamplingClausePlanner::transform(
   return samplingPlan;
 }
 
-Status SamplingClausePlanner::buildSampling(SamplingClauseContext* octx,
-                                            SubPlan& subplan) {
+Status SamplingClausePlanner::buildSampling(SamplingClauseContext* octx, SubPlan& subplan) {
   auto* currentRoot = subplan.root;
-  auto* sampling =
-      Sampling::make(octx->qctx, currentRoot, octx->indexedSamplingFactors);
+  auto* sampling = Sampling::make(octx->qctx, currentRoot, octx->indexedSamplingFactors);
   subplan.root = sampling;
   subplan.tail = sampling;
   return Status::OK();

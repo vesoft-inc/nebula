@@ -11,8 +11,8 @@
 #include "common/expression/Expression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "graph/context/ast/AstContext.h"
-#include "parser/MatchSentence.h"
 #include "graph/planner/plan/Query.h"
+#include "parser/MatchSentence.h"
 namespace nebula {
 namespace graph {
 enum class CypherClauseKind : uint8_t {

@@ -436,8 +436,7 @@ void Sort::cloneMembers(const Sort& p) {
 
 std::unique_ptr<PlanNodeDescription> Sampling::explain() const {
   auto desc = SingleInputNode::explain();
-  addDescription("factors", folly::toJson(util::toJson(factorsString())),
-                 desc.get());
+  addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());
   return desc;
 }
 

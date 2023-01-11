@@ -18,51 +18,42 @@ folly::Future<Status> SamplingExecutor::execute() {
   Result result = ectx_->getResult(sampling->inputVar());
   auto *iter = result.iterRef();
   if (UNLIKELY(iter == nullptr)) {
-    return Status::Error(
-        "Internal error: nullptr iterator in sampling executor");
+    return Status::Error("Internal error: nullptr iterator in sampling executor");
   }
   if (UNLIKELY(!result.iter()->isSequentialIter())) {
     std::stringstream ss;
-    ss << "Internal error: Sampling executor does not supported "
-       << iter->kind();
+    ss << "Internal error: Sampling executor does not supported " << iter->kind();
     return Status::Error(ss.str());
   }
   auto &factors = sampling->factors();
   auto size = iter->size();
   if (size <= 0) {
     iter->clear();
-    return finish(ResultBuilder()
-                      .value(result.valuePtr())
-                      .iter(std::move(result).iter())
-                      .build());
+    return finish(ResultBuilder().value(result.valuePtr()).iter(std::move(result).iter()).build());
   }
   auto colNames = result.value().getDataSet().colNames;
   DataSet dataset(std::move(colNames));
   for (auto factor : factors) {
     if (factor.count <= 0) {
       iter->clear();
-      return finish(ResultBuilder()
-                        .value(result.valuePtr())
-                        .iter(std::move(result).iter())
-                        .build());
+      return finish(
+          ResultBuilder().value(result.valuePtr()).iter(std::move(result).iter()).build());
     }
     if (factor.samplingType == SamplingFactor::SamplingType::BINARY) {
-      executeBinarySample<SequentialIter>(iter, factor.colIdx, factor.count,
-                                          dataset);
+      executeBinarySample<SequentialIter>(iter, factor.colIdx, factor.count, dataset);
     } else {
-      executeAliasSample<SequentialIter>(iter, factor.colIdx, factor.count,
-                                         dataset);
+      executeAliasSample<SequentialIter>(iter, factor.colIdx, factor.count, dataset);
     }
   }
-  return finish(ResultBuilder()
-                    .value(Value(std::move(dataset)))
-                    .iter(Iterator::Kind::kSequential)
-                    .build());
+  return finish(
+      ResultBuilder().value(Value(std::move(dataset))).iter(Iterator::Kind::kSequential).build());
 }
 
 template <typename U>
-void SamplingExecutor::executeBinarySample(Iterator *iter, size_t index,
-                                           size_t count, DataSet &list) {
+void SamplingExecutor::executeBinarySample(Iterator *iter,
+                                           size_t index,
+                                           size_t count,
+                                           DataSet &list) {
   auto uIter = static_cast<U *>(iter);
   std::vector<WeightType> accumulateWeights;
   auto it = uIter->begin();
@@ -83,16 +74,17 @@ void SamplingExecutor::executeBinarySample(Iterator *iter, size_t index,
   nebula::algorithm::Normalization<WeightType>(accumulateWeights);
   auto beg = uIter->begin();
   for (size_t i = 0; i < count; ++i) {
-    auto idx =
-        nebula::algorithm::BinarySampleAcc<WeightType>(accumulateWeights);
+    auto idx = nebula::algorithm::BinarySampleAcc<WeightType>(accumulateWeights);
     list.emplace_back(*(beg + idx));
   }
   uIter->clear();
 }
 
 template <typename U>
-void SamplingExecutor::executeAliasSample(Iterator *iter, size_t index,
-                                          size_t count, DataSet &list) {
+void SamplingExecutor::executeAliasSample(Iterator *iter,
+                                          size_t index,
+                                          size_t count,
+                                          DataSet &list) {
   auto uIter = static_cast<U *>(iter);
   std::vector<WeightType> weights;
   auto it = uIter->begin();

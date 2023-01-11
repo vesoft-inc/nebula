@@ -13,8 +13,7 @@ namespace nebula {
 namespace graph {
 class SamplingValidator final : public Validator {
  public:
-  SamplingValidator(Sentence* sentence, QueryContext* context)
-      : Validator(sentence, context) {
+  SamplingValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 

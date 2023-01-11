@@ -17,8 +17,7 @@ namespace nebula {
 namespace algorithm {
 template <typename T = float>
 T UniformRandom() {
-  static_assert(std::is_floating_point<T>::value,
-                "Only support float point type");
+  static_assert(std::is_floating_point<T>::value, "Only support float point type");
 #if defined(__clang__)
   static std::default_random_engine e(std::time(nullptr));
   static std::uniform_real_distribution<T> u(0., 1.);
@@ -31,8 +30,7 @@ T UniformRandom() {
 
 template <typename T>
 void Normalization(std::vector<T>& distribution) {
-  static_assert(std::is_floating_point<T>::value,
-                "Only support float point type");
+  static_assert(std::is_floating_point<T>::value, "Only support float point type");
   T norm_sum = 0.0f;
   for (auto& dist : distribution) {
     norm_sum += dist;
@@ -52,8 +50,7 @@ void Normalization(std::vector<T>& distribution) {
 template <typename T = float>
 class AliasSampler {
  public:
-  static_assert(std::is_floating_point<T>::value,
-                "Only support float point type");
+  static_assert(std::is_floating_point<T>::value, "Only support float point type");
   using AliasType = uint32_t;
   bool Init(std::vector<T>& distribution);
   inline bool Init(const std::vector<T>& distribution);

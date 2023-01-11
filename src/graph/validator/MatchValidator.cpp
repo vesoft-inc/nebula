@@ -497,9 +497,8 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
 
   if (ret->samplingFactors() != nullptr) {
     auto samplingCtx = getContext<SamplingClauseContext>();
-    NG_RETURN_IF_ERROR(validateSampling(ret->samplingFactors(),
-                                        retClauseCtx.yield->yieldColumns,
-                                        *samplingCtx));
+    NG_RETURN_IF_ERROR(
+        validateSampling(ret->samplingFactors(), retClauseCtx.yield->yieldColumns, *samplingCtx));
     retClauseCtx.sampling = std::move(samplingCtx);
   }
 
@@ -873,9 +872,9 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
 // Check validity of order by options.
 // Disable duplicate columns,
 // check expression of column (only constant expression and label expression)
-Status MatchValidator::validateSampling(
-    const SamplingFactors *factors, const YieldColumns *yieldColumns,
-    SamplingClauseContext &samplingCtx) const {
+Status MatchValidator::validateSampling(const SamplingFactors *factors,
+                                        const YieldColumns *yieldColumns,
+                                        SamplingClauseContext &samplingCtx) const {
   if (factors != nullptr) {
     std::vector<std::string> inputColList;
     inputColList.reserve(yieldColumns->columns().size());
@@ -885,8 +884,7 @@ Status MatchValidator::validateSampling(
     std::unordered_map<std::string, size_t> inputColIndices;
     for (auto i = 0u; i < inputColList.size(); i++) {
       if (!inputColIndices.emplace(inputColList[i], i).second) {
-        return Status::SemanticError("Duplicated columns not allowed: %s",
-                                     inputColList[i].c_str());
+        return Status::SemanticError("Duplicated columns not allowed: %s", inputColList[i].c_str());
       }
     }
 
@@ -897,16 +895,15 @@ Status MatchValidator::validateSampling(
       auto factorExpr = factor->expr();
       if (ExpressionUtils::isEvaluableExpr(factorExpr, qctx_)) continue;
       if (factorExpr->kind() != Expression::Kind::kLabel) {
-        return Status::SemanticError(
-            "Only column name can be used as sort item");
+        return Status::SemanticError("Only column name can be used as sort item");
       }
       auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
       auto iter = inputColIndices.find(name);
       if (iter == inputColIndices.end()) {
         return Status::SemanticError("Column `%s' not found", name.c_str());
       }
-      samplingCtx.indexedSamplingFactors.emplace_back(SamplingParams(
-          iter->second, factor->count(), factor->samplingType()));
+      samplingCtx.indexedSamplingFactors.emplace_back(
+          SamplingParams(iter->second, factor->count(), factor->samplingType()));
     }
   }
 

@@ -1025,21 +1025,22 @@ struct SamplingParams {
 // Sampling the given record set.
 class Sampling final : public SingleInputNode {
  public:
-  static Sampling* make(QueryContext* qctx, PlanNode* input,
+  static Sampling* make(QueryContext* qctx,
+                        PlanNode* input,
                         std::vector<SamplingParams> factors = {}) {
-    return qctx->objPool()->makeAndAdd<Sampling>(qctx, input,
-                                                 std::move(factors));
+    return qctx->objPool()->makeAndAdd<Sampling>(qctx, input, std::move(factors));
   }
 
-  const std::vector<SamplingParams>& factors() const { return factors_; }
+  const std::vector<SamplingParams>& factors() const {
+    return factors_;
+  }
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
   friend ObjectPool;
-  Sampling(QueryContext* qctx, PlanNode* input,
-           std::vector<SamplingParams> factors)
+  Sampling(QueryContext* qctx, PlanNode* input, std::vector<SamplingParams> factors)
       : SingleInputNode(qctx, Kind::kSampling, input) {
     factors_ = std::move(factors);
   }
@@ -1050,8 +1051,7 @@ class Sampling final : public SingleInputNode {
     for (auto& factor : factors_) {
       std::string colName = cols[factor.colIdx];
       std::string order =
-          factor.samplingType == SamplingFactor::SamplingType::BINARY ? "BINARY"
-                                                                      : "ALIAS";
+          factor.samplingType == SamplingFactor::SamplingType::BINARY ? "BINARY" : "ALIAS";
       std::vector temp = {colName, std::to_string(factor.count), order};
       result.emplace_back(temp);
     }

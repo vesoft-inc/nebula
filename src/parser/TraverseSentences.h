@@ -301,7 +301,6 @@ class OrderBySentence final : public Sentence {
   std::unique_ptr<OrderFactors> orderFactors_;
 };
 
-
 class SamplingFactor final {
  public:
   enum SamplingType : uint8_t { BINARY, ALIAS };
@@ -355,7 +354,6 @@ class SamplingFactors final {
  private:
   std::vector<std::unique_ptr<SamplingFactor>> factors_;
 };
-
 
 class SamplingSentence final : public Sentence {
  public:
