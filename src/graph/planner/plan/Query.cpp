@@ -790,7 +790,7 @@ void Traverse::cloneMembers(const Traverse& g) {
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   auto desc = GetNeighbors::explain();
-  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
+  addDescription("steps", range_.toString(), desc.get());
   addDescription("vertex filter", vFilter_ != nullptr ? vFilter_->toString() : "", desc.get());
   addDescription("edge filter", eFilter_ != nullptr ? eFilter_->toString() : "", desc.get());
   addDescription("if_track_previous_path", folly::toJson(util::toJson(trackPrevPath_)), desc.get());

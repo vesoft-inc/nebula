@@ -67,8 +67,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   folly::Future<Status> buildPathMultiJobs(size_t minStep, size_t maxStep);
 
   bool isFinalStep() const {
-    return (range_ == nullptr && currentStep_ == 1) ||
-           (range_ != nullptr && (currentStep_ == range_->max() || range_->max() == 0));
+    return currentStep_ == range_.max() || range_.max() == 0;
   }
 
   bool filterSameEdge(const Row& lhs,
@@ -133,7 +132,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> adjList_;
   std::unordered_map<Value, std::vector<Row>, VertexHash, VertexEqual> dst2PathsMap_;
   const Traverse* traverse_{nullptr};
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   size_t currentStep_{0};
 };
 

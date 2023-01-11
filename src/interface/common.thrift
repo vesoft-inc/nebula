@@ -376,6 +376,7 @@ enum ErrorCode {
     E_RELATED_INDEX_EXISTS            = -2015,  // There are still indexes related to tag or edge, cannot drop it
     E_RELATED_SPACE_EXISTS            = -2016,  // There are still some space on the host, cannot drop it
     E_RELATED_FULLTEXT_INDEX_EXISTS   = -2017,  // There are still fulltext index on tag/edge
+    E_HISTORY_CONFLICT                = -2018,  // Existed before (e.g., schema)
 
     E_STORE_FAILURE                   = -2021,  // Failed to store data
     E_STORE_SEGMENT_ILLEGAL           = -2022,  // Illegal storage segment
