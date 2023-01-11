@@ -57,11 +57,15 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
       LOG(INFO) << "Session id '" << sessionId << "' not found";
-      // If the session requested to be updated can not be found in meta, the session has been
-      // killed
+      // If the session requested to be updated can not be found in meta, we consider the session
+      // has been killed
       if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
         killedSessions.emplace_back(sessionId);
         continue;
+      } else {
+        handleErrorCode(errCode);
+        onFinished();
+        return;
       }
     }
 
@@ -169,10 +173,18 @@ void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
     auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
     auto ret = doGet(sessionKey);
 
-    // If the session is not found, we should continue to remove other sessions.
     if (!nebula::ok(ret)) {
+      auto errCode = nebula::error(ret);
       LOG(INFO) << "Session id `" << sessionId << "' not found";
-      continue;
+
+      // If the session is not found, we should continue to remove other sessions.
+      if (errCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+        continue;
+      } else {  // for other error like leader change, we handle the error and return.
+        handleErrorCode(errCode);
+        onFinished();
+        return;
+      }
     }
 
     // Remove session key from kvstore
