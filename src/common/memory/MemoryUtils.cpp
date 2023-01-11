@@ -44,7 +44,7 @@ DEFINE_string(cgroup_v2_memory_current_path,
 
 DEFINE_bool(memory_purge_enabled, true, "memory purge enabled, default true");
 DEFINE_int32(memory_purge_interval_seconds, 10, "memory purge interval in seconds, default 10");
-DEFINE_bool(memory_tracker_detail_log, true, "print memory stats detail log");
+DEFINE_bool(memory_tracker_detail_log, false, "print memory stats detail log");
 DEFINE_int32(memory_tracker_detail_log_interval_ms,
              60000,
              "print memory stats detail log interval in ms");
