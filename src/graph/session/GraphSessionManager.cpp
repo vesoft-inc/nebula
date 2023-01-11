@@ -5,6 +5,7 @@
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
@@ -258,8 +259,9 @@ void GraphSessionManager::updateSessionsToMeta() {
   auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();
-      return Status::Error("Update sessions failed: %s", resp.status().toString().c_str());
+      return;
     }
+
     auto& killedQueriesForEachSession = *resp.value().killed_queries_ref();
     for (auto& killedQueries : killedQueriesForEachSession) {
       auto sessionId = killedQueries.first;
@@ -276,19 +278,24 @@ void GraphSessionManager::updateSessionsToMeta() {
         VLOG(1) << "Kill query, session: " << sessionId << " plan: " << epId;
       }
     }
-    return Status::OK();
   };
 
   // The response from meta contains sessions that are marked as killed, so we need to clean the
   // local cache and update statistics
   auto handleKilledSessions = [this](auto&& resp) {
+    if (!resp.ok()) {
+      LOG(ERROR) << "Update sessions failed: " << resp.status();
+      return;
+    }
+
     auto killSessions = resp.value().get_killed_sessions();
     removeSessionFromLocalCache(killSessions);
   };
 
   auto result = metaClient_->updateSessions(sessions).get();
   if (!result.ok()) {
-    LOG(ERROR) << "Update sessions failed: " << result;
+    LOG(ERROR) << "Update sessions failed: " << result.status();
+    return;
   }
   handleKilledQueries(result);
   handleKilledSessions(result);
