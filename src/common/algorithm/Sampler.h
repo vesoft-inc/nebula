@@ -15,8 +15,6 @@
 
 namespace nebula {
 namespace algorithm {
-
-namespace {
 template <typename T = float>
 T UniformRandom() {
   static_assert(std::is_floating_point<T>::value,
@@ -30,7 +28,6 @@ T UniformRandom() {
 #endif
   return u(e);
 }
-}  // namespace
 
 template <typename T>
 void Normalization(std::vector<T>& distribution) {
@@ -40,7 +37,7 @@ void Normalization(std::vector<T>& distribution) {
   for (auto& dist : distribution) {
     norm_sum += dist;
   }
-  if (norm_sum <= FLT_EPSILON and !distribution.empty()) {
+  if (norm_sum <= FLT_EPSILON && !distribution.empty()) {
     for (size_t i = 0; i < distribution.size(); ++i) {
       distribution[i] = 1.0f / static_cast<T>(distribution.size());
     }
