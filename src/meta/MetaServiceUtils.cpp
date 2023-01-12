@@ -87,11 +87,20 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
     bool isEdge) {
   switch (op) {
     case cpp2::AlterSchemaOp::ADD:
+      // Check the current schema first. Then check all schemas.
+      for (auto it = cols.begin(); it != cols.end(); ++it) {
+        if (it->get_name() == col.get_name()) {
+          LOG(ERROR) << "Column existing: " << col.get_name();
+          return nebula::cpp2::ErrorCode::E_EXISTED;
+        }
+      }
+      // There won't any two columns having the same name across all schemas. If there is a column
+      // having the same name with the intended change, it must be from history schemas.
       for (auto& versionedCols : allVersionedCols) {
         for (auto it = versionedCols.begin(); it != versionedCols.end(); ++it) {
           if (it->get_name() == col.get_name()) {
-            LOG(ERROR) << "Column currently or previously existing: " << col.get_name();
-            return nebula::cpp2::ErrorCode::E_EXISTED;
+            LOG(ERROR) << "Column previously existing: " << col.get_name();
+            return nebula::cpp2::ErrorCode::E_HISTORY_CONFLICT;
           }
         }
       }

@@ -97,6 +97,11 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(WhereClauseContext* bindWhereCl
 
   auto cp = CrossJoin::make(qctx, leftPlan.root, rightPlan.root);
 
+  MatchStepRange stepRange(1, 1);
+  if (edge.range != nullptr) {
+    stepRange = *edge.range;
+  }
+
   auto shortestPath = ShortestPath::make(qctx, cp, spaceId, singleShortest);
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProp);
@@ -104,7 +109,7 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(WhereClauseContext* bindWhereCl
   shortestPath->setEdgeProps(SchemaUtil::getEdgeProps(edge, false, qctx, spaceId));
   shortestPath->setReverseEdgeProps(SchemaUtil::getEdgeProps(edge, true, qctx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
-  shortestPath->setStepRange(edge.range);
+  shortestPath->setStepRange(stepRange);
   shortestPath->setColNames(std::move(colNames));
 
   subplan.root = shortestPath;

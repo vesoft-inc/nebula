@@ -77,6 +77,7 @@
   X(E_WRONGCLUSTER, -2010)                                                    \
   X(E_ZONE_NOT_ENOUGH, -2011)                                                 \
   X(E_ZONE_IS_EMPTY, -2012)                                                   \
+  X(E_HISTORY_CONFLICT, -2018)                                                \
                                                                               \
   X(E_STORE_FAILURE, -2021)                                                   \
   X(E_STORE_SEGMENT_ILLEGAL, -2022)                                           \

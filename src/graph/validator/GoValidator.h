@@ -36,7 +36,7 @@ class GoValidator final : public Validator {
 
   Status extractTagIds();
 
-  void extractPropExprs(const Expression* expr, std::unordered_set<std::string>& uniqueCols);
+  Status extractPropExprs(const Expression* expr, std::unordered_set<std::string>& uniqueCols);
 
   Expression* rewrite2VarProp(const Expression* expr);
 
