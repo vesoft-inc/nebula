@@ -509,14 +509,19 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
 Status MatchValidator::validateAliases(
     const std::vector<const Expression *> &exprs,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
-  static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
-                                                             Expression::Kind::kLabelAttribute,
-                                                             Expression::Kind::kLabelTagProperty,
-                                                             // primitive props
-                                                             Expression::Kind::kEdgeSrc,
-                                                             Expression::Kind::kEdgeDst,
-                                                             Expression::Kind::kEdgeRank,
-                                                             Expression::Kind::kEdgeType};
+  static const std::unordered_set<Expression::Kind> kinds = {
+      Expression::Kind::kLabel,
+      Expression::Kind::kLabelAttribute,
+      Expression::Kind::kLabelTagProperty,
+      // primitive props
+      Expression::Kind::kEdgeSrc,
+      Expression::Kind::kEdgeDst,
+      Expression::Kind::kEdgeRank,
+      Expression::Kind::kEdgeType,
+      // invalid prop exprs
+      Expression::Kind::kSrcProperty,
+      Expression::Kind::kDstProperty,
+  };
 
   for (auto *expr : exprs) {
     auto refExprs = ExpressionUtils::collectAll(expr, kinds);
@@ -1057,6 +1062,11 @@ Status MatchValidator::checkAlias(
           return Status::SemanticError("Alias `%s' does not have the edge property ranking",
                                        name.c_str());
       }
+    }
+    case Expression::Kind::kSrcProperty:
+    case Expression::Kind::kDstProperty: {
+      return Status::SemanticError("Expression %s is not allowed to use in cypher",
+                                   refExpr->toString().c_str());
     }
     default:  // refExpr must satisfy one of cases and should never hit this branch
       break;

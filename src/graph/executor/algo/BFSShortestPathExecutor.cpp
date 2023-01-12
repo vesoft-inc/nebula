@@ -167,15 +167,13 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue([this](auto&& resps) {
-        memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
-          currentDs_.append(std::move(resp));
-        }
-        return Status::OK();
-      });
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
+    return Status::OK();
+  });
 }
 
 DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,

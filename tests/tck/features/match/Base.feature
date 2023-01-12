@@ -1069,6 +1069,46 @@ Feature: Basic match
   Scenario: match_with_wrong_syntax
     When executing query:
       """
+      MATCH (v:player) RETURN $$.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) RETURN $^.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) RETURN $-.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) WHERE $var.player > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) WHERE $$.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) WHERE $^.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) WHERE $-.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v:player) WHERE $var.player > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
       MATCH (v{name: "Tim Duncan"}) return v
       """
     Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
