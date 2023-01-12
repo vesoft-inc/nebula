@@ -1072,6 +1072,61 @@ Feature: Basic match
       MATCH (v{name: "Tim Duncan"}) return v
       """
     Then a SemanticError should be raised at runtime: `name:"Tim Duncan"': No tag found for property.
+    When executing query:
+      """
+      MATCH (v:player) RETURN $$.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime: Expression $$.player.age is not allowed to use in cypher
+    When executing query:
+      """
+      MATCH (v:player) RETURN $^.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime: Expression $^.player.age is not allowed to use in cypher
+    When executing query:
+      """
+      MATCH (v:player) RETURN $-.player.age AS a
+      """
+    Then a SemanticError should be raised at runtime: `$-.player', not exist prop `player'
+    When executing query:
+      """
+      MATCH (v:player) WHERE $var.player > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `$var.player', not exist variable `var'
+    When executing query:
+      """
+      MATCH (v:player) WHERE $$.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Expression $$.player.age is not allowed to use in cypher
+    When executing query:
+      """
+      MATCH (v:player) WHERE $^.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Expression $^.player.age is not allowed to use in cypher
+    When executing query:
+      """
+      MATCH (v:player) WHERE $-.player.age > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `$-.player', not exist prop `player'
+    When executing query:
+      """
+      MATCH (v:player) WHERE $var.player > 0 RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `$var.player', not exist variable `var'
+    When executing query:
+      """
+      MATCH (v:player) WITH {k: $^} AS x RETUR x.k.player.name
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `} AS x R'
+    When executing query:
+      """
+      MATCH (v:player) WITH {k: $^.player.age} AS x RETURN x.k
+      """
+    Then a SemanticError should be raised at runtime: Expression $^.player.age is not allowed to use in cypher
+    When executing query:
+      """
+      MATCH (v:player) WITH {k: $var} AS x RETUR x.k.player.name
+      """
+    Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `{k: $var}'
 
   Scenario: match with tag filter
     When executing query:
