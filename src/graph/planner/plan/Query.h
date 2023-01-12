@@ -1824,13 +1824,13 @@ class RollUpApply : public BinaryInputNode {
   static RollUpApply* make(QueryContext* qctx,
                            PlanNode* left,
                            PlanNode* right,
-                           std::vector<Expression*> compareCols,
+                           std::vector<std::pair<Expression*, bool>> compareCols,
                            InputPropertyExpression* collectCol) {
     return qctx->objPool()->makeAndAdd<RollUpApply>(
         qctx, Kind::kRollUpApply, left, right, std::move(compareCols), collectCol);
   }
 
-  const std::vector<Expression*>& compareCols() const {
+  const std::vector<std::pair<Expression*, bool>>& compareCols() const {
     return compareCols_;
   }
 
@@ -1853,14 +1853,14 @@ class RollUpApply : public BinaryInputNode {
               Kind kind,
               PlanNode* left,
               PlanNode* right,
-              std::vector<Expression*> compareCols,
+              std::vector<std::pair<Expression*, bool>> compareCols,
               InputPropertyExpression* collectCol);
 
   void cloneMembers(const RollUpApply&);
 
  protected:
   // Collect columns when compare column equal
-  std::vector<Expression*> compareCols_;
+  std::vector<std::pair<Expression*, bool>> compareCols_;
   // Collect column to List
   InputPropertyExpression* collectCol_;
 };
@@ -1871,13 +1871,13 @@ class PatternApply : public BinaryInputNode {
   static PatternApply* make(QueryContext* qctx,
                             PlanNode* left,
                             PlanNode* right,
-                            std::vector<Expression*> keyCols,
+                            std::vector<std::pair<Expression*, bool>> keyCols,
                             bool isAntiPred = false) {
     return qctx->objPool()->makeAndAdd<PatternApply>(
         qctx, Kind::kPatternApply, left, right, std::move(keyCols), isAntiPred);
   }
 
-  const std::vector<Expression*>& keyCols() const {
+  const std::vector<std::pair<Expression*, bool>>& keyCols() const {
     return keyCols_;
   }
 
@@ -1896,14 +1896,14 @@ class PatternApply : public BinaryInputNode {
                Kind kind,
                PlanNode* left,
                PlanNode* right,
-               std::vector<Expression*> keyCols,
+               std::vector<std::pair<Expression*, bool>> keyCols,
                bool isAntiPred);
 
   void cloneMembers(const PatternApply&);
 
  protected:
   // Common columns of subplans on both sides
-  std::vector<Expression*> keyCols_;
+  std::vector<std::pair<Expression*, bool>> keyCols_;
   bool isAntiPred_{false};
 };
 

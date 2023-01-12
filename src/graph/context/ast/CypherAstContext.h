@@ -99,7 +99,7 @@ struct Path final {
   // True for pattern expression, to collect path to list
   bool rollUpApply{false};
   // vector ["v"] in (v)-[:like]->()
-  std::vector<std::string> compareVariables;
+  std::vector<std::pair<std::string, bool>> compareVariables;
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
 

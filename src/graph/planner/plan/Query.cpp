@@ -927,7 +927,7 @@ RollUpApply::RollUpApply(QueryContext* qctx,
                          Kind kind,
                          PlanNode* left,
                          PlanNode* right,
-                         std::vector<Expression*> compareCols,
+                         std::vector<std::pair<Expression*, bool>> compareCols,
                          InputPropertyExpression* collectCol)
     : BinaryInputNode(qctx, kind, left, right),
       compareCols_(std::move(compareCols)),
@@ -935,8 +935,8 @@ RollUpApply::RollUpApply(QueryContext* qctx,
 
 void RollUpApply::cloneMembers(const RollUpApply& r) {
   BinaryInputNode::cloneMembers(r);
-  for (const auto* col : r.compareCols_) {
-    compareCols_.emplace_back(col->clone());
+  for (const auto& pair : r.compareCols_) {
+    compareCols_.emplace_back(std::make_pair(pair.first->clone(), pair.second));
   }
   collectCol_ = static_cast<InputPropertyExpression*>(DCHECK_NOTNULL(r.collectCol_)->clone());
 }
@@ -961,7 +961,7 @@ PatternApply::PatternApply(QueryContext* qctx,
                            Kind kind,
                            PlanNode* left,
                            PlanNode* right,
-                           std::vector<Expression*> keyCols,
+                           std::vector<std::pair<Expression*, bool>> keyCols,
                            bool isAntiPred)
     : BinaryInputNode(qctx, kind, left, right),
       keyCols_(std::move(keyCols)),
@@ -969,8 +969,8 @@ PatternApply::PatternApply(QueryContext* qctx,
 
 void PatternApply::cloneMembers(const PatternApply& r) {
   BinaryInputNode::cloneMembers(r);
-  for (const auto* col : r.keyCols_) {
-    keyCols_.emplace_back(col->clone());
+  for (const auto& pair : r.keyCols_) {
+    keyCols_.emplace_back(std::make_pair(pair.first->clone(), pair.second));
   }
   isAntiPred_ = r.isAntiPred_;
 }

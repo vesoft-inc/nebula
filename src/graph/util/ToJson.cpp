@@ -94,6 +94,10 @@ std::string toJson(const Expression *expr) {
   return expr->toString();
 }
 
+std::string toJson(std::pair<Expression *, bool> &pair) {
+  return pair.first->toString();
+}
+
 folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc) {
   folly::dynamic obj = folly::dynamic::object();
   obj.insert("name", *desc.space_name_ref());

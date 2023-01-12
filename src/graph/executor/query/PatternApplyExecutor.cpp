@@ -38,18 +38,18 @@ Status PatternApplyExecutor::checkBiInputDataSets() {
   return Status::OK();
 }
 
-void PatternApplyExecutor::collectValidKeys(const std::vector<Expression*>& keyCols,
-                                            Iterator* iter,
-                                            std::unordered_set<List>& validKeys) const {
+void PatternApplyExecutor::collectValidKeys(
+    const std::vector<std::pair<Expression*, bool>>& pairs,
+    Iterator* iter,
+    std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys) const {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
-    List list;
-    list.values.reserve(keyCols.size());
-    for (auto& col : keyCols) {
-      Value val = col->eval(ctx(iter));
-      list.values.emplace_back(std::move(val));
+    ListWrapper listWrapper;
+    for (auto& pair : pairs) {
+      Value val = pair.first->eval(ctx(iter));
+      listWrapper.emplace(std::move(val), pair.second);
     }
-    validKeys.emplace(std::move(list));
+    validKeys.emplace(std::move(listWrapper));
   }
 }
 
@@ -93,21 +93,21 @@ DataSet PatternApplyExecutor::applySingleKey(Expression* appliedKey,
   return ds;
 }
 
-DataSet PatternApplyExecutor::applyMultiKey(std::vector<Expression*> appliedKeys,
-                                            Iterator* appliedIter,
-                                            const std::unordered_set<List>& validKeys) {
+DataSet PatternApplyExecutor::applyMultiKey(
+    std::vector<std::pair<Expression*, bool>> pairs,
+    Iterator* appliedIter,
+    const std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys) {
   DataSet ds;
   ds.rows.reserve(appliedIter->size());
   QueryExpressionContext ctx(ectx_);
   for (; appliedIter->valid(); appliedIter->next()) {
-    List list;
-    list.values.reserve(appliedKeys.size());
-    for (auto& col : appliedKeys) {
-      Value val = col->eval(ctx(appliedIter));
-      list.values.emplace_back(std::move(val));
+    ListWrapper listWrapper;
+    for (auto& pair : pairs) {
+      Value val = pair.first->eval(ctx(appliedIter));
+      listWrapper.emplace(std::move(val), pair.second);
     }
 
-    bool applyFlag = (validKeys.find(list) != validKeys.end()) ^ isAntiPred_;
+    bool applyFlag = (validKeys.find(listWrapper) != validKeys.end()) ^ isAntiPred_;
     if (applyFlag) {
       Row row = mv_ ? appliedIter->moveRow() : *appliedIter->row();
       ds.rows.emplace_back(std::move(row));
@@ -128,20 +128,20 @@ folly::Future<Status> PatternApplyExecutor::patternApply() {
     applyZeroKey(lhsIter_.get(), (rhsIter_->size() > 0) ^ isAntiPred_);
   } else if (keyCols.size() == 1) {
     std::unordered_set<Value> validKey;
-    collectValidKey(keyCols[0]->clone(), rhsIter_.get(), validKey);
-    result = applySingleKey(keyCols[0]->clone(), lhsIter_.get(), validKey);
+    collectValidKey(keyCols[0].first->clone(), rhsIter_.get(), validKey);
+    result = applySingleKey(keyCols[0].first->clone(), lhsIter_.get(), validKey);
   } else {
     // Copy the keyCols to refresh the inside propIndex_ cache
-    auto cloneExpr = [](std::vector<Expression*> exprs) {
-      std::vector<Expression*> applyColsCopy;
-      applyColsCopy.reserve(exprs.size());
-      for (auto& expr : exprs) {
-        applyColsCopy.emplace_back(expr->clone());
+    auto cloneExpr = [](std::vector<std::pair<Expression*, bool>> pairs) {
+      std::vector<std::pair<Expression*, bool>> applyColsCopy;
+      applyColsCopy.reserve(pairs.size());
+      for (auto& pair : pairs) {
+        applyColsCopy.emplace_back(std::make_pair(pair.first->clone(), pair.second));
       }
       return applyColsCopy;
     };
 
-    std::unordered_set<List> validKeys;
+    std::unordered_set<ListWrapper, WrapperHash, WrapperEqual> validKeys;
     collectValidKeys(cloneExpr(keyCols), rhsIter_.get(), validKeys);
     result = applyMultiKey(cloneExpr(keyCols), lhsIter_.get(), validKeys);
   }

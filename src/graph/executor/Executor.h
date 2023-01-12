@@ -17,6 +17,98 @@ namespace nebula {
 namespace graph {
 class PlanNode;
 class QueryContext;
+
+class ListWrapper {
+ public:
+  ListWrapper() = default;
+
+  void emplace(const Value &val, bool type) {
+    pairs_.emplace_back(std::make_pair(val, type));
+  }
+
+  std::string toString() const {
+    std::string str;
+    for (auto &v : pairs_) {
+      str += v.first.toString();
+      str += " ";
+      str += v.second ? " true " : " false ";
+    }
+    return str;
+  }
+
+  std::vector<std::pair<Value, bool>> pairs() const {
+    return pairs_;
+  }
+
+ private:
+  // pair.second  true : normal, false : edgeList
+  std::vector<std::pair<Value, bool>> pairs_;
+};
+
+struct WrapperHash {
+  std::size_t operator()(const ListWrapper &wrapper) const {
+    size_t seed = 0;
+    for (const auto &pair : wrapper.pairs()) {
+      if (pair.second) {
+        seed ^= std::hash<nebula::Value>()(pair.first);
+      } else {
+        const auto &values = pair.first.getList().values;
+        for (const auto &v : values) {
+          seed ^= std::hash<nebula::Value>()(v);
+        }
+      }
+    }
+    DLOG(ERROR) << "hashValue : " << wrapper.toString() << " values : " << seed;
+    return seed;
+  }
+};
+
+struct WrapperEqual {
+  bool operator()(const ListWrapper &lhs, const ListWrapper &rhs) const {
+    const auto &pairs = lhs.pairs();
+    size_t size = pairs.size();
+    const auto &otherPairs = rhs.pairs();
+    if (size != otherPairs.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < size; ++i) {
+      auto type = pairs[i].second;
+      if (type != otherPairs[i].second) {
+        return false;
+      }
+      if (type) {
+        if (pairs[i].first != otherPairs[i].first) {
+          return false;
+        } else {
+          continue;
+        }
+      }
+      const auto &values = pairs[i].first.getList().values;
+      const auto &otherValues = otherPairs[i].first.getList().values;
+      size_t listSize = values.size();
+      if (listSize != otherValues.size()) {
+        return false;
+      }
+      if (values.front() == otherValues.front()) {
+        for (size_t j = 1; j < listSize; ++j) {
+          if (values[j] != otherValues[j]) {
+            return false;
+          }
+        }
+      } else if (values.front() == otherValues.back()) {
+        for (size_t j = 1; j < listSize; ++j) {
+          if (values[j] != otherValues[listSize - 1 - j]) {
+            return false;
+          }
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
 class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node

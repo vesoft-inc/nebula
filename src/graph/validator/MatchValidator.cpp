@@ -1297,12 +1297,16 @@ Status MatchValidator::validatePathInWhere(
   for (const auto &node : path->nodes()) {
     // The inner variable of expression will be replaced by anno variable
     if (!node->alias().empty() && node->alias()[0] != '_') {
-      pathInfo.compareVariables.emplace_back(node->alias());
+      pathInfo.compareVariables.emplace_back(std::make_pair(node->alias(), true));
     }
   }
   for (const auto &edge : path->edges()) {
     if (edge->alias()[0] != '_') {
-      pathInfo.compareVariables.emplace_back(edge->alias());
+      if (!edge->range()) {
+        pathInfo.compareVariables.emplace_back(std::make_pair(edge->alias(), true));
+      } else {
+        pathInfo.compareVariables.emplace_back(std::make_pair(edge->alias(), false));
+      }
     }
   }
   pathInfo.collectVariable = *path->alias();

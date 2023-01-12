@@ -76,10 +76,11 @@ SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
   auto* qctx = ctx->qctx;
 
   SubPlan newPlan = left;
-  std::vector<Expression*> compareProps;
-  for (const auto& col : path.compareVariables) {
-    compareProps.emplace_back(FunctionCallExpression::make(
-        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), col)}));
+  std::vector<std::pair<Expression*, bool>> compareProps;
+  for (const auto& pair : path.compareVariables) {
+    auto expr = FunctionCallExpression::make(
+        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), pair.first)});
+    compareProps.emplace_back(std::make_pair(expr, pair.second));
   }
   InputPropertyExpression* collectProp = InputPropertyExpression::make(qctx->objPool(), collectCol);
   auto* rollUpApply = RollUpApply::make(
@@ -101,10 +102,11 @@ SubPlan SegmentsConnector::rollUpApply(CypherClauseContextBase* ctx,
                                                    const graph::Path& path) {
   SubPlan newPlan = left;
   auto qctx = ctx->qctx;
-  std::vector<Expression*> keyProps;
-  for (const auto& col : path.compareVariables) {
-    keyProps.emplace_back(FunctionCallExpression::make(
-        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), col)}));
+  std::vector<std::pair<Expression*, bool>> keyProps;
+  for (const auto& pair : path.compareVariables) {
+    auto* expr = FunctionCallExpression::make(
+        qctx->objPool(), "_joinkey", {InputPropertyExpression::make(qctx->objPool(), pair.first)});
+    keyProps.emplace_back(std::make_pair(expr, pair.second));
   }
   auto* patternApply = PatternApply::make(
       qctx, left.root, DCHECK_NOTNULL(right.root), std::move(keyProps), path.isAntiPred);

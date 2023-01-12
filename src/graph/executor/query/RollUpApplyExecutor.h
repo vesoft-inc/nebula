@@ -18,14 +18,13 @@ class RollUpApplyExecutor : public Executor {
   folly::Future<Status> execute() override;
 
  protected:
-  void buildHashTable(const std::vector<Expression*>& compareCols, Iterator* iter);
-
   Status checkBiInputDataSets();
 
-  void buildHashTable(const std::vector<Expression*>& compareCols,
-                      const InputPropertyExpression* collectCol,
-                      Iterator* iter,
-                      std::unordered_map<List, List>& hashTable) const;
+  void buildHashTable(
+      const std::vector<std::pair<Expression*, bool>>& compareCols,
+      const InputPropertyExpression* collectCol,
+      Iterator* iter,
+      std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable) const;
 
   void buildSingleKeyHashTable(Expression* compareCol,
                                const InputPropertyExpression* collectCol,
@@ -42,9 +41,9 @@ class RollUpApplyExecutor : public Executor {
                          Iterator* probeIter,
                          const std::unordered_map<Value, List>& hashTable);
 
-  DataSet probe(std::vector<Expression*> probeKeys,
+  DataSet probe(std::vector<std::pair<Expression*, bool>> probeKeys,
                 Iterator* probeIter,
-                const std::unordered_map<List, List>& hashTable);
+                const std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable);
 
   folly::Future<Status> rollUpApply();
 

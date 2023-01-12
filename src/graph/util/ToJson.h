@@ -65,6 +65,7 @@ std::string toJson(const List &list);
 folly::dynamic toJson(const Value &value);
 std::string toJson(const EdgeKeyRef *ref);
 std::string toJson(const Expression *expr);
+std::string toJson(std::pair<Expression *, bool> &pair);
 
 // Concerts the given object to a dynamic object
 folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
