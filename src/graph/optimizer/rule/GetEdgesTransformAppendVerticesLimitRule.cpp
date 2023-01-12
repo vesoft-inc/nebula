@@ -121,7 +121,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
 
   newLimitGroupNode->dependsOn(newAppendVerticesGroup);
 
-  auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges =
+      GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->offset() + limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }

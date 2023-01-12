@@ -100,7 +100,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   newProjectGroupNode->dependsOn(newLimitGroup);
   newProject->setInputVar(newLimit->outputVar());
 
-  auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges =
+      GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->offset() + limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }
