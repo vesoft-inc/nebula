@@ -447,3 +447,34 @@ Feature: Basic match
       """
     Then the result should be, in any order:
       | v |
+
+  Scenario: different edge type in two pattern when apply join
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*2]->(n)
+        RETURN ()-[e:like*2]->(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like*2]->(n) = ()-[e:like*2]->(n)                                                                                                                                                                                                                                                                                                   |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 90}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})<-[:like@0 {likeness: 95}]-("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>]                                               |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>]                                                       |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:like@0 {likeness: 95}]-("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})>]     |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like]->(n)
+        RETURN ()-[e:like]->(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like]->(n) = ()-[e:like]->(n)                                                                                                                                                                 |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]     |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*1..2]->(n)
+        RETURN ()-[e:like*1..2]->(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like*1..2]->(n) = ()-[e:like*1..2]->(n)                                                                                                                                                                 |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]     |
