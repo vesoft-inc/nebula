@@ -13,6 +13,7 @@ namespace graph {
 folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
                                                   const HashSet& endVids,
                                                   DataSet* result) {
+  memory::MemoryCheckGuard guard1;
   size_t rowSize = startVids.size() * endVids.size();
   init(startVids, endVids, rowSize);
   std::vector<folly::Future<Status>> futures;

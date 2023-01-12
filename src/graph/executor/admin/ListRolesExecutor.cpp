@@ -13,6 +13,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> ListRolesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   return listRoles();
 }

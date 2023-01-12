@@ -576,6 +576,37 @@ Feature: Go Sentence
       | "Chris Paul" | "Carmelo Anthony" | "Dwyane Wade"       |
       | "Chris Paul" | "Dwyane Wade"     | "LeBron James"      |
       | "Chris Paul" | "Dwyane Wade"     | "Carmelo Anthony"   |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like,serve
+        WHERE (serve.start_year>2000 OR like.likeness>90) AND size(labels($$)[0]) > 0 AND $$.player.age>40
+        yield $$ as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                         |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like,serve
+        WHERE size(labels($$))>0 AND $$.player.age>40
+        yield $$ as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like,serve
+        WHERE  $$.player.age>40 AND size(labels($$)[0]) > 0
+        yield $$ as v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                                           |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
 
   @skip
   Scenario: all prop(reason = $-.* over * $var.* not implement)

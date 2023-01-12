@@ -9,6 +9,8 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> PassThroughExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   const auto &result = ectx_->getResult(node()->outputVar());

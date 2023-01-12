@@ -59,8 +59,6 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
   // vertex/edge expression
   void visit(VertexExpression *) override;
   void visit(EdgeExpression *) override;
-  // binary expression
-  void visit(SubscriptExpression *) override;
   // column expression
   void visit(ColumnExpression *) override;
 

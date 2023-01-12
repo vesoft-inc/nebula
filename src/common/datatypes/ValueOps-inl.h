@@ -334,7 +334,9 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
       case 5: {
         if (readState.fieldType == apache::thrift::protocol::T_STRING) {
           obj->setStr("");
-          proto->readBinary(obj->mutableStr());
+          std::string s;
+          proto->readBinary(s);
+          obj->setStr(std::move(s));
         } else {
           proto->skip(readState.fieldType);
         }

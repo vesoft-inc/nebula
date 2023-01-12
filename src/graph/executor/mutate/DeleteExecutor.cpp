@@ -15,6 +15,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> DeleteVerticesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   return deleteVertices();
 }

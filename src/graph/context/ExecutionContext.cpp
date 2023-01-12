@@ -26,7 +26,7 @@ void ExecutionContext::setResult(const std::string& name, Result&& result) {
 }
 
 void ExecutionContext::dropResult(const std::string& name) {
-  DCHECK_EQ(valueMap_.count(name), 1);
+  DCHECK_EQ(valueMap_.count(name), 1) << "not found" << name;
   auto& val = valueMap_[name];
   if (FLAGS_enable_async_gc) {
     GC::instance().clear(std::move(val));

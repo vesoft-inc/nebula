@@ -10,6 +10,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> UnionAllVersionVarExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
   auto* UnionAllVersionVarNode = asNode<UnionAllVersionVar>(node());
   // Retrieve all versions of inputVar

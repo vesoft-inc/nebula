@@ -22,6 +22,8 @@ StatusOr<std::vector<Value>> GetDstBySrcExecutor::buildRequestList() {
 }
 
 folly::Future<Status> GetDstBySrcExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
+
   auto res = buildRequestList();
   NG_RETURN_IF_ERROR(res);
   auto reqList = std::move(res).value();

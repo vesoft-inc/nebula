@@ -12,6 +12,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> ShowSessionsExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   auto *showNode = asNode<ShowSessions>(node());
   if (showNode->isSetSessionID()) {

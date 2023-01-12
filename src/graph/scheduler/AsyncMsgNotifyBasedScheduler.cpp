@@ -95,6 +95,7 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) c
           if (t.hasException()) {
             notifyError(pros, Status::Error(std::move(t).exception().what()));
           } else {
+            DCHECK(!memory::MemoryTracker::isOn());
             auto v = std::move(t).value();
             if (v.ok()) {
               notifyOK(pros);
@@ -143,7 +144,6 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runSelect(
         return execute(select);
       })
       .thenValue([select, this](auto&& selectStatus) mutable -> folly::Future<Status> {
-        memory::MemoryCheckGuard guard;
         NG_RETURN_IF_ERROR(selectStatus);
         auto val = qctx_->ectx()->getValue(select->node()->outputVar());
         if (!val.isBool()) {
@@ -185,7 +185,6 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::runLoop(
         return execute(loop);
       })
       .thenValue([loop, runner, this](auto&& loopStatus) mutable -> folly::Future<Status> {
-        memory::MemoryCheckGuard guard;
         NG_RETURN_IF_ERROR(loopStatus);
         auto val = qctx_->ectx()->getValue(loop->node()->outputVar());
         if (!val.isBool()) {
@@ -225,16 +224,21 @@ void AsyncMsgNotifyBasedScheduler::notifyError(std::vector<folly::Promise<Status
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::execute(Executor* executor) const {
-  memory::MemoryCheckGuard guard1;
   auto status = executor->open();
   if (!status.ok()) {
     return executor->error(std::move(status));
   }
-  return executor->execute().thenValue([executor](Status s) {
-    memory::MemoryCheckGuard guard2;
+  auto exeStatus = runExecute(executor);
+
+  return std::move(exeStatus).thenValue([executor](Status s) {
     NG_RETURN_IF_ERROR(s);
     return executor->close();
   });
+}
+
+folly::Future<Status> AsyncMsgNotifyBasedScheduler::runExecute(Executor* executor) const {
+  memory::MemoryCheckGuard guard;
+  return executor->execute();
 }
 
 }  // namespace graph

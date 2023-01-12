@@ -10,6 +10,8 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> DedupExecutor::execute() {
+  memory::MemoryCheckGuard guard2;
+
   // MemoryTrackerVerified
   SCOPED_TIMER(&execTime_);
 

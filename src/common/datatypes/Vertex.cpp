@@ -129,11 +129,11 @@ bool Vertex::operator<(const Vertex& rhs) const {
 namespace std {
 
 // Inject a customized hash function
-std::size_t hash<nebula::Tag>::operator()(const nebula::Tag& h) const noexcept {
+std::size_t hash<nebula::Tag>::operator()(const nebula::Tag& h) const {
   return folly::hash::fnv64(h.name);
 }
 
-std::size_t hash<nebula::Vertex>::operator()(const nebula::Vertex& h) const noexcept {
+std::size_t hash<nebula::Vertex>::operator()(const nebula::Vertex& h) const {
   size_t hv = folly::hash::fnv64(h.vid.toString());
   for (auto& t : h.tags) {
     hv += (hv << 1) + (hv << 4) + (hv << 5) + (hv << 7) + (hv << 8) + (hv << 40);

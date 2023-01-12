@@ -11,6 +11,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> FilterExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   SCOPED_TIMER(&execTime_);
   auto *filter = asNode<Filter>(node());
   auto iter = ectx_->getResult(filter->inputVar()).iter();
@@ -84,6 +85,8 @@ StatusOr<DataSet> FilterExecutor::handleJob(size_t begin, size_t end, Iterator *
 }
 
 Status FilterExecutor::handleSingleJobFilter() {
+//  memory::MemoryCheckGuard guard;
+
   auto *filter = asNode<Filter>(node());
   auto inputVar = filter->inputVar();
   // Use the userCount of the operator's inputVar at runtime to determine whether concurrent

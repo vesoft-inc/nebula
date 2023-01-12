@@ -13,6 +13,7 @@ DECLARE_bool(optimize_appendvertices);
 namespace nebula {
 namespace graph {
 folly::Future<Status> AppendVerticesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   return appendVertices();
 }
 

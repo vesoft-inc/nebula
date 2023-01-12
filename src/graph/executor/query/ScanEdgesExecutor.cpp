@@ -15,6 +15,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> ScanEdgesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   return scanEdges();
 }
 

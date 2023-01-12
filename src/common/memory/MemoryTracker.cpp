@@ -41,8 +41,8 @@ bool MemoryTracker::isOn() {
   return MemoryStats::instance().throwOnMemoryExceeded();
 }
 
-void MemoryTracker::allocImpl(int64_t size, bool) {
-  MemoryStats::instance().alloc(size);
+void MemoryTracker::allocImpl(int64_t size, bool throw_if_memory_exceeded) {
+  MemoryStats::instance().alloc(size, throw_if_memory_exceeded);
 }
 
 }  // namespace memory

@@ -9,6 +9,7 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> KillQueryExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   QueriesMap toBeVerifiedQueries;

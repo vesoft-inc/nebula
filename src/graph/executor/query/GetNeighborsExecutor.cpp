@@ -22,6 +22,8 @@ StatusOr<std::vector<Value>> GetNeighborsExecutor::buildRequestVids() {
 }
 
 folly::Future<Status> GetNeighborsExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
+
   auto res = buildRequestVids();
   NG_RETURN_IF_ERROR(res);
   auto vids = std::move(res).value();

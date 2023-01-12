@@ -13,6 +13,8 @@ SelectExecutor::SelectExecutor(const PlanNode* node, QueryContext* qctx)
     : Executor("SelectExecutor", node, qctx) {}
 
 folly::Future<Status> SelectExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   auto* select = asNode<Select>(node());

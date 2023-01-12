@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> CartesianProductExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   SCOPED_TIMER(&execTime_);
 
   auto* cartesianProduct = asNode<CartesianProduct>(node());

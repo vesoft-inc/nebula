@@ -62,6 +62,9 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
 
   folly::Future<Status> execute(Executor* executor) const;
 
+  folly::Future<Status> runExecute(Executor* executor) const;
+
+
   QueryContext* qctx_{nullptr};
 };
 }  // namespace graph

@@ -412,7 +412,7 @@ struct Value {
     (&val)->~T();
   }
 
-  // Null value
+  // Null val
   void setN(const NullType& v);
   void setN(NullType&& v);
   // Bool value
@@ -555,7 +555,7 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Value> {
-  std::size_t operator()(const nebula::Value& h) const noexcept {
+  std::size_t operator()(const nebula::Value& h) const {
     if (h.isInt()) {
       return h.getInt();
     } else if (h.isStr()) {
@@ -567,28 +567,28 @@ struct hash<nebula::Value> {
 
 template <>
 struct hash<nebula::Value*> {
-  std::size_t operator()(const nebula::Value* h) const noexcept {
+  std::size_t operator()(const nebula::Value* h) const {
     return h == nullptr ? 0 : hash<nebula::Value>()(*h);
   }
 };
 
 template <>
 struct hash<const nebula::Value*> {
-  std::size_t operator()(const nebula::Value* h) const noexcept {
+  std::size_t operator()(const nebula::Value* h) const {
     return h == nullptr ? 0 : hash<nebula::Value>()(*h);
   }
 };
 
 template <>
 struct equal_to<nebula::Value*> {
-  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
+  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const {
     return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
   }
 };
 
 template <>
 struct equal_to<const nebula::Value*> {
-  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const noexcept {
+  bool operator()(const nebula::Value* lhs, const nebula::Value* rhs) const {
     return lhs == rhs ? true : (lhs != nullptr) && (rhs != nullptr) && (*lhs == *rhs);
   }
 };

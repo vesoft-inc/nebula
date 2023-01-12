@@ -136,7 +136,7 @@ class StatusOr final {
   }
 
   // Move constructor
-  StatusOr(StatusOr &&rhs) noexcept : state_(rhs.state_) {
+  StatusOr(StatusOr &&rhs) : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
       rhs.resetValue();
@@ -148,7 +148,7 @@ class StatusOr final {
 
   // Move construct from a rvalue of StatusOr<U>
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr(StatusOr<U> &&rhs) noexcept : state_(rhs.state_) {
+  StatusOr(StatusOr<U> &&rhs) : state_(rhs.state_) {
     if (hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
       rhs.resetValue();
@@ -161,7 +161,7 @@ class StatusOr final {
   }
 
   // Move assignment operator
-  StatusOr &operator=(StatusOr &&rhs) noexcept {
+  StatusOr &operator=(StatusOr &&rhs) {
     if (&rhs == this) {
       return *this;
     }
@@ -182,7 +182,7 @@ class StatusOr final {
 
   // Move assignment operator from a rvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr &operator=(StatusOr<U> &&rhs) noexcept {
+  StatusOr &operator=(StatusOr<U> &&rhs) {
     reset();
     if (rhs.hasValue()) {
       new (&variant_) Variant(std::move(rhs.variant_.value_));
@@ -200,7 +200,7 @@ class StatusOr final {
 
   // Move assignment operator from a rvalue of any compatible type with `T'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
-  StatusOr &operator=(U &&value) noexcept {
+  StatusOr &operator=(U &&value) {
     destruct();
     new (&variant_) Variant(std::forward<U>(value));
     state_ = kValue;
@@ -216,7 +216,7 @@ class StatusOr final {
   }
 
   // Move assign from a rvalue of `Status'
-  StatusOr &operator=(Status &&status) noexcept {
+  StatusOr &operator=(Status &&status) {
     destruct();
     new (&variant_) Variant(std::move(status));
     state_ = kStatus;

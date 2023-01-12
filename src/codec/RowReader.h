@@ -25,7 +25,7 @@ class RowReader {
     friend class Iterator;
 
    public:
-    Value value() const noexcept;
+    Value value() const;
 
    private:
     const Iterator* iter_;
@@ -74,7 +74,7 @@ class RowReader {
    * @param prop Property name
    * @return Value Property value
    */
-  virtual Value getValueByName(const std::string& prop) const noexcept = 0;
+  virtual Value getValueByName(const std::string& prop) const = 0;
 
   /**
    * @brief Get the property value by index in schema
@@ -82,33 +82,33 @@ class RowReader {
    * @param index Index in Schema
    * @return Value Property value
    */
-  virtual Value getValueByIndex(const int64_t index) const noexcept = 0;
+  virtual Value getValueByIndex(const int64_t index) const = 0;
 
   /**
    * @brief Get the timestamp in value
    *
    * @return int64_t UTC
    */
-  virtual int64_t getTimestamp() const noexcept = 0;
+  virtual int64_t getTimestamp() const = 0;
 
   /**
    * @brief The row reader version, only 1 or 2 is legal
    *
    * @return int32_t Reader version
    */
-  virtual int32_t readerVer() const noexcept = 0;
+  virtual int32_t readerVer() const = 0;
 
   /**
    * @brief Return the number of bytes used for the header info
    */
-  virtual size_t headerLen() const noexcept = 0;
+  virtual size_t headerLen() const = 0;
 
   /**
    * @brief Iterator points to the first field
    *
    * @return Iterator
    */
-  virtual Iterator begin() const noexcept {
+  virtual Iterator begin() const {
     return Iterator(this, 0);
   }
 
@@ -117,7 +117,7 @@ class RowReader {
    *
    * @return const Iterator&
    */
-  virtual const Iterator& end() const noexcept {
+  virtual const Iterator& end() const {
     return endIter_;
   }
 
@@ -126,7 +126,7 @@ class RowReader {
    *
    * @return SchemaVer Schema version
    */
-  virtual SchemaVer schemaVer() const noexcept {
+  virtual SchemaVer schemaVer() const {
     return schema_->getVersion();
   }
 
@@ -135,7 +135,7 @@ class RowReader {
    *
    * @return size_t
    */
-  virtual size_t numFields() const noexcept {
+  virtual size_t numFields() const {
     return schema_->getNumFields();
   }
 
@@ -170,7 +170,7 @@ class RowReader {
    * @param row
    * @return Whether reset succeed
    */
-  virtual bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept;
+  virtual bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row);
 
  private:
   Iterator endIter_;

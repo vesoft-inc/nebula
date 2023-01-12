@@ -10,6 +10,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> SampleExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   auto* sample = asNode<Sample>(node());

@@ -13,6 +13,8 @@ LoopExecutor::LoopExecutor(const PlanNode *node, QueryContext *qctx)
     : Executor("LoopExecutor", node, qctx) {}
 
 folly::Future<Status> LoopExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   auto *loopNode = asNode<Loop>(node());

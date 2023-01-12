@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> AddHostsExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   auto *ahNode = asNode<AddHosts>(node());
   return qctx()

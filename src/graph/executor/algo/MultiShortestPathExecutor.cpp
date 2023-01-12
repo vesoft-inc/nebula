@@ -8,6 +8,7 @@ DECLARE_int32(num_operator_threads);
 namespace nebula {
 namespace graph {
 folly::Future<Status> MultiShortestPathExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<MultiShortestPath>(node());
   terminationVar_ = pathNode_->terminationVar();

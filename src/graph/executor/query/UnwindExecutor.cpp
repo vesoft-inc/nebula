@@ -10,6 +10,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> UnwindExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   auto *unwind = asNode<Unwind>(node());

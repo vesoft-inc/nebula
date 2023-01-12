@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> SortExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto *sort = asNode<Sort>(node());

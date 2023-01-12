@@ -18,6 +18,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   range_ = traverse_->stepRange();
   auto status = buildRequestVids();
   if (!status.ok()) {

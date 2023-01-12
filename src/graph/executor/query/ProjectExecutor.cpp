@@ -11,6 +11,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> ProjectExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   // throw std::bad_alloc in MemoryCheckGuard verified
   SCOPED_TIMER(&execTime_);
   auto *project = asNode<Project>(node());

@@ -13,6 +13,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> RollUpApplyExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   return rollUpApply();
 }

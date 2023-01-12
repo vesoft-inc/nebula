@@ -12,6 +12,7 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShowQueriesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto* showQueries = asNode<ShowQueries>(node());

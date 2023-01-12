@@ -15,6 +15,7 @@ using nebula::storage::cpp2::GetPropResponse;
 namespace nebula::graph {
 
 folly::Future<Status> FulltextIndexScanExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   auto esAdapterResult = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
   if (!esAdapterResult.ok()) {
     return esAdapterResult.status();

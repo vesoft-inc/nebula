@@ -125,9 +125,9 @@ class EitherOr {
    * Constructors
    *
    **********************************************/
-  EitherOr() noexcept {};
+  EitherOr() {}
 
-  EitherOr(const EitherOr& rhs) noexcept {
+  EitherOr(const EitherOr& rhs) {
     switch (rhs.state_) {
       case State::VOID:
         break;
@@ -142,7 +142,7 @@ class EitherOr {
     }
   }
 
-  EitherOr(EitherOr&& rhs) noexcept {
+  EitherOr(EitherOr&& rhs) {
     switch (rhs.state_) {
       case State::VOID:
         break;
@@ -161,7 +161,7 @@ class EitherOr {
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                         std::is_constructible<RIGHT, V>::value>>
-  EitherOr(const EitherOr<U, V>& rhs) noexcept {
+  EitherOr(const EitherOr<U, V>& rhs) {
     switch (rhs.state_) {
       case State::VOID:
         break;
@@ -180,7 +180,7 @@ class EitherOr {
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                         std::is_constructible<RIGHT, V>::value>>
-  EitherOr(EitherOr<U, V>&& rhs) noexcept {
+  EitherOr(EitherOr<U, V>&& rhs) {
     switch (rhs.state_) {
       case State::VOID:
         break;
@@ -195,22 +195,22 @@ class EitherOr {
     }
   }
 
-  EitherOr(const LEFT& v) noexcept {  // NOLINT
+  EitherOr(const LEFT& v) {  // NOLINT
     new (&val_) Variant(kConstructLeft, v);
     state_ = State::LEFT_TYPE;
   }
 
-  EitherOr(LEFT&& v) noexcept {  // NOLINT
+  EitherOr(LEFT&& v) {  // NOLINT
     new (&val_) Variant(kConstructLeft, std::move(v));
     state_ = State::LEFT_TYPE;
   }
 
-  EitherOr(const RIGHT& v) noexcept {  // NOLINT
+  EitherOr(const RIGHT& v) {  // NOLINT
     new (&val_) Variant(kConstructRight, v);
     state_ = State::RIGHT_TYPE;
   }
 
-  EitherOr(RIGHT&& v) noexcept {  // NOLINT
+  EitherOr(RIGHT&& v) {  // NOLINT
     new (&val_) Variant(kConstructRight, std::move(v));
     state_ = State::RIGHT_TYPE;
   }
@@ -220,7 +220,7 @@ class EitherOr {
   template <class... Args,
             typename = std::enable_if_t<std::is_constructible<LEFT, Args...>::value ||
                                         std::is_constructible<RIGHT, Args...>::value>>
-  EitherOr(Args&&... v) noexcept {  // NOLINT
+  EitherOr(Args&&... v) {  // NOLINT
     new (&val_) Variant(convert_to_t<Args...>, std::forward<Args>(v)...);
     state_ = convert_to_s<Args...>;
   }
@@ -230,7 +230,7 @@ class EitherOr {
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                         std::is_constructible<RIGHT, U>::value>>
-  EitherOr(const LeftType*, U&& v) noexcept {
+  EitherOr(const LeftType*, U&& v) {
     new (&val_) Variant(kConstructLeft, std::forward<U>(v));
     state_ = State::LEFT_TYPE;
   }
@@ -240,7 +240,7 @@ class EitherOr {
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                         std::is_constructible<RIGHT, U>::value>>
-  EitherOr(const RightType*, U&& v) noexcept {
+  EitherOr(const RightType*, U&& v) {
     new (&val_) Variant(kConstructRight, std::forward<U>(v));
     state_ = State::RIGHT_TYPE;
   }
@@ -250,28 +250,28 @@ class EitherOr {
    * Assignments
    *
    **********************************************/
-  EitherOr& operator=(const LEFT& v) noexcept {
+  EitherOr& operator=(const LEFT& v) {
     reset();
     new (&val_) Variant(kConstructLeft, v);
     state_ = State::LEFT_TYPE;
     return *this;
   }
 
-  EitherOr& operator=(LEFT&& v) noexcept {
+  EitherOr& operator=(LEFT&& v) {
     reset();
     new (&val_) Variant(kConstructLeft, std::move(v));
     state_ = State::LEFT_TYPE;
     return *this;
   }
 
-  EitherOr& operator=(const RIGHT& v) noexcept {
+  EitherOr& operator=(const RIGHT& v) {
     reset();
     new (&val_) Variant(kConstructRight, v);
     state_ = State::RIGHT_TYPE;
     return *this;
   }
 
-  EitherOr& operator=(RIGHT&& v) noexcept {
+  EitherOr& operator=(RIGHT&& v) {
     reset();
     new (&val_) Variant(kConstructRight, std::move(v));
     state_ = State::RIGHT_TYPE;
@@ -284,14 +284,14 @@ class EitherOr {
   typename std::enable_if_t<std::is_constructible<LEFT, U>::value ||
                                 std::is_constructible<RIGHT, U>::value,
                             EitherOr>&
-  operator=(U&& v) noexcept {
+  operator=(U&& v) {
     reset();
     new (&val_) Variant(convert_to_t<U>, std::forward<U>(v));
     state_ = convert_to_s<U>;
     return *this;
   }
 
-  EitherOr& operator=(const EitherOr& rhs) noexcept {
+  EitherOr& operator=(const EitherOr& rhs) {
     // Avoid self-assignment
     if (&rhs == this) {
       return *this;
@@ -313,7 +313,7 @@ class EitherOr {
     return *this;
   }
 
-  EitherOr& operator=(EitherOr&& rhs) noexcept {
+  EitherOr& operator=(EitherOr&& rhs) {
     // Avoid self-assignment
     if (&rhs == this) {
       return *this;
@@ -339,7 +339,7 @@ class EitherOr {
   typename std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                 std::is_constructible<RIGHT, V>::value,
                             EitherOr>&
-  operator=(const EitherOr<U, V>& rhs) noexcept {
+  operator=(const EitherOr<U, V>& rhs) {
     reset();
     switch (rhs.state_) {
       case State::VOID:
@@ -360,7 +360,7 @@ class EitherOr {
   typename std::enable_if_t<std::is_constructible<LEFT, U>::value &&
                                 std::is_constructible<RIGHT, V>::value,
                             EitherOr>&
-  operator=(EitherOr<U, V>&& rhs) noexcept {
+  operator=(EitherOr<U, V>&& rhs) {
     reset();
     switch (rhs.state_) {
       case State::VOID:

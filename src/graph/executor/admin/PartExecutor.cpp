@@ -11,6 +11,7 @@ using nebula::network::NetworkUtils;
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShowPartsExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto* spNode = asNode<ShowParts>(node());

@@ -125,12 +125,12 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Tag> {
-  std::size_t operator()(const nebula::Tag& h) const noexcept;
+  std::size_t operator()(const nebula::Tag& h) const;
 };
 
 template <>
 struct hash<nebula::Vertex> {
-  std::size_t operator()(const nebula::Vertex& h) const noexcept;
+  std::size_t operator()(const nebula::Vertex& h) const;
 };
 
 }  // namespace std

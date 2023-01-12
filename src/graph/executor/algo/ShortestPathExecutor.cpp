@@ -16,6 +16,7 @@ DEFINE_uint32(num_path_thread, 0, "number of concurrent threads when do shortest
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShortestPathExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   // MemoryTrackerVerified
   SCOPED_TIMER(&execTime_);
   if (FLAGS_num_path_thread == 0) {

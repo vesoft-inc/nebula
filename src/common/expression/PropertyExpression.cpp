@@ -46,7 +46,7 @@ void PropertyExpression::resetFrom(Decoder& decoder) {
 const Value& PropertyExpression::eval(ExpressionContext& ctx) {
   // TODO maybe cypher need it.
   UNUSED(ctx);
-  DLOG(FATAL) << "Unimplemented";
+//  DLOG(FATAL) << "Unimplemented";
   return Value::kNullBadType;
 }
 

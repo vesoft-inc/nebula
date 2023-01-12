@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> AssignExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   auto* assign = asNode<Assign>(node());
   auto& items = assign->items();

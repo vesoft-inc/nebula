@@ -11,6 +11,7 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> DataCollectExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   return doCollect().ensure([this]() {
     result_ = Value::kEmpty;
     colNames_.clear();

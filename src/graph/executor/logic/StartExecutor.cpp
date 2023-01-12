@@ -8,6 +8,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> StartExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   return start();

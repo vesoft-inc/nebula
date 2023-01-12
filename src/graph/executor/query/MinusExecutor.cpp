@@ -12,6 +12,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> MinusExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
 
   NG_RETURN_IF_ERROR(checkInputDataSets());

@@ -13,6 +13,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> InsertVerticesExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   return insertVertices();
 }
 

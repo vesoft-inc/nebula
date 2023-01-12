@@ -10,6 +10,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> AggregateExecutor::execute() {
+  memory::MemoryCheckGuard guard2;
+
   SCOPED_TIMER(&execTime_);
   // MemoryTrackerVerified
   auto* agg = asNode<Aggregate>(node());

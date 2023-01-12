@@ -137,9 +137,7 @@ class RowReaderWrapper : public RowReader {
    * @param readVer
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema,
-             folly::StringPiece row,
-             int32_t readVer) noexcept;
+  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row, int32_t readVer);
 
   /**
    * @brief Reset current row reader wrapper to of given schema and data
@@ -148,7 +146,7 @@ class RowReaderWrapper : public RowReader {
    * @param row
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept;
+  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row);
 
   /**
    * @brief Reset current row reader wrapper of given schemas and data, the schemas are stored in
@@ -159,50 +157,50 @@ class RowReaderWrapper : public RowReader {
    * @return Whether reset succeed
    */
   bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-             folly::StringPiece row) noexcept;
+             folly::StringPiece row);
 
-  Value getValueByName(const std::string& prop) const noexcept override {
+  Value getValueByName(const std::string& prop) const override {
     DCHECK(!!currReader_);
     return currReader_->getValueByName(prop);
   }
 
-  Value getValueByIndex(const int64_t index) const noexcept override {
+  Value getValueByIndex(const int64_t index) const override {
     DCHECK(!!currReader_);
     return currReader_->getValueByIndex(index);
   }
 
-  int64_t getTimestamp() const noexcept override {
+  int64_t getTimestamp() const override {
     DCHECK(!!currReader_);
     return currReader_->getTimestamp();
   }
 
-  int32_t readerVer() const noexcept override {
+  int32_t readerVer() const override {
     DCHECK(!!currReader_);
     return currReader_->readerVer();
   }
 
   // Return the number of bytes used for the header info
-  size_t headerLen() const noexcept override {
+  size_t headerLen() const override {
     DCHECK(!!currReader_);
     return currReader_->headerLen();
   }
 
-  Iterator begin() const noexcept override {
+  Iterator begin() const override {
     DCHECK(!!currReader_);
     return currReader_->begin();
   }
 
-  const Iterator& end() const noexcept override {
+  const Iterator& end() const override {
     DCHECK(!!currReader_);
     return currReader_->end();
   }
 
-  SchemaVer schemaVer() const noexcept override {
+  SchemaVer schemaVer() const override {
     DCHECK(!!currReader_);
     return currReader_->schemaVer();
   }
 
-  size_t numFields() const noexcept override {
+  size_t numFields() const override {
     DCHECK(!!currReader_);
     return currReader_->numFields();
   }
@@ -229,56 +227,56 @@ class RowReaderWrapper : public RowReader {
   /**
    * @brief Return whether wrapper points to a valid data
    */
-  operator bool() const noexcept {
+  operator bool() const {
     return operator!=(nullptr);
   }
 
   /**
    * @brief Return whether wrapper points to a valid data
    */
-  bool operator==(std::nullptr_t) const noexcept {
+  bool operator==(std::nullptr_t) const {
     return !operator!=(nullptr);
   }
 
   /**
    * @brief Return whether wrapper points to a valid data
    */
-  bool operator!=(std::nullptr_t) const noexcept {
+  bool operator!=(std::nullptr_t) const {
     return currReader_ != nullptr;
   }
 
   /**
    * @brief Return this row reader wrapper
    */
-  RowReaderWrapper* operator->() const noexcept {
+  RowReaderWrapper* operator->() const {
     return get();
   }
 
   /**
    * @brief Return this row reader wrapper
    */
-  RowReaderWrapper* get() const noexcept {
+  RowReaderWrapper* get() const {
     return const_cast<RowReaderWrapper*>(this);
   }
 
   /**
    * @brief Return this row reader wrapper
    */
-  RowReaderWrapper* get() noexcept {
+  RowReaderWrapper* get() {
     return this;
   }
 
   /**
    * @brief Return this row reader wrapper
    */
-  RowReaderWrapper& operator*() const noexcept {
+  RowReaderWrapper& operator*() const {
     return *get();
   }
 
   /**
    * @brief Reset to an empty row reader
    */
-  void reset() noexcept {
+  void reset() {
     currReader_ = nullptr;
   }
 

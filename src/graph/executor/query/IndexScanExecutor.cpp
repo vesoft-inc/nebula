@@ -14,6 +14,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> IndexScanExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   return indexScan();
 }
 

@@ -14,6 +14,7 @@ namespace nebula {
 namespace graph {
 
 StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
+  memory::MemoryCheckGuard guard;
   if (data.colNames.size() <= 1) {
     if (yieldNames_.empty()) {
       return Status::OK();

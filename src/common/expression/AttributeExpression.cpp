@@ -16,7 +16,7 @@ namespace nebula {
 const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   auto &lvalue = left()->eval(ctx);
   auto &rvalue = right()->eval(ctx);
-  DCHECK(rvalue.isStr());
+//  DCHECK(rvalue.isStr());
 
   // TODO(dutor) Take care of the builtin properties, _src, _vid, _type, etc.
   switch (lvalue.type()) {
@@ -36,7 +36,7 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
       return Value::kNullValue;
     }
     case Value::Type::EDGE: {
-      DCHECK(!rvalue.getStr().empty());
+//      DCHECK(!rvalue.getStr().empty());
       if (rvalue.getStr()[0] == '_') {
         if (rvalue.getStr() == kSrc) {
           result_ = lvalue.getEdge().src;

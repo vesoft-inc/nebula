@@ -15,6 +15,7 @@ namespace graph {
 folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
                                                  const HashSet& endVids,
                                                  DataSet* result) {
+  memory::MemoryCheckGuard guard1;
   // MemoryTrackerVerified
   size_t rowSize = init(startVids, endVids);
   std::vector<folly::Future<Status>> futures;

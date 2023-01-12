@@ -13,6 +13,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> SubgraphExecutor::execute() {
+  memory::MemoryCheckGuard guard1;
   SCOPED_TIMER(&execTime_);
   totalSteps_ = subgraph_->steps();
   auto iter = ectx_->getResult(subgraph_->inputVar()).iter();

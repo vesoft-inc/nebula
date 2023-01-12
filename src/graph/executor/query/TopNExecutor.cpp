@@ -10,6 +10,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> TopNExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
   auto *topn = asNode<TopN>(node());
   Result result = ectx_->getResult(topn->inputVar());

@@ -12,6 +12,8 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> LeftJoinExecutor::execute() {
+  memory::MemoryCheckGuard guard;
+
   SCOPED_TIMER(&execTime_);
   auto* joinNode = asNode<Join>(node());
   auto& rhsResult =

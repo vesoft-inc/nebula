@@ -7,6 +7,7 @@
 namespace nebula {
 namespace graph {
 folly::Future<Status> ShowCharsetExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   DataSet dataSet({"Charset", "Description", "Default collation", "Maxlen"});

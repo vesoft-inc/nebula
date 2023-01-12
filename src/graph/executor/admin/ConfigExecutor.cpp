@@ -57,6 +57,7 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
 }
 
 folly::Future<Status> SetConfigExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto *scNode = asNode<SetConfig>(node());
@@ -97,6 +98,7 @@ folly::Future<Status> SetConfigExecutor::execute() {
 }
 
 folly::Future<Status> GetConfigExecutor::execute() {
+  memory::MemoryCheckGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto *gcNode = asNode<GetConfig>(node());
