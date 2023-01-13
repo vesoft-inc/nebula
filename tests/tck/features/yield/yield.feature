@@ -6,6 +6,13 @@ Feature: Yield Sentence
   Scenario: Base
     When executing query:
       """
+      YIELD 1
+      """
+    Then the result should be, in any order
+      | 1 |
+      | 1 |
+    When executing query:
+      """
       YIELD [1, 1.1, 1e2, 1.1e2, .3e4, 1.e4, 1234E-10, true] AS basic_value
       """
     Then the result should be, in any order, with relax comparison:
