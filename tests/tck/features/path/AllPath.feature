@@ -1,11 +1,30 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: All Path
 
   Background:
     Given a graph with space named "nba"
+
+  Scenario: ALL Path zero step
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Tim Duncan" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Spurs", "Tony Parker" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan", "Tony Parker" TO "Tim Duncan" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
 
   Scenario: ALL Path one TO one
     When executing query:
@@ -413,7 +432,6 @@ Feature: All Path
     Then drop the used space
 
   Scenario: ALL PATH YIELD PATH
-    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM "Yao Ming" TO "Danny Green" OVER * BIDIRECT
