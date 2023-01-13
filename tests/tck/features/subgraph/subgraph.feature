@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: subgraph
 
   Background:
@@ -57,6 +58,11 @@ Feature: subgraph
       $a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH WITH PROP FROM $a.id YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' OUT like, noexist  YIELD vertices as v
+      """
+    Then a ExecutionError should be raised at runtime: EdgeNotFound: EdgeName `noexist`
 
   Scenario: zero step
     When executing query:
