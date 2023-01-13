@@ -292,6 +292,14 @@ Value::Value(Duration&& v) {
   setDU(std::make_unique<Duration>(std::move(v)));
 }
 
+Value::Value(const std::unordered_map<std::string, Value>& map) {
+  setM(std::make_unique<Map>(map));
+}
+
+Value::Value(std::unordered_map<std::string, Value>&& map) {
+  setM(std::make_unique<Map>(std::move(map)));
+}
+
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
       {Type::__EMPTY__, "__EMPTY__"},
