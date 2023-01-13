@@ -982,11 +982,6 @@ Status MatchValidator::checkAlias(
       auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
       auto res = getAliasType(aliasesAvailable, name);
       NG_RETURN_IF_ERROR(res);
-      if (res.value() == AliasType::kNode) {
-        return Status::SemanticError(
-            "To get the property of the vertex in `%s', should use the format `var.tag.prop'",
-            refExpr->toString().c_str());
-      }
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {

@@ -756,9 +756,9 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | UNKNOWN_PROP         | "Dejounte Murray" | "男"             | 2022         | 29               |
+      | 41                    | NULL                 | "Dejounte Murray" | "男"             | 2022         | 29               |
       | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
-      | 41                    | UNKNOWN_PROP         | "Tiago Splitter"  | "男"             | 2022         | 34               |
+      | 41                    | NULL                 | "Tiago Splitter"  | "男"             | 2022         | 34               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
@@ -779,12 +779,12 @@ Feature: Prune Properties rule
         order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | degree       | name              | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | UNKNOWN_PROP | "Aron Baynes"     | 41  | 2022            | 32               |
-      | "男"                  | UNKNOWN_PROP | "Blake Griffin"   | 41  | 2022            | 30               |
-      | "男"                  | UNKNOWN_PROP | "Boris Diaw"      | 41  | 2022            | 36               |
-      | "男"                  | UNKNOWN_PROP | "Carmelo Anthony" | 41  | 2022            | 34               |
-      | "男"                  | UNKNOWN_PROP | "Chris Paul"      | 41  | 2022            | 33               |
+      | properties(src_v).sex | degree | name              | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | NULL   | "Aron Baynes"     | 41  | 2022            | 32               |
+      | "男"                  | NULL   | "Blake Griffin"   | 41  | 2022            | 30               |
+      | "男"                  | NULL   | "Boris Diaw"      | 41  | 2022            | 36               |
+      | "男"                  | NULL   | "Carmelo Anthony" | 41  | 2022            | 34               |
+      | "男"                  | NULL   | "Chris Paul"      | 41  | 2022            | 33               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
@@ -860,11 +860,11 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
     Then drop the used space
 
   Scenario: Project on not exist tag

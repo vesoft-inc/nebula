@@ -94,8 +94,8 @@ Feature: With clause
       RETURN x.c
       """
     Then the result should be, in any order:
-      | x.c          |
-      | UNKNOWN_PROP |
+      | x.c  |
+      | NULL |
 
   Scenario: match with return
     When executing query:
@@ -232,7 +232,10 @@ Feature: With clause
       WITH dst AS b
       RETURN b.age AS age, b
       """
-    Then a SemanticError should be raised at runtime: To get the property of the vertex in `b.age', should use the format `var.tag.prop'
+    Then the result should be, in any order, with relax comparison:
+      | age  | b                                                         |
+      | NULL | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | NULL | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
 
   @skip
   Scenario: with match return
