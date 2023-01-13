@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: Go Sentence
 
   Background:
@@ -1614,6 +1615,28 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | name  |
       | EMPTY |
+
+  Scenario: negative  step
+    When executing query:
+      """
+      GO -1 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 STEPS'
+    When executing query:
+      """
+      GO -1 TO 2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 TO 2'
+    When executing query:
+      """
+      GO -1 TO -2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 TO -2'
+    When executing query:
+      """
+      GO -1 TO 2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 TO 2 '
 
   Scenario: zero step
     When executing query:
