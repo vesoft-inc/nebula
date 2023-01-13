@@ -18,11 +18,13 @@ folly::Future<Status> UnwindExecutor::execute() {
   bool emptyInput = inputRes.valuePtr()->type() == Value::Type::DATASET ? false : true;
   QueryExpressionContext ctx(ectx_);
   auto *unwindExpr = unwind->unwindExpr();
+  DLOG(ERROR) << "unwind Expr " << unwindExpr->toString();
 
   DataSet ds;
   ds.colNames = unwind->colNames();
   for (; iter->valid(); iter->next()) {
     const Value &list = unwindExpr->eval(ctx(iter.get()));
+    DLOG(ERROR) << "unwind list " << list.toString();
     std::vector<Value> vals = extractList(list);
     for (auto &v : vals) {
       Row row;

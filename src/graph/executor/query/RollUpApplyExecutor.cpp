@@ -58,15 +58,16 @@ void RollUpApplyExecutor::buildHashTable(
 }
 
 void RollUpApplyExecutor::buildSingleKeyHashTable(
-    Expression* compareCol,
+    const std::pair<Expression*, bool>& compareCol,
     const InputPropertyExpression* collectCol,
     Iterator* iter,
-    std::unordered_map<Value, List>& hashTable) const {
+    std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable) const {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
-    auto& val = compareCol->eval(ctx(iter));
-
-    auto& vals = hashTable[val];
+    auto& val = compareCol.first->eval(ctx(iter));
+    ListWrapper listWrapper;
+    listWrapper.emplace(std::move(val), compareCol.second);
+    auto& vals = hashTable[listWrapper];
     vals.emplace_back(const_cast<InputPropertyExpression*>(collectCol)->eval(ctx(iter)));
   }
 }
@@ -93,16 +94,19 @@ DataSet RollUpApplyExecutor::probeZeroKey(Iterator* probeIter, const List& hashT
   return ds;
 }
 
-DataSet RollUpApplyExecutor::probeSingleKey(Expression* probeKey,
-                                            Iterator* probeIter,
-                                            const std::unordered_map<Value, List>& hashTable) {
+DataSet RollUpApplyExecutor::probeSingleKey(
+    const std::pair<Expression*, bool>& probeKey,
+    Iterator* probeIter,
+    const std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable) {
   DataSet ds;
   ds.rows.reserve(probeIter->size());
   QueryExpressionContext ctx(ectx_);
   for (; probeIter->valid(); probeIter->next()) {
-    auto& val = probeKey->eval(ctx(probeIter));
+    auto& val = probeKey.first->eval(ctx(probeIter));
+    ListWrapper listWrapper;
+    listWrapper.emplace(std::move(val), probeKey.second);
     List vals;
-    auto found = hashTable.find(val);
+    auto found = hashTable.find(listWrapper);
     if (found != hashTable.end()) {
       vals = found->second;
     }
@@ -154,10 +158,11 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
     buildZeroKeyHashTable(rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
     result = probeZeroKey(lhsIter_.get(), hashTable);
   } else if (compareCols.size() == 1) {
-    std::unordered_map<Value, List> hashTable;
-    buildSingleKeyHashTable(
-        compareCols[0].first->clone(), rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
-    result = probeSingleKey(compareCols[0].first->clone(), lhsIter_.get(), hashTable);
+    std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual> hashTable;
+    std::pair<Expression*, bool> pair(compareCols[0].first->clone(), compareCols[0].second);
+    buildSingleKeyHashTable(pair, rollUpApplyNode->collectCol(), rhsIter_.get(), hashTable);
+    std::pair<Expression*, bool> newPair(compareCols[0].first->clone(), compareCols[0].second);
+    result = probeSingleKey(newPair, lhsIter_.get(), hashTable);
   } else {
     // Copy the compareCols to make sure the propIndex_ is not cached in the expr
     auto cloneExpr = [](std::vector<std::pair<Expression*, bool>> pairs) {
@@ -176,6 +181,7 @@ folly::Future<Status> RollUpApplyExecutor::rollUpApply() {
     result = probe(cloneExpr(compareCols), lhsIter_.get(), hashTable);
   }
   result.colNames = rollUpApplyNode->colNames();
+  DLOG(ERROR) << "Rollup result " << result.toString();
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
