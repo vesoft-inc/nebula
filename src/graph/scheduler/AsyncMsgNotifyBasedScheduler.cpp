@@ -229,7 +229,6 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::execute(Executor* executor) 
     return executor->error(std::move(status));
   }
   auto exeStatus = runExecute(executor);
-
   return std::move(exeStatus).thenValue([executor](Status s) {
     NG_RETURN_IF_ERROR(s);
     return executor->close();
@@ -238,7 +237,10 @@ folly::Future<Status> AsyncMsgNotifyBasedScheduler::execute(Executor* executor) 
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::runExecute(Executor* executor) const {
   memory::MemoryCheckGuard guard;
-  return executor->execute();
+  return executor->execute().thenError(folly::tag_t<std::bad_alloc>{}, [](const std::bad_alloc&) {
+    return folly::makeFuture<Status>(Status::GraphMemoryExceeded(
+        "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
+  });
 }
 
 }  // namespace graph
