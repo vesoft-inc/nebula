@@ -16,6 +16,25 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
+      GO FROM "Tim Duncan" OVER serve WHERE 1 > 0 YIELD serve._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | serve._dst |
+      | "Spurs"    |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER serve WHERE 1 < 0 YIELD serve._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | serve._dst |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER serve WHERE 'Tim Duncan' > 0 YIELD serve._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | serve._dst |
+    When executing query:
+      """
       GO FROM "Tim Duncan" OVER serve YIELD DISTINCT properties(edge) | YIELD COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
@@ -76,6 +95,17 @@ Feature: Go Sentence
       | "Boris Diaw"   | 2008             | 2012           | "Hornets"    |
       | "Boris Diaw"   | 2012             | 2016           | "Spurs"      |
       | "Boris Diaw"   | 2016             | 2017           | "Jazz"       |
+    When executing query:
+      """
+      GO FROM "Boris Diaw" OVER serve YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name, 1, 1>2
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $^.player.name | serve.start_year | serve.end_year | $$.team.name | 1 | (1>2) |
+      | "Boris Diaw"   | 2003             | 2005           | "Hawks"      | 1 | false |
+      | "Boris Diaw"   | 2005             | 2008           | "Suns"       | 1 | false |
+      | "Boris Diaw"   | 2008             | 2012           | "Hornets"    | 1 | false |
+      | "Boris Diaw"   | 2012             | 2016           | "Spurs"      | 1 | false |
+      | "Boris Diaw"   | 2016             | 2017           | "Jazz"       | 1 | false |
     When executing query:
       """
       GO FROM "Rajon Rondo" OVER serve WHERE serve.start_year >= 2013 AND serve.end_year <= 2018
@@ -175,6 +205,12 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | $^.player.name |
       | "Tony Parker"  |
+    When executing query:
+      """
+      GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] AND 1 > 2 YIELD $^.player.name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $^.player.name |
 
   Scenario: assignment simple
     When executing query:
@@ -1213,6 +1249,11 @@ Feature: Go Sentence
       GO FROM 'Tim Duncan' OVER like where like.likeness YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: `like.likeness', expected boolean, but was `INT'
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like where ($^)-[:like]->($$) YIELD like._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `)-[:like'
 
   Scenario: contain
     When executing query:
@@ -1614,6 +1655,28 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | name  |
       | EMPTY |
+
+  Scenario: negative  step
+    When executing query:
+      """
+      GO -1 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 STEPS'
+    When executing query:
+      """
+      GO -1 TO 2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 TO 2 '
+    When executing query:
+      """
+      GO -1 TO -2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 TO -2'
+    When executing query:
+      """
+      GO 1 TO -2 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-2 STEPS'
 
   Scenario: zero step
     When executing query:
