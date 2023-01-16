@@ -308,8 +308,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
     JobID jobId,
     cpp2::JobStatus jobStatus,
     std::optional<nebula::cpp2::ErrorCode> jobErrorCode) {
-  LOG(INFO) << folly::sformat("{}, spaceId={}, jobId={}, result={}",
-                              __func__,
+  LOG(INFO) << folly::sformat("Trying to end job, spaceId={}, jobId={}, target phase status={}",
                               spaceId,
                               jobId,
                               apache::thrift::util::enumNameSafe(jobStatus));
@@ -345,7 +344,7 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
   }
 
   if (!optJobDesc.setStatus(jobStatus, force)) {
-    // job already been set as finished, failed or stopped
+    LOG(INFO) << "Job already been set as finished, failed or stopped";
     return nebula::cpp2::ErrorCode::E_JOB_ALREADY_FINISH;
   }
 
@@ -360,6 +359,8 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(
       std::unique_ptr<kvstore::KVIterator> iter;
       auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
       if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(INFO) << "Failed to end job due to fetch job info failure:"
+                  << apache::thrift::util::enumNameSafe(rc);
         return rc;
       }
       for (; iter->valid(); iter->next()) {
@@ -966,6 +967,9 @@ nebula::cpp2::ErrorCode JobManager::save(const std::string& k, const std::string
   kvStore_->asyncMultiPut(
       kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
         rc = code;
+        if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          LOG(INFO) << "Save job failed with errorcode: " << apache::thrift::util::enumNameSafe(rc);
+        }
         baton.post();
       });
   baton.wait();
