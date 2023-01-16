@@ -20,10 +20,9 @@ class PatternApplyExecutor : public Executor {
  protected:
   Status checkBiInputDataSets();
 
-  void collectValidKeys(
-      const std::vector<std::pair<Expression*, bool>>& keyCols,
-      Iterator* iter,
-      std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys) const;
+  void collectValidKeys(const std::vector<std::pair<Expression*, bool>>& keyCols,
+                        Iterator* iter,
+                        std::unordered_set<ListWrapper>& validKeys) const;
 
   void collectValidKey(Expression* keyCol,
                        Iterator* iter,
@@ -35,10 +34,9 @@ class PatternApplyExecutor : public Executor {
                          Iterator* appliedIter,
                          const std::unordered_set<Value>& validKey);
 
-  DataSet applyMultiKey(
-      std::vector<std::pair<Expression*, bool>> appliedKeys,
-      Iterator* appliedIter,
-      const std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys);
+  DataSet applyMultiKey(std::vector<std::pair<Expression*, bool>> appliedKeys,
+                        Iterator* appliedIter,
+                        const std::unordered_set<ListWrapper>& validKeys);
 
   folly::Future<Status> patternApply();
   std::unique_ptr<Iterator> lhsIter_;

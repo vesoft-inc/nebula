@@ -45,70 +45,6 @@ class ListWrapper {
   std::vector<std::pair<Value, bool>> pairs_;
 };
 
-struct WrapperHash {
-  std::size_t operator()(const ListWrapper &wrapper) const {
-    size_t seed = 0;
-    for (const auto &pair : wrapper.pairs()) {
-      if (pair.second) {
-        seed ^= std::hash<nebula::Value>()(pair.first);
-      } else {
-        const auto &values = pair.first.getList().values;
-        for (const auto &v : values) {
-          seed ^= std::hash<nebula::Value>()(v);
-        }
-      }
-    }
-    DLOG(ERROR) << "hashValue : " << wrapper.toString() << " values : " << seed;
-    return seed;
-  }
-};
-
-struct WrapperEqual {
-  bool operator()(const ListWrapper &lhs, const ListWrapper &rhs) const {
-    const auto &pairs = lhs.pairs();
-    size_t size = pairs.size();
-    const auto &otherPairs = rhs.pairs();
-    if (size != otherPairs.size()) {
-      return false;
-    }
-    for (size_t i = 0; i < size; ++i) {
-      auto type = pairs[i].second;
-      if (type != otherPairs[i].second) {
-        return false;
-      }
-      if (type) {
-        if (pairs[i].first != otherPairs[i].first) {
-          return false;
-        } else {
-          continue;
-        }
-      }
-      const auto &values = pairs[i].first.getList().values;
-      const auto &otherValues = otherPairs[i].first.getList().values;
-      size_t listSize = values.size();
-      if (listSize != otherValues.size()) {
-        return false;
-      }
-      if (values.front() == otherValues.front()) {
-        for (size_t j = 1; j < listSize; ++j) {
-          if (values[j] != otherValues[j]) {
-            return false;
-          }
-        }
-      } else if (values.front() == otherValues.back()) {
-        for (size_t j = 1; j < listSize; ++j) {
-          if (values[j] != otherValues[listSize - 1 - j]) {
-            return false;
-          }
-        }
-      } else {
-        return false;
-      }
-    }
-    return true;
-  }
-};
-
 class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
@@ -270,5 +206,20 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
 }
 }  // namespace graph
 }  // namespace nebula
+
+namespace std {
+// Inject a customized hash function
+template <>
+struct hash<nebula::graph::ListWrapper> {
+  std::size_t operator()(const nebula::graph::ListWrapper &wrapper) const noexcept;
+};
+
+template <>
+struct equal_to<nebula::graph::ListWrapper> {
+  bool operator()(const nebula::graph::ListWrapper &lhs,
+                  const nebula::graph::ListWrapper &rhs) const noexcept;
+};
+
+}  // namespace std
 
 #endif  // GRAPH_EXECUTOR_EXECUTOR_H_

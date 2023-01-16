@@ -92,8 +92,7 @@ std::string MatchPath::toString() const {
   buf.reserve(256);
 
   if (alias_ != nullptr) {
-    buf += *alias_;
-    buf += " = ";
+    return *alias_;
   }
 
   buf += node(0)->toString();

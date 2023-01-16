@@ -20,17 +20,15 @@ class RollUpApplyExecutor : public Executor {
  protected:
   Status checkBiInputDataSets();
 
-  void buildHashTable(
-      const std::vector<std::pair<Expression*, bool>>& compareCols,
-      const InputPropertyExpression* collectCol,
-      Iterator* iter,
-      std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable) const;
+  void buildHashTable(const std::vector<std::pair<Expression*, bool>>& compareCols,
+                      const InputPropertyExpression* collectCol,
+                      Iterator* iter,
+                      std::unordered_map<ListWrapper, List>& hashTable) const;
 
-  void buildSingleKeyHashTable(
-      const std::pair<Expression*, bool>& compareCol,
-      const InputPropertyExpression* collectCol,
-      Iterator* iter,
-      std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable) const;
+  void buildSingleKeyHashTable(const std::pair<Expression*, bool>& compareCol,
+                               const InputPropertyExpression* collectCol,
+                               Iterator* iter,
+                               std::unordered_map<ListWrapper, List>& hashTable) const;
 
   void buildZeroKeyHashTable(const InputPropertyExpression* collectCol,
                              Iterator* iter,
@@ -38,14 +36,13 @@ class RollUpApplyExecutor : public Executor {
 
   DataSet probeZeroKey(Iterator* probeIter, const List& hashTable);
 
-  DataSet probeSingleKey(
-      const std::pair<Expression*, bool>& probeKey,
-      Iterator* probeIter,
-      const std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable);
+  DataSet probeSingleKey(const std::pair<Expression*, bool>& probeKey,
+                         Iterator* probeIter,
+                         const std::unordered_map<ListWrapper, List>& hashTable);
 
   DataSet probe(std::vector<std::pair<Expression*, bool>> probeKeys,
                 Iterator* probeIter,
-                const std::unordered_map<ListWrapper, List, WrapperHash, WrapperEqual>& hashTable);
+                const std::unordered_map<ListWrapper, List>& hashTable);
 
   folly::Future<Status> rollUpApply();
 

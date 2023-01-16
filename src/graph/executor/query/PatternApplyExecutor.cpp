@@ -38,10 +38,9 @@ Status PatternApplyExecutor::checkBiInputDataSets() {
   return Status::OK();
 }
 
-void PatternApplyExecutor::collectValidKeys(
-    const std::vector<std::pair<Expression*, bool>>& pairs,
-    Iterator* iter,
-    std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys) const {
+void PatternApplyExecutor::collectValidKeys(const std::vector<std::pair<Expression*, bool>>& pairs,
+                                            Iterator* iter,
+                                            std::unordered_set<ListWrapper>& validKeys) const {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     ListWrapper listWrapper;
@@ -93,10 +92,9 @@ DataSet PatternApplyExecutor::applySingleKey(Expression* appliedKey,
   return ds;
 }
 
-DataSet PatternApplyExecutor::applyMultiKey(
-    std::vector<std::pair<Expression*, bool>> pairs,
-    Iterator* appliedIter,
-    const std::unordered_set<ListWrapper, WrapperHash, WrapperEqual>& validKeys) {
+DataSet PatternApplyExecutor::applyMultiKey(std::vector<std::pair<Expression*, bool>> pairs,
+                                            Iterator* appliedIter,
+                                            const std::unordered_set<ListWrapper>& validKeys) {
   DataSet ds;
   ds.rows.reserve(appliedIter->size());
   QueryExpressionContext ctx(ectx_);
@@ -141,7 +139,7 @@ folly::Future<Status> PatternApplyExecutor::patternApply() {
       return applyColsCopy;
     };
 
-    std::unordered_set<ListWrapper, WrapperHash, WrapperEqual> validKeys;
+    std::unordered_set<ListWrapper> validKeys;
     collectValidKeys(cloneExpr(keyCols), rhsIter_.get(), validKeys);
     result = applyMultiKey(cloneExpr(keyCols), lhsIter_.get(), validKeys);
   }
