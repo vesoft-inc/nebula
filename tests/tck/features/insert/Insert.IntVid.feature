@@ -236,6 +236,34 @@ Feature: Insert int vid of vertex and edge
       VALUES hash("Laura"):("Laura", 8, "three", 20190901008),hash("Amber"):("Amber", 9, "four", 20180901003)
       """
     Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON person hash("Laura") YIELD person.name, person.age
+      """
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | 'Laura'     | 8          |
+    When executing query:
+      """
+      FETCH PROP ON student hash("Laura") YIELD student.grade, student.number
+      """
+    Then the result should be, in any order:
+      | student.grade | student.number |
+      | 'three'       | 20190901008    |
+    When executing query:
+      """
+      FETCH PROP ON person hash("Amber") YIELD person.name, person.age
+      """
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | 'Amber'     | 9          |
+    When executing query:
+      """
+      FETCH PROP ON student hash("Amber") YIELD student.grade, student.number
+      """
+    Then the result should be, in any order:
+      | student.grade | student.number |
+      | 'four'        | 20180901003    |
     # insert multi vertex one tag
     When executing query:
       """

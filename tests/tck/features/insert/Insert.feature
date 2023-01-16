@@ -95,7 +95,7 @@ Feature: Insert string vid of vertex and edge
       INSERT EDGE schoolmate(likeness, nickname) VALUES "Tom"->"Lucy":(85, "Lily")
       """
     Then the execution should be successful
-    # insert vertex wrong type
+    # insert edge wrong type
     When executing query:
       """
       INSERT EDGE schoolmate(likeness, nickname) VALUES "Laura"->"Amber":("87", "");
@@ -224,6 +224,34 @@ Feature: Insert string vid of vertex and edge
         "Amber":("Amber", 9, "four", 20180901003);
       """
     Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON person "Laura" YIELD person.name, person.age
+      """
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | 'Laura'     | 8          |
+    When executing query:
+      """
+      FETCH PROP ON student "Laura" YIELD student.grade, student.number
+      """
+    Then the result should be, in any order:
+      | student.grade | student.number |
+      | 'three'       | 20190901008    |
+    When executing query:
+      """
+      FETCH PROP ON person "Amber" YIELD person.name, person.age
+      """
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | 'Amber'     | 9          |
+    When executing query:
+      """
+      FETCH PROP ON student "Amber" YIELD student.grade, student.number
+      """
+    Then the result should be, in any order:
+      | student.grade | student.number |
+      | 'four'        | 20180901003    |
     # insert multi vertex one tag
     When executing query:
       """

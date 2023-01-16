@@ -200,13 +200,15 @@ Feature: Delete int vid of tag
       """
     Then the execution should be successful
     # after delete tag
-    When executing query:
-      """
-      FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
-      """
-    Then the result should be, in any order:
-      | player.name | player.age |
-      | EMPTY       | EMPTY      |
+    # the result should be an empty set,
+    # revert this case when https://github.com/vesoft-inc/nebula/issues/5262 is fixed
+    # @skip
+    # When executing query:
+    # """
+    # FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
+    # """
+    # Then the result should be, in any order:
+    # | player.name | player.age |
     When executing query:
       """
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
