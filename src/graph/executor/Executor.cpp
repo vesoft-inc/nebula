@@ -774,6 +774,9 @@ std::size_t hash<nebula::graph::ListWrapper>::operator()(
     if (pair.second) {
       seed ^= std::hash<nebula::Value>()(pair.first);
     } else {
+      if (!pair.first.isList()) {
+        return std::hash<nebula::Value>()(pair.first);
+      }
       const auto &values = pair.first.getList().values;
       for (const auto &v : values) {
         seed ^= std::hash<nebula::Value>()(v);
@@ -804,26 +807,41 @@ bool equal_to<nebula::graph::ListWrapper>::operator()(
         continue;
       }
     }
-    const auto &values = pairs[i].first.getList().values;
-    const auto &otherValues = otherPairs[i].first.getList().values;
-    size_t listSize = values.size();
-    if (listSize != otherValues.size()) {
-      return false;
-    }
-    if (values.front() == otherValues.front()) {
-      for (size_t j = 1; j < listSize; ++j) {
-        if (values[j] != otherValues[j]) {
+    if (!pairs[i].first.isList()) {
+      if (!otherPairs[i].first.isList()) {
+        if (pairs[i].first != otherPairs[i].first) {
           return false;
+        } else {
+          continue;
         }
-      }
-    } else if (values.front() == otherValues.back()) {
-      for (size_t j = 1; j < listSize; ++j) {
-        if (values[j] != otherValues[listSize - 1 - j]) {
-          return false;
-        }
+      } else {
+        return false;
       }
     } else {
-      return false;
+      if (!otherPairs[i].first.isList()) {
+        return false;
+      }
+      const auto &values = pairs[i].first.getList().values;
+      const auto &otherValues = otherPairs[i].first.getList().values;
+      size_t listSize = values.size();
+      if (listSize != otherValues.size()) {
+        return false;
+      }
+      if (values.front() == otherValues.front()) {
+        for (size_t j = 1; j < listSize; ++j) {
+          if (values[j] != otherValues[j]) {
+            return false;
+          }
+        }
+      } else if (values.front() == otherValues.back()) {
+        for (size_t j = 1; j < listSize; ++j) {
+          if (values[j] != otherValues[listSize - 1 - j]) {
+            return false;
+          }
+        }
+      } else {
+        return false;
+      }
     }
   }
   return true;

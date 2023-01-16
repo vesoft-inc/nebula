@@ -45,14 +45,10 @@ std::string MatchEdge::toString() const {
       if (range_->min() == range_->max()) {
         buf += folly::to<std::string>(range_->min());
       } else if (range_->max() == std::numeric_limits<size_t>::max()) {
-        if (range_->min() != 1) {
-          buf += folly::to<std::string>(range_->min());
-          buf += "..";
-        }
+        buf += folly::to<std::string>(range_->min());
+        buf += "..";
       } else {
-        if (range_->min() != 1) {
-          buf += folly::to<std::string>(range_->min());
-        }
+        buf += folly::to<std::string>(range_->min());
         buf += "..";
         buf += folly::to<std::string>(range_->max());
       }
