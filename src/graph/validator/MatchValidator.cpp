@@ -1297,11 +1297,18 @@ Status MatchValidator::validatePathInWhere(
     }
   }
   for (const auto &edge : path->edges()) {
-    if (edge->alias()[0] != '_') {
-      pathInfo.compareVariables.emplace_back(edge->alias());
+    const auto &edgeAlias = edge->alias();
+    if (!edgeAlias.empty() && edgeAlias.front() != '_') {
+      if (edge->range()) {
+        return Status::SemanticError(
+            "Variable '%s` 's type is edgeList. not support used in multiple patterns "
+            "simultaneously.",
+            edgeAlias.c_str());
+      }
+      pathInfo.compareVariables.emplace_back(edgeAlias);
     }
   }
-  pathInfo.collectVariable = *path->alias();
+  pathInfo.collectVariable = path->toString();
   pathInfo.rollUpApply = true;
   return Status::OK();
 }
