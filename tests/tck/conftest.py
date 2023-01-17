@@ -981,7 +981,7 @@ def switch_to_new_session(conn_pool, user, password, class_fixture_variables, ex
     class_fixture_variables["sessions"].append(sess)
     exec_ctx["current_session"] = sess
 
-@when(parse('login with user "{user}"'))
+@when(parse('verify login with user "{user}"'))
 def login_without_password(conn_pool, user):
     sess = None
     try:
@@ -989,7 +989,7 @@ def login_without_password(conn_pool, user):
     except Exception as e:
         assert e
 
-@when(parse('login with user "{user}" and password "{password}"'))
+@when(parse('verify login with user "{user}" and password "{password}"'))
 def login_with_password(conn_pool, user, password):
     sess = None
     try:
