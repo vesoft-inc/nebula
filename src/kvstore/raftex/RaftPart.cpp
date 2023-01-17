@@ -1083,8 +1083,13 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
-        lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
-        lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
+        auto nowCosMs = lastMsgSentDur_.elapsedInMSec();
+        auto nowTime = static_cast<uint64_t>(time::WallClock::fastNowInMilliSec());
+        if (nowTime - nowCosMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
+          lastMsgAcceptedCostMs_ = nowCosMs;
+          lastMsgAcceptedTime_ = nowTime;
+        }
+
         if (!commitInThisTerm_) {
           commitInThisTerm_ = true;
           bgWorkers_->addTask(
