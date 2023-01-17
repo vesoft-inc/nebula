@@ -534,6 +534,22 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order, with relax comparison:
       | node        |
       | ('English') |
+    # insert Chinese character
+    # if the Chinese character is out of the fixed_string's size, it will be truncated,
+    # and no invalid char should be inserted
+    When executing query:
+      """
+      INSERT VERTEX course(name) VALUES "Chinese":("中文字符")
+      """
+    Then the execution should be successful
+    # check result
+    When executing query:
+      """
+      FETCH PROP ON course "Chinese" YIELD vertex as node
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node        |
+      | ('Chinese') |
     # check result
     When executing query:
       """
@@ -551,6 +567,7 @@ Feature: Insert string vid of vertex and edge
       | course.name | course.introduce |
       | 'Engli'     | NULL             |
       | 'Math'      | NULL             |
+      | '中'        | NULL             |
     When executing query:
       """
       LOOKUP ON student YIELD student.name, student.age
@@ -658,3 +675,15 @@ Feature: Insert string vid of vertex and edge
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The VID must be a 64-bit integer or a string fitting space vertex id length limit.
     Then drop the used space
+
+  Scenario: insert vertex with non existent tag
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+    When try to execute query:
+      """
+      INSERT VERTEX invalid_vertex VALUES "non_existed_tag":()
+      """
+    Then a SemanticError should be raised at runtime: No schema found

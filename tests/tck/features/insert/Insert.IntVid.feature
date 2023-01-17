@@ -614,3 +614,15 @@ Feature: Insert int vid of vertex and edge
       | src | dst |
       | 300 | 400 |
     Then drop the used space
+
+  Scenario: insert vertex with non existent tag
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+    When try to execute query:
+      """
+      INSERT VERTEX invalid_vertex VALUES "non_existed_tag":()
+      """
+    Then a SemanticError should be raised at runtime: No schema found
