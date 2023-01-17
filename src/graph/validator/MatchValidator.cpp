@@ -1301,7 +1301,7 @@ Status MatchValidator::validatePathInWhere(
     if (!edgeAlias.empty() && edgeAlias.front() != '_') {
       if (edge->range()) {
         return Status::SemanticError(
-            "Variable '%s` 's type is edgeList. not support used in multiple patterns "
+            "Variable '%s` 's type is list. not support used in multiple patterns "
             "simultaneously.",
             edgeAlias.c_str());
       }

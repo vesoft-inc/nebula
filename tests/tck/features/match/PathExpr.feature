@@ -363,7 +363,7 @@ Feature: Basic match
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
 
-  Scenario: pattern in where
+  Scenario: pattern in where or return
     When executing query:
       """
       MATCH (v:player)-[e]->(b)
@@ -415,29 +415,62 @@ Feature: Basic match
       | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]               |
     When executing query:
       """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like]-(n)
+        RETURN ()-[e:like]-(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like]-(n)                                                                                                                                                                                             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})>]               |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 70}]-("Danny Green" :player{age: 31, name: "Danny Green"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})>]     |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 90}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>]         |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 55}]-("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})>]     |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})>]   |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})>]       |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>]         |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]             |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like]->(n)
+        RETURN ()-[e:like]->(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like]->(n)                                                                                                                                                                                    |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]     |
+
+  Scenario: list join not support
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*2]->(n)
+       RETURN ()-[e:like*2]->(n)
+      """
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*3]->(n), (t:team {name: "Spurs"})
       WITH v, e, collect(distinct n) AS ns
         UNWIND [n in ns | ()-[e*3]->(n:player)] AS p
         RETURN p
       """
-    Then a SemanticError should be raised at runtime: Variable e 's type is edgeList. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n)
         WHERE (n)-[e*3]->(:player)
         RETURN v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is list. not support used in multiple patterns simultaneously.
