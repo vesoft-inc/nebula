@@ -91,49 +91,51 @@ struct Value {
   // matched ctor it will convert to bool type and the match the bool value
   // ctor, So we disable all pointer ctor except the char*
   template <typename T>
-  Value(T*) = delete;                    // NOLINT
-  Value(const std::nullptr_t) = delete;  // NOLINT
-  Value(const NullType& v);              // NOLINT
-  Value(NullType&& v);                   // NOLINT
-  Value(const bool& v);                  // NOLINT
-  Value(bool&& v);                       // NOLINT
-  Value(const int8_t& v);                // NOLINT
-  Value(int8_t&& v);                     // NOLINT
-  Value(const int16_t& v);               // NOLINT
-  Value(int16_t&& v);                    // NOLINT
-  Value(const int32_t& v);               // NOLINT
-  Value(int32_t&& v);                    // NOLINT
-  Value(const int64_t& v);               // NOLINT
-  Value(int64_t&& v);                    // NOLINT
-  Value(const double& v);                // NOLINT
-  Value(double&& v);                     // NOLINT
-  Value(const std::string& v);           // NOLINT
-  Value(std::string&& v);                // NOLINT
-  Value(const char* v);                  // NOLINT
-  Value(const Date& v);                  // NOLINT
-  Value(Date&& v);                       // NOLINT
-  Value(const Time& v);                  // NOLINT
-  Value(Time&& v);                       // NOLINT
-  Value(const DateTime& v);              // NOLINT
-  Value(DateTime&& v);                   // NOLINT
-  Value(const Vertex& v);                // NOLINT
-  Value(Vertex&& v);                     // NOLINT
-  Value(const Edge& v);                  // NOLINT
-  Value(Edge&& v);                       // NOLINT
-  Value(const Path& v);                  // NOLINT
-  Value(Path&& v);                       // NOLINT
-  Value(const List& v);                  // NOLINT
-  Value(List&& v);                       // NOLINT
-  Value(const Map& v);                   // NOLINT
-  Value(Map&& v);                        // NOLINT
-  Value(const Set& v);                   // NOLINT
-  Value(Set&& v);                        // NOLINT
-  Value(const DataSet& v);               // NOLINT
-  Value(DataSet&& v);                    // NOLINT
-  Value(const Geography& v);             // NOLINT
-  Value(Geography&& v);                  // NOLINT
-  Value(const Duration& v);              // NOLINT
-  Value(Duration&& v);                   // NOLINT
+  Value(T*) = delete;                                        // NOLINT
+  Value(const std::nullptr_t) = delete;                      // NOLINT
+  Value(const NullType& v);                                  // NOLINT
+  Value(NullType&& v);                                       // NOLINT
+  Value(const bool& v);                                      // NOLINT
+  Value(bool&& v);                                           // NOLINT
+  Value(const int8_t& v);                                    // NOLINT
+  Value(int8_t&& v);                                         // NOLINT
+  Value(const int16_t& v);                                   // NOLINT
+  Value(int16_t&& v);                                        // NOLINT
+  Value(const int32_t& v);                                   // NOLINT
+  Value(int32_t&& v);                                        // NOLINT
+  Value(const int64_t& v);                                   // NOLINT
+  Value(int64_t&& v);                                        // NOLINT
+  Value(const double& v);                                    // NOLINT
+  Value(double&& v);                                         // NOLINT
+  Value(const std::string& v);                               // NOLINT
+  Value(std::string&& v);                                    // NOLINT
+  Value(const char* v);                                      // NOLINT
+  Value(const Date& v);                                      // NOLINT
+  Value(Date&& v);                                           // NOLINT
+  Value(const Time& v);                                      // NOLINT
+  Value(Time&& v);                                           // NOLINT
+  Value(const DateTime& v);                                  // NOLINT
+  Value(DateTime&& v);                                       // NOLINT
+  Value(const Vertex& v);                                    // NOLINT
+  Value(Vertex&& v);                                         // NOLINT
+  Value(const Edge& v);                                      // NOLINT
+  Value(Edge&& v);                                           // NOLINT
+  Value(const Path& v);                                      // NOLINT
+  Value(Path&& v);                                           // NOLINT
+  Value(const List& v);                                      // NOLINT
+  Value(List&& v);                                           // NOLINT
+  Value(const Map& v);                                       // NOLINT
+  Value(Map&& v);                                            // NOLINT
+  Value(const Set& v);                                       // NOLINT
+  Value(Set&& v);                                            // NOLINT
+  Value(const DataSet& v);                                   // NOLINT
+  Value(DataSet&& v);                                        // NOLINT
+  Value(const Geography& v);                                 // NOLINT
+  Value(Geography&& v);                                      // NOLINT
+  Value(const Duration& v);                                  // NOLINT
+  Value(Duration&& v);                                       // NOLINT
+  Value(const std::unordered_map<std::string, Value>& map);  // NOLINT
+  Value(std::unordered_map<std::string, Value>&& map);       // NOLINT
   ~Value() {
     clear();
   }

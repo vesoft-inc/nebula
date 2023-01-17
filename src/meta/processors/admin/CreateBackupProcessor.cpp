@@ -85,9 +85,11 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // make sure there is no index job
   std::unordered_set<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
                                              cpp2::JobType::REBUILD_EDGE_INDEX,
+                                             cpp2::JobType::REBUILD_FULLTEXT_INDEX,
                                              cpp2::JobType::COMPACT,
                                              cpp2::JobType::INGEST,
                                              cpp2::JobType::DATA_BALANCE,
+                                             cpp2::JobType::ZONE_BALANCE,
                                              cpp2::JobType::LEADER_BALANCE};
   auto result = jobMgr->checkTypeJobRunning(jobTypes);
   if (!nebula::ok(result)) {
@@ -105,6 +107,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
 
   folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
+  LOG(INFO) << "Start to create checkpoints in all hosts.";
   // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {

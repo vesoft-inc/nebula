@@ -112,7 +112,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
 
 Expression* TraverseExecutor::selectFilter() {
   Expression* filter = nullptr;
-  if (!(currentStep_ == 1 && traverse_->zeroStep())) {
+  if (!(currentStep_ == 1 && range_.min() == 0)) {
     filter = const_cast<Expression*>(traverse_->filter());
   }
   if (currentStep_ == 1) {
@@ -166,18 +166,14 @@ folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
         initVertices_.emplace_back(vertex);
       }
     }
-    if (range_ && range_->min() == 0) {
+    if (range_.min() == 0) {
       result_.rows = buildZeroStepPath();
     }
   }
   expand(iter.get());
   if (!isFinalStep()) {
     if (vids_.empty()) {
-      if (range_ != nullptr) {
-        return buildResult();
-      } else {
-        return folly::makeFuture<Status>(Status::OK());
-      }
+      return buildResult();
     } else {
       return getNeighbors();
     }
@@ -267,12 +263,8 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath() {
 }
 
 folly::Future<Status> TraverseExecutor::buildResult() {
-  size_t minStep = 1;
-  size_t maxStep = 1;
-  if (range_ != nullptr) {
-    minStep = range_->min();
-    maxStep = range_->max();
-  }
+  size_t minStep = range_.min();
+  size_t maxStep = range_.max();
 
   result_.colNames = traverse_->colNames();
   if (maxStep == 0) {
