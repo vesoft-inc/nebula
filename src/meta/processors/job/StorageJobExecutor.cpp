@@ -231,7 +231,7 @@ folly::Future<nebula::cpp2::ErrorCode> StorageJobExecutor::execute() {
                                            task.getErrorCode());
       faildKV.emplace_back(std::move(taskKey), std::move(taskVal));
     }
-
+    baton.reset();
     kvstore_->asyncMultiPut(
         kDefaultSpaceId, kDefaultPartId, std::move(faildKV), [&](nebula::cpp2::ErrorCode code) {
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
