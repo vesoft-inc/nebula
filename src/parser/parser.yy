@@ -1683,6 +1683,7 @@ match_clause
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
         if ($4 != nullptr) {
+            delete $3;
             throw nebula::GraphParser::syntax_error(@4, "Where clause in optional match is not supported.");
         } else {
             $$ = new MatchClause($3, nullptr, true);
