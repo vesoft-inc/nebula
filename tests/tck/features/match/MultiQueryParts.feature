@@ -181,7 +181,7 @@ Feature: Multi Query Parts
       with v1, v2, e3, v4, e5, v3 where id(v3) == "Tim Duncan" or id(v3) is NULL
       return *
       """
-    Then the result should be,d in any order, with relax comparison:
+    Then the result should be, in any order, with relax comparison:
       | v1              | v2                | e3                                            | v4                    | e5                                             | v3             |
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"LaMarcus Aldridge" @0] | ("LaMarcus Aldridge") | [:like "LaMarcus Aldridge"->"Tony Parker" @0]  | ("Tim Duncan") |
       | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0 ]       | ("Tony Parker")       | NULL                                           | NULL           |
