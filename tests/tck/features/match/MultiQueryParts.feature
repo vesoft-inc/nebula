@@ -177,36 +177,40 @@ Feature: Multi Query Parts
     When profiling query:
       """
       MATCH (v1:player)-[:like*2..2]->(v2)-[e3:like]->(v4) where id(v1) == "Tony Parker"
-      OPTIONAL MATCH (v3:player)-[:like]->(v1)<-[e5]-(v4) where id(v3) == "Tim Duncan" return *
+      OPTIONAL MATCH (v3:player)-[:like]->(v1)<-[e5]-(v4)
+      with v1, v2, e3, v4, e5, v3 where id(v3) == "Tim Duncan" or id(v3) is NULL
+      return *
       """
     Then the result should be, in any order, with relax comparison:
-      | v1              | v2                | e3                                            | v4                    | v3             | e5                                             |
-      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"LaMarcus Aldridge" @0] | ("LaMarcus Aldridge") | ("Tim Duncan") | [:like "LaMarcus Aldridge"->"Tony Parker" @0]  |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0 ]       | ("Tony Parker")       | NULL           | NULL                                           |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0]        | ("Tony Parker")       | NULL           | NULL                                           |
-      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Tim Duncan" @0 ]       | ("Tim Duncan")        | ("Tim Duncan") | [:teammate "Tim Duncan"->"Tony Parker" @0]     |
-      | ("Tony Parker") | ("Manu Ginobili") | [:like "Manu Ginobili"->"Tim Duncan" @0 ]     | ("Tim Duncan")        | ("Tim Duncan") | [:teammate "Tim Duncan"->"Tony Parker" @0]     |
-      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0]     | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0]  |
-      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0 ]    | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0]  |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0 ]     | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0 ] |
-      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0]      | ("Manu Ginobili")     | ("Tim Duncan") | [:teammate "Manu Ginobili"->"Tony Parker" @0]  |
+      | v1              | v2                | e3                                            | v4                    | e5                                             | v3             |
+      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"LaMarcus Aldridge" @0] | ("LaMarcus Aldridge") | [:like "LaMarcus Aldridge"->"Tony Parker" @0]  | ("Tim Duncan") |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0 ]       | ("Tony Parker")       | NULL                                           | NULL           |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Tony Parker" @0]        | ("Tony Parker")       | NULL                                           | NULL           |
+      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Tim Duncan" @0 ]       | ("Tim Duncan")        | [:teammate "Tim Duncan"->"Tony Parker" @0]     | ("Tim Duncan") |
+      | ("Tony Parker") | ("Manu Ginobili") | [:like "Manu Ginobili"->"Tim Duncan" @0 ]     | ("Tim Duncan")        | [:teammate "Tim Duncan"->"Tony Parker" @0]     | ("Tim Duncan") |
+      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0]     | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0]  | ("Tim Duncan") |
+      | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0 ]    | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0]  | ("Tim Duncan") |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0 ]     | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0 ] | ("Tim Duncan") |
+      | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0]      | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0]  | ("Tim Duncan") |
     # The redudant Project after HashLeftJoin is removed now
     And the execution plan should be:
       | id | name           | dependencies | profiling data | operator info |
-      | 19 | HashLeftJoin   | 7,14         |                |               |
-      | 7  | Project        | 6            |                |               |
+      | 22 | Project        | 18           |                |               |
+      | 18 | Filter         | 14           |                |               |
+      | 14 | HashLeftJoin   | 7,13         |                |               |
+      | 7  | project        | 6            |                |               |
       | 6  | AppendVertices | 5            |                |               |
       | 5  | Traverse       | 20           |                |               |
       | 20 | Traverse       | 2            |                |               |
       | 2  | Dedup          | 1            |                |               |
       | 1  | PassThrough    | 3            |                |               |
       | 3  | Start          |              |                |               |
-      | 14 | Project        | 13           |                |               |
-      | 13 | Traverse       | 21           |                |               |
-      | 21 | Traverse       | 9            |                |               |
-      | 9  | Dedup          | 8            |                |               |
-      | 8  | PassThrough    | 10           |                |               |
-      | 10 | Start          |              |                |               |
+      | 13 | Project        | 21           |                |               |
+      | 21 | AppendVertices | 11           |                |               |
+      | 11 | Traverse       | 10           |                |               |
+      | 10 | AppendVertices | 9            |                |               |
+      | 9  | Traverse       | 8            |                |               |
+      | 8  | Argument       |              |                |               |
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
