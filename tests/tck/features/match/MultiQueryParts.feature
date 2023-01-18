@@ -192,8 +192,8 @@ Feature: Multi Query Parts
       | ("Tony Parker") | ("Tony Parker")   | [:like "Tony Parker"->"Manu Ginobili" @0 ]    | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0]  | ("Tim Duncan") |
       | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0 ]     | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0 ] | ("Tim Duncan") |
       | ("Tony Parker") | ("Tim Duncan")    | [:like "Tim Duncan"->"Manu Ginobili" @0]      | ("Manu Ginobili")     | [:teammate "Manu Ginobili"->"Tony Parker" @0]  | ("Tim Duncan") |
-    # The redudant Project after HashInnerJoin is removed now
-    Then the execution plan should be:
+    # The redudant Project after HashLeftJoin is removed now
+    And the execution plan should be:
       | id | name           | dependencies | profiling data | operator info |
       | 22 | Project        | 18           |                |               |
       | 18 | Filter         | 14           |                |               |
