@@ -37,7 +37,7 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&...args) {
+  T *makeAndAdd(Args &&... args) {
     void *ptr;
     {
       // alloc happens here(may throw bad_alloc), use guard to guarantee unlock
