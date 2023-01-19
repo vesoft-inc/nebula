@@ -25,7 +25,7 @@ class RowReader {
     friend class Iterator;
 
    public:
-    Value value() const noexcept;
+    Value value() const;
 
    private:
     const Iterator* iter_;
@@ -74,7 +74,7 @@ class RowReader {
    * @param prop Property name
    * @return Value Property value
    */
-  virtual Value getValueByName(const std::string& prop) const noexcept = 0;
+  virtual Value getValueByName(const std::string& prop) const = 0;
 
   /**
    * @brief Get the property value by index in schema
@@ -82,7 +82,7 @@ class RowReader {
    * @param index Index in Schema
    * @return Value Property value
    */
-  virtual Value getValueByIndex(const int64_t index) const noexcept = 0;
+  virtual Value getValueByIndex(const int64_t index) const = 0;
 
   /**
    * @brief Get the timestamp in value
@@ -108,7 +108,7 @@ class RowReader {
    *
    * @return Iterator
    */
-  virtual Iterator begin() const noexcept {
+  virtual Iterator begin() const {
     return Iterator(this, 0);
   }
 
@@ -117,7 +117,7 @@ class RowReader {
    *
    * @return const Iterator&
    */
-  virtual const Iterator& end() const noexcept {
+  virtual const Iterator& end() const {
     return endIter_;
   }
 
@@ -170,7 +170,7 @@ class RowReader {
    * @param row
    * @return Whether reset succeed
    */
-  virtual bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept;
+  virtual bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row);
 
  private:
   Iterator endIter_;

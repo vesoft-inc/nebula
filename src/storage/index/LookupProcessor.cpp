@@ -218,6 +218,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> LookupProcessor::bu
 
 void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
                                         std::unique_ptr<IndexNode> plan) {
+  memory::MemoryCheckGuard guard;
   // printPlan(plan.get());
   std::vector<std::deque<Row>> datasetList;
   std::vector<::nebula::cpp2::ErrorCode> codeList;
@@ -265,6 +266,7 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
 
 void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
                                           std::unique_ptr<IndexNode> plan) {
+  memory::MemoryCheckOffGuard offGuard;
   std::vector<std::unique_ptr<IndexNode>> planCopy = reproducePlan(plan.get(), parts.size());
   using ReturnType = std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>, Row>;
   std::vector<folly::Future<ReturnType>> futures;
@@ -298,49 +300,47 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
                      }
                      return {part, code, dataset, statResult};
                    })
-            .thenError(
-                folly::tag_t<std::bad_alloc>{},
-                [this](const std::bad_alloc&) {
-                  memoryExceeded_ = true;
-                  return folly::makeFuture<
-                      std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>, Row>>(
-                      std::runtime_error("Memory Limit Exceeded, " +
-                                         memory::MemoryStats::instance().toString()));
-                })
-            .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-              LOG(ERROR) << e.what();
+            .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+              memoryExceeded_ = true;
               return folly::makeFuture<
                   std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>, Row>>(
-                  std::runtime_error(e.what()));
+                  std::runtime_error("Memory Limit Exceeded, " +
+                                     memory::MemoryStats::instance().toString()));
             }));
   }
-  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
-    memory::MemoryCheckGuard guard;
-    CHECK(!t.hasException());
-    const auto& tries = t.value();
-    std::vector<Row> statResults;
-    for (size_t j = 0; j < tries.size(); j++) {
-      if (tries[j].hasException()) {
-        onError();
-        return;
-      }
-      auto& [partId, code, dataset, statResult] = tries[j].value();
-      if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-        for (auto& row : dataset) {
-          resultDataSet_.emplace_back(std::move(row));
+  folly::collectAll(futures)
+      .via(executor_)
+      .thenTry([this](auto&& t) {
+        memory::MemoryCheckGuard guard;
+        CHECK(!t.hasException());
+        const auto& tries = t.value();
+        std::vector<Row> statResults;
+        for (size_t j = 0; j < tries.size(); j++) {
+          if (tries[j].hasException()) {
+            onError();
+            return;
+          }
+          auto& [partId, code, dataset, statResult] = tries[j].value();
+          if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+            for (auto& row : dataset) {
+              resultDataSet_.emplace_back(std::move(row));
+            }
+          } else {
+            handleErrorCode(code, context_->spaceId(), partId);
+          }
+          statResults.emplace_back(std::move(statResult));
         }
-      } else {
-        handleErrorCode(code, context_->spaceId(), partId);
-      }
-      statResults.emplace_back(std::move(statResult));
-    }
-    DLOG(INFO) << "finish";
-    // IndexAggregateNode has been copied and each part get it's own aggregate info,
-    // we need to merge it
-    this->mergeStatsResult(statResults);
-    this->onProcessFinished();
-    this->onFinished();
-  });
+        DLOG(INFO) << "finish";
+        // IndexAggregateNode has been copied and each part get it's own aggregate info,
+        // we need to merge it
+        this->mergeStatsResult(statResults);
+        this->onProcessFinished();
+        this->onFinished();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        onError();
+      });
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<std::string, cpp2::StatType>>>

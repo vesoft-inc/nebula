@@ -6,6 +6,9 @@
 
 #include <atomic>
 
+#define BOOST_STACKTRACE_USE_ADDR2LINE
+#include <boost/stacktrace.hpp>
+
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -63,7 +66,7 @@ class MemoryStats {
   }
 
   /// Inform size of memory allocation
-  inline ALWAYS_INLINE void alloc(int64_t size) {
+  inline ALWAYS_INLINE void alloc(int64_t size, bool throw_if_memory_exceeded) {
     int64_t willBe = threadMemoryStats_.reserved - size;
 
     if (UNLIKELY(willBe < 0)) {
@@ -74,7 +77,7 @@ class MemoryStats {
       }
       // allocGlobal() may end with bad_alloc, only invoke allocGlobal() once (ALL_OR_NOTHING
       // semantic)
-      allocGlobal(getFromGlobal);
+      allocGlobal(getFromGlobal, throw_if_memory_exceeded);
       willBe += getFromGlobal;
     }
     // Only update after successful allocations, failed allocations should not be taken into
@@ -143,12 +146,18 @@ class MemoryStats {
     return threadMemoryStats_.throwOnMemoryExceeded;
   }
 
+  static bool setThrowOnMemoryExceeded(bool value) {
+    return threadMemoryStats_.throwOnMemoryExceeded = value;
+  }
+
  private:
-  inline ALWAYS_INLINE void allocGlobal(int64_t size) {
+  inline ALWAYS_INLINE void allocGlobal(int64_t size, bool throw_if_memory_exceeded) {
     int64_t willBe = size + used_.fetch_add(size, std::memory_order_relaxed);
-    if (threadMemoryStats_.throwOnMemoryExceeded && willBe > limit_) {
+    if (threadMemoryStats_.throwOnMemoryExceeded && throw_if_memory_exceeded && willBe > limit_) {
       // revert
       used_.fetch_sub(size, std::memory_order_relaxed);
+      threadMemoryStats_.throwOnMemoryExceeded = false;
+      // LOG(INFO) << boost::stacktrace::stacktrace();
       throw std::bad_alloc();
     }
   }
@@ -165,12 +174,26 @@ class MemoryStats {
 
 // A guard to only enable memory check (throw when memory exceed) during its lifetime.
 struct MemoryCheckGuard {
+  bool previous;
   MemoryCheckGuard() {
+    previous = MemoryStats::throwOnMemoryExceeded();
     MemoryStats::turnOnThrow();
   }
 
   ~MemoryCheckGuard() {
+    MemoryStats::setThrowOnMemoryExceeded(previous);
+  }
+};
+
+struct MemoryCheckOffGuard {
+  bool previous;
+  MemoryCheckOffGuard() {
+    previous = MemoryStats::throwOnMemoryExceeded();
     MemoryStats::turnOffThrow();
+  }
+
+  ~MemoryCheckOffGuard() {
+    MemoryStats::setThrowOnMemoryExceeded(previous);
   }
 };
 

@@ -62,6 +62,9 @@ Status TraverseExecutor::buildRequestVids() {
     const auto& spaceInfo = qctx()->rctx()->session()->space();
     const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
     auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
+    if (vidType != Value::Type::STRING && vidType != Value::Type::INT) {
+      LOG(ERROR) << "InvalidVidType: " << vidType;
+    }
     for (; iter->valid(); iter->next()) {
       const auto& vid = src->eval(ctx(iter));
       if (vid.type() != vidType) {

@@ -39,6 +39,7 @@ class BaseProcessor {
   }
 
   virtual void onFinished() {
+    memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
       if (!this->result_.get_failed_parts().empty()) {
@@ -57,11 +58,11 @@ class BaseProcessor {
     if (counters_) {
       stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
     }
-
     delete this;
   }
 
   virtual void onError() {
+    memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
       if (!this->result_.get_failed_parts().empty()) {
@@ -82,7 +83,6 @@ class BaseProcessor {
 
     this->resp_.result_ref() = std::move(this->result_);
     this->promise_.setValue(std::move(this->resp_));
-
     delete this;
   }
 
@@ -171,14 +171,13 @@ struct MemoryCheckScope {
       : processor_(processor), f_(std::move(f)) {}
 
   ~MemoryCheckScope() {
-    memory::MemoryCheckGuard guard;
     try {
       f_();
     } catch (std::bad_alloc& e) {
       processor_->memoryExceeded();
       processor_->onError();
     } catch (std::exception& e) {
-      LOG(ERROR) << e.what();
+      LOG(ERROR) << processor_ << e.what();
       processor_->onError();
     } catch (...) {
       processor_->onError();

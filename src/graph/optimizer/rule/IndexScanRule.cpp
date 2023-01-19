@@ -144,7 +144,7 @@ Status IndexScanRule::createMultipleIQC(IndexQueryCtx& iqctx,
   return Status::OK();
 }
 
-size_t IndexScanRule::hintCount(const FilterItems& items) const noexcept {
+size_t IndexScanRule::hintCount(const FilterItems& items) const {
   std::unordered_set<std::string> hintCols;
   for (const auto& i : items.items) {
     hintCols.emplace(i.col_);

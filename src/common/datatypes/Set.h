@@ -72,7 +72,7 @@ inline std::ostream& operator<<(std::ostream& os, const Set& s) {
 namespace std {
 template <>
 struct hash<nebula::Set> {
-  std::size_t operator()(const nebula::Set& s) const noexcept;
+  std::size_t operator()(const nebula::Set& s) const;
 };
 
 }  // namespace std
