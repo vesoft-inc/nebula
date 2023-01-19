@@ -190,11 +190,11 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
   } else {
     options.prefix_same_as_start = true;
   }
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
-  storageIter->reset(new RocksRangeIter(iter, start, end));
+  storageIter->reset(new RocksRangeIter(std::move(iter), start, end));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -218,11 +218,11 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
   options.prefix_same_as_start = true;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -234,11 +234,11 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
   }
   // prefix_same_as_start is false by default
   options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -251,20 +251,20 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
   } else {
     options.prefix_same_as_start = true;
   }
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
   options.total_order_seek = true;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   iter->SeekToFirst();
-  storageIter->reset(new RocksCommonIter(iter));
+  storageIter->reset(new RocksCommonIter(std::move(iter)));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
