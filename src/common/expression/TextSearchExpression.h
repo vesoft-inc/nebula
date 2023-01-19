@@ -85,7 +85,7 @@ class TextSearchArgument final {
   std::string val_;
   std::string op_;
   int32_t fuzziness_{-2};
-  int32_t limit_{-1};
+  int32_t limit_{10000};
   int32_t timeout_{-1};
 };
 
