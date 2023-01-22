@@ -22,6 +22,8 @@
   <br>
 </p>
 
+[![TODOs](https://img.shields.io/endpoint?url=https://todos.tickgit.com/badge?repo=github.com/vesoft-inc/nebula)](https://todos.tickgit.com/browse?repo=github.com/vesoft-inc/nebula)
+
 
 # NebulaGraph
 
