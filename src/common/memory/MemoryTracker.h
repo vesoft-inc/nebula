@@ -106,10 +106,17 @@ class MemoryStats {
   /// Set limit (maximum usable bytes) of memory
   void setLimit(int64_t limit) {
     if (this->limit_ != limit) {
-      LOG(INFO) << fmt::format(
+      DLOG(INFO) << fmt::format(
           "MemoryTracker update limit {} -> {}", ReadableSize(this->limit_), ReadableSize(limit));
       this->limit_ = limit;
     }
+  }
+
+  /// update limit (maximum usable bytes) of memory
+  /// limit will be set to (used memory + available memory)
+  void updateLimit(int64_t available) {
+    int64_t newLimit = used_ + available;
+    setLimit(newLimit);
   }
 
   /// Get limit (maximum usable bytes) of memory

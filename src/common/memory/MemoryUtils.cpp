@@ -6,6 +6,9 @@
 #include "common/memory/MemoryUtils.h"
 
 #include <gflags/gflags.h>
+
+#include <limits>
+
 #if ENABLE_JEMALLOC
 #include <jemalloc/jemalloc.h>
 
@@ -75,7 +78,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
     return false;
   }
-  double available = 0.0;
+  int64_t available = 0;
   int64_t total = 0;
   if (FLAGS_containerized) {
     bool cgroupsv2 = FileUtils::exist(FLAGS_cgroup_v2_controllers);
@@ -100,8 +103,8 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
 
-    total = static_cast<double>(limitInBytes);
-    available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
+    total = static_cast<int64_t>(limitInBytes);
+    available = static_cast<int64_t>(limitInBytes - usageInBytes + cacheSize);
   } else {
     FileUtils::FileLineIterator iter("/proc/meminfo", &reMemAvailable);
     std::vector<uint64_t> memorySize;
@@ -118,17 +121,53 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     }
   }
 
-  // MemoryStats depends on jemalloc
-#ifdef ENABLE_JEMALLOC
-#ifndef ENABLE_ASAN
-  // set MemoryStats limit (MemoryTracker track-able memory)
-  int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB;
-  if (trackable > 0) {
-    MemoryStats::instance().setLimit(trackable * FLAGS_memory_tracker_limit_ratio);
-  } else {
-    // Do not set limit, keep previous set limit or default limit
-    LOG(ERROR) << "Total available memory less than "
-               << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
+  handleMemoryTracker(total, available);
+
+  auto hits =
+      (1 - (static_cast<double>(available)) / total) > FLAGS_system_memory_high_watermark_ratio;
+  LOG_IF_EVERY_N(WARNING, hits, 100)
+      << "Memory usage has hit the high watermark of system, available: " << available
+      << " vs. total: " << total << " in bytes.";
+  return hits;
+}
+
+StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
+  std::ifstream ifs(path);
+  if (!ifs) {
+    return Status::Error("Could not open the file: %s", path.c_str());
+  }
+  uint64_t value = 0;
+  ifs >> value;
+  return value;
+}
+
+void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
+#ifdef ENABLE_MEMORY_TRACKER
+  double limitRatio = FLAGS_memory_tracker_limit_ratio;
+  double untrackedMb = FLAGS_memory_tracker_untracked_reserved_memory_mb;
+  // update limit by Flags  (MemoryTracker track-able memory)
+  // three FLAGS_memory_tracker_limit_ratio conditions:
+  //     <= 1.0: Normal limit is set to ratio of trackable memory;
+  //             limit is set to FLAGS_memory_tracker_limit_ratio
+  //                     * (total - FLAGS_memory_tracker_untracked_reserved_memory_mb);
+  //     == 2.0: Special value for dynamic self adaptive;
+  //             limit is set to current used memory + available memory
+  //     == 3.0: Special value for disable memorytracker;
+  //             limit is set to max
+  if (limitRatio <= 1.0) {
+    double trackable = total - (untrackedMb * MiB);
+    if (trackable > 0) {
+      MemoryStats::instance().setLimit(trackable * limitRatio);
+    } else {
+      // Do not set limit, keep previous set limit or default limit
+      LOG(ERROR) << "Total available memory less than " << untrackedMb << " Mib,"
+                 << " MemoryTracker limit is not set properly, "
+                 << " Current memory stats:" << MemoryStats::instance().toString();
+    }
+  } else if (limitRatio == 2.0) {
+    MemoryStats::instance().updateLimit(available);
+  } else if (limitRatio == 3.0) {
+    MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
   }
 
   // purge if enabled
@@ -168,24 +207,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     }
   }
 #endif
-#endif
-
-  auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
-  LOG_IF_EVERY_N(WARNING, hits, 100)
-      << "Memory usage has hit the high watermark of system, available: " << available
-      << " vs. total: " << total << " in bytes.";
-  return hits;
-}
-
-StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
-  std::ifstream ifs(path);
-  if (!ifs) {
-    return Status::Error("Could not open the file: %s", path.c_str());
-  }
-  uint64_t value = 0;
-  ifs >> value;
-  return value;
-}
+}  // namespace memory
 
 }  // namespace memory
 }  // namespace nebula

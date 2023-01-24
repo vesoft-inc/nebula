@@ -20,6 +20,7 @@ option(ENABLE_GDB_SCRIPT_SECTION        "Add .debug_gdb_scripts section" OFF)
 option(DISABLE_CXX11_ABI                "Whether to disable cxx11 abi" OFF)
 option(ENABLE_BREAKPAD                  "Whether to enable breakpad" OFF)
 option(ENABLE_STANDALONE_VERSION        "Enable standalone version build" OFF)
+option(ENABLE_MEMORY_TRACKER            "Enable memory tracker" ON)
 
 get_cmake_property(variable_list VARIABLES)
 foreach(_varname ${variable_list})

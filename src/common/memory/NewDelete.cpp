@@ -7,18 +7,12 @@
 
 #include "common/memory/Memory.h"
 /// Replace default new/delete with memory tracking versions.
-///
-/// Two condition need check before MemoryTracker is on
+/// ENABLE_MEMORY_TRACKER is defined by cmake only following two condition satisfied:
 ///   1. jemalloc is used
 ///      MemoryTracker need jemalloc API to get accurate size of alloc/free memory.
 ///   2. address_sanitizer is off
 ///      sanitizer has already override the new/delete operator,
 ///      only override new/delete operator only when address_sanitizer is off
-#ifdef ENABLE_JEMALLOC
-#ifndef ENABLE_ASAN
-#define ENABLE_MEMORY_TRACKER
-#endif
-#endif
 
 #ifdef ENABLE_MEMORY_TRACKER
 /// new
