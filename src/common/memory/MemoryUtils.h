@@ -40,6 +40,8 @@ class MemoryUtils final {
  private:
   static int64_t kLastPurge_;
   static int64_t kLastPrintMemoryTrackerStats_;
+  static int64_t kCurrentTotal_;
+  static double kCurrentLimitRatio_;
 };
 
 }  // namespace memory

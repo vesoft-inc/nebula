@@ -73,6 +73,8 @@ static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)")
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
 int64_t MemoryUtils::kLastPurge_{0};
 int64_t MemoryUtils::kLastPrintMemoryTrackerStats_{0};
+int64_t MemoryUtils::kCurrentTotal_{0};
+double MemoryUtils::kCurrentLimitRatio_{0.0};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
@@ -155,20 +157,31 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
   //     == 3.0: Special value for disable memorytracker;
   //             limit is set to max
   if (limitRatio <= 1.0) {
-    double trackable = total - (untrackedMb * MiB);
-    if (trackable > 0) {
-      MemoryStats::instance().setLimit(trackable * limitRatio);
-    } else {
-      // Do not set limit, keep previous set limit or default limit
-      LOG(ERROR) << "Total available memory less than " << untrackedMb << " Mib,"
-                 << " MemoryTracker limit is not set properly, "
-                 << " Current memory stats:" << MemoryStats::instance().toString();
+    // update limit when either total or ratio changed
+    if (kCurrentTotal_ != total || kCurrentLimitRatio_ != limitRatio) {
+      double trackable = total - (untrackedMb * MiB);
+      if (trackable > 0) {
+        MemoryStats::instance().setLimit(trackable * limitRatio);
+      } else {
+        // Do not set limit, keep previous set limit or default limit
+        LOG(ERROR) << "Total available memory less than " << untrackedMb << " Mib,"
+                   << " MemoryTracker limit is not set properly, "
+                   << " Current memory stats:" << MemoryStats::instance().toString();
+      }
+      LOG(INFO) << "MemoryTracker set static ratio: " << limitRatio;
     }
   } else if (limitRatio == 2.0) {
+    // available almost alway changing, no need check change
     MemoryStats::instance().updateLimit(available);
+    DLOG(INFO) << "MemoryTracker set to dynamic self adaptive";
   } else if (limitRatio == 3.0) {
-    MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
+    if (kCurrentLimitRatio_ != limitRatio) {
+      MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
+      LOG(INFO) << "MemoryTracker disabled";
+    }
   }
+  kCurrentTotal_ = total;
+  kCurrentLimitRatio_ = limitRatio;
 
   // purge if enabled
   if (FLAGS_memory_purge_enabled) {
@@ -196,9 +209,9 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
   if (FLAGS_memory_tracker_detail_log) {
     if (now - kLastPrintMemoryTrackerStats_ >= FLAGS_memory_tracker_detail_log_interval_ms) {
       LOG(INFO) << fmt::format("sys:{}/{} {:.2f}%",
-                               ReadableSize(static_cast<int64_t>(total - available)),
+                               ReadableSize(total - available),
                                ReadableSize(total),
-                               (1 - available / total) * 100)
+                               (1 - available / static_cast<double>(total)) * 100)
                 << fmt::format(" usr:{}/{} {:.2f}%",
                                ReadableSize(MemoryStats::instance().used()),
                                ReadableSize(MemoryStats::instance().getLimit()),
