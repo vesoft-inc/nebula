@@ -322,7 +322,7 @@ std::string AsyncMsgNotifyBasedScheduler::formatPrettyDependencyTree(Executor* r
 void AsyncMsgNotifyBasedScheduler::appendExecutor(size_t spaces,
                                                   Executor* executor,
                                                   std::stringstream& ss) {
-  ss << std::string(spaces, ' ') << formatPrettyId(executor);
+  ss << std::string(spaces, ' ') << formatPrettyId(executor) << std::endl;
   for (auto depend : executor->depends()) {
     appendExecutor(spaces + 1, depend, ss);
   }
