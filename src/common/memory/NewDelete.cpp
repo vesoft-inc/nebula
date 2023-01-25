@@ -97,4 +97,6 @@ void operator delete[](void *ptr, std::size_t size, std::align_val_t align) noex
   nebula::memory::deleteSized(ptr, size, align);
 }
 
+#else
+#pragma message("WARNING: MemoryTracker was disabled at compile time")
 #endif

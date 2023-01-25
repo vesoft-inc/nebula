@@ -224,6 +224,7 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
     }
   }
 #else
+  LOG_FIRST_N(WARNING, 1) << "WARNING: MemoryTracker was disabled at compile time";
   UNUSED(total);
   UNUSED(available);
 #endif
