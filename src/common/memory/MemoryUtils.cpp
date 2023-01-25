@@ -156,7 +156,7 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
   //             limit is set to current used memory + available memory
   //     == 3.0: Special value for disable memorytracker;
   //             limit is set to max
-  if (limitRatio <= 1.0) {
+  if (limitRatio > 0.0 && limitRatio <= 1.0) {
     // update limit when either total or ratio changed
     if (kCurrentTotal_ != total || kCurrentLimitRatio_ != limitRatio) {
       double trackable = total - (untrackedMb * MiB);
@@ -178,6 +178,10 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
     if (kCurrentLimitRatio_ != limitRatio) {
       MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
       LOG(INFO) << "MemoryTracker disabled";
+    }
+  } else {
+    if (kCurrentTotal_ != limitRatio) {
+      LOG(ERROR) << "Invalid memory_tracker_limit_ratio: " << limitRatio;
     }
   }
   kCurrentTotal_ = total;
