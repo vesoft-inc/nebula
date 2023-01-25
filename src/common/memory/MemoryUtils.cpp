@@ -219,6 +219,9 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
       kLastPrintMemoryTrackerStats_ = now;
     }
   }
+#else
+  UNUSED(total);
+  UNUSED(available);
 #endif
 }  // namespace memory
 
