@@ -48,7 +48,10 @@ bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
     if (to.get_type() == nebula::cpp2::PropertyType::STRING) {
       return true;
     } else if (to.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
-      return from.get_type_length() <= to.get_type_length();
+      if (!from.type_length_ref().has_value() || !to.type_length_ref().has_value()) {
+        return false;
+      }
+      return *from.type_length_ref() <= *to.type_length_ref();
     } else {
       return false;
     }
@@ -84,11 +87,20 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
     bool isEdge) {
   switch (op) {
     case cpp2::AlterSchemaOp::ADD:
+      // Check the current schema first. Then check all schemas.
+      for (auto it = cols.begin(); it != cols.end(); ++it) {
+        if (it->get_name() == col.get_name()) {
+          LOG(ERROR) << "Column existing: " << col.get_name();
+          return nebula::cpp2::ErrorCode::E_EXISTED;
+        }
+      }
+      // There won't any two columns having the same name across all schemas. If there is a column
+      // having the same name with the intended change, it must be from history schemas.
       for (auto& versionedCols : allVersionedCols) {
         for (auto it = versionedCols.begin(); it != versionedCols.end(); ++it) {
           if (it->get_name() == col.get_name()) {
-            LOG(ERROR) << "Column currently or previously existing: " << col.get_name();
-            return nebula::cpp2::ErrorCode::E_EXISTED;
+            LOG(ERROR) << "Column previously existing: " << col.get_name();
+            return nebula::cpp2::ErrorCode::E_HISTORY_CONFLICT;
           }
         }
       }

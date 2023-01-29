@@ -1,5 +1,5 @@
 space:
-    name: test
+    name: ngdata
     partitionNum: 1
     ReplicaFactor: 1
     vidType: int

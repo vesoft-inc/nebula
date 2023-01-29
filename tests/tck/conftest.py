@@ -86,7 +86,7 @@ def get_running_jobs(sess):
 
 
 def wait_all_jobs_finished(sess, jobs=[]):
-    times = 4 * get_running_jobs(sess)
+    times = 5 * get_running_jobs(sess)
     while jobs and times > 0:
         jobs = [job for job in jobs if not is_job_finished(sess, job)]
         time.sleep(1)
@@ -182,7 +182,7 @@ def preload_space(
     load_nba_int_vid_data,
     load_student_data,
     load_ldbc_v0_3_3,
-    load_test_data,
+    load_ngdata_data,
     exec_ctx,
 ):
     space = normalize_outline_scenario(request, space)
@@ -194,8 +194,8 @@ def preload_space(
         exec_ctx["space_desc"] = load_student_data
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
-    elif space == "test":
-        exec_ctx["space_desc"] = load_test_data
+    elif space == "ngdata":
+        exec_ctx["space_desc"] = load_ngdata_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
@@ -980,3 +980,19 @@ def switch_to_new_session(conn_pool, user, password, class_fixture_variables, ex
     sess = conn_pool.get_session(user, password)
     class_fixture_variables["sessions"].append(sess)
     exec_ctx["current_session"] = sess
+
+@when(parse('verify login with user "{user}"'))
+def login_without_password(conn_pool, user):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, '')
+    except Exception as e:
+        assert e
+
+@when(parse('verify login with user "{user}" and password "{password}"'))
+def login_with_password(conn_pool, user, password):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, password)
+    except Exception as e:
+        assert e

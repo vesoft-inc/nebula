@@ -62,13 +62,12 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> buildResult();
 
-  std::vector<Row> buildPath(const Value& vid, size_t minStep, size_t maxStep);
+  std::vector<Row> buildPath(const Value& initVertex, size_t minStep, size_t maxStep);
 
   folly::Future<Status> buildPathMultiJobs(size_t minStep, size_t maxStep);
 
   bool isFinalStep() const {
-    return (range_ == nullptr && currentStep_ == 1) ||
-           (range_ != nullptr && (currentStep_ == range_->max() || range_->max() == 0));
+    return currentStep_ == range_.max() || range_.max() == 0;
   }
 
   bool filterSameEdge(const Row& lhs,
@@ -77,7 +76,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   bool hasSameEdge(const std::vector<Value>& edgeList, const Edge& edge);
 
-  std::vector<Row> buildZeroStepPath(GetNeighborsIter* iter);
+  std::vector<Row> buildZeroStepPath();
 
   Expression* selectFilter();
 
@@ -127,13 +126,13 @@ class TraverseExecutor final : public StorageAccessExecutor {
   ObjectPool objPool_;
 
   std::vector<Value> vids_;
-  std::vector<Value> initVids_;
+  std::vector<Value> initVertices_;
   DataSet result_;
   // Key : vertex  Value : adjacent edges
   std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> adjList_;
   std::unordered_map<Value, std::vector<Row>, VertexHash, VertexEqual> dst2PathsMap_;
   const Traverse* traverse_{nullptr};
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   size_t currentStep_{0};
 };
 

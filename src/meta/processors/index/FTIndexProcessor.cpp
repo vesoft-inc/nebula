@@ -65,18 +65,6 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       onFinished();
       return;
     }
-    // if the data type is fixed_string,
-    // the data length must be less than MAX_INDEX_TYPE_LENGTH.
-    // else if the data type is string,
-    // will be truncated to MAX_INDEX_TYPE_LENGTH bytes when data insert.
-    if (targetCol->get_type().get_type() == nebula::cpp2::PropertyType::FIXED_STRING &&
-        *targetCol->get_type().get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-      LOG(INFO) << "Unsupported data length more than " << MAX_INDEX_TYPE_LENGTH
-                << " bytes : " << col << "(" << *targetCol->get_type().get_type_length() << ")";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
-      onFinished();
-      return;
-    }
   }
 
   // Check fulltext index exist.
@@ -173,13 +161,6 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     return;
   }
 
-  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
-  batchHolder->remove(std::move(indexKey));
-  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
-  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
-  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
-  doBatchOperation(std::move(batch));
-
   const auto& serviceKey = MetaKeyUtils::serviceKey(cpp2::ExternalServiceType::ELASTICSEARCH);
   auto getRet = doGet(serviceKey);
   if (!nebula::ok(getRet)) {
@@ -213,6 +194,13 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     onFinished();
     return;
   }
+
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+  batchHolder->remove(std::move(indexKey));
+  auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
+  LastUpdateTimeMan::update(batchHolder.get(), timeInMilliSec);
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {

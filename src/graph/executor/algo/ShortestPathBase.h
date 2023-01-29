@@ -23,7 +23,7 @@ class ShortestPathBase {
                    std::unordered_map<std::string, std::string>* stats)
       : pathNode_(node), qctx_(qctx), stats_(stats) {
     singleShortest_ = node->singleShortest();
-    maxStep_ = node->stepRange()->max();
+    maxStep_ = node->stepRange().max();
   }
 
   virtual ~ShortestPathBase() {}
@@ -50,6 +50,8 @@ class ShortestPathBase {
   void addStats(RpcResponse& resp, size_t stepNum, int64_t timeInUSec, bool reverse) const;
 
   void addStats(PropRpcResponse& resp, int64_t timeInUSec) const;
+
+  folly::Executor* runner() const;
 
   template <typename Resp>
   StatusOr<Result::State> handleCompleteness(const storage::StorageRpcResponse<Resp>& rpcResp,

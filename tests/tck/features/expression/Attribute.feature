@@ -61,8 +61,8 @@ Feature: Attribute
       RETURN {k1 : 1, k2: true}.K1 AS k
       """
     Then the result should be, in any order:
-      | k            |
-      | UNKNOWN_PROP |
+      | k    |
+      | NULL |
     When executing query:
       """
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name
@@ -122,7 +122,7 @@ Feature: Attribute
       """
     Then the result should be, in any order:
       | not_exists_attr |
-      | UNKNOWN_PROP    |
+      | NULL            |
     When executing query:
       """
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.not_exists_attr

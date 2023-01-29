@@ -125,7 +125,7 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     auto& cols = edgeItem.get_schema().get_columns();
     for (auto& col : cols) {
       auto retCode = MetaServiceUtils::alterColumnDefs(
-          columns, prop, col, *edgeItem.op_ref(), std::move(allVersionedColumns), true);
+          columns, prop, col, *edgeItem.op_ref(), allVersionedColumns, true);
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "Alter edge column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);

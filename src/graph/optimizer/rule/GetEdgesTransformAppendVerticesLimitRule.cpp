@@ -58,7 +58,8 @@ bool GetEdgesTransformAppendVerticesLimitRule::match(OptContext *ctx,
   if (colNames[colSize - 2][0] != '_') {  // src
     return false;
   }
-  if (traverse->stepRange() != nullptr) {
+  const auto &stepRange = traverse->stepRange();
+  if (stepRange.min() != 1 || stepRange.max() != 1) {
     return false;
   }
   // Can't apply vertex filter in GetEdges
@@ -120,7 +121,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformAppendVerticesLimitRule::tra
 
   newLimitGroupNode->dependsOn(newAppendVerticesGroup);
 
-  auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges =
+      GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->offset() + limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }

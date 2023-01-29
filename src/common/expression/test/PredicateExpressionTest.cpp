@@ -31,7 +31,7 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     ASSERT_EQ(false, value.getBool());
   }
   {
-    // any(xxx IN nodes(p) WHERE xxx.player.age >= 19)
+    // any(n IN nodes(p) WHERE n.age >= 19)
     auto v1 = Vertex("101", {Tag("player", {{"name", "joe"}, {"age", 18}})});
     auto v2 = Vertex("102", {Tag("player", {{"name", "amber"}, {"age", 19}})});
     auto v3 = Vertex("103", {Tag("player", {{"name", "shawdan"}, {"age", 20}})});
@@ -40,25 +40,22 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     path.steps.emplace_back(Step(v2, 1, "like", 0, {}));
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
-    std::unordered_map<std::string, graph::AliasType> aliasTypeMap = {
-        {"xxx", graph::AliasType::kNode}};
+
     ArgumentList *argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = PredicateExpression::make(
         &pool,
         "any",
-        "xxx",
+        "n",
         FunctionCallExpression::make(&pool, "nodes", argList),
         RelationalExpression::makeGE(
             &pool,
-            graph::ExpressionUtils::rewriteAttr2LabelTagProp(
-                AttributeExpression::make(
-                    &pool,
-                    LabelAttributeExpression::make(&pool,
-                                                   LabelExpression::make(&pool, "xxx"),
-                                                   ConstantExpression::make(&pool, "player")),
-                    ConstantExpression::make(&pool, "age")),
-                aliasTypeMap),
+            AttributeExpression::make(
+                &pool,
+                AttributeExpression::make(&pool,
+                                          VariableExpression::makeInner(&pool, "n"),
+                                          ConstantExpression::make(&pool, "player")),
+                ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
     auto value = Expression::eval(expr, gExpCtxt);
@@ -96,25 +93,22 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
     path.steps.emplace_back(Step(v2, 1, "like", 0, {}));
     path.steps.emplace_back(Step(v3, 1, "like", 0, {}));
     gExpCtxt.setVar("p", path);
-    std::unordered_map<std::string, graph::AliasType> aliasTypeMap = {
-        {"xxx", graph::AliasType::kNode}};
+
     ArgumentList *argList = ArgumentList::make(&pool);
     argList->addArgument(VariableExpression::make(&pool, "p"));
     auto expr = PredicateExpression::make(
         &pool,
         "none",
-        "xxx",
+        "n",
         FunctionCallExpression::make(&pool, "nodes", argList),
         RelationalExpression::makeGE(
             &pool,
-            graph::ExpressionUtils::rewriteAttr2LabelTagProp(
-                AttributeExpression::make(
-                    &pool,
-                    LabelAttributeExpression::make(&pool,
-                                                   LabelExpression::make(&pool, "xxx"),
-                                                   ConstantExpression::make(&pool, "player")),
-                    ConstantExpression::make(&pool, "age")),
-                aliasTypeMap),
+            AttributeExpression::make(
+                &pool,
+                AttributeExpression::make(&pool,
+                                          VariableExpression::makeInner(&pool, "n"),
+                                          ConstantExpression::make(&pool, "player")),
+                ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
     auto value = Expression::eval(expr, gExpCtxt);

@@ -15,7 +15,7 @@ namespace nebula {
  * class RowReader::Cell
  *
  ********************************************/
-Value RowReader::Cell::value() const noexcept {
+Value RowReader::Cell::value() const {
   return iter_->reader_->getValueByIndex(iter_->index_);
 }
 
@@ -50,7 +50,7 @@ RowReader::Iterator& RowReader::Iterator::operator++() {
  *
  ********************************************/
 
-bool RowReader::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept {
+bool RowReader::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
   schema_ = schema;
   data_ = row;
 

@@ -197,8 +197,8 @@ function package {
 function _find_dump_syms_tool {
     if [[ -x ${build_dir}/third-party/install/bin/dump_syms ]]; then
         dump_syms_tool_dir=${build_dir}/third-party/install/bin
-    elif [[ -x /opt/vesoft/third-party/2.0/bin/dump_syms ]]; then
-        dump_syms_tool_dir=/opt/vesoft/third-party/2.0/bin
+    elif [[ -x /opt/vesoft/third-party/3.3/bin/dump_syms ]]; then
+        dump_syms_tool_dir=/opt/vesoft/third-party/3.3/bin
     else
         echo ">>> Failed to find the dump_syms tool <<<"
         exit 1

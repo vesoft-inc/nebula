@@ -26,7 +26,7 @@ struct DataSet {
 
   DataSet() = default;
   explicit DataSet(std::vector<std::string> columns) : colNames(std::move(columns)) {}
-  DataSet(const DataSet& ds) noexcept {
+  DataSet(const DataSet& ds) {
     colNames = ds.colNames;
     rows = ds.rows;
   }
@@ -34,7 +34,7 @@ struct DataSet {
     colNames = std::move(ds.colNames);
     rows = std::move(ds.rows);
   }
-  DataSet& operator=(const DataSet& ds) noexcept {
+  DataSet& operator=(const DataSet& ds) {
     if (&ds != this) {
       colNames = ds.colNames;
       rows = ds.rows;

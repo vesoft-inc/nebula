@@ -64,24 +64,24 @@ class GeoIndex {
       : rcParams_(params), pointsOnly_(pointsOnly) {}
 
   // Build geo index for the geography g
-  std::vector<uint64_t> indexCells(const Geography& g) const noexcept;
+  std::vector<uint64_t> indexCells(const Geography& g) const;
 
   // Query the geo index
   // ST_Intersects(g, x), x is the indexed geography column
-  std::vector<ScanRange> intersects(const Geography& g) const noexcept;
+  std::vector<ScanRange> intersects(const Geography& g) const;
   // ST_Covers(g, x), x is the indexed geography column
-  std::vector<ScanRange> covers(const Geography& g) const noexcept;
+  std::vector<ScanRange> covers(const Geography& g) const;
   // ST_CoveredBy(g, x), x is the indexed geography column
-  std::vector<ScanRange> coveredBy(const Geography& g) const noexcept;
+  std::vector<ScanRange> coveredBy(const Geography& g) const;
   // ST_Distance(g, x, distance), x is the indexed geography column
-  std::vector<ScanRange> dWithin(const Geography& g, double distance) const noexcept;
+  std::vector<ScanRange> dWithin(const Geography& g, double distance) const;
 
  private:
-  std::vector<ScanRange> intersects(const S2Region& r, bool isPoint = false) const noexcept;
+  std::vector<ScanRange> intersects(const S2Region& r, bool isPoint = false) const;
 
-  std::vector<S2CellId> coveringCells(const S2Region& r, bool isPoint = false) const noexcept;
+  std::vector<S2CellId> coveringCells(const S2Region& r, bool isPoint = false) const;
 
-  std::vector<S2CellId> ancestorCells(const std::vector<S2CellId>& cells) const noexcept;
+  std::vector<S2CellId> ancestorCells(const std::vector<S2CellId>& cells) const;
 
  private:
   RegionCoverParams rcParams_;

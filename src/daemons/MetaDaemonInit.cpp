@@ -147,16 +147,18 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     LOG(ERROR) << "Meta version is invalid";
     return nullptr;
   } else if (version == nebula::meta::MetaVersion::V1) {
-    LOG(ERROR) << "Can't upgrade meta from V1 to V3";
+    LOG(ERROR) << "Can't upgrade meta from V1 to V3_4";
     return nullptr;
   } else if (version == nebula::meta::MetaVersion::V2) {
-    auto ret = nebula::meta::MetaVersionMan::updateMetaV2ToV3(engine);
+    LOG(ERROR) << "Can't upgrade meta from V2 to V3_4";
+    return nullptr;
+  } else if (version == nebula::meta::MetaVersion::V3) {
+    auto ret = nebula::meta::MetaVersionMan::updateMetaV3ToV3_4(engine);
     if (!ret.ok()) {
-      LOG(ERROR) << "Update meta from V2 to V3 failed " << ret;
+      LOG(ERROR) << "Update meta from V3 to V3_4 failed " << ret;
       return nullptr;
     }
-
-    nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V3);
+    nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V3_4);
   }
 
   LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;

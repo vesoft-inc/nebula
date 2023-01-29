@@ -292,6 +292,14 @@ Value::Value(Duration&& v) {
   setDU(std::make_unique<Duration>(std::move(v)));
 }
 
+Value::Value(const std::unordered_map<std::string, Value>& map) {
+  setM(std::make_unique<Map>(map));
+}
+
+Value::Value(std::unordered_map<std::string, Value>&& map) {
+  setM(std::make_unique<Map>(std::move(map)));
+}
+
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
       {Type::__EMPTY__, "__EMPTY__"},
@@ -1177,265 +1185,265 @@ Value& Value::operator=(const Value& rhs) {
 }
 
 void Value::setN(const NullType& v) {
-  type_ = Type::NULLVALUE;
   new (std::addressof(value_.nVal)) NullType(v);
+  type_ = Type::NULLVALUE;
 }
 
 void Value::setN(NullType&& v) {
-  type_ = Type::NULLVALUE;
   new (std::addressof(value_.nVal)) NullType(std::move(v));
+  type_ = Type::NULLVALUE;
 }
 
 void Value::setB(const bool& v) {
-  type_ = Type::BOOL;
   new (std::addressof(value_.bVal)) bool(v);  // NOLINT
+  type_ = Type::BOOL;
 }
 
 void Value::setB(bool&& v) {
-  type_ = Type::BOOL;
   new (std::addressof(value_.bVal)) bool(std::move(v));  // NOLINT
+  type_ = Type::BOOL;
 }
 
 void Value::setI(const int64_t& v) {
-  type_ = Type::INT;
   new (std::addressof(value_.iVal)) int64_t(v);  // NOLINT
+  type_ = Type::INT;
 }
 
 void Value::setI(int64_t&& v) {
-  type_ = Type::INT;
   new (std::addressof(value_.iVal)) int64_t(std::move(v));  // NOLINT
+  type_ = Type::INT;
 }
 
 void Value::setF(const double& v) {
-  type_ = Type::FLOAT;
   new (std::addressof(value_.fVal)) double(v);  // NOLINT
+  type_ = Type::FLOAT;
 }
 
 void Value::setF(double&& v) {
-  type_ = Type::FLOAT;
   new (std::addressof(value_.fVal)) double(std::move(v));  // NOLINT
+  type_ = Type::FLOAT;
 }
 
 void Value::setS(std::unique_ptr<std::string> v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(std::move(v));
+  type_ = Type::STRING;
 }
 
 void Value::setS(const std::string& v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
+  type_ = Type::STRING;
 }
 
 void Value::setS(std::string&& v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(std::move(v)));
+  type_ = Type::STRING;
 }
 
 void Value::setS(const char* v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
+  type_ = Type::STRING;
 }
 
 void Value::setD(const Date& v) {
-  type_ = Type::DATE;
   new (std::addressof(value_.dVal)) Date(v);
+  type_ = Type::DATE;
 }
 
 void Value::setD(Date&& v) {
-  type_ = Type::DATE;
   new (std::addressof(value_.dVal)) Date(std::move(v));
+  type_ = Type::DATE;
 }
 
 void Value::setT(const Time& v) {
-  type_ = Type::TIME;
   new (std::addressof(value_.tVal)) Time(v);
+  type_ = Type::TIME;
 }
 
 void Value::setT(Time&& v) {
-  type_ = Type::TIME;
   new (std::addressof(value_.tVal)) Time(std::move(v));
+  type_ = Type::TIME;
 }
 
 void Value::setDT(const DateTime& v) {
-  type_ = Type::DATETIME;
   new (std::addressof(value_.dtVal)) DateTime(v);
+  type_ = Type::DATETIME;
 }
 
 void Value::setDT(DateTime&& v) {
-  type_ = Type::DATETIME;
   new (std::addressof(value_.dtVal)) DateTime(std::move(v));
+  type_ = Type::DATETIME;
 }
 
 void Value::setV(Vertex* v) {
-  type_ = Type::VERTEX;
   value_.vVal = v;
   value_.vVal->ref();
+  type_ = Type::VERTEX;
 }
 
 void Value::setV(const Vertex& v) {
-  type_ = Type::VERTEX;
   new (std::addressof(value_.vVal)) Vertex*(new Vertex(v));
+  type_ = Type::VERTEX;
 }
 
 void Value::setV(Vertex&& v) {
-  type_ = Type::VERTEX;
   new (std::addressof(value_.vVal)) Vertex*(new Vertex(std::move(v)));
+  type_ = Type::VERTEX;
 }
 
 void Value::setE(Edge* v) {
-  type_ = Type::EDGE;
   value_.eVal = v;
   value_.eVal->ref();
+  type_ = Type::EDGE;
 }
 
 void Value::setE(const Edge& v) {
-  type_ = Type::EDGE;
   new (std::addressof(value_.eVal)) Edge*(new Edge(v));
+  type_ = Type::EDGE;
 }
 
 void Value::setE(Edge&& v) {
-  type_ = Type::EDGE;
   new (std::addressof(value_.eVal)) Edge*(new Edge(std::move(v)));
+  type_ = Type::EDGE;
 }
 
 void Value::setP(const std::unique_ptr<Path>& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(*v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(std::unique_ptr<Path>&& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(std::move(v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(const Path& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(Path&& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(std::move(v)));
+  type_ = Type::PATH;
 }
 
 void Value::setL(const std::unique_ptr<List>& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(*v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(std::unique_ptr<List>&& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(std::move(v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(const List& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(List&& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(std::move(v)));
+  type_ = Type::LIST;
 }
 
 void Value::setM(const std::unique_ptr<Map>& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(*v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(std::unique_ptr<Map>&& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(std::move(v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(const Map& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(Map&& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(std::move(v)));
+  type_ = Type::MAP;
 }
 
 void Value::setU(const std::unique_ptr<Set>& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(new Set(*v));
+  type_ = Type::SET;
 }
 
 void Value::setU(std::unique_ptr<Set>&& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(std::move(v));
+  type_ = Type::SET;
 }
 
 void Value::setU(const Set& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(new Set(v));
+  type_ = Type::SET;
 }
 
 void Value::setU(Set&& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.vVal)) std::unique_ptr<Set>(new Set(std::move(v)));
+  type_ = Type::SET;
 }
 
 void Value::setG(const std::unique_ptr<DataSet>& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(*v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(std::unique_ptr<DataSet>&& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(std::move(v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(const DataSet& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(DataSet&& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
+  type_ = Type::DATASET;
 }
 
 void Value::setGG(const std::unique_ptr<Geography>& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(*v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(std::unique_ptr<Geography>&& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(std::move(v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(const Geography& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(Geography&& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(std::move(v)));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setDU(const std::unique_ptr<Duration>& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(*v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(std::unique_ptr<Duration>&& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(std::move(v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(const Duration& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(Duration&& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(std::move(v)));
+  type_ = Type::DURATION;
 }
 
 // Convert Nebula::Value to a value compatible with Json standard
@@ -1507,7 +1515,7 @@ folly::dynamic Value::toJson() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
   return folly::dynamic(nullptr);
 }
 
@@ -1553,7 +1561,7 @@ folly::dynamic Value::getMetaData() const {
       break;
   }
 
-  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
   return folly::dynamic(nullptr);
 }
 
@@ -1581,7 +1589,7 @@ std::string Value::toString() const {
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
       }
-      LOG(DFATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      DLOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
       return "__NULL_BAD_TYPE__";
     }
     case Value::Type::BOOL: {
@@ -1635,7 +1643,7 @@ std::string Value::toString() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(DFATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
   return "__NULL_BAD_TYPE__";
 }
 
@@ -1858,7 +1866,7 @@ Value Value::lessThan(const Value& v) const {
       return kNullBadType;
     }
   }
-  LOG(DFATAL) << "Unknown type " << static_cast<int>(v.type());
+  DLOG(FATAL) << "Unknown type " << static_cast<int>(v.type());
   return Value::kNullBadType;
 }
 
@@ -1957,7 +1965,7 @@ Value Value::equal(const Value& v) const {
       return false;
     }
   }
-  LOG(DFATAL) << "Unknown type " << static_cast<int>(v.type());
+  DLOG(FATAL) << "Unknown type " << static_cast<int>(v.type());
   return Value::kNullBadType;
 }
 
@@ -1979,7 +1987,7 @@ bool Value::implicitBool() const {
     case Type::LIST:
       return !getList().empty();
     default:
-      LOG(DFATAL) << "Impossible to reach here!";
+      DLOG(FATAL) << "Impossible to reach here!";
       return false;
   }
 }
@@ -2262,7 +2270,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return Value::kNullValue;
         }
       }
-      LOG(DFATAL) << "Unknown type: " << rhs.type();
+      DLOG(FATAL) << "Unknown type: " << rhs.type();
       return Value::kNullBadType;
     }
     case Value::Type::VERTEX: {
@@ -2696,7 +2704,7 @@ bool operator<(const Value& lhs, const Value& rhs) {
       return lhs.getGeography() < rhs.getGeography();
     }
     case Value::Type::DURATION: {
-      LOG(DFATAL) << "Duration is not comparable.";
+      DLOG(FATAL) << "Duration is not comparable.";
       return false;
     }
     case Value::Type::NULLVALUE:
@@ -2704,7 +2712,7 @@ bool operator<(const Value& lhs, const Value& rhs) {
       return false;
     }
   }
-  LOG(DFATAL) << "Unknown type " << static_cast<int>(lType);
+  DLOG(FATAL) << "Unknown type " << static_cast<int>(lType);
   return false;
 }
 
@@ -2800,7 +2808,7 @@ bool Value::equals(const Value& rhs) const {
       return false;
     }
   }
-  LOG(DFATAL) << "Unknown type " << static_cast<int>(type());
+  DLOG(FATAL) << "Unknown type " << static_cast<int>(type());
   return false;
 }
 
@@ -2858,11 +2866,11 @@ std::size_t Value::hash() const {
       return std::hash<Duration>()(getDuration());
     }
     case Type::DATASET: {
-      LOG(DFATAL) << "Hash for DATASET has not been implemented";
+      DLOG(FATAL) << "Hash for DATASET has not been implemented";
       break;
     }
     default: {
-      LOG(DFATAL) << "Unknown type";
+      DLOG(FATAL) << "Unknown type";
     }
   }
   return ~0UL;

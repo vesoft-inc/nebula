@@ -17,57 +17,30 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   auto &lvalue = left()->eval(ctx);
   auto &rvalue = right()->eval(ctx);
   DCHECK(rvalue.isStr());
+  auto la = [&rvalue](const Tag &t) { return t.name == rvalue.getStr(); };
 
   // TODO(dutor) Take care of the builtin properties, _src, _vid, _type, etc.
   switch (lvalue.type()) {
-    case Value::Type::MAP:
-      return lvalue.getMap().at(rvalue.getStr());
+    case Value::Type::MAP: {
+      auto &m = lvalue.getMap().kvs;
+      auto iter = m.find(rvalue.getStr());
+      if (iter == m.end()) {
+        return Value::kNullValue;
+      }
+      return iter->second;
+    }
     case Value::Type::VERTEX: {
-      /*
-       * WARNING(Xuntao): Vertices shall not be evaluated as AttributeExpressions,
-       * since there shall always be a tag specified in the format of:
-       * var.tag.property. Due to design flaws, however, we have to keep
-       * this case segment.
-       */
       if (rvalue.getStr() == kVid) {
         result_ = lvalue.getVertex().vid;
         return result_;
       }
-      /*
-       * WARNING(Xuntao): the following code snippet is dedicated to address the legacy
-       * problem of treating LabelTagProperty expressions as Attribute expressions.
-       * This snippet is necessary to allow users to write var.tag.prop in
-       * ListComprehensionExpression without making structural changes to the implementation.
-       */
-      if (left()->kind() != Expression::Kind::kAttribute) {
-        if (right()->kind() == Expression::Kind::kConstant &&
-            rvalue.type() == Value::Type::STRING) {
-          auto rStr = rvalue.getStr();
-          for (auto &tag : lvalue.getVertex().tags) {
-            if (rStr.compare(tag.name) == 0) {
-              return lvalue;
-            }
-          }
-          LOG(ERROR) << "Tag not found for: " << rStr
-                     << "Please check whether the related expression "
-                     << "follows the format of vertex.tag.property.";
-        }
-      } else if (left()->kind() == Expression::Kind::kAttribute &&
-                 dynamic_cast<AttributeExpression *>(left())->right()->kind() ==
-                     Expression::Kind::kConstant) {
-        auto &tagName = dynamic_cast<AttributeExpression *>(left())->right()->eval(ctx).getStr();
-        for (auto &tag : lvalue.getVertex().tags) {
-          if (tagName.compare(tag.name) != 0) {
-            continue;
-          } else {
-            auto iter = tag.props.find(rvalue.getStr());
-            if (iter != tag.props.end()) {
-              return iter->second;
-            }
-          }
-        }
+      const auto &tags = lvalue.getVertex().tags;
+      auto iter = std::find_if(tags.begin(), tags.end(), la);
+      if (iter == tags.end()) {
+        return Value::kNullValue;
       }
-      return Value::kNullUnknownProp;
+      result_.setMap(Map(iter->props));
+      return result_;
     }
     case Value::Type::EDGE: {
       DCHECK(!rvalue.getStr().empty());
@@ -98,11 +71,14 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
     case Value::Type::DATETIME:
       result_ = time::TimeUtils::getDateTimeAttr(lvalue.getDateTime(), rvalue.getStr());
       return result_;
-    default:
-      if (lvalue.isNull() && lvalue.getNull() == NullType::UNKNOWN_PROP) {
-        // return UNKNOWN_PROP as plain null values, instead of bad type.
-        return Value::kNullValue;
+    case Value::Type::NULLVALUE: {
+      if (lvalue.isBadNull()) {
+        return Value::kNullBadType;
       }
+      return Value::kNullValue;
+    }
+    default:
+      // Unexpected data types
       return Value::kNullBadType;
   }
 }

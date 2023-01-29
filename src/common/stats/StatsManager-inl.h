@@ -26,7 +26,7 @@ StatsManager::VT StatsManager::readValue(StatsHolder& stats,
       return stats.template rate<VT>(level);
   }
 
-  LOG(DFATAL) << "Unknown statistic method";
+  DLOG(FATAL) << "Unknown statistic method";
   return StatsManager::VT(0);
 }
 

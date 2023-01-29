@@ -1644,6 +1644,14 @@ yield_sentence
         s->setWhereClause($4);
         $$ = s;
     }
+    | KW_RETURN yield_columns {
+        auto *s = new YieldSentence($2);
+        $$ = s;
+    }
+    | KW_RETURN KW_DISTINCT yield_columns {
+        auto *s = new YieldSentence($3, true);
+        $$ = s;
+    }
     ;
 
 unwind_clause
@@ -1674,7 +1682,15 @@ match_clause
         $$ = new MatchClause($2, $3, false/*optional*/);
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
-        $$ = new MatchClause($3, $4, true);
+        if ($4 != nullptr) {
+            SCOPE_EXIT {
+                delete $3;
+                delete $4;
+            };
+            throw nebula::GraphParser::syntax_error(@4, "Where clause in optional match is not supported.");
+        } else {
+            $$ = new MatchClause($3, nullptr, true);
+        }
     }
     ;
 
@@ -1720,10 +1736,7 @@ reading_with_clauses
     ;
 
 match_sentence
-    : match_return {
-        $$ = new MatchSentence(new MatchClauseList(), $1);
-    }
-    | reading_clauses match_return {
+    : reading_clauses match_return {
         $$ = new MatchSentence($1, $2);
     }
     | reading_with_clauses match_return {

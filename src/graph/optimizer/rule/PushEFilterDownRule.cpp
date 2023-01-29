@@ -174,7 +174,7 @@ std::string PushEFilterDownRule::toString() const {
       ret = EdgePropertyExpression::make(pool, std::move(edgeNameResult).value(), exp->prop());
       break;
     default:
-      LOG(DFATAL) << "Unexpected expr: " << exp->kind();
+      DLOG(FATAL) << "Unexpected expr: " << exp->kind();
   }
   return ret;
 }

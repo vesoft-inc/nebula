@@ -53,6 +53,10 @@ class MatchPathPatternExpression final : public Expression {
     return *matchPath_;
   }
 
+  MatchPath* matchPathPtr() const {
+    return matchPath_.get();
+  }
+
  private:
   friend ObjectPool;
   explicit MatchPathPatternExpression(ObjectPool* pool, std::unique_ptr<MatchPath>&& matchPath)
@@ -60,12 +64,12 @@ class MatchPathPatternExpression final : public Expression {
 
   // This expression contains variable implicitly, so we don't support persist or transform it.
   void writeTo(Encoder&) const override {
-    LOG(DFATAL) << "Not implemented";
+    LOG(FATAL) << "Not implemented";
   }
 
   // This expression contains variable implicitly, so we don't support persist or transform it.
   void resetFrom(Decoder&) override {
-    LOG(DFATAL) << "Not implemented";
+    LOG(FATAL) << "Not implemented";
   }
 
  private:

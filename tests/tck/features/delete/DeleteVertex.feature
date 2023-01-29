@@ -108,7 +108,7 @@ Feature: Delete string vid of vertex
       | like._dst     |
       | "Kobe Bryant" |
       | "Grant Hill"  |
-      | -"Rudy Gay"   |
+      | "Rudy Gay"    |
     # before delete hash id vertex to check value by go
     When executing query:
       """

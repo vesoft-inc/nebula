@@ -47,10 +47,6 @@ void ExtractPropExprVisitor::visit(VariableExpression* expr) {
   UNUSED(expr);
 }
 
-void ExtractPropExprVisitor::visit(SubscriptExpression* expr) {
-  reportError(expr);
-}
-
 void ExtractPropExprVisitor::visit(LabelExpression* expr) {
   reportError(expr);
 }
@@ -93,7 +89,7 @@ void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
     }
   }
@@ -111,7 +107,7 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }
@@ -165,7 +161,7 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      LOG(DFATAL) << "Invalid Kind " << expr->kind();
+      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }

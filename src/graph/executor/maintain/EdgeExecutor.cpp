@@ -21,18 +21,13 @@ folly::Future<Status> CreateEdgeExecutor::execute() {
       .via(runner())
       .thenValue([ceNode, spaceId](StatusOr<EdgeType> resp) {
         memory::MemoryCheckGuard guard;
+        // throw in MemoryCheckGuard verified
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create edge `" << ceNode->getName()
                        << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -47,6 +42,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
       .via(runner())
       .thenValue([this, deNode, spaceId](StatusOr<meta::cpp2::Schema> resp) {
         memory::MemoryCheckGuard guard;
+        // MemoryTrackerVerified
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Desc edge `" << deNode->getName()
                        << "' failed: " << resp.status();
@@ -62,12 +58,6 @@ folly::Future<Status> DescEdgeExecutor::execute() {
                           .value(Value(std::move(ret).value()))
                           .iter(Iterator::Kind::kDefault)
                           .build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -82,18 +72,13 @@ folly::Future<Status> DropEdgeExecutor::execute() {
       .via(runner())
       .thenValue([deNode, spaceId](StatusOr<bool> resp) {
         memory::MemoryCheckGuard guard;
+        // MemoryTrackerVerified
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop edge `" << deNode->getName()
                        << "' failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -101,11 +86,8 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()
-      ->getMetaClient()
-      ->listEdgeSchemas(spaceId)
-      .via(runner())
-      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
+  return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).thenValue(
+      [this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edges failed: " << resp.status();
@@ -128,12 +110,6 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -161,12 +137,6 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
         }
         return finish(
             ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -187,12 +157,6 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
           return resp.status();
         }
         return finish(ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

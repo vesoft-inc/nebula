@@ -85,7 +85,7 @@ class TextSearchArgument final {
   std::string val_;
   std::string op_;
   int32_t fuzziness_{-2};
-  int32_t limit_{-1};
+  int32_t limit_{10000};
   int32_t timeout_{-1};
 };
 
@@ -114,12 +114,12 @@ class TextSearchExpression : public Expression {
   bool operator==(const Expression& rhs) const override;
 
   const Value& eval(ExpressionContext&) override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    DLOG(FATAL) << "TextSearchExpression has to be rewritten";
     return Value::kNullBadData;
   }
 
   void accept(ExprVisitor*) override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    DLOG(FATAL) << "TextSearchExpression has to be rewritten";
   }
 
   std::string toString() const override;
@@ -149,11 +149,11 @@ class TextSearchExpression : public Expression {
   }
 
   void writeTo(Encoder&) const override {
-    LOG(DFATAL) << "TextSearchExpression has to be rewritten";
+    LOG(FATAL) << "TextSearchExpression has to be rewritten";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(DFATAL) << "TextSearchExpression has to be reset";
+    LOG(FATAL) << "TextSearchExpression has to be reset";
   }
 
  private:

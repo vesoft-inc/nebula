@@ -73,12 +73,6 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -135,12 +129,6 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -215,7 +203,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->deleteEdges(param, std::move(edgeKeys))
@@ -228,12 +216,6 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc&) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 }  // namespace graph

@@ -143,6 +143,7 @@ nebula::cpp2::ErrorCode RocksEngine::commitBatchWrite(std::unique_ptr<WriteBatch
 nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key,
                                          std::string* value,
                                          const void* snapshot) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
@@ -161,6 +162,7 @@ nebula::cpp2::ErrorCode RocksEngine::get(const std::string& key,
 
 std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
                                           std::vector<std::string>* values) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   std::vector<rocksdb::Slice> slices;
   for (size_t index = 0; index < keys.size(); index++) {
@@ -184,23 +186,25 @@ std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
 nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   if (!isPlainTable_) {
     options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   } else {
     options.prefix_same_as_start = true;
   }
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
-  storageIter->reset(new RocksRangeIter(iter, start, end));
+  storageIter->reset(new RocksRangeIter(std::move(iter), start, end));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
                                             std::unique_ptr<KVIterator>* storageIter,
                                             const void* snapshot) {
+  memory::MemoryCheckOffGuard guard;
   // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
   // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
   if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
@@ -213,58 +217,62 @@ nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
 nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& prefix,
                                                          const void* snapshot,
                                                          std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
   options.prefix_same_as_start = true;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
     const std::string& prefix, const void* snapshot, std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   if (snapshot != nullptr) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
   // prefix_same_as_start is false by default
   options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
                                                      const std::string& prefix,
                                                      std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   if (!isPlainTable_) {
     options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   } else {
     options.prefix_same_as_start = true;
   }
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
-  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  storageIter->reset(new RocksPrefixIter(std::move(iter), prefix));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
+  memory::MemoryCheckOffGuard guard;
   rocksdb::ReadOptions options;
   options.total_order_seek = true;
-  rocksdb::Iterator* iter = db_->NewIterator(options);
+  std::unique_ptr<rocksdb::Iterator> iter(db_->NewIterator(options));
   iter->SeekToFirst();
-  storageIter->reset(new RocksCommonIter(iter));
+  storageIter->reset(new RocksCommonIter(std::move(iter)));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 

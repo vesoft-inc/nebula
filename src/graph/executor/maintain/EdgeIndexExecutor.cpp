@@ -27,6 +27,7 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
       .via(runner())
       .thenValue([ceiNode, spaceId](StatusOr<IndexID> resp) {
         memory::MemoryCheckGuard guard;
+        // MemoryTrackerVerified
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Create index `" << ceiNode->getIndexName()
                        << "' at edge: `" << ceiNode->getSchemaName()
@@ -34,12 +35,6 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
           return resp.status();
         }
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -60,12 +55,6 @@ folly::Future<Status> DropEdgeIndexExecutor::execute() {
           return resp.status();
         }
         return Status::OK();
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -94,12 +83,6 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
         }
         return finish(
             ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -127,12 +110,6 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
         }
         return finish(
             ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -141,11 +118,8 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
   auto *iNode = asNode<ShowEdgeIndexes>(node());
   const auto &bySchema = iNode->name();
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()
-      ->getMetaClient()
-      ->listEdgeIndexes(spaceId)
-      .via(runner())
-      .thenValue([this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
+  return qctx()->getMetaClient()->listEdgeIndexes(spaceId).via(runner()).thenValue(
+      [this, spaceId, bySchema](StatusOr<std::vector<meta::cpp2::IndexItem>> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge indexes failed" << resp.status();
@@ -190,12 +164,6 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -203,11 +171,8 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()
-      ->getMetaClient()
-      ->listEdgeIndexStatus(spaceId)
-      .via(runner())
-      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
+  return qctx()->getMetaClient()->listEdgeIndexStatus(spaceId).via(runner()).thenValue(
+      [this, spaceId](StatusOr<std::vector<meta::cpp2::IndexStatus>> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edge index status failed"
@@ -229,12 +194,6 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
-      })
-      .thenError(
-          folly::tag_t<std::bad_alloc>{},
-          [](const std::bad_alloc &) { return folly::makeFuture<Status>(memoryExceededStatus()); })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception &e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 

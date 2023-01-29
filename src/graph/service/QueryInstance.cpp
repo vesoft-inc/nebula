@@ -38,7 +38,6 @@ QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *opti
 
 void QueryInstance::execute() {
   try {
-    memory::MemoryCheckGuard guard1;
     Status status = validateAndOptimize();
     if (!status.ok()) {
       onError(std::move(status));
@@ -55,7 +54,6 @@ void QueryInstance::execute() {
     // series of Executors through the Scheduler to drive the execution of the Executors.
     scheduler_->schedule()
         .thenValue([this](Status s) {
-          memory::MemoryCheckGuard guard2;
           if (s.ok()) {
             this->onFinish();
           } else {
@@ -67,7 +65,8 @@ void QueryInstance::execute() {
         .thenError(folly::tag_t<std::exception>{},
                    [this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
   } catch (std::bad_alloc &e) {
-    onError(Executor::memoryExceededStatus());
+    onError(Status::GraphMemoryExceeded(
+        "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
   } catch (std::exception &e) {
     onError(Status::Error("%s", e.what()));
   } catch (...) {
@@ -138,6 +137,7 @@ void QueryInstance::onFinish() {
   rctx->finish();
 
   rctx->session()->deleteQuery(qctx_.get());
+  scheduler_->waitFinish();
   // The `QueryInstance' is the root node holding all resources during the
   // execution. When the whole query process is done, it's safe to release this
   // object, as long as no other contexts have chances to access these resources
@@ -191,6 +191,8 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kUserNotFound:
     case Status::Code::kListenerNotFound:
     case Status::Code::kSessionNotFound:
+    case Status::Code::kGraphMemoryExceeded:
+    case Status::Code::kStorageMemoryExceeded:
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }

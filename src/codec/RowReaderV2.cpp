@@ -9,7 +9,7 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
-bool RowReaderV2::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept {
+bool RowReaderV2::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
   RowReader::resetImpl(schema, row);
 
   DCHECK(!!schema_);
@@ -45,12 +45,12 @@ bool RowReaderV2::isNull(size_t pos) const {
   return flag != 0;
 }
 
-Value RowReaderV2::getValueByName(const std::string& prop) const noexcept {
+Value RowReaderV2::getValueByName(const std::string& prop) const {
   int64_t index = schema_->getFieldIndex(prop);
   return getValueByIndex(index);
 }
 
-Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
+Value RowReaderV2::getValueByIndex(const int64_t index) const {
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return Value(NullType::UNKNOWN_PROP);
   }
@@ -208,8 +208,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
     case PropertyType::UNKNOWN:
       break;
   }
-  LOG(DFATAL) << "Should not reach here, illegal property type: "
-              << static_cast<int>(field->type());
+  LOG(FATAL) << "Should not reach here, illegal property type: " << static_cast<int>(field->type());
   return Value::kNullBadType;
 }
 

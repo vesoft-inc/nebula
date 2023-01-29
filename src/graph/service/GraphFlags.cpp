@@ -12,7 +12,7 @@ DEFINE_int32(client_idle_timeout_secs,
              28800,
              "The number of seconds NebulaGraph service waits before closing the idle connections");
 DEFINE_int32(session_idle_timeout_secs, 28800, "The number of seconds before idle sessions expire");
-DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expired sessions");
+DEFINE_int32(session_reclaim_interval_secs, 60, "Period we try to reclaim expired sessions");
 DEFINE_int32(num_netio_threads,
              0,
              "The number of networking threads, 0 for number of physical CPU cores");
@@ -70,7 +70,6 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
-DEFINE_bool(enable_toss, false, "Whether to enable toss feature");
 DEFINE_bool(enable_data_balance, true, "Whether to enable data balance feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");

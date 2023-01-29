@@ -891,6 +891,8 @@ class TestPermission(NebulaTestSuite):
         assert ret
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
         assert ret
+        ret, self.nopClient = self.spawn_nebula_client_and_auth('nop', 'nop')
+        assert ret
 
         query = 'CREATE SPACE space4(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))'
         resp = self.execute(query)
@@ -927,6 +929,12 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
         expected_result = [['space2']]
+        self.check_column_names(resp, expected_column_names)
+        self.check_out_of_order_result(resp, expected_result)
+
+        resp = self.nopClient.execute(query)
+        self.check_resp_succeeded(resp)
+        expected_result = []
         self.check_column_names(resp, expected_column_names)
         self.check_out_of_order_result(resp, expected_result)
 
@@ -987,6 +995,8 @@ class TestPermission(NebulaTestSuite):
         assert ret
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
         assert ret
+        ret, self.nopClient = self.spawn_nebula_client_and_auth('nop', 'nop')
+        assert ret
 
         query = 'SHOW ROLES IN space5'
         expected_result = []
@@ -1020,6 +1030,10 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expected_result)
+
+        expected_result = []
+        resp = self.nopClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         # clean up
         query = 'DROP SPACE IF EXISTS space5'

@@ -14,20 +14,11 @@ namespace storage {
 ProcessorCounters kGetPropCounters;
 
 void GetPropProcessor::process(const cpp2::GetPropRequest& req) {
-  try {
-    if (executor_ != nullptr) {
-      executor_->add([req, this]() { this->doProcess(req); });
-    } else {
-      doProcess(req);
-    }
-  } catch (std::bad_alloc& e) {
-    memoryExceeded_ = true;
-    onError();
-  } catch (std::exception& e) {
-    LOG(ERROR) << e.what();
-    onError();
-  } catch (...) {
-    onError();
+  if (executor_ != nullptr) {
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
+  } else {
+    doProcess(req);
   }
 }
 
@@ -65,6 +56,7 @@ void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
 }
 
 void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
+  memory::MemoryCheckGuard guard;
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
   std::unordered_set<PartitionID> failedParts;
   if (!isEdge_) {
@@ -125,6 +117,7 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
 }
 
 void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
+  memory::MemoryCheckOffGuard offGuard;
   for (size_t i = 0; i < req.get_parts().size(); i++) {
     nebula::DataSet result = resultDataSet_;
     results_.emplace_back(std::move(result));
@@ -137,30 +130,36 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
     i++;
   }
 
-  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
-    memory::MemoryCheckGuard guard;
-    CHECK(!t.hasException());
-    const auto& tries = t.value();
-    size_t sum = 0;
-    for (size_t j = 0; j < tries.size(); j++) {
-      if (tries[j].hasException()) {
+  folly::collectAll(futures)
+      .via(executor_)
+      .thenTry([this](auto&& t) mutable {
+        memory::MemoryCheckGuard guard;
+        CHECK(!t.hasException());
+        const auto& tries = t.value();
+        size_t sum = 0;
+        for (size_t j = 0; j < tries.size(); j++) {
+          if (tries[j].hasException()) {
+            onError();
+            return;
+          }
+          sum += results_[j].size();
+        }
+        resultDataSet_.rows.reserve(sum);
+        for (size_t j = 0; j < tries.size(); j++) {
+          const auto& [code, partId] = tries[j].value();
+          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(code, spaceId_, partId);
+          } else {
+            resultDataSet_.append(std::move(results_[j]));
+          }
+        }
+        this->onProcessFinished();
+        this->onFinished();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
         onError();
-        return;
-      }
-      sum += results_[j].size();
-    }
-    resultDataSet_.rows.reserve(sum);
-    for (size_t j = 0; j < tries.size(); j++) {
-      const auto& [code, partId] = tries[j].value();
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        handleErrorCode(code, spaceId_, partId);
-      } else {
-        resultDataSet_.append(std::move(results_[j]));
-      }
-    }
-    this->onProcessFinished();
-    this->onFinished();
-  });
+      });
 }
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor::runInExecutor(
@@ -171,6 +170,10 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
   return folly::via(executor_,
                     [this, context, result, partId, input = std::move(rows)]() {
                       memory::MemoryCheckGuard guard;
+                      if (memoryExceeded_) {
+                        return std::make_pair(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED,
+                                              partId);
+                      }
                       if (!isEdge_) {
                         auto plan = buildTagPlan(context, result);
                         for (const auto& row : input) {
@@ -215,17 +218,11 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
                         return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
                       }
                     })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [this](const std::bad_alloc&) {
-                   memoryExceeded_ = true;
-                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
-                       std::runtime_error("Memory Limit Exceeded, " +
-                                          memory::MemoryStats::instance().toString()));
-                 })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        LOG(ERROR) << e.what();
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
         return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
-            std::runtime_error(e.what()));
+            std::runtime_error("Memory Limit Exceeded, " +
+                               memory::MemoryStats::instance().toString()));
       });
 }
 
