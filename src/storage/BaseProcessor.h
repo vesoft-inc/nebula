@@ -58,6 +58,7 @@ class BaseProcessor {
     if (counters_) {
       stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
     }
+
     delete this;
   }
 
@@ -83,6 +84,7 @@ class BaseProcessor {
 
     this->resp_.result_ref() = std::move(this->result_);
     this->promise_.setValue(std::move(this->resp_));
+
     delete this;
   }
 
@@ -177,7 +179,7 @@ struct MemoryCheckScope {
       processor_->memoryExceeded();
       processor_->onError();
     } catch (std::exception& e) {
-      LOG(ERROR) << processor_ << e.what();
+      LOG(ERROR) << e.what();
       processor_->onError();
     } catch (...) {
       processor_->onError();
