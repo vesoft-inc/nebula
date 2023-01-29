@@ -66,6 +66,7 @@ void GetDstBySrcProcessor::doProcess(const cpp2::GetDstBySrcRequest& req) {
 }
 
 void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req) {
+  memory::MemoryCheckGuard guard;
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
   auto plan = buildPlan(&contexts_.front(), &flatResult_);
   std::unordered_set<PartitionID> failedParts;
@@ -101,6 +102,7 @@ void GetDstBySrcProcessor::runInSingleThread(const cpp2::GetDstBySrcRequest& req
 }
 
 void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& req) {
+  memory::MemoryCheckOffGuard offGuard;
   for (size_t i = 0; i < req.get_parts().size(); i++) {
     partResults_.emplace_back();
     contexts_.emplace_back(RuntimeContext(planContext_.get()));
@@ -112,39 +114,45 @@ void GetDstBySrcProcessor::runInMultipleThread(const cpp2::GetDstBySrcRequest& r
     i++;
   }
 
-  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
-    memory::MemoryCheckGuard guard;
-    CHECK(!t.hasException());
-    const auto& tries = t.value();
+  folly::collectAll(futures)
+      .via(executor_)
+      .thenTry([this](auto&& t) mutable {
+        memory::MemoryCheckGuard guard;
+        CHECK(!t.hasException());
+        const auto& tries = t.value();
 
-    // size_t sum = 0;
-    // for (size_t j = 0; j < tries.size(); j++) {
-    //   const auto& [code, partId] = tries[j].value();
-    //   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    //     sum += partResults_[j].size();
-    //   }
-    // }
-    // flatResult_.reserve(sum);
+        // size_t sum = 0;
+        // for (size_t j = 0; j < tries.size(); j++) {
+        //   const auto& [code, partId] = tries[j].value();
+        //   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        //     sum += partResults_[j].size();
+        //   }
+        // }
+        // flatResult_.reserve(sum);
 
-    for (size_t j = 0; j < tries.size(); j++) {
-      if (tries[j].hasException()) {
-        onError();
-        return;
-      }
-      const auto& [code, partId] = tries[j].value();
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        handleErrorCode(code, spaceId_, partId);
-      } else {
-        for (auto& v : partResults_[j]) {
-          flatResult_.emplace_back(std::move(v));
+        for (size_t j = 0; j < tries.size(); j++) {
+          if (tries[j].hasException()) {
+            onError();
+            return;
+          }
+          const auto& [code, partId] = tries[j].value();
+          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(code, spaceId_, partId);
+          } else {
+            for (auto& v : partResults_[j]) {
+              flatResult_.emplace_back(std::move(v));
+            }
+            std::deque<Value>().swap(partResults_[j]);
+          }
         }
-        std::deque<Value>().swap(partResults_[j]);
-      }
-    }
 
-    this->onProcessFinished();
-    this->onFinished();
-  });
+        this->onProcessFinished();
+        this->onFinished();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        onError();
+      });
 }
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProcessor::runInExecutor(
@@ -155,6 +163,10 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
   return folly::via(executor_,
                     [this, context, result, partId, input = std::move(srcIds)]() mutable {
                       memory::MemoryCheckGuard guard;
+                      if (memoryExceeded_) {
+                        return std::make_pair(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED,
+                                              partId);
+                      }
                       auto plan = buildPlan(context, result);
                       for (const auto& src : input) {
                         auto& vId = src.getStr();
@@ -176,17 +188,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetDstBySrcProces
                       }
                       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
                     })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [this](const std::bad_alloc&) {
-                   memoryExceeded_ = true;
-                   return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
-                       std::runtime_error("Memory Limit Exceeded, " +
-                                          memory::MemoryStats::instance().toString()));
-                 })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        LOG(ERROR) << e.what();
-        return folly::makeFuture<std::pair<nebula::cpp2::ErrorCode, PartitionID>>(
-            std::runtime_error(e.what()));
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this, partId](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        return std::make_pair(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED, partId);
       });
 }
 

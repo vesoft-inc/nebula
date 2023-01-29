@@ -220,9 +220,7 @@ bool ESListener::writeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLo
   return true;
 }
 
-std::string ESListener::encodeAppliedId(LogID lastId,
-                                        TermID lastTerm,
-                                        LogID lastApplyLogId) const noexcept {
+std::string ESListener::encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const {
   std::string val;
   val.reserve(sizeof(LogID) * 2 + sizeof(TermID));
   val.append(reinterpret_cast<const char*>(&lastId), sizeof(LogID))

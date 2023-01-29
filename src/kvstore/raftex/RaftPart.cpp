@@ -87,15 +87,13 @@ class AppendLogsIterator final : public LogIterator {
 
   ~AppendLogsIterator() {
     if (!logs_.empty()) {
-      size_t notFulfilledPromise = 0;
       for (auto& log : logs_) {
         auto& promiseRef = std::get<4>(log);
         if (!promiseRef.isFulfilled()) {
-          ++notFulfilledPromise;
+          // When a AppendLogsIterator destruct before calling commit, the promise it not fulfilled.
+          // It only happens when exception is thrown, which make `commit` is never invoked.
+          promiseRef.setValue(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED);
         }
-      }
-      if (notFulfilledPromise > 0) {
-        LOG(FATAL) << "notFulfilledPromise == " << notFulfilledPromise;
       }
     }
   }

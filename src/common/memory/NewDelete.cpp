@@ -7,18 +7,12 @@
 
 #include "common/memory/Memory.h"
 /// Replace default new/delete with memory tracking versions.
-///
-/// Two condition need check before MemoryTracker is on
+/// ENABLE_MEMORY_TRACKER is defined by cmake only following two condition satisfied:
 ///   1. jemalloc is used
 ///      MemoryTracker need jemalloc API to get accurate size of alloc/free memory.
 ///   2. address_sanitizer is off
 ///      sanitizer has already override the new/delete operator,
 ///      only override new/delete operator only when address_sanitizer is off
-#ifdef ENABLE_JEMALLOC
-#ifndef ENABLE_ASAN
-#define ENABLE_MEMORY_TRACKER
-#endif
-#endif
 
 #ifdef ENABLE_MEMORY_TRACKER
 /// new
@@ -43,22 +37,22 @@ void *operator new[](std::size_t size, std::align_val_t align) {
 }
 
 void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
-  nebula::memory::trackMemory(size);
+  nebula::memory::trackMemoryNoThrow(size);
   return nebula::memory::newNoException(size);
 }
 
 void *operator new[](std::size_t size, const std::nothrow_t &) noexcept {
-  nebula::memory::trackMemory(size);
+  nebula::memory::trackMemoryNoThrow(size);
   return nebula::memory::newNoException(size);
 }
 
 void *operator new(std::size_t size, std::align_val_t align, const std::nothrow_t &) noexcept {
-  nebula::memory::trackMemory(size, align);
+  nebula::memory::trackMemoryNoThrow(size, align);
   return nebula::memory::newNoException(size, align);
 }
 
 void *operator new[](std::size_t size, std::align_val_t align, const std::nothrow_t &) noexcept {
-  nebula::memory::trackMemory(size, align);
+  nebula::memory::trackMemoryNoThrow(size, align);
   return nebula::memory::newNoException(size, align);
 }
 
@@ -103,4 +97,6 @@ void operator delete[](void *ptr, std::size_t size, std::align_val_t align) noex
   nebula::memory::deleteSized(ptr, size, align);
 }
 
+#else
+#pragma message("WARNING: MemoryTracker was disabled at compile time")
 #endif

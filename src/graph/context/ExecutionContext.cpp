@@ -21,12 +21,16 @@ void ExecutionContext::setValue(const std::string& name, Value&& val) {
 }
 
 void ExecutionContext::setResult(const std::string& name, Result&& result) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto& hist = valueMap_[name];
   hist.emplace_back(std::move(result));
 }
 
 void ExecutionContext::dropResult(const std::string& name) {
-  DCHECK_EQ(valueMap_.count(name), 1);
+  folly::RWSpinLock::WriteHolder holder(lock_);
+  if (valueMap_.count(name) == 0) {
+    return;
+  }
   auto& val = valueMap_[name];
   if (FLAGS_enable_async_gc) {
     GC::instance().clear(std::move(val));
@@ -36,6 +40,7 @@ void ExecutionContext::dropResult(const std::string& name) {
 }
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
+  folly::RWSpinLock::ReadHolder holder(lock_);
   auto it = valueMap_.find(name);
   CHECK(it != valueMap_.end());
   return it->second.size();
@@ -43,6 +48,7 @@ size_t ExecutionContext::numVersions(const std::string& name) const {
 
 // Only keep the last several versions of the Value
 void ExecutionContext::truncHistory(const std::string& name, size_t numVersionsToKeep) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto it = valueMap_.find(name);
   if (it != valueMap_.end()) {
     if (it->second.size() <= numVersionsToKeep) {
@@ -59,6 +65,7 @@ const Value& ExecutionContext::getValue(const std::string& name) const {
 }
 
 Value ExecutionContext::moveValue(const std::string& name) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto it = valueMap_.find(name);
   if (it != valueMap_.end() && !it->second.empty()) {
     return it->second.back().moveValue();
@@ -68,6 +75,7 @@ Value ExecutionContext::moveValue(const std::string& name) {
 }
 
 const Result& ExecutionContext::getResult(const std::string& name) const {
+  folly::RWSpinLock::ReadHolder holder(lock_);
   auto it = valueMap_.find(name);
   if (it != valueMap_.end() && !it->second.empty()) {
     return it->second.back();
@@ -79,6 +87,7 @@ const Result& ExecutionContext::getResult(const std::string& name) const {
 void ExecutionContext::setVersionedResult(const std::string& name,
                                           Result&& result,
                                           int64_t version) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto it = valueMap_.find(name);
   if (it != valueMap_.end()) {
     auto& hist = it->second;
@@ -101,6 +110,7 @@ const Result& ExecutionContext::getVersionedResult(const std::string& name, int6
 }
 
 const std::vector<Result>& ExecutionContext::getHistory(const std::string& name) const {
+  folly::RWSpinLock::ReadHolder holder(lock_);
   auto it = valueMap_.find(name);
   if (it != valueMap_.end()) {
     return it->second;
