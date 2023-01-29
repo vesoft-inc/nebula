@@ -110,7 +110,7 @@ class MemoryStats {
   }
 
   /// update limit (maximum usable bytes) of memory
-  /// limit will be set to (used memory + available memory)
+  /// limit will be set to "used memory + available"
   void updateLimit(int64_t available) {
     int64_t newLimit = used_ + available;
     setLimit(newLimit);
