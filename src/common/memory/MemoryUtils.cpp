@@ -58,7 +58,11 @@ DEFINE_double(memory_tracker_untracked_reserved_memory_mb,
               "memory (direct call malloc/free)");
 DEFINE_double(memory_tracker_limit_ratio,
               0.8,
-              "memory tacker usable memory ratio to (total_available - untracked_reserved_memory)");
+              "memory tacker usable memory ratio to (total - untracked_reserved_memory)");
+
+DEFINE_double(memory_tracker_available_ratio,
+              0.8,
+              "memory tacker available memory ratio to (available - untracked_reserved_memory)");
 
 using nebula::fs::FileUtils;
 
@@ -146,35 +150,44 @@ StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
 void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
 #ifdef ENABLE_MEMORY_TRACKER
   double limitRatio = FLAGS_memory_tracker_limit_ratio;
+  double availableRatio = FLAGS_memory_tracker_available_ratio;
+
   double untrackedMb = FLAGS_memory_tracker_untracked_reserved_memory_mb;
-  // update limit by Flags  (MemoryTracker track-able memory)
-  // three FLAGS_memory_tracker_limit_ratio conditions:
-  //     <= 1.0: Normal limit is set to ratio of trackable memory;
-  //             limit is set to FLAGS_memory_tracker_limit_ratio
-  //                     * (total - FLAGS_memory_tracker_untracked_reserved_memory_mb);
-  //     == 2.0: Special value for dynamic self adaptive;
-  //             limit is set to current used memory + available memory
-  //     == 3.0: Special value for disable memorytracker;
-  //             limit is set to max
+
+  // update MemoryTracker limit memory by Flags
   if (limitRatio > 0.0 && limitRatio <= 1.0) {
-    // update limit when either total or ratio changed
+    /**
+     * (<= 1.0): Normal limit is set to ratio of trackable memory;
+     *           limit = limitRatio * (total - untrackedMb)
+     */
     if (kCurrentTotal_ != total || kCurrentLimitRatio_ != limitRatio) {
       double trackable = total - (untrackedMb * MiB);
       if (trackable > 0) {
         MemoryStats::instance().setLimit(trackable * limitRatio);
       } else {
-        // Do not set limit, keep previous set limit or default limit
-        LOG(ERROR) << "Total available memory less than " << untrackedMb << " Mib,"
+        LOG(ERROR) << "Total memory less than untracked " << untrackedMb << " Mib,"
                    << " MemoryTracker limit is not set properly, "
                    << " Current memory stats:" << MemoryStats::instance().toString();
       }
       LOG(INFO) << "MemoryTracker set static ratio: " << limitRatio;
     }
   } else if (limitRatio == 2.0) {
-    // available almost alway changing, no need check change
-    MemoryStats::instance().updateLimit(available);
+    /**
+     * (== 2.0): Special value for dynamic self adaptive;
+     *           limit = current_used_memory + (available - untracked) * availableRatio
+     */
+    double trackableAvailable = available - (untrackedMb * MiB);
+    if (trackableAvailable > 0) {
+      MemoryStats::instance().updateLimit(trackableAvailable * availableRatio);
+    } else {
+      MemoryStats::instance().updateLimit(0);
+    }
     DLOG(INFO) << "MemoryTracker set to dynamic self adaptive";
   } else if (limitRatio == 3.0) {
+    /**
+     * (== 3.0): Special value for disable memory_tracker;
+     *           limit is set to max
+     */
     if (kCurrentLimitRatio_ != limitRatio) {
       MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
       LOG(INFO) << "MemoryTracker disabled";
@@ -198,17 +211,19 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
     }
   }
 
-  // print system & application level memory stats
-  // sys: read from system environment, varies depends on environment:
-  //      container: controlled by cgroup,
-  //                 used: read from memory.current in cgroup path
-  //                 total: read from memory.max in cgroup path
-  //      physical machine: judge by system level memory consumption
-  //                 used: current used memory of the system
-  //                 total: all physical memory installed
-  // usr: record by current process's MemoryStats
-  //                 used: bytes allocated by new operator
-  //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
+  /**
+   * print system & application level memory stats
+   * sys: read from system environment, varies depends on environment:
+   *      container: controlled by cgroup,
+   *                 used: read from memory.current in cgroup path
+   *                 total: read from memory.max in cgroup path
+   *      physical machine: judge by system level memory consumption
+   *                 used: current used memory of the system
+   *                 total: all physical memory installed
+   * usr: record by current process's MemoryStats
+   *                 used: bytes allocated by new operator
+   *                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
+   */
   int64_t now = time::WallClock::fastNowInMilliSec();
   if (FLAGS_memory_tracker_detail_log) {
     if (now - kLastPrintMemoryTrackerStats_ >= FLAGS_memory_tracker_detail_log_interval_ms) {
