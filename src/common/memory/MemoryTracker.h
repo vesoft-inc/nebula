@@ -6,9 +6,6 @@
 
 #include <atomic>
 
-#define BOOST_STACKTRACE_USE_ADDR2LINE
-#include <boost/stacktrace.hpp>
-
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -164,7 +161,6 @@ class MemoryStats {
       // revert
       used_.fetch_sub(size, std::memory_order_relaxed);
       threadMemoryStats_.throwOnMemoryExceeded = false;
-      // LOG(INFO) << boost::stacktrace::stacktrace();
       throw std::bad_alloc();
     }
   }
