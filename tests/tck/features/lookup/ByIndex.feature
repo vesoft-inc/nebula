@@ -585,7 +585,6 @@ Feature: Lookup by index itself
       | name          |
       | "Tim Duncan"  |
       | "Tony Parker" |
-    Then drop the used space
     # (TODO) Unsupported cases due to the lack of float precision
     When executing query:
       """
@@ -602,3 +601,4 @@ Feature: Lookup by index itself
       | name          |
       | "Tim Duncan"  |
       | "Tony Parker" |
+    Then drop the used space
