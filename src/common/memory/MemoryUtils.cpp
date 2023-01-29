@@ -84,7 +84,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
     return false;
   }
-  int64_t available = 0;
+  double available = 0.0;
   int64_t total = 0;
   if (FLAGS_containerized) {
     bool cgroupsv2 = FileUtils::exist(FLAGS_cgroup_v2_controllers);
@@ -109,8 +109,8 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
 
-    total = static_cast<int64_t>(limitInBytes);
-    available = static_cast<int64_t>(limitInBytes - usageInBytes + cacheSize);
+    total = static_cast<double>(limitInBytes);
+    available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
   } else {
     FileUtils::FileLineIterator iter("/proc/meminfo", &reMemAvailable);
     std::vector<uint64_t> memorySize;
@@ -129,8 +129,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 
   handleMemoryTracker(total, available);
 
-  auto hits =
-      (1 - (static_cast<double>(available)) / total) > FLAGS_system_memory_high_watermark_ratio;
+  auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
   LOG_IF_EVERY_N(WARNING, hits, 100)
       << "Memory usage has hit the high watermark of system, available: " << available
       << " vs. total: " << total << " in bytes.";
