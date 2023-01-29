@@ -170,7 +170,7 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
       }
       LOG(INFO) << "MemoryTracker set static ratio: " << limitRatio;
     }
-  } else if (limitRatio == 2.0) {
+  } else if (std::fabs(limitRatio - 2.0) < std::numeric_limits<double>::epsilon()) {
     /**
      * (== 2.0): Special value for dynamic self adaptive;
      *           limit = current_used_memory + (available - untracked) * availableRatio
@@ -182,7 +182,7 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
       MemoryStats::instance().updateLimit(0);
     }
     DLOG(INFO) << "MemoryTracker set to dynamic self adaptive";
-  } else if (limitRatio == 3.0) {
+  } else if (std::fabs(limitRatio - 3.0) < std::numeric_limits<double>::epsilon()) {
     /**
      * (== 3.0): Special value for disable memory_tracker;
      *           limit is set to max
