@@ -89,6 +89,7 @@ class HttpClient {
   static void setRespBody(CURL* curl, const std::string& body);
   static void setRespHeader(CURL* curl, const std::string& header);
   static void setTimeout(CURL* curl);
+  static void setSSL(CURL* curl);
   static void setAuth(CURL* curl, const std::string& username, const std::string& password);
   static size_t onWriteData(void* ptr, size_t size, size_t nmemb, void* stream);
 };
