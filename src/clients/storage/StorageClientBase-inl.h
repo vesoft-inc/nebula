@@ -76,6 +76,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
     folly::EventBase* evb,
     std::unordered_map<HostAddr, Request> requests,
     RemoteFunc&& remoteFunc) {
+  memory::MemoryCheckOffGuard offGuard;
   std::vector<folly::Future<StatusOr<Response>>> respFutures;
   respFutures.reserve(requests.size());
 

@@ -46,7 +46,6 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
 
 // Create query context and query instance and execute it
 void QueryEngine::execute(RequestContextPtr rctx) {
-  memory::MemoryCheckGuard guard;
   auto qctx = std::make_unique<QueryContext>(std::move(rctx),
                                              schemaManager_.get(),
                                              indexManager_.get(),

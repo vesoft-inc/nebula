@@ -31,20 +31,20 @@
 //    Processors DO NOT NEED handle error in their logic.
 //  else (do some work in another thread)
 //    Processors need handle error in that thread by itself
-#define RETURN_FUTURE(processor)   \
-  memory::MemoryCheckGuard guard;  \
-  auto f = processor->getFuture(); \
-  try {                            \
-    processor->process(req);       \
-  } catch (std::bad_alloc & e) {   \
-    processor->memoryExceeded();   \
-    processor->onError();          \
-  } catch (std::exception & e) {   \
-    LOG(ERROR) << e.what();        \
-    processor->onError();          \
-  } catch (...) {                  \
-    processor->onError();          \
-  }                                \
+#define RETURN_FUTURE(processor)             \
+  auto f = processor->getFuture();           \
+  try {                                      \
+    processor->process(req);                 \
+  } catch (std::bad_alloc & e) {             \
+    LOG(ERROR) << processor << " bad_alloc"; \
+    processor->memoryExceeded();             \
+    processor->onError();                    \
+  } catch (std::exception & e) {             \
+    LOG(ERROR) << e.what();                  \
+    processor->onError();                    \
+  } catch (...) {                            \
+    processor->onError();                    \
+  }                                          \
   return f;
 
 namespace nebula {

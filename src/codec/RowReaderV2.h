@@ -28,8 +28,8 @@ class RowReaderV2 : public RowReader {
  public:
   ~RowReaderV2() override = default;
 
-  Value getValueByName(const std::string& prop) const noexcept override;
-  Value getValueByIndex(const int64_t index) const noexcept override;
+  Value getValueByName(const std::string& prop) const override;
+  Value getValueByIndex(const int64_t index) const override;
   int64_t getTimestamp() const noexcept override;
 
   int32_t readerVer() const noexcept override {
@@ -41,7 +41,7 @@ class RowReaderV2 : public RowReader {
   }
 
  protected:
-  bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept override;
+  bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) override;
 
  private:
   size_t headerLen_;

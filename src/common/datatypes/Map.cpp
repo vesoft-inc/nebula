@@ -91,7 +91,7 @@ Map::Map(const folly::dynamic& obj) {
 }  // namespace nebula
 
 namespace std {
-std::size_t hash<nebula::Map>::operator()(const nebula::Map& m) const noexcept {
+std::size_t hash<nebula::Map>::operator()(const nebula::Map& m) const {
   size_t seed = 0;
   for (auto& v : m.kvs) {
     seed ^= hash<std::string>()(v.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);

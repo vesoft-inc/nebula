@@ -88,7 +88,7 @@ inline std::ostream& operator<<(std::ostream& os, const Map& m) {
 namespace std {
 template <>
 struct hash<nebula::Map> {
-  std::size_t operator()(const nebula::Map& m) const noexcept;
+  std::size_t operator()(const nebula::Map& m) const;
 };
 
 }  // namespace std
