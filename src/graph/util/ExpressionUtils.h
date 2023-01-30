@@ -65,7 +65,7 @@ class ExpressionUtils {
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
   // rewrite rank(e) to e._rank
-  static Expression* rewriteRankFunc2LabelAttribute(
+  static Expression* rewriteEdgePropFunc2LabelAttribute(
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
   // rewrite LabelAttr to tagProp
