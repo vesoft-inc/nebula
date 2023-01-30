@@ -106,7 +106,7 @@ Feature: Lookup with yield in integer vid
     When executing query:
       """
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.startYear AS startYear, 1 AS a, 10+1 AS b
+      YIELD serve.start_year AS startYear, 1 AS a, 10+1 AS b
       """
     Then the result should be, in any order:
       | startYear | a | b  |
