@@ -165,3 +165,17 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player WHERE player.name==player_name YIELD id(vertex) as id;
       """
     Then a SemanticError should be raised at runtime: 'player_name' is not an evaluable expression
+
+  Scenario: some variables in yield clause of lookup statement
+    When executing query:
+      """
+      $var = YIELD true;
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, $var AS v;
+      """
+    Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, $-.player_name AS pn;
+      """
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield
