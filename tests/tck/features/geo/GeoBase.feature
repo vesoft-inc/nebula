@@ -108,6 +108,7 @@ Feature: Geo base
       INSERT VERTEX test_3() VALUES "test_103":()
       """
     Then the execution should be successful
+    And drop the used space
 
   Scenario: test geo CURD
     # Any geo shape(point/linestring/polygon) is allowed to insert to the column geography
@@ -770,3 +771,4 @@ Feature: Geo base
       DROP EDGE any_shape_edge;
       """
     Then the execution should be successful
+    And drop the used space
