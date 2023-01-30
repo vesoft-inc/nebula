@@ -27,6 +27,86 @@ Feature: Push Filter down Traverse rule
       | 3  | Start          |              |                                  |
     When profiling query:
       """
+      MATCH (v:player)-[e:like]->(v2) WHERE rank(e) == 0 RETURN COUNT(*)
+      """
+    Then the result should be, in any order:
+      | COUNT(*) |
+      | 81       |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                 |
+      | 7  | Aggregate      | 6            |                               |
+      | 6  | Project        | 5            |                               |
+      | 5  | AppendVertices | 10           |                               |
+      | 10 | Traverse       | 2            | {"filter": "(like._rank==0)"} |
+      | 2  | Dedup          | 9            |                               |
+      | 9  | IndexScan      | 3            |                               |
+      | 3  | Start          |              |                               |
+    When profiling query:
+      """
+      MATCH (v:player)-[e:like]->(v2) WHERE none_direct_dst(e) IN ["Tony Parker", "Tim Duncan"] RETURN e.likeness, v2.player.age
+      """
+    Then the result should be, in any order:
+      | e.likeness | v2.player.age |
+      | 80         | 36            |
+      | 99         | 36            |
+      | 75         | 36            |
+      | 50         | 36            |
+      | 95         | 36            |
+      | 80         | 42            |
+      | 80         | 42            |
+      | 70         | 42            |
+      | 99         | 42            |
+      | 75         | 42            |
+      | 90         | 42            |
+      | 55         | 42            |
+      | 80         | 42            |
+      | 80         | 42            |
+      | 95         | 42            |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                               |
+      | 6  | Project        | 5            |                                                                             |
+      | 5  | AppendVertices | 10           |                                                                             |
+      | 10 | Traverse       | 9            | {"filter": "((like._dst==\"Tony Parker\") OR (like._dst==\"Tim Duncan\"))"} |
+      | 9  | IndexScan      | 3            |                                                                             |
+      | 3  | Start          |              |                                                                             |
+    # The following two match statements is equivalent, so the minus of them should be empty.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2) WHERE none_direct_dst(e) IN ["Tony Parker", "Tim Duncan"] RETURN *
+      MINUS
+      MATCH (v:player)-[e:like]->(v2) WHERE id(v2) IN ["Tony Parker", "Tim Duncan"] RETURN *
+      """
+    Then the result should be, in any order:
+      | v | e | v2 |
+    When profiling query:
+      """
+      MATCH (v:player)-[e:like]->(v2) WHERE none_direct_src(e) IN ["Tony Parker", "Tim Duncan"] RETURN e.likeness, v2.player.age
+      """
+    Then the result should be, in any order:
+      | e.likeness | v2.player.age |
+      | 90         | 33            |
+      | 95         | 41            |
+      | 95         | 42            |
+      | 95         | 41            |
+      | 95         | 36            |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                               |
+      | 6  | Project        | 5            |                                                                             |
+      | 5  | AppendVertices | 10           |                                                                             |
+      | 10 | Traverse       | 9            | {"filter": "((like._src==\"Tony Parker\") OR (like._src==\"Tim Duncan\"))"} |
+      | 9  | IndexScan      | 3            |                                                                             |
+      | 3  | Start          |              |                                                                             |
+    # The following two match statements is equivalent, so the minus of them should be empty.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2) WHERE none_direct_src(e) IN ["Tony Parker", "Tim Duncan"] RETURN *
+      MINUS
+      MATCH (v:player)-[e:like]->(v2) WHERE id(v) IN ["Tony Parker", "Tim Duncan"] RETURN *
+      """
+    Then the result should be, in any order:
+      | v | e | v2 |
+    When profiling query:
+      """
       MATCH (person:player)-[:like*1..2]-(friend:player)-[served:serve]->(friendTeam:team)
       WHERE id(person) == "Tony Parker" AND id(friend) != "Tony Parker" AND served.start_year > 2010
       WITH DISTINCT friend, friendTeam
@@ -94,3 +174,25 @@ Feature: Push Filter down Traverse rule
       | 12 | Traverse       | 8            | {"filter": "((like.likeness+100)!=199)"} |
       | 8  | IndexScan      | 2            |                                          |
       | 2  | Start          |              |                                          |
+    When profiling query:
+      """
+      MATCH (v:player)-[e:like]->(v2)
+        WHERE v.player.age != 35 and (e.likeness + 100) != 199 and none_direct_dst(e) in ["Tony Parker", "Tim Duncan", "Yao Ming"]
+      RETURN e.likeness, v2.player.age as age
+      ORDER BY age
+      LIMIT 3
+      """
+    Then the result should be, in any order:
+      | e.likeness | age |
+      | 80         | 36  |
+      | 75         | 36  |
+      | 50         | 36  |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                                                                                             |
+      | 11 | TopN           | 10           |                                                                                                                                           |
+      | 10 | Project        | 9            |                                                                                                                                           |
+      | 9  | Filter         | 4            | {"condition": "($-.v.player.age!=35)" }                                                                                                   |
+      | 4  | AppendVertices | 12           |                                                                                                                                           |
+      | 12 | Traverse       | 8            | {"filter": "(((like.likeness+100)!=199) AND ((like._dst==\"Tony Parker\") OR (like._dst==\"Tim Duncan\") OR (like._dst==\"Yao Ming\")))"} |
+      | 8  | IndexScan      | 2            |                                                                                                                                           |
+      | 2  | Start          |              |                                                                                                                                           |
