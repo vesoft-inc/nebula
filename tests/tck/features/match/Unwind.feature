@@ -149,7 +149,7 @@ Feature: Unwind clause
     Then a SyntaxError should be raised at runtime: syntax error near `WITH'
     When executing query:
       """
-      MATCH (a:player {name:"Tim Duncan"}) - [e:like] -> (b)
+      MATCH (a:player {name:"Tim Duncan"})-[e:like]->(b)
       UNWIND count(b) as num
       RETURN  num
       """

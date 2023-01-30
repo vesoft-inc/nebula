@@ -1285,3 +1285,25 @@ Feature: Basic match
       | ("Tony Parker")       |
       | ("Tracy McGrady")     |
       | ("Marco Belinelli")   |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE size([ii in e WHERE (v)-[ii]-(v2) | ii])>1
+      RETURN count(*) AS cnt
+      """
+    # FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
+    Then a SemanticError should be raised at runtime: PatternExpression are not allowed to introduce new variables: `ii'.
+
+# Then the result should be, in any order:
+# | cnt |
+# |  0  |
+# When executing query:
+# """
+# MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+# WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+# RETURN count(*) AS cnt
+# """
+# FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
+# Then the result should be, in any order:
+# | cnt |
+# |  0  |
