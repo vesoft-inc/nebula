@@ -340,8 +340,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
   // rewrite Attribute to LabelTagProperty
   newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
                                                         whereClauseCtx.aliasesAvailable);
-  newFilter =
-      ExpressionUtils::rewriteRankFunc2LabelAttribute(newFilter, whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(newFilter,
+                                                                  whereClauseCtx.aliasesAvailable);
 
   whereClauseCtx.filter = newFilter;
 
