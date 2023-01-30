@@ -1,3 +1,6 @@
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
 Feature: Lookup tag index full scan
 
   Background:
@@ -297,6 +300,11 @@ Feature: Lookup tag index full scan
       | 2  | Filter           | 4            | {"condition": "(team.name NOT IN [\"Hornets\",\"Jazz\"])"} |
       | 4  | TagIndexFullScan | 0            |                                                            |
       | 0  | Start            |              |                                                            |
+    When executing query:
+      """
+      LOOKUP ON team WHERE NOT team.name IN ["Hornets", "Jazz"] YIELD id(vertex) as id
+      """
+    Then a SemanticError should be raised at runtime: Expression !((team.name IN ["Hornets","Jazz"])) not supported yet
     When profiling query:
       """
       LOOKUP ON player WHERE player.age NOT IN [40 - 1 , 72/2] YIELD id(vertex) as id, player.age
@@ -373,6 +381,11 @@ Feature: Lookup tag index full scan
       LOOKUP ON team WHERE team.name NOT CONTAINS "ABC" YIELD vertex as node
       """
     Then a SemanticError should be raised at runtime: Expression (team.name NOT CONTAINS "ABC") is not supported, please use full-text index as an optimal solution
+    When executing query:
+      """
+      LOOKUP ON team WHERE NOT team.name CONTAINS "ABC" YIELD vertex as node
+      """
+    Then a SemanticError should be raised at runtime: Expression !((team.name CONTAINS "ABC")) not supported yet
 
   Scenario: Tag with relational STARTS WITH filter
     When profiling query:

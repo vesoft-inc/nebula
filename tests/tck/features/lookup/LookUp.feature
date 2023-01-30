@@ -38,7 +38,37 @@ Feature: LookUpTest_Vid_String
       | "200" |
     When executing query:
       """
+      LOOKUP ON lookup_tag_1
+      WHERE lookup_tag_1.col2 == 200 AND lookup_tag_1.col3 > 202
+      YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_1
+      WHERE lookup_tag_1.col2 >= 202 OR lookup_tag_1.col1 < 201
+      YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "200" |
+      | "202" |
+    When executing query:
+      """
       LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col1 == true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col2 == 0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_2 WHERE lookup_tag_2.col3 >= 0 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
       | id |
@@ -73,6 +103,23 @@ Feature: LookUpTest_Vid_String
       | "200" | "201" | 0    |
     When executing query:
       """
+      LOOKUP ON lookup_edge_1
+      WHERE lookup_edge_1.col2 == 201 AND lookup_edge_1.col3 == 200
+      YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
+      """
+    Then the result should be, in any order:
+      | src | dst | rank |
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_1
+      WHERE lookup_edge_1.col2 == 201 OR lookup_edge_1.col3 == 200
+      YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
+      """
+    Then the result should be, in any order:
+      | src   | dst   | rank |
+      | "200" | "201" | 0    |
+    When executing query:
+      """
       LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col2 IN [201] and lookup_edge_1.col2>3 YIELD src(edge) as src, dst(Edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
@@ -82,7 +129,13 @@ Feature: LookUpTest_Vid_String
       """
       LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col1 == 200 YIELD edge as e
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: Column type error : col1
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_2 WHERE lookup_edge_2.col1 == false YIELD edge as e
+      """
+    Then the result should be, in any order:
+      | e |
     Then drop the used space
 
   Scenario: LookupTest VertexConditionScan
