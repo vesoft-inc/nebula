@@ -24,7 +24,7 @@ Feature: Test kill queries permission from different services
     Then the execution should be successful
     And wait 10 seconds
     # Make sure the record exists
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -35,7 +35,7 @@ Feature: Test kill queries permission from different services
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
     # Kill failed by user test_permission
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -46,7 +46,7 @@ Feature: Test kill queries permission from different services
       """
     Then an PermissionError should be raised at runtime: Only GOD role could kill others' queries.
     # Kill successful by user root
-    When executing query with user root with password nebula:
+    When executing query with user "root" and password "nebula":
       """
       USE nba;
       SHOW QUERIES
@@ -65,7 +65,7 @@ Feature: Test kill queries permission from different services
       """
     Then the execution should be successful
     And wait 5 seconds
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       GO 100002 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
@@ -80,7 +80,7 @@ Feature: Test kill queries permission from different services
     Then the execution should be successful
     And wait 15 seconds
     # Make sure the record exists
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -90,7 +90,7 @@ Feature: Test kill queries permission from different services
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -109,7 +109,7 @@ Feature: Test kill queries permission from different services
       """
     Then the execution should be successful
     And wait 5 seconds
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       GO 100003 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
@@ -124,7 +124,7 @@ Feature: Test kill queries permission from different services
     Then the execution should be successful
     And wait 15 seconds
     # Make sure the record exists
-    When executing query with user root with password nebula:
+    When executing query with user "root" and password "nebula":
       """
       USE nba;
       SHOW QUERIES
@@ -134,7 +134,7 @@ Feature: Test kill queries permission from different services
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-    When executing query with user root with password nebula:
+    When executing query with user "root" and password "nebula":
       """
       USE nba;
       SHOW QUERIES
