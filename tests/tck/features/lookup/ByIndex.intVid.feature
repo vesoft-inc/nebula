@@ -584,23 +584,20 @@ Feature: Lookup by index itself in integer vid
       | name          |
       | "Tim Duncan"  |
       | "Tony Parker" |
+    # (TODO) Unsupported cases due to the lack of float precision
+    When executing query:
+      """
+      LOOKUP ON weight WHERE weight.WEIGHT > 70.5 YIELD id(vertex) as name;
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | name          |
+      | "Tony Parker" |
+    When executing query:
+      """
+      LOOKUP ON weight WHERE weight.WEIGHT <= 80.0 YIELD id(vertex) as name;
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | name          |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
     Then drop the used space
-
-# (TODO) Unsupported cases due to the lack of float precision
-# When executing query:
-# """
-# LOOKUP ON weight
-# WHERE weight.WEIGHT > 70.5;
-# """
-# Then the result should be, in any order, and the columns 0 should be hashed:
-# | VertexID      |
-# | "Tony Parker" |
-# When executing query:
-# """
-# LOOKUP ON weight
-# WHERE weight.WEIGHT <= 80.0;
-# """
-# Then the result should be, in any order, and the columns 0 should be hashed:
-# | VertexID      |
-# | "Tim Duncan"  |
-# | "Tony Parker" |

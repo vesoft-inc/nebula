@@ -135,6 +135,78 @@ Feature: Delete int vid of edge
       | "Zhangsan"     | 50              | "Jack"      |
     Then drop the used space
 
+  Scenario: delete edges delete the edge with rank 0 by default
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1   |
+      | replica_factor | 1   |
+      | vid_type       | int |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS person(name string, age int);
+      CREATE EDGE IF NOT EXISTS friend(intimacy int);
+      """
+    And having executed:
+      """
+      INSERT VERTEX
+        person(name, age)
+      VALUES
+        hash("Zhangsan"):("Zhangsan", 22),
+        hash("Lisi"):("Lisi", 23);
+      INSERT EDGE
+        friend(intimacy)
+      VALUES
+        hash("Zhangsan")->hash("Lisi"):(1),
+        hash("Zhangsan")->hash("Lisi")@15:(2),
+        hash("Zhangsan")->hash("Lisi")@25:(3),
+        hash("Zhangsan")->hash("Lisi")@35:(4);
+      """
+    # before delete get result by go
+    When executing query:
+      """
+      GO FROM hash("Zhangsan") OVER friend
+      YIELD $^.person.name, friend.intimacy, friend._rank, friend._dst
+      """
+    Then the result should be, in any order:
+      | $^.person.name | friend.intimacy | friend._rank | friend._dst  |
+      | "Zhangsan"     | 1               | 0            | hash("Lisi") |
+      | "Zhangsan"     | 2               | 15           | hash("Lisi") |
+      | "Zhangsan"     | 3               | 25           | hash("Lisi") |
+      | "Zhangsan"     | 4               | 35           | hash("Lisi") |
+    # delete edge friend, by default only the edge with rank of 0 will be deleted
+    When executing query:
+      """
+      DELETE EDGE friend hash("Zhangsan")->hash("Lisi");
+      """
+    Then the execution should be successful
+    # check result
+    When executing query:
+      """
+      GO FROM hash("Zhangsan") OVER friend
+      YIELD $^.person.name, friend.intimacy, friend._rank, friend._dst
+      """
+    Then the result should be, in any order:
+      | $^.person.name | friend.intimacy | friend._rank | friend._dst  |
+      | "Zhangsan"     | 2               | 15           | hash("Lisi") |
+      | "Zhangsan"     | 3               | 25           | hash("Lisi") |
+      | "Zhangsan"     | 4               | 35           | hash("Lisi") |
+    # delete all edges with different ranks
+    When executing query:
+      """
+      GO FROM hash("Zhangsan") OVER friend YIELD id($^) AS src, friend._rank AS rank, friend._dst AS dst
+      | DELETE EDGE friend $-.src -> $-.dst @ $-.rank;
+      """
+    Then the execution should be successful
+    # check result
+    When executing query:
+      """
+      GO FROM hash("Zhangsan") OVER friend
+      YIELD $^.person.name, friend.intimacy, friend._rank, friend._dst
+      """
+    Then the result should be, in any order:
+      | $^.person.name | friend.intimacy | friend._rank | friend._dst |
+    Then drop the used space
+
   Scenario: delete edges use pipe
     Given load "nba_int_vid" csv data to a new space
     # test delete with pipe wrong vid type

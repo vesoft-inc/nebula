@@ -6,6 +6,9 @@
 #include "common/memory/MemoryUtils.h"
 
 #include <gflags/gflags.h>
+
+#include <limits>
+
 #if ENABLE_JEMALLOC
 #include <jemalloc/jemalloc.h>
 
@@ -55,7 +58,11 @@ DEFINE_double(memory_tracker_untracked_reserved_memory_mb,
               "memory (direct call malloc/free)");
 DEFINE_double(memory_tracker_limit_ratio,
               0.8,
-              "memory tacker usable memory ratio to (total_available - untracked_reserved_memory)");
+              "memory tacker usable memory ratio to (total - untracked_reserved_memory)");
+
+DEFINE_double(memory_tracker_available_ratio,
+              0.8,
+              "memory tacker available memory ratio to (available - untracked_reserved_memory)");
 
 using nebula::fs::FileUtils;
 
@@ -70,6 +77,8 @@ static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)")
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
 int64_t MemoryUtils::kLastPurge_{0};
 int64_t MemoryUtils::kLastPrintMemoryTrackerStats_{0};
+int64_t MemoryUtils::kCurrentTotal_{0};
+double MemoryUtils::kCurrentLimitRatio_{0.0};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
@@ -118,57 +127,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     }
   }
 
-  // MemoryStats depends on jemalloc
-#ifdef ENABLE_JEMALLOC
-#ifndef ENABLE_ASAN
-  // set MemoryStats limit (MemoryTracker track-able memory)
-  int64_t trackable = total - FLAGS_memory_tracker_untracked_reserved_memory_mb * MiB;
-  if (trackable > 0) {
-    MemoryStats::instance().setLimit(trackable * FLAGS_memory_tracker_limit_ratio);
-  } else {
-    // Do not set limit, keep previous set limit or default limit
-    LOG(ERROR) << "Total available memory less than "
-               << FLAGS_memory_tracker_untracked_reserved_memory_mb << " Mib";
-  }
-
-  // purge if enabled
-  if (FLAGS_memory_purge_enabled) {
-    int64_t now = time::WallClock::fastNowInSec();
-    if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
-      // jemalloc seems has issue with address_sanitizer, do purge only when address_sanitizer is
-      // off
-      mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
-      kLastPurge_ = now;
-    }
-  }
-
-  // print system & application level memory stats
-  // sys: read from system environment, varies depends on environment:
-  //      container: controlled by cgroup,
-  //                 used: read from memory.current in cgroup path
-  //                 total: read from memory.max in cgroup path
-  //      physical machine: judge by system level memory consumption
-  //                 used: current used memory of the system
-  //                 total: all physical memory installed
-  // usr: record by current process's MemoryStats
-  //                 used: bytes allocated by new operator
-  //                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
-  int64_t now = time::WallClock::fastNowInMilliSec();
-  if (FLAGS_memory_tracker_detail_log) {
-    if (now - kLastPrintMemoryTrackerStats_ >= FLAGS_memory_tracker_detail_log_interval_ms) {
-      LOG(INFO) << fmt::format("sys:{}/{} {:.2f}%",
-                               ReadableSize(static_cast<int64_t>(total - available)),
-                               ReadableSize(total),
-                               (1 - available / total) * 100)
-                << fmt::format(" usr:{}/{} {:.2f}%",
-                               ReadableSize(MemoryStats::instance().used()),
-                               ReadableSize(MemoryStats::instance().getLimit()),
-                               MemoryStats::instance().usedRatio() * 100);
-      kLastPrintMemoryTrackerStats_ = now;
-    }
-  }
-#endif
-#endif
+  handleMemoryTracker(total, available);
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
   LOG_IF_EVERY_N(WARNING, hits, 100)
@@ -186,6 +145,102 @@ StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
   ifs >> value;
   return value;
 }
+
+void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
+#ifdef ENABLE_MEMORY_TRACKER
+  double limitRatio = FLAGS_memory_tracker_limit_ratio;
+  double availableRatio = FLAGS_memory_tracker_available_ratio;
+
+  double untrackedMb = FLAGS_memory_tracker_untracked_reserved_memory_mb;
+
+  // update MemoryTracker limit memory by Flags
+  if (limitRatio > 0.0 && limitRatio <= 1.0) {
+    /**
+     * (<= 1.0): Normal limit is set to ratio of trackable memory;
+     *           limit = limitRatio * (total - untrackedMb)
+     */
+    if (kCurrentTotal_ != total || kCurrentLimitRatio_ != limitRatio) {
+      double trackable = total - (untrackedMb * MiB);
+      if (trackable > 0) {
+        MemoryStats::instance().setLimit(trackable * limitRatio);
+      } else {
+        LOG(ERROR) << "Total memory less than untracked " << untrackedMb << " Mib,"
+                   << " MemoryTracker limit is not set properly, "
+                   << " Current memory stats:" << MemoryStats::instance().toString();
+      }
+      LOG(INFO) << "MemoryTracker set static ratio: " << limitRatio;
+    }
+  } else if (std::fabs(limitRatio - 2.0) < std::numeric_limits<double>::epsilon()) {
+    /**
+     * (== 2.0): Special value for dynamic self adaptive;
+     *           limit = current_used_memory + (available - untracked) * availableRatio
+     */
+    double trackableAvailable = available - (untrackedMb * MiB);
+    if (trackableAvailable > 0) {
+      MemoryStats::instance().updateLimit(trackableAvailable * availableRatio);
+    } else {
+      MemoryStats::instance().updateLimit(0);
+    }
+    DLOG(INFO) << "MemoryTracker set to dynamic self adaptive";
+  } else if (std::fabs(limitRatio - 3.0) < std::numeric_limits<double>::epsilon()) {
+    /**
+     * (== 3.0): Special value for disable memory_tracker;
+     *           limit is set to max
+     */
+    if (kCurrentLimitRatio_ != limitRatio) {
+      MemoryStats::instance().setLimit(std::numeric_limits<int64_t>::max());
+      LOG(INFO) << "MemoryTracker disabled";
+    }
+  } else {
+    LOG(ERROR) << "Invalid memory_tracker_limit_ratio: " << limitRatio;
+  }
+  kCurrentTotal_ = total;
+  kCurrentLimitRatio_ = limitRatio;
+
+  // purge if enabled
+  if (FLAGS_memory_purge_enabled) {
+    int64_t now = time::WallClock::fastNowInSec();
+    if (now - kLastPurge_ > FLAGS_memory_purge_interval_seconds) {
+      // jemalloc seems has issue with address_sanitizer, do purge only when address_sanitizer is
+      // off
+      mallctl("arena." STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
+      kLastPurge_ = now;
+    }
+  }
+
+  /**
+   * print system & application level memory stats
+   * sys: read from system environment, varies depends on environment:
+   *      container: controlled by cgroup,
+   *                 used: read from memory.current in cgroup path
+   *                 total: read from memory.max in cgroup path
+   *      physical machine: judge by system level memory consumption
+   *                 used: current used memory of the system
+   *                 total: all physical memory installed
+   * usr: record by current process's MemoryStats
+   *                 used: bytes allocated by new operator
+   *                 total: sys_total * FLAGS_system_memory_high_watermark_ratio
+   */
+  int64_t now = time::WallClock::fastNowInMilliSec();
+  if (FLAGS_memory_tracker_detail_log) {
+    if (now - kLastPrintMemoryTrackerStats_ >= FLAGS_memory_tracker_detail_log_interval_ms) {
+      LOG(INFO) << fmt::format("sys:{}/{} {:.2f}%",
+                               ReadableSize(total - available),
+                               ReadableSize(total),
+                               (1 - available / static_cast<double>(total)) * 100)
+                << fmt::format(" usr:{}/{} {:.2f}%",
+                               ReadableSize(MemoryStats::instance().used()),
+                               ReadableSize(MemoryStats::instance().getLimit()),
+                               MemoryStats::instance().usedRatio() * 100);
+      kLastPrintMemoryTrackerStats_ = now;
+    }
+  }
+#else
+  LOG_FIRST_N(WARNING, 1) << "WARNING: MemoryTracker was disabled at compile time";
+  UNUSED(total);
+  UNUSED(available);
+#endif
+}  // namespace memory
 
 }  // namespace memory
 }  // namespace nebula

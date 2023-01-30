@@ -464,7 +464,7 @@ def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
                 break
 
 
-@when(parse("executing query with user {username} with password {password}:\n{query}"))
+@when(parse('executing query with user "{username}" and password "{password}":\n{query}'))
 def executing_query(
     username, password, conn_pool_to_first_graph_service, query, exec_ctx, request
 ):
@@ -980,3 +980,19 @@ def switch_to_new_session(conn_pool, user, password, class_fixture_variables, ex
     sess = conn_pool.get_session(user, password)
     class_fixture_variables["sessions"].append(sess)
     exec_ctx["current_session"] = sess
+
+@when(parse('verify login with user "{user}"'))
+def login_without_password(conn_pool, user):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, '')
+    except Exception as e:
+        assert e
+
+@when(parse('verify login with user "{user}" and password "{password}"'))
+def login_with_password(conn_pool, user, password):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, password)
+    except Exception as e:
+        assert e

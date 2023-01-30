@@ -97,7 +97,7 @@ RowReaderWrapper::RowReaderWrapper(const meta::SchemaProviderIf* schema,
 
 bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
                              folly::StringPiece row,
-                             int32_t readerVer) noexcept {
+                             int32_t readerVer) {
   CHECK_NOTNULL(schema);
   readerVer_ = readerVer;
   if (readerVer_ == 1) {
@@ -115,8 +115,7 @@ bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
   }
 }
 
-bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
-                             folly::StringPiece row) noexcept {
+bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
   currReader_ = nullptr;
   if (schema == nullptr) {
     return false;
@@ -132,7 +131,7 @@ bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
 
 bool RowReaderWrapper::reset(
     const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-    folly::StringPiece row) noexcept {
+    folly::StringPiece row) {
   currReader_ = nullptr;
   SchemaVer schemaVer;
   int32_t readerVer;
