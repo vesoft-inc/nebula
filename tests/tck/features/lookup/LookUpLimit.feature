@@ -179,3 +179,9 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, $-.player_name AS pn;
       """
     Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, player_name AS pn;
+      """
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: player_name
