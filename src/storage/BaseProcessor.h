@@ -39,6 +39,7 @@ class BaseProcessor {
   }
 
   virtual void onFinished() {
+    memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
       if (!this->result_.get_failed_parts().empty()) {
@@ -62,6 +63,7 @@ class BaseProcessor {
   }
 
   virtual void onError() {
+    memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
       if (!this->result_.get_failed_parts().empty()) {
@@ -171,7 +173,6 @@ struct MemoryCheckScope {
       : processor_(processor), f_(std::move(f)) {}
 
   ~MemoryCheckScope() {
-    memory::MemoryCheckGuard guard;
     try {
       f_();
     } catch (std::bad_alloc& e) {
