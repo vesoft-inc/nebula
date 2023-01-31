@@ -92,9 +92,6 @@ std::string MatchPath::toString() const {
   buf.reserve(256);
 
   if (alias_ != nullptr) {
-    if (alias_->front() == '(') {
-      return *alias_;
-    }
     buf += *alias_;
     buf += " = ";
   }

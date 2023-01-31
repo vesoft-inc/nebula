@@ -126,6 +126,9 @@ Status MatchValidator::validateImpl() {
 // \param matchClauseCtx the context of current match clause
 Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   matchClauseCtx.paths.emplace_back();
+  if (path->alias() == nullptr) {
+    const_cast<MatchPath *>(path)->setPredicate();
+  }
   NG_RETURN_IF_ERROR(
       buildNodeInfo(path, matchClauseCtx.paths.back().nodeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
@@ -170,11 +173,11 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   }
 
   auto *pathAlias = path->alias();
-  if (pathAlias == nullptr) {
-    return Status::OK();
-  }
-  if (!aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
+  if (pathAlias != nullptr && !aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
+  }
+  if (path->isPredicate()) {
+    return Status::OK();
   }
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
@@ -185,7 +188,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   pathInfo.pathBuild = std::move(pathBuild);
   pathInfo.anonymous = false;
-  pathInfo.alias = *pathAlias;
+  pathInfo.alias = pathAlias == nullptr ? path->toString() : *pathAlias;
   return Status::OK();
 }
 
@@ -1105,7 +1108,6 @@ Status MatchValidator::validateMatchPathExpr(
     // Build path alias
     auto matchPathPtr = matchPathExprImpl->matchPathPtr();
     auto pathAlias = matchPathPtr->toString();
-    matchPathPtr->setAlias(new std::string(pathAlias));
     if (matchPathExprImpl->genList() == nullptr) {
       // Don't done in expression visitor
       Expression *genList = InputPropertyExpression::make(pool, pathAlias);
@@ -1192,7 +1194,6 @@ Status MatchValidator::validatePathInWhere(
     NG_RETURN_IF_ERROR(checkMatchPathExpr(pred, availableAliases));
     // Build path alias
     auto pathAlias = pred->toString();
-    pred->setAlias(new std::string(pathAlias));
     paths.emplace_back();
     NG_RETURN_IF_ERROR(validatePath(pred, paths.back()));
     NG_RETURN_IF_ERROR(buildRollUpPathInfo(pred, paths.back()));
@@ -1216,7 +1217,6 @@ Status MatchValidator::validatePathInWhere(
     // Build path alias
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
-    matchPath.setAlias(new std::string(pathAlias));
     if (matchPathExprImpl->genList() == nullptr) {
       // Don't done in expression visitor
       Expression *genList = InputPropertyExpression::make(pool, pathAlias);
@@ -1289,7 +1289,6 @@ Status MatchValidator::validatePathInWhere(
 }
 
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
-  DCHECK(!DCHECK_NOTNULL(path->alias())->empty());
   for (const auto &node : path->nodes()) {
     // The inner variable of expression will be replaced by anno variable
     if (!node->alias().empty() && node->alias()[0] != '_') {
