@@ -240,7 +240,7 @@ class ExpressionUtils {
 
   // Whether the whole expression is vertex id predication
   // e.g. id(v) == 1, id(v) IN [...]
-  static bool isVidPredication(const Expression* expr);
+  static bool isVidPredication(const Expression* expr, QueryContext* qctx);
 
   // Check if the expr looks like `$-.e[0].likeness`
   static bool isOneStepEdgeProp(const std::string& edgeAlias, const Expression* expr);

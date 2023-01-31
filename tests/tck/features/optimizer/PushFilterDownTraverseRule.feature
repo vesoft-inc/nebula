@@ -63,12 +63,12 @@ Feature: Push Filter down Traverse rule
       | 80         | 42            |
       | 95         | 42            |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                               |
-      | 6  | Project        | 5            |                                                                             |
-      | 5  | AppendVertices | 10           |                                                                             |
-      | 10 | Traverse       | 9            | {"filter": "((like._dst==\"Tony Parker\") OR (like._dst==\"Tim Duncan\"))"} |
-      | 9  | IndexScan      | 3            |                                                                             |
-      | 3  | Start          |              |                                                                             |
+      | id | name           | dependencies | operator info                                                 |
+      | 6  | Project        | 5            |                                                               |
+      | 5  | AppendVertices | 10           |                                                               |
+      | 10 | Traverse       | 9            | {"filter": "(like._dst IN [\"Tony Parker\",\"Tim Duncan\"])"} |
+      | 9  | IndexScan      | 3            |                                                               |
+      | 3  | Start          |              |                                                               |
     # The following two match statements is equivalent, so the minus of them should be empty.
     When executing query:
       """
@@ -90,12 +90,12 @@ Feature: Push Filter down Traverse rule
       | 95         | 41            |
       | 95         | 36            |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                               |
-      | 6  | Project        | 5            |                                                                             |
-      | 5  | AppendVertices | 10           |                                                                             |
-      | 10 | Traverse       | 9            | {"filter": "((like._src==\"Tony Parker\") OR (like._src==\"Tim Duncan\"))"} |
-      | 9  | IndexScan      | 3            |                                                                             |
-      | 3  | Start          |              |                                                                             |
+      | id | name           | dependencies | operator info                                                 |
+      | 6  | Project        | 5            |                                                               |
+      | 5  | AppendVertices | 10           |                                                               |
+      | 10 | Traverse       | 9            | {"filter": "(like._src IN [\"Tony Parker\",\"Tim Duncan\"])"} |
+      | 9  | IndexScan      | 3            |                                                               |
+      | 3  | Start          |              |                                                               |
     # The following two match statements is equivalent, so the minus of them should be empty.
     When executing query:
       """
@@ -149,6 +149,35 @@ Feature: Push Filter down Traverse rule
       | 14 | Traverse       | 12           |                |                                       |
       | 12 | Traverse       | 11           |                |                                       |
       | 11 | Argument       |              |                |                                       |
+    When profiling query:
+      """
+      MATCH (v)-[e1:like]->(v1) WHERE id(v) == "Tony Parker"
+      WITH DISTINCT v1, e1.degree AS strength
+      ORDER BY strength DESC LIMIT 20
+      MATCH (v1)<-[e2:like]-(v2)
+      WITH v1, e2, v2 WHERE none_direct_dst(e2) IN ["Yao Ming", "Tim Duncan"]
+      RETURN id(v2) AS candidate, count(*) AS cnt;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | candidate    | cnt |
+      | "Tim Duncan" | 1   |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info                                              |
+      | 18 | Aggregate      | 22           |                |                                                            |
+      | 22 | Project        | 25           |                |                                                            |
+      | 25 | HashInnerJoin  | 20,27        |                |                                                            |
+      | 20 | TopN           | 8            |                |                                                            |
+      | 8  | Dedup          | 19           |                |                                                            |
+      | 19 | Project        | 5            |                |                                                            |
+      | 5  | AppendVertices | 4            |                |                                                            |
+      | 4  | Traverse       | 2            |                |                                                            |
+      | 2  | Dedup          | 1            |                |                                                            |
+      | 1  | PassThrough    | 3            |                |                                                            |
+      | 3  | Start          |              |                |                                                            |
+      | 27 | Project        | 28           |                |                                                            |
+      | 28 | AppendVertices | 30           |                |                                                            |
+      | 30 | Traverse       | 11           |                | {"filter": "(like._dst IN [\"Yao Ming\",\"Tim Duncan\"])"} |
+      | 11 | Argument       |              |                |                                                            |
 
   Scenario: push filter down Traverse with complex filter
     When profiling query:
