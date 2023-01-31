@@ -1081,10 +1081,10 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
-        auto nowCosMs = lastMsgSentDur_.elapsedInMSec();
+        auto nowCostMs = lastMsgSentDur_.elapsedInMSec();
         auto nowTime = static_cast<uint64_t>(time::WallClock::fastNowInMilliSec());
-        if (nowTime - nowCosMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
-          lastMsgAcceptedCostMs_ = nowCosMs;
+        if (nowTime - nowCostMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
+          lastMsgAcceptedCostMs_ = nowCostMs;
           lastMsgAcceptedTime_ = nowTime;
         }
 
