@@ -25,8 +25,7 @@ Feature: Push Filter Down Cases Using the test Space
       | 17 | project        | 19           |                                               |
       | 19 | aggregate      | 24           |                                               |
       | 24 | HashInnerJoin  | 21,29        |                                               |
-      | 21 | project        | 20           |                                               |
-      | 20 | filter         | 6            |                                               |
+      | 21 | project        | 6            |                                               |
       | 6  | AppendVertices | 26           |                                               |
       | 26 | Traverse       | 25           |                                               |
       | 25 | Traverse       | 2            |                                               |
