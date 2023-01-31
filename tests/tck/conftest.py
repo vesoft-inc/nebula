@@ -464,7 +464,7 @@ def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
                 break
 
 
-@when(parse("executing query with user {username} with password {password}:\n{query}"))
+@when(parse('executing query with user "{username}" and password "{password}":\n{query}'))
 def executing_query(
     username, password, conn_pool_to_first_graph_service, query, exec_ctx, request
 ):

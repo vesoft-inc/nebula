@@ -328,6 +328,11 @@ Feature: Lookup edge index full scan
       LOOKUP ON edge_1 WHERE edge_1.col1_str NOT STARTS WITH "R" YIELD edge_1.col1_str
       """
     Then a SemanticError should be raised at runtime: Expression (edge_1.col1_str NOT STARTS WITH "R") is not supported, please use full-text index as an optimal solution
+    When profiling query:
+      """
+      LOOKUP ON edge_1 WHERE NOT edge_1.col1_str STARTS WITH "R" YIELD edge_1.col1_str
+      """
+    Then a SemanticError should be raised at runtime: Expression !((edge_1.col1_str STARTS WITH "R")) not supported yet
 
   Scenario: Edge with relational ENDS/NOT ENDS WITH filter
     When executing query:
@@ -340,3 +345,8 @@ Feature: Lookup edge index full scan
       LOOKUP ON edge_1 WHERE edge_1.col1_str NOT ENDS WITH toLower("E") YIELD edge_1.col1_str
       """
     Then a SemanticError should be raised at runtime: Expression (edge_1.col1_str NOT ENDS WITH toLower("E")) is not supported, please use full-text index as an optimal solution
+    When executing query:
+      """
+      LOOKUP ON edge_1 WHERE NOT edge_1.col1_str ENDS WITH toLower("E") YIELD edge_1.col1_str
+      """
+    Then a SemanticError should be raised at runtime: Expression !((edge_1.col1_str ENDS WITH toLower("E"))) not supported yet
