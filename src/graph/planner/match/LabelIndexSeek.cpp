@@ -85,7 +85,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   // refactored
   auto* pool = nodeCtx->qctx->objPool();
   if (nodeCtx->bindWhereClause != nullptr && nodeCtx->bindWhereClause->filter != nullptr) {
-    auto* filter = nodeCtx->bindWhereClause->filter;
+    auto* filter = ExpressionUtils::rewriteInnerInExpr(nodeCtx->bindWhereClause->filter);
     const auto& nodeAlias = nodeCtx->info->alias;
     const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
 

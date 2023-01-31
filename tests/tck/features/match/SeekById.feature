@@ -477,6 +477,7 @@ Feature: Match seek by id
       | 11 | Project        | 8            |               |
       | 8  | Filter         | 4            |               |
       | 4  | AppendVertices | 10           |               |
-      | 10 | Traverse       | 1            |               |
-      | 1  | IndexScan      | 2            |               |
-      | 2  | Start          |              |               |
+      | 10 | Traverse       | 2            |               |
+      | 2  | Dedup          | 4            |               |
+      | 1  | PassThrough    | 3            |               |
+      | 3  | Start          |              |               |
