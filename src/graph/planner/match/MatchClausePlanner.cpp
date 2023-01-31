@@ -10,6 +10,7 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/ShortestPathPlanner.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -29,6 +30,12 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     auto& nodeInfos = iter->nodeInfos;
     SubPlan pathPlan;
     if (iter->pathType == Path::PathType::kDefault) {
+      // This filter is just used for index scan module which embedded in planner, e.g.
+      // PropIndexSeek, LabelIndexSeek So we need to rewrite the in list expr to or expr.
+      if (matchClauseCtx->where && matchClauseCtx->where->filter) {
+        matchClauseCtx->where->filter =
+            ExpressionUtils::rewriteInnerInExpr(matchClauseCtx->where->filter);
+      }
       MatchPathPlanner matchPathPlanner(matchClauseCtx, *iter);
       auto result = matchPathPlanner.transform(matchClauseCtx->where.get(), nodeAliasesSeen);
       NG_RETURN_IF_ERROR(result);
