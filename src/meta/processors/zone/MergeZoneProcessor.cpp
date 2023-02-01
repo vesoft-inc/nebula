@@ -141,6 +141,12 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   // Rewrite space properties
   ret = doPrefix(spacePrefix);
+  if (!nebula::ok(ret)) {
+    LOG(INFO) << "List space failed";
+    handleErrorCode(nebula::error(ret));
+    onFinished();
+    return;
+  }
   iter = nebula::value(ret).get();
   while (iter->valid()) {
     auto id = MetaKeyUtils::spaceId(iter->key());
