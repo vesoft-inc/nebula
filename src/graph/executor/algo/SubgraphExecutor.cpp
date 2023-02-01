@@ -100,17 +100,20 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
 
 void SubgraphExecutor::filterEdges(int version) {
   auto iter = ectx_->getVersionedResult(subgraph_->outputVar(), version).iter();
-  auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-  while (gnIter->valid()) {
-    const auto& dst = gnIter->getEdgeProp("*", nebula::kDst);
-    if (validVids_.find(dst) == validVids_.end()) {
-      auto edge = gnIter->getEdge();
-      gnIter->erase();
-    } else {
-      gnIter->next();
+  auto* iterPtr = iter.get();
+  if (iterPtr->isGetNeighborsIter()) {
+    auto* gnIter = static_cast<GetNeighborsIter*>(iterPtr);
+    while (gnIter->valid()) {
+      const auto& dst = gnIter->getEdgeProp("*", nebula::kDst);
+      if (validVids_.find(dst) == validVids_.end()) {
+        auto edge = gnIter->getEdge();
+        gnIter->erase();
+      } else {
+        gnIter->next();
+      }
     }
+    gnIter->reset();
   }
-  gnIter->reset();
   ResultBuilder builder;
   builder.iter(std::move(iter));
   ectx_->setVersionedResult(subgraph_->outputVar(), builder.build(), version);
