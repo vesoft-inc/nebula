@@ -19,10 +19,11 @@
   <a href="https://github.com/vesoft-inc/nebula/network/members">
       <img src="https://img.shields.io/github/forks/vesoft-inc/nebula" alt="GitHub forks" />
   </a>
+  <a href="https://todos.tickgit.com/browse?repo=github.com/vesoft-inc/nebula">
+      <img src="https://img.shields.io/endpoint?url=https://todos.tickgit.com/badge?repo=github.com/vesoft-inc/nebula" alt="GitHub TODOs" />
+  </a>
   <br>
 </p>
-
-[![TODOs](https://img.shields.io/endpoint?url=https://todos.tickgit.com/badge?repo=github.com/vesoft-inc/nebula)](https://todos.tickgit.com/browse?repo=github.com/vesoft-inc/nebula)
 
 
 # NebulaGraph
