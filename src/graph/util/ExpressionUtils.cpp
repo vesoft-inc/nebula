@@ -1527,7 +1527,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   return true;
 }
 
-/*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr) {
+/*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr, QueryContext *qctx) {
   if (DCHECK_NOTNULL(expr)->kind() != Expression::Kind::kRelIn &&
       expr->kind() != Expression::Kind::kRelEQ) {
     return false;
@@ -1543,7 +1543,13 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   }
   if (expr->kind() == Expression::Kind::kRelIn) {
     // id(V) IN [List]
-    if (relExpr->right()->kind() != Expression::Kind::kList) {
+    if (!ExpressionUtils::isEvaluableExpr(relExpr->right(), qctx)) {
+      return false;
+    }
+
+    auto rightListValue = const_cast<Expression *>(relExpr->right())
+                              ->eval(graph::QueryExpressionContext(qctx->ectx())());
+    if (!rightListValue.isList()) {
       return false;
     }
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
