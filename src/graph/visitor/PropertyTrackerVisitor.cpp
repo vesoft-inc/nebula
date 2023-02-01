@@ -10,6 +10,36 @@
 
 namespace nebula {
 namespace graph {
+
+std::string PropertyTracker::toString() const {
+  std::string str;
+  str += "vertexPropsMap: ";
+  for (const auto &v : vertexPropsMap) {
+    str += v.first + ": ";
+    for (const auto &t : v.second) {
+      str += std::to_string(t.first) + ": ";
+      for (const auto &p : t.second) {
+        str += p + ", ";
+      }
+    }
+  }
+  str += "edgePropsMap: ";
+  for (const auto &v : edgePropsMap) {
+    str += v.first + ": ";
+    for (const auto &t : v.second) {
+      str += std::to_string(t.first) + ": ";
+      for (const auto &p : t.second) {
+        str += p + ", ";
+      }
+    }
+  }
+  str += "colsSet: ";
+  for (const auto &c : colsSet) {
+    str += c + ", ";
+  }
+  return str;
+}
+
 void PropertyTracker::insertVertexProp(const std::string &name,
                                        TagID tagId,
                                        const std::string &propName) {
@@ -296,7 +326,7 @@ void PropertyTrackerVisitor::visit(FunctionCallExpression *expr) {
   // length function support `STRING` input too, so we can't ignore it directly
   // TODO add type info to variable to help optimize it.
   static const std::unordered_set<std::string> ignoreFuncs = {
-      "src", "dst", "type", "typeid", "id", "rank" /*, "length"*/};
+      "src", "dst", "type", "typeid", "id", "rank", "_joinkey" /*, "length"*/};
 
   auto funName = expr->name();
   std::transform(funName.begin(), funName.end(), funName.begin(), ::tolower);

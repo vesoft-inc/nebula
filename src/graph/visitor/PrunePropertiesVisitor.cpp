@@ -107,12 +107,27 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
 }
 
 void PrunePropertiesVisitor::visit(Aggregate *node) {
-  rootNode_ = false;
   visitCurrent(node);
   status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
+  if (rootNode_) {
+    for (auto *groupKey : node->groupKeys()) {
+      status_ = extractPropsFromExpr(groupKey);
+      if (!status_.ok()) {
+        return;
+      }
+    }
+    for (auto *groupItem : node->groupItems()) {
+      status_ = extractPropsFromExpr(groupItem);
+      if (!status_.ok()) {
+        return;
+      }
+    }
+    rootNode_ = false;
+    return;
+  }
   for (auto *groupKey : node->groupKeys()) {
     if (groupKey->kind() == Expression::Kind::kVarProperty ||
         groupKey->kind() == Expression::Kind::kInputProperty ||
@@ -125,6 +140,11 @@ void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
     }
   }
   for (auto *groupItem : node->groupItems()) {
+    if (groupItem->kind() == Expression::Kind::kVarProperty ||
+        groupItem->kind() == Expression::Kind::kInputProperty ||
+        groupItem->kind() == Expression::Kind::kConstant) {
+      continue;
+    }
     status_ = extractPropsFromExpr(groupItem);
     if (!status_.ok()) {
       return;
