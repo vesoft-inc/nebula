@@ -13,8 +13,10 @@ using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 using RpcResponse = StorageRpcResponse<GetNeighborsResponse>;
 using PropRpcResponse = StorageRpcResponse<nebula::storage::cpp2::GetPropResponse>;
+
 namespace nebula {
 namespace graph {
+
 class ShortestPathBase {
  public:
   using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;
