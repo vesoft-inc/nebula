@@ -557,7 +557,7 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Value> {
-  std::size_t operator()(const nebula::Value& h) const noexcept {
+  std::size_t operator()(const nebula::Value& h) const {
     if (h.isInt()) {
       return h.getInt();
     } else if (h.isStr()) {
@@ -569,14 +569,14 @@ struct hash<nebula::Value> {
 
 template <>
 struct hash<nebula::Value*> {
-  std::size_t operator()(const nebula::Value* h) const noexcept {
+  std::size_t operator()(const nebula::Value* h) const {
     return h == nullptr ? 0 : hash<nebula::Value>()(*h);
   }
 };
 
 template <>
 struct hash<const nebula::Value*> {
-  std::size_t operator()(const nebula::Value* h) const noexcept {
+  std::size_t operator()(const nebula::Value* h) const {
     return h == nullptr ? 0 : hash<nebula::Value>()(*h);
   }
 };

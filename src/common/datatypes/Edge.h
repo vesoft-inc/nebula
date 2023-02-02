@@ -100,7 +100,7 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Edge> {
-  std::size_t operator()(const nebula::Edge& h) const noexcept;
+  std::size_t operator()(const nebula::Edge& h) const;
 };
 
 }  // namespace std

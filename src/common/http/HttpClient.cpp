@@ -91,6 +91,9 @@ HttpResponse HttpClient::sendRequest(const std::string& url,
   CURL* curl = curl_easy_init();
   CHECK(curl);
   setUrl(curl, url);
+  if (folly::StringPiece(url).startsWith("https")) {
+    setSSL(curl);
+  }
   setMethod(curl, method);
   curl_slist* h = setHeaders(curl, header);
   if (!body.empty()) {
@@ -154,6 +157,11 @@ void HttpClient::setAuth(CURL* curl, const std::string& username, const std::str
       curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
     }
   }
+}
+
+void HttpClient::setSSL(CURL* curl) {
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 }
 
 size_t HttpClient::onWriteData(void* ptr, size_t size, size_t nmemb, void* stream) {

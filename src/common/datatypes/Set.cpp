@@ -44,7 +44,7 @@ folly::dynamic Set::getMetaData() const {
 }  // namespace nebula
 
 namespace std {
-std::size_t hash<nebula::Set>::operator()(const nebula::Set& s) const noexcept {
+std::size_t hash<nebula::Set>::operator()(const nebula::Set& s) const {
   size_t seed = 0;
   for (auto& v : s.values) {
     seed ^= hash<nebula::Value>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);

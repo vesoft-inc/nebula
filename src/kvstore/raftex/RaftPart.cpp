@@ -87,15 +87,13 @@ class AppendLogsIterator final : public LogIterator {
 
   ~AppendLogsIterator() {
     if (!logs_.empty()) {
-      size_t notFulfilledPromise = 0;
       for (auto& log : logs_) {
         auto& promiseRef = std::get<4>(log);
         if (!promiseRef.isFulfilled()) {
-          ++notFulfilledPromise;
+          // When a AppendLogsIterator destruct before calling commit, the promise it not fulfilled.
+          // It only happens when exception is thrown, which make `commit` is never invoked.
+          promiseRef.setValue(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED);
         }
-      }
-      if (notFulfilledPromise > 0) {
-        LOG(FATAL) << "notFulfilledPromise == " << notFulfilledPromise;
       }
     }
   }
@@ -1083,8 +1081,13 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
-        lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
-        lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
+        auto nowCostMs = lastMsgSentDur_.elapsedInMSec();
+        auto nowTime = static_cast<uint64_t>(time::WallClock::fastNowInMilliSec());
+        if (nowTime - nowCostMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
+          lastMsgAcceptedCostMs_ = nowCostMs;
+          lastMsgAcceptedTime_ = nowTime;
+        }
+
         if (!commitInThisTerm_) {
           commitInThisTerm_ = true;
           bgWorkers_->addTask(

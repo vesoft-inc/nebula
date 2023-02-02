@@ -41,6 +41,7 @@ class ExecutionContext {
   virtual ~ExecutionContext() = default;
 
   void initVar(const std::string& name) {
+    folly::RWSpinLock::WriteHolder holder(lock_);
     valueMap_[name];
   }
 
@@ -69,6 +70,7 @@ class ExecutionContext {
   void truncHistory(const std::string& name, size_t numVersionsToKeep);
 
   bool exist(const std::string& name) const {
+    folly::RWSpinLock::ReadHolder holder(lock_);
     return valueMap_.find(name) != valueMap_.end();
   }
 
@@ -77,6 +79,7 @@ class ExecutionContext {
   Value moveValue(const std::string& name);
 
   // name -> Value with multiple versions
+  mutable folly::RWSpinLock lock_;
   std::unordered_map<std::string, std::vector<Result>> valueMap_;
 };
 

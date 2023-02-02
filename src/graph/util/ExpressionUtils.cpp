@@ -152,8 +152,8 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-// rewrite rank(e) to e._rank
-Expression *ExpressionUtils::rewriteRankFunc2LabelAttribute(
+// rewrite rank(e) to e._rank, none_direct_src(e) to e._src, none_direct_dst(e) to e._dst
+Expression *ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(
     const Expression *expr, const std::unordered_map<std::string, AliasType> &aliasTypeMap) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [&aliasTypeMap](const Expression *e) -> bool {
@@ -162,7 +162,9 @@ Expression *ExpressionUtils::rewriteRankFunc2LabelAttribute(
     auto *funcExpr = static_cast<const FunctionCallExpression *>(e);
     auto funcName = funcExpr->name();
     std::transform(funcName.begin(), funcName.end(), funcName.begin(), ::tolower);
-    if (funcName != "rank") return false;
+    if (funcName != "rank" && funcName != "none_direct_src" && funcName != "none_direct_dst") {
+      return false;
+    }
     auto args = funcExpr->args()->args();
     if (args.size() != 1) return false;
     if (args[0]->kind() != Expression::Kind::kLabel) return false;
@@ -174,11 +176,15 @@ Expression *ExpressionUtils::rewriteRankFunc2LabelAttribute(
     }
     return true;
   };
+  static const std::unordered_map<std::string, std::string> func2Attr = {
+      {"rank", "_rank"}, {"none_direct_src", "_src"}, {"none_direct_dst", "_dst"}};
   auto rewriter = [pool](const Expression *e) -> Expression * {
     auto funcExpr = static_cast<const FunctionCallExpression *>(e);
+    auto &funcName = funcExpr->name();
+    auto &attrName = func2Attr.at(funcName);
     auto args = funcExpr->args()->args();
     return LabelAttributeExpression::make(
-        pool, static_cast<LabelExpression *>(args[0]), ConstantExpression::make(pool, "_rank"));
+        pool, static_cast<LabelExpression *>(args[0]), ConstantExpression::make(pool, attrName));
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
@@ -1521,7 +1527,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   return true;
 }
 
-/*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr) {
+/*static*/ bool ExpressionUtils::isVidPredication(const Expression *expr, QueryContext *qctx) {
   if (DCHECK_NOTNULL(expr)->kind() != Expression::Kind::kRelIn &&
       expr->kind() != Expression::Kind::kRelEQ) {
     return false;
@@ -1537,7 +1543,13 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
   }
   if (expr->kind() == Expression::Kind::kRelIn) {
     // id(V) IN [List]
-    if (relExpr->right()->kind() != Expression::Kind::kList) {
+    if (!ExpressionUtils::isEvaluableExpr(relExpr->right(), qctx)) {
+      return false;
+    }
+
+    auto rightListValue = const_cast<Expression *>(relExpr->right())
+                              ->eval(graph::QueryExpressionContext(qctx->ectx())());
+    if (!rightListValue.isList()) {
       return false;
     }
   } else if (expr->kind() == Expression::Kind::kRelEQ) {

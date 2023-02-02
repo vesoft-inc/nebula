@@ -1,3 +1,6 @@
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
 Feature: Lookup with yield
 
   Background:
@@ -97,3 +100,14 @@ Feature: Lookup with yield
     Then the result should be, in any order:
       | nums |
       | 6    |
+
+  Scenario: yield constant columns
+    When executing query:
+      """
+      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
+      YIELD serve.start_year AS startYear, 1 AS a, 10+1 AS b
+      """
+    Then the result should be, in any order:
+      | startYear | a | b  |
+      | 2008      | 1 | 11 |
+      | 2008      | 1 | 11 |

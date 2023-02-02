@@ -2057,6 +2057,46 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    // `none_direct_src` always return the srcId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
+    auto &attr = functions_["none_direct_src"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.src;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &firstVal = listVal.values.front();
+          if (firstVal.isEdge()) {
+            return firstVal.getEdge().src;
+          } else if (firstVal.isVertex()) {
+            return firstVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
     auto &attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;

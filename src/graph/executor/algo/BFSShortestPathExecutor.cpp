@@ -11,7 +11,6 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
   // MemoryTrackerVerified
-
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();

@@ -93,8 +93,7 @@ Feature: Parameter
       | "Tony Parker" |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 9  | Project        | 7            |               |
-      | 7  | Filter         | 2            |               |
+      | 9  | Project        | 2            |               |
       | 2  | AppendVertices | 6            |               |
       | 6  | Dedup          | 6            |               |
       | 6  | PassThrough    | 0            |               |

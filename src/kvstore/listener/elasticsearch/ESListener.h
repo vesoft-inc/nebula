@@ -102,7 +102,7 @@ class ESListener : public Listener {
    * @param lastApplyLogId Last apply id
    * @return Encoded string
    */
-  std::string encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const noexcept;
+  std::string encodeAppliedId(LogID lastId, TermID lastTerm, LogID lastApplyLogId) const;
 
  private:
   meta::SchemaManager* schemaMan_{nullptr};

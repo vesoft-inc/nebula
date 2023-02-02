@@ -130,7 +130,7 @@ struct hash<nebula::Tag> {
 
 template <>
 struct hash<nebula::Vertex> {
-  std::size_t operator()(const nebula::Vertex& h) const noexcept;
+  std::size_t operator()(const nebula::Vertex& h) const;
 };
 
 }  // namespace std

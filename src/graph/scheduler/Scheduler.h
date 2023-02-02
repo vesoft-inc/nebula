@@ -22,6 +22,8 @@ class Scheduler : private boost::noncopyable, private cpp::NonMovable {
 
   virtual folly::Future<Status> schedule() = 0;
 
+  virtual void waitFinish() = 0;
+
   static void analyzeLifetime(const PlanNode *node, std::size_t loopLayers = 0);
 
  protected:

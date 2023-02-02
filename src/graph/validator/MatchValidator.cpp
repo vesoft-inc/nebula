@@ -334,14 +334,13 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
   auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
-  newFilter = graph::ExpressionUtils::rewriteInnerInExpr(filter);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
   newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
                                                         whereClauseCtx.aliasesAvailable);
-  newFilter =
-      ExpressionUtils::rewriteRankFunc2LabelAttribute(newFilter, whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(newFilter,
+                                                                  whereClauseCtx.aliasesAvailable);
 
   whereClauseCtx.filter = newFilter;
 

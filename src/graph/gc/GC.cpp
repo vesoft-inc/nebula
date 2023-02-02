@@ -23,12 +23,15 @@ GC::GC() {
 }
 
 void GC::clear(std::vector<Result>&& garbage) {
+  memory::MemoryCheckOffGuard guard;
+  // do not bother folly
   queue_.enqueue(std::move(garbage));
 }
 
 void GC::periodicTask() {
-  // TODO: maybe could release by batch
-  queue_.try_dequeue();
+  while (!queue_.empty()) {
+    queue_.try_dequeue();
+  }
 }
 }  // namespace graph
 }  // namespace nebula

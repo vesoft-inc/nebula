@@ -6,6 +6,7 @@
 #ifndef GRAPH_CONTEXT_SYMBOLS_H_
 #define GRAPH_CONTEXT_SYMBOLS_H_
 
+#include <mutex>
 #include <unordered_set>
 #include <vector>
 
@@ -82,6 +83,7 @@ class SymbolTable final {
   ObjectPool* objPool_{nullptr};
   ExecutionContext* ectx_{nullptr};
   // var name -> variable
+  mutable folly::RWSpinLock lock_;
   std::unordered_map<std::string, Variable*> vars_;
 };
 

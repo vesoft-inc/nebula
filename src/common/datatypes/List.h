@@ -103,7 +103,7 @@ inline std::ostream& operator<<(std::ostream& os, const List& l) {
 namespace std {
 template <>
 struct hash<nebula::List> {
-  std::size_t operator()(const nebula::List& h) const noexcept {
+  std::size_t operator()(const nebula::List& h) const {
     if (h.values.size() == 1) {
       return std::hash<nebula::Value>()(h.values[0]);
     }

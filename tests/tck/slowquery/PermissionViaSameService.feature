@@ -23,7 +23,7 @@ Feature: Test kill queries from same service
     Then the execution should be successful
     And wait 10 seconds
     # Make sure the record exists
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -33,7 +33,7 @@ Feature: Test kill queries from same service
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -43,7 +43,7 @@ Feature: Test kill queries from same service
       | KILL QUERY(session=$-.sid, plan=$-.eid)
       """
     Then an PermissionError should be raised at runtime: Only GOD role could kill others' queries.
-    When executing query with user root with password nebula:
+    When executing query with user "root" and password "nebula":
       """
       USE nba;
       SHOW QUERIES
@@ -62,7 +62,7 @@ Feature: Test kill queries from same service
       """
     Then the execution should be successful
     And wait 5 seconds
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       GO 100002 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
@@ -77,7 +77,7 @@ Feature: Test kill queries from same service
     Then the execution should be successful
     # Make sure the record exists
     And wait 15 seconds
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES
@@ -87,7 +87,7 @@ Feature: Test kill queries from same service
     Then the result should be, in order:
       | sid   | eid   | dur   |
       | /\d+/ | /\d+/ | /\d+/ |
-    When executing query with user test_permission with password test:
+    When executing query with user "test_permission" and password "test":
       """
       USE nba;
       SHOW QUERIES

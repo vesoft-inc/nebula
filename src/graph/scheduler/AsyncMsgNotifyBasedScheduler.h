@@ -27,6 +27,8 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
 
   folly::Future<Status> schedule() override;
 
+  void waitFinish() override;
+
  private:
   folly::Future<Status> doSchedule(Executor* root) const;
 
@@ -62,6 +64,29 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
 
   folly::Future<Status> execute(Executor* executor) const;
 
+  folly::Future<Status> runExecute(Executor* executor) const;
+
+  void addExecuting(Executor* executor) const;
+
+  void removeExecuting(Executor* executor) const;
+
+  void setFailStatus(Status status) const;
+
+  bool hasFailStatus() const;
+
+  static std::string formatPrettyId(Executor* executor);
+
+  static std::string formatPrettyDependencyTree(Executor* root);
+
+  static void appendExecutor(size_t tabs, Executor* executor, std::stringstream& ss);
+
+ private:
+  // set if some Executor failed, then other Executors no need to do Executor::execute() further
+  mutable std::mutex smtx_;
+  mutable std::optional<Status> failedStatus_;
+  mutable std::mutex emtx_;
+  mutable std::condition_variable cv_;
+  mutable size_t executing_{0};
   QueryContext* qctx_{nullptr};
 };
 }  // namespace graph

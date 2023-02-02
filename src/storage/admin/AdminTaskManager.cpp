@@ -89,7 +89,7 @@ void AdminTaskManager::handleUnreportedTasks() {
         if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
           pStats = &statsItem;
         }
-        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, task_rc={}",
                                     jobId,
                                     taskId,
                                     apache::thrift::util::enumNameSafe(errCode));
@@ -131,7 +131,7 @@ void AdminTaskManager::handleUnreportedTasks() {
           continue;
         }
         rc = fut.value().value();
-        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, report_rc={}",
                                     jId,
                                     tId,
                                     apache::thrift::util::enumNameSafe(rc));

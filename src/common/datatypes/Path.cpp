@@ -87,7 +87,7 @@ std::size_t hash<nebula::Step>::operator()(const nebula::Step& h) const noexcept
   return folly::hash::fnv64_buf(reinterpret_cast<const void*>(&h.ranking), sizeof(h.ranking), hv);
 }
 
-std::size_t hash<nebula::Path>::operator()(const nebula::Path& h) const noexcept {
+std::size_t hash<nebula::Path>::operator()(const nebula::Path& h) const {
   size_t hv = hash<nebula::Vertex>()(h.src);
   for (auto& s : h.steps) {
     hv += (hv << 1) + (hv << 4) + (hv << 5) + (hv << 7) + (hv << 8) + (hv << 40);

@@ -254,6 +254,7 @@ bool MetaClient::loadUsersAndRoles() {
 }
 
 bool MetaClient::loadData() {
+  memory::MemoryCheckOffGuard g;
   // UNKNOWN role will skip heartbeat
   if (options_.role_ != cpp2::HostRole::UNKNOWN &&
       localDataLastUpdateTime_ == metadLastUpdateTime_) {
@@ -425,6 +426,7 @@ bool MetaClient::loadData() {
 }
 
 TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
+  memory::MemoryCheckOffGuard g;
   TagSchemas tagSchemas;
   for (auto& tagIt : tagItemVec) {
     // meta will return the different version from new to old
@@ -447,6 +449,7 @@ TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
 }
 
 EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
+  memory::MemoryCheckOffGuard g;
   EdgeSchemas edgeSchemas;
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
   for (auto& edgeIt : edgeItemVec) {
@@ -470,6 +473,7 @@ EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec
 }
 
 void MetaClient::addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col) {
+  memory::MemoryCheckOffGuard g;
   bool hasDef = col.default_value_ref().has_value();
   auto& colType = col.get_type();
   size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
@@ -493,6 +497,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              SpaceNewestTagVerMap& newestTagVerMap,
                              SpaceNewestEdgeVerMap& newestEdgeVerMap,
                              SpaceAllEdgeMap& allEdgeMap) {
+  memory::MemoryCheckOffGuard g;
   auto tagRet = listTagSchemas(spaceId).get();
   if (!tagRet.ok()) {
     LOG(ERROR) << "Get tag schemas failed for spaceId " << spaceId << ", " << tagRet.status();
@@ -559,6 +564,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
 }
 
 Indexes buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
+  memory::MemoryCheckOffGuard g;
   Indexes indexes;
   for (auto index : indexItemVec) {
     auto indexName = index.get_index_name();
@@ -570,6 +576,7 @@ Indexes buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
 }
 
 bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache) {
+  memory::MemoryCheckOffGuard g;
   auto tagIndexesRet = listTagIndexes(spaceId).get();
   if (!tagIndexesRet.ok()) {
     LOG(ERROR) << "Get tag indexes failed for spaceId " << spaceId << ", "
@@ -607,6 +614,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCach
 }
 
 bool MetaClient::loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache) {
+  memory::MemoryCheckOffGuard g;
   auto listenerRet = listListener(spaceId).get();
   if (!listenerRet.ok()) {
     LOG(ERROR) << "Get listeners failed for spaceId " << spaceId << ", " << listenerRet.status();
@@ -622,6 +630,7 @@ bool MetaClient::loadListeners(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCa
 }
 
 bool MetaClient::loadGlobalServiceClients() {
+  memory::MemoryCheckOffGuard g;
   auto ret = listServiceClients(cpp2::ExternalServiceType::ELASTICSEARCH).get();
   if (!ret.ok()) {
     LOG(ERROR) << "List services failed, status:" << ret.status();
@@ -632,6 +641,7 @@ bool MetaClient::loadGlobalServiceClients() {
 }
 
 bool MetaClient::loadFulltextIndexes() {
+  memory::MemoryCheckOffGuard g;
   auto ftRet = listFTIndexes().get();
   if (!ftRet.ok()) {
     LOG(ERROR) << "List fulltext indexes failed, status:" << ftRet.status();
@@ -642,6 +652,7 @@ bool MetaClient::loadFulltextIndexes() {
 }
 
 Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
@@ -657,6 +668,7 @@ Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
 }
 
 Status MetaClient::checkEdgeIndexed(GraphSpaceID space, IndexID indexID) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(space);
@@ -673,6 +685,7 @@ Status MetaClient::checkEdgeIndexed(GraphSpaceID space, IndexID indexID) {
 
 std::unordered_map<HostAddr, std::vector<PartitionID>> MetaClient::reverse(
     const PartsAlloc& parts) {
+  memory::MemoryCheckOffGuard g;
   std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
   for (auto& partHost : parts) {
     for (auto& h : partHost.second) {
@@ -694,6 +707,7 @@ void MetaClient::getResponse(Request req,
                              bool toLeader,
                              int32_t retry,
                              int32_t retryLimit) {
+  memory::MemoryCheckOffGuard g;
   stats::StatsManager::addValue(kNumRpcSentToMetad);
   auto* evb = ioThreadPool_->getEventBase();
   HostAddr host;
@@ -803,6 +817,7 @@ void MetaClient::getResponse(Request req,
 }
 
 std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdName>& tIdNames) {
+  memory::MemoryCheckOffGuard g;
   std::vector<SpaceIdName> idNames;
   idNames.resize(tIdNames.size());
   std::transform(tIdNames.begin(), tIdNames.end(), idNames.begin(), [](const auto& tin) {
@@ -813,6 +828,7 @@ std::vector<SpaceIdName> MetaClient::toSpaceIdName(const std::vector<cpp2::IdNam
 
 template <typename RESP>
 Status MetaClient::handleResponse(const RESP& resp) {
+  memory::MemoryCheckOffGuard g;
   switch (resp.get_code()) {
     case nebula::cpp2::ErrorCode::SUCCEEDED:
       return Status::OK();
@@ -979,6 +995,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
 }
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& localCache) {
+  memory::MemoryCheckOffGuard g;
   PartsMap partMap;
   for (const auto& it : localCache) {
     auto spaceId = it.first;
@@ -999,6 +1016,7 @@ PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& local
 }
 
 void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
+  memory::MemoryCheckOffGuard g;
   folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
@@ -1060,6 +1078,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
 }
 
 void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newCache) {
+  memory::MemoryCheckOffGuard g;
   folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
@@ -1169,6 +1188,7 @@ void MetaClient::listenerDiff(const LocalCache& oldCache, const LocalCache& newC
 }
 
 void MetaClient::loadRemoteListeners() {
+  memory::MemoryCheckOffGuard g;
   folly::SharedMutex::WriteHolder holder(listenerLock_);
   if (listener_ == nullptr) {
     VLOG(3) << "Listener is null!";
@@ -1194,6 +1214,7 @@ void MetaClient::loadRemoteListeners() {
 /// ================================== public methods =================================
 
 PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
+  memory::MemoryCheckOffGuard g;
   // If the length of the id is 8, we will treat it as int64_t to be compatible
   // with the version 1.0
   uint64_t vid = 0;
@@ -1210,6 +1231,7 @@ PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
 
 folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
     GraphSpaceID spaceId, cpp2::JobOp op, cpp2::JobType type, std::vector<std::string> paras) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AdminJobReq req;
   req.space_id_ref() = spaceId;
   req.op_ref() = op;
@@ -1227,6 +1249,7 @@ folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
 
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceDesc spaceDesc,
                                                               bool ifNotExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateSpaceReq req;
   req.properties_ref() = std::move(spaceDesc);
   req.if_not_exists_ref() = ifNotExists;
@@ -1242,6 +1265,7 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
 
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
                                                                 const std::string& newSpaceName) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateSpaceAsReq req;
   req.old_space_name_ref() = oldSpaceName;
   req.new_space_name_ref() = newSpaceName;
@@ -1256,6 +1280,7 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::strin
 }
 
 folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListSpacesReq req;
   folly::Promise<StatusOr<std::vector<SpaceIdName>>> promise;
   auto future = promise.getFuture();
@@ -1270,6 +1295,7 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
 }
 
 folly::Future<StatusOr<cpp2::SpaceItem>> MetaClient::getSpace(std::string name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetSpaceReq req;
   req.space_name_ref() = std::move(name);
   folly::Promise<StatusOr<cpp2::SpaceItem>> promise;
@@ -1283,6 +1309,7 @@ folly::Future<StatusOr<cpp2::SpaceItem>> MetaClient::getSpace(std::string name) 
 }
 
 folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropSpaceReq req;
   req.space_name_ref() = std::move(name);
   req.if_exists_ref() = ifExists;
@@ -1299,6 +1326,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool
 }
 
 folly::Future<StatusOr<bool>> MetaClient::clearSpace(std::string name, const bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ClearSpaceReq req;
   req.space_name_ref() = std::move(name);
   req.if_exists_ref() = ifExists;
@@ -1315,6 +1343,7 @@ folly::Future<StatusOr<bool>> MetaClient::clearSpace(std::string name, const boo
 }
 
 folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2::ListHostType tp) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListHostsReq req;
   req.type_ref() = tp;
 
@@ -1331,6 +1360,7 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2:
 folly::Future<StatusOr<bool>> MetaClient::alterSpace(const std::string& spaceName,
                                                      meta::cpp2::AlterSpaceOp op,
                                                      const std::vector<std::string>& paras) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AlterSpaceReq req;
   req.op_ref() = op;
   req.space_name_ref() = spaceName;
@@ -1349,6 +1379,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterSpace(const std::string& spaceNam
 
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
     GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListPartsReq req;
   req.space_id_ref() = spaceId;
   req.part_ids_ref() = std::move(partIds);
@@ -1364,6 +1395,7 @@ folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
 
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetPartsAllocReq req;
   req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>> promise;
@@ -1388,6 +1420,7 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
 }
 
 StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1401,6 +1434,7 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
 }
 
 StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1416,6 +1450,7 @@ StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId
 
 StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
                                                     const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1430,6 +1465,7 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
 
 StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& space,
                                                           const TagID& tagId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1444,6 +1480,7 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
 
 StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& space,
                                                           const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1458,6 +1495,7 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
 
 StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                              const EdgeType edgeType) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1471,6 +1509,7 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
 }
 
 StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSpaceID& space) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1484,12 +1523,14 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
 }
 
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   return doGetPartsMap(host, metadata.localCache_);
 }
 
 StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId, PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
@@ -1511,6 +1552,7 @@ StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId, Part
 Status MetaClient::checkPartExistInCache(const HostAddr& host,
                                          GraphSpaceID spaceId,
                                          PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
@@ -1531,6 +1573,7 @@ Status MetaClient::checkPartExistInCache(const HostAddr& host,
 }
 
 Status MetaClient::checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
@@ -1546,6 +1589,7 @@ Status MetaClient::checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spa
 }
 
 StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto it = metadata.localCache_.find(spaceId);
@@ -1559,6 +1603,7 @@ folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
                                                            std::string name,
                                                            cpp2::Schema schema,
                                                            bool ifNotExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateTagReq req;
   req.space_id_ref() = spaceId;
   req.tag_name_ref() = std::move(name);
@@ -1578,6 +1623,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterTagSchema(GraphSpaceID spaceId,
                                                          std::string name,
                                                          std::vector<cpp2::AlterSchemaItem> items,
                                                          cpp2::SchemaProp schemaProp) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AlterTagReq req;
   req.space_id_ref() = spaceId;
   req.tag_name_ref() = std::move(name);
@@ -1597,6 +1643,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterTagSchema(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>> MetaClient::listTagSchemas(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListTagsReq req;
   req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::TagItem>>> promise;
@@ -1612,6 +1659,7 @@ folly::Future<StatusOr<std::vector<cpp2::TagItem>>> MetaClient::listTagSchemas(
 folly::Future<StatusOr<bool>> MetaClient::dropTagSchema(GraphSpaceID spaceId,
                                                         std::string tagName,
                                                         const bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropTagReq req;
   req.space_id_ref() = spaceId;
   req.tag_name_ref() = std::move(tagName);
@@ -1631,6 +1679,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropTagSchema(GraphSpaceID spaceId,
 folly::Future<StatusOr<cpp2::Schema>> MetaClient::getTagSchema(GraphSpaceID spaceId,
                                                                std::string name,
                                                                int64_t version) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetTagReq req;
   req.space_id_ref() = spaceId;
   req.tag_name_ref() = std::move(name);
@@ -1649,6 +1698,7 @@ folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spac
                                                                std::string name,
                                                                cpp2::Schema schema,
                                                                bool ifNotExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateEdgeReq req;
   req.space_id_ref() = spaceId;
   req.edge_name_ref() = std::move(name);
@@ -1669,6 +1719,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                                                           std::string name,
                                                           std::vector<cpp2::AlterSchemaItem> items,
                                                           cpp2::SchemaProp schemaProp) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AlterEdgeReq req;
   req.space_id_ref() = spaceId;
   req.edge_name_ref() = std::move(name);
@@ -1688,6 +1739,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> MetaClient::listEdgeSchemas(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListEdgesReq req;
   req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::EdgeItem>>> promise;
@@ -1703,6 +1755,7 @@ folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> MetaClient::listEdgeSchemas
 folly::Future<StatusOr<cpp2::Schema>> MetaClient::getEdgeSchema(GraphSpaceID spaceId,
                                                                 std::string name,
                                                                 SchemaVer version) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetEdgeReq req;
   req.space_id_ref() = spaceId;
   req.edge_name_ref() = std::move(name);
@@ -1720,6 +1773,7 @@ folly::Future<StatusOr<cpp2::Schema>> MetaClient::getEdgeSchema(GraphSpaceID spa
 folly::Future<StatusOr<bool>> MetaClient::dropEdgeSchema(GraphSpaceID spaceId,
                                                          std::string name,
                                                          const bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropEdgeReq req;
   req.space_id_ref() = spaceId;
   req.edge_name_ref() = std::move(name);
@@ -1743,6 +1797,7 @@ folly::Future<StatusOr<IndexID>> MetaClient::createTagIndex(GraphSpaceID spaceID
                                                             bool ifNotExists,
                                                             const cpp2::IndexParams* indexParams,
                                                             const std::string* comment) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateTagIndexReq req;
   req.space_id_ref() = spaceID;
   req.index_name_ref() = std::move(indexName);
@@ -1769,6 +1824,7 @@ folly::Future<StatusOr<IndexID>> MetaClient::createTagIndex(GraphSpaceID spaceID
 folly::Future<StatusOr<bool>> MetaClient::dropTagIndex(GraphSpaceID spaceID,
                                                        std::string name,
                                                        bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropTagIndexReq req;
   req.space_id_ref() = (spaceID);
   req.index_name_ref() = (std::move(name));
@@ -1788,6 +1844,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropTagIndex(GraphSpaceID spaceID,
 
 folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getTagIndex(GraphSpaceID spaceID,
                                                                  std::string name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetTagIndexReq req;
   req.space_id_ref() = spaceID;
   req.index_name_ref() = std::move(name);
@@ -1804,6 +1861,7 @@ folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getTagIndex(GraphSpaceID sp
 
 folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listTagIndexes(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListTagIndexesReq req;
   req.space_id_ref() = spaceId;
 
@@ -1818,6 +1876,7 @@ folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listTagIndexes
 }
 
 folly::Future<StatusOr<bool>> MetaClient::rebuildTagIndex(GraphSpaceID spaceID, std::string name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RebuildIndexReq req;
   req.space_id_ref() = spaceID;
   req.index_name_ref() = std::move(name);
@@ -1836,6 +1895,7 @@ folly::Future<StatusOr<bool>> MetaClient::rebuildTagIndex(GraphSpaceID spaceID, 
 
 folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listTagIndexStatus(
     GraphSpaceID spaceID) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListIndexStatusReq req;
   req.space_id_ref() = spaceID;
 
@@ -1859,6 +1919,7 @@ folly::Future<StatusOr<IndexID>> MetaClient::createEdgeIndex(
     bool ifNotExists,
     const cpp2::IndexParams* indexParams,
     const std::string* comment) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateEdgeIndexReq req;
   req.space_id_ref() = spaceID;
   req.index_name_ref() = std::move(indexName);
@@ -1886,6 +1947,7 @@ folly::Future<StatusOr<IndexID>> MetaClient::createEdgeIndex(
 folly::Future<StatusOr<bool>> MetaClient::dropEdgeIndex(GraphSpaceID spaceId,
                                                         std::string name,
                                                         bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropEdgeIndexReq req;
   req.space_id_ref() = spaceId;
   req.index_name_ref() = std::move(name);
@@ -1905,6 +1967,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropEdgeIndex(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getEdgeIndex(GraphSpaceID spaceId,
                                                                   std::string name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetEdgeIndexReq req;
   req.space_id_ref() = spaceId;
   req.index_name_ref() = std::move(name);
@@ -1921,6 +1984,7 @@ folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getEdgeIndex(GraphSpaceID s
 
 folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listEdgeIndexes(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListEdgeIndexesReq req;
   req.space_id_ref() = spaceId;
 
@@ -1937,6 +2001,7 @@ folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listEdgeIndexe
 }
 
 StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1956,6 +2021,7 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
 }
 
 StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpaceID& spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1978,6 +2044,7 @@ StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpac
 }
 
 StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1992,6 +2059,7 @@ StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& spaceId) 
 }
 
 StatusOr<meta::cpp2::IsolationLevel> MetaClient::getIsolationLevel(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   auto spaceDescStatus = getSpaceDesc(spaceId);
   if (!spaceDescStatus.ok()) {
     return spaceDescStatus.status();
@@ -2002,6 +2070,7 @@ StatusOr<meta::cpp2::IsolationLevel> MetaClient::getIsolationLevel(GraphSpaceID 
 
 StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getTagSchemaFromCache(
     GraphSpaceID spaceId, TagID tagID, SchemaVer ver) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2023,6 +2092,7 @@ StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getTagSchemaFr
 
 StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getEdgeSchemaFromCache(
     GraphSpaceID spaceId, EdgeType edgeType, SchemaVer ver) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2043,6 +2113,7 @@ StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getEdgeSchemaF
 }
 
 StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2056,6 +2127,7 @@ StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
 }
 
 StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2075,6 +2147,7 @@ StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spa
 }
 
 StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2088,6 +2161,7 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
 }
 
 StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphSpaceID& spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2107,6 +2181,7 @@ StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphS
 }
 
 folly::Future<StatusOr<bool>> MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID, std::string name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RebuildIndexReq req;
   req.space_id_ref() = spaceID;
   req.index_name_ref() = std::move(name);
@@ -2125,6 +2200,7 @@ folly::Future<StatusOr<bool>> MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
 
 folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listEdgeIndexStatus(
     GraphSpaceID spaceID) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListIndexStatusReq req;
   req.space_id_ref() = spaceID;
 
@@ -2142,6 +2218,7 @@ folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listEdgeInde
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexByNameFromCache(
     const GraphSpaceID space, const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2160,6 +2237,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexByNameFromCach
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexByNameFromCache(
     const GraphSpaceID space, const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2178,6 +2256,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexByNameFromCac
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexFromCache(GraphSpaceID spaceId,
                                                                             IndexID indexID) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2201,6 +2280,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexFromCache(Grap
 
 StatusOr<TagID> MetaClient::getRelatedTagIDByIndexNameFromCache(const GraphSpaceID space,
                                                                 const std::string& indexName) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2216,6 +2296,7 @@ StatusOr<TagID> MetaClient::getRelatedTagIDByIndexNameFromCache(const GraphSpace
 
 StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(GraphSpaceID spaceId,
                                                                              IndexID indexId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2239,6 +2320,7 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(Gra
 
 StatusOr<EdgeType> MetaClient::getRelatedEdgeTypeByIndexNameFromCache(
     const GraphSpaceID space, const std::string& indexName) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2254,6 +2336,7 @@ StatusOr<EdgeType> MetaClient::getRelatedEdgeTypeByIndexNameFromCache(
 
 StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getTagIndexesFromCache(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2278,6 +2361,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getTagIndexe
 
 StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndexesFromCache(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2301,6 +2385,7 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndex
 }
 
 StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2332,18 +2417,21 @@ StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, P
 void MetaClient::updateStorageLeader(GraphSpaceID spaceId,
                                      PartitionID partId,
                                      const HostAddr& leader) {
+  memory::MemoryCheckOffGuard g;
   VLOG(1) << "Update the leader for [" << spaceId << ", " << partId << "] to " << leader;
   folly::SharedMutex::WriteHolder holder(leadersLock_);
   leadersInfo_.leaderMap_[{spaceId, partId}] = leader;
 }
 
 void MetaClient::invalidStorageLeader(GraphSpaceID spaceId, PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   VLOG(1) << "Invalidate the leader for [" << spaceId << ", " << partId << "]";
   folly::SharedMutex::WriteHolder holder(leadersLock_);
   leadersInfo_.leaderMap_.erase({spaceId, partId});
 }
 
 StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2356,6 +2444,7 @@ const std::vector<HostAddr>& MetaClient::getAddresses() {
 }
 
 std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return std::vector<cpp2::RoleItem>(0);
   }
@@ -2369,6 +2458,7 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
 }
 
 Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+  memory::MemoryCheckOffGuard g;
   // Check meta service status
   if (!ready_) {
     return Status::Error("Meta Service not ready");
@@ -2437,6 +2527,7 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
 }
 
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return false;
   }
@@ -2450,6 +2541,7 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
 }
 
 StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   folly::rcu_reader guard;
   const auto& metadata = *metadata_.load();
   auto spaceInfo = metadata.localCache_.find(spaceId);
@@ -2466,6 +2558,7 @@ StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID 
 }
 
 StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2477,6 +2570,7 @@ StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() {
 
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
                                                              const TagID& tagId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2491,6 +2585,7 @@ StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID&
 
 StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID& space,
                                                               const EdgeType& edgeType) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2504,6 +2599,7 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
 }
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
+  memory::MemoryCheckOffGuard g;
   cpp2::HBReq req;
   req.host_ref() = options_.localHost_;
   req.role_ref() = options_.role_;
@@ -2596,6 +2692,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
 folly::Future<StatusOr<bool>> MetaClient::createUser(std::string account,
                                                      std::string password,
                                                      bool ifNotExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateUserReq req;
   req.account_ref() = std::move(account);
   req.encoded_pwd_ref() = std::move(password);
@@ -2613,6 +2710,7 @@ folly::Future<StatusOr<bool>> MetaClient::createUser(std::string account,
 }
 
 folly::Future<StatusOr<bool>> MetaClient::dropUser(std::string account, bool ifExists) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropUserReq req;
   req.account_ref() = std::move(account);
   req.if_exists_ref() = ifExists;
@@ -2629,6 +2727,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropUser(std::string account, bool ifE
 }
 
 folly::Future<StatusOr<bool>> MetaClient::alterUser(std::string account, std::string password) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AlterUserReq req;
   req.account_ref() = std::move(account);
   req.encoded_pwd_ref() = std::move(password);
@@ -2645,6 +2744,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterUser(std::string account, std::st
 }
 
 folly::Future<StatusOr<bool>> MetaClient::grantToUser(cpp2::RoleItem roleItem) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GrantRoleReq req;
   req.role_item_ref() = std::move(roleItem);
   folly::Promise<StatusOr<bool>> promise;
@@ -2660,6 +2760,7 @@ folly::Future<StatusOr<bool>> MetaClient::grantToUser(cpp2::RoleItem roleItem) {
 }
 
 folly::Future<StatusOr<bool>> MetaClient::revokeFromUser(cpp2::RoleItem roleItem) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RevokeRoleReq req;
   req.role_item_ref() = std::move(roleItem);
   folly::Promise<StatusOr<bool>> promise;
@@ -2675,6 +2776,7 @@ folly::Future<StatusOr<bool>> MetaClient::revokeFromUser(cpp2::RoleItem roleItem
 }
 
 folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient::listUsers() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListUsersReq req;
   folly::Promise<StatusOr<std::unordered_map<std::string, std::string>>> promise;
   auto future = promise.getFuture();
@@ -2687,6 +2789,7 @@ folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient
 }
 
 folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::listRoles(GraphSpaceID space) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListRolesReq req;
   req.space_id_ref() = std::move(space);
   folly::Promise<StatusOr<std::vector<cpp2::RoleItem>>> promise;
@@ -2702,6 +2805,7 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::listRoles(Graph
 folly::Future<StatusOr<bool>> MetaClient::changePassword(std::string account,
                                                          std::string newPwd,
                                                          std::string oldPwd) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ChangePasswordReq req;
   req.account_ref() = std::move(account);
   req.new_encoded_pwd_ref() = std::move(newPwd);
@@ -2719,6 +2823,7 @@ folly::Future<StatusOr<bool>> MetaClient::changePassword(std::string account,
 }
 
 folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(std::string account) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetUserRolesReq req;
   req.account_ref() = std::move(account);
   folly::Promise<StatusOr<std::vector<cpp2::RoleItem>>> promise;
@@ -2732,6 +2837,7 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(st
 }
 
 folly::Future<StatusOr<bool>> MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RegConfigReq req;
   req.items_ref() = items;
   folly::Promise<StatusOr<int64_t>> promise;
@@ -2748,6 +2854,7 @@ folly::Future<StatusOr<bool>> MetaClient::regConfig(const std::vector<cpp2::Conf
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::getConfig(
     const cpp2::ConfigModule& module, const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!configReady_) {
     return Status::Error("Not ready!");
   }
@@ -2769,6 +2876,7 @@ folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::getConfig(
 folly::Future<StatusOr<bool>> MetaClient::setConfig(const cpp2::ConfigModule& module,
                                                     const std::string& name,
                                                     const Value& value) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ConfigItem item;
   item.module_ref() = module;
   item.name_ref() = name;
@@ -2790,6 +2898,7 @@ folly::Future<StatusOr<bool>> MetaClient::setConfig(const cpp2::ConfigModule& mo
 
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::listConfigs(
     const cpp2::ConfigModule& module) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListConfigsReq req;
   req.module_ref() = module;
   folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;
@@ -2803,6 +2912,7 @@ folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::listConfigs(
 }
 
 folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateSnapshotReq req;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -2820,6 +2930,7 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
 }
 
 folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropSnapshotReq req;
   std::vector<std::string> names{name};
   req.names_ref() = names;
@@ -2836,6 +2947,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) 
 }
 
 folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListSnapshotsReq req;
   folly::Promise<StatusOr<std::vector<cpp2::Snapshot>>> promise;
   auto future = promise.getFuture();
@@ -2852,6 +2964,7 @@ folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> MetaClient::listSnapshots()
 folly::Future<StatusOr<bool>> MetaClient::addListener(GraphSpaceID spaceId,
                                                       cpp2::ListenerType type,
                                                       std::vector<HostAddr> hosts) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AddListenerReq req;
   req.space_id_ref() = spaceId;
   req.type_ref() = type;
@@ -2870,6 +2983,7 @@ folly::Future<StatusOr<bool>> MetaClient::addListener(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<bool>> MetaClient::removeListener(GraphSpaceID spaceId,
                                                          cpp2::ListenerType type) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RemoveListenerReq req;
   req.space_id_ref() = spaceId;
   req.type_ref() = type;
@@ -2887,6 +3001,7 @@ folly::Future<StatusOr<bool>> MetaClient::removeListener(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> MetaClient::listListener(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListListenerReq req;
   req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::ListenerInfo>>> promise;
@@ -2902,6 +3017,7 @@ folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> MetaClient::listListene
 }
 
 bool MetaClient::registerCfg() {
+  memory::MemoryCheckOffGuard g;
   auto ret = regConfig(gflagsDeclared_).get();
   if (ret.ok()) {
     LOG(INFO) << "Register gflags ok " << gflagsDeclared_.size();
@@ -2912,6 +3028,7 @@ bool MetaClient::registerCfg() {
 
 StatusOr<std::vector<std::pair<PartitionID, cpp2::ListenerType>>>
 MetaClient::getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAddr& host) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2932,6 +3049,7 @@ MetaClient::getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAdd
 }
 
 StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& host) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2941,6 +3059,7 @@ StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& h
 }
 
 ListenersMap MetaClient::doGetListenersMap(const HostAddr& host, const LocalCache& localCache) {
+  memory::MemoryCheckOffGuard g;
   ListenersMap listenersMap;
   for (const auto& space : localCache) {
     auto spaceId = space.first;
@@ -2970,6 +3089,7 @@ ListenersMap MetaClient::doGetListenersMap(const HostAddr& host, const LocalCach
 StatusOr<HostAddr> MetaClient::getListenerHostsBySpacePartType(GraphSpaceID spaceId,
                                                                PartitionID partId,
                                                                cpp2::ListenerType type) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -2992,6 +3112,7 @@ StatusOr<HostAddr> MetaClient::getListenerHostsBySpacePartType(GraphSpaceID spac
 
 StatusOr<std::vector<RemoteListenerInfo>> MetaClient::getListenerHostTypeBySpacePartType(
     GraphSpaceID spaceId, PartitionID partId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3017,6 +3138,7 @@ StatusOr<std::vector<RemoteListenerInfo>> MetaClient::getListenerHostTypeBySpace
 }
 
 bool MetaClient::loadCfg() {
+  memory::MemoryCheckOffGuard g;
   // UNKNOWN role will skip heartbeat
   if (options_.skipConfig_ || (options_.role_ != cpp2::HostRole::UNKNOWN &&
                                localCfgLastUpdateTime_ == metadLastUpdateTime_)) {
@@ -3057,6 +3179,7 @@ bool MetaClient::loadCfg() {
 }
 
 void MetaClient::updateGflagsValue(const cpp2::ConfigItem& item) {
+  memory::MemoryCheckOffGuard g;
   if (item.get_mode() != cpp2::ConfigMode::MUTABLE) {
     return;
   }
@@ -3085,6 +3208,7 @@ void MetaClient::updateGflagsValue(const cpp2::ConfigItem& item) {
 }
 
 void MetaClient::updateNestedGflags(const std::unordered_map<std::string, Value>& nameValues) {
+  memory::MemoryCheckOffGuard g;
   std::unordered_map<std::string, std::string> optionMap;
   for (const auto& value : nameValues) {
     optionMap.emplace(value.first, value.second.toString());
@@ -3098,12 +3222,14 @@ void MetaClient::updateNestedGflags(const std::unordered_map<std::string, Value>
 }
 
 Status MetaClient::refreshCache() {
+  memory::MemoryCheckOffGuard g;
   auto ret = bgThread_->addTask(&MetaClient::loadData, this).get();
   return ret ? Status::OK() : Status::Error("Load data failed");
 }
 
 void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
                             const SpaceNameIdMap& spaceIndexByName) {
+  memory::MemoryCheckOffGuard g;
   LeaderInfo leaderInfo;
   for (auto& item : hostItems) {
     for (auto& spaceEntry : item.get_leader_parts()) {
@@ -3143,6 +3269,7 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
 }
 
 folly::Future<StatusOr<bool>> MetaClient::addHosts(std::vector<HostAddr> hosts) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AddHostsReq req;
   req.hosts_ref() = std::move(hosts);
 
@@ -3159,6 +3286,7 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(std::vector<HostAddr> hosts) 
 }
 
 folly::Future<StatusOr<bool>> MetaClient::dropHosts(std::vector<HostAddr> hosts) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropHostsReq req;
   req.hosts_ref() = std::move(hosts);
 
@@ -3176,6 +3304,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropHosts(std::vector<HostAddr> hosts)
 
 folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zones,
                                                     std::string zoneName) {
+  memory::MemoryCheckOffGuard g;
   cpp2::MergeZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
   req.zones_ref() = std::move(zones);
@@ -3193,6 +3322,7 @@ folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zon
 
 folly::Future<StatusOr<bool>> MetaClient::divideZone(
     std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zoneItems) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DivideZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
   req.zone_items_ref() = std::move(zoneItems);
@@ -3210,6 +3340,7 @@ folly::Future<StatusOr<bool>> MetaClient::divideZone(
 
 folly::Future<StatusOr<bool>> MetaClient::renameZone(std::string originalZoneName,
                                                      std::string zoneName) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RenameZoneReq req;
   req.original_zone_name_ref() = std::move(originalZoneName);
   req.zone_name_ref() = std::move(zoneName);
@@ -3226,6 +3357,7 @@ folly::Future<StatusOr<bool>> MetaClient::renameZone(std::string originalZoneNam
 }
 
 folly::Future<StatusOr<bool>> MetaClient::dropZone(std::string zoneName) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
 
@@ -3244,6 +3376,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropZone(std::string zoneName) {
 folly::Future<StatusOr<bool>> MetaClient::addHostsIntoZone(std::vector<HostAddr> hosts,
                                                            std::string zoneName,
                                                            bool isNew) {
+  memory::MemoryCheckOffGuard g;
   cpp2::AddHostsIntoZoneReq req;
   req.hosts_ref() = hosts;
   req.zone_name_ref() = zoneName;
@@ -3262,6 +3395,7 @@ folly::Future<StatusOr<bool>> MetaClient::addHostsIntoZone(std::vector<HostAddr>
 }
 
 folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::getZone(std::string zoneName) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
 
@@ -3276,6 +3410,7 @@ folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::getZone(std::string z
 }
 
 folly::Future<StatusOr<std::vector<cpp2::Zone>>> MetaClient::listZones() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListZonesReq req;
   folly::Promise<StatusOr<std::vector<cpp2::Zone>>> promise;
   auto future = promise.getFuture();
@@ -3288,6 +3423,7 @@ folly::Future<StatusOr<std::vector<cpp2::Zone>>> MetaClient::listZones() {
 }
 
 folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetStatsReq req;
   req.space_id_ref() = (spaceId);
   folly::Promise<StatusOr<cpp2::StatsItem>> promise;
@@ -3307,6 +3443,7 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
     int32_t taskId,
     nebula::cpp2::ErrorCode taskErrCode,
     cpp2::StatsItem* statisticItem) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ReportTaskReq req;
   req.code_ref() = taskErrCode;
   req.space_id_ref() = spaceId;
@@ -3328,6 +3465,7 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
 
 folly::Future<StatusOr<bool>> MetaClient::signInService(
     const cpp2::ExternalServiceType& type, const std::vector<cpp2::ServiceClient>& clients) {
+  memory::MemoryCheckOffGuard g;
   cpp2::SignInServiceReq req;
   req.type_ref() = type;
   req.clients_ref() = clients;
@@ -3345,6 +3483,7 @@ folly::Future<StatusOr<bool>> MetaClient::signInService(
 }
 
 folly::Future<StatusOr<bool>> MetaClient::signOutService(const cpp2::ExternalServiceType& type) {
+  memory::MemoryCheckOffGuard g;
   cpp2::SignOutServiceReq req;
   req.type_ref() = type;
   folly::Promise<StatusOr<bool>> promise;
@@ -3362,6 +3501,7 @@ folly::Future<StatusOr<bool>> MetaClient::signOutService(const cpp2::ExternalSer
 
 folly::Future<StatusOr<ServiceClientsList>> MetaClient::listServiceClients(
     const cpp2::ExternalServiceType& type) {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListServiceClientsReq req;
   req.type_ref() = type;
   folly::Promise<StatusOr<ServiceClientsList>> promise;
@@ -3378,6 +3518,7 @@ folly::Future<StatusOr<ServiceClientsList>> MetaClient::listServiceClients(
 
 StatusOr<std::vector<cpp2::ServiceClient>> MetaClient::getServiceClientsFromCache(
     const cpp2::ExternalServiceType& type) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3394,6 +3535,7 @@ StatusOr<std::vector<cpp2::ServiceClient>> MetaClient::getServiceClientsFromCach
 
 folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,
                                                         const cpp2::FTIndex& index) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateFTIndexReq req;
   req.fulltext_index_name_ref() = name;
   req.index_ref() = index;
@@ -3412,6 +3554,7 @@ folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,
 
 folly::Future<StatusOr<bool>> MetaClient::dropFTIndex(GraphSpaceID spaceId,
                                                       const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   cpp2::DropFTIndexReq req;
   req.fulltext_index_name_ref() = name;
   req.space_id_ref() = spaceId;
@@ -3430,6 +3573,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropFTIndex(GraphSpaceID spaceId,
 
 folly::Future<StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>>
 MetaClient::listFTIndexes() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListFTIndexesReq req;
   folly::Promise<StatusOr<std::unordered_map<std::string, cpp2::FTIndex>>> promise;
   auto future = promise.getFuture();
@@ -3444,6 +3588,7 @@ MetaClient::listFTIndexes() {
 }
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexesFromCache() {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3454,6 +3599,7 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexe
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceFromCache(
     GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3470,6 +3616,7 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
 
 StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
     GraphSpaceID spaceId, int32_t schemaId, const std::string& field) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3490,6 +3637,7 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexFromCache(
     GraphSpaceID spaceId, int32_t schemaId) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3509,6 +3657,7 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexF
 
 StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID spaceId,
                                                               const std::string& name) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3523,6 +3672,7 @@ StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID space
 
 folly::Future<StatusOr<cpp2::CreateSessionResp>> MetaClient::createSession(
     const std::string& userName, const HostAddr& graphAddr, const std::string& clientIp) {
+  memory::MemoryCheckOffGuard g;
   cpp2::CreateSessionReq req;
   req.user_ref() = userName;
   req.graph_addr_ref() = graphAddr;
@@ -3540,6 +3690,7 @@ folly::Future<StatusOr<cpp2::CreateSessionResp>> MetaClient::createSession(
 
 folly::Future<StatusOr<cpp2::UpdateSessionsResp>> MetaClient::updateSessions(
     const std::vector<cpp2::Session>& sessions) {
+  memory::MemoryCheckOffGuard g;
   cpp2::UpdateSessionsReq req;
   req.sessions_ref() = sessions;
   folly::Promise<StatusOr<cpp2::UpdateSessionsResp>> promise;
@@ -3554,6 +3705,7 @@ folly::Future<StatusOr<cpp2::UpdateSessionsResp>> MetaClient::updateSessions(
 }
 
 folly::Future<StatusOr<cpp2::ListSessionsResp>> MetaClient::listSessions() {
+  memory::MemoryCheckOffGuard g;
   cpp2::ListSessionsReq req;
   folly::Promise<StatusOr<cpp2::ListSessionsResp>> promise;
   auto future = promise.getFuture();
@@ -3566,6 +3718,7 @@ folly::Future<StatusOr<cpp2::ListSessionsResp>> MetaClient::listSessions() {
 }
 
 folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID sessionId) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetSessionReq req;
   req.session_id_ref() = sessionId;
   folly::Promise<StatusOr<cpp2::GetSessionResp>> promise;
@@ -3580,6 +3733,7 @@ folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID s
 
 folly::Future<StatusOr<cpp2::RemoveSessionResp>> MetaClient::removeSessions(
     const std::vector<SessionID>& sessionIds) {
+  memory::MemoryCheckOffGuard g;
   cpp2::RemoveSessionReq req;
   req.session_ids_ref() = sessionIds;
   folly::Promise<StatusOr<cpp2::RemoveSessionResp>> promise;
@@ -3595,6 +3749,7 @@ folly::Future<StatusOr<cpp2::RemoveSessionResp>> MetaClient::removeSessions(
 
 folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
     std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries) {
+  memory::MemoryCheckOffGuard g;
   cpp2::KillQueryReq req;
   req.kill_queries_ref() = std::move(killQueries);
   folly::Promise<StatusOr<cpp2::ExecResp>> promise;
@@ -3609,6 +3764,7 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
 }
 
 folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
+  memory::MemoryCheckOffGuard g;
   cpp2::GetWorkerIdReq req;
   req.host_ref() = std::move(ipAddr);
 
@@ -3624,6 +3780,7 @@ folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
 }
 
 folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {
+  memory::MemoryCheckOffGuard g;
   auto req = cpp2::GetSegmentIdReq();
   req.length_ref() = length;
 
@@ -3639,6 +3796,7 @@ folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {
 }
 
 bool MetaClient::loadSessions() {
+  memory::MemoryCheckOffGuard g;
   auto session_list = listSessions().get();
   if (!session_list.ok()) {
     LOG(ERROR) << "List sessions failed, status:" << session_list.status();
@@ -3658,6 +3816,7 @@ bool MetaClient::loadSessions() {
 }
 
 StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID& session_id) {
+  memory::MemoryCheckOffGuard g;
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -3671,6 +3830,7 @@ StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID&
 }
 
 bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) {
+  memory::MemoryCheckOffGuard g;
   static thread_local int check_counter = 0;
   // Inaccurate in a multi-threaded environment, but it is not important
   check_counter = (check_counter + 1) & ((1 << FLAGS_check_plan_killed_frequency) - 1);
@@ -3682,6 +3842,7 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 }
 
 Status MetaClient::verifyVersion() {
+  memory::MemoryCheckOffGuard g;
   auto req = cpp2::VerifyClientVersionReq();
   req.build_version_ref() = getOriginVersion();
   req.host_ref() = options_.localHost_;
@@ -3705,6 +3866,7 @@ Status MetaClient::verifyVersion() {
 }
 
 Status MetaClient::saveVersionToMeta() {
+  memory::MemoryCheckOffGuard g;
   auto req = cpp2::SaveGraphVersionReq();
   req.build_version_ref() = getOriginVersion();
   req.host_ref() = options_.localHost_;

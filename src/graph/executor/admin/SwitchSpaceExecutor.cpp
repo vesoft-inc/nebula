@@ -5,6 +5,7 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 
 #include "clients/meta/MetaClient.h"
+#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/PermissionManager.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -13,6 +14,8 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> SwitchSpaceExecutor::execute() {
+  // TODO: need check if this MemoryCheckOff is necessary
+  memory::MemoryCheckOffGuard guard;
   SCOPED_TIMER(&execTime_);
 
   auto *spaceToNode = asNode<SwitchSpace>(node());
@@ -25,6 +28,11 @@ folly::Future<Status> SwitchSpaceExecutor::execute() {
         }
 
         auto spaceId = resp.value().get_space_id();
+        // SwitchSpace can be mixed with normal query, if the corresponding query failed by other
+        // Executors, QueryContext may already be released.
+        if (!qctx() || !qctx()->rctx() || qctx_->rctx()->session() == nullptr) {
+          return Status::Error("Session not found");
+        }
         auto *session = qctx_->rctx()->session();
         NG_RETURN_IF_ERROR(PermissionManager::canReadSpace(session, spaceId));
         const auto &properties = resp.value().get_properties();
