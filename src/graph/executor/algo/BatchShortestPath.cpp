@@ -9,9 +9,12 @@
 #include "sys/sysinfo.h"
 
 using nebula::storage::StorageClient;
+
 DECLARE_uint32(num_path_thread);
+
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
                                                  const HashSet& endVids,
                                                  DataSet* result) {
@@ -550,12 +553,13 @@ size_t BatchShortestPath::splitTask(const HashSet& startVids, const HashSet& end
       ++count;
     }
   }
-  std::stringstream ss;
-  ss << "{\n"
-     << "startVids' size : " << startVidsSize << " endVids's size : " << endVidsSize;
-  ss << " thread num : " << threadNum;
-  ss << " start blocks : " << startSlices << " end blocks : " << endSlices << "\n}";
-  stats_->emplace(folly::sformat("split task "), ss.str());
+  folly::dynamic obj = folly::dynamic::object();
+  obj.insert("startVids' size", startVidsSize);
+  obj.insert("endVids's size", endVidsSize);
+  obj.insert("thread num", threadNum);
+  obj.insert("start blocks", startSlices);
+  obj.insert("end blocks", endSlices);
+  stats_->emplace("split task", folly::toPrettyJson(obj));
   return startSlices * endSlices;
 }
 

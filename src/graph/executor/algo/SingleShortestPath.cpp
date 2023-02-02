@@ -10,6 +10,7 @@ using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
                                                   const HashSet& endVids,
                                                   DataSet* result) {

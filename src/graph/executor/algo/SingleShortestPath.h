@@ -9,6 +9,7 @@
 
 namespace nebula {
 namespace graph {
+
 class SingleShortestPath final : public ShortestPathBase {
  public:
   using HashSet = robin_hood::unordered_flat_set<Value, std::hash<Value>>;

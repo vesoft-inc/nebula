@@ -62,7 +62,7 @@ void GetNeighborsIter::goToFirstEdge() {
          ++currentRow_) {
       colIdx_ = currentDs_->colLowerBound + 1;
       while (colIdx_ < currentDs_->colUpperBound && !valid_) {
-        const auto& currentCol = currentRow_->operator[](colIdx_);
+        const auto& currentCol = (*currentRow_)[colIdx_];
         if (!currentCol.isList() || currentCol.getList().empty()) {
           ++colIdx_;
           continue;
@@ -229,7 +229,7 @@ void GetNeighborsIter::next() {
 
   while (++edgeIdx_ > -1) {
     if (edgeIdx_ < edgeIdxUpperBound_) {
-      const auto& currentEdge = currentCol_->operator[](edgeIdx_);
+      const auto& currentEdge = (*currentCol_)[edgeIdx_];
       if (!currentEdge.isList()) {
         continue;
       }
@@ -366,10 +366,10 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
   auto& row = *currentRow_;
   if (tag == "*") {
     for (auto& index : currentDs_->tagPropsMap) {
-      auto propIndex = index.second.propIndices.find(prop);
-      if (propIndex != index.second.propIndices.end()) {
+      auto propIndexIter = index.second.propIndices.find(prop);
+      if (propIndexIter != index.second.propIndices.end()) {
         colId = index.second.colIdx;
-        propId = propIndex->second;
+        propId = propIndexIter->second;
         DCHECK_GT(row.size(), colId);
         if (row[colId].empty()) {
           continue;
@@ -393,12 +393,12 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
     if (index == tagPropIndices.end()) {
       return Value::kEmpty;
     }
-    auto propIndex = index->second.propIndices.find(prop);
-    if (propIndex == index->second.propIndices.end()) {
+    auto propIndexIter = index->second.propIndices.find(prop);
+    if (propIndexIter == index->second.propIndices.end()) {
       return Value::kEmpty;
     }
     colId = index->second.colIdx;
-    propId = propIndex->second;
+    propId = propIndexIter->second;
     DCHECK_GT(row.size(), colId);
     if (row[colId].empty()) {
       return Value::kEmpty;
@@ -427,8 +427,7 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
   }
   auto index = currentDs_->edgePropsMap.find(currentEdge);
   if (index == currentDs_->edgePropsMap.end()) {
-    DLOG(INFO) << "No edge found: " << edge;
-    DLOG(INFO) << "Current edge: " << currentEdge;
+    DLOG(INFO) << "No edge found: " << edge << " Current edge: " << currentEdge;
     return Value::kEmpty;
   }
   auto propIndex = index->second.propIndices.find(prop);
@@ -466,10 +465,9 @@ Value GetNeighborsIter::getVertex(const std::string& name) {
     Tag tag;
     tag.name = tagProp.first;
     for (size_t i = 0; i < propList.size(); ++i) {
-      if (tagPropNameList[i] == nebula::kTag) {
-        continue;
+      if (tagPropNameList[i] != nebula::kTag) {
+        tag.props.emplace(tagPropNameList[i], propList[i]);
       }
-      tag.props.emplace(tagPropNameList[i], propList[i]);
     }
     vertex.tags.emplace_back(std::move(tag));
   }
