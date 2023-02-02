@@ -1291,13 +1291,13 @@ Status MatchValidator::validatePathInWhere(
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
   for (const auto &node : path->nodes()) {
     // The inner variable of expression will be replaced by anno variable
-    if (!node->alias().empty() && node->alias()[0] != '_') {
+    if (!node->anonymous()) {
       pathInfo.compareVariables.emplace_back(node->alias());
     }
   }
   for (const auto &edge : path->edges()) {
     const auto &edgeAlias = edge->alias();
-    if (!edgeAlias.empty() && edgeAlias.front() != '_') {
+    if (!edge->anonymous()) {
       if (edge->range()) {
         return Status::SemanticError(
             "Variable '%s` 's type is list. not support used in multiple patterns "
