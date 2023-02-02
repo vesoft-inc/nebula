@@ -32,6 +32,12 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   // Check that partition is not held on the host
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto spaceIterRet = doPrefix(spacePrefix);
+  if (!nebula::ok(spaceIterRet)) {
+    LOG(INFO) << "List space failed";
+    handleErrorCode(nebula::error(spaceIterRet));
+    onFinished();
+    return;
+  }
   auto spaceIter = nebula::value(spaceIterRet).get();
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   std::map<GraphSpaceID, meta::cpp2::SpaceDesc> spaceMap;
@@ -48,6 +54,12 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     spaceMap.emplace(spaceId, MetaKeyUtils::parseSpace(spaceIter->val()));
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto partIterRet = doPrefix(partPrefix);
+    if (!nebula::ok(partIterRet)) {
+      LOG(INFO) << "List part failed";
+      handleErrorCode(nebula::error(partIterRet));
+      onFinished();
+      return;
+    }
     auto partIter = nebula::value(partIterRet).get();
     while (partIter->valid()) {
       auto partHosts = MetaKeyUtils::parsePartVal(partIter->val());
