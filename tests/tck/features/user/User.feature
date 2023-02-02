@@ -733,7 +733,7 @@ Feature: User & privilege Test
       """
     Then the result should be, in any order, with relax comparison:
       | role | space |
-    When executing query with user user1 with password pwd1:
+    When executing query with user "user1" and password "pwd1":
       """
       DESC USER user1
       """
@@ -751,7 +751,7 @@ Feature: User & privilege Test
       """
     Then the result should be, in any order:
       | role | space |
-    When executing query with user user1 with password pwd1:
+    When executing query with user "user1" and password "pwd1":
       """
       DESC USER user2
       """
@@ -761,7 +761,7 @@ Feature: User & privilege Test
       GRANT ROLE GUEST ON user_tmp_space_4 TO user1
       """
     Then the execution should be successful
-    When executing query with user user1 with password pwd1:
+    When executing query with user "user1" and password "pwd1":
       """
       DESC USER root
       """

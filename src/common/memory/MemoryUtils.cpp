@@ -192,9 +192,7 @@ void MemoryUtils::handleMemoryTracker(int64_t total, int64_t available) {
       LOG(INFO) << "MemoryTracker disabled";
     }
   } else {
-    if (kCurrentTotal_ != limitRatio) {
-      LOG(ERROR) << "Invalid memory_tracker_limit_ratio: " << limitRatio;
-    }
+    LOG(ERROR) << "Invalid memory_tracker_limit_ratio: " << limitRatio;
   }
   kCurrentTotal_ = total;
   kCurrentLimitRatio_ = limitRatio;
