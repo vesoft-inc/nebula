@@ -133,7 +133,7 @@ void CrossJoin::accept(PlanNodeVisitor* visitor) {
 CrossJoin::CrossJoin(QueryContext* qctx) : BinaryInputNode(qctx, Kind::kCrossJoin) {}
 
 std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
-  auto desc = SingleDependencyNode::explain();
+  auto desc = SingleInputNode::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
   addDescription("tag_filter", tagFilter_ ? tagFilter_->toString() : "", desc.get());
   addDescription("edge_filter", edgeFilter_ ? edgeFilter_->toString() : "", desc.get());
