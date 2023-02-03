@@ -30,6 +30,8 @@ struct PropertyTracker {
   void insertVertexProp(const std::string& name, TagID tagId, const std::string& propName);
   void insertEdgeProp(const std::string& name, EdgeType type, const std::string& propName);
   void insertCols(const std::string& name);
+
+  std::string toString() const;
 };
 
 class PropertyTrackerVisitor : public ExprVisitorImpl {

@@ -10,6 +10,7 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 #include "interface/gen-cpp2/storage_types.h"
+
 // only used in match scenarios
 // invoke the getNeighbors interface, according to the number of times specified by the user,
 // and assemble the result into paths
@@ -35,6 +36,7 @@
 // `getNeighbors` : invoke the getNeightbors interface
 // `releasePrevPaths` : deleted The path whose length does not meet the user-defined length
 // `hasSameEdge` : check if there are duplicate edges in path
+
 namespace nebula {
 namespace graph {
 
@@ -63,18 +65,16 @@ class TraverseExecutor final : public StorageAccessExecutor {
   folly::Future<Status> buildResult();
 
   std::vector<Row> buildPath(const Value& initVertex, size_t minStep, size_t maxStep);
-
   folly::Future<Status> buildPathMultiJobs(size_t minStep, size_t maxStep);
+  std::vector<Row> joinPrevPath(const Value& initVertex, const std::vector<Row>& newResult) const;
 
   bool isFinalStep() const {
     return currentStep_ == range_.max() || range_.max() == 0;
   }
 
-  bool filterSameEdge(const Row& lhs,
-                      const Row& rhs,
-                      std::unordered_set<Value>* uniqueEdge = nullptr);
-
-  bool hasSameEdge(const std::vector<Value>& edgeList, const Edge& edge);
+  bool hasSameEdge(const std::vector<Value>& edgeList, const Edge& edge) const;
+  bool hasSameEdgeInPath(const Row& lhs, const Row& rhs) const;
+  bool hasSameEdgeInSet(const Row& rhs, const std::unordered_set<Value>& uniqueEdge) const;
 
   std::vector<Row> buildZeroStepPath();
 
@@ -134,6 +134,8 @@ class TraverseExecutor final : public StorageAccessExecutor {
   const Traverse* traverse_{nullptr};
   MatchStepRange range_;
   size_t currentStep_{0};
+
+  size_t expandTime_{0u};
 };
 
 }  // namespace graph

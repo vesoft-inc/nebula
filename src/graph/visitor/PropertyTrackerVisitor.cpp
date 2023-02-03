@@ -10,6 +10,36 @@
 
 namespace nebula {
 namespace graph {
+
+std::string PropertyTracker::toString() const {
+  std::string str;
+  str += "vertexPropsMap: ";
+  for (const auto &v : vertexPropsMap) {
+    str += v.first + ": ";
+    for (const auto &t : v.second) {
+      str += std::to_string(t.first) + ": ";
+      for (const auto &p : t.second) {
+        str += p + ", ";
+      }
+    }
+  }
+  str += "edgePropsMap: ";
+  for (const auto &v : edgePropsMap) {
+    str += v.first + ": ";
+    for (const auto &t : v.second) {
+      str += std::to_string(t.first) + ": ";
+      for (const auto &p : t.second) {
+        str += p + ", ";
+      }
+    }
+  }
+  str += "colsSet: ";
+  for (const auto &c : colsSet) {
+    str += c + ", ";
+  }
+  return str;
+}
+
 void PropertyTracker::insertVertexProp(const std::string &name,
                                        TagID tagId,
                                        const std::string &propName) {

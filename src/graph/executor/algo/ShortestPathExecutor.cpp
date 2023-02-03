@@ -13,8 +13,10 @@
 using nebula::storage::StorageClient;
 
 DEFINE_uint32(num_path_thread, 0, "number of concurrent threads when do shortest path");
+
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> ShortestPathExecutor::execute() {
   // MemoryTrackerVerified
   SCOPED_TIMER(&execTime_);
