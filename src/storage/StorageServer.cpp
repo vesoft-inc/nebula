@@ -47,6 +47,10 @@ DECLARE_string(local_ip);
 #endif
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
+DEFINE_uint32(num_max_connections,
+              0,
+              "Max active connections for all networking threads. 0 means no limit. Max active "
+              "connections for each networking thread = num_max_connections / num_netio_threads");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds");
 
@@ -366,6 +370,7 @@ std::unique_ptr<apache::thrift::ThriftServer> StorageServer::getStorageServer() 
     server->setIdleTimeout(std::chrono::seconds(0));
     server->setIOThreadPool(ioThreadPool_);
     server->setThreadManager(workers_);
+    server->setMaxConnections(FLAGS_num_max_connections);
     if (FLAGS_enable_ssl) {
       server->setSSLConfig(nebula::sslContextConfig());
     }
