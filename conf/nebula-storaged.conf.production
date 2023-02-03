@@ -111,6 +111,9 @@
 --auto_remove_invalid_space=true
 # Network IO threads number
 --num_io_threads=16
+# Max active connections for all networking threads. 0 means no limit.
+# Max connections for each networking thread = num_max_connections / num_netio_threads
+--num_max_connections=0
 # Worker threads number to handle request
 --num_worker_threads=32
 # Maximum subtasks to run admin jobs concurrently
