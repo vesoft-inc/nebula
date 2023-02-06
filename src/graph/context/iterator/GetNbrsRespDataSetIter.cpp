@@ -21,7 +21,7 @@ bool isDataSetInvalid(const DataSet* dataset) {
 }
 
 GetNbrsRespDataSetIter::GetNbrsRespDataSetIter(const DataSet* dataset)
-    : dataset_(DCHECK_NOTNULL(dataset)), firstEdgeColIdx_(-1), curRowIdx_(0) {
+    : dataset_(DCHECK_NOTNULL(dataset)), curRowIdx_(0) {
   DCHECK(!isDataSetInvalid(dataset));
   for (size_t i = 0, e = dataset->colNames.size(); i < e; ++i) {
     buildPropIndex(dataset->colNames[i], i);
@@ -64,10 +64,6 @@ void GetNbrsRespDataSetIter::buildPropIndex(const std::string& colName, size_t c
   if (prefix.startsWith(kEdgePrefix)) {
     DCHECK(name.startsWith("-") || name.startsWith("+")) << "the edge name has to start with '-/+'";
     edgePropsMap_.emplace(name, std::move(propIdx));
-
-    if (firstEdgeColIdx_ < 0) {
-      firstEdgeColIdx_ = colIdx;
-    }
   } else if (prefix.startsWith(kTag)) {
     tagPropsMap_.emplace(name, std::move(propIdx));
   }

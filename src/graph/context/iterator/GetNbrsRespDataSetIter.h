@@ -33,7 +33,6 @@ class GetNbrsRespDataSetIter final {
     size_t edgeTypeIdx;
     size_t edgeRankIdx;
     size_t edgeDstIdx;
-    // std::vector<std::string> propList;
     std::unordered_map<std::string, size_t> propIdxMap;
   };
 
@@ -45,7 +44,6 @@ class GetNbrsRespDataSetIter final {
 
   // my fields
   const DataSet* dataset_;
-  int firstEdgeColIdx_;
   size_t curRowIdx_;
 
   // _tag:t1:p1:p2  ->  {t1 : [column_idx, [p1, p2], {p1 : 0, p2 : 1}]}
