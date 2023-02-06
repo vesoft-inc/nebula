@@ -108,7 +108,7 @@ Value GetNbrsRespDataSetIter::createEdgeByPropList(const PropIndex& propIdx,
   DCHECK_LT(propIdx.edgeRankIdx, propList.size());
 
   Edge edge;
-  edge.name = edgeName.substr(1);  // skip the edge direction symbol: `-/+`
+  edge.name = edgeName;
   edge.src = src;
   edge.dst = propList[propIdx.edgeDstIdx];
   const Value& typeVal = propList[propIdx.edgeTypeIdx];
@@ -135,7 +135,9 @@ std::vector<Value> GetNbrsRespDataSetIter::getAdjEdges(VidHashSet* dstSet) const
     const Value& edgeColumn = curRow[propIdx.colIdx];
     if (edgeColumn.isList()) {
       for (const Value& edgeVal : edgeColumn.getList().values) {
-        Value edge = createEdgeByPropList(propIdx, edgeVal, curRow[0], edgeName);
+        // skip the edge direction symbol: `-/+`
+        auto name = edgeName.substr(1);
+        Value edge = createEdgeByPropList(propIdx, edgeVal, curRow[0], name);
         if (!edge.empty()) {
           if (dstSet) {
             dstSet->emplace(edge.getEdge().dst);
