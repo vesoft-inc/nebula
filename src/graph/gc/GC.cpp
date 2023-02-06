@@ -4,10 +4,12 @@
 
 #include "graph/gc/GC.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
+
 GC& GC::instance() {
   static GC gc;
   return gc;
@@ -33,5 +35,6 @@ void GC::periodicTask() {
     queue_.try_dequeue();
   }
 }
+
 }  // namespace graph
 }  // namespace nebula
