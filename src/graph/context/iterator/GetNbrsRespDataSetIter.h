@@ -42,7 +42,6 @@ class GetNbrsRespDataSetIter final {
                              const Value& src,
                              const std::string& edgeName) const;
 
-  // my fields
   const DataSet* dataset_;
   size_t curRowIdx_;
 
