@@ -115,10 +115,6 @@ class MatchEdge final {
     return range_.get();
   }
 
-  bool anonymous() const {
-    return alias_.empty() || alias_.front() == '_';
-  }
-
   std::string toString() const;
 
   MatchEdge clone() const {
@@ -236,10 +232,6 @@ class MatchNode final {
 
   const std::string& alias() const {
     return alias_;
-  }
-
-  bool anonymous() const {
-    return alias_.empty() || alias_.front() == '_';
   }
 
   const auto* labels() const {

@@ -278,7 +278,7 @@ void MatchSolver::buildProjectColumns(QueryContext* qctx, const Path& path, SubP
   DCHECK(!nodeInfos.empty());
   addNode(nodeInfos.back());
 
-  if (!path.anonymous) {
+  if (!path.isPred) {
     DCHECK(!path.alias.empty());
     columns->addColumn(new YieldColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
     colNames.emplace_back(path.alias);

@@ -127,6 +127,7 @@ Status MatchValidator::validateImpl() {
 Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   matchClauseCtx.paths.emplace_back();
   if (path->alias() == nullptr) {
+    // No need to generate path structure
     const_cast<MatchPath *>(path)->setPredicate();
   }
   NG_RETURN_IF_ERROR(
@@ -145,7 +146,6 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
   NG_RETURN_IF_ERROR(buildNodeInfo(path, pathInfo.nodeInfos, dummy));
   NG_RETURN_IF_ERROR(buildEdgeInfo(path, pathInfo.edgeInfos, dummy));
   NG_RETURN_IF_ERROR(buildPathExpr(path, pathInfo, dummy));
-  pathInfo.isPred = path->isPredicate();
   pathInfo.isAntiPred = path->isAntiPredicate();
 
   return Status::OK();
@@ -177,6 +177,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
   }
   if (path->isPredicate()) {
+    pathInfo.isPred = true;
     return Status::OK();
   }
   auto *pool = qctx_->objPool();
@@ -187,7 +188,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   }
   pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   pathInfo.pathBuild = std::move(pathBuild);
-  pathInfo.anonymous = false;
+  pathInfo.anonymous = pathAlias == nullptr;
   pathInfo.alias = pathAlias == nullptr ? path->toString() : *pathAlias;
   return Status::OK();
 }
@@ -1291,16 +1292,17 @@ Status MatchValidator::validatePathInWhere(
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
   for (const auto &node : path->nodes()) {
     // The inner variable of expression will be replaced by anno variable
-    if (!node->anonymous()) {
-      pathInfo.compareVariables.emplace_back(node->alias());
+    const auto &nodeAlias = node->alias();
+    if (!nodeAlias.empty() && !AnonVarGenerator::isAnnoVar(nodeAlias)) {
+      pathInfo.compareVariables.emplace_back(nodeAlias);
     }
   }
   for (const auto &edge : path->edges()) {
     const auto &edgeAlias = edge->alias();
-    if (!edge->anonymous()) {
+    if (!edgeAlias.empty() && !AnonVarGenerator::isAnnoVar(edgeAlias)) {
       if (edge->range()) {
         return Status::SemanticError(
-            "Variable '%s` 's type is list. not support used in multiple patterns "
+            "Variable '%s` 's type is edge list. not support used in multiple patterns "
             "simultaneously.",
             edgeAlias.c_str());
       }
