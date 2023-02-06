@@ -51,6 +51,9 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> execute() override;
 
+  template <typename T = Value>
+  using VertexMap = std::unordered_map<Value, std::vector<T>, VertexHash, VertexEqual>;
+
  private:
   Status buildRequestVids();
 
@@ -58,8 +61,10 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors();
 
-  void expand(GetNeighborsIter* iter);
+  size_t numRowsOfRpcResp(const RpcResponse& resps) const;
 
+  void expand(GetNeighborsIter* iter);
+  void expandOneStep(const RpcResponse& resps);
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
   folly::Future<Status> buildResult();
@@ -80,62 +85,21 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   Expression* selectFilter();
 
-  struct VertexHash {
-    std::size_t operator()(const Value& v) const {
-      switch (v.type()) {
-        case Value::Type::VERTEX: {
-          auto& vid = v.getVertex().vid;
-          if (vid.type() == Value::Type::STRING) {
-            return std::hash<std::string>()(vid.getStr());
-          } else {
-            return vid.getInt();
-          }
-        }
-        case Value::Type::STRING: {
-          return std::hash<std::string>()(v.getStr());
-        }
-        case Value::Type::INT: {
-          return v.getInt();
-        }
-        default: {
-          return v.hash();
-        }
-      }
-    }
-  };
-
-  struct VertexEqual {
-    bool operator()(const Value& lhs, const Value& rhs) const {
-      if (lhs.type() == rhs.type()) {
-        if (lhs.isVertex()) {
-          return lhs.getVertex().vid == rhs.getVertex().vid;
-        }
-        return lhs == rhs;
-      }
-      if (lhs.type() == Value::Type::VERTEX) {
-        return lhs.getVertex().vid == rhs;
-      }
-      if (rhs.type() == Value::Type::VERTEX) {
-        return lhs == rhs.getVertex().vid;
-      }
-      return lhs == rhs;
-    }
-  };
-
  private:
   ObjectPool objPool_;
 
-  std::vector<Value> vids_;
+  VidHashSet vids_;
   std::vector<Value> initVertices_;
   DataSet result_;
   // Key : vertex  Value : adjacent edges
-  std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> adjList_;
-  std::unordered_map<Value, std::vector<Row>, VertexHash, VertexEqual> dst2PathsMap_;
+  VertexMap<Value> adjList_;
+  VertexMap<Row> dst2PathsMap_;
   const Traverse* traverse_{nullptr};
   MatchStepRange range_;
   size_t currentStep_{0};
 
   size_t expandTime_{0u};
+  size_t expandOneStepTime_{0u};
 };
 
 }  // namespace graph

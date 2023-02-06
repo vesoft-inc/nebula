@@ -10,6 +10,7 @@ nebula_add_library(
     Iterator.cpp
     Result.cpp
     Symbols.cpp
+    iterator/GetNbrsRespDataSetIter.cpp
 )
 
 

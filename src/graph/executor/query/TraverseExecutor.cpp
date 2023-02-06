@@ -6,6 +6,7 @@
 
 #include "clients/storage/StorageClient.h"
 #include "common/memory/MemoryTracker.h"
+#include "graph/context/iterator/GetNbrsRespDataSetIter.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
@@ -19,17 +20,19 @@ namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
   range_ = traverse_->stepRange();
-  auto status = buildRequestVids();
-  if (!status.ok()) {
-    return error(std::move(status));
-  }
+  NG_RETURN_IF_ERROR(buildRequestVids());
   if (vids_.empty()) {
     DataSet emptyDs;
     return finish(ResultBuilder().value(Value(std::move(emptyDs))).build());
   }
   return getNeighbors().ensure([this]() {
     // fill some profile time stats
-    otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime_));
+    if (expandTime_) {
+      otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime_));
+    }
+    if (expandOneStepTime_) {
+      otherStats_.emplace("expandOneStepTime", folly::sformat("{}(us)", expandOneStepTime_));
+    }
   });
 }
 
@@ -45,21 +48,16 @@ Status TraverseExecutor::buildRequestVids() {
 
   bool mv = movable(traverse_->inputVars().front());
   if (traverse_->trackPrevPath()) {
-    std::unordered_set<Value> uniqueVid;
-    uniqueVid.reserve(iterSize);
     for (; iter->valid(); iter->next()) {
       const auto& vid = src->eval(ctx(iter));
       auto prevPath = mv ? iter->moveRow() : *iter->row();
       auto vidIter = dst2PathsMap_.find(vid);
       if (vidIter == dst2PathsMap_.end()) {
-        std::vector<Row> tmp({std::move(prevPath)});
-        dst2PathsMap_.emplace(vid, std::move(tmp));
+        dst2PathsMap_.emplace(vid, std::vector<Row>{std::move(prevPath)});
       } else {
         vidIter->second.emplace_back(std::move(prevPath));
       }
-      if (uniqueVid.emplace(vid).second) {
-        vids_.emplace_back(vid);
-      }
+      vids_.emplace(vid);
     }
   } else {
     const auto& spaceInfo = qctx()->rctx()->session()->space();
@@ -67,11 +65,11 @@ Status TraverseExecutor::buildRequestVids() {
     auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
     for (; iter->valid(); iter->next()) {
       const auto& vid = src->eval(ctx(iter));
-      if (vid.type() != vidType) {
-        LOG(ERROR) << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
-        continue;
+      DCHECK_EQ(vid.type(), vidType)
+          << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
+      if (vid.type() == vidType) {
+        vids_.emplace(vid);
       }
-      vids_.emplace_back(vid);
     }
   }
   return Status::OK();
@@ -86,10 +84,12 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
+  std::vector<Value> vids(vids_.size());
+  std::move(vids_.begin(), vids_.end(), vids.begin());
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
-                     std::move(vids_),
+                     std::move(vids),
                      traverse_->edgeTypes(),
                      traverse_->edgeDirection(),
                      finalStep ? traverse_->statProps() : nullptr,
@@ -146,35 +146,79 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
   otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepObj));
 }
 
+size_t TraverseExecutor::numRowsOfRpcResp(const RpcResponse& resps) const {
+  size_t numRows = 0;
+  for (const auto& resp : resps.responses()) {
+    auto dataset = resp.get_vertices();
+    if (dataset) {
+      numRows += dataset->rowSize();
+    }
+  }
+  return numRows;
+}
+
+void TraverseExecutor::expandOneStep(const RpcResponse& resps) {
+  SCOPED_TIMER(&expandOneStepTime_);
+  initVertices_.reserve(numRowsOfRpcResp(resps));
+
+  for (const auto& resp : resps.responses()) {
+    auto dataset = resp.get_vertices();
+    if (dataset) {
+      for (GetNbrsRespDataSetIter iter(dataset); iter.valid(); iter.next()) {
+        Value v = iter.getVertex();
+        initVertices_.emplace_back(v);
+        VidHashSet dstSet;
+        auto adjEdges = iter.getAdjEdges(&dstSet);
+        for (const Value& dst : dstSet) {
+          if (adjList_.find(dst) == adjList_.end()) {
+            vids_.emplace(dst);
+          }
+        }
+        DCHECK(adjList_.find(v) == adjList_.end())
+            << "The adjacency list should not contain the source vertex";
+        adjList_.emplace(v, std::move(adjEdges));
+      }
+    }
+  }
+
+  if (range_.min() == 0) {
+    result_.rows = buildZeroStepPath();
+  }
+}
+
 folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
   NG_RETURN_IF_ERROR(handleCompleteness(resps, FLAGS_accept_partial_success));
 
-  List list;
-  for (auto& resp : resps.responses()) {
-    auto dataset = resp.get_vertices();
-    if (dataset) {
-      list.values.emplace_back(std::move(*dataset));
-    }
-  }
-  auto listVal = std::make_shared<Value>(std::move(list));
-  auto iter = std::make_unique<GetNeighborsIter>(listVal);
-  if (currentStep_ == 1) {
-    initVertices_.reserve(iter->numRows());
-    auto vertices = iter->getVertices();
-    // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
-    // save the vertex that meets the filter conditions as the starting vertex of the current
-    // traverse
-    for (auto& vertex : vertices.values) {
-      if (vertex.isVertex()) {
-        initVertices_.emplace_back(vertex);
+  if (currentStep_ == 1 && !traverse_->eFilter() && !traverse_->vFilter()) {
+    expandOneStep(resps);
+  } else {
+    List list;
+    for (auto& resp : resps.responses()) {
+      auto dataset = resp.get_vertices();
+      if (dataset) {
+        list.values.emplace_back(std::move(*dataset));
       }
     }
-    if (range_.min() == 0) {
-      result_.rows = buildZeroStepPath();
+    auto listVal = std::make_shared<Value>(std::move(list));
+    auto iter = std::make_unique<GetNeighborsIter>(listVal);
+    if (currentStep_ == 1) {
+      initVertices_.reserve(iter->numRows());
+      auto vertices = iter->getVertices();
+      // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
+      // save the vertex that meets the filter conditions as the starting vertex of the current
+      // traverse
+      for (auto& vertex : vertices.values) {
+        if (vertex.isVertex()) {
+          initVertices_.emplace_back(vertex);
+        }
+      }
+      if (range_.min() == 0) {
+        result_.rows = buildZeroStepPath();
+      }
     }
-  }
 
-  expand(iter.get());
+    expand(iter.get());
+  }
 
   if (!isFinalStep() && !vids_.empty()) {
     return getNeighbors();
@@ -191,9 +235,12 @@ void TraverseExecutor::expand(GetNeighborsIter* iter) {
   auto* eFilter = traverse_->eFilter();
   QueryExpressionContext ctx(ectx_);
 
-  std::unordered_set<Value> uniqueVids;
   Value curVertex;
   std::vector<Value> adjEdges;
+  auto sz = iter->size();
+  adjEdges.reserve(sz);
+  vids_.reserve(vids_.size() + sz);
+  adjList_.reserve(adjList_.size() + iter->numRows() + 1u);
   for (; iter->valid(); iter->next()) {
     if (vFilter != nullptr && currentStep_ == 1) {
       const auto& vFilterVal = vFilter->eval(ctx(iter));
@@ -212,8 +259,8 @@ void TraverseExecutor::expand(GetNeighborsIter* iter) {
       continue;
     }
     const auto& dst = edge.getEdge().dst;
-    if (adjList_.find(dst) == adjList_.end() && uniqueVids.emplace(dst).second) {
-      vids_.emplace_back(dst);
+    if (adjList_.find(dst) == adjList_.end()) {
+      vids_.emplace(dst);
     }
     const auto& vertex = iter->getVertex();
     curVertex = curVertex.empty() ? vertex : curVertex;
@@ -333,7 +380,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
   return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
 }
 
-// build path based on BFS through adjancency list
+// build path based on BFS through adjacency list
 std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
                                              size_t minStep,
                                              size_t maxStep) {
