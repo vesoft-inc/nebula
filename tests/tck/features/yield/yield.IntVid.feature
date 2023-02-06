@@ -514,7 +514,7 @@ Feature: Yield Sentence
       | -9223372036854775808 |
     When executing query:
       """
-      YIELD --9223372036854775808
+      YIELD - -9223372036854775808
       """
     Then a SemanticError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
@@ -656,7 +656,7 @@ Feature: Yield Sentence
   Scenario: WithComment
     When executing query:
       """
-      YIELD 1--1
+      YIELD 1- -1
       """
     Then the result should be, in any order:
       | (1--(1)) |
