@@ -7,9 +7,12 @@ nebula_add_library(
     QueryContext.cpp
     QueryExpressionContext.cpp
     ExecutionContext.cpp
-    Iterator.cpp
     Result.cpp
     Symbols.cpp
+    iterator/GetNeighborsIter.cpp
+    iterator/Iterator.cpp
+    iterator/PropIter.cpp
+    iterator/SequentialIter.cpp
     iterator/GetNbrsRespDataSetIter.cpp
 )
 
