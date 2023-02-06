@@ -7,6 +7,7 @@
 #define GRAPH_CONTEXT_ITERATOR_H_
 
 #include "graph/context/iterator/DefaultIter.h"
+#include "graph/context/iterator/GetNbrsRespDataSetIter.h"
 #include "graph/context/iterator/GetNeighborsIter.h"
 #include "graph/context/iterator/Iterator.h"
 #include "graph/context/iterator/PropIter.h"
