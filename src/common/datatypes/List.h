@@ -80,6 +80,10 @@ struct List {
     return values[i];
   }
 
+  Value& operator[](size_t i) {
+    return values[i];
+  }
+
   bool contains(const Value& value) const {
     return std::find(values.begin(), values.end(), value) != values.end();
   }

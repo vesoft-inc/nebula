@@ -98,6 +98,11 @@ class StorageRpcResponse final {
   }
 
   // Not thread-safe.
+  const std::vector<Response>& responses() const {
+    return responses_;
+  }
+
+  // Not thread-safe.
   const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
     return hostLatency_;
   }

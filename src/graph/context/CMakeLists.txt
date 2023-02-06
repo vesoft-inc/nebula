@@ -13,6 +13,7 @@ nebula_add_library(
     iterator/Iterator.cpp
     iterator/PropIter.cpp
     iterator/SequentialIter.cpp
+    iterator/GetNbrsRespDataSetIter.cpp
 )
 
 
