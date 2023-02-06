@@ -207,15 +207,15 @@ Feature: Push Filter down Traverse rule
       """
       MATCH (v:player)-[e:like]->(v2)
         WHERE v.player.age != 35 and (e.likeness + 100) != 199 and none_direct_dst(e) in ["Tony Parker", "Tim Duncan", "Yao Ming"]
-      RETURN e.likeness, v2.player.age as age
-      ORDER BY age
+      RETURN e.likeness AS likeness, v2.player.age as age
+      ORDER BY age, likeness DESC
       LIMIT 3
       """
     Then the result should be, in any order:
-      | e.likeness | age |
-      | 80         | 36  |
-      | 75         | 36  |
-      | 50         | 36  |
+      | likeness | age |
+      | 95       | 36  |
+      | 80       | 36  |
+      | 75       | 36  |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                                                                             |
       | 11 | TopN           | 10           |                                                                                                                                           |
