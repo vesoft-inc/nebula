@@ -133,6 +133,9 @@ constexpr char kSrc[] = "_src";
 constexpr char kType[] = "_type";
 constexpr char kRank[] = "_rank";
 constexpr char kDst[] = "_dst";
+constexpr char kEdgePrefix[] = "_edge";
+constexpr char kStatsPrefix[] = "_stats";
+constexpr char kExprPrefix[] = "_expr";
 
 // Useful type traits
 

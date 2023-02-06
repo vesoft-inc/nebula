@@ -550,6 +550,16 @@ inline uint64_t operator&(const Value::Type& lhs, const uint64_t rhs) {
   return static_cast<uint64_t>(lhs) & rhs;
 }
 
+struct VertexHash {
+  std::size_t operator()(const Value& v) const;
+};
+
+struct VertexEqual {
+  bool operator()(const Value& lhs, const Value& rhs) const;
+};
+
+using VidHashSet = std::unordered_set<Value, VertexHash, VertexEqual>;
+
 }  // namespace nebula
 
 namespace std {
