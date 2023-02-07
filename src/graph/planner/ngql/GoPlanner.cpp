@@ -202,10 +202,13 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
 
-  // dst is the last column, columnName is "JOIN_DST_VID"
-  auto* dstExpr = ColumnExpression::make(pool, LAST_COL_INDEX);
+  auto argNode = Argument::make(qctx, "JOIN_DST_VID");
+  argNode->setColNames({"JOIN_DST_VID"});
+
+  // dst is the first column, columnName is "JOIN_DST_VID"
+  auto* dstExpr = ColumnExpression::make(pool, VID_INDEX);
   auto* getVertex = GetVertices::make(qctx,
-                                      dep,
+                                      argNode,
                                       goCtx_->space.id,
                                       dstExpr,
                                       buildVertexProps(goCtx_->exprProps.dstTagProps()),
@@ -221,17 +224,20 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto* project = Project::make(qctx, getVertex, dstPropsExpr);
 
   // dep's colName "JOIN_DST_VID"  join getVertex's colName "DST_VID"
-  auto* hashKey = dstExpr->clone();
+  auto* hashKey = ColumnExpression::make(pool, LAST_COL_INDEX);
   auto* probeKey = ColumnExpression::make(pool, LAST_COL_INDEX);
-  auto* join = LeftJoin::make(qctx,
-                              project,
-                              {dep->outputVar(), ExecutionContext::kLatestVersion},
-                              {project->outputVar(), ExecutionContext::kLatestVersion},
-                              {hashKey},
-                              {probeKey});
 
-  VLOG(1) << join->outputVar() << " hasKey: " << hashKey->toString()
-          << " probeKey: " << probeKey->toString();
+  auto* join = HashLeftJoin::make(qctx, dep, project, {hashKey}, {probeKey});
+
+  // auto* join = LeftJoin::make(qctx,
+  //                             project,
+  //                             {dep->outputVar(), ExecutionContext::kLatestVersion},
+  //                             {project->outputVar(), ExecutionContext::kLatestVersion},
+  //                             {hashKey},
+  //                             {probeKey});
+
+  DLOG(INFO) << join->outputVar() << " hasKey: " << hashKey->toString()
+             << " probeKey: " << probeKey->toString();
 
   std::vector<std::string> colNames = dep->colNames();
   colNames.insert(colNames.end(), project->colNames().begin(), project->colNames().end());
