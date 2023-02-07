@@ -9,6 +9,7 @@
 
 DEFINE_uint32(path_threshold_size, 100, "");
 DEFINE_uint32(path_threshold_ratio, 2, "");
+DEFINE_uint32(path_batch_size, 3000, "");
 
 namespace nebula {
 namespace graph {
@@ -16,7 +17,7 @@ folly::Future<Status> AllPathsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<AllPaths>(node());
   noLoop_ = pathNode_->noLoop();
-  steps_ = pathNode_->steps();
+  maxStep_ = pathNode_->steps();
   withProp_ = pathNode_->withProp();
   if (pathNode_->limit() != -1) {
     limit_ = pathNode_->limit();
@@ -65,7 +66,7 @@ void AllPathsExecutor::init() {
 AllPathsExecutor::Direction AllPathsExecutor::direction() {
   auto leftSize = leftVids_.size();
   auto rightSize = rightVids_.size();
-  if (leftSteps_ + rightSteps_ + 1 == steps_) {
+  if (leftSteps_ + rightSteps_ + 1 == maxStep_) {
     if (leftSize > rightSize) {
       ++rightSteps_;
       return Direction::kRight;
@@ -112,7 +113,7 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
         return folly::makeFuture<Status>(std::move(resp));
       }
     }
-    if (leftSteps_ + rightSteps_ < steps_) {
+    if (leftSteps_ + rightSteps_ < maxStep_) {
       if (leftVids_.empty() || rightVids_.empty()) {
         return buildResult();
       } else {
@@ -254,6 +255,11 @@ void AllPathsExecutor::expandFromLeft(GetNeighborsIter* iter) {
 }
 
 folly::Future<Status> AllPathsExecutor::buildResult() {
+  // when the key in the right adjacency list does not exist in the left adjacency list
+  // add key & values to the left adjacency list,
+  // if key exists, discard the right adjacency's key & values
+  // because the right adjacency list may have fewer edges
+  //  a->c->o, a->b, c->f, f->o
   for (auto& rAdj : rightAdjList_) {
     auto& src = rAdj.first;
     auto iter = leftAdjList_.find(src);
@@ -285,105 +291,156 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
       }
     }
   }
-
-  auto futures = buildPathMultiJobs();
-  folly::collect(futures).via(runner()).thenValue([this](std::vector<std::vector<Row>>&& resp) {
-    DLOG(ERROR) << "collect resp 's size " << resp.size();
-    for (auto& rows : resp) {
-      DLOG(ERROR) << "rows ' size " << rows.size();
-      if (rows.empty()) {
-        continue;
-      }
-      result_.rows.insert(result_.rows.end(),
-                          std::make_move_iterator(rows.begin()),
-                          std::make_move_iterator(rows.end()));
-    }
-    DLOG(ERROR) << " result' s size " << result_.rows.size();
-    DLOG(ERROR) << "reuslt is " << result_.toString();
-    if (limit_ != std::numeric_limits<size_t>::max() && limit_ < result_.rows.size()) {
-      result_.rows.resize(limit_);
-    }
-  });
-  DLOG(ERROR) << "test";
-
-  if (!withProp_ || emptyPropVids_.empty()) {
-    return finish(ResultBuilder().value(Value(std::move(result_))).build());
-  }
-
-  auto future = getProps(emptyPropVids_, pathNode_->vertexProps());
-  return future.via(runner()).thenValue([this](auto&& vertices) {
-    for (auto& vertex : vertices) {
-      if (vertex.empty()) {
-        continue;
-      }
-      auto iter = leftAdjList_.find(vertex);
-      if (iter != leftAdjList_.end()) {
-        auto val = iter->first;
-        auto& mutableVertex = val.mutableVertex();
-        mutableVertex.tags.swap(vertex.mutableVertex().tags);
-      }
-    }
-    return finish(ResultBuilder().value(Value(std::move(result_))).build());
-  });
-}
-
-std::vector<folly::SemiFuture<std::vector<Row>>> AllPathsExecutor::buildPathMultiJobs() {
-  std::vector<folly::SemiFuture<std::vector<Row>>> futures;
-  nebula::thread::GenericThreadPool pool;
-  pool.start(FLAGS_num_path_thread, "build-path");
-
-  using funType = std::function<std::vector<Row>(size_t, Value, std::vector<std::vector<Value>>)>;
-  funType task = [this, &task, &pool, &futures](
-                     size_t step, Value&& src, std::vector<std::vector<Value>>&& edgeLists) {
-    DLOG(ERROR) << "step is : " << step << " src : " << src.toString() << " edgeLists.size() "
-                << edgeLists.size();
-    auto& adjList = leftAdjList_;
-    std::vector<Row> result;
-    std::vector<std::vector<Value>> newEdgeLists;
-    newEdgeLists.reserve(edgeLists.size());
-
-    for (auto& edgeList : edgeLists) {
-      auto& dst = edgeList.back().getEdge().dst;
-      auto dstIter = rightInitVids_.find(dst);
-      if (dstIter != rightInitVids_.end()) {
-        Row row;
-        row.values.emplace_back(src);
-        row.values.emplace_back(List(edgeList));
-        row.values.emplace_back(*dstIter);
-        result.emplace_back(std::move(row));
-        ++cnt_;
-      }
-      if (step <= steps_) {
-        auto adjIter = adjList.find(dst);
-        if (adjIter == adjList.end()) {
-          continue;
+  // asyn return
+  return folly::via(runner())
+      .thenValue([this]() {
+        if (!withProp_ || emptyPropVids_.empty()) {
+          return finish(ResultBuilder().value(Value(std::move(result_))).build());
         }
-
-        auto& adjedges = adjIter->second;
-        for (auto& edge : adjedges) {
-          if (hasSameEdge(edgeList, edge.getEdge())) {
+        return getProps(emptyPropVids_, pathNode_->vertexProps());
+      })
+      .thenValue([this](std::vector<Value>&& vertices) {
+        for (auto& vertex : vertices) {
+          if (vertex.empty()) {
             continue;
           }
-          auto newEdgeList = edgeList;
-          newEdgeList.emplace_back(adjIter->first);
-          newEdgeList.emplace_back(edge);
-          newEdgeLists.emplace_back(std::move(newEdgeList));
+          auto iter = leftAdjList_.find(vertex);
+          if (iter != leftAdjList_.end()) {
+            auto val = iter->first;
+            auto& mutableVertex = val.mutableVertex();
+            mutableVertex.tags.swap(vertex.mutableVertex().tags);
+          }
         }
+        return finish(ResultBuilder().value(Value(std::move(result_))).build());
+      });
+
+  // auto futures = buildPathMultiJobs();
+  // folly::collect(futures).via(runner()).thenValue([this](std::vector<std::vector<Row>>&& resp) {
+  //   DLOG(ERROR) << "collect resp 's size " << resp.size();
+  //   for (auto& rows : resp) {
+  //     DLOG(ERROR) << "rows ' size " << rows.size();
+  //     if (rows.empty()) {
+  //       continue;
+  //     }
+  //     result_.rows.insert(result_.rows.end(),
+  //                         std::make_move_iterator(rows.begin()),
+  //                         std::make_move_iterator(rows.end()));
+  //   }
+  //   DLOG(ERROR) << " result' s size " << result_.rows.size();
+  //   DLOG(ERROR) << "reuslt is " << result_.toString();
+  //   if (limit_ != std::numeric_limits<size_t>::max() && limit_ < result_.rows.size()) {
+  //     result_.rows.resize(limit_);
+  //   }
+  // });
+  // DLOG(ERROR) << "test";
+
+  // if (!withProp_ || emptyPropVids_.empty()) {
+  //   return finish(ResultBuilder().value(Value(std::move(result_))).build());
+  // }
+
+  // auto future = getProps(emptyPropVids_, pathNode_->vertexProps());
+  // return future.via(runner()).thenValue([this](auto&& vertices) {
+  //   for (auto& vertex : vertices) {
+  //     if (vertex.empty()) {
+  //       continue;
+  //     }
+  //     auto iter = leftAdjList_.find(vertex);
+  //     if (iter != leftAdjList_.end()) {
+  //       auto val = iter->first;
+  //       auto& mutableVertex = val.mutableVertex();
+  //       mutableVertex.tags.swap(vertex.mutableVertex().tags);
+  //     }
+  //   }
+  //   return finish(ResultBuilder().value(Value(std::move(result_))).build());
+  // });
+}
+
+std::vector<Row> AllPathsExecutor::doBuildPath(
+    size_t step,
+    size_t start,
+    size_t end,
+    std::shared_ptr<std::vector<std::vector<Value>>> edgeLists) {
+  if (cnt_.load(std::memory_order_relaxed) >= limit_) {
+    return std::vector<Row>();
+  }
+
+  std::vector<folly::Future<folly::Unit>> futures;
+  auto& adjList = leftAdjList_;
+  std::vector<Row> paths;
+  auto newEdgeLists = std::make_shared<std::vector<std::vector<Value>>>(edgeLists->size());
+
+  for (auto i = start; i < end; ++i) {
+    auto& edgeList = (*edgeLists)[i];
+    auto& dst = edgeList.back().getEdge().dst;
+    auto dstIter = rightInitVids_.find(dst);
+    if (dstIter != rightInitVids_.end()) {
+      Row row;
+      row.values.emplace_back(List(edgeList));
+      row.values.emplace_back(*dstIter);
+      paths.emplace_back(std::move(row));
+      ++cnt_;
+      if (cnt_.load(std::memory_order_relaxed) >= limit_) {
+        break;
       }
     }
-    if (step > steps_) {
-      DLOG(ERROR) << " stop ";
-      pool.stop();
-    }
-    if (cnt_.load(std::memory_order_relaxed) >= limit_) {
-      pool.stop();
-    } else if (step <= steps_ && !newEdgeLists.empty()) {
-      DLOG(ERROR) << " newEdgeLists.size() " << newEdgeLists.size();
-      futures.emplace_back(pool.addTask(task, step + 1, std::move(src), std::move(newEdgeLists)));
-    }
-    return result;
-  };
+    if (step <= maxStep_) {
+      auto adjIter = adjList.find(dst);
+      if (adjIter == adjList.end()) {
+        continue;
+      }
 
+      auto& adjedges = adjIter->second;
+      for (auto& edge : adjedges) {
+        if (hasSameEdge(edgeList, edge.getEdge())) {
+          continue;
+        }
+        auto newEdgeList = edgeList;
+        newEdgeList.emplace_back(adjIter->first);
+        newEdgeList.emplace_back(edge);
+        newEdgeLists->emplace_back(std::move(newEdgeList));
+      }
+    }
+  }
+
+  auto newEdgeListsSize = newEdgeLists->size();
+  if (step > maxStep_ || newEdgeListsSize == 0) {
+    return paths;
+  }
+  DLOG(ERROR) << " newEdgeLists.size() " << newEdgeLists->size();
+  if (newEdgeListsSize < FLAGS_path_batch_size) {
+    futures.emplace_back(folly::via(runner(), [this, step, newEdgeListsSize, newEdgeLists]() {
+      doBuildPath(step + 1, 0, newEdgeListsSize, newEdgeLists);
+    }));
+  } else {
+    for (size_t _start = 0; _start < newEdgeListsSize; _start += FLAGS_path_batch_size) {
+      auto trueEnd = _start + FLAGS_path_batch_size;
+      auto _end = trueEnd > newEdgeListsSize ? newEdgeListsSize : trueEnd;
+      futures.emplace_back(folly::via(runner(), [this, step, _start, _end, newEdgeLists]() {
+        doBuildPath(step + 1, _start, _end, newEdgeLists);
+      }));
+    }
+  }
+  return folly::collect(futures).via(runner()).thenValue(
+      [&paths](std::vector<std::vector<Row>>&& resp) {
+        DLOG(ERROR) << "collect resp 's size " << resp.size();
+        // result_.rows.swap(paths);
+        for (auto& rows : resp) {
+          DLOG(ERROR) << "rows ' size " << rows.size();
+          if (rows.empty()) {
+            continue;
+          }
+          result_.rows.insert(result_.rows.end(),
+                              std::make_move_iterator(rows.begin()),
+                              std::make_move_iterator(rows.end()));
+        }
+        DLOG(ERROR) << " result' s size " << result_.rows.size();
+        DLOG(ERROR) << "reuslt is " << result_.toString();
+        return result_;
+      });
+}
+
+void AllPathsExecutor::buildPathMultiJobs() {
+  auto edgeLists = std::make_shared<std::vector<std::vector<Value>>>();
   for (auto& vid : leftInitVids_) {
     auto vidIter = leftAdjList_.find(vid);
     if (vidIter == leftAdjList_.end()) {
@@ -394,101 +451,98 @@ std::vector<folly::SemiFuture<std::vector<Row>>> AllPathsExecutor::buildPathMult
     if (adjEdges.empty()) {
       continue;
     }
-    std::vector<std::vector<Value>> edgeLists;
-    edgeLists.reserve(adjEdges.size());
+    edgeLists->reserve(adjEdges.size() + edgeLists->size());
     for (auto& edge : adjEdges) {
-      edgeLists.emplace_back(std::vector<Value>({edge}));
+      edgeLists->emplace_back(std::vector<Value>({src, edge}));
     }
-    size_t step = 2;
-    futures.emplace_back(pool.addTask(task, step, src, std::move(edgeLists)));
   }
-  pool.wait();
-  return futures;
+  size_t step = 2;
+  doBuildPath(step, 0, edgeLists->size(), edgeLists);
 }
 
-void AllPathsExecutor::buildPath() {
-  for (const auto& vid : leftInitVids_) {
-    auto paths = doBuildPath(vid);
-    if (paths.empty()) {
-      continue;
-    }
-    result_.rows.insert(result_.rows.end(),
-                        std::make_move_iterator(paths.begin()),
-                        std::make_move_iterator(paths.end()));
-  }
-}
+// void AllPathsExecutor::buildPath() {
+//   for (const auto& vid : leftInitVids_) {
+//     auto paths = doBuildPath(vid);
+//     if (paths.empty()) {
+//       continue;
+//     }
+//     result_.rows.insert(result_.rows.end(),
+//                         std::make_move_iterator(paths.begin()),
+//                         std::make_move_iterator(paths.end()));
+//   }
+// }
 
-std::vector<Row> AllPathsExecutor::doBuildPath(const Value& vid) {
-  auto& adjList = leftAdjList_;
-  auto vidIter = adjList.find(vid);
-  if (vidIter == adjList.end()) {
-    return std::vector<Row>();
-  }
-  auto& src = vidIter->first;
-  auto& adjEdges = vidIter->second;
-  if (adjEdges.empty()) {
-    return std::vector<Row>();
-  }
+// std::vector<Row> AllPathsExecutor::doBuildPath(const Value& vid) {
+//   auto& adjList = leftAdjList_;
+//   auto vidIter = adjList.find(vid);
+//   if (vidIter == adjList.end()) {
+//     return std::vector<Row>();
+//   }
+//   auto& src = vidIter->first;
+//   auto& adjEdges = vidIter->second;
+//   if (adjEdges.empty()) {
+//     return std::vector<Row>();
+//   }
 
-  std::vector<Row> result;
-  result.reserve(adjEdges.size());
+//   std::vector<Row> result;
+//   result.reserve(adjEdges.size());
 
-  std::queue<std::vector<Value>*> queue;
-  std::list<std::unique_ptr<std::vector<Value>>> holder;
-  for (auto& edge : adjEdges) {
-    auto ptr = std::make_unique<std::vector<Value>>(std::vector<Value>({edge}));
-    queue.emplace(ptr.get());
-    holder.emplace_back(std::move(ptr));
-  }
+//   std::queue<std::vector<Value>*> queue;
+//   std::list<std::unique_ptr<std::vector<Value>>> holder;
+//   for (auto& edge : adjEdges) {
+//     auto ptr = std::make_unique<std::vector<Value>>(std::vector<Value>({edge}));
+//     queue.emplace(ptr.get());
+//     holder.emplace_back(std::move(ptr));
+//   }
 
-  size_t step = 1;
-  size_t adjSize = queue.size();
-  while (!queue.empty()) {
-    auto edgeListPtr = queue.front();
-    queue.pop();
-    --adjSize;
+//   size_t step = 1;
+//   size_t adjSize = queue.size();
+//   while (!queue.empty()) {
+//     auto edgeListPtr = queue.front();
+//     queue.pop();
+//     --adjSize;
 
-    auto& dst = edgeListPtr->back().getEdge().dst;
-    auto dstIter = rightInitVids_.find(dst);
-    if (dstIter != rightInitVids_.end()) {
-      Row row;
-      row.values.emplace_back(src);
-      row.values.emplace_back(List(*edgeListPtr));
-      row.values.emplace_back(*dstIter);
-      result.emplace_back(std::move(row));
-    }
+//     auto& dst = edgeListPtr->back().getEdge().dst;
+//     auto dstIter = rightInitVids_.find(dst);
+//     if (dstIter != rightInitVids_.end()) {
+//       Row row;
+//       row.values.emplace_back(src);
+//       row.values.emplace_back(List(*edgeListPtr));
+//       row.values.emplace_back(*dstIter);
+//       result.emplace_back(std::move(row));
+//     }
 
-    auto adjIter = adjList.find(dst);
-    if (adjIter == adjList.end()) {
-      if (adjSize == 0) {
-        if (++step > steps_) {
-          break;
-        }
-        adjSize = queue.size();
-      }
-      continue;
-    }
+//     auto adjIter = adjList.find(dst);
+//     if (adjIter == adjList.end()) {
+//       if (adjSize == 0) {
+//         if (++step > maxStep_) {
+//           break;
+//         }
+//         adjSize = queue.size();
+//       }
+//       continue;
+//     }
 
-    auto& adjedges = adjIter->second;
-    for (auto& edge : adjedges) {
-      if (hasSameEdge(*edgeListPtr, edge.getEdge())) {
-        continue;
-      }
-      auto newEdgeListPtr = std::make_unique<std::vector<Value>>(*edgeListPtr);
-      newEdgeListPtr->emplace_back(adjIter->first);
-      newEdgeListPtr->emplace_back(edge);
-      queue.emplace(newEdgeListPtr.get());
-      holder.emplace_back(std::move(newEdgeListPtr));
-    }
-    if (adjSize == 0) {
-      if (++step > steps_) {
-        break;
-      }
-      adjSize = queue.size();
-    }
-  }
-  return result;
-}
+//     auto& adjedges = adjIter->second;
+//     for (auto& edge : adjedges) {
+//       if (hasSameEdge(*edgeListPtr, edge.getEdge())) {
+//         continue;
+//       }
+//       auto newEdgeListPtr = std::make_unique<std::vector<Value>>(*edgeListPtr);
+//       newEdgeListPtr->emplace_back(adjIter->first);
+//       newEdgeListPtr->emplace_back(edge);
+//       queue.emplace(newEdgeListPtr.get());
+//       holder.emplace_back(std::move(newEdgeListPtr));
+//     }
+//     if (adjSize == 0) {
+//       if (++step > maxStep_) {
+//         break;
+//       }
+//       adjSize = queue.size();
+//     }
+//   }
+//   return result;
+// }
 
 }  // namespace graph
 }  // namespace nebula

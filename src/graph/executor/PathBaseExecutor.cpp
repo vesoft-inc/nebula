@@ -175,7 +175,9 @@ void PathBaseExecutor::addGetNeighborStats(RpcResponse& resp,
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, timeInUSec);
+    // auto info = util::collectRespProfileData(result.result, hostLatency[i], size, timeInUSec);
+    UNUSED(timeInUSec);
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
     stats.push_back(std::move(info));
   }
 
@@ -190,7 +192,9 @@ void PathBaseExecutor::addGetPropStats(PropRpcResponse& resp, int64_t timeInUSec
   auto& hostLatency = resp.hostLatency();
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     const auto& result = resp.responses()[i].get_result();
-    auto info = util::collectRespProfileData(result, hostLatency[i], 0, timeInUSec);
+    // auto info = util::collectRespProfileData(result, hostLatency[i], 0, timeInUSec);
+    UNUSED(timeInUSec);
+    auto info = util::collectRespProfileData(result, hostLatency[i], 0);
     stats.push_back(std::move(info));
   }
 
