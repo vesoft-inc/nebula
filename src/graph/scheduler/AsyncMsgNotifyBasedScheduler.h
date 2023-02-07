@@ -12,6 +12,7 @@
 
 namespace nebula {
 namespace graph {
+
 /**
  * This is an scheduler implementation based on asynchronous message
  * notification and bread first search. Each node in execution plan would be
@@ -74,12 +75,6 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
 
   bool hasFailStatus() const;
 
-  static std::string formatPrettyId(Executor* executor);
-
-  static std::string formatPrettyDependencyTree(Executor* root);
-
-  static void appendExecutor(size_t tabs, Executor* executor, std::stringstream& ss);
-
  private:
   // set if some Executor failed, then other Executors no need to do Executor::execute() further
   mutable std::mutex smtx_;
@@ -87,8 +82,8 @@ class AsyncMsgNotifyBasedScheduler final : public Scheduler {
   mutable std::mutex emtx_;
   mutable std::condition_variable cv_;
   mutable size_t executing_{0};
-  QueryContext* qctx_{nullptr};
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_

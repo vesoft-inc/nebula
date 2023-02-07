@@ -13,7 +13,6 @@
 #include "graph/optimizer/OptRule.h"
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
-#include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 #include "graph/scheduler/Scheduler.h"
 #include "graph/stats/GraphStats.h"
 #include "graph/util/AstUtils.h"
@@ -32,7 +31,6 @@ namespace graph {
 QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *optimizer) {
   qctx_ = std::move(qctx);
   optimizer_ = DCHECK_NOTNULL(optimizer);
-  scheduler_ = std::make_unique<AsyncMsgNotifyBasedScheduler>(qctx_.get());
   qctx_->rctx()->session()->addQuery(qctx_.get());
 }
 
@@ -110,6 +108,7 @@ Status QueryInstance::validateAndOptimize() {
         stats::StatsManager::histoWithLabels(kOptimizerLatencyUs, {{"space", spaceName}}));
   }
 
+  scheduler_ = Scheduler::create(qctx_.get());
   return Status::OK();
 }
 

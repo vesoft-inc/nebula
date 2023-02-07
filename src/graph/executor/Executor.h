@@ -3,8 +3,10 @@
 // This source code is licensed under Apache 2.0 License.
 #ifndef GRAPH_EXECUTOR_EXECUTOR_H_
 #define GRAPH_EXECUTOR_EXECUTOR_H_
+
 #include <folly/futures/Future.h>
 
+#include <atomic>
 #include <boost/core/noncopyable.hpp>
 
 #include "common/cpp/helpers.h"
@@ -13,10 +15,13 @@
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
+
 namespace nebula {
 namespace graph {
+
 class PlanNode;
 class QueryContext;
+
 class Executor : private boost::noncopyable, private cpp::NonMovable {
  public:
   // Create executor according to plan node
@@ -81,6 +86,10 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
         "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
   }
 
+  size_t finishDep() {
+    return ++numFinishedDep_;
+  }
+
  protected:
   static Executor *makeExecutor(const PlanNode *node,
                                 QueryContext *qctx,
@@ -138,6 +147,7 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   // Topology
   std::set<Executor *> depends_;
   std::set<Executor *> successors_;
+  std::atomic<size_t> numFinishedDep_{0};
 
   // profiling data
   uint64_t numRows_{0};
@@ -176,6 +186,7 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
   // Gather all results and do post works
   return folly::collect(futures).via(runner()).thenValue(std::move(gather));
 }
+
 }  // namespace graph
 }  // namespace nebula
 

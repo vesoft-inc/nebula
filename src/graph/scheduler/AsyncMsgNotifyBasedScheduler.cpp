@@ -5,15 +5,13 @@
 
 #include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 
-DECLARE_bool(enable_lifetime_optimize);
+#include "graph/executor/Executor.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
 
-AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) : Scheduler() {
-  qctx_ = qctx;
-  query_ = qctx->rctx()->query();
-}
+AsyncMsgNotifyBasedScheduler::AsyncMsgNotifyBasedScheduler(QueryContext* qctx) : Scheduler(qctx) {}
 
 void AsyncMsgNotifyBasedScheduler::waitFinish() {
   std::unique_lock<std::mutex> lck(emtx_);
@@ -29,16 +27,7 @@ void AsyncMsgNotifyBasedScheduler::waitFinish() {
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::schedule() {
-  auto root = qctx_->plan()->root();
-  if (FLAGS_enable_lifetime_optimize) {
-    // special for root
-    root->outputVarPtr()->userCount.store(std::numeric_limits<uint64_t>::max(),
-                                          std::memory_order_relaxed);
-    analyzeLifetime(root);
-  }
-  auto executor = Executor::create(root, qctx_);
-  DLOG(INFO) << formatPrettyDependencyTree(executor);
-  return doSchedule(executor);
+  return doSchedule(makeExecutor());
 }
 
 folly::Future<Status> AsyncMsgNotifyBasedScheduler::doSchedule(Executor* root) const {
@@ -306,26 +295,6 @@ void AsyncMsgNotifyBasedScheduler::setFailStatus(Status status) const {
 bool AsyncMsgNotifyBasedScheduler::hasFailStatus() const {
   std::unique_lock<std::mutex> lck(smtx_);
   return failedStatus_.has_value();
-}
-
-std::string AsyncMsgNotifyBasedScheduler::formatPrettyId(Executor* executor) {
-  return fmt::format("[{},{}]", executor->name(), executor->id());
-}
-
-std::string AsyncMsgNotifyBasedScheduler::formatPrettyDependencyTree(Executor* root) {
-  std::stringstream ss;
-  size_t spaces = 0;
-  appendExecutor(spaces, root, ss);
-  return ss.str();
-}
-
-void AsyncMsgNotifyBasedScheduler::appendExecutor(size_t spaces,
-                                                  Executor* executor,
-                                                  std::stringstream& ss) {
-  ss << std::string(spaces, ' ') << formatPrettyId(executor) << std::endl;
-  for (auto depend : executor->depends()) {
-    appendExecutor(spaces + 1, depend, ss);
-  }
 }
 
 }  // namespace graph
