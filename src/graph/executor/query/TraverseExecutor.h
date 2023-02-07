@@ -64,7 +64,12 @@ class TraverseExecutor final : public StorageAccessExecutor {
   size_t numRowsOfRpcResp(const RpcResponse& resps) const;
 
   void expand(GetNeighborsIter* iter);
-  void expandOneStep(const RpcResponse& resps);
+  void buildAdjList(DataSet& dataset,
+                    std::vector<Value>& initVertices,
+                    VidHashSet& vids,
+                    VertexMap<Value>& adjList) const;
+  folly::Future<Status> expandOneStep(RpcResponse&& resps);
+  folly::Future<Status> asyncExpandOneStep(RpcResponse&& resps);
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
   folly::Future<Status> buildResult();
@@ -97,9 +102,6 @@ class TraverseExecutor final : public StorageAccessExecutor {
   const Traverse* traverse_{nullptr};
   MatchStepRange range_;
   size_t currentStep_{0};
-
-  size_t expandTime_{0u};
-  size_t expandOneStepTime_{0u};
 };
 
 }  // namespace graph
