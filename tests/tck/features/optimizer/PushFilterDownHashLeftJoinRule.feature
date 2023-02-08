@@ -104,3 +104,61 @@ Feature: Push Filter down HashLeftJoin rule
       | 5  | Project      | 4            |               |
       | 4  | GetVertices  | 3            |               |
       | 3  | Argument     |              |               |
+    When profiling query:
+      """
+      GO FROM "Tony Parker" OVER like
+      WHERE $$.player.age >= 32 AND like.likeness > 85
+      YIELD like._dst AS id, like.likeness AS likeness, $$.player.age AS age
+      """
+    Then the result should be, in any order:
+      | id                  | likeness | age |
+      | "LaMarcus Aldridge" | 90       | 33  |
+      | "Manu Ginobili"     | 95       | 41  |
+      | "Tim Duncan"        | 95       | 42  |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info                    |
+      | 8  | Project      | 12           |                                  |
+      | 12 | Filter       | 11           | {"condition" : "($__COL_0>=32)"} |
+      | 11 | HashLeftJoin | 14,5         |                                  |
+      | 14 | Project      | 15           |                                  |
+      | 15 | GetNeighbors | 0            |                                  |
+      | 0  | Start        |              |                                  |
+      | 5  | Project      | 4            |                                  |
+      | 4  | GetVertices  | 3            |                                  |
+      | 3  | Argument     |              |                                  |
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
+      | YIELD $-.id AS vid
+      |  GO FROM $-.vid OVER like BIDIRECT
+      WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')
+      YIELD $$.player.name, like._dst AS vid
+      | GO FROM $-.vid OVER like BIDIRECT WHERE any(x in split($$.player.name, ' ') WHERE x contains 'Ti')
+      YIELD $$.player.name
+      """
+    Then the result should be, in any order:
+      | $$.player.name |
+      | "Tim Duncan"   |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info |
+      | 26 | Project            | 36           |               |
+      | 36 | InnerJoin          | 35           |               |
+      | 35 | Filter             | 23           |               |
+      | 23 | HashLeftJoin       | 19,20        |               |
+      | 19 | Project            | 32           |               |
+      | 32 | GetNeighbors       | 15           |               |
+      | 15 | Project            | 34           |               |
+      | 34 | InnerJoin          | 33           |               |
+      | 33 | Filter             | 12           |               |
+      | 12 | HashLeftJoin       | 8, 11        |               |
+      | 8  | Project            | 31           |               |
+      | 31 | GetNeighbors       | 28           |               |
+      | 28 | Project            | 27           |               |
+      | 27 | TagIndexPrefixScan | 0            |               |
+      | 0  | Start              |              |               |
+      | 11 | Project            | 10           |               |
+      | 10 | GetVertices        | 9            |               |
+      | 9  | Argument           |              |               |
+      | 22 | Project            | 21           |               |
+      | 21 | GetVertices        | 20           |               |
+      | 20 | Argument           |              |               |
