@@ -43,7 +43,7 @@ Feature: Push Filter down HashLeftJoin rule
       | 15 | HashLeftJoin | 17,9         |                                  |
       | 17 | Project      | 18           |                                  |
       | 18 | GetNeighbors | 4            | {"filter": "(like.likeness>90)"} |
-      | 4  | Loop         | 0            |                                  |
+      | 4  | Loop         | 0            | {"loopBody": "3"}                |
       | 3  | Dedup        | 2            |                                  |
       | 2  | GetDstBySrc  | 1            |                                  |
       | 1  | Start        |              |                                  |
@@ -94,13 +94,13 @@ Feature: Push Filter down HashLeftJoin rule
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                    |
-      | 8  | Project      | 7            |                                  |
-      | 7  | Filter       | 6            |                                  |
-      | 6  | HashLeftJoin | 2,5          |                                  |
-      | 2  | Project      | 1            |                                  |
-      | 1  | GetNeighbors | 0            | {"filter": "(like.likeness>90)"} |
-      | 0  | Start        |              |                                  |
-      | 5  | Project      | 4            |                                  |
-      | 4  | GetVertices  | 3            |                                  |
-      | 3  | Argument     |              |                                  |
+      | id | name         | dependencies | operator info |
+      | 8  | Project      | 7            |               |
+      | 7  | Filter       | 6            |               |
+      | 6  | HashLeftJoin | 2,5          |               |
+      | 2  | Project      | 1            |               |
+      | 1  | GetNeighbors | 0            |               |
+      | 0  | Start        |              |               |
+      | 5  | Project      | 4            |               |
+      | 4  | GetVertices  | 3            |               |
+      | 3  | Argument     |              |               |
