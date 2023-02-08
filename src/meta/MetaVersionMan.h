@@ -7,6 +7,7 @@
 #define META_METAVERSIONMAN_H_
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
@@ -35,7 +36,7 @@ class MetaVersionMan final {
    * @param kv
    * @return
    */
-  static MetaVersion getMetaVersionFromKV(kvstore::KVStore* kv);
+  static ErrorOr<nebula::cpp2::ErrorCode, MetaVersion> getMetaVersionFromKV(kvstore::KVStore* kv);
 
   static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
 
@@ -44,8 +45,6 @@ class MetaVersionMan final {
   static Status updateMetaV3ToV3_4(kvstore::KVEngine* engine);
 
  private:
-  static MetaVersion getVersionByHost(kvstore::KVStore* kv);
-
   static Status doUpgradeV3ToV3_4(kvstore::KVEngine* engine);
 
   static Status doUpgradeV2ToV3(kvstore::KVEngine* engine);

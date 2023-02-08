@@ -108,7 +108,10 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
   auto version = metaVersion_.load();
   if (version == -1) {
-    metaVersion_.store(static_cast<int64_t>(MetaVersionMan::getMetaVersionFromKV(kvstore_)));
+    auto v = MetaVersionMan::getMetaVersionFromKV(kvstore_);
+    if (nebula::ok(v)) {
+      metaVersion_.store(static_cast<int64_t>(nebula::value(v)));
+    }
   }
 
   resp_.meta_version_ref() = metaVersion_.load();
