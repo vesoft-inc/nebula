@@ -150,8 +150,11 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
     LOG(ERROR) << "Can't upgrade meta from V1 to V3_4";
     return nullptr;
   } else if (version == nebula::meta::MetaVersion::V2) {
-    LOG(ERROR) << "Can't upgrade meta from V2 to V3_4";
-    return nullptr;
+    auto ret = nebula::meta::MetaVersionMan::updateMetaV2ToV3_4(engine);
+    if (!ret.ok()) {
+      LOG(ERROR) << "Update meta from V2 to V3_4 failed " << ret;
+      return nullptr;
+    }
   } else if (version == nebula::meta::MetaVersion::V3) {
     auto ret = nebula::meta::MetaVersionMan::updateMetaV3ToV3_4(engine);
     if (!ret.ok()) {

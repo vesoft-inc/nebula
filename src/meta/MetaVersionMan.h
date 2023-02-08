@@ -39,12 +39,16 @@ class MetaVersionMan final {
 
   static bool setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion version);
 
+  static Status updateMetaV2ToV3_4(kvstore::KVEngine* engine);
+
   static Status updateMetaV3ToV3_4(kvstore::KVEngine* engine);
 
  private:
   static MetaVersion getVersionByHost(kvstore::KVStore* kv);
 
   static Status doUpgradeV3ToV3_4(kvstore::KVEngine* engine);
+
+  static Status doUpgradeV2ToV3(kvstore::KVEngine* engine);
 };
 
 }  // namespace meta
