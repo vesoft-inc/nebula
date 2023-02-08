@@ -19,20 +19,26 @@ folly::Future<Status> ArgumentExecutor::execute() {
   auto iter = ectx_->getResult(argNode->inputVar()).iter();
   DCHECK(iter != nullptr);
 
+  const auto &successor = successors();
+  auto sucessorExecutor = *successor.begin();
+  bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
+
   DataSet ds;
   ds.colNames = argNode->colNames();
   ds.rows.reserve(iter->size());
-  std::unordered_set<Value> unique;
+  VidHashSet unique;
   for (; iter->valid(); iter->next()) {
     auto &val = iter->getColumn(alias);
     if (val.isNull()) {
       continue;
-    } else if (!val.isVertex()) {
-      return Status::Error("Argument only support vertex, but got %s, which is type %s, ",
+    }
+    // TODO(jmq) analyze the type of val in the validation phase
+    if (flag && !val.isVertex()) {
+      return Status::Error("Argument only support vertex, but got %s, which is type %s",
                            val.toString().c_str(),
                            val.typeName().c_str());
     }
-    if (unique.emplace(val.getVertex().vid).second) {
+    if (unique.emplace(val).second) {
       Row row;
       row.values.emplace_back(val);
       ds.rows.emplace_back(std::move(row));

@@ -65,7 +65,6 @@ class PlanNode {
     kCartesianProduct,
     kSubgraph,
     kDataCollect,
-    kLeftJoin,
     kInnerJoin,
     kHashLeftJoin,
     kHashInnerJoin,

@@ -56,7 +56,6 @@ const std::unordered_set<graph::PlanNode::Kind> RemoveNoopProjectRule::kQueries{
     PlanNode::Kind::kCartesianProduct,
     PlanNode::Kind::kSubgraph,
     PlanNode::Kind::kDataCollect,
-    PlanNode::Kind::kLeftJoin,
     PlanNode::Kind::kInnerJoin,
     PlanNode::Kind::kHashLeftJoin,
     PlanNode::Kind::kHashInnerJoin,
