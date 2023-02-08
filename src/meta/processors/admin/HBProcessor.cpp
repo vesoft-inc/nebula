@@ -111,6 +111,8 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     auto v = MetaVersionMan::getMetaVersionFromKV(kvstore_);
     if (nebula::ok(v)) {
       metaVersion_.store(static_cast<int64_t>(nebula::value(v)));
+    } else {
+      metaVersion_.store(static_cast<int64_t>(MetaVersion::V3_4));
     }
   }
 
