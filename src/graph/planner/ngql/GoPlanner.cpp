@@ -202,11 +202,12 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
 
-  auto argNode = Argument::make(qctx, "JOIN_DST_VID");
-  argNode->setColNames({"JOIN_DST_VID"});
+  auto& colName = dep->colNames().back();
+  auto argNode = Argument::make(qctx, colName);
+  argNode->setColNames({colName});
 
   // dst is the first column, columnName is "JOIN_DST_VID"
-  auto* dstExpr = ColumnExpression::make(pool, VID_INDEX);
+  auto* dstExpr = ColumnExpression::make(pool, LAST_COL_INDEX);
   auto* getVertex = GetVertices::make(qctx,
                                       argNode,
                                       goCtx_->space.id,
@@ -228,14 +229,6 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto* probeKey = ColumnExpression::make(pool, LAST_COL_INDEX);
 
   auto* join = HashLeftJoin::make(qctx, dep, project, {hashKey}, {probeKey});
-
-  // auto* join = LeftJoin::make(qctx,
-  //                             project,
-  //                             {dep->outputVar(), ExecutionContext::kLatestVersion},
-  //                             {project->outputVar(), ExecutionContext::kLatestVersion},
-  //                             {hashKey},
-  //                             {probeKey});
-
   DLOG(INFO) << join->outputVar() << " hasKey: " << hashKey->toString()
              << " probeKey: " << probeKey->toString();
 
