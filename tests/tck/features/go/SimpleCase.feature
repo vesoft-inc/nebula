@@ -29,15 +29,16 @@ Feature: Simple case
       | "Shaquille O'Neal" | 47  |
       | "Tracy McGrady"    | 39  |
     And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 7  | Sort        | 6            |               |
-      | 6  | Project     | 5            |               |
-      | 5  | LeftJoin    | 4            |               |
-      | 4  | Project     | 3            |               |
-      | 3  | GetVertices | 2            |               |
-      | 2  | Dedup       | 1            |               |
-      | 1  | GetDstBySrc | 0            |               |
-      | 0  | Start       |              |               |
+      | id | name         | dependencies | operator info |
+      | 8  | Sort         | 7            |               |
+      | 7  | Project      | 6            |               |
+      | 6  | HashLeftJoin | 2, 5         |               |
+      | 2  | Dedup        | 1            |               |
+      | 1  | GetDstBySrc  | 0            |               |
+      | 0  | Start        |              |               |
+      | 5  | Project      | 4            |               |
+      | 4  | GetVertices  | 3            |               |
+      | 3  | Argument     |              |               |
     When profiling query:
       """
       GO FROM "Yao Ming" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$) AS dst, $$.player.age AS age | ORDER BY $-.dst
@@ -46,16 +47,17 @@ Feature: Simple case
       | dst                | age |
       | "Shaquille O'Neal" | 47  |
     And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 8  | Sort        | 7            |               |
-      | 7  | Project     | 6            |               |
-      | 6  | Filter      | 5            |               |
-      | 5  | LeftJoin    | 4            |               |
-      | 4  | Project     | 3            |               |
-      | 3  | GetVertices | 2            |               |
-      | 2  | Dedup       | 1            |               |
-      | 1  | GetDstBySrc | 0            |               |
-      | 0  | Start       |              |               |
+      | id | name         | dependencies | operator info |
+      | 9  | Sort         | 8            |               |
+      | 8  | Project      | 7            |               |
+      | 7  | Filter       | 6            |               |
+      | 6  | HashLeftJoin | 2, 5         |               |
+      | 2  | Dedup        | 1            |               |
+      | 1  | GetDstBySrc  | 0            |               |
+      | 0  | Start        |              |               |
+      | 5  | Project      | 4            |               |
+      | 4  | GetVertices  | 3            |               |
+      | 3  | Argument     |              |               |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like YIELD DISTINCT id($$) AS a | ORDER BY $-.a
@@ -114,20 +116,21 @@ Feature: Simple case
       | count(*) |
       | 21       |
     And the execution plan should be:
-      | id | name        | dependencies | operator info     |
-      | 12 | Aggregate   | 11           |                   |
-      | 11 | Project     | 10           |                   |
-      | 10 | Filter      | 9            |                   |
-      | 9  | LeftJoin    | 8            |                   |
-      | 8  | Project     | 7            |                   |
-      | 7  | GetVertices | 6            |                   |
-      | 6  | Dedup       | 5            |                   |
-      | 5  | GetDstBySrc | 4            |                   |
-      | 4  | Loop        | 0            | {"loopBody": "3"} |
-      | 3  | Dedup       | 2            |                   |
-      | 2  | GetDstBySrc | 1            |                   |
-      | 1  | Start       |              |                   |
-      | 0  | Start       |              |                   |
+      | id | name         | dependencies | operator info     |
+      | 13 | Aggregate    | 12           |                   |
+      | 12 | Project      | 11           |                   |
+      | 11 | Filter       | 10           |                   |
+      | 10 | HashLeftJoin | 6,9          |                   |
+      | 6  | Dedup        | 5            |                   |
+      | 5  | GetDstBySrc  | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+      | 9  | Project      | 8            |                   |
+      | 8  | GetVertices  | 7            |                   |
+      | 7  | Argument     |              |                   |
     # The last step degenerates to `GetNeighbors` when the yield clause is not `YIELD DISTINCT id($$)`
     When profiling query:
       """
@@ -171,19 +174,20 @@ Feature: Simple case
       | count(*) |
       | 22       |
     And the execution plan should be:
-      | id | name        | dependencies | operator info     |
-      | 11 | Aggregate   | 10           |                   |
-      | 10 | Project     | 9            |                   |
-      | 9  | LeftJoin    | 8            |                   |
-      | 8  | Project     | 7            |                   |
-      | 7  | GetVertices | 6            |                   |
-      | 6  | Dedup       | 5            |                   |
-      | 5  | GetDstBySrc | 4            |                   |
-      | 4  | Loop        | 0            | {"loopBody": "3"} |
-      | 3  | Dedup       | 2            |                   |
-      | 2  | GetDstBySrc | 1            |                   |
-      | 1  | Start       |              |                   |
-      | 0  | Start       |              |                   |
+      | id | name         | dependencies | operator info     |
+      | 12 | Aggregate    | 11           |                   |
+      | 11 | Project      | 10           |                   |
+      | 10 | HashLeftJoin | 6, 9         |                   |
+      | 6  | Dedup        | 5            |                   |
+      | 5  | GetDstBySrc  | 4            |                   |
+      | 4  | Loop         | 0            | {"loopBody": "3"} |
+      | 3  | Dedup        | 2            |                   |
+      | 2  | GetDstBySrc  | 1            |                   |
+      | 1  | Start        |              |                   |
+      | 0  | Start        |              |                   |
+      | 9  | Project      | 8            |                   |
+      | 8  | GetVertices  | 7            |                   |
+      | 7  | Argument     |              |                   |
     When profiling query:
       """
       GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE $^.player.age > 30 YIELD DISTINCT id($$) AS dst | YIELD count(*)
