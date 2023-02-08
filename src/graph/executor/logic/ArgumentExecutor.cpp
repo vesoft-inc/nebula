@@ -19,6 +19,10 @@ folly::Future<Status> ArgumentExecutor::execute() {
   auto iter = ectx_->getResult(argNode->inputVar()).iter();
   DCHECK(iter != nullptr);
 
+  const auto &successor = successors();
+  auto sucessorExecutor = *successor.begin();
+  bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
+
   DataSet ds;
   ds.colNames = argNode->colNames();
   ds.rows.reserve(iter->size());
@@ -27,6 +31,12 @@ folly::Future<Status> ArgumentExecutor::execute() {
     auto &val = iter->getColumn(alias);
     if (val.isNull()) {
       continue;
+    }
+    // TODO(jmq) analyze the type of val in the validation phase
+    if (flag && !val.isVertex()) {
+      return Status::Error("Argument only support vertex, but got %s, which is type %s",
+                           val.toString().c_str(),
+                           val.typeName().c_str());
     }
     if (unique.emplace(val).second) {
       Row row;

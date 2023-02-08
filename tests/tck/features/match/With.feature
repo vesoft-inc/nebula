@@ -453,29 +453,24 @@ Feature: With clause
       """
       with "1" as a match (a)-[e:like]->(b) return b
       """
-    Then the result should be, in any order:
-      | b |
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got "1", which is type string
     When executing query:
       """
       with 1 as a match (a)-[e:like]->(b) return b
       """
-    Then the result should be, in any order:
-      | b |
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
     When executing query:
       """
       with 1 as b match (b) return b
       """
-    Then the result should be, in any order:
-      | b |
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
     When executing query:
       """
       with [1,2] as a unwind a as b  match (b) return b
       """
-    Then the result should be, in any order:
-      | b |
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
     When executing query:
       """
       with [1,2] as a unwind a as b  match (b)-[e:like]->(a:player{age:30}) return b
       """
-    Then the result should be, in any order:
-      | b |
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
