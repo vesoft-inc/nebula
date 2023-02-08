@@ -7,6 +7,7 @@
 
 #include "common/time/ScopedTimer.h"
 #include "common/utils/IndexKeyUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "common/utils/Utils.h"
@@ -487,6 +488,9 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, folly:
 }
 
 nebula::cpp2::ErrorCode Part::cleanup() {
+  if (spaceId_ == kDefaultSpaceId && partId_ == kDefaultPartId) {
+    return metaCleanup();
+  }
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
@@ -555,6 +559,14 @@ nebula::cpp2::ErrorCode Part::cleanup() {
   }
   return engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
+}
+
+nebula::cpp2::ErrorCode Part::metaCleanup() {
+  std::string kMetaPrefix = "__";
+  auto firstKey = NebulaKeyUtils::firstKey(kMetaPrefix, 1);
+  auto lastKey = NebulaKeyUtils::lastKey(kMetaPrefix, 1);
+  // todo(doodle): since the poor performance of DeleteRange, perhaps we need to compact
+  return engine_->removeRange(firstKey, lastKey);
 }
 
 }  // namespace kvstore
