@@ -28,6 +28,7 @@ nebula_add_library(
     rule/PushFilterDownProjectRule.cpp
     rule/PushFilterDownLeftJoinRule.cpp
     rule/PushFilterDownHashInnerJoinRule.cpp
+    rule/PushFilterDownHashLeftJoinRule.cpp
     rule/PushFilterDownInnerJoinRule.cpp
     rule/PushFilterDownNodeRule.cpp
     rule/PushFilterDownScanVerticesRule.cpp
