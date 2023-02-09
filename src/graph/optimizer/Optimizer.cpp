@@ -159,17 +159,17 @@ bool findArgumentRefPlanNodeInPath(const std::vector<const PlanNode *> &path, Pl
   return false;
 }
 
-Status rewriteArgumentInputVarInternal(PlanNode *root,
+}  // namespace
 
-                                       bool &hasArgument,
-                                       std::vector<const PlanNode *> &path) {
+// static
+Status Optimizer::rewriteArgumentInputVarInternal(PlanNode *root,
+                                                  std::vector<const PlanNode *> &path) {
   if (!root) return Status::OK();
 
   path.push_back(root);
   switch (root->numDeps()) {
     case 0: {
       if (root->kind() == PlanNode::Kind::kArgument) {
-        hasArgument = true;
         DCHECK(root->inputVar().empty())
             << "Should keep the input empty for argument when plan generation";
 
@@ -181,15 +181,15 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
     }
     case 1: {
       auto *dep = const_cast<PlanNode *>(root->dep());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, hasArgument, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, path));
       break;
     }
     case 2: {
       auto *bpn = static_cast<BinaryInputNode *>(root);
       auto *left = const_cast<PlanNode *>(bpn->left());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, hasArgument, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, path));
       auto *right = const_cast<PlanNode *>(bpn->right());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, hasArgument, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, path));
       break;
     }
     default: {
@@ -199,24 +199,24 @@ Status rewriteArgumentInputVarInternal(PlanNode *root,
   }
   path.pop_back();
 
-  // Ensure that there's no argument plan node if loop/select plan nodes exist in execution plan
-  if (root->kind() == PlanNode::Kind::kLoop || root->kind() == PlanNode::Kind::kSelect) {
-    if (hasArgument) {
-      return Status::Error(
-          "Loop/Select plan node should not exist with argument in the same execution plan");
-    }
+  if (root->kind() == PlanNode::Kind::kLoop) {
+    auto loop = static_cast<Loop *>(root);
+    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(loop->body())));
+  }
+
+  if (root->kind() == PlanNode::Kind::kSelect) {
+    auto sel = static_cast<Select *>(root);
+    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(sel->then())));
+    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(sel->otherwise())));
   }
 
   return Status::OK();
 }
 
-}  // namespace
-
 // static
 Status Optimizer::rewriteArgumentInputVar(PlanNode *root) {
-  bool hasArgument = false;
   std::vector<const PlanNode *> path;
-  return rewriteArgumentInputVarInternal(root, hasArgument, path);
+  return rewriteArgumentInputVarInternal(root, path);
 }
 
 Status Optimizer::checkPlanDepth(const PlanNode *root) const {

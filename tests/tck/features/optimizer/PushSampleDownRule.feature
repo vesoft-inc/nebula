@@ -49,20 +49,21 @@ Feature: Push Limit down rule
       | "Luka Doncic" | 90       | "Kristaps Porzingis" |
     And the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                          |
-      | 13 | Project      | 12           |                |                                                        |
-      | 12 | LeftJoin     | 11           |                |                                                        |
-      | 11 | Project      | 10           |                |                                                        |
-      | 10 | GetVertices  | 9            |                |                                                        |
-      | 9  | Project      | 16           |                |                                                        |
-      | 16 | Limit        | 17           |                |                                                        |
-      | 17 | GetNeighbors | 6            |                | {"limit": "2", "random": "false"}                      |
+      | 14 | Project      | 13           |                |                                                        |
+      | 13 | HashLeftJoin | 9, 12        |                |                                                        |
+      | 9  | Project      | 15           |                |                                                        |
+      | 15 | Limit        | 16           |                |                                                        |
+      | 16 | GetNeighbors | 6            |                | {"limit": "2", "random": "false"}                      |
       | 6  | Loop         | 0            |                | {"loopBody": "5"}                                      |
       | 5  | Dedup        | 4            |                |                                                        |
-      | 4  | Project      | 24           |                |                                                        |
-      | 24 | Limit        | 25           |                |                                                        |
-      | 25 | GetNeighbors | 1            |                | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "false"} |
+      | 4  | Project      | 17           |                |                                                        |
+      | 17 | Limit        | 18           |                |                                                        |
+      | 18 | GetNeighbors | 1            |                | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "false"} |
       | 1  | Start        |              |                |                                                        |
       | 0  | Start        |              |                |                                                        |
+      | 12 | Project      | 11           |                |                                                        |
+      | 11 | GetVertices  | 10           |                |                                                        |
+      | 10 | Argument     |              |                |                                                        |
     When profiling query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst;
@@ -144,20 +145,21 @@ Feature: Push Limit down rule
       | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
     And the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                         |
-      | 13 | Project      | 12           |                |                                                       |
-      | 12 | LeftJoin     | 11           |                |                                                       |
-      | 11 | Project      | 10           |                |                                                       |
-      | 10 | GetVertices  | 9            |                |                                                       |
-      | 9  | Project      | 16           |                |                                                       |
-      | 16 | Sample       | 17           |                |                                                       |
-      | 17 | GetNeighbors | 6            |                | {"limit": "2", "random": "true"}                      |
+      | 14 | Project      | 13           |                |                                                       |
+      | 13 | HashLeftJoin | 9, 12        |                |                                                       |
+      | 9  | Project      | 17           |                |                                                       |
+      | 17 | Sample       | 18           |                |                                                       |
+      | 18 | GetNeighbors | 6            |                | {"limit": "2", "random": "true"}                      |
       | 6  | Loop         | 0            |                | {"loopBody": "5"}                                     |
       | 5  | Dedup        | 4            |                |                                                       |
-      | 4  | Project      | 24           |                |                                                       |
-      | 24 | Sample       | 25           |                |                                                       |
-      | 25 | GetNeighbors | 1            |                | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "true"} |
+      | 4  | Project      | 25           |                |                                                       |
+      | 25 | Sample       | 26           |                |                                                       |
+      | 26 | GetNeighbors | 1            |                | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "true"} |
       | 1  | Start        |              |                |                                                       |
       | 0  | Start        |              |                |                                                       |
+      | 12 | Project      | 11           |                |                                                       |
+      | 11 | GetVertices  | 10           |                |                                                       |
+      | 10 | Argument     |              |                |                                                       |
     When profiling query:
       """
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst;

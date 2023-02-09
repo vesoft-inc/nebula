@@ -373,9 +373,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShowSnapshots: {
       return pool->makeAndAdd<ShowSnapshotsExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kLeftJoin: {
-      return pool->makeAndAdd<LeftJoinExecutor>(node, qctx);
-    }
     case PlanNode::Kind::kInnerJoin: {
       return pool->makeAndAdd<InnerJoinExecutor>(node, qctx);
     }
