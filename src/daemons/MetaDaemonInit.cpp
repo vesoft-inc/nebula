@@ -142,28 +142,30 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   }
 
   auto version = nebula::meta::MetaVersionMan::getMetaVersionFromKV(kvstore.get());
-  LOG(INFO) << "Get meta version is " << static_cast<int32_t>(version);
-  if (version == nebula::meta::MetaVersion::UNKNOWN) {
-    LOG(ERROR) << "Meta version is invalid";
-    return nullptr;
-  } else if (version == nebula::meta::MetaVersion::V1) {
-    LOG(ERROR) << "Can't upgrade meta from V1 to V3_4";
-    return nullptr;
-  } else if (version == nebula::meta::MetaVersion::V2) {
-    auto ret = nebula::meta::MetaVersionMan::updateMetaV2ToV3_4(engine);
-    if (!ret.ok()) {
-      LOG(ERROR) << "Update meta from V2 to V3_4 failed " << ret;
-      return nullptr;
-    }
-  } else if (version == nebula::meta::MetaVersion::V3) {
+  if (!nebula::ok(version)) {
     auto ret = nebula::meta::MetaVersionMan::updateMetaV3ToV3_4(engine);
     if (!ret.ok()) {
       LOG(ERROR) << "Update meta from V3 to V3_4 failed " << ret;
       return nullptr;
     }
-    nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V3_4);
+  } else {
+    auto v = nebula::value(version);
+    LOG(INFO) << "Get meta version is " << static_cast<int32_t>(v);
+    if (v == nebula::meta::MetaVersion::UNKNOWN) {
+      LOG(ERROR) << "Meta version is invalid";
+      return nullptr;
+    } else if (v == nebula::meta::MetaVersion::V1) {
+      LOG(ERROR) << "Can't upgrade meta from V1 to V3_4";
+      return nullptr;
+    } else if (v == nebula::meta::MetaVersion::V2) {
+      auto ret = nebula::meta::MetaVersionMan::updateMetaV2ToV3_4(engine);
+      if (!ret.ok()) {
+        LOG(ERROR) << "Update meta from V2 to V3_4 failed " << ret;
+        return nullptr;
+      }
+    }
   }
-
+  nebula::meta::MetaVersionMan::setMetaVersionToKV(engine, nebula::meta::MetaVersion::V3_4);
   LOG(INFO) << "Nebula store init succeeded, clusterId " << gClusterId;
   return kvstore;
 }

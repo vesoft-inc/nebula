@@ -21,7 +21,8 @@ namespace meta {
 static const std::string kMetaVersionKey = "__meta_version__";  // NOLINT
 
 // static
-MetaVersion MetaVersionMan::getMetaVersionFromKV(kvstore::KVStore* kv) {
+ErrorOr<nebula::cpp2::ErrorCode, MetaVersion> MetaVersionMan::getMetaVersionFromKV(
+    kvstore::KVStore* kv) {
   CHECK_NOTNULL(kv);
   std::string value;
   auto code = kv->get(kDefaultSpaceId, kDefaultPartId, kMetaVersionKey, &value, true);
@@ -29,24 +30,8 @@ MetaVersion MetaVersionMan::getMetaVersionFromKV(kvstore::KVStore* kv) {
     auto version = *reinterpret_cast<const MetaVersion*>(value.data());
     return version;
   } else {
-    return getVersionByHost(kv);
+    return code;
   }
-}
-
-// static
-MetaVersion MetaVersionMan::getVersionByHost(kvstore::KVStore* kv) {
-  const auto& hostPrefix = nebula::MetaKeyUtils::hostPrefix();
-  std::unique_ptr<nebula::kvstore::KVIterator> iter;
-  auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter, true);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return MetaVersion::UNKNOWN;
-  }
-  if (iter->valid()) {
-    auto v1KeySize = hostPrefix.size() + sizeof(int64_t);
-    return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3_4;
-  }
-  // No hosts exists, regard as version 3
-  return MetaVersion::V3_4;
 }
 
 // static
