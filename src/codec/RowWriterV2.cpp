@@ -201,8 +201,13 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
   }
 
   switch (val.type()) {
-    case Value::Type::NULLVALUE:
+    case Value::Type::NULLVALUE: {
+      if (val.isBadNull()) {
+        // Property value never be bad null
+        return WriteResult::TYPE_MISMATCH;
+      }
       return setNull(index);
+    }
     case Value::Type::BOOL:
       return write(index, val.getBool());
     case Value::Type::INT:

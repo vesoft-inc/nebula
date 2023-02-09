@@ -48,7 +48,8 @@ class SchemaUtil final {
   static StatusOr<Value> toVertexID(Expression* expr, Value::Type vidType);
 
   // Iterate exprs and calculate each element's value and return them as a vector.
-  static StatusOr<std::vector<Value>> toValueVec(std::vector<Expression*> exprs);
+  static StatusOr<std::vector<Value>> toValueVec(QueryContext* qctx,
+                                                 std::vector<Expression*> exprs);
 
   // Returns the "Field", "Type", "Null", "Default", "Comment" of the schema as a dataset
   static StatusOr<DataSet> toDescSchema(const meta::cpp2::Schema& schema);
