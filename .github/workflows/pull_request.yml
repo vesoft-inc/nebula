@@ -106,7 +106,7 @@ jobs:
               cmake \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -Dcmake -DNEBULA_USE_LINKER=mold \
+                  -DNEBULA_USE_LINKER=mold \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -GNinja \
