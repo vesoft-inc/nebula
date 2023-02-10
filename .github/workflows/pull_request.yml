@@ -111,7 +111,6 @@ jobs:
                   -DENABLE_TESTING=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::8"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -124,7 +123,6 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::8"
               ;;
             esac
             ;;
@@ -140,7 +138,6 @@ jobs:
                 -DENABLE_TESTING=on \
                 -GNinja \
                 -B build
-            echo "::set-output name=j::4"
             ;;
           esac
       - name: Make
@@ -157,7 +154,7 @@ jobs:
             ubuntu2004)
               # build with Debug type
               ccache -z
-              ninja -j $(($(nproc)/2+1))
+              ninja -j $(nproc)
               ccache -s
               ;;
             esac
