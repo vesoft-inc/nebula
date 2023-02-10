@@ -27,6 +27,7 @@ class PlanNode {
     kGetNeighbors,
     kGetVertices,
     kGetEdges,
+    kGetDstBySrc,
     kTraverse,
     kAppendVertices,
     kShortestPath,
@@ -74,10 +75,10 @@ class PlanNode {
     kArgument,
 
     // Logic
-    kStart,
     kSelect,
     kLoop,
     kPassThrough,
+    kStart,
 
     // schema related
     kCreateSpace,
@@ -183,12 +184,10 @@ class PlanNode {
 
     kShowQueries,
     kKillQuery,
-
-    kGetDstBySrc,
   };
 
   bool isQueryNode() const {
-    return kind_ < Kind::kStart;
+    return kind_ <= Kind::kStart;
   }
 
   // Describe plan node
