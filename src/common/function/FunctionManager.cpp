@@ -9,6 +9,7 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
+#include "FunctionUdfManager.h"
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
@@ -28,7 +29,6 @@
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
-#include "FunctionUdfManager.h"
 
 DEFINE_bool(enable_udf, false, "enable udf");
 

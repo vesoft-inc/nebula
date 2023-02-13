@@ -1,7 +1,13 @@
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
+ *
+ * This source code is licensed under Apache 2.0 License.
+ */
+
 #include "FunctionUdfManager.h"
 
 #include <dirent.h>
 #include <dlfcn.h>
+
 #include <cstring>
 #include <iostream>
 
@@ -47,7 +53,7 @@ std::vector<std::string> getFilesList(const std::string &path, const char *ftype
 }
 
 FunctionUdfManager::create_f *FunctionUdfManager::getGraphFunctionClass(void *func_handle) {
-  auto *create_func = (create_f *)dlsym(func_handle, "create");
+  auto *create_func = reinterpret_cast<create_f *>(dlsym(func_handle, "create"));
   dlsym_error = dlerror();
   if (dlsym_error) {
     LOG(ERROR) << "Cannot load symbol create: " << dlsym_error;
@@ -56,7 +62,7 @@ FunctionUdfManager::create_f *FunctionUdfManager::getGraphFunctionClass(void *fu
 }
 
 FunctionUdfManager::destroy_f *FunctionUdfManager::deleteGraphFunctionClass(void *func_handle) {
-  auto *destroy_func = (destroy_f *)dlsym(func_handle, "destroy");
+  auto *destroy_func = reinterpret_cast<destroy_f *>(dlsym(func_handle, "destroy"));
   dlsym_error = dlerror();
   if (dlsym_error) {
     LOG(ERROR) << "Cannot load symbol destroy: " << dlsym_error;
@@ -113,7 +119,6 @@ void FunctionUdfManager::initAndLoadSoFunction() {
 
       destroy_func(gf);
       dlclose(func_handle);
-
     } catch (...) {
       LOG(ERROR) << "load So library Error: " << soPath;
     }

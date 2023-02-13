@@ -96,3 +96,9 @@
 
 # if use balance data feature, only work if enable_experimental_feature is true
 --enable_data_balance=true
+
+# enable udf, written in c++ only for now
+--enable_udf=true
+
+# set the directory where the .so files of udf are stored, when enable_udf is true
+--udf_path=/home/nebula/dev/nebula/udf/
