@@ -38,7 +38,7 @@ namespace nebula {
 // static
 FunctionManager &FunctionManager::instance() {
   static FunctionManager instance;
-  if(FLAGS_enable_udf) {
+  if (FLAGS_enable_udf) {
     static FunctionUdfManager udfManager;
   }
   return instance;
