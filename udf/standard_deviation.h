@@ -23,11 +23,21 @@
 // | 0.0                         |
 // +-----------------------------+
 
-// > GO 1 TO 2 STEPS FROM "player100" OVER follow YIELD properties(edge).degree AS d | yield collect($-.d)
+// > GO 1 TO 2 STEPS FROM "player100" OVER follow
+//     YIELD properties(edge).degree AS d | YIELD collect($-.d)
 // +--------------------------+
 // | collect($-.d)            |
 // +--------------------------+
 // | [95, 95, 95, 90, 95, 90] |
+// +--------------------------+
+
+// > GO 1 TO 2 STEPS FROM "player100" OVER follow
+//     YIELD properties(edge).degree AS d | YIELD collect($-.d) AS d |
+//     YIELD standard_deviation($-.d)
+// +--------------------------+
+// | standard_deviation($-.d) |
+// +--------------------------+
+// | 2.357022603955158        |
 // +--------------------------+
 
 
