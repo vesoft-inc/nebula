@@ -252,7 +252,7 @@ Feature: Parameter
       """
       LOOKUP ON player WHERE player.age>$p2+43
       """
-    Then a SemanticError should be raised at runtime: Column type error : age
+    Then a SemanticError should be raised at runtime: Type error `(true+43)'
     When executing query:
       """
       MATCH (v:player) RETURN  v LIMIT $p6
