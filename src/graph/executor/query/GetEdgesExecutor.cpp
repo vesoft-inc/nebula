@@ -103,7 +103,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
       .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp), ge->colNames());
       });
 }

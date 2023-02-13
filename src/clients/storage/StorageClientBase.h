@@ -35,6 +35,7 @@ class StorageRpcResponse final {
 
   explicit StorageRpcResponse(size_t reqsSent) : totalReqsSent_(reqsSent) {
     lock_ = std::make_unique<std::mutex>();
+    responses_.reserve(reqsSent);
   }
 
   bool succeeded() const {
@@ -47,18 +48,26 @@ class StorageRpcResponse final {
     return maxLatency_;
   }
 
-  void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
-    std::lock_guard<std::mutex> g(*lock_);
+  void setLatencyUnsafe(const HostAddr& host, int32_t latency, int32_t e2eLatency) {
     if (latency > maxLatency_) {
       maxLatency_ = latency;
     }
     hostLatency_.emplace_back(std::make_tuple(host, latency, e2eLatency));
   }
 
-  void markFailure() {
+  void setLatency(const HostAddr& host, int32_t latency, int32_t e2eLatency) {
     std::lock_guard<std::mutex> g(*lock_);
+    setLatencyUnsafe(host, latency, e2eLatency);
+  }
+
+  void markFailureUnsafe() {
     result_ = Result::PARTIAL_SUCCEEDED;
     ++failedReqs_;
+  }
+
+  void markFailure() {
+    std::lock_guard<std::mutex> g(*lock_);
+    markFailureUnsafe();
   }
 
   // A value between [0, 100], representing a percentage
@@ -68,23 +77,36 @@ class StorageRpcResponse final {
     return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
   }
 
-  void emplaceFailedPart(PartitionID partId, nebula::cpp2::ErrorCode errorCode) {
-    std::lock_guard<std::mutex> g(*lock_);
+  void emplaceFailedPartUnsafe(PartitionID partId, nebula::cpp2::ErrorCode errorCode) {
     failedParts_.emplace(partId, errorCode);
   }
 
-  void appendFailedParts(const std::vector<PartitionID>& partsId,
-                         nebula::cpp2::ErrorCode errorCode) {
+  void emplaceFailedPart(PartitionID partId, nebula::cpp2::ErrorCode errorCode) {
     std::lock_guard<std::mutex> g(*lock_);
+    emplaceFailedPartUnsafe(partId, errorCode);
+  }
+
+  void appendFailedPartsUnsafe(const std::vector<PartitionID>& partsId,
+                               nebula::cpp2::ErrorCode errorCode) {
     failedParts_.reserve(failedParts_.size() + partsId.size());
     for (const auto& partId : partsId) {
       failedParts_.emplace(partId, errorCode);
     }
   }
 
+  void appendFailedParts(const std::vector<PartitionID>& partsId,
+                         nebula::cpp2::ErrorCode errorCode) {
+    std::lock_guard<std::mutex> g(*lock_);
+    appendFailedPartsUnsafe(partsId, errorCode);
+  }
+
+  void addResponseUnsafe(Response&& resp) {
+    responses_.emplace_back(std::move(resp));
+  }
+
   void addResponse(Response&& resp) {
     std::lock_guard<std::mutex> g(*lock_);
-    responses_.emplace_back(std::move(resp));
+    addResponseUnsafe(std::move(resp));
   }
 
   // Not thread-safe.

@@ -106,44 +106,44 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
         memory::MemoryCheckGuard guard;
         StorageRpcResponse<Response> rpcResp(resps.size());
         for (size_t i = 0; i < resps.size(); i++) {
-          auto& host = hosts->at(i);
+          const auto& host = hosts->at(i);
           folly::Try<StatusOr<Response>>& tryResp = resps[i];
           if (tryResp.hasException()) {
             std::string errMsg = tryResp.exception().what().toStdString();
-            rpcResp.markFailure();
+            rpcResp.markFailureUnsafe();
             LOG(ERROR) << "There some RPC errors: " << errMsg;
-            auto req = requests.at(host);
-            auto parts = getReqPartsId(req);
-            rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+            const auto& req = requests.at(host);
+            const auto& parts = getReqPartsId(req);
+            rpcResp.appendFailedPartsUnsafe(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           } else {
             StatusOr<Response> status = std::move(tryResp).value();
             if (status.ok()) {
               auto resp = std::move(status).value();
-              auto result = resp.get_result();
+              const auto& result = resp.get_result();
 
               if (!result.get_failed_parts().empty()) {
-                rpcResp.markFailure();
+                rpcResp.markFailureUnsafe();
                 for (auto& part : result.get_failed_parts()) {
-                  rpcResp.emplaceFailedPart(part.get_part_id(), part.get_code());
+                  rpcResp.emplaceFailedPartUnsafe(part.get_part_id(), part.get_code());
                 }
               }
 
               // Adjust the latency
               auto latency = result.get_latency_in_us();
-              rpcResp.setLatency(host, latency, totalLatencies->at(i));
+              rpcResp.setLatencyUnsafe(host, latency, totalLatencies->at(i));
               // Keep the response
-              rpcResp.addResponse(std::move(resp));
+              rpcResp.addResponseUnsafe(std::move(resp));
             } else {
-              rpcResp.markFailure();
+              rpcResp.markFailureUnsafe();
               Status s = std::move(status).status();
               nebula::cpp2::ErrorCode errorCode =
                   s.code() == Status::Code::kGraphMemoryExceeded
                       ? nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED
                       : nebula::cpp2::ErrorCode::E_RPC_FAILURE;
               LOG(ERROR) << "There some RPC errors: " << s.message();
-              auto req = requests.at(host);
-              auto parts = getReqPartsId(req);
-              rpcResp.appendFailedParts(parts, errorCode);
+              const auto& req = requests.at(host);
+              const auto& parts = getReqPartsId(req);
+              rpcResp.appendFailedPartsUnsafe(parts, errorCode);
             }
           }
         }
