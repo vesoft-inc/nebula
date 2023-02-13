@@ -203,8 +203,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowSnapshots";
     case Kind::kSubmitJob:
       return "SubmitJob";
-    case Kind::kLeftJoin:
-      return "LeftJoin";
     case Kind::kInnerJoin:
       return "InnerJoin";
     case Kind::kDeleteVertices:

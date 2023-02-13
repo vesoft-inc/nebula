@@ -133,3 +133,55 @@ Feature: Push Limit down IndexScan Rule
       | 7  | Limit               | 8            |                |
       | 8  | EdgeIndexPrefixScan | 9            | {"limit": "3"} |
       | 9  | Start               |              |                |
+
+  Scenario: some variables in where clause of lookup statement
+    When executing query:
+      """
+      $var = YIELD true;
+      LOOKUP ON player WHERE $var==true YIELD id(vertex) as id;
+      """
+    Then a SemanticError should be raised at runtime: Expression ($var==true) not supported yet
+    When executing query:
+      """
+      $var = YIELD true;
+      LOOKUP ON player WHERE player.name=='Tim Duncan' AND $var==true YIELD id(vertex) as id;
+      """
+    Then a SemanticError should be raised at runtime: Expression ($var==true) not supported yet
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name==$-.player_name YIELD id(vertex) as id;
+      """
+    Then a SemanticError should be raised at runtime: '$-.player_name' is not an evaluable expression
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name IN [$-.player_name, 'Tony Parker'] YIELD id(vertex) as id;
+      """
+    Then a SemanticError should be raised at runtime: '[$-.player_name,"Tony Parker"]' is not an evaluable expression
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name==player_name YIELD id(vertex) as id;
+      """
+    Then a SemanticError should be raised at runtime: 'player_name' is not an evaluable expression
+
+  Scenario: some variables in yield clause of lookup statement
+    When executing query:
+      """
+      $var = YIELD true;
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, $var AS v;
+      """
+    Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, $-.player_name AS pn;
+      """
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield
+    When executing query:
+      """
+      YIELD 'Tim Duncan' AS player_name |
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id, player_name AS pn;
+      """
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: player_name

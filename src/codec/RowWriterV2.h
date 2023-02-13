@@ -118,7 +118,7 @@ class RowWriterV2 {
    *
    * @return const std::string&
    */
-  const std::string& getEncodedStr() const noexcept {
+  const std::string& getEncodedStr() const {
     CHECK(finished_) << "You need to call finish() first";
     return buf_;
   }
@@ -128,7 +128,7 @@ class RowWriterV2 {
    *
    * @return std::string
    */
-  std::string moveEncodedStr() noexcept {
+  std::string moveEncodedStr() {
     CHECK(finished_) << "You need to call finish() first";
     return std::move(buf_);
   }
@@ -138,7 +138,7 @@ class RowWriterV2 {
    *
    * @return WriteResult Whether encode succeed
    */
-  WriteResult finish() noexcept;
+  WriteResult finish();
 
   // Data write
   /**
@@ -150,7 +150,7 @@ class RowWriterV2 {
    * @return WriteResult
    */
   template <typename T>
-  WriteResult set(size_t index, T&& v) noexcept {
+  WriteResult set(size_t index, T&& v) {
     CHECK(!finished_) << "You have called finish()";
     if (index >= schema_->getNumFields()) {
       return WriteResult::UNKNOWN_FIELD;
@@ -168,7 +168,7 @@ class RowWriterV2 {
    * @return WriteResult
    */
   template <typename T>
-  WriteResult set(const std::string& name, T&& v) noexcept {
+  WriteResult set(const std::string& name, T&& v) {
     CHECK(!finished_) << "You have called finish()";
     int64_t index = schema_->getFieldIndex(name);
     if (index >= 0) {
@@ -185,7 +185,7 @@ class RowWriterV2 {
    * @param val
    * @return WriteResult
    */
-  WriteResult setValue(ssize_t index, const Value& val) noexcept;
+  WriteResult setValue(ssize_t index, const Value& val);
 
   /**
    * @brief Set the value by index
@@ -194,7 +194,7 @@ class RowWriterV2 {
    * @param val
    * @return WriteResult
    */
-  WriteResult setValue(const std::string& name, const Value& val) noexcept;
+  WriteResult setValue(const std::string& name, const Value& val);
 
   /**
    * @brief Set null by index
@@ -202,7 +202,7 @@ class RowWriterV2 {
    * @param index
    * @return WriteResult
    */
-  WriteResult setNull(ssize_t index) noexcept;
+  WriteResult setNull(ssize_t index);
 
   /**
    * @brief Set null by property name
@@ -210,7 +210,7 @@ class RowWriterV2 {
    * @param name
    * @return WriteResult
    */
-  WriteResult setNull(const std::string& name) noexcept;
+  WriteResult setNull(const std::string& name);
 
  private:
   const meta::SchemaProviderIf* schema_;
@@ -229,40 +229,40 @@ class RowWriterV2 {
   bool outOfSpaceStr_;
   std::vector<std::string> strList_;
 
-  WriteResult checkUnsetFields() noexcept;
-  std::string processOutOfSpace() noexcept;
+  WriteResult checkUnsetFields();
+  std::string processOutOfSpace();
 
-  void processV2EncodedStr() noexcept;
+  void processV2EncodedStr();
 
-  void setNullBit(ssize_t pos) noexcept;
-  void clearNullBit(ssize_t pos) noexcept;
+  void setNullBit(ssize_t pos);
+  void clearNullBit(ssize_t pos);
   // Return true if the flag at the given position is NULL;
   // otherwise, return false
-  bool checkNullBit(ssize_t pos) const noexcept;
+  bool checkNullBit(ssize_t pos) const;
 
-  WriteResult write(ssize_t index, bool v) noexcept;
-  WriteResult write(ssize_t index, float v) noexcept;
-  WriteResult write(ssize_t index, double v) noexcept;
+  WriteResult write(ssize_t index, bool v);
+  WriteResult write(ssize_t index, float v);
+  WriteResult write(ssize_t index, double v);
 
-  WriteResult write(ssize_t index, int8_t v) noexcept;
-  WriteResult write(ssize_t index, int16_t v) noexcept;
-  WriteResult write(ssize_t index, int32_t v) noexcept;
-  WriteResult write(ssize_t index, int64_t v) noexcept;
-  WriteResult write(ssize_t index, uint8_t v) noexcept;
-  WriteResult write(ssize_t index, uint16_t v) noexcept;
-  WriteResult write(ssize_t index, uint32_t v) noexcept;
-  WriteResult write(ssize_t index, uint64_t v) noexcept;
+  WriteResult write(ssize_t index, int8_t v);
+  WriteResult write(ssize_t index, int16_t v);
+  WriteResult write(ssize_t index, int32_t v);
+  WriteResult write(ssize_t index, int64_t v);
+  WriteResult write(ssize_t index, uint8_t v);
+  WriteResult write(ssize_t index, uint16_t v);
+  WriteResult write(ssize_t index, uint32_t v);
+  WriteResult write(ssize_t index, uint64_t v);
 
-  WriteResult write(ssize_t index, const std::string& v) noexcept;
-  WriteResult write(ssize_t index, folly::StringPiece v) noexcept;
-  WriteResult write(ssize_t index, const char* v) noexcept;
+  WriteResult write(ssize_t index, const std::string& v);
+  WriteResult write(ssize_t index, folly::StringPiece v);
+  WriteResult write(ssize_t index, const char* v);
 
-  WriteResult write(ssize_t index, const Date& v) noexcept;
-  WriteResult write(ssize_t index, const Time& v) noexcept;
-  WriteResult write(ssize_t index, const DateTime& v) noexcept;
-  WriteResult write(ssize_t index, const Duration& v) noexcept;
+  WriteResult write(ssize_t index, const Date& v);
+  WriteResult write(ssize_t index, const Time& v);
+  WriteResult write(ssize_t index, const DateTime& v);
+  WriteResult write(ssize_t index, const Duration& v);
 
-  WriteResult write(ssize_t index, const Geography& v) noexcept;
+  WriteResult write(ssize_t index, const Geography& v);
 };
 
 }  // namespace nebula

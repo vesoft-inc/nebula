@@ -60,6 +60,9 @@
 --num_accept_threads=1
 # The number of networking IO threads, 0 for # of CPU cores
 --num_netio_threads=0
+# Max active connections for all networking threads. 0 means no limit.
+# Max connections for each networking thread = num_max_connections / num_netio_threads
+--num_max_connections=0
 # The number of threads to execute user queries, 0 for # of CPU cores
 --num_worker_threads=0
 # HTTP service ip
@@ -104,7 +107,7 @@
 --memory_tracker_untracked_reserved_memory_mb=50
 
 # enable log memory tracker stats periodically
---memory_tracker_detail_log=true
+--memory_tracker_detail_log=false
 # log memory tacker stats interval in milliseconds
 --memory_tracker_detail_log_interval_ms=60000
 

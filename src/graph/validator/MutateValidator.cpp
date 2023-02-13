@@ -119,7 +119,7 @@ Status InsertVerticesValidator::prepareVertices() {
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
     }
-    auto valsRet = SchemaUtil::toValueVec(row->values());
+    auto valsRet = SchemaUtil::toValueVec(qctx_, row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto values = std::move(valsRet).value();
 
@@ -252,7 +252,7 @@ Status InsertEdgesValidator::prepareEdges() {
       }
     }
 
-    auto valsRet = SchemaUtil::toValueVec(row->values());
+    auto valsRet = SchemaUtil::toValueVec(qctx_, row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto props = std::move(valsRet).value();
 
@@ -755,9 +755,7 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
       Expression::Kind::kVersionedVar,
       Expression::Kind::kVarProperty,
       Expression::Kind::kInputProperty,
-      Expression::Kind::kVar,
       // Expression::Kind::kLabelAttribute, valid only for update edge
-      Expression::Kind::kAttribute,
       Expression::Kind::kSubscript,
       Expression::Kind::kUUID,
       Expression::Kind::kTagProperty,
@@ -773,6 +771,10 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
   } else {
     invalidExprs.emplace(Expression::Kind::kLabelAttribute);
     invalidExprs.emplace(Expression::Kind::kEdgeProperty);
+  }
+  if (ExpressionUtils::checkVarExprIfExist(expr, qctx_)) {
+    hasWrongType = true;
+    return nullptr;
   }
   auto *r = ExpressionUtils::findAny(expr, invalidExprs);
   if (r != nullptr) {
@@ -814,7 +816,7 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
     }
   };
   auto *newExpr = RewriteVisitor::transform(expr, matcher, rewriter);
-  return newExpr;
+  return ExpressionUtils::rewriteParameter(newExpr, qctx_);
 }
 
 Status UpdateVertexValidator::validateImpl() {

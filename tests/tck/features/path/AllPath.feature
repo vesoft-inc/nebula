@@ -3,8 +3,30 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: All Path
 
-  Scenario: [1] ALL Path
+  Background:
     Given a graph with space named "nba"
+
+  Scenario: ALL Path zero step
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Tim Duncan" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Spurs", "Tony Parker" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan", "Tony Parker" TO "Tim Duncan" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+
+  Scenario: ALL Path one TO one
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tim Duncan" OVER * UPTO 2 STEPS YIELD path as p
@@ -30,6 +52,13 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                                         |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>      |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like, noexist UPTO 3 STEPS YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: noexist not found in space [nba].
+
+  Scenario: ALL Path one TO M
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker", "Manu Ginobili" OVER like UPTO 3 STEPS YIELD path as p
@@ -69,8 +98,99 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:serve]->("Spurs")>      |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>          |
 
+  Scenario: ALL PATH M to one
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tony Parker","Spurs" TO "Tim Duncan" OVER like,serve UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                |
+      | <("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>                               |
+      | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                                                                   |
+      | <("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>                                   |
+      | <("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>      |
+    When executing query:
+      """
+      FIND ALL PATH FROM "noexist", "Tony Parker","Spurs" TO "Tim Duncan" OVER like,serve UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                |
+      | <("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>                               |
+      | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                                                                   |
+      | <("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>                                   |
+      | <("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>      |
+
+  Scenario: ALL PATH M to N
+    When executing query:
+      """
+      FIND ALL PATH FROM "Yao Ming","Manu Ginobili" TO "Tim Duncan", "Larkers" OVER * UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                          |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>                                                                           |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>                                                                       |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                                         |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>                                     |
+      | <("Yao Ming")-[:like@0 {}]->("Shaquille O'Neal")-[:like@0 {}]->("Tim Duncan")>                                             |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")-[:like@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>      |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>  |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>    |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>         |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")> |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>          |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>          |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>      |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>      |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Yao Ming","Manu Ginobili" TO "Tim Duncan", "Larkers", "noexist" OVER * UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                          |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>                                                                           |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>                                                                       |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                                         |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>                                     |
+      | <("Yao Ming")-[:like@0 {}]->("Shaquille O'Neal")-[:like@0 {}]->("Tim Duncan")>                                             |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Danny Green")-[:like@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>      |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tim Duncan")>  |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>                |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>            |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>        |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Tim Duncan")>    |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>         |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>     |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tony Parker")-[:teammate@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")> |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>          |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>          |
+      | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")>      |
+      | <("Manu Ginobili")-[:teammate@0 {}]->("Tim Duncan")-[:teammate@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")>      |
+
   Scenario: [1] ALL Path Run Time Input
-    Given a graph with space named "nba"
     When executing query:
       """
       GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst |
@@ -101,7 +221,6 @@ Feature: All Path
       | <("Tony Parker")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>      |
 
   Scenario: [1] ALL Path With Limit
-    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS YIELD path as p |
@@ -127,7 +246,6 @@ Feature: All Path
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
 
   Scenario: [1] ALL PATH REVERSELY
-    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like REVERSELY UPTO 3 STEPS YIELD path as p
@@ -164,7 +282,6 @@ Feature: All Path
       | <("Tim Duncan")<-[:like]-("Tony Parker")<-[:like]-("LaMarcus Aldridge")<-[:like]-("Tony Parker")>       |
 
   Scenario: [2] ALL PATH BIDIRECT
-    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like BIDIRECT UPTO 3 STEPS YIELD path as p
@@ -210,8 +327,25 @@ Feature: All Path
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})-[:like@0 {likeness: 90}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                               |
 
-  Scenario: ALL Path WITH FILTER
-    Given a graph with space named "nba"
+  Scenario: ALL Path constant filter
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Yao Ming" OVER * BIDIRECT
+      WHERE 1 > 2 UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Yao Ming" OVER * BIDIRECT
+      WHERE 1 < 2 UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                                                                                                                                                                              |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})>                                                                                              |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2013, start_year: 2013}]-("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
+
+  Scenario: ALL Path edge filter
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Yao Ming" OVER * BIDIRECT
@@ -242,6 +376,25 @@ Feature: All Path
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:teammate@0 {end_year: 2016, start_year: 2010}]->("Danny Green" :player{age: 31, name: "Danny Green"})> |
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2000, start_year: 1997}]->("Raptors" :team{name: "Raptors"})<-[:serve@0 {end_year: 2019, start_year: 2018}]-("Danny Green" :player{age: 31, name: "Danny Green"})>                                                              |
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 2010}]-("Danny Green" :player{age: 31, name: "Danny Green"})>                                                                  |
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM "Yao Ming" TO "Danny Green" OVER * BIDIRECT
+      WHERE like.likeness is  EMPTY OR like.likeness >= 80 AND 1 > 2 UPTO 3 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst, like.likeness AS val |
+      FIND ALL PATH FROM $-.src TO $-.dst OVER like WHERE like.likeness > $-.val UPTO 3 STEPS YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: Not support `(like.likeness>$-.val)' in where sentence.
+    When executing query:
+      """
+      $v = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst, like.likeness AS val;
+      FIND ALL PATH FROM $v.src TO $v.dst OVER like WHERE like.likeness > $v.val UPTO 3 STEPS YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: Not support `(like.likeness>$v.val)' in where sentence.
 
   Scenario: Dangling edge
     Given an empty graph
@@ -279,7 +432,6 @@ Feature: All Path
     Then drop the used space
 
   Scenario: ALL PATH YIELD PATH
-    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM "Yao Ming" TO "Danny Green" OVER * BIDIRECT

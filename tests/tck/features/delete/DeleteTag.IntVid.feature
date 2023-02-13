@@ -200,6 +200,7 @@ Feature: Delete int vid of tag
       """
     Then the execution should be successful
     # after delete tag
+    # the output has one row because the vertex has multiple tags
     When executing query:
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age

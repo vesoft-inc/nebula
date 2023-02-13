@@ -1031,7 +1031,7 @@ Feature: Match By Id
       """
       OPTIONAL MATCH (n) OPTIONAL MATCH (n) WHERE id(n) == 'James Harden' RETURN n
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE id(n) == 'James Harden''
     When executing query:
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)

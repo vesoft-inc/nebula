@@ -194,19 +194,17 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue([this](auto&& resps) {
-        memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
-          currentDs_.append(std::move(resp));
-        }
-        preLeftPaths_.swap(leftPaths_);
-        preRightPaths_.swap(rightPaths_);
-        leftPaths_.clear();
-        rightPaths_.clear();
-        return Status::OK();
-      });
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
+    preLeftPaths_.swap(leftPaths_);
+    preRightPaths_.swap(rightPaths_);
+    leftPaths_.clear();
+    rightPaths_.clear();
+    return Status::OK();
+  });
 }
 
 void ProduceAllPathsExecutor::setNextStepVid(Interims& paths, const string& var) {

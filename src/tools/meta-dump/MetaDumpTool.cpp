@@ -56,20 +56,7 @@ class MetaDumper {
       }
 
       if (!found) {
-        prefix = MetaKeyUtils::hostPrefix();
-        iter->Seek(rocksdb::Slice(prefix));
-        while (iter->Valid() && iter->key().starts_with(prefix)) {
-          found = true;
-          auto v1KeySize = prefix.size() + sizeof(int64_t);
-          auto version = (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3_4;
-          LOG(INFO) << "Meta version=" << static_cast<int>(version);
-          iter->Next();
-          break;
-        }
-
-        if (!found) {
-          LOG(INFO) << "Meta version= Unknown";
-        }
+        LOG(INFO) << "Meta version= Unknown";
       }
     }
     {

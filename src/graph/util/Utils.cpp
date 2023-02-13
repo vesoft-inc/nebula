@@ -18,17 +18,13 @@ folly::dynamic getStorageDetail(const std::map<std::string, int32_t>& profileDet
 
 folly::dynamic collectRespProfileData(const storage::cpp2::ResponseCommon& resp,
                                       const std::tuple<HostAddr, int32_t, int32_t>& info,
-                                      size_t numVertices,
-                                      size_t totalRpcTime) {
+                                      size_t numVertices) {
   folly::dynamic stat = folly::dynamic::object();
   stat.insert("host", std::get<0>(info).toRawString());
   stat.insert("exec", folly::sformat("{}(us)", std::get<1>(info)));
   stat.insert("total", folly::sformat("{}(us)", std::get<2>(info)));
   if (numVertices > 0) {
     stat.insert("vertices", numVertices);
-  }
-  if (totalRpcTime > 0) {
-    stat.insert("total_rpc_time", folly::sformat("{}(us)", totalRpcTime));
   }
   if (resp.latency_detail_us_ref().has_value()) {
     stat.insert("storage_detail", getStorageDetail(*resp.get_latency_detail_us()));

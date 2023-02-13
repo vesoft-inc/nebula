@@ -717,22 +717,6 @@ Join::Join(QueryContext* qctx,
   readVariable(rightVar_.first);
 }
 
-std::unique_ptr<PlanNodeDescription> LeftJoin::explain() const {
-  auto desc = Join::explain();
-  addDescription("kind", "LeftJoin", desc.get());
-  return desc;
-}
-
-PlanNode* LeftJoin::clone() const {
-  auto* newLeftJoin = LeftJoin::make(qctx_, nullptr, leftVar_, rightVar_);
-  newLeftJoin->cloneMembers(*this);
-  return newLeftJoin;
-}
-
-void LeftJoin::cloneMembers(const LeftJoin& l) {
-  Join::cloneMembers(l);
-}
-
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
   auto desc = Join::explain();
   addDescription("kind", "InnerJoin", desc.get());
@@ -904,7 +888,7 @@ HashJoin::HashJoin(QueryContext* qctx,
 
 std::unique_ptr<PlanNodeDescription> HashLeftJoin::explain() const {
   auto desc = HashJoin::explain();
-  addDescription("kind", "LeftJoin", desc.get());
+  addDescription("kind", "HashLeftJoin", desc.get());
   return desc;
 }
 

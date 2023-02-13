@@ -369,10 +369,10 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
       }
       case 9: {
         if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
-          auto* ptr = new nebula::Vertex();
-          Cpp2Ops<nebula::Vertex>::read(proto, ptr);
-          obj->setVertex(ptr);
+          auto ptr = std::make_unique<nebula::Vertex>();
           ptr->unref();
+          Cpp2Ops<nebula::Vertex>::read(proto, ptr.get());
+          obj->setVertex(ptr.release());
         } else {
           proto->skip(readState.fieldType);
         }
@@ -380,10 +380,10 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
       }
       case 10: {
         if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
-          auto* ptr = new nebula::Edge();
-          Cpp2Ops<nebula::Edge>::read(proto, ptr);
-          obj->setEdge(ptr);
+          auto ptr = std::make_unique<nebula::Edge>();
           ptr->unref();
+          Cpp2Ops<nebula::Edge>::read(proto, ptr.get());
+          obj->setEdge(ptr.release());
         } else {
           proto->skip(readState.fieldType);
         }

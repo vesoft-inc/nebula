@@ -167,7 +167,7 @@ std::string Edge::id() const {
 namespace std {
 
 // Inject a customized hash function
-std::size_t hash<nebula::Edge>::operator()(const nebula::Edge& h) const noexcept {
+std::size_t hash<nebula::Edge>::operator()(const nebula::Edge& h) const {
   const auto& src = h.type > 0 ? h.src.toString() : h.dst.toString();
   const auto& dst = h.type > 0 ? h.dst.toString() : h.src.toString();
   auto type = h.type > 0 ? h.type : -h.type;

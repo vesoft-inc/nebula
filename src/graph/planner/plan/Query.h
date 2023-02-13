@@ -1399,7 +1399,7 @@ class DataCollect final : public VariableDependencyNode {
 };
 
 // Join two result set based on the keys
-// We have LeftJoin and InnerJoin now.
+// We have InnerJoin now.
 class Join : public SingleDependencyNode {
  public:
   const std::pair<std::string, int64_t>& leftVar() const {
@@ -1455,45 +1455,6 @@ class Join : public SingleDependencyNode {
   std::pair<std::string, int64_t> rightVar_;
   std::vector<Expression*> hashKeys_;
   std::vector<Expression*> probeKeys_;
-};
-
-// Left join
-class LeftJoin final : public Join {
- public:
-  static LeftJoin* make(QueryContext* qctx,
-                        PlanNode* input,
-                        std::pair<std::string, int64_t> leftVar,
-                        std::pair<std::string, int64_t> rightVar,
-                        std::vector<Expression*> hashKeys = {},
-                        std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<LeftJoin>(qctx,
-                                                 input,
-                                                 std::move(leftVar),
-                                                 std::move(rightVar),
-                                                 std::move(hashKeys),
-                                                 std::move(probeKeys));
-  }
-
-  PlanNode* clone() const override;
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
- private:
-  friend ObjectPool;
-  LeftJoin(QueryContext* qctx,
-           PlanNode* input,
-           std::pair<std::string, int64_t> leftVar,
-           std::pair<std::string, int64_t> rightVar,
-           std::vector<Expression*> hashKeys,
-           std::vector<Expression*> probeKeys)
-      : Join(qctx,
-             Kind::kLeftJoin,
-             input,
-             std::move(leftVar),
-             std::move(rightVar),
-             std::move(hashKeys),
-             std::move(probeKeys)) {}
-
-  void cloneMembers(const LeftJoin&);
 };
 
 // Inner join

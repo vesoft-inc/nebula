@@ -50,12 +50,12 @@ std::string Expression::Encoder::moveStr() {
   return std::move(buf_);
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(Kind kind) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(Kind kind) {
   buf_.append(reinterpret_cast<const char*>(&kind), sizeof(uint8_t));
   return *this;
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(const std::string& str) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(const std::string& str) {
   size_t sz = str.size();
   buf_.append(reinterpret_cast<char*>(&sz), sizeof(size_t));
   if (sz > 0) {
@@ -64,22 +64,22 @@ Expression::Encoder& Expression::Encoder::operator<<(const std::string& str) noe
   return *this;
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(const Value& val) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(const Value& val) {
   serializer::serialize(val, &buf_);
   return *this;
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(size_t size) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(size_t size) {
   buf_.append(reinterpret_cast<char*>(&size), sizeof(size_t));
   return *this;
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(Value::Type vType) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(Value::Type vType) {
   buf_.append(reinterpret_cast<char*>(&vType), sizeof(Value::Type));
   return *this;
 }
 
-Expression::Encoder& Expression::Encoder::operator<<(const Expression& exp) noexcept {
+Expression::Encoder& Expression::Encoder::operator<<(const Expression& exp) {
   exp.writeTo(*this);
   return *this;
 }
@@ -100,7 +100,7 @@ std::string Expression::Decoder::getHexStr() const {
   return toHexStr(encoded_);
 }
 
-Expression::Kind Expression::Decoder::readKind() noexcept {
+Expression::Kind Expression::Decoder::readKind() {
   CHECK_LE(ptr_ + sizeof(uint8_t), encoded_.end());
 
   Expression::Kind kind;
@@ -110,7 +110,7 @@ Expression::Kind Expression::Decoder::readKind() noexcept {
   return kind;
 }
 
-std::string Expression::Decoder::readStr() noexcept {
+std::string Expression::Decoder::readStr() {
   CHECK_LE(ptr_ + sizeof(size_t), encoded_.end());
 
   size_t sz = 0;
@@ -127,7 +127,7 @@ std::string Expression::Decoder::readStr() noexcept {
   return std::string(ptr, sz);
 }
 
-Value Expression::Decoder::readValue() noexcept {
+Value Expression::Decoder::readValue() {
   Value val;
   size_t len = serializer::deserialize(folly::StringPiece(ptr_, encoded_.end()), val);
   ptr_ += len;
@@ -148,7 +148,7 @@ Value::Type Expression::Decoder::readValueType() noexcept {
   return type;
 }
 
-Expression* Expression::Decoder::readExpression(ObjectPool* pool) noexcept {
+Expression* Expression::Decoder::readExpression(ObjectPool* pool) {
   return Expression::decode(pool, *this);
 }
 

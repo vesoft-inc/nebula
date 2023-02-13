@@ -137,9 +137,7 @@ class RowReaderWrapper : public RowReader {
    * @param readVer
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema,
-             folly::StringPiece row,
-             int32_t readVer) noexcept;
+  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row, int32_t readVer);
 
   /**
    * @brief Reset current row reader wrapper to of given schema and data
@@ -148,7 +146,7 @@ class RowReaderWrapper : public RowReader {
    * @param row
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept;
+  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row);
 
   /**
    * @brief Reset current row reader wrapper of given schemas and data, the schemas are stored in
@@ -159,14 +157,14 @@ class RowReaderWrapper : public RowReader {
    * @return Whether reset succeed
    */
   bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-             folly::StringPiece row) noexcept;
+             folly::StringPiece row);
 
-  Value getValueByName(const std::string& prop) const noexcept override {
+  Value getValueByName(const std::string& prop) const override {
     DCHECK(!!currReader_);
     return currReader_->getValueByName(prop);
   }
 
-  Value getValueByIndex(const int64_t index) const noexcept override {
+  Value getValueByIndex(const int64_t index) const override {
     DCHECK(!!currReader_);
     return currReader_->getValueByIndex(index);
   }
@@ -187,12 +185,12 @@ class RowReaderWrapper : public RowReader {
     return currReader_->headerLen();
   }
 
-  Iterator begin() const noexcept override {
+  Iterator begin() const override {
     DCHECK(!!currReader_);
     return currReader_->begin();
   }
 
-  const Iterator& end() const noexcept override {
+  const Iterator& end() const override {
     DCHECK(!!currReader_);
     return currReader_->end();
   }

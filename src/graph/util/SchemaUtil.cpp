@@ -134,12 +134,12 @@ StatusOr<Value> SchemaUtil::toVertexID(Expression *expr, Value::Type vidType) {
 }
 
 // static
-StatusOr<std::vector<Value>> SchemaUtil::toValueVec(std::vector<Expression *> exprs) {
+StatusOr<std::vector<Value>> SchemaUtil::toValueVec(QueryContext *qctx,
+                                                    std::vector<Expression *> exprs) {
   std::vector<Value> values;
   values.reserve(exprs.size());
-  QueryExpressionContext ctx;
   for (auto *expr : exprs) {
-    auto value = expr->eval(ctx(nullptr));
+    auto value = expr->eval(QueryExpressionContext(qctx->ectx())());
     if (value.isNull() && value.getNull() != NullType::__NULL__) {
       LOG(ERROR) << expr->toString() << " is the wrong value type: " << value.typeName();
       return Status::Error("Wrong value type: %s", expr->toString().c_str());

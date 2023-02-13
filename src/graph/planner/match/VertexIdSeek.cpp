@@ -48,7 +48,7 @@ bool VertexIdSeek::matchNode(NodeContext *nodeCtx) {
       if (nodeVid.first == node.alias) {
         nodeCtx->ids = std::move(nodeVid.second.vids);
         // Eliminate Filter when it's complete predication about Vertex Id
-        if (ExpressionUtils::isVidPredication(nodeCtx->bindWhereClause->filter)) {
+        if (ExpressionUtils::isVidPredication(nodeCtx->bindWhereClause->filter, nodeCtx->qctx)) {
           nodeCtx->bindWhereClause->filter = nullptr;
         }
         return true;

@@ -1,8 +1,7 @@
 // Bison options
 %language "C++"
-%skeleton "glr.cc"
-%glr-parser
-%no-lines
+%skeleton "lalr1.cc"
+%no-lines 
 %locations
 %define api.namespace { nebula }
 %define api.parser.class { GraphParser }
@@ -219,10 +218,11 @@ using namespace nebula;
 %token KW_MERGE KW_DIVIDE KW_RENAME
 
 /* symbols */
-%token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE ASSIGN
-%token DOT DOT_DOT COLON QM SEMICOLON L_ARROW R_ARROW AT
-%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
+%token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
+       MINUS_L_BRACKET R_BRACKET_MINUS L_ARROW_L_BRACKET R_BRACKET_R_ARROW PIPE
+       MINUS_MINUS MINUS_R_ARROW L_ARROW_MINUS L_ARROW_R_ARROW ASSIGN DOT DOT_DOT
+       COLON QM SEMICOLON L_ARROW R_ARROW AT ID_PROP TYPE_PROP 
+       SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
 %token <boolval> BOOL
@@ -753,10 +753,10 @@ constant_expression
     ;
 
 compound_expression
-    : match_path_pattern_expression %dprec 2 {
+    : match_path_pattern_expression {
         $$ = $1;
     }
-    | parenthesized_expression %dprec 1 {
+    | parenthesized_expression {
         $$ = $1;
     }
     | property_expression {
@@ -1688,7 +1688,15 @@ match_clause
         $$ = new MatchClause($2, $3, false/*optional*/);
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
-        $$ = new MatchClause($3, $4, true);
+        if ($4 != nullptr) {
+            SCOPE_EXIT {
+                delete $3;
+                delete $4;
+            };
+            throw nebula::GraphParser::syntax_error(@4, "Where clause in optional match is not supported.");
+        } else {
+            $$ = new MatchClause($3, nullptr, true);
+        }
     }
     ;
 
@@ -1795,9 +1803,16 @@ match_path_list
     }
 
 match_node
-    : L_PAREN match_alias R_PAREN {
-        $$ = new MatchNode(*$2, nullptr, nullptr);
-        delete $2;
+    : L_PAREN R_PAREN {
+        $$ = new MatchNode();
+    }
+    | parenthesized_expression {
+        auto& e = $1;
+        if (e->kind() != Expression::Kind::kLabel) {
+            delete $1;
+            throw nebula::GraphParser::syntax_error(@1, "Invalid node pattern");
+        }
+        $$ = new MatchNode(static_cast<LabelExpression*>(e)->name(), nullptr, nullptr);
     }
     | L_PAREN match_alias match_node_label_list R_PAREN {
         $$ = new MatchNode(*$2, $3, nullptr);
@@ -1839,31 +1854,40 @@ match_alias
     ;
 
 match_edge
-    : MINUS match_edge_prop MINUS {
+    : MINUS_MINUS {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::BOTH);
+    }
+    | MINUS_R_ARROW {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::OUT_EDGE);
+    }
+    | L_ARROW_MINUS {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::IN_EDGE);
+    }
+    | L_ARROW_R_ARROW {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::BOTH);
+    } 
+    | MINUS_L_BRACKET match_edge_prop R_BRACKET_MINUS {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::BOTH);
     }
-    | MINUS match_edge_prop R_ARROW {
+    | MINUS_L_BRACKET match_edge_prop R_BRACKET_R_ARROW {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::OUT_EDGE);
     }
-    | L_ARROW match_edge_prop MINUS {
+    | L_ARROW_L_BRACKET match_edge_prop R_BRACKET_MINUS {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::IN_EDGE);
     }
-    | L_ARROW match_edge_prop R_ARROW {
+    | L_ARROW_L_BRACKET match_edge_prop R_BRACKET_R_ARROW {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::BOTH);
     }
     ;
 
 match_edge_prop
-    : %empty {
-        $$ = nullptr;
+    : match_alias opt_match_edge_type_list match_step_range {
+        $$ = new MatchEdgeProp(*$1, $2, $3, nullptr);
+        delete $1;
     }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, nullptr);
-        delete $2;
-    }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range map_expression R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, $5);
-        delete $2;
+    | match_alias opt_match_edge_type_list match_step_range map_expression {
+        $$ = new MatchEdgeProp(*$1, $2, $3, $4);
+        delete $1;
     }
     ;
 

@@ -13,7 +13,6 @@
 DECLARE_int32(heartbeat_interval_secs);
 DEFINE_int32(agent_heartbeat_interval_secs, 60, "Agent heartbeat interval in seconds");
 DECLARE_uint32(expired_time_factor);
-DEFINE_bool(check_term_for_leader_info, false, "if check term when update leader info");
 
 namespace nebula {
 namespace meta {
@@ -46,16 +45,14 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     TermID term = -1;
     nebula::cpp2::ErrorCode code;
     for (auto i = 0U; i != leaderKeys.size(); ++i) {
-      if (FLAGS_check_term_for_leader_info) {
-        if (statusVec[i].ok()) {
-          std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
-          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-            LOG(INFO) << apache::thrift::util::enumNameSafe(code);
-            continue;
-          }
-          if (terms[i] <= term) {
-            continue;
-          }
+      if (statusVec[i].ok()) {
+        std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          LOG(INFO) << apache::thrift::util::enumNameSafe(code);
+          continue;
+        }
+        if (terms[i] <= term) {
+          continue;
         }
       }
       // write directly if not exist, or update if has greater term

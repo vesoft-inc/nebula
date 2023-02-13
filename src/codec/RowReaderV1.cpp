@@ -27,7 +27,7 @@ using nebula::cpp2::PropertyType;
  * class RowReaderV1
  *
  ********************************************/
-bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept {
+bool RowReaderV1::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
   RowReader::resetImpl(schema, row);
 
   DCHECK(schema_ != nullptr) << "A schema must be provided";
@@ -95,7 +95,7 @@ bool RowReaderV1::processHeader(folly::StringPiece row) {
   return true;
 }
 
-int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
+int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const {
   const PropertyType& vType = getSchema()->getFieldType(index);
   if (offsets_[index + 1] >= 0) {
     return offsets_[index + 1];
@@ -160,7 +160,7 @@ int64_t RowReaderV1::skipToNext(int64_t index, int64_t offset) const noexcept {
   return offset;
 }
 
-int64_t RowReaderV1::skipToField(int64_t index) const noexcept {
+int64_t RowReaderV1::skipToField(int64_t index) const {
   DCHECK_GE(index, 0);
   if (index >= static_cast<int64_t>(schema_->getNumFields())) {
     // Index is out of range
@@ -191,12 +191,12 @@ int64_t RowReaderV1::skipToField(int64_t index) const noexcept {
  *  Get the property value
  *
  ***********************************************************/
-Value RowReaderV1::getValueByName(const std::string& prop) const noexcept {
+Value RowReaderV1::getValueByName(const std::string& prop) const {
   int64_t index = getSchema()->getFieldIndex(prop);
   return getValueByIndex(index);
 }
 
-Value RowReaderV1::getValueByIndex(const int64_t index) const noexcept {
+Value RowReaderV1::getValueByIndex(const int64_t index) const {
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return Value(NullType::UNKNOWN_PROP);
   }
@@ -233,7 +233,7 @@ int64_t RowReaderV1::getTimestamp() const noexcept {
  *  Get the property value from the serialized binary string
  *
  ***********************************************************/
-Value RowReaderV1::getBool(int64_t index) const noexcept {
+Value RowReaderV1::getBool(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
@@ -272,7 +272,7 @@ Value RowReaderV1::getBool(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getInt(int64_t index) const noexcept {
+Value RowReaderV1::getInt(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
@@ -296,7 +296,7 @@ Value RowReaderV1::getInt(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getFloat(int64_t index) const noexcept {
+Value RowReaderV1::getFloat(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
@@ -334,7 +334,7 @@ Value RowReaderV1::getFloat(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getDouble(int64_t index) const noexcept {
+Value RowReaderV1::getDouble(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
@@ -368,7 +368,7 @@ Value RowReaderV1::getDouble(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getString(int64_t index) const noexcept {
+Value RowReaderV1::getString(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   switch (getSchema()->getFieldType(index)) {
@@ -391,7 +391,7 @@ Value RowReaderV1::getString(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getInt64(int64_t index) const noexcept {
+Value RowReaderV1::getInt64(int64_t index) const {
   RR_GET_OFFSET()
   Value v;
   int64_t val;
@@ -425,7 +425,7 @@ Value RowReaderV1::getInt64(int64_t index) const noexcept {
   return v;
 }
 
-Value RowReaderV1::getVid(int64_t index) const noexcept {
+Value RowReaderV1::getVid(int64_t index) const {
   auto fieldType = getSchema()->getFieldType(index);
   if (fieldType == PropertyType::INT64 || fieldType == PropertyType::VID) {
     // Since 2.0, vid has been defined as a binary array. So we need to convert
@@ -445,7 +445,7 @@ Value RowReaderV1::getVid(int64_t index) const noexcept {
  *  Low-level functions to read from the bytes
  *
  ***********************************************************/
-int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {
+int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const {
   const uint8_t* start = reinterpret_cast<const uint8_t*>(&(buffer_[offset]));
   folly::ByteRange range(start, buffer_.size() - offset);
 
@@ -457,7 +457,7 @@ int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {
   return range.begin() - start;
 }
 
-int32_t RowReaderV1::readFloat(int64_t offset, float& v) const noexcept {
+int32_t RowReaderV1::readFloat(int64_t offset, float& v) const {
   if (offset + sizeof(float) > buffer_.size()) {
     return -1;
   }
@@ -467,7 +467,7 @@ int32_t RowReaderV1::readFloat(int64_t offset, float& v) const noexcept {
   return sizeof(float);
 }
 
-int32_t RowReaderV1::readDouble(int64_t offset, double& v) const noexcept {
+int32_t RowReaderV1::readDouble(int64_t offset, double& v) const {
   if (offset + sizeof(double) > buffer_.size()) {
     return -1;
   }
@@ -477,7 +477,7 @@ int32_t RowReaderV1::readDouble(int64_t offset, double& v) const noexcept {
   return sizeof(double);
 }
 
-int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const noexcept {
+int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const {
   int64_t strLen = 0;
   int32_t intLen = readInteger(offset, strLen);
   CHECK_GT(intLen, 0) << "Invalid string length";
@@ -489,7 +489,7 @@ int32_t RowReaderV1::readString(int64_t offset, folly::StringPiece& v) const noe
   return intLen + strLen;
 }
 
-int32_t RowReaderV1::readInt64(int64_t offset, int64_t& v) const noexcept {
+int32_t RowReaderV1::readInt64(int64_t offset, int64_t& v) const {
   if (offset + sizeof(int64_t) > buffer_.size()) {
     return -1;
   }
@@ -500,7 +500,7 @@ int32_t RowReaderV1::readInt64(int64_t offset, int64_t& v) const noexcept {
   return sizeof(int64_t);
 }
 
-int32_t RowReaderV1::readVid(int64_t offset, int64_t& v) const noexcept {
+int32_t RowReaderV1::readVid(int64_t offset, int64_t& v) const {
   return readInt64(offset, v);
 }
 

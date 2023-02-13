@@ -13,6 +13,141 @@ Feature: Yield Sentence
       | 1 |
     When executing query:
       """
+      YIELD [1, 1.1, 1e2, 1.1e2, .3e4, 1.e4, 1234E-10, true] AS basic_value
+      """
+    Then the result should be, in any order, with relax comparison:
+      | basic_value                                                 |
+      | [1, 1.1, 100.0, 110.0, 3000.0, 10000.0, 0.0000001234, true] |
+    When executing query:
+      """
+      YIELD {p1: 1, p2: true, p3: "test"} AS r
+      """
+    Then the result should be, in any order:
+      | r                             |
+      | {p1: 1, p2: true, p3: "test"} |
+    When executing query:
+      """
+      YIELD true and false
+      """
+    Then the result should be, in any order:
+      | (true AND false) |
+      | false            |
+    When executing query:
+      """
+      YIELD datetime('2012-03-04T22:11').year
+      """
+    Then the result should be, in any order:
+      | datetime("2012-03-04T22:11").year |
+      | 2012                              |
+    When executing query:
+      """
+      YIELD datetime('2012-03-04T22:11').not_exists
+      """
+    Then the result should be, in any order:
+      | datetime("2012-03-04T22:11").not_exists |
+      | UNKNOWN_PROP                            |
+    When executing query:
+      """
+      YIELD CASE 1 WHEN 1 THEN 2 ELSE 3 END
+      """
+    Then the result should be, in any order:
+      | CASE 1 WHEN 1 THEN 2 ELSE 3 END |
+      | 2                               |
+    When executing query:
+      """
+      YIELD abs(-1)
+      """
+    Then the result should be, in any order:
+      | abs(-(1)) |
+      | 1         |
+    When executing query:
+      """
+      YIELD v.l1.p1
+      """
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: v
+    When executing query:
+      """
+      YIELD l1
+      """
+    Then a SemanticError should be raised at runtime: Invalid label identifiers: l1
+    When executing query:
+      """
+      YIELD [i in [1, 2, 3] where i > 1 | i + 1] AS r
+      """
+    Then the result should be, in any order:
+      | r      |
+      | [3, 4] |
+    When executing query:
+      """
+      YIELD all(n IN range(1, 5) WHERE n > 2)
+      """
+    Then the result should be, in any order:
+      | all(n IN range(1,5) WHERE (n>2)) |
+      | false                            |
+    When executing query:
+      """
+      YIELD like._dst
+      """
+    Then a SemanticError should be raised at runtime: Only support input and variable in yield sentence.
+    When executing query:
+      """
+      YIELD reduce(totalNum = 10, n IN range(1, 3) | totalNum + n) AS r
+      """
+    Then the result should be, in any order:
+      | r  |
+      | 16 |
+    When executing query:
+      """
+      YIELD [1, 2, 3][2]
+      """
+    Then the result should be, in any order:
+      | [1,2,3][2] |
+      | 3          |
+    When executing query:
+      """
+      YIELD [1, 2, 3][0..1]
+      """
+    Then the result should be, in any order:
+      | [1,2,3][0..1] |
+      | [1]           |
+    When executing query:
+      """
+      YIELD prefix(edge1.prop1,"高")
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `(edge1.p'
+    When executing query:
+      """
+      YIELD (INT)"1"
+      """
+    Then the result should be, in any order:
+      | (INT)"1" |
+      | 1        |
+    When executing query:
+      """
+      YIELD -(1)
+      """
+    Then the result should be, in any order:
+      | -(1) |
+      | -1   |
+    When executing query:
+      """
+      YIELD uuid()
+      """
+    Then a SemanticError should be raised at runtime: Not supported expression `uuid()' for props deduction.
+    When executing query:
+      """
+      YIELD $v
+      """
+    Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$v'
+    When executing query:
+      """
+      YIELD 1 AS num
+      """
+    Then the result should be, in any order:
+      | num |
+      | 1   |
+    When executing query:
+      """
       YIELD 1+1, (int)3.14, (string)(1+1), (string)true,"1+1"
       """
     Then the result should be, in any order:
@@ -25,6 +160,20 @@ Feature: Yield Sentence
     Then the result should be, in any order:
       | "Hello" | hash("Hello")       |
       | "Hello" | 2275118702903107253 |
+
+  # TODO fix it
+  @skip
+  Scenario: Mistake
+    When executing query:
+      """
+      YIELD count(*)
+      """
+    Then a SemanticError should be raised at runtime: Don't support aggregate function without input.
+    When executing query:
+      """
+      YIELD (v)-[:like]-()
+      """
+    Then a SemanticError should be raised at runtime: Not support pattern expression.
 
   Scenario: HashCall
     When executing query:
@@ -365,7 +514,7 @@ Feature: Yield Sentence
       | -9223372036854775808 |
     When executing query:
       """
-      YIELD --9223372036854775808
+      YIELD - -9223372036854775808
       """
     Then a SemanticError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
@@ -507,7 +656,7 @@ Feature: Yield Sentence
   Scenario: WithComment
     When executing query:
       """
-      YIELD 1--1
+      YIELD 1- -1
       """
     Then the result should be, in any order:
       | (1--(1)) |

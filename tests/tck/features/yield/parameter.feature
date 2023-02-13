@@ -93,8 +93,7 @@ Feature: Parameter
       | "Tony Parker" |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 9  | Project        | 7            |               |
-      | 7  | Filter         | 2            |               |
+      | 9  | Project        | 2            |               |
       | 2  | AppendVertices | 6            |               |
       | 6  | Dedup          | 6            |               |
       | 6  | PassThrough    | 0            |               |
@@ -330,3 +329,62 @@ Feature: Parameter
       | v        |
       | BAD_TYPE |
       | BAD_TYPE |
+
+  Scenario: [param-test-013] DML
+    Given an empty graph
+    And load "nba" csv data to a new space
+    When executing query:
+      """
+      insert vertex player(name, age) values "1":($p6.c, $p1+40)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      insert vertex player(age, name) values "1":($p6.c, $p1+40)
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
+    When executing query:
+      """
+      insert edge like(likeness) values "1"->"2":($p1+40)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      insert edge like(likeness) values "1"->"2":($p6.c)
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
+    When executing query:
+      """
+      update vertex on player "1" set age=age+$p1 when age>$p1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      update vertex on player "1" set age=age+$p6.c when age>$p1
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
+    When executing query:
+      """
+      update edge on like "1"->"2" set likeness=likeness+$p1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      update edge on like "1"->"2" set likeness=likeness+$p6.c when likeness>300
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      update edge on like "1"->"2" set likeness=likeness+$p6.c when likeness<300
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
+    When executing query:
+      """
+      update edge on like "1"->"2" set likeness=likeness+$p6.c when likeness>$p1
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
+    When executing query:
+      """
+      update edge on like "1"->"2" set likeness=likeness+$p6.a when likeness>$p1
+      """
+    Then the execution should be successful

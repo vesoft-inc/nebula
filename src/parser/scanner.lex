@@ -360,6 +360,16 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 "<-"                        { return TokenType::L_ARROW; }
 "->"                        { return TokenType::R_ARROW; }
+
+"-["                        { return TokenType::MINUS_L_BRACKET; }
+"]-"                        { return TokenType::R_BRACKET_MINUS; }
+"<-["                       { return TokenType::L_ARROW_L_BRACKET; }
+"]->"                       { return TokenType::R_BRACKET_R_ARROW; }
+"--"                        { return TokenType::MINUS_MINUS; }
+"-->"                       { return TokenType::MINUS_R_ARROW; }
+"<--"                       { return TokenType::L_ARROW_MINUS; }
+"<-->"                      { return TokenType::L_ARROW_R_ARROW; }
+
 "_id"                       { return TokenType::ID_PROP; }
 "_type"                     { return TokenType::TYPE_PROP; }
 "_src"                      { return TokenType::SRC_ID_PROP; }

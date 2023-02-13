@@ -50,9 +50,12 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         FunctionCallExpression::make(&pool, "nodes", argList),
         RelationalExpression::makeGE(
             &pool,
-            AttributeExpression::make(&pool,
-                                      VariableExpression::makeInner(&pool, "n"),
-                                      ConstantExpression::make(&pool, "age")),
+            AttributeExpression::make(
+                &pool,
+                AttributeExpression::make(&pool,
+                                          VariableExpression::makeInner(&pool, "n"),
+                                          ConstantExpression::make(&pool, "player")),
+                ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
     auto value = Expression::eval(expr, gExpCtxt);
@@ -100,9 +103,12 @@ TEST_F(PredicateExpressionTest, PredicateEvaluate) {
         FunctionCallExpression::make(&pool, "nodes", argList),
         RelationalExpression::makeGE(
             &pool,
-            AttributeExpression::make(&pool,
-                                      VariableExpression::makeInner(&pool, "n"),
-                                      ConstantExpression::make(&pool, "age")),
+            AttributeExpression::make(
+                &pool,
+                AttributeExpression::make(&pool,
+                                          VariableExpression::makeInner(&pool, "n"),
+                                          ConstantExpression::make(&pool, "player")),
+                ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 19)));
 
     auto value = Expression::eval(expr, gExpCtxt);

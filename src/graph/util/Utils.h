@@ -35,8 +35,7 @@ folly::dynamic getStorageDetail(const std::map<std::string, int32_t>& profileDet
 
 folly::dynamic collectRespProfileData(const storage::cpp2::ResponseCommon& resp,
                                       const std::tuple<HostAddr, int32_t, int32_t>& info,
-                                      size_t numVertices = 0UL,
-                                      size_t totalRpcTime = 0UL);
+                                      size_t numVertices = 0UL);
 
 }  // namespace nebula::graph::util
 

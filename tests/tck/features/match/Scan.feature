@@ -78,6 +78,67 @@ Feature: Match seek by scan
       | Name   |
       | "Mary" |
 
+  Scenario: query vertices by scan with skip limit
+    When executing query:
+      """
+      MATCH (v)
+      RETURN v.person.name AS name
+      SKIP 10 LIMIT 4
+      """
+    Then the result should be, in any order:
+      | name     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH (v)
+      RETURN v.person.name AS name
+      SKIP 10 LIMIT 5
+      """
+    Then the result should be, in any order:
+      | name     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH (v)
+      RETURN v.person.name AS name
+      SKIP 10 LIMIT 7
+      """
+    Then the result should be, in any order:
+      | name     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH (v)
+      RETURN v.person.name AS name
+      SKIP 10 LIMIT 11
+      """
+    Then the result should be, in any order:
+      | name     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+
   Scenario: query vertices by scan failed
     When executing query:
       """
@@ -168,3 +229,65 @@ Feature: Match seek by scan
       LIMIT 3
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
+  # #5223
+  Scenario: query edge by scan with skip limit
+    When executing query:
+      """
+      MATCH ()-[e]->()
+      RETURN type(e) AS Type
+      SKIP 10 LIMIT 4
+      """
+    Then the result should be, in any order:
+      | Type     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH ()-[e]->()
+      RETURN type(e) AS Type
+      SKIP 10 LIMIT 5
+      """
+    Then the result should be, in any order:
+      | Type     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH ()-[e]->()
+      RETURN type(e) AS Type
+      SKIP 10 LIMIT 7
+      """
+    Then the result should be, in any order:
+      | Type     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+    When executing query:
+      """
+      MATCH ()-[e]->()
+      RETURN type(e) AS Type
+      SKIP 10 LIMIT 11
+      """
+    Then the result should be, in any order:
+      | Type     |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |
+      | /[\w_]+/ |

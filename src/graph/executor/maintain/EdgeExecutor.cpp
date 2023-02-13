@@ -86,11 +86,8 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()
-      ->getMetaClient()
-      ->listEdgeSchemas(spaceId)
-      .via(runner())
-      .thenValue([this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
+  return qctx()->getMetaClient()->listEdgeSchemas(spaceId).via(runner()).thenValue(
+      [this, spaceId](StatusOr<std::vector<meta::cpp2::EdgeItem>> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show edges failed: " << resp.status();

@@ -63,7 +63,7 @@ class MemoryStats {
   }
 
   /// Inform size of memory allocation
-  inline ALWAYS_INLINE void alloc(int64_t size) {
+  inline ALWAYS_INLINE void alloc(int64_t size, bool throw_if_memory_exceeded) {
     int64_t willBe = threadMemoryStats_.reserved - size;
 
     if (UNLIKELY(willBe < 0)) {
@@ -74,7 +74,7 @@ class MemoryStats {
       }
       // allocGlobal() may end with bad_alloc, only invoke allocGlobal() once (ALL_OR_NOTHING
       // semantic)
-      allocGlobal(getFromGlobal);
+      allocGlobal(getFromGlobal, throw_if_memory_exceeded);
       willBe += getFromGlobal;
     }
     // Only update after successful allocations, failed allocations should not be taken into
@@ -103,10 +103,17 @@ class MemoryStats {
   /// Set limit (maximum usable bytes) of memory
   void setLimit(int64_t limit) {
     if (this->limit_ != limit) {
-      LOG(INFO) << fmt::format(
+      DLOG(INFO) << fmt::format(
           "MemoryTracker update limit {} -> {}", ReadableSize(this->limit_), ReadableSize(limit));
       this->limit_ = limit;
     }
+  }
+
+  /// update limit (maximum usable bytes) of memory
+  /// limit will be set to "used memory + available"
+  void updateLimit(int64_t available) {
+    int64_t newLimit = used_ + available;
+    setLimit(newLimit);
   }
 
   /// Get limit (maximum usable bytes) of memory
@@ -143,12 +150,17 @@ class MemoryStats {
     return threadMemoryStats_.throwOnMemoryExceeded;
   }
 
+  static bool setThrowOnMemoryExceeded(bool value) {
+    return threadMemoryStats_.throwOnMemoryExceeded = value;
+  }
+
  private:
-  inline ALWAYS_INLINE void allocGlobal(int64_t size) {
+  inline ALWAYS_INLINE void allocGlobal(int64_t size, bool throw_if_memory_exceeded) {
     int64_t willBe = size + used_.fetch_add(size, std::memory_order_relaxed);
-    if (threadMemoryStats_.throwOnMemoryExceeded && willBe > limit_) {
+    if (threadMemoryStats_.throwOnMemoryExceeded && throw_if_memory_exceeded && willBe > limit_) {
       // revert
       used_.fetch_sub(size, std::memory_order_relaxed);
+      threadMemoryStats_.throwOnMemoryExceeded = false;
       throw std::bad_alloc();
     }
   }
@@ -165,12 +177,26 @@ class MemoryStats {
 
 // A guard to only enable memory check (throw when memory exceed) during its lifetime.
 struct MemoryCheckGuard {
+  bool previous;
   MemoryCheckGuard() {
+    previous = MemoryStats::throwOnMemoryExceeded();
     MemoryStats::turnOnThrow();
   }
 
   ~MemoryCheckGuard() {
+    MemoryStats::setThrowOnMemoryExceeded(previous);
+  }
+};
+
+struct MemoryCheckOffGuard {
+  bool previous;
+  MemoryCheckOffGuard() {
+    previous = MemoryStats::throwOnMemoryExceeded();
     MemoryStats::turnOffThrow();
+  }
+
+  ~MemoryCheckOffGuard() {
+    MemoryStats::setThrowOnMemoryExceeded(previous);
   }
 };
 

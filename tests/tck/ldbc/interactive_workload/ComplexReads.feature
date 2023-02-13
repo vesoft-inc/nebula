@@ -137,8 +137,7 @@ Feature: LDBC Interactive Workload - Complex Reads
         sum(postsOnTag) AS postCount
       ORDER BY postCount DESC, tagName ASC
       """
-    Then the result should be, in any order:
-      | tagName | postCount |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE oldPost.Post.creationDate < $startDate'
 
   Scenario: 5. New groups
     # {"personId":"6597069766734","minDate":"1288612800000"}

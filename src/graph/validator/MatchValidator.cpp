@@ -334,14 +334,13 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
   auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
-  newFilter = graph::ExpressionUtils::rewriteInnerInExpr(filter);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
   newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
                                                         whereClauseCtx.aliasesAvailable);
-  newFilter =
-      ExpressionUtils::rewriteRankFunc2LabelAttribute(newFilter, whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(newFilter,
+                                                                  whereClauseCtx.aliasesAvailable);
 
   whereClauseCtx.filter = newFilter;
 
@@ -516,14 +515,19 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
 Status MatchValidator::validateAliases(
     const std::vector<const Expression *> &exprs,
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
-  static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
-                                                             Expression::Kind::kLabelAttribute,
-                                                             Expression::Kind::kLabelTagProperty,
-                                                             // primitive props
-                                                             Expression::Kind::kEdgeSrc,
-                                                             Expression::Kind::kEdgeDst,
-                                                             Expression::Kind::kEdgeRank,
-                                                             Expression::Kind::kEdgeType};
+  static const std::unordered_set<Expression::Kind> kinds = {
+      Expression::Kind::kLabel,
+      Expression::Kind::kLabelAttribute,
+      Expression::Kind::kLabelTagProperty,
+      // primitive props
+      Expression::Kind::kEdgeSrc,
+      Expression::Kind::kEdgeDst,
+      Expression::Kind::kEdgeRank,
+      Expression::Kind::kEdgeType,
+      // invalid prop exprs
+      Expression::Kind::kSrcProperty,
+      Expression::Kind::kDstProperty,
+  };
 
   for (auto *expr : exprs) {
     auto refExprs = ExpressionUtils::collectAll(expr, kinds);
@@ -1025,11 +1029,6 @@ Status MatchValidator::checkAlias(
       auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
       auto res = getAliasType(aliasesAvailable, name);
       NG_RETURN_IF_ERROR(res);
-      if (res.value() == AliasType::kNode) {
-        return Status::SemanticError(
-            "To get the property of the vertex in `%s', should use the format `var.tag.prop'",
-            refExpr->toString().c_str());
-      }
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {
@@ -1105,6 +1104,11 @@ Status MatchValidator::checkAlias(
           return Status::SemanticError("Alias `%s' does not have the edge property ranking",
                                        name.c_str());
       }
+    }
+    case Expression::Kind::kSrcProperty:
+    case Expression::Kind::kDstProperty: {
+      return Status::SemanticError("Expression %s is not allowed to use in cypher",
+                                   refExpr->toString().c_str());
     }
     default:  // refExpr must satisfy one of cases and should never hit this branch
       break;

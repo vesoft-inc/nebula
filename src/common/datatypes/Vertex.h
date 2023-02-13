@@ -24,6 +24,7 @@ struct Tag {
   Tag(const Tag& tag) : name(tag.name), props(tag.props) {}
   Tag(std::string tagName, std::unordered_map<std::string, Value> tagProps)
       : name(std::move(tagName)), props(std::move(tagProps)) {}
+  explicit Tag(const std::string& tagName) : name(tagName), props() {}
 
   void clear() {
     name.clear();
@@ -130,7 +131,7 @@ struct hash<nebula::Tag> {
 
 template <>
 struct hash<nebula::Vertex> {
-  std::size_t operator()(const nebula::Vertex& h) const noexcept;
+  std::size_t operator()(const nebula::Vertex& h) const;
 };
 
 }  // namespace std

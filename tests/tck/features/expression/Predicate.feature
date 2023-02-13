@@ -285,9 +285,9 @@ Feature: Predicate
       """
       MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m)
       RETURN
-        nodes(p)[0].name AS n1,
-        nodes(p)[1].name AS n2,
-        all(n IN nodes(p) WHERE n.name NOT STARTS WITH "D") AS b
+        nodes(p)[0].player.name AS n1,
+        nodes(p)[1].player.name AS n2,
+        all(n IN nodes(p) WHERE n.player.name NOT STARTS WITH "D") AS b
       """
     Then the result should be, in any order:
       | n1             | n2                | b     |
@@ -300,7 +300,7 @@ Feature: Predicate
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)
-      RETURN single(n IN nodes(p) WHERE n.age > 40) AS b
+      RETURN single(n IN nodes(p) WHERE n.player.age > 40) AS b
       """
     Then the result should be, in any order:
       | b    |

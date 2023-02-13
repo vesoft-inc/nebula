@@ -53,8 +53,8 @@ Feature: ListComprehension
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m)
-      RETURN [n IN nodes(p) WHERE n.name
-      NOT STARTS WITH "LeBron" | n.age + 100] AS r
+      RETURN [n IN nodes(p) WHERE n.player.name
+      NOT STARTS WITH "LeBron" | n.player.age + 100] AS r
       """
     Then the result should be, in any order:
       | r     |
@@ -67,7 +67,7 @@ Feature: ListComprehension
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)
-      RETURN [n IN nodes(p) | n.age + 100] AS r
+      RETURN [n IN nodes(p) | n.player.age + 100] AS r
       """
     Then the result should be, in any order:
       | r          |

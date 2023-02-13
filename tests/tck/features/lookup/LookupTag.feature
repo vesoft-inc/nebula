@@ -1,3 +1,6 @@
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
 Feature: Test lookup on tag index
   Examples:
     | where_condition                                                                    |
@@ -125,5 +128,3 @@ Feature: Test lookup on tag index
       | lookup_tag_1.col1 | lookup_tag_1.col2 | lookup_tag_1.col3 |
       | 201               | 201               | 201               |
     Then drop the used space
-
-# TODO(yee): Test bool expression

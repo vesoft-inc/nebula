@@ -151,23 +151,24 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
     }
-    if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        !(expr->right()->kind() == Expression::Kind::kList ||
-          expr->right()->kind() == Expression::Kind::kAttribute) ||
-        !ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+    if (expr->left()->kind() != Expression::Kind::kFunctionCall) {
       vidPattern_ = VidPattern{};
       return;
     }
-
     const auto *fCallExpr = static_cast<const FunctionCallExpression *>(expr->left());
     if (fCallExpr->name() != "id" && fCallExpr->args()->numArgs() != 1 &&
         fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
       vidPattern_ = VidPattern{};
       return;
     }
+    if (!ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+      vidPattern_ = VidPattern{};
+      return;
+    }
 
     auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
     if (!rightListValue.isList()) {
+      vidPattern_ = VidPattern{};
       return;
     }
     vidPattern_ = VidPattern{VidPattern::Special::kInUsed,

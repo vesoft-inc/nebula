@@ -11,6 +11,8 @@
 #include <rocksdb/utilities/backup_engine.h>
 #include <rocksdb/utilities/checkpoint.h>
 
+#include <memory>
+
 #include "common/base/Base.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
@@ -26,6 +28,9 @@ class RocksRangeIter : public KVIterator {
  public:
   RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
       : iter_(iter), start_(start), end_(end) {}
+
+  RocksRangeIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice start, rocksdb::Slice end)
+      : iter_(std::move(iter)), start_(start), end_(end) {}
 
   ~RocksRangeIter() = default;
 
@@ -62,6 +67,9 @@ class RocksPrefixIter : public KVIterator {
  public:
   RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix) : iter_(iter), prefix_(prefix) {}
 
+  RocksPrefixIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice prefix)
+      : iter_(std::move(iter)), prefix_(prefix) {}
+
   ~RocksPrefixIter() = default;
 
   bool valid() const override {
@@ -95,6 +103,8 @@ class RocksPrefixIter : public KVIterator {
 class RocksCommonIter : public KVIterator {
  public:
   explicit RocksCommonIter(rocksdb::Iterator* iter) : iter_(iter) {}
+
+  explicit RocksCommonIter(std::unique_ptr<rocksdb::Iterator> iter) : iter_(std::move(iter)) {}
 
   ~RocksCommonIter() = default;
 

@@ -121,7 +121,7 @@ class IndexScanRule final : public OptRule {
                        const FilterItems& items,
                        const meta::cpp2::ColumnDef& col) const;
 
-  size_t hintCount(const FilterItems& items) const noexcept;
+  size_t hintCount(const FilterItems& items) const;
 
   bool isEdge(const OptGroupNode* groupNode) const;
 

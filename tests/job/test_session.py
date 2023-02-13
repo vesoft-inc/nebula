@@ -74,8 +74,8 @@ class TestSession(NebulaTestSuite):
     def test_sessions(self):
         # 1: test add session with right username
         try:
-            client_ok = self.client_pool.get_session('session_user', '123456')
-            assert client_ok is not None
+            user_session = self.client_pool.get_session('session_user', '123456')
+            assert user_session is not None
             assert True
         except Exception as e:
             assert False, e
@@ -114,7 +114,7 @@ class TestSession(NebulaTestSuite):
         assert session_id != 0
 
         # 4: test get session info
-        resp = client_ok.execute('USE nba')
+        resp = user_session.execute('USE nba')
         self.check_resp_succeeded(resp)
 
         # wait for session sync.
@@ -157,6 +157,16 @@ class TestSession(NebulaTestSuite):
         resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
         self.check_resp_succeeded(resp)
         time.sleep(3)
+
+        # 6: test privilege
+        # show sessions with non-root user, only the root user can show all sessions
+        try:
+            non_root_session = self.client_pool.get_session('session_user', '123456')
+            assert non_root_session is not None
+            resp = non_root_session.execute('SHOW SESSIONS')
+            self.check_resp_failed(resp)
+        except Exception as e:
+            assert False, e
 
     def test_the_same_id_to_different_graphd(self):
 
@@ -431,15 +441,8 @@ class TestSession(NebulaTestSuite):
             self.check_resp_succeeded(ResultSet(resp, 0))
             assert user1_session_num == len(ResultSet(resp, 0).rows()) + 1
 
-            # execute query with the killed session
-            resp = conn2.execute(
-                session_id2,
-                'SHOW HOSTS',
-            )
-            # the session has not been synced to host2, so the query should succeed
-            self.check_resp_succeeded(ResultSet(resp, 0))
-
             # wait for the session to be synced (in test session_reclaim_interval_secs=2)
+            # and execute a query with the killed session
             time.sleep(4)
             resp = conn2.execute(
                 session_id2,

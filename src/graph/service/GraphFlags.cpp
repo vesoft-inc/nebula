@@ -12,11 +12,15 @@ DEFINE_int32(client_idle_timeout_secs,
              28800,
              "The number of seconds NebulaGraph service waits before closing the idle connections");
 DEFINE_int32(session_idle_timeout_secs, 28800, "The number of seconds before idle sessions expire");
-DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expired sessions");
+DEFINE_int32(session_reclaim_interval_secs, 60, "Period we try to reclaim expired sessions");
 DEFINE_int32(num_netio_threads,
              0,
              "The number of networking threads, 0 for number of physical CPU cores");
 DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connections");
+DEFINE_uint32(num_max_connections,
+              0,
+              "Max active connections for all networking threads. 0 means no limit. Max active "
+              "connections for each networking thread = num_max_connections / num_netio_threads");
 DEFINE_int32(num_worker_threads, 0, "Number of threads to execute user queries");
 DEFINE_int32(num_operator_threads, 2, "Number of threads to execute a single operator");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");

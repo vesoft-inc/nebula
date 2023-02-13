@@ -40,9 +40,9 @@ Feature: Reduce
       """
       MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m)
       RETURN
-        nodes(p)[0].age AS age1,
-        nodes(p)[1].age AS age2,
-        reduce(totalAge = 100, n IN nodes(p) | totalAge + n.age) AS r
+        nodes(p)[0].player.age AS age1,
+        nodes(p)[1].player.age AS age2,
+        reduce(totalAge = 100, n IN nodes(p) | totalAge + n.player.age) AS r
       """
     Then the result should be, in any order:
       | age1 | age2 | r   |
@@ -55,9 +55,9 @@ Feature: Reduce
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)
-      RETURN nodes(p)[0].age AS age1,
-             nodes(p)[1].age AS age2,
-             reduce(x = 10, n IN nodes(p) | n.age - x) AS x
+      RETURN nodes(p)[0].player.age AS age1,
+             nodes(p)[1].player.age AS age2,
+             reduce(x = 10, n IN nodes(p) | n.player.age - x) AS x
       """
     Then the result should be, in any order:
       | age1 | age2 | x  |

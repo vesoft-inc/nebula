@@ -475,7 +475,8 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
   }
 
   auto funName = expr->name();
-  if (funName == "id" || funName == "src" || funName == "dst") {
+  if (funName == "id" || funName == "src" || funName == "dst" || funName == "none_direct_src" ||
+      funName == "none_direct_dst") {
     type_ = vidType_;
     return;
   }

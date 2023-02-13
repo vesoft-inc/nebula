@@ -188,8 +188,8 @@ Status GoValidator::extractTagIds() {
   return Status::OK();
 }
 
-void GoValidator::extractPropExprs(const Expression* expr,
-                                   std::unordered_set<std::string>& uniqueExpr) {
+Status GoValidator::extractPropExprs(const Expression* expr,
+                                     std::unordered_set<std::string>& uniqueExpr) {
   ExtractPropExprVisitor visitor(vctx_,
                                  goCtx_->srcEdgePropsExpr,
                                  goCtx_->dstPropsExpr,
@@ -197,6 +197,7 @@ void GoValidator::extractPropExprs(const Expression* expr,
                                  propExprColMap_,
                                  uniqueExpr);
   const_cast<Expression*>(expr)->accept(&visitor);
+  return std::move(visitor).status();
 }
 
 Expression* GoValidator::rewriteVertexEdge2EdgeProp(const Expression* expr) {
@@ -277,13 +278,13 @@ Status GoValidator::buildColumns() {
   std::unordered_set<std::string> uniqueEdgeVertexExpr;
   auto filter = goCtx_->filter;
   if (filter != nullptr) {
-    extractPropExprs(filter, uniqueEdgeVertexExpr);
+    NG_RETURN_IF_ERROR(extractPropExprs(filter, uniqueEdgeVertexExpr));
     goCtx_->filter = rewrite2VarProp(filter);
   }
 
   auto* newYieldExpr = pool->makeAndAdd<YieldColumns>();
   for (auto* col : goCtx_->yieldExpr->columns()) {
-    extractPropExprs(col->expr(), uniqueEdgeVertexExpr);
+    NG_RETURN_IF_ERROR(extractPropExprs(col->expr(), uniqueEdgeVertexExpr));
     newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
   }
 

@@ -106,10 +106,20 @@ inline ALWAYS_INLINE size_t getActualAllocationSize(size_t size, std::align_val_
 
 inline ALWAYS_INLINE void trackMemory(std::size_t size) {
   std::size_t actual_size = getActualAllocationSize(size);
+  MemoryTracker::alloc(actual_size);
+}
+
+inline ALWAYS_INLINE void trackMemoryNoThrow(std::size_t size) {
+  std::size_t actual_size = getActualAllocationSize(size);
   MemoryTracker::allocNoThrow(actual_size);
 }
 
 inline ALWAYS_INLINE void trackMemory(std::size_t size, std::align_val_t align) {
+  std::size_t actual_size = getActualAllocationSize(size, align);
+  MemoryTracker::alloc(actual_size);
+}
+
+inline ALWAYS_INLINE void trackMemoryNoThrow(std::size_t size, std::align_val_t align) {
   std::size_t actual_size = getActualAllocationSize(size, align);
   MemoryTracker::allocNoThrow(actual_size);
 }

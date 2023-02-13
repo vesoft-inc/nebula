@@ -11,7 +11,6 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> BFSShortestPathExecutor::execute() {
   // MemoryTrackerVerified
-
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
@@ -167,15 +166,13 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue([this](auto&& resps) {
-        memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
-          currentDs_.append(std::move(resp));
-        }
-        return Status::OK();
-      });
+  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      currentDs_.append(std::move(resp));
+    }
+    return Status::OK();
+  });
 }
 
 DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,

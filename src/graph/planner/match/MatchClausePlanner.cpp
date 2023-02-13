@@ -10,6 +10,7 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/ShortestPathPlanner.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {

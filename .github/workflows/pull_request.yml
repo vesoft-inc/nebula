@@ -132,6 +132,7 @@ jobs:
                 -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
                 -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DENABLE_MEMORY_TRACKER=off \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -GNinja \

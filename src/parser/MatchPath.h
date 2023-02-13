@@ -218,12 +218,13 @@ class MatchNodeLabelList final {
 
 class MatchNode final {
  public:
-  MatchNode(const std::string& alias, MatchNodeLabelList* labels, Expression* props = nullptr) {
+  MatchNode(const std::string& alias = "",
+            MatchNodeLabelList* labels = nullptr,
+            Expression* props = nullptr) {
     alias_ = alias;
     labels_.reset(labels);
     props_ = static_cast<MapExpression*>(props);
   }
-  MatchNode() = default;
 
   void setAlias(const std::string& alias) {
     alias_ = alias;

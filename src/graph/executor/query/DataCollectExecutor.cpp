@@ -65,6 +65,9 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
   ds.colNames = std::move(colNames_);
   const auto& hist = ectx_->getHistory(vars[0]);
   for (const auto& result : hist) {
+    if (!result.iterRef()->isGetNeighborsIter()) {
+      continue;
+    }
     auto iter = result.iter();
     auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
     List vertices;
