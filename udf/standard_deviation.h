@@ -40,7 +40,6 @@
 // | 2.357022603955158        |
 // +--------------------------+
 
-
 class standard_deviation : public GraphFunction {
  public:
   char *name() override;
