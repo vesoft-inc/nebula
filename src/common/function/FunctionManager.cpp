@@ -10,6 +10,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <cstdint>
 
+#include "FunctionUdfManager.h"
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
@@ -28,12 +29,18 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
+#include "graph/service/GraphFlags.h"
+
+DEFINE_bool(enable_udf, false, "enable udf");
 
 namespace nebula {
 
 // static
 FunctionManager &FunctionManager::instance() {
   static FunctionManager instance;
+  if (FLAGS_enable_udf) {
+    static FunctionUdfManager udfManager;
+  }
   return instance;
 }
 
@@ -440,6 +447,9 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
   }
   auto iter = typeSignature_.find(func);
   if (iter == typeSignature_.end()) {
+    if (FLAGS_enable_udf) {
+      return FunctionUdfManager::getUdfReturnType(funcName, argsType);
+    }
     return Status::Error("Function `%s' not defined", funcName.c_str());
   }
 
@@ -2930,6 +2940,9 @@ Status FunctionManager::find(const std::string &func, const size_t arity) {
   std::transform(func.begin(), func.end(), func.begin(), ::tolower);
   auto iter = functions_.find(func);
   if (iter == functions_.end()) {
+    if (FLAGS_enable_udf) {
+      return FunctionUdfManager::loadUdfFunction(func, arity);
+    }
     return Status::Error("Function `%s' not defined", func.c_str());
   }
   // check arity
