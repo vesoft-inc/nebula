@@ -13,6 +13,7 @@ Nebula Test framework depends on python3(>=3.7) and some thirdparty libraries, s
 So you should install all these dependencies before running test cases by:
 
 ```shell
+$ cd tests
 $ make init-all
 ```
 
@@ -51,6 +52,9 @@ $ make RM_DIR=false tck  # default value of RM_DIR is true
 And if you want to debug only one test case, you should check the usage of `pytest` itself by `pytest --help`. For example, run the test cases related to `MATCH`, you can do it like:
 
 ```shell
+# pytest will use keyword 'match' to match the Scenario name. All the Scenario whose name contains
+# the keyword 'match' will be selected. 
+# You can also use '@keyword' to annotate a scenario and using `pytest -k 'keyword'` to run only the one scenario.
 $ pytest -k 'match' -m 'not skip' .
 ```
 
@@ -175,7 +179,7 @@ e.g.
 ```gherkin
 Feature: Nebula service termination test
   Scenario: Basic termination test
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener
     When the cluster was terminated
     Then no service should still running after 4s
 ```
@@ -183,7 +187,7 @@ Feature: Nebula service termination test
 ```gherkin
 Feature: Example
   Scenario: test with disable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=false
       """
@@ -201,7 +205,7 @@ Feature: Example
     Then the execution should be successful
 
   Scenario: test with enable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=true
       """

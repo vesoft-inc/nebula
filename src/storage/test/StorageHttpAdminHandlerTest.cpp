@@ -55,7 +55,7 @@ class StorageHttpAdminHandlerTestEnv : public ::testing::Environment {
 static std::string request(const std::string& url) {
   auto request =
       folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url.c_str());
-  auto resp = HttpClient::get(request);
+  auto resp = HttpClient::instance().get(request);
   EXPECT_EQ(resp.curlCode, 0);
   return resp.body;
 }

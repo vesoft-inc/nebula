@@ -4,6 +4,7 @@
 
 #include "graph/executor/mutate/DeleteExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
@@ -68,6 +69,7 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -123,6 +125,7 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
         VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -200,7 +203,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->deleteEdges(param, std::move(edgeKeys))
@@ -209,6 +212,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
         VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();

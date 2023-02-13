@@ -33,7 +33,7 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:time_utils_obj>
-    $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:graph_session_obj>
@@ -47,6 +47,7 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:gc_obj>
+    $<TARGET_OBJECTS:http_client_obj>
 )
 
 
@@ -95,6 +96,7 @@ nebula_add_test(
         gtest
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -110,6 +112,7 @@ nebula_add_executable(
         boost_regex
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        curl
 )
 
 nebula_add_executable(
@@ -125,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
@@ -150,6 +154,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>

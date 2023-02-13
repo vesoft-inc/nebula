@@ -48,6 +48,7 @@ folly::Future<Status> GetDstBySrcExecutor::execute() {
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getDstTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetDstBySrcResponse>&& resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {

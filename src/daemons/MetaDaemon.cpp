@@ -159,14 +159,6 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  {
-    nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
-    if (!jobMgr->init(gKVStore.get())) {
-      LOG(ERROR) << "Init job manager failed";
-      return EXIT_FAILURE;
-    }
-  }
-
   auto godInit = initGodUser(gKVStore.get(), localhost);
   if (godInit != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Init god user failed";
@@ -199,6 +191,13 @@ int main(int argc, char* argv[]) {
   auto handler =
       std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), metaClusterId());
   LOG(INFO) << "The meta daemon start on " << localhost;
+  {
+    nebula::meta::JobManager* jobMgr = nebula::meta::JobManager::getInstance();
+    if (!jobMgr->init(gKVStore.get(), handler->getAdminClient())) {
+      LOG(ERROR) << "Init job manager failed";
+      return EXIT_FAILURE;
+    }
+  }
   try {
     metaServer->setPort(FLAGS_port);
     metaServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection

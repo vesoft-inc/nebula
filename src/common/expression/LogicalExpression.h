@@ -99,7 +99,7 @@ class LogicalExpression final : public Expression {
     } else if (kind_ == Kind::kLogicalOr) {
       kind_ = Kind::kLogicalAnd;
     } else {
-      LOG(FATAL) << "Should not reverse logical expression except and/or kind.";
+      DLOG(FATAL) << "Should not reverse logical expression except and/or kind.";
     }
   }
 

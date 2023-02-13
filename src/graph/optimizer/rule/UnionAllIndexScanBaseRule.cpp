@@ -48,11 +48,12 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
   auto conditionType = condition->kind();
 
   if (condition->isLogicalExpr()) {
-    // Case1: OR Expr
-    if (conditionType == ExprKind::kLogicalOr) {
-      return true;
-    }
-    // Case2: AND Expr
+    // Don't support XOR yet
+    if (conditionType == ExprKind::kLogicalXor) return false;
+    if (graph::ExpressionUtils::findAny(static_cast<LogicalExpression*>(condition),
+                                        {ExprKind::kLogicalXor}))
+      return false;
+    if (conditionType == ExprKind::kLogicalOr) return true;
     if (conditionType == ExprKind::kLogicalAnd &&
         graph::ExpressionUtils::findAny(static_cast<LogicalExpression*>(condition),
                                         {ExprKind::kRelIn})) {
@@ -166,8 +167,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
       break;
     }
     default:
-      LOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
-      break;
+      DLOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
+      return TransformResult::noTransform();
   }
 
   DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr);

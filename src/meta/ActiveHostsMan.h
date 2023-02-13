@@ -54,7 +54,7 @@ struct HostInfo {
    * int8_t           dataVer
    * int64_t          timestamp
    * sizeof(HostRole) hostRole
-   * size_t           lenth of gitInfoSha
+   * size_t           length of gitInfoSha
    * string           gitInfoSha
    *
    * @param info
@@ -141,7 +141,7 @@ class ActiveHostsMan final {
    * @param hostAddr Which host to register
    * @return
    */
-  static bool machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr);
+  static bool machineRegistered(kvstore::KVStore* kv, const HostAddr& hostAddr);
 
   /**
    * @brief Get all registered host

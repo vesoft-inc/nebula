@@ -174,7 +174,7 @@ class ShortestPath final : public SingleInputNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  MatchStepRange* stepRange() const {
+  MatchStepRange stepRange() const {
     return range_;
   }
 
@@ -202,7 +202,7 @@ class ShortestPath final : public SingleInputNode {
     return singleShortest_;
   }
 
-  void setStepRange(MatchStepRange* range) {
+  void setStepRange(const MatchStepRange& range) {
     range_ = range;
   }
 
@@ -234,7 +234,7 @@ class ShortestPath final : public SingleInputNode {
  private:
   GraphSpaceID space_;
   bool singleShortest_{false};
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
   std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
   std::unique_ptr<std::vector<VertexProp>> vertexProps_;
@@ -367,10 +367,10 @@ class Subgraph final : public SingleInputNode {
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
 };
 
-class BiCartesianProduct final : public BinaryInputNode {
+class CrossJoin final : public BinaryInputNode {
  public:
-  static BiCartesianProduct* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
-    return qctx->objPool()->makeAndAdd<BiCartesianProduct>(qctx, left, right);
+  static CrossJoin* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx, left, right);
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -383,15 +383,15 @@ class BiCartesianProduct final : public BinaryInputNode {
   friend ObjectPool;
 
   // used for clone only
-  static BiCartesianProduct* make(QueryContext* qctx) {
-    return qctx->objPool()->makeAndAdd<BiCartesianProduct>(qctx);
+  static CrossJoin* make(QueryContext* qctx) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx);
   }
 
-  void cloneMembers(const BiCartesianProduct& r);
+  void cloneMembers(const CrossJoin& r);
 
-  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
+  CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right);
   // use for clone
-  explicit BiCartesianProduct(QueryContext* qctx);
+  explicit CrossJoin(QueryContext* qctx);
 };
 }  // namespace graph
 }  // namespace nebula

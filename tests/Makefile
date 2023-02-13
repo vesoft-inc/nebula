@@ -2,7 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-.PHONY: fmt check check-and-diff init init-all clean test tck fail up down test-all ldbc
+.PHONY: fmt check check-and-diff init init-all clean test tck fail up down test-all ldbc ps kill
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
@@ -14,6 +14,8 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
+ENABLE_FT_INDEX ?= false
+ES_ADDRESS ?= 127.0.0.1:9200
 ENABLE_SSL ?= false
 ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
@@ -27,7 +29,15 @@ QUERY_CONCURRENTLY ?= false
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
-test_without_skip = python3 -m pytest -m "not skip" --build_dir=$(BUILD_DIR)
+
+ifeq ($(ENABLE_FT_INDEX),false)
+	PYTEST_MARKEXPR="not skip and not ft_index"
+else
+	export NEBULA_TEST_ES_ADDRESS=${ES_ADDRESS}
+	PYTEST_MARKEXPR="not skip"
+endif
+
+test_without_skip = python3 -m pytest -m $(PYTEST_MARKEXPR) --build_dir=$(BUILD_DIR)
 test_without_skip_sa = python3 -m pytest -m "not skip and not distonly" --build_dir=$(BUILD_DIR)
 test_j = $(test_without_skip) -n$(J)
 test_j_sa = $(test_without_skip_sa) -n$(J)
@@ -108,6 +118,7 @@ test: sess
 	$(test_j) --dist=loadfile -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
+	$(test_j) tck/steps/test_kill_slow_query_base_test.py && \
 	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
 	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py && \
 	$(test_j) tck/steps/test_kill_permission_via_same_service.py && \
@@ -142,3 +153,6 @@ clean:
 
 kill:
 	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9
+
+ps:
+	@ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)"

@@ -24,7 +24,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   }
   if (fields.size() != columnSet.size()) {
     LOG(INFO) << "Conflict field in the tag index.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
@@ -32,7 +32,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   // A maximum of 16 columns are allowed in the index.
   if (columnSet.size() > maxIndexLimit) {
     LOG(INFO) << "The number of index columns exceeds maximum limit " << maxIndexLimit;
-    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
@@ -145,9 +145,8 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       return;
     }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
-      if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
-                  << " : " << field.get_name();
+      if (field.get_type_length() != nullptr) {
+        LOG(INFO) << "Length should not be specified of fixed_string index :" << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -162,6 +161,12 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       if (*field.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
         LOG(INFO) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
                   << " : " << field.get_name();
+        handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+        onFinished();
+        return;
+      }
+      if (*field.get_type_length() <= 0) {
+        LOG(INFO) << "Unsupported index type length <= 0 : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;

@@ -283,7 +283,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
   nebula::cpp2::ErrorCode collectOneRow(bool isIntId, std::size_t vIdLen) {
     List row;
     nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    // Usually there is only one edge node, when all of the egdeNodes are invalid (e.g. ttl
+    // Usually there is only one edge node, when all of the edgeNodes are invalid (e.g. ttl
     // expired), just skip the row. If we don't skip it, there will be a whole line of empty value.
     if (!std::any_of(edgeNodes_.begin(), edgeNodes_.end(), [](const auto& edgeNode) {
           return edgeNode->valid();

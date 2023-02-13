@@ -8,6 +8,7 @@
 #include <folly/json.h>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <cstdint>
 
 #include "FunctionUdfManager.h"
 #include "common/base/Base.h"
@@ -48,6 +49,7 @@ std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnT
     {"concat_ws", Value::Type::STRING},
     {"cos_similarity", Value::Type::FLOAT},
     {"coalesce", Value::Type::__EMPTY__},
+    {"_any", Value::Type::__EMPTY__},
 };
 
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
@@ -1700,7 +1702,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1740,7 +1743,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1781,7 +1785,8 @@ FunctionManager::FunctionManager() {
           }
         }
         default:
-          LOG(FATAL) << "Unexpected arguments count " << args.size();
+          DLOG(FATAL) << "Unexpected arguments count " << args.size();
+          return Value::kNullBadType;
       }
     };
   }
@@ -1847,6 +1852,43 @@ FunctionManager::FunctionManager() {
         }
         default: {
           return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["_joinkey"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      const Value &value = args[0].get();
+      switch (value.type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          return value.getVertex().vid;
+        }
+        // NOTE:
+        // id() on Edge is designed to be used get a Join key when
+        // Join operator performed on edge, the returned id is a
+        // string encoded the {src, dst, type, ranking} tuple
+        case Value::Type::EDGE: {
+          return value.getEdge().id();
+        }
+        // The root cause is the edge-type data format of Traverse executor
+        case Value::Type::LIST: {
+          auto &edges = value.getList().values;
+          if (edges.size() == 1 && edges[0].isEdge()) {
+            return edges[0].getEdge().id();
+          } else {
+            return args[0];
+          }
+        }
+        default: {
+          // Join on the origin type
+          return args[0];
         }
       }
     };
@@ -1985,6 +2027,11 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    // `none_direct_dst` always return the dstId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -2009,6 +2056,46 @@ FunctionManager::FunctionManager() {
             return lastVal.getEdge().dst;
           } else if (lastVal.isVertex()) {
             return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    // `none_direct_src` always return the srcId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
+    auto &attr = functions_["none_direct_src"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.src;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &firstVal = listVal.values.front();
+          if (firstVal.isEdge()) {
+            return firstVal.getEdge().src;
+          } else if (firstVal.isVertex()) {
+            return firstVal.getVertex().vid;
           } else {
             return Value::kNullBadType;
           }
@@ -2766,7 +2853,7 @@ FunctionManager::FunctionManager() {
       const std::size_t nodeIndex = args[1].get().getInt();
       if (nodeIndex < 0 || nodeIndex >= (1 + p.steps.size())) {
         DLOG(FATAL) << "Out of range node index.";
-        return Value::kNullBadData;
+        return Value::kNullOutOfRange;
       }
       if (nodeIndex == 0) {
         return p.src.vid;
@@ -2801,6 +2888,21 @@ FunctionManager::FunctionManager() {
       } catch (const std::exception &e) {
         return Value::kNullBadData;
       }
+    };
+  }
+  // Get any argument which is not empty/null
+  {
+    auto &attr = functions_["_any"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      for (const auto &arg : args) {
+        if (!arg.get().isNull() && !arg.get().empty()) {
+          return arg.get();
+        }
+      }
+      return Value::kNullValue;
     };
   }
 }  // NOLINT

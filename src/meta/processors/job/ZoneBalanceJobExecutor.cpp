@@ -174,7 +174,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::rebalanceActiveZones(
             break;
           }
         }
-        // if the zone's part reach the avgPartNum,it can't recieve parts any more
+        // if the zone's part reach the avgPartNum,it can't receive parts any more
         if (newLeftIndex == leftEnd - 1 &&
             sortedActiveZonesRef[newLeftIndex]->partNum_ >= avgPartNum) {
           leftEnd--;
@@ -324,12 +324,12 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
     return Status::Error(apache::thrift::util::enumNameSafe(rc));
   }
 
-  bool emty = std::find_if(existTasks.begin(),
-                           existTasks.end(),
-                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                             return !p.second.empty();
-                           }) == existTasks.end();
-  if (emty) {
+  bool empty = std::find_if(existTasks.begin(),
+                            existTasks.end(),
+                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                              return !p.second.empty();
+                            }) == existTasks.end();
+  if (empty) {
     return Status::Balanced();
   }
   plan_ = std::make_unique<BalancePlan>(jobDescription_, kvstore_, adminClient_);

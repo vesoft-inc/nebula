@@ -63,20 +63,6 @@ class TestSpace(NebulaTestSuite):
         # expect_result = [['default_space', create_space_str_result]]
         # self.check_result(resp, expect_result)
 
-        # check result from show create
-        resp = self.client.execute('DROP SPACE default_space')
-        self.check_resp_succeeded(resp)
-
-        create_space_str = 'CREATE SPACE `default_space` (partition_num = 1, '\
-                           'replica_factor = 1, '\
-                           'charset = utf8, '\
-                           'collate = utf8_bin, '\
-                           'vid_type = FIXED_STRING(8), '\
-                           'atomic_edge = false)'
-
-        resp = self.client.execute(create_space_str)
-        self.check_resp_succeeded(resp)
-
         resp = self.client.execute('SHOW SPACES')
         self.check_resp_succeeded(resp)
 

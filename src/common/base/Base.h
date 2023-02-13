@@ -95,7 +95,7 @@
 #define COMPILER_BARRIER() asm volatile("" ::: "memory")
 #endif  // COMPILER_BARRIER
 
-// Formated logging
+// Formatted logging
 #define FLOG_FATAL(...) LOG(FATAL) << folly::stringPrintf(__VA_ARGS__)
 #define FLOG_ERROR(...) LOG(ERROR) << folly::stringPrintf(__VA_ARGS__)
 #define FLOG_WARN(...) LOG(WARNING) << folly::stringPrintf(__VA_ARGS__)
@@ -133,6 +133,9 @@ constexpr char kSrc[] = "_src";
 constexpr char kType[] = "_type";
 constexpr char kRank[] = "_rank";
 constexpr char kDst[] = "_dst";
+constexpr char kEdgePrefix[] = "_edge";
+constexpr char kStatsPrefix[] = "_stats";
+constexpr char kExprPrefix[] = "_expr";
 
 // Useful type traits
 

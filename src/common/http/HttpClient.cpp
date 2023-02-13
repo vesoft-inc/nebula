@@ -21,39 +21,79 @@ CurlHandle* CurlHandle::instance() {
   return &handle;
 }
 
+HttpClient& HttpClient::instance() {
+  static HttpClient instance_;
+  return instance_;
+}
+
 HttpResponse HttpClient::get(const std::string& url) {
   return HttpClient::get(url, {});
 }
 
 HttpResponse HttpClient::get(const std::string& url, const std::vector<std::string>& header) {
-  return sendRequest(url, "GET", header, "");
+  return sendRequest(url, "GET", header, "", "", "");
+}
+
+HttpResponse HttpClient::get(const std::string& url,
+                             const std::vector<std::string>& header,
+                             const std::string& username,
+                             const std::string& password) {
+  return sendRequest(url, "GET", header, "", username, password);
 }
 
 HttpResponse HttpClient::post(const std::string& url,
                               const std::vector<std::string>& header,
                               const std::string& body) {
-  return sendRequest(url, "POST", header, body);
+  return sendRequest(url, "POST", header, body, "", "");
+}
+
+HttpResponse HttpClient::post(const std::string& url,
+                              const std::vector<std::string>& header,
+                              const std::string& body,
+                              const std::string& username,
+                              const std::string& password) {
+  return sendRequest(url, "POST", header, body, username, password);
 }
 
 HttpResponse HttpClient::delete_(const std::string& url, const std::vector<std::string>& header) {
-  return sendRequest(url, "DELETE", header, "");
+  return sendRequest(url, "DELETE", header, "", "", "");
+}
+
+HttpResponse HttpClient::delete_(const std::string& url,
+                                 const std::vector<std::string>& header,
+                                 const std::string& username,
+                                 const std::string& password) {
+  return sendRequest(url, "DELETE", header, "", username, password);
 }
 
 HttpResponse HttpClient::put(const std::string& url,
                              const std::vector<std::string>& header,
                              const std::string& body) {
-  return sendRequest(url, "PUT", header, body);
+  return sendRequest(url, "PUT", header, body, "", "");
+}
+
+HttpResponse HttpClient::put(const std::string& url,
+                             const std::vector<std::string>& header,
+                             const std::string& body,
+                             const std::string& username,
+                             const std::string& password) {
+  return sendRequest(url, "PUT", header, body, username, password);
 }
 
 HttpResponse HttpClient::sendRequest(const std::string& url,
                                      const std::string& method,
                                      const std::vector<std::string>& header,
-                                     const std::string& body) {
+                                     const std::string& body,
+                                     const std::string& username,
+                                     const std::string& password) {
   CurlHandle::instance();
   HttpResponse resp;
   CURL* curl = curl_easy_init();
   CHECK(curl);
   setUrl(curl, url);
+  if (folly::StringPiece(url).startsWith("https")) {
+    setSSL(curl);
+  }
   setMethod(curl, method);
   curl_slist* h = setHeaders(curl, header);
   if (!body.empty()) {
@@ -62,6 +102,9 @@ HttpResponse HttpClient::sendRequest(const std::string& url,
   setRespHeader(curl, resp.header);
   setRespBody(curl, resp.body);
   setTimeout(curl);
+  if (!username.empty()) {
+    setAuth(curl, username, password);
+  }
   resp.curlCode = curl_easy_perform(curl);
   if (resp.curlCode != 0) {
     resp.curlMessage = std::string(curl_easy_strerror(resp.curlCode));
@@ -105,6 +148,20 @@ void HttpClient::setTimeout(CURL* curl) {
   curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
   curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
+}
+
+void HttpClient::setAuth(CURL* curl, const std::string& username, const std::string& password) {
+  if (!username.empty()) {
+    curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
+    if (!password.empty()) {
+      curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
+    }
+  }
+}
+
+void HttpClient::setSSL(CURL* curl) {
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 }
 
 size_t HttpClient::onWriteData(void* ptr, size_t size, size_t nmemb, void* stream) {

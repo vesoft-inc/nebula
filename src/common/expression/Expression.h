@@ -177,12 +177,12 @@ class Expression {
     explicit Encoder(size_t bufSizeHint = 2048);
     std::string moveStr();
 
-    Encoder& operator<<(Kind kind) noexcept;
-    Encoder& operator<<(const std::string& str) noexcept;
-    Encoder& operator<<(const Value& val) noexcept;
-    Encoder& operator<<(size_t size) noexcept;
-    Encoder& operator<<(Value::Type vType) noexcept;
-    Encoder& operator<<(const Expression& exp) noexcept;
+    Encoder& operator<<(Kind kind);
+    Encoder& operator<<(const std::string& str);
+    Encoder& operator<<(const Value& val);
+    Encoder& operator<<(size_t size);
+    Encoder& operator<<(Value::Type vType);
+    Encoder& operator<<(const Expression& exp);
 
    private:
     std::string buf_;
@@ -194,12 +194,12 @@ class Expression {
 
     bool finished() const;
 
-    Kind readKind() noexcept;
-    std::string readStr() noexcept;
-    Value readValue() noexcept;
+    Kind readKind();
+    std::string readStr();
+    Value readValue();
     size_t readSize() noexcept;
     Value::Type readValueType() noexcept;
-    Expression* readExpression(ObjectPool* pool) noexcept;
+    Expression* readExpression(ObjectPool* pool);
 
     // Convert the unprocessed part into the hex string
     std::string getHexStr() const;

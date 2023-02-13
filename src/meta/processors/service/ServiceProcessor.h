@@ -13,7 +13,7 @@ namespace meta {
 
 /**
  * @brief Sign in external service info. It is only used in listeners now, such as ES
- *        service servce info.
+ *        service info.
  *
  */
 class SignInServiceProcessor : public BaseProcessor<cpp2::ExecResp> {

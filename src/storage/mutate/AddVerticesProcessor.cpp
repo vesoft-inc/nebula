@@ -8,8 +8,8 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/stats/StatsManager.h"
-#include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"

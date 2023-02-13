@@ -76,7 +76,7 @@ class AdminClient {
 
   /**
    * @brief Add a learner for given partition. The rpc will be sent to
-   *        the partition leader, writting the add event as a log.
+   *        the partition leader, writing the add event as a log.
    *
    * @param spaceId
    * @param partId
@@ -256,8 +256,8 @@ class AdminClient {
                                             RespGenerator respGen);
 
   /**
-   * @brief Send the rpc request to a storage node, the operation is only realted to the spaces,
-   *        does not have affect on a partition. It may also return extra infomations, so return
+   * @brief Send the rpc request to a storage node, the operation is only related to the spaces,
+   *        does not have affect on a partition. It may also return extra information, so return
    *        StatusOr<Response> is necessary
    *
    * @tparam Request RPC request type

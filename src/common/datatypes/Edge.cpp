@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <common/base/Logging.h>
 #include <common/datatypes/Edge.h>
 #include <folly/String.h>
 #include <folly/hash/Hash.h>
@@ -106,13 +107,7 @@ bool Edge::operator<(const Edge& rhs) const {
 }
 
 bool Edge::operator==(const Edge& rhs) const {
-  if (type != rhs.type && type != -rhs.type) {
-    return false;
-  }
-  if (type == rhs.type) {
-    return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking && props == rhs.props;
-  }
-  return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking && props == rhs.props;
+  return keyEqual(rhs);
 }
 
 void Edge::reverse() {
@@ -141,12 +136,38 @@ bool Edge::keyEqual(const Edge& rhs) const {
   return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking;
 }
 
+std::string Edge::id() const {
+  std::string s;
+  // FIXME(czp): How to distinguish between `11->2@90` and `1->12@90`?
+  if (src.type() == Value::Type::INT) {
+    EdgeType t = type > 0 ? type : -type;
+    const int64_t& srcId = type > 0 ? src.getInt() : dst.getInt();
+    const int64_t& dstId = type > 0 ? dst.getInt() : src.getInt();
+    s.reserve(sizeof(srcId) + sizeof(dstId) + sizeof(type) + sizeof(ranking));
+    s.append(reinterpret_cast<const char*>(&srcId), sizeof(srcId));
+    s.append(reinterpret_cast<const char*>(&dstId), sizeof(dstId));
+    s.append(reinterpret_cast<const char*>(&t), sizeof(t));
+    s.append(reinterpret_cast<const char*>(&ranking), sizeof(ranking));
+  } else {
+    DCHECK(src.type() == Value::Type::STRING);
+    EdgeType t = type > 0 ? type : -type;
+    const std::string& srcId = type > 0 ? src.getStr() : dst.getStr();
+    const std::string& dstId = type > 0 ? dst.getStr() : src.getStr();
+    s.reserve(srcId.size() + dstId.size() + sizeof(t) + sizeof(ranking));
+    s.append(srcId.data(), srcId.size());
+    s.append(dstId.data(), dstId.size());
+    s.append(reinterpret_cast<const char*>(&t), sizeof(t));
+    s.append(reinterpret_cast<const char*>(&ranking), sizeof(ranking));
+  }
+  return s;
+}
+
 }  // namespace nebula
 
 namespace std {
 
 // Inject a customized hash function
-std::size_t hash<nebula::Edge>::operator()(const nebula::Edge& h) const noexcept {
+std::size_t hash<nebula::Edge>::operator()(const nebula::Edge& h) const {
   const auto& src = h.type > 0 ? h.src.toString() : h.dst.toString();
   const auto& dst = h.type > 0 ? h.dst.toString() : h.src.toString();
   auto type = h.type > 0 ? h.type : -h.type;

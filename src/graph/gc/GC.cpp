@@ -4,10 +4,12 @@
 
 #include "graph/gc/GC.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
+
 GC& GC::instance() {
   static GC gc;
   return gc;
@@ -23,12 +25,16 @@ GC::GC() {
 }
 
 void GC::clear(std::vector<Result>&& garbage) {
+  memory::MemoryCheckOffGuard guard;
+  // do not bother folly
   queue_.enqueue(std::move(garbage));
 }
 
 void GC::periodicTask() {
-  // TODO: maybe could release by batch
-  queue_.try_dequeue();
+  while (!queue_.empty()) {
+    queue_.try_dequeue();
+  }
 }
+
 }  // namespace graph
 }  // namespace nebula

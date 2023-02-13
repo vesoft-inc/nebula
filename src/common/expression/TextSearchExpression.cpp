@@ -66,7 +66,8 @@ std::string TextSearchExpression::toString() const {
       break;
     }
     default: {
-      LOG(FATAL) << "Unimplemented";
+      DLOG(FATAL) << "Illegal kind for text search expression: " << static_cast<int>(kind());
+      buf = "invalid text search expression(";
     }
   }
   buf += arg_ ? arg_->toString() : "";

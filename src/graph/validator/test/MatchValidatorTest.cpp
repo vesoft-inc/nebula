@@ -535,6 +535,18 @@ TEST_F(MatchValidatorTest, validateAlias) {
         std::string(result.message()),
         "SemanticError: keywords: vertex and edge are not supported in return clause `EDGE AS b'");
   }
+  // Duplicate alias at the end of the pattern
+  {
+    std::string query = "MATCH (v :person{name:\"Tim Duncan\"})-[e]->(v2)-[]->(v2) RETURN e";
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kIndexScan,
+                                            PlanNode::Kind::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
+  }
 }
 
 }  // namespace graph

@@ -17,17 +17,20 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   // rebuilding.
   JobManager* jobMgr = JobManager::getInstance();
   std::unordered_set<cpp2::JobType> jobTypes{cpp2::JobType::REBUILD_TAG_INDEX,
-                                             cpp2::JobType::REBUILD_EDGE_INDEX};
+                                             cpp2::JobType::REBUILD_EDGE_INDEX,
+                                             cpp2::JobType::COMPACT,
+                                             cpp2::JobType::INGEST,
+                                             cpp2::JobType::DATA_BALANCE,
+                                             cpp2::JobType::LEADER_BALANCE};
   auto result = jobMgr->checkTypeJobRunning(jobTypes);
   if (!nebula::ok(result)) {
-    handleErrorCode(nebula::error(result));
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     onFinished();
     return;
   }
-
   if (nebula::value(result)) {
-    LOG(INFO) << "Index is rebuilding, not allowed to create snapshot.";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+    LOG(INFO) << "Mutating data job is running, not allowed to create snapshot.";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_RUNNING_JOBS);
     onFinished();
     return;
   }
@@ -42,10 +45,27 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     return;
   }
   auto hosts = std::move(nebula::value(activeHostsRet));
-
   if (hosts.empty()) {
     LOG(INFO) << "There is no active hosts";
     handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
+    onFinished();
+    return;
+  }
+
+  std::unordered_set<HostAddr> machines;
+  auto ret = getAllMachines(machines);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(ret);
+    onFinished();
+    return;
+  }
+  // since all active hosts are checked registered, then we only need check count here
+  if (hosts.size() != machines.size()) {
+    LOG(INFO) << "There are some hosts registered(by `ADD HOSTS`) but not active, please "
+                 "ensure all storaged active and you haven't registered useless machine;"
+              << "registered machines count=" << machines.size()
+              << "; active hosts count=" << hosts.size();
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     onFinished();
     return;
   }
@@ -55,7 +75,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     // Step 1 : Blocking all writes action for storage engines.
-    auto ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_ON);
+    ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_ON);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(INFO) << "Send blocking sign to storage engine error";
       code = ret;
@@ -69,6 +89,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     if (!nebula::ok(csRet)) {
       LOG(INFO) << "Checkpoint create error on storage engine";
       code = nebula::error(csRet);
+      cancelWriteBlocking();
       status = cpp2::SnapshotStatus::INVALID;
       break;
     }
@@ -105,7 +126,12 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     }
   }
 
-  LOG(INFO) << "Create snapshot " << snapshot << " successfully";
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create snapshot " << snapshot
+              << " failed: " << apache::thrift::util::enumNameSafe(code);
+  } else {
+    LOG(INFO) << "Create snapshot " << snapshot << " successfully";
+  }
   handleErrorCode(code);
   onFinished();
 }

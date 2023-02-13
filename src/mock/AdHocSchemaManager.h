@@ -103,8 +103,8 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 
   void addServiceClient(const nebula::meta::cpp2::ServiceClient& client);
 
-  StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(GraphSpaceID,
-                                                                           int32_t) override {
+  StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
+      GraphSpaceID, int32_t) override {
     LOG(FATAL) << "Unimplemented";
     return Status::Error("Unimplemented");
   }

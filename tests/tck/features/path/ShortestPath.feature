@@ -6,6 +6,25 @@ Feature: Shortest Path
   Background:
     Given a graph with space named "nba"
 
+  Scenario: Shortest Path zero step
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" , "Yao Ming" TO "Tony Parker" OVER like UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan", "Yao Ming" TO "Tony Parker", "Spurs" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan", "Yao Ming" TO "Tony Parker", "Spurs" OVER * UPTO -1 STEPS YIELD path as p
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 STEPS'
+
   Scenario: [1] SinglePair Shortest Path
     When executing query:
       """
@@ -14,6 +33,32 @@ Feature: Shortest Path
     Then the result should be, in any order, with relax comparison:
       | p                                         |
       | <("Tim Duncan")-[:like]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker", "noexist" OVER like YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                         |
+      | <("Tim Duncan")-[:like]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan", "noexist" TO "Tony Parker" OVER like YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                         |
+      | <("Tim Duncan")-[:like]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan", "noexist" TO "Tony Parker", "noexist" OVER like YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                         |
+      | <("Tim Duncan")-[:like]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan", "noexist" TO "Tony Parker", "noexist" OVER noexistedge,like YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: noexistedge not found in space [nba].
 
   Scenario: [2] SinglePair Shortest Path
     When executing query:

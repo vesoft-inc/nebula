@@ -10,6 +10,7 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/ShortestPathPlanner.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -29,23 +30,13 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     auto& nodeInfos = iter->nodeInfos;
     SubPlan pathPlan;
     if (iter->pathType == Path::PathType::kDefault) {
-      MatchPathPlanner matchPathPlanner;
-      auto result = matchPathPlanner.transform(matchClauseCtx->qctx,
-                                               matchClauseCtx->space.id,
-                                               matchClauseCtx->where.get(),
-                                               matchClauseCtx->aliasesAvailable,
-                                               nodeAliasesSeen,
-                                               *iter);
+      MatchPathPlanner matchPathPlanner(matchClauseCtx, *iter);
+      auto result = matchPathPlanner.transform(matchClauseCtx->where.get(), nodeAliasesSeen);
       NG_RETURN_IF_ERROR(result);
       pathPlan = std::move(result).value();
     } else {
-      ShortestPathPlanner shortestPathPlanner;
-      auto result = shortestPathPlanner.transform(matchClauseCtx->qctx,
-                                                  matchClauseCtx->space.id,
-                                                  matchClauseCtx->where.get(),
-                                                  matchClauseCtx->aliasesAvailable,
-                                                  nodeAliasesSeen,
-                                                  *iter);
+      ShortestPathPlanner shortestPathPlanner(matchClauseCtx, *iter);
+      auto result = shortestPathPlanner.transform(matchClauseCtx->where.get(), nodeAliasesSeen);
       NG_RETURN_IF_ERROR(result);
       pathPlan = std::move(result).value();
     }
@@ -61,28 +52,27 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
                                            std::unordered_set<std::string>& nodeAliasesSeen,
                                            SubPlan& matchClausePlan) {
   std::unordered_set<std::string> intersectedAliases;
-  std::for_each(
-      nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
-        if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
-          intersectedAliases.emplace(info.alias);
-        }
-      });
-  std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
+  for (auto& info : nodeInfos) {
+    if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
+      intersectedAliases.emplace(info.alias);
+    }
     if (!info.anonymous) {
       nodeAliasesSeen.emplace(info.alias);
     }
-  });
+  }
+
   if (matchClausePlan.root == nullptr) {
     matchClausePlan = subplan;
+    return Status::OK();
+  }
+
+  if (intersectedAliases.empty()) {
+    matchClausePlan =
+        SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
   } else {
-    if (intersectedAliases.empty()) {
-      matchClausePlan =
-          SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
-    } else {
-      // TODO: Actually a natural join would be much easy use.
-      matchClausePlan = SegmentsConnector::innerJoin(
-          matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
-    }
+    // TODO: Actually a natural join would be much easy use.
+    matchClausePlan = SegmentsConnector::innerJoin(
+        matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
   }
   return Status::OK();
 }

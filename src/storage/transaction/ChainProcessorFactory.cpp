@@ -61,7 +61,8 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          return nullptr;
         }
       }
       break;
@@ -79,7 +80,8 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          return nullptr;
         }
       }
       break;
@@ -97,13 +99,15 @@ ChainBaseProcessor* ChainProcessorFactory::makeProcessor(StorageEnv* env,
           break;
         }
         case ResumeType::UNKNOWN: {
-          LOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          DLOG(FATAL) << "ResumeType::UNKNOWN: not supposed run here";
+          return nullptr;
         }
       }
       break;
     }
     case RequestType::UNKNOWN: {
-      LOG(FATAL) << "RequestType::UNKNOWN: not supposed run here";
+      DLOG(FATAL) << "RequestType::UNKNOWN: not supposed run here";
+      return nullptr;
     }
   }
   ret->term_ = termId;

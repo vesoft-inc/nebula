@@ -1287,6 +1287,25 @@ class ShowSessions final : public SingleInputNode {
   bool isLocalCommand_{false};
 };
 
+class KillSession final : public SingleInputNode {
+ public:
+  static KillSession* make(QueryContext* qctx, PlanNode* input, Expression* sessionId) {
+    return qctx->objPool()->makeAndAdd<KillSession>(qctx, input, sessionId);
+  }
+
+  Expression* getSessionId() const {
+    return sessionId_;
+  }
+
+ private:
+  friend ObjectPool;
+  KillSession(QueryContext* qctx, PlanNode* input, Expression* sessionId)
+      : SingleInputNode(qctx, Kind::kKillSession, input), sessionId_(sessionId) {}
+
+ private:
+  Expression* sessionId_{nullptr};
+};
+
 class UpdateSession final : public SingleInputNode {
  public:
   static UpdateSession* make(QueryContext* qctx, PlanNode* input, meta::cpp2::Session session) {

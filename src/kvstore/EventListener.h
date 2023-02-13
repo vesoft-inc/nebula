@@ -102,7 +102,7 @@ class EventListener : public rocksdb::EventListener {
    * @brief A callback function for RocksDB which will be called before a memtable is made
    * immutable.
    *
-   * @param info MemTable informations passed by rocksdb
+   * @param info MemTable information passed by rocksdb
    */
   void OnMemTableSealed(const rocksdb::MemTableInfo& info) override {
     VLOG(3) << "MemTable Sealed column family: " << info.cf_name
@@ -125,7 +125,7 @@ class EventListener : public rocksdb::EventListener {
    * using IngestExternalFile.
    *
    * @param db Rocksdb instance
-   * @param info Ingest infomations passed by rocksdb
+   * @param info Ingest information passed by rocksdb
    */
   void OnExternalFileIngested(rocksdb::DB* db,
                               const rocksdb::ExternalFileIngestionInfo& info) override {
@@ -178,7 +178,7 @@ class EventListener : public rocksdb::EventListener {
    * @param info Information when write a rocksdb file
    */
   void OnFileWriteFinish(const rocksdb::FileOperationInfo& info) override {
-    VLOG(4) << "Writeing file finished: file path is " << info.path << " offset: " << info.offset
+    VLOG(4) << "Writing file finished: file path is " << info.path << " offset: " << info.offset
             << " length: " << info.length;
   }
 

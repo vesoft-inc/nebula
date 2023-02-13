@@ -11,13 +11,13 @@ nebula_add_library(
     ExtractPropExprVisitor.cpp
     ExtractFilterExprVisitor.cpp
     FoldConstantExprVisitor.cpp
-    RewriteSymExprVisitor.cpp
     RewriteVisitor.cpp
     FindVisitor.cpp
     VidExtractVisitor.cpp
     EvaluableExprVisitor.cpp
     ExtractGroupSuiteVisitor.cpp
     ValidatePatternExpressionVisitor.cpp
+    DeduceAliasTypeVisitor.cpp
 )
 
 nebula_add_library(

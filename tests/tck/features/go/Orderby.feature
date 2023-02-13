@@ -211,3 +211,23 @@ Feature: Orderby Sentence
       GO FROM "Boris Diaw" OVER serve YIELD $^.player.name as team, serve.start_year as start, $$.team.name as team | ORDER BY $-.team
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: Order by with null
+    When executing query:
+      """
+      UNWIND [3, NULL, 1] AS a
+      UNWIND [1, 4, NULL] AS b
+      RETURN a, b
+      ORDER BY a ASC, b DESC
+      """
+    Then the result should be, in order, with relax comparison:
+      | a    | b    |
+      | 1    | NULL |
+      | 1    | 4    |
+      | 1    | 1    |
+      | 3    | NULL |
+      | 3    | 4    |
+      | 3    | 1    |
+      | NULL | NULL |
+      | NULL | 4    |
+      | NULL | 1    |

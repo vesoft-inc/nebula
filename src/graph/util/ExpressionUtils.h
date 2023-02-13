@@ -32,7 +32,7 @@ class ExpressionUtils {
   // Checks if the kind of the given expression is one of the expected kind
   static inline bool isKindOf(const Expression* expr,
                               const std::unordered_set<Expression::Kind>& expected) {
-    return expected.find(expr->kind()) != expected.end();
+    return expected.find(DCHECK_NOTNULL(expr)->kind()) != expected.end();
   }
 
   // Checks if the expression is a property expression (TagProperty or LabelTagProperty or
@@ -62,6 +62,10 @@ class ExpressionUtils {
   // ** Expression rewrite **
   // rewrites Attribute to LabelTagProp
   static Expression* rewriteAttr2LabelTagProp(
+      const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
+
+  // rewrite rank(e) to e._rank
+  static Expression* rewriteEdgePropFunc2LabelAttribute(
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
   // rewrite LabelAttr to tagProp
@@ -104,6 +108,8 @@ class ExpressionUtils {
   // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
   static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
 
+  static Expression* foldInnerLogicalExpr(const Expression* expr);
+
   // Returns the operands of container expressions
   // For list and set, return the operands
   // For map, return the keys
@@ -114,6 +120,13 @@ class ExpressionUtils {
   // Examples:
   // v.age > 40 + 1  =>  v.age > 41
   static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
+
+  // Simplify logical and/or expr.
+  // e.g. A and true => A
+  //      A or false => A
+  //      A and false => false
+  //      A or true => true
+  static Expression* simplifyLogicalExpr(const LogicalExpression* logicalExpr);
 
   // Clones and reduces unaryNot expression
   // Examples:
@@ -153,6 +166,11 @@ class ExpressionUtils {
   static void pullOrs(Expression* expr);
   static void pullOrsImpl(LogicalExpression* expr, std::vector<Expression*>& operands);
 
+  // For a logical XOR expression, extracts all non-logicalXorExpr from its operands and set them as
+  // the new operands
+  static void pullXors(Expression* expr);
+  static void pullXorsImpl(LogicalExpression* expr, std::vector<Expression*>& operands);
+
   // Constructs a nested logical OR expression
   // Example:
   // [expr1, expr2, expr3]  =>  ((expr1 OR expr2) OR expr3)
@@ -177,9 +195,12 @@ class ExpressionUtils {
   // calls flattenInnerLogicalAndExpr() first then executes flattenInnerLogicalOrExpr()
   static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
-  // Uses the picker to split the given experssion expr into two parts: filterPicked and
+  // Check whether there exists the property of variable expression in `columns'
+  static bool checkVarPropIfExist(const std::vector<std::string>& columns, const Expression* e);
+
+  // Uses the picker to split the given expression expr into two parts: filterPicked and
   // filterUnpicked If expr is a non-LogicalAnd expression, applies the picker to expr directly If
-  // expr is a logicalAnd expression,  applies the picker to all its operands
+  // expr is a logicalAnd expression, applies the picker to all its operands
   static void splitFilter(const Expression* expr,
                           std::function<bool(const Expression*)> picker,
                           Expression** filterPicked,
@@ -219,7 +240,14 @@ class ExpressionUtils {
 
   // Whether the whole expression is vertex id predication
   // e.g. id(v) == 1, id(v) IN [...]
-  static bool isVidPredication(const Expression* expr);
+  static bool isVidPredication(const Expression* expr, QueryContext* qctx);
+
+  // Check if the expr looks like `$-.e[0].likeness`
+  static bool isOneStepEdgeProp(const std::string& edgeAlias, const Expression* expr);
+
+  static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
+                                               const std::string& edgeAlias,
+                                               Expression* expr);
 };
 
 }  // namespace graph

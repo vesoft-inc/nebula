@@ -15,7 +15,7 @@ extern ProcessorCounters kLookupCounters;
 
 /**
  * @brief processor support index based search (lookup match)
- *        not compatiable with other processor.
+ *        not compatible with other processor.
  */
 class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
  public:

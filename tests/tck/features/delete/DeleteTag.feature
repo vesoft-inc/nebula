@@ -134,7 +134,7 @@ Feature: Delete string vid of tag
     Then the result should be, in any order:
       | id           |
       | "Tim Duncan" |
-    # delete one tag
+    # delete all tag
     When executing query:
       """
       DELETE TAG * FROM "Tim Duncan";
@@ -200,6 +200,7 @@ Feature: Delete string vid of tag
       """
     Then the execution should be successful
     # after delete tag
+    # the output has one row because the vertex has multiple tags
     When executing query:
       """
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age

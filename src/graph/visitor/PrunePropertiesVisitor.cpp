@@ -51,6 +51,13 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
       auto *expr = col->expr();
       status_ = extractPropsFromExpr(expr);
       if (!status_.ok()) {
+        // Project a not exit tag, should not break other columns
+        // e.g. Vertex tag {{"name", "string"}, {"age", "int64"}}
+        //      Project "... RETURN v.name, v.xxx.yyy, v.player.age"
+        //      v.xxx.yyy should not break v.player.age
+        if (status_.isTagNotFound()) {
+          continue;
+        }
         return;
       }
     }
@@ -100,12 +107,27 @@ void PrunePropertiesVisitor::visitCurrent(Project *node) {
 }
 
 void PrunePropertiesVisitor::visit(Aggregate *node) {
-  rootNode_ = false;
   visitCurrent(node);
   status_ = depsPruneProperties(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visitCurrent(Aggregate *node) {
+  if (rootNode_) {
+    for (auto *groupKey : node->groupKeys()) {
+      status_ = extractPropsFromExpr(groupKey);
+      if (!status_.ok()) {
+        return;
+      }
+    }
+    for (auto *groupItem : node->groupItems()) {
+      status_ = extractPropsFromExpr(groupItem);
+      if (!status_.ok()) {
+        return;
+      }
+    }
+    rootNode_ = false;
+    return;
+  }
   for (auto *groupKey : node->groupKeys()) {
     if (groupKey->kind() == Expression::Kind::kVarProperty ||
         groupKey->kind() == Expression::Kind::kInputProperty ||
@@ -169,9 +191,9 @@ void PrunePropertiesVisitor::pruneCurrent(ScanEdges *node) {
       if (edgeTypeIter != usedEdgeProps.end()) {
         uniqueProps.insert(edgeTypeIter->second.begin(), edgeTypeIter->second.end());
       }
-      auto unKnowEdgeIter = usedEdgeProps.find(unKnowType_);
-      if (unKnowEdgeIter != usedEdgeProps.end()) {
-        uniqueProps.insert(unKnowEdgeIter->second.begin(), unKnowEdgeIter->second.end());
+      auto unknownEdgeIter = usedEdgeProps.find(unknownType_);
+      if (unknownEdgeIter != usedEdgeProps.end()) {
+        uniqueProps.insert(unknownEdgeIter->second.begin(), unknownEdgeIter->second.end());
       }
       for (auto &prop : props) {
         if (uniqueProps.find(prop) != uniqueProps.end()) {
@@ -232,15 +254,15 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
       if (usedVertexProps.empty()) {
         node->setVertexProps(nullptr);
       } else {
-        auto unknowIter = usedVertexProps.find(unKnowType_);
+        auto unknownIter = usedVertexProps.find(unknownType_);
         auto prunedVertexProps = std::make_unique<std::vector<VertexProp>>();
         prunedVertexProps->reserve(usedVertexProps.size());
         for (auto &vertexProp : *vertexProps) {
           auto tagId = vertexProp.tag_ref().value();
           auto &props = vertexProp.props_ref().value();
           std::unordered_set<std::string> usedProps;
-          if (unknowIter != usedVertexProps.end()) {
-            usedProps.insert(unknowIter->second.begin(), unknowIter->second.end());
+          if (unknownIter != usedVertexProps.end()) {
+            usedProps.insert(unknownIter->second.begin(), unknownIter->second.end());
           }
           auto tagIter = usedVertexProps.find(tagId);
           if (tagIter != usedVertexProps.end()) {
@@ -293,9 +315,9 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
       if (edgeTypeIter != usedEdgeProps.end()) {
         uniqueProps.insert(edgeTypeIter->second.begin(), edgeTypeIter->second.end());
       }
-      auto unKnowEdgeIter = usedEdgeProps.find(unKnowType_);
-      if (unKnowEdgeIter != usedEdgeProps.end()) {
-        uniqueProps.insert(unKnowEdgeIter->second.begin(), unKnowEdgeIter->second.end());
+      auto unknownEdgeIter = usedEdgeProps.find(unknownType_);
+      if (unknownEdgeIter != usedEdgeProps.end()) {
+        uniqueProps.insert(unknownEdgeIter->second.begin(), unknownEdgeIter->second.end());
       }
       for (auto &prop : props) {
         if (uniqueProps.find(prop) != uniqueProps.end()) {
@@ -387,15 +409,15 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     }
     return;
   }
-  auto unknowIter = usedVertexProps.find(unKnowType_);
+  auto unknownIter = usedVertexProps.find(unknownType_);
   prunedVertexProps->reserve(usedVertexProps.size());
   for (auto &vertexProp : *vertexProps) {
     auto tagId = vertexProp.tag_ref().value();
     auto &props = vertexProp.props_ref().value();
     auto tagIter = usedVertexProps.find(tagId);
     std::unordered_set<std::string> usedProps;
-    if (unknowIter != usedVertexProps.end()) {
-      usedProps.insert(unknowIter->second.begin(), unknowIter->second.end());
+    if (unknownIter != usedVertexProps.end()) {
+      usedProps.insert(unknownIter->second.begin(), unknownIter->second.end());
     }
     if (tagIter != usedVertexProps.end()) {
       usedProps.insert(tagIter->second.begin(), tagIter->second.end());
@@ -420,11 +442,11 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
   node->setVertexProps(std::move(prunedVertexProps));
 }
 
-void PrunePropertiesVisitor::visit(BiJoin *node) {
+void PrunePropertiesVisitor::visit(HashJoin *node) {
   status_ = depsPruneProperties(node->dependencies());
 }
 
-void PrunePropertiesVisitor::visit(BiCartesianProduct *node) {
+void PrunePropertiesVisitor::visit(CrossJoin *node) {
   status_ = pruneMultiBranch(node->dependencies());
 }
 
@@ -439,7 +461,11 @@ void PrunePropertiesVisitor::visit(Unwind *node) {
 
 void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
   const auto &alias = node->alias();
-  if (propsUsed_.hasAlias(alias)) {
+  auto expr = node->unwindExpr();
+  auto kind = expr->kind();
+  // unwind e.start_year as a
+  if (propsUsed_.hasAlias(alias) ||
+      (kind != Expression::Kind::kVarProperty && kind != Expression::Kind::kInputProperty)) {
     status_ = extractPropsFromExpr(node->unwindExpr());
     if (!status_.ok()) {
       return;

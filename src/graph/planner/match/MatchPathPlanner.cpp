@@ -11,6 +11,7 @@
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -18,6 +19,10 @@
 
 namespace nebula {
 namespace graph {
+
+MatchPathPlanner::MatchPathPlanner(CypherClauseContextBase* ctx, const Path& path)
+    : ctx_(DCHECK_NOTNULL(ctx)), path_(path) {}
+
 static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
                                                     const NodeInfo& node,
                                                     const EdgeInfo& edge,
@@ -61,79 +66,52 @@ static Expression* nodeId(ObjectPool* pool, const NodeInfo& node) {
       pool, InputPropertyExpression::make(pool, node.alias), ConstantExpression::make(pool, kVid));
 }
 
-StatusOr<SubPlan> MatchPathPlanner::transform(
-    QueryContext* qctx,
-    GraphSpaceID spaceId,
-    WhereClauseContext* bindWhere,
-    const std::unordered_map<std::string, AliasType>& aliasesAvailable,
-    std::unordered_set<std::string> nodeAliasesSeen,
-    Path& path) {
+StatusOr<SubPlan> MatchPathPlanner::transform(WhereClauseContext* bindWhere,
+                                              std::unordered_set<std::string> nodeAliasesSeen) {
   // All nodes ever seen in current match clause
   // TODO: Maybe it is better to rebuild the graph and find all connected components.
-  auto& nodeInfos = path.nodeInfos;
-  auto& edgeInfos = path.edgeInfos;
   SubPlan subplan;
   size_t startIndex = 0;
   bool startFromEdge = false;
-  // The node alias seen in current pattern only
-  std::unordered_set<std::string> nodeAliasesSeenInPattern;
 
-  NG_RETURN_IF_ERROR(findStarts(nodeInfos,
-                                edgeInfos,
-                                qctx,
-                                spaceId,
-                                bindWhere,
-                                aliasesAvailable,
-                                nodeAliasesSeen,
-                                startFromEdge,
-                                startIndex,
-                                subplan));
-  NG_RETURN_IF_ERROR(expand(nodeInfos,
-                            edgeInfos,
-                            qctx,
-                            spaceId,
-                            startFromEdge,
-                            startIndex,
-                            subplan,
-                            nodeAliasesSeenInPattern));
+  NG_RETURN_IF_ERROR(findStarts(bindWhere, nodeAliasesSeen, startFromEdge, startIndex, subplan));
+  NG_RETURN_IF_ERROR(expand(startFromEdge, startIndex, subplan));
 
-  MatchSolver::buildProjectColumns(qctx, path, subplan);
+  // No need to actually build path if the path is just a predicate
+  if (!path_.isPred) {
+    MatchSolver::buildProjectColumns(ctx_->qctx, path_, subplan);
+  }
+
   return subplan;
 }
 
-Status MatchPathPlanner::findStarts(
-    std::vector<NodeInfo>& nodeInfos,
-    std::vector<EdgeInfo>& edgeInfos,
-    QueryContext* qctx,
-    GraphSpaceID spaceId,
-    WhereClauseContext* bindWhereClause,
-    const std::unordered_map<std::string, AliasType>& aliasesAvailable,
-    std::unordered_set<std::string> nodeAliasesSeen,
-    bool& startFromEdge,
-    size_t& startIndex,
-    SubPlan& matchClausePlan) {
+Status MatchPathPlanner::findStarts(WhereClauseContext* bindWhereClause,
+                                    std::unordered_set<std::string> nodeAliasesSeen,
+                                    bool& startFromEdge,
+                                    size_t& startIndex,
+                                    SubPlan& matchClausePlan) {
   auto& startVidFinders = StartVidFinder::finders();
   bool foundStart = false;
-  std::unordered_set<std::string> allNodeAliasesAvailable;
-  allNodeAliasesAvailable.merge(nodeAliasesSeen);
   std::for_each(
-      aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
-        if (kv.second == AliasType::kNode) {
-          allNodeAliasesAvailable.emplace(kv.first);
-        }
+      ctx_->aliasesAvailable.begin(), ctx_->aliasesAvailable.end(), [&nodeAliasesSeen](auto& kv) {
+        // if (kv.second == AliasType::kNode) {
+        nodeAliasesSeen.emplace(kv.first);
+        // }
       });
 
+  auto spaceId = ctx_->space.id;
+  auto* qctx = ctx_->qctx;
+  const auto& nodeInfos = path_.nodeInfos;
+  const auto& edgeInfos = path_.edgeInfos;
   // Find the start plan node
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
-      auto nodeCtx = NodeContext(qctx, bindWhereClause, spaceId, &nodeInfos[i]);
-      nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
+      NodeContext nodeCtx(qctx, bindWhereClause, spaceId, &nodeInfos[i]);
+      nodeCtx.nodeAliasesAvailable = &nodeAliasesSeen;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);
-        if (!plan.ok()) {
-          return plan.status();
-        }
+        NG_RETURN_IF_ERROR(plan);
         matchClausePlan = std::move(plan).value();
         startIndex = i;
         foundStart = true;
@@ -145,13 +123,11 @@ Status MatchPathPlanner::findStarts(
       }
 
       if (i != nodeInfos.size() - 1) {
-        auto edgeCtx = EdgeContext(qctx, bindWhereClause, spaceId, &edgeInfos[i]);
+        EdgeContext edgeCtx(qctx, bindWhereClause, spaceId, &edgeInfos[i]);
         auto edgeFinder = finder();
         if (edgeFinder->match(&edgeCtx)) {
           auto plan = edgeFinder->transform(&edgeCtx);
-          if (!plan.ok()) {
-            return plan.status();
-          }
+          NG_RETURN_IF_ERROR(plan);
           matchClausePlan = std::move(plan).value();
           startFromEdge = true;
           startIndex = i;
@@ -169,97 +145,67 @@ Status MatchPathPlanner::findStarts(
     return Status::SemanticError("Can't solve the start vids from the sentence.");
   }
 
-  if (matchClausePlan.tail->isSingleInput()) {
-    auto start = StartNode::make(qctx);
-    matchClausePlan.tail->setDep(0, start);
-    matchClausePlan.tail = start;
-  }
+  // Both StartNode and Argument are leaf plan nodes
+  matchClausePlan.appendStartNode(qctx);
 
   return Status::OK();
 }
 
-Status MatchPathPlanner::expand(const std::vector<NodeInfo>& nodeInfos,
-                                const std::vector<EdgeInfo>& edgeInfos,
-                                QueryContext* qctx,
-                                GraphSpaceID spaceId,
-                                bool startFromEdge,
-                                size_t startIndex,
-                                SubPlan& subplan,
-                                std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
+Status MatchPathPlanner::expand(bool startFromEdge, size_t startIndex, SubPlan& subplan) {
   if (startFromEdge) {
-    return expandFromEdge(
-        nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern);
+    return expandFromEdge(startIndex, subplan);
   } else {
-    return expandFromNode(
-        nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern);
+    return expandFromNode(startIndex, subplan);
   }
 }
 
-Status MatchPathPlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos,
-                                        const std::vector<EdgeInfo>& edgeInfos,
-                                        QueryContext* qctx,
-                                        GraphSpaceID spaceId,
-                                        size_t startIndex,
-                                        SubPlan& subplan,
-                                        std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
+Status MatchPathPlanner::expandFromNode(size_t startIndex, SubPlan& subplan) {
+  const auto& nodeInfos = path_.nodeInfos;
+  DCHECK_LT(startIndex, nodeInfos.size());
   // Vid of the start node is known already
-  nodeAliasesSeenInPattern.emplace(nodeInfos[startIndex].alias);
-  DCHECK(!nodeInfos.empty() && startIndex < nodeInfos.size());
+  nodeAliasesSeenInPattern_.emplace(nodeInfos[startIndex].alias);
   if (startIndex == 0) {
     // Pattern: (start)-[]-...-()
-    return rightExpandFromNode(
-        nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern);
+    return rightExpandFromNode(startIndex, subplan);
   }
 
-  const auto& var = subplan.root->outputVar();
   if (startIndex == nodeInfos.size() - 1) {
     // Pattern: ()-[]-...-(start)
-    return leftExpandFromNode(
-        nodeInfos, edgeInfos, qctx, spaceId, startIndex, var, subplan, nodeAliasesSeenInPattern);
+    return leftExpandFromNode(startIndex, subplan);
   }
 
   // Pattern: ()-[]-...-(start)-...-[]-()
-  NG_RETURN_IF_ERROR(rightExpandFromNode(
-      nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern));
-  NG_RETURN_IF_ERROR(leftExpandFromNode(nodeInfos,
-                                        edgeInfos,
-                                        qctx,
-                                        spaceId,
-                                        startIndex,
-                                        subplan.root->outputVar(),
-                                        subplan,
-                                        nodeAliasesSeenInPattern));
+  NG_RETURN_IF_ERROR(rightExpandFromNode(startIndex, subplan));
+  NG_RETURN_IF_ERROR(leftExpandFromNode(startIndex, subplan));
 
   return Status::OK();
 }
 
-Status MatchPathPlanner::leftExpandFromNode(
-    const std::vector<NodeInfo>& nodeInfos,
-    const std::vector<EdgeInfo>& edgeInfos,
-    QueryContext* qctx,
-    GraphSpaceID spaceId,
-    size_t startIndex,
-    std::string inputVar,
-    SubPlan& subplan,
-    std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
+Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan) {
+  const auto& nodeInfos = path_.nodeInfos;
+  const auto& edgeInfos = path_.edgeInfos;
   Expression* nextTraverseStart = nullptr;
   if (startIndex == nodeInfos.size() - 1) {
     nextTraverseStart = initialExpr_;
   } else {
-    auto* pool = qctx->objPool();
+    auto* pool = ctx_->qctx->objPool();
     auto args = ArgumentList::make(pool);
     args->addArgument(InputPropertyExpression::make(pool, nodeInfos[startIndex].alias));
-    nextTraverseStart = FunctionCallExpression::make(pool, "id", args);
+    nextTraverseStart = FunctionCallExpression::make(pool, "_joinkey", args);
   }
   bool reversely = true;
+  auto qctx = ctx_->qctx;
+  auto spaceId = ctx_->space.id;
   for (size_t i = startIndex; i > 0; --i) {
     auto& node = nodeInfos[i];
     auto& dst = nodeInfos[i - 1];
-    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
-    if (!node.anonymous) {
-      nodeAliasesSeenInPattern.emplace(node.alias);
-    }
+    addNodeAlias(node);
+    bool expandInto = isExpandInto(dst.alias);
     auto& edge = edgeInfos[i - 1];
+    MatchStepRange stepRange(1, 1);
+    if (edge.range != nullptr) {
+      stepRange = *edge.range;
+    }
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
     auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
@@ -267,21 +213,18 @@ Status MatchPathPlanner::leftExpandFromNode(
     traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
+    traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(edge.range);
+    traverse->setStepRange(stepRange);
     traverse->setDedup();
     // If start from end of the path pattern, the first traverse would not
     // track the previous path, otherwise, it should.
-    traverse->setTrackPrevPath(startIndex + 1 == nodeInfos.size() ? i != startIndex : true);
-    traverse->setColNames(
-        genTraverseColNames(subplan.root->colNames(),
-                            node,
-                            edge,
-                            startIndex + 1 == nodeInfos.size() ? i != startIndex : true));
+    bool trackPrevPath = (startIndex + 1 == nodeInfos.size() ? i != startIndex : true);
+    traverse->setTrackPrevPath(trackPrevPath);
+    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge, trackPrevPath));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
-    inputVar = traverse->outputVar();
     if (expandInto) {
       // TODO(shylock) optimize to embed filter to Traverse
       auto* startVid = nodeId(qctx->objPool(), dst);
@@ -289,47 +232,51 @@ Status MatchPathPlanner::leftExpandFromNode(
       auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
       auto* filter = Filter::make(qctx, traverse, filterExpr, false);
       subplan.root = filter;
-      inputVar = filter->outputVar();
     }
   }
 
-  auto& node = nodeInfos.front();
-  if (!node.anonymous) {
-    nodeAliasesSeenInPattern.emplace(node.alias);
+  auto& lastNode = nodeInfos.front();
+
+  bool duppedLastAlias = isExpandInto(lastNode.alias) && nodeAliasesSeenInPattern_.size() > 1;
+  // If the the last alias has been presented in the pattern, we could emit the AppendVertices node
+  // because the same alias always presents in the same entity.
+  if (duppedLastAlias) {
+    return Status::OK();
   }
+
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProps);
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
-  appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setVertexFilter(genVertexFilter(lastNode));
   appendV->setDedup();
   appendV->setTrackPrevPath(!edgeInfos.empty());
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
 
   return Status::OK();
 }
 
-Status MatchPathPlanner::rightExpandFromNode(
-    const std::vector<NodeInfo>& nodeInfos,
-    const std::vector<EdgeInfo>& edgeInfos,
-    QueryContext* qctx,
-    GraphSpaceID spaceId,
-    size_t startIndex,
-    SubPlan& subplan,
-    std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
-  auto inputVar = subplan.root->outputVar();
+Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan) {
+  const auto& nodeInfos = path_.nodeInfos;
+  const auto& edgeInfos = path_.edgeInfos;
   Expression* nextTraverseStart = initialExpr_;
   bool reversely = false;
+  auto qctx = ctx_->qctx;
+  auto spaceId = ctx_->space.id;
   for (size_t i = startIndex; i < edgeInfos.size(); ++i) {
     auto& node = nodeInfos[i];
     auto& dst = nodeInfos[i + 1];
-    bool expandInto = nodeAliasesSeenInPattern.find(dst.alias) != nodeAliasesSeenInPattern.end();
-    if (!node.anonymous) {
-      nodeAliasesSeenInPattern.emplace(node.alias);
-    }
+
+    addNodeAlias(node);
+    bool expandInto = isExpandInto(dst.alias);
+
     auto& edge = edgeInfos[i];
+    MatchStepRange stepRange(1, 1);
+    if (edge.range != nullptr) {
+      stepRange = *edge.range;
+    }
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
     auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
@@ -337,9 +284,10 @@ Status MatchPathPlanner::rightExpandFromNode(
     traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(SchemaUtil::getEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
+    traverse->setTagFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setStepRange(edge.range);
+    traverse->setStepRange(stepRange);
     traverse->setDedup();
     traverse->setTrackPrevPath(i != startIndex);
     traverse->setColNames(
@@ -352,37 +300,37 @@ Status MatchPathPlanner::rightExpandFromNode(
       auto* filterExpr = RelationalExpression::makeEQ(qctx->objPool(), startVid, endVid);
       auto* filter = Filter::make(qctx, traverse, filterExpr, false);
       subplan.root = filter;
-      inputVar = filter->outputVar();
     }
   }
 
-  auto& node = nodeInfos.back();
-  if (!node.anonymous) {
-    nodeAliasesSeenInPattern.emplace(node.alias);
+  auto& lastNode = nodeInfos.back();
+
+  bool duppedLastAlias = isExpandInto(lastNode.alias) && nodeAliasesSeenInPattern_.size() > 1;
+
+  addNodeAlias(lastNode);
+
+  // If the the last alias has been presented in the pattern, we could emit the AppendVertices node
+  // because the same alias always presents in the same entity.
+  if (duppedLastAlias) {
+    return Status::OK();
   }
+
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
   NG_RETURN_IF_ERROR(vertexProps);
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
-  appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setVertexFilter(genVertexFilter(lastNode));
   appendV->setDedup();
   appendV->setTrackPrevPath(!edgeInfos.empty());
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), lastNode, !edgeInfos.empty()));
   subplan.root = appendV;
 
   return Status::OK();
 }
 
-Status MatchPathPlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos,
-                                        const std::vector<EdgeInfo>& edgeInfos,
-                                        QueryContext* qctx,
-                                        GraphSpaceID spaceId,
-                                        size_t startIndex,
-                                        SubPlan& subplan,
-                                        std::unordered_set<std::string>& nodeAliasesSeenInPattern) {
-  return expandFromNode(
-      nodeInfos, edgeInfos, qctx, spaceId, startIndex, subplan, nodeAliasesSeenInPattern);
+Status MatchPathPlanner::expandFromEdge(size_t startIndex, SubPlan& subplan) {
+  return expandFromNode(startIndex, subplan);
 }
 
 }  // namespace graph

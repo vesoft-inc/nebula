@@ -15,6 +15,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -30,6 +31,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -45,6 +47,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -60,6 +63,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -69,12 +73,14 @@ nebula_add_test(
         MetaClientTest.cpp
     OBJECTS
         ${meta_test_deps}
+        $<TARGET_OBJECTS:http_client_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -90,6 +96,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -107,6 +114,7 @@ nebula_add_test(
         wangle
         gtest
         gmock
+        curl
 )
 
 
@@ -145,6 +153,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 
@@ -161,6 +170,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -176,6 +186,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -192,6 +203,7 @@ nebula_add_test(
         wangle
         gtest
         gmock
+        curl
 )
 
 nebula_add_test(
@@ -208,6 +220,7 @@ nebula_add_test(
         wangle
         gtest
         gmock
+        curl
 )
 
 nebula_add_test(
@@ -223,6 +236,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -238,6 +252,23 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        snapshot_processors_test
+    SOURCES
+        SnapshotProcessorsTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
 )
 
 nebula_add_test(
@@ -253,6 +284,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -268,6 +300,7 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )
 
 nebula_add_test(
@@ -283,4 +316,5 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+        curl
 )

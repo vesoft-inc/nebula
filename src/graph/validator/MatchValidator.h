@@ -87,7 +87,7 @@ class MatchValidator final : public Validator {
   Status checkAlias(const Expression *refExpr,
                     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const;
 
-  Status buildOutputs(const YieldColumns *yields);
+  Status buildOutputs(YieldColumns *yields);
 
   StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
 
@@ -98,9 +98,13 @@ class MatchValidator final : public Validator {
                                const std::unordered_map<std::string, AliasType> &availableAliases,
                                std::vector<Path> &paths);
 
+  // Check and extract path in where clause
+  Status validatePathInWhere(WhereClauseContext &wctx,
+                             const std::unordered_map<std::string, AliasType> &availableAliases,
+                             std::vector<Path> &paths);
+
   static Status checkMatchPathExpr(
-      const MatchPathPatternExpression *expr,
-      const std::unordered_map<std::string, AliasType> &availableAliases);
+      MatchPath *matchPath, const std::unordered_map<std::string, AliasType> &availableAliases);
 
   static Status buildRollUpPathInfo(const MatchPath *path, Path &pathInfo);
 

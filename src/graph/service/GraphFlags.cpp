@@ -12,11 +12,15 @@ DEFINE_int32(client_idle_timeout_secs,
              28800,
              "The number of seconds NebulaGraph service waits before closing the idle connections");
 DEFINE_int32(session_idle_timeout_secs, 28800, "The number of seconds before idle sessions expire");
-DEFINE_int32(session_reclaim_interval_secs, 10, "Period we try to reclaim expired sessions");
+DEFINE_int32(session_reclaim_interval_secs, 60, "Period we try to reclaim expired sessions");
 DEFINE_int32(num_netio_threads,
              0,
              "The number of networking threads, 0 for number of physical CPU cores");
 DEFINE_int32(num_accept_threads, 1, "Number of threads to accept incoming connections");
+DEFINE_uint32(num_max_connections,
+              0,
+              "Max active connections for all networking threads. 0 means no limit. Max active "
+              "connections for each networking thread = num_max_connections / num_netio_threads");
 DEFINE_int32(num_worker_threads, 0, "Number of threads to execute user queries");
 DEFINE_int32(num_operator_threads, 2, "Number of threads to execute a single operator");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
@@ -30,7 +34,7 @@ DEFINE_string(meta_server_addrs,
               "",
               "list of meta server addresses,"
               "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(local_config, true, "meta client will not retrieve latest configuration from meta");
 
 DEFINE_string(default_charset, "utf8", "The default charset when a space is created");
 DEFINE_string(default_collate, "utf8_bin", "The default collate when a space is created");
@@ -70,7 +74,6 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
-DEFINE_bool(enable_toss, false, "Whether to enable toss feature");
 DEFINE_bool(enable_data_balance, true, "Whether to enable data balance feature");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");

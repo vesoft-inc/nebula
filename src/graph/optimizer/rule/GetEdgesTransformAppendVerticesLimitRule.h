@@ -26,7 +26,7 @@ namespace opt {
 //  Query example:
 //   1. match ()-[e]->() return e limit 1
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 // +---------+---------+
 // |      Project      |

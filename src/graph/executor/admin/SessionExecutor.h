@@ -35,6 +35,14 @@ class ShowSessionsExecutor final : public Executor {
   }
 };
 
+class KillSessionExecutor final : public Executor {
+ public:
+  KillSessionExecutor(const PlanNode *node, QueryContext *ectx)
+      : Executor("KillSessionExecutor", node, ectx) {}
+
+  folly::Future<Status> execute() override;
+};
+
 class UpdateSessionExecutor final : public Executor {
  public:
   UpdateSessionExecutor(const PlanNode *node, QueryContext *ectx)

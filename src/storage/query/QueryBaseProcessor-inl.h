@@ -401,15 +401,21 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
+    case Expression::Kind::kAttribute: {
+      // Skip check for attribute expression
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     case Expression::Kind::kPredicate: {
       auto* predExp = static_cast<const PredicateExpression*>(exp);
       auto ret = checkExp(predExp->collection(), returned, filtered, updated, allowNoexistentProp);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return ret;
       }
-      ret = checkExp(predExp->filter(), returned, filtered, updated, allowNoexistentProp);
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        return ret;
+      if (predExp->hasFilter()) {
+        ret = checkExp(predExp->filter(), returned, filtered, updated, allowNoexistentProp);
+        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          return ret;
+        }
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
@@ -599,7 +605,6 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
     }
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kSubscript:
-    case Expression::Kind::kAttribute:
     case Expression::Kind::kLabelTagProperty:
     case Expression::Kind::kLabelAttribute:
     case Expression::Kind::kVertex:

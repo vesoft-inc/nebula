@@ -113,7 +113,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   std::vector<::std::string> zones;
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (properties.get_zone_names().empty()) {
-    // If zone names is emtpy, then this space could use all zones.
+    // If zone names is empty, then this space could use all zones.
     const auto& zonePrefix = MetaKeyUtils::zonePrefix();
     auto zoneIterRet = doPrefix(zonePrefix);
     if (!nebula::ok(zoneIterRet)) {

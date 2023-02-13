@@ -27,7 +27,7 @@
 --stdout_log_file=graphd-stdout.log
 --stderr_log_file=graphd-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
---stderrthreshold=2
+--stderrthreshold=3
 # wether logging files' name contain time stamp.
 --timestamp_in_logfile_name=true
 ########## query ##########
@@ -61,6 +61,9 @@
 --num_accept_threads=1
 # The number of networking IO threads, 0 for # of CPU cores
 --num_netio_threads=0
+# Max active connections for all networking threads. 0 means no limit.
+# Max connections for each networking thread = num_max_connections / num_netio_threads
+--num_max_connections=0
 # The number of threads to execute user queries, 0 for # of CPU cores
 --num_worker_threads=0
 # HTTP service ip
@@ -91,9 +94,6 @@
 # if use experimental features
 --enable_experimental_feature=false
 
-# if use toss feature, only work if enable_experimental_feature is true
---enable_toss=false
-
 # if use balance data feature, only work if enable_experimental_feature is true
 --enable_data_balance=true
 
@@ -102,3 +102,24 @@
 
 # set the directory where the .so files of udf are stored, when enable_udf is true
 --udf_path=/home/nebula/dev/nebula/udf/
+
+########## session ##########
+# Maximum number of sessions that can be created per IP and per user
+--max_sessions_per_ip_per_user=300
+
+########## memory tracker ##########
+# trackable memory ratio (trackable_memory / (total_memory - untracked_reserved_memory) )
+--memory_tracker_limit_ratio=0.8
+# untracked reserved memory in Mib
+--memory_tracker_untracked_reserved_memory_mb=50
+
+# enable log memory tracker stats periodically
+--memory_tracker_detail_log=false
+# log memory tacker stats interval in milliseconds
+--memory_tracker_detail_log_interval_ms=60000
+
+# enable memory background purge (if jemalloc is used)
+--memory_purge_enabled=true
+# memory background purge interval in seconds
+--memory_purge_interval_seconds=10
+

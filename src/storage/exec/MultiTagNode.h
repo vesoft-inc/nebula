@@ -95,17 +95,17 @@ class MultiTagNode : public IterateNode<VertexID> {
   }
 
   folly::StringPiece key() const override {
-    LOG(FATAL) << "not allowed to do this";
+    DLOG(FATAL) << "not allowed to do this";
     return "";
   }
 
   folly::StringPiece val() const override {
-    LOG(FATAL) << "not allowed to do this";
+    DLOG(FATAL) << "not allowed to do this";
     return "";
   }
 
   RowReader* reader() const override {
-    LOG(FATAL) << "not allowed to do this";
+    DLOG(FATAL) << "not allowed to do this";
     return nullptr;
   }
 

@@ -6,6 +6,7 @@
 #include "storage/mutate/UpdateVertexProcessor.h"
 
 #include "common/base/Base.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/FilterNode.h"
 #include "storage/exec/TagNode.h"
@@ -19,7 +20,8 @@ ProcessorCounters kUpdateVertexCounters;
 
 void UpdateVertexProcessor::process(const cpp2::UpdateVertexRequest& req) {
   if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
   } else {
     doProcess(req);
   }

@@ -68,17 +68,29 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
     queryPlan = matchPlan;
     return Status::OK();
   }
-  std::unordered_set<std::string> intersectedAliases;
+  std::unordered_set<std::string> interAliases;
   for (auto& alias : matchCtx->aliasesGenerated) {
-    if (matchCtx->aliasesAvailable.find(alias.first) != matchCtx->aliasesAvailable.end()) {
-      intersectedAliases.insert(alias.first);
+    auto it = matchCtx->aliasesAvailable.find(alias.first);
+    if (it != matchCtx->aliasesAvailable.end()) {
+      interAliases.insert(alias.first);
+      // If any type is kRuntime, leave the type check to runtime
+      if (it->second == AliasType::kRuntime || alias.second == AliasType::kRuntime) {
+        continue;
+      }
+      // Non-runtime joined types should be the same
+      if (it->second != alias.second) {
+        return Status::SemanticError(fmt::format("{} binding to different type: {} vs {}",
+                                                 alias.first,
+                                                 AliasTypeName::get(alias.second),
+                                                 AliasTypeName::get(it->second)));
+      }
     }
   }
-  if (!intersectedAliases.empty()) {
+  if (!interAliases.empty()) {
     if (matchCtx->isOptional) {
       // connect LeftJoin match filter
       auto& whereCtx = matchCtx->where;
-      if (whereCtx.get() != nullptr && whereCtx->filter != nullptr) {
+      if (whereCtx && whereCtx->filter) {
         auto exprs = ExpressionUtils::collectAll(
             whereCtx->filter, {Expression::Kind::kVarProperty, Expression::Kind::kLabel});
 
@@ -101,20 +113,17 @@ Status MatchPlanner::connectMatchPlan(SubPlan& queryPlan, MatchClauseContext* ma
               "other statements is not supported yet.");
         }
         whereCtx->inputColNames = matchPlan.root->colNames();
-        auto wherePlanStatus =
-            std::make_unique<WhereClausePlanner>()->transform(matchCtx->where.get());
+        auto wherePlanStatus = WhereClausePlanner().transform(matchCtx->where.get());
         NG_RETURN_IF_ERROR(wherePlanStatus);
         auto wherePlan = std::move(wherePlanStatus).value();
         matchPlan = SegmentsConnector::addInput(wherePlan, matchPlan, true);
       }
-      queryPlan =
-          SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
+      queryPlan = SegmentsConnector::leftJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
     } else {
-      queryPlan =
-          SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, intersectedAliases);
+      queryPlan = SegmentsConnector::innerJoin(matchCtx->qctx, queryPlan, matchPlan, interAliases);
     }
   } else {
-    queryPlan.root = BiCartesianProduct::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
+    queryPlan.root = CrossJoin::make(matchCtx->qctx, queryPlan.root, matchPlan.root);
   }
 
   return Status::OK();
@@ -152,12 +161,12 @@ Status MatchPlanner::genQueryPartPlan(QueryContext* qctx,
 
   // TBD: need generate var for all queryPlan.tail?
   if (queryPlan.tail->isSingleInput()) {
-    queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    if (queryPlan.tail->kind() != PlanNode::Kind::kArgument) {
+      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    }
     if (!tailConnected_) {
-      auto start = StartNode::make(qctx);
-      queryPlan.tail->setDep(0, start);
       tailConnected_ = true;
-      queryPlan.tail = start;
+      queryPlan.appendStartNode(qctx);
     }
   }
   VLOG(1) << queryPlan;

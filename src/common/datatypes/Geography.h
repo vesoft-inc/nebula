@@ -238,7 +238,7 @@ namespace std {
 // Inject a customized hash function
 template <>
 struct hash<nebula::Geography> {
-  std::size_t operator()(const nebula::Geography& h) const noexcept;
+  std::size_t operator()(const nebula::Geography& h) const;
 };
 
 }  // namespace std

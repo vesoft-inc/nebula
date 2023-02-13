@@ -6,6 +6,7 @@
 #include "meta/processors/index/FTIndexProcessor.h"
 
 #include "common/base/CommonMacro.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "kvstore/LogEncoder.h"
 
 namespace nebula {
@@ -64,18 +65,6 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       onFinished();
       return;
     }
-    // if the data type is fixed_string,
-    // the data length must be less than MAX_INDEX_TYPE_LENGTH.
-    // else if the data type is string,
-    // will be truncated to MAX_INDEX_TYPE_LENGTH bytes when data insert.
-    if (targetCol->get_type().get_type() == nebula::cpp2::PropertyType::FIXED_STRING &&
-        *targetCol->get_type().get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-      LOG(INFO) << "Unsupported data length more than " << MAX_INDEX_TYPE_LENGTH
-                << " bytes : " << col << "(" << *targetCol->get_type().get_type_length() << ")";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
-      onFinished();
-      return;
-    }
   }
 
   // Check fulltext index exist.
@@ -101,16 +90,48 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       return;
     }
     // Because tagId/edgeType is the space range, judge the spaceId and schemaId
-    if (index.get_space_id() == indexItem.get_space_id() &&
-        index.get_depend_schema() == indexItem.get_depend_schema()) {
-      LOG(INFO) << "Depends on the same schema , index : " << indexName;
-      handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
-      onFinished();
-      return;
-    }
+    // if (index.get_space_id() == indexItem.get_space_id() &&
+    //     index.get_depend_schema() == indexItem.get_depend_schema()) {
+    //   LOG(INFO) << "Depends on the same schema , index : " << indexName;
+    //   handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+    //   onFinished();
+    //   return;
+    // }
     it->next();
   }
+  const auto& serviceKey = MetaKeyUtils::serviceKey(cpp2::ExternalServiceType::ELASTICSEARCH);
+  auto getRet = doGet(serviceKey);
+  if (!nebula::ok(getRet)) {
+    auto retCode = nebula::error(getRet);
+    LOG(INFO) << "Create fulltext index failed, error: "
+              << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
 
+  auto clients = MetaKeyUtils::parseServiceClients(nebula::value(getRet));
+  if (clients.size() <= 0) {
+    handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
+    onFinished();
+    return;
+  }
+  std::vector<plugin::ESClient> esClients;
+  for (auto& client : clients) {
+    std::string protocol = client.conn_type_ref().has_value() ? *client.get_conn_type() : "http";
+    std::string user = client.user_ref().has_value() ? *client.get_user() : "";
+    std::string password = client.pwd_ref().has_value() ? *client.get_pwd() : "";
+    esClients.emplace_back(
+        HttpClient::instance(), protocol, client.get_host().toRawString(), user, password);
+  }
+  plugin::ESAdapter esAdapter(std::move(esClients));
+  auto createIndexresult = esAdapter.createIndex(name);
+  if (!createIndexresult.ok()) {
+    LOG(ERROR) << createIndexresult.message();
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);
+    onFinished();
+    return;
+  }
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::fulltextIndexKey(name), MetaKeyUtils::fulltextIndexVal(index));
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
@@ -136,6 +157,40 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
     LOG(INFO) << "Drop fulltext index failed, error: "
               << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  const auto& serviceKey = MetaKeyUtils::serviceKey(cpp2::ExternalServiceType::ELASTICSEARCH);
+  auto getRet = doGet(serviceKey);
+  if (!nebula::ok(getRet)) {
+    auto retCode = nebula::error(getRet);
+    LOG(INFO) << "Drop fulltext index failed, error: "
+              << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  auto clients = MetaKeyUtils::parseServiceClients(nebula::value(getRet));
+  if (clients.size() <= 0) {
+    handleErrorCode(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND);
+    onFinished();
+    return;
+  }
+  std::vector<plugin::ESClient> esClients;
+  for (auto& client : clients) {
+    std::string protocol = client.conn_type_ref().has_value() ? *client.get_conn_type() : "http";
+    std::string user = client.user_ref().has_value() ? *client.get_user() : "";
+    std::string password = client.pwd_ref().has_value() ? *client.get_pwd() : "";
+    esClients.emplace_back(
+        HttpClient::instance(), protocol, client.get_host().toRawString(), user, password);
+  }
+  plugin::ESAdapter esAdapter(std::move(esClients));
+  auto dropIndexresult = esAdapter.dropIndex(req.get_fulltext_index_name());
+  if (!dropIndexresult.ok()) {
+    LOG(ERROR) << dropIndexresult.message();
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);
     onFinished();
     return;
   }

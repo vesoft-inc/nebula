@@ -52,14 +52,14 @@ using nebula::wal::FileBasedWalPolicy;
 using OpProcessor = folly::Function<std::optional<std::string>(AtomicOp op)>;
 
 /**
- * @brief code to describle if a log can be merged with others
+ * @brief code to describe if a log can be merged with others
  *  NO_MERGE: can't merge with any other
  *  MERGE_NEXT: can't previous logs, can merge with next. (has to be head)
  *  MERGE_PREV: can merge with previous, can't merge any more.  (has to be tail)
  *  MERGE_BOTH: can merge with any other
  *
  *  Normal / heartbeat will always be MERGE_BOTH
- *  Command will alwayse be MERGE_PREV
+ *  Command will always be MERGE_PREV
  *  ATOMIC_OP can be either MERGE_NEXT or MERGE_BOTH
  *                          depends on if it read a key in write set.
  *  no log type will judge as NO_MERGE
@@ -87,15 +87,13 @@ class AppendLogsIterator final : public LogIterator {
 
   ~AppendLogsIterator() {
     if (!logs_.empty()) {
-      size_t notFulfilledPromise = 0;
       for (auto& log : logs_) {
         auto& promiseRef = std::get<4>(log);
         if (!promiseRef.isFulfilled()) {
-          ++notFulfilledPromise;
+          // When a AppendLogsIterator destruct before calling commit, the promise it not fulfilled.
+          // It only happens when exception is thrown, which make `commit` is never invoked.
+          promiseRef.setValue(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED);
         }
-      }
-      if (notFulfilledPromise > 0) {
-        LOG(FATAL) << "notFulfilledPromise == " << notFulfilledPromise;
       }
     }
   }
@@ -1034,7 +1032,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       // here, but this will make caller believe this append failed
       // however, this log is replicated to followers(written in WAL)
       // and those followers may become leader (use that WAL)
-      // which means this log may actully commit succeeded.
+      // which means this log may actually commit succeeded.
       res = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_APPEND_LOG;
     }
   }
@@ -1074,7 +1072,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       As for leader, we did't acquire raftLock because it would block heartbeat. Instead, we
       protect the partition by the logsLock_, there won't be another out-going logs. So the third
       parameters need to be true, we would grab the lock for some special operations. Besides,
-      leader neet to wait all logs applied to state machine, so the second parameters need to be
+      leader need to wait all logs applied to state machine, so the second parameters need to be
       true so the second parameters need to be true.
       */
       auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true, true);
@@ -1083,8 +1081,13 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         CHECK_EQ(lastLogId, lastCommitId);
         committedLogId_ = lastCommitId;
         committedLogTerm_ = lastCommitTerm;
-        lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
-        lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
+        auto nowCostMs = lastMsgSentDur_.elapsedInMSec();
+        auto nowTime = static_cast<uint64_t>(time::WallClock::fastNowInMilliSec());
+        if (nowTime - nowCostMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
+          lastMsgAcceptedCostMs_ = nowCostMs;
+          lastMsgAcceptedTime_ = nowTime;
+        }
+
         if (!commitInThisTerm_) {
           commitInThisTerm_ = true;
           bgWorkers_->addTask(
@@ -1517,7 +1520,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     resp.current_term_ref() = term_;
   } else if (req.get_is_pre_vote() && req.get_term() - 1 > term_) {
     // req.get_term() - 1 > term_ in prevote, update term and convert to follower.
-    // we need to substract 1 because the candidate's actaul term is req.term() - 1
+    // we need to subtract 1 because the candidate's actual term is req.term() - 1
     term_ = req.get_term() - 1;
     role_ = Role::FOLLOWER;
     leader_ = HostAddr("", 0);
@@ -1679,7 +1682,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // 3. My log term on req.last_log_id_sent is not same as req.last_log_term_sent
       // todo(doodle): One of the most common case when req.get_last_log_id_sent() < committedLogId_
       // is that leader timeout, and retry with same request, but follower has received it
-      // previously in fact. There are two choise: ask leader to send logs after committedLogId_ or
+      // previously in fact. There are two choices: ask leader to send logs after committedLogId_ or
       // just do nothing.
       if (req.get_last_log_id_sent() < committedLogId_ ||
           wal_->lastLogId() < req.get_last_log_id_sent()) {
@@ -1700,7 +1703,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         */
         if (req.get_last_log_id_sent() == committedLogId_ &&
             req.get_last_log_term_sent() == committedLogTerm_) {
-          // Logs are matched of at log index of committedLogId_, and we could check remaing wal if
+          // remaining
           // there are any.
           // The first log of wal must be committedLogId_ + 1, it can't be 0 (no wal) as well
           // because it has been checked by case 2
@@ -1750,7 +1753,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       numLogs = numLogs - diffIndex;
     }
 
-    // happy path or a difference is found: append remaing logs
+    // happy path or a difference is found: append remaining logs
     auto logEntries = std::vector<cpp2::RaftLogEntry>(
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
@@ -2180,7 +2183,7 @@ void RaftPart::reset() {
   lastLogTerm_ = committedLogTerm_ = 0;
 }
 
-nebula::cpp2::ErrorCode RaftPart::isCatchedUp(const HostAddr& peer) {
+nebula::cpp2::ErrorCode RaftPart::isCaughtUp(const HostAddr& peer) {
   std::lock_guard<std::mutex> lck(raftLock_);
   VLOG(2) << idStr_ << "Check whether I catch up";
   if (role_ != Role::LEADER) {

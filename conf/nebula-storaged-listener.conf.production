@@ -3,13 +3,13 @@
 # Whether to run as a daemon process
 --daemonize=true
 # The file to host the process id
---pid_file=pids_listener/nebula-storaged.pid
+--pid_file=pids/nebula-storaged-listener.pid
 # Whether to use the configuration obtained from the configuration file
 --local_config=true
 
 ########## logging ##########
 # The directory to host logging files
---log_dir=logs_listener
+--log_dir=logs_storaged_listener
 # Log level, 0, 1, 2, 3 for INFO, WARNING, ERROR, FATAL respectively
 --minloglevel=0
 # Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
@@ -19,10 +19,10 @@
 # Whether to redirect stdout and stderr to separate output files
 --redirect_stdout=true
 # Destination filename of stdout and stderr, which will also reside in log_dir.
---stdout_log_file=storaged-stdout.log
---stderr_log_file=storaged-stderr.log
+--stdout_log_file=storaged-listener-stdout.log
+--stderr_log_file=storaged-listener-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
---stderrthreshold=2
+--stderrthreshold=3
 # Wether logging files' name contain timestamp.
 --timestamp_in_logfile_name=true
 

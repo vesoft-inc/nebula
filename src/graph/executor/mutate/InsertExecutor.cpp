@@ -36,6 +36,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
         VLOG(1) << "Add vertices time: " << addVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();
@@ -54,7 +55,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       ieNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->addEdges(param,
@@ -66,6 +67,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
       .ensure(
           [addEdgeTime]() { VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us"; })
       .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
         return Status::OK();

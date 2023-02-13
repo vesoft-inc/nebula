@@ -387,7 +387,7 @@ bool Geography::operator<(const Geography& rhs) const {
 namespace std {
 
 // Inject a customized hash function
-std::size_t hash<nebula::Geography>::operator()(const nebula::Geography& v) const noexcept {
+std::size_t hash<nebula::Geography>::operator()(const nebula::Geography& v) const {
   std::string wkb = v.asWKB();
   return hash<std::string>{}(wkb);
 }

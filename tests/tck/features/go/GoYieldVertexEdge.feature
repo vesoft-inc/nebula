@@ -561,7 +561,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Spurs"        |
 
   @skip
-  Scenario: all prop(reson = $-.* over * $var.* not implement)
+  Scenario: all prop(reason = $-.* over * $var.* not implement)
     When executing query:
       """
       GO FROM 'Tim Duncan', 'Chris Paul' OVER like YIELD $^.player.name AS name, like._dst AS id

@@ -14,7 +14,18 @@ namespace meta {
 
 void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   auto& snapshots = req.get_names();
+  if (snapshots.empty()) {
+    LOG(INFO) << "The snapshots to remove must be given";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
+    onFinished();
+    return;
+  }
+
   auto snapshot = snapshots[0];
+  if (snapshots.size() > 1) {
+    LOG(INFO) << "There are more than one snapshot are given"
+              << "only the first one will be dropped, name=" << snapshot;
+  }
   folly::SharedMutex::WriteHolder holder(LockUtils::snapshotLock());
 
   // Check snapshot is exists
@@ -24,6 +35,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     auto retCode = nebula::error(ret);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       LOG(INFO) << "Snapshot " << snapshot << " does not exist or already dropped.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_NOT_FOUND);
       onFinished();
       return;
     }
@@ -35,34 +47,25 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   }
   auto val = nebula::value(ret);
 
-  auto hosts = MetaKeyUtils::parseSnapshotHosts(val);
-  auto peersRet = NetworkUtils::toHosts(hosts);
-  if (!peersRet.ok()) {
+  auto hostsStr = MetaKeyUtils::parseSnapshotHosts(val);
+  auto hostsRet = NetworkUtils::toHosts(hostsStr);
+  if (!hostsRet.ok()) {
     LOG(INFO) << "Get checkpoint hosts error";
     handleErrorCode(nebula::cpp2::ErrorCode::E_SNAPSHOT_FAILURE);
     onFinished();
     return;
   }
-
-  auto peers = peersRet.value();
+  auto hosts = hostsRet.value();
   auto batchHolder = std::make_unique<kvstore::BatchHolder>();
-  auto dsRet = Snapshot::instance(kvstore_, client_)->dropSnapshot(snapshot, std::move(peers));
+  auto dsRet = Snapshot::instance(kvstore_, client_)->dropSnapshot(snapshot, std::move(hosts));
   if (dsRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Drop snapshot error on storage engine";
-    // Need update the snapshot status to invalid, maybe some storage engine
-    // drop done.
-    batchHolder->put(MetaKeyUtils::snapshotKey(snapshot),
-                     MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
+    LOG(INFO) << "Drop snapshot error on some storage engine";
   }
 
   auto dmRet = kvstore_->dropCheckpoint(kDefaultSpaceId, snapshot);
   // TODO sky : need remove meta checkpoint from slave hosts.
   if (dmRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(INFO) << "Drop snapshot error on meta engine";
-    // Need update the snapshot status to invalid, maybe storage engines drop
-    // done.
-    batchHolder->put(MetaKeyUtils::snapshotKey(snapshot),
-                     MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
   }
 
   // Delete metadata of checkpoint

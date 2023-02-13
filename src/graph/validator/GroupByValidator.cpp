@@ -54,6 +54,9 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
         aggOutputColNames_.emplace_back(agg->toString());
         groupItems_.emplace_back(agg->clone());
         needGenProject_ = true;
+        ExpressionProps yieldProps;
+        NG_RETURN_IF_ERROR(deduceProps(agg, yieldProps));
+        exprProps_.unionProps(std::move(yieldProps));
       }
       if (!aggs.empty()) {
         auto* colRewrited = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());

@@ -60,12 +60,13 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "BIT_XOR(3) AS bit_xor";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -87,12 +88,13 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -109,12 +111,13 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "AVG($-.end_year) AS avg";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -132,12 +135,13 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "1+1 AS cal";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -155,12 +159,13 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "1+1 AS cal";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
 }
@@ -190,12 +195,13 @@ TEST_F(GroupByValidatorTest, VariableTest) {
         "1+1 AS cal";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -213,12 +219,13 @@ TEST_F(GroupByValidatorTest, VariableTest) {
         "1+1 AS cal";
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
-                                            PK::kLeftJoin,
+                                            PK::kHashLeftJoin,
                                             PK::kProject,
-                                            PK::kGetVertices,
                                             PK::kProject,
                                             PK::kGetNeighbors,
-                                            PK::kStart};
+                                            PK::kGetVertices,
+                                            PK::kStart,
+                                            PK::kArgument};
     EXPECT_TRUE(checkResult(query, expected));
   }
 }

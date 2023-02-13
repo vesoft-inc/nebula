@@ -28,11 +28,7 @@ struct Step {
         name(std::move(s.name)),
         ranking(std::move(s.ranking)),
         props(std::move(s.props)) {}
-  Step(Vertex d,
-       EdgeType t,
-       std::string n,
-       EdgeRanking r,
-       std::unordered_map<std::string, Value> p) noexcept
+  Step(Vertex d, EdgeType t, std::string n, EdgeRanking r, std::unordered_map<std::string, Value> p)
       : dst(std::move(d)), type(t), name(std::move(n)), ranking(r), props(std::move(p)) {}
 
   void clear() {
@@ -71,7 +67,7 @@ struct Step {
     return *this;
   }
 
-  Step& operator=(const Step& rhs) noexcept {
+  Step& operator=(const Step& rhs) {
     if (&rhs != this) {
       dst = rhs.dst;
       type = rhs.type;
@@ -91,7 +87,7 @@ struct Step {
     if (dst != rhs.dst) {
       return dst < rhs.dst;
     }
-    if (type != rhs.dst) {
+    if (type != rhs.type) {
       return type < rhs.type;
     }
     if (ranking != rhs.ranking) {
@@ -190,7 +186,7 @@ struct Path {
     return *this;
   }
 
-  Path& operator=(const Path& rhs) noexcept {
+  Path& operator=(const Path& rhs) {
     if (&rhs != this) {
       src = rhs.src;
       steps = rhs.steps;
@@ -247,7 +243,7 @@ struct hash<nebula::Step> {
 
 template <>
 struct hash<nebula::Path> {
-  std::size_t operator()(const nebula::Path& h) const noexcept;
+  std::size_t operator()(const nebula::Path& h) const;
 };
 
 }  // namespace std

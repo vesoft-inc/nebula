@@ -151,23 +151,24 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
                                {{label, {VidPattern::Vids::Kind::kOtherSource, {}}}}};
       return;
     }
-    if (expr->left()->kind() != Expression::Kind::kFunctionCall ||
-        !(expr->right()->kind() == Expression::Kind::kList ||
-          expr->right()->kind() == Expression::Kind::kAttribute) ||
-        !ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+    if (expr->left()->kind() != Expression::Kind::kFunctionCall) {
       vidPattern_ = VidPattern{};
       return;
     }
-
     const auto *fCallExpr = static_cast<const FunctionCallExpression *>(expr->left());
     if (fCallExpr->name() != "id" && fCallExpr->args()->numArgs() != 1 &&
         fCallExpr->args()->args().front()->kind() != Expression::Kind::kLabel) {
       vidPattern_ = VidPattern{};
       return;
     }
+    if (!ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
+      vidPattern_ = VidPattern{};
+      return;
+    }
 
     auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
     if (!rightListValue.isList()) {
+      vidPattern_ = VidPattern{};
       return;
     }
     vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
@@ -309,28 +310,30 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
     operandsResult.reserve(expr->operands().size());
     for (const auto &operand : expr->operands()) {
       operand->accept(this);
+      if (vidPattern_.spec != VidPattern::Special::kInUsed) {
+        vidPattern_ = VidPattern{};
+        return;
+      }
       operandsResult.emplace_back(moveVidPattern());
     }
     VidPattern inResult{VidPattern::Special::kInUsed, {}};
     for (auto &result : operandsResult) {
-      if (result.spec == VidPattern::Special::kInUsed) {
-        for (auto &node : result.nodes) {
-          // Can't deduce with outher source (e.g. PropertiesIndex)
-          switch (node.second.kind) {
-            case VidPattern::Vids::Kind::kOtherSource:
-              vidPattern_ = VidPattern{};
-              return;
-            case VidPattern::Vids::Kind::kIn: {
-              inResult.nodes[node.first].kind = VidPattern::Vids::Kind::kIn;
-              inResult.nodes[node.first].vids.values.insert(
-                  inResult.nodes[node.first].vids.values.end(),
-                  std::make_move_iterator(node.second.vids.values.begin()),
-                  std::make_move_iterator(node.second.vids.values.end()));
-            }
-            case VidPattern::Vids::Kind::kNotIn:
-              // nothing
-              break;
+      for (auto &node : result.nodes) {
+        // Can't deduce with outher source (e.g. PropertiesIndex)
+        switch (node.second.kind) {
+          case VidPattern::Vids::Kind::kOtherSource:
+            vidPattern_ = VidPattern{};
+            return;
+          case VidPattern::Vids::Kind::kIn: {
+            inResult.nodes[node.first].kind = VidPattern::Vids::Kind::kIn;
+            inResult.nodes[node.first].vids.values.insert(
+                inResult.nodes[node.first].vids.values.end(),
+                std::make_move_iterator(node.second.vids.values.begin()),
+                std::make_move_iterator(node.second.vids.values.end()));
           }
+          case VidPattern::Vids::Kind::kNotIn:
+            // nothing
+            break;
         }
       }
     }

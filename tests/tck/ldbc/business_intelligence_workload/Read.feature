@@ -115,8 +115,7 @@ Feature: LDBC Business Intelligence Workload - Read
         tagName ASC
       LIMIT 100
       """
-    Then the result should be, in any order:
-      | tagName | countMonth1 | countMonth2 | diff |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE datetime('2012-06-01') <= message1.Message.creationDate AND message1.Messa'
 
   Scenario: 4. Popular topics in a country
     When executing query:
@@ -530,8 +529,7 @@ Feature: LDBC Business Intelligence Workload - Read
         personCount DESC,
         messageCount DESC
       """
-    Then the result should be, in order:
-      | messageCount | personCount |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE message.Message.content IS NOT NULL AND message.Message.length < 20 AND me'
 
   Scenario: 19. Stranger’s interaction
     # NOTICE: A big rewritten, have to test the correctness

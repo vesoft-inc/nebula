@@ -48,7 +48,8 @@ class SchemaUtil final {
   static StatusOr<Value> toVertexID(Expression* expr, Value::Type vidType);
 
   // Iterate exprs and calculate each element's value and return them as a vector.
-  static StatusOr<std::vector<Value>> toValueVec(std::vector<Expression*> exprs);
+  static StatusOr<std::vector<Value>> toValueVec(QueryContext* qctx,
+                                                 std::vector<Expression*> exprs);
 
   // Returns the "Field", "Type", "Null", "Default", "Comment" of the schema as a dataset
   static StatusOr<DataSet> toDescSchema(const meta::cpp2::Schema& schema);
@@ -61,10 +62,10 @@ class SchemaUtil final {
   static std::string typeToString(const meta::cpp2::ColumnTypeDef& col);
   static std::string typeToString(const meta::cpp2::ColumnDef& col);
 
-  // Returns the coresponding Value type of the given PropertyType.
+  // Returns the corresponding Value type of the given PropertyType.
   static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
 
-  // Validates wether the value type matches the ColumnTypeDef.
+  // Validates whether the value type matches the ColumnTypeDef.
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
   static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);
   static bool isValidVid(const Value& value);

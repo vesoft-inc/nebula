@@ -7,19 +7,19 @@ namespace nebula {
 namespace graph {
 
 void FindVisitor::visit(TypeCastingExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->operand()->accept(this);
 }
 
 void FindVisitor::visit(UnaryExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->operand()->accept(this);
 }
 
 void FindVisitor::visit(FunctionCallExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& arg : expr->args()->args()) {
     arg->accept(this);
@@ -28,13 +28,13 @@ void FindVisitor::visit(FunctionCallExpression* expr) {
 }
 
 void FindVisitor::visit(AggregateExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->arg()->accept(this);
 }
 
 void FindVisitor::visit(ListExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& item : expr->items()) {
     item->accept(this);
@@ -43,7 +43,7 @@ void FindVisitor::visit(ListExpression* expr) {
 }
 
 void FindVisitor::visit(SetExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& item : expr->items()) {
     item->accept(this);
@@ -52,7 +52,7 @@ void FindVisitor::visit(SetExpression* expr) {
 }
 
 void FindVisitor::visit(MapExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& pair : expr->items()) {
     pair.second->accept(this);
@@ -61,7 +61,7 @@ void FindVisitor::visit(MapExpression* expr) {
 }
 
 void FindVisitor::visit(CaseExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
 
   if (expr->hasCondition()) {
@@ -81,7 +81,7 @@ void FindVisitor::visit(CaseExpression* expr) {
 }
 
 void FindVisitor::visit(PredicateExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
 
   expr->collection()->accept(this);
@@ -92,7 +92,7 @@ void FindVisitor::visit(PredicateExpression* expr) {
 }
 
 void FindVisitor::visit(ReduceExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
 
   expr->initial()->accept(this);
@@ -104,7 +104,7 @@ void FindVisitor::visit(ReduceExpression* expr) {
 }
 
 void FindVisitor::visit(ListComprehensionExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
 
   expr->collection()->accept(this);
@@ -121,7 +121,7 @@ void FindVisitor::visit(ListComprehensionExpression* expr) {
 }
 
 void FindVisitor::visit(LogicalExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& operand : expr->operands()) {
     operand->accept(this);
@@ -190,7 +190,7 @@ void FindVisitor::visit(LabelExpression* expr) {
 }
 
 void FindVisitor::visit(LabelAttributeExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->left()->accept(this);
   if (!needFindAll_ && !foundExprs_.empty()) return;
@@ -202,7 +202,7 @@ void FindVisitor::visit(VertexExpression* expr) {
 }
 
 void FindVisitor::visit(LabelTagPropertyExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->label()->accept(this);
 }
@@ -216,7 +216,7 @@ void FindVisitor::visit(ColumnExpression* expr) {
 }
 
 void FindVisitor::visit(PathBuildExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   for (const auto& item : expr->items()) {
     item->accept(this);
@@ -225,7 +225,7 @@ void FindVisitor::visit(PathBuildExpression* expr) {
 }
 
 void FindVisitor::visit(SubscriptRangeExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
 
   expr->list()->accept(this);
@@ -243,7 +243,7 @@ void FindVisitor::visit(SubscriptRangeExpression* expr) {
 }
 
 void FindVisitor::visit(MatchPathPatternExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   if (expr->genList() != nullptr) {
     expr->genList()->accept(this);
@@ -252,17 +252,19 @@ void FindVisitor::visit(MatchPathPatternExpression* expr) {
 }
 
 void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
-  findInCurrentExpr(expr);
+  if (findInCurrentExpr(expr) && stopVisitChildrenAfterFind_) return;
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->left()->accept(this);
   if (!needFindAll_ && !foundExprs_.empty()) return;
   expr->right()->accept(this);
 }
 
-void FindVisitor::findInCurrentExpr(Expression* expr) {
+bool FindVisitor::findInCurrentExpr(Expression* expr) {
   if (finder_(expr)) {
     foundExprs_.emplace_back(expr);
+    return true;
   }
+  return false;
 }
 
 }  // namespace graph

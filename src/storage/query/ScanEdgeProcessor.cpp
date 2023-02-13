@@ -5,6 +5,7 @@
 
 #include "storage/query/ScanEdgeProcessor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"
@@ -16,7 +17,8 @@ ProcessorCounters kScanEdgeCounters;
 
 void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
   if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
   } else {
     doProcess(req);
   }
@@ -125,6 +127,11 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
     StorageExpressionContext* expCtx) {
   return folly::via(executor_,
                     [this, context, result, cursors, partId, input = std::move(cursor), expCtx]() {
+                      memory::MemoryCheckGuard guard;
+                      if (memoryExceeded_) {
+                        return std::make_pair(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED,
+                                              partId);
+                      }
                       auto plan = buildPlan(context, result, cursors, expCtx);
 
                       auto ret = plan.go(partId, input);
@@ -132,10 +139,15 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
                         return std::make_pair(ret, partId);
                       }
                       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
-                    });
+                    })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this, partId](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        return std::make_pair(nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED, partId);
+      });
 }
 
 void ScanEdgeProcessor::runInSingleThread(const cpp2::ScanEdgeRequest& req) {
+  memory::MemoryCheckGuard guard;
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
   expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   std::unordered_set<PartitionID> failedParts;
@@ -157,6 +169,7 @@ void ScanEdgeProcessor::runInSingleThread(const cpp2::ScanEdgeRequest& req) {
 }
 
 void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
+  memory::MemoryCheckOffGuard offGuard;
   cursorsOfPart_.resize(req.get_parts().size());
   for (size_t i = 0; i < req.get_parts().size(); i++) {
     nebula::DataSet result = resultDataSet_;
@@ -177,27 +190,37 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
     i++;
   }
 
-  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) mutable {
-    CHECK(!t.hasException());
-    const auto& tries = t.value();
-    size_t sum = 0;
-    for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
-      sum += results_[j].size();
-    }
-    resultDataSet_.rows.reserve(sum);
-    for (size_t j = 0; j < tries.size(); j++) {
-      const auto& [code, partId] = tries[j].value();
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        handleErrorCode(code, spaceId_, partId);
-      } else {
-        resultDataSet_.append(std::move(results_[j]));
-        cursors_.merge(std::move(cursorsOfPart_[j]));
-      }
-    }
-    this->onProcessFinished();
-    this->onFinished();
-  });
+  folly::collectAll(futures)
+      .via(executor_)
+      .thenTry([this](auto&& t) mutable {
+        memory::MemoryCheckGuard guard;
+        CHECK(!t.hasException());
+        const auto& tries = t.value();
+        size_t sum = 0;
+        for (size_t j = 0; j < tries.size(); j++) {
+          if (tries[j].hasException()) {
+            onError();
+            return;
+          }
+          sum += results_[j].size();
+        }
+        resultDataSet_.rows.reserve(sum);
+        for (size_t j = 0; j < tries.size(); j++) {
+          const auto& [code, partId] = tries[j].value();
+          if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+            handleErrorCode(code, spaceId_, partId);
+          } else {
+            resultDataSet_.append(std::move(results_[j]));
+            cursors_.merge(std::move(cursorsOfPart_[j]));
+          }
+        }
+        this->onProcessFinished();
+        this->onFinished();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        onError();
+      });
 }
 
 }  // namespace storage

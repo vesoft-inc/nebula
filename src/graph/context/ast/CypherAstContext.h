@@ -46,7 +46,7 @@ struct NodeInfo {
 
 struct EdgeInfo {
   bool anonymous{false};
-  MatchStepRange* range{nullptr};
+  std::unique_ptr<MatchStepRange> range{nullptr};
   std::vector<EdgeType> edgeTypes;
   MatchEdge::Direction direction{MatchEdge::Direction::OUT_EDGE};
   std::vector<std::string> types;
@@ -55,7 +55,27 @@ struct EdgeInfo {
   Expression* filter{nullptr};
 };
 
-enum class AliasType : int8_t { kNode, kEdge, kPath, kDefault };
+enum class AliasType : int8_t { kNode, kEdge, kPath, kNodeList, kEdgeList, kRuntime };
+
+struct AliasTypeName {
+  static std::string get(AliasType type) {
+    switch (type) {
+      case AliasType::kNode:
+        return "Node";
+      case AliasType::kEdge:
+        return "Edge";
+      case AliasType::kPath:
+        return "Path";
+      case AliasType::kNodeList:
+        return "NodeList";
+      case AliasType::kEdgeList:
+        return "EdgeList";
+      case AliasType::kRuntime:
+        return "Runtime";
+    }
+    return "Error";  // should not reach here
+  }
+};
 
 struct ScanInfo {
   Expression* filter{nullptr};
@@ -76,12 +96,16 @@ struct Path final {
   std::vector<EdgeInfo> edgeInfos;
   PathBuildExpression* pathBuild{nullptr};
 
-  // True for pattern expresssion, to collect path to list
+  // True for pattern expression, to collect path to list
   bool rollUpApply{false};
   // vector ["v"] in (v)-[:like]->()
   std::vector<std::string> compareVariables;
   // "(v)-[:like]->()" in (v)-[:like]->()
   std::string collectVariable;
+
+  // Flag for pattern predicate
+  bool isPred{false};
+  bool isAntiPred{false};
 
   enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};
@@ -95,6 +119,8 @@ struct CypherClauseContextBase : AstContext {
   // Input column names of current clause
   // Now used by unwind clause planner
   std::vector<std::string> inputColNames;
+
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct WhereClauseContext final : CypherClauseContextBase {
@@ -104,7 +130,6 @@ struct WhereClauseContext final : CypherClauseContextBase {
   std::vector<Path> paths;
 
   Expression* filter{nullptr};
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct OrderByClauseContext final : CypherClauseContextBase {
@@ -133,8 +158,7 @@ struct YieldClauseContext final : CypherClauseContextBase {
   std::vector<Path> paths;
 
   bool distinct{false};
-  const YieldColumns* yieldColumns{nullptr};
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
+  YieldColumns* yieldColumns{nullptr};
 
   bool hasAgg_{false};
   bool needGenProject_{false};
@@ -169,7 +193,6 @@ struct MatchClauseContext final : CypherClauseContextBase {
   bool isOptional{false};
   std::vector<Path> paths;
   std::unique_ptr<WhereClauseContext> where;
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -182,7 +205,6 @@ struct UnwindClauseContext final : CypherClauseContextBase {
   Expression* unwindExpr{nullptr};
   std::string alias;
 
-  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -209,13 +231,13 @@ struct PatternContext {
 };
 
 struct NodeContext final : PatternContext {
-  NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, NodeInfo* i)
+  NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const NodeInfo* i)
       : PatternContext(PatternKind::kNode), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  NodeInfo* info;
+  const NodeInfo* info;
   std::unordered_set<std::string>* nodeAliasesAvailable{nullptr};
 
   // Output fields
@@ -226,13 +248,13 @@ struct NodeContext final : PatternContext {
 };
 
 struct EdgeContext final : PatternContext {
-  EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, EdgeInfo* i)
+  EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const EdgeInfo* i)
       : PatternContext(PatternKind::kEdge), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
 
   QueryContext* qctx;
   WhereClauseContext* bindWhereClause;
   GraphSpaceID spaceId;
-  EdgeInfo* info;
+  const EdgeInfo* info;
 
   // Output fields
   ScanInfo scanInfo;

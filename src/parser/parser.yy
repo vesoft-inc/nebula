@@ -1,8 +1,7 @@
 // Bison options
 %language "C++"
-%skeleton "glr.cc"
-%glr-parser
-%no-lines
+%skeleton "lalr1.cc"
+%no-lines 
 %locations
 %define api.namespace { nebula }
 %define api.parser.class { GraphParser }
@@ -217,10 +216,11 @@ using namespace nebula;
 %token KW_MERGE KW_DIVIDE KW_RENAME
 
 /* symbols */
-%token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
-%token PIPE ASSIGN
-%token DOT DOT_DOT COLON QM SEMICOLON L_ARROW R_ARROW AT
-%token ID_PROP TYPE_PROP SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
+%token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
+       MINUS_L_BRACKET R_BRACKET_MINUS L_ARROW_L_BRACKET R_BRACKET_R_ARROW PIPE
+       MINUS_MINUS MINUS_R_ARROW L_ARROW_MINUS L_ARROW_R_ARROW ASSIGN DOT DOT_DOT
+       COLON QM SEMICOLON L_ARROW R_ARROW AT ID_PROP TYPE_PROP 
+       SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
 
 /* token type specification */
 %token <boolval> BOOL
@@ -381,7 +381,7 @@ using namespace nebula;
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
-%type <sentence> show_queries_sentence kill_query_sentence
+%type <sentence> show_queries_sentence kill_query_sentence kill_session_sentence
 %type <sentence> show_sentence
 
 %type <sentence> mutate_sentence
@@ -747,10 +747,10 @@ constant_expression
     ;
 
 compound_expression
-    : match_path_pattern_expression %dprec 2 {
+    : match_path_pattern_expression {
         $$ = $1;
     }
-    | parenthesized_expression %dprec 1 {
+    | parenthesized_expression {
         $$ = $1;
     }
     | property_expression {
@@ -1240,7 +1240,7 @@ type_spec
         $$->type_ref() = nebula::cpp2::PropertyType::STRING;
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -1682,7 +1682,15 @@ match_clause
         $$ = new MatchClause($2, $3, false/*optional*/);
     }
     | KW_OPTIONAL KW_MATCH match_path_list where_clause {
-        $$ = new MatchClause($3, $4, true);
+        if ($4 != nullptr) {
+            SCOPE_EXIT {
+                delete $3;
+                delete $4;
+            };
+            throw nebula::GraphParser::syntax_error(@4, "Where clause in optional match is not supported.");
+        } else {
+            $$ = new MatchClause($3, nullptr, true);
+        }
     }
     ;
 
@@ -1789,9 +1797,16 @@ match_path_list
     }
 
 match_node
-    : L_PAREN match_alias R_PAREN {
-        $$ = new MatchNode(*$2, nullptr, nullptr);
-        delete $2;
+    : L_PAREN R_PAREN {
+        $$ = new MatchNode();
+    }
+    | parenthesized_expression {
+        auto& e = $1;
+        if (e->kind() != Expression::Kind::kLabel) {
+            delete $1;
+            throw nebula::GraphParser::syntax_error(@1, "Invalid node pattern");
+        }
+        $$ = new MatchNode(static_cast<LabelExpression*>(e)->name(), nullptr, nullptr);
     }
     | L_PAREN match_alias match_node_label_list R_PAREN {
         $$ = new MatchNode(*$2, $3, nullptr);
@@ -1833,31 +1848,40 @@ match_alias
     ;
 
 match_edge
-    : MINUS match_edge_prop MINUS {
+    : MINUS_MINUS {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::BOTH);
+    }
+    | MINUS_R_ARROW {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::OUT_EDGE);
+    }
+    | L_ARROW_MINUS {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::IN_EDGE);
+    }
+    | L_ARROW_R_ARROW {
+        $$ = new MatchEdge(nullptr, storage::cpp2::EdgeDirection::BOTH);
+    } 
+    | MINUS_L_BRACKET match_edge_prop R_BRACKET_MINUS {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::BOTH);
     }
-    | MINUS match_edge_prop R_ARROW {
+    | MINUS_L_BRACKET match_edge_prop R_BRACKET_R_ARROW {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::OUT_EDGE);
     }
-    | L_ARROW match_edge_prop MINUS {
+    | L_ARROW_L_BRACKET match_edge_prop R_BRACKET_MINUS {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::IN_EDGE);
     }
-    | L_ARROW match_edge_prop R_ARROW {
+    | L_ARROW_L_BRACKET match_edge_prop R_BRACKET_R_ARROW {
         $$ = new MatchEdge($2, storage::cpp2::EdgeDirection::BOTH);
     }
     ;
 
 match_edge_prop
-    : %empty {
-        $$ = nullptr;
+    : match_alias opt_match_edge_type_list match_step_range {
+        $$ = new MatchEdgeProp(*$1, $2, $3, nullptr);
+        delete $1;
     }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, nullptr);
-        delete $2;
-    }
-    | L_BRACKET match_alias opt_match_edge_type_list match_step_range map_expression R_BRACKET {
-        $$ = new MatchEdgeProp(*$2, $3, $4, $5);
-        delete $2;
+    | match_alias opt_match_edge_type_list match_step_range map_expression {
+        $$ = new MatchEdgeProp(*$1, $2, $3, $4);
+        delete $1;
     }
     ;
 
@@ -2645,7 +2669,7 @@ index_field
         delete $1;
     }
     | name_label L_PAREN INTEGER R_PAREN {
-        if ($3 > std::numeric_limits<int16_t>::max()) {
+        if ($3 > std::numeric_limits<int16_t>::max() || $3 <= 0) {
             delete $1;
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
@@ -2693,10 +2717,10 @@ create_edge_index_sentence
     ;
 
 create_fulltext_index_sentence
-    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
         $$ = new CreateFTIndexSentence(false, $5, $7, $9);
     }
-    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN {
+    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
         $$ = new CreateFTIndexSentence(true, $5, $7, $9);
     }
     ;
@@ -2931,6 +2955,8 @@ traverse_sentence
     | kill_query_sentence { $$ = $1; }
     | describe_user_sentence { $$ = $1; }
     | unwind_sentence { $$ = $1; }
+    | show_sentence { $$ = $1; }
+    | kill_session_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -2969,6 +2995,9 @@ match_sentences
         s->setDistinct();
         $$ = s;
     }
+    | match_sentences KW_INTERSECT match_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
+    | match_sentences KW_MINUS match_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
+    ;
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
@@ -3470,6 +3499,7 @@ list_host_type
     | KW_META       { $$ = meta::cpp2::ListHostType::META; }
     | KW_STORAGE    { $$ = meta::cpp2::ListHostType::STORAGE; }
     | KW_AGENT      { $$ = meta::cpp2::ListHostType::AGENT; }
+    | KW_STORAGE KW_LISTENER { $$ = meta::cpp2::ListHostType::STORAGE_LISTENER; }
     ;
 
 config_module_enum
@@ -3628,9 +3658,6 @@ space_opt_item
     | KW_VID_TYPE ASSIGN type_spec {
         $$ = new SpaceOptItem(SpaceOptItem::VID_TYPE, *$3);
         delete $3;
-    }
-    | KW_ATOMIC_EDGE ASSIGN BOOL {
-        $$ = new SpaceOptItem(SpaceOptItem::ATOMIC_EDGE, $3);
     }
     // TODO(YT) Create Spaces for different engines
     // KW_ENGINE_TYPE ASSIGN name_label
@@ -3836,6 +3863,16 @@ kill_query_sentence
     : KW_KILL KW_QUERY L_PAREN query_unique_identifier R_PAREN {
         $$ = new KillQuerySentence($4);
     }
+    ;
+
+kill_session_sentence
+    : KW_KILL KW_SESSIONS expression {
+        $$ = new KillSessionSentence($3);
+    }
+    | KW_KILL KW_SESSION expression {
+        $$ = new KillSessionSentence($3);
+    }
+    ;
 
 query_unique_identifier_value
     : legal_integer {
@@ -3902,7 +3939,6 @@ maintain_sentence
     | divide_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }

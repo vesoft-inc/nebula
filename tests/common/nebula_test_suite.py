@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Pattern, Set
 
 from nebula3.common import ttypes as CommonTtypes
+from nebula3.gclient.net import Connection
+
 # from nebula3.gclient.net import ConnectionPool
 # from nebula3.Config import Config
 from nebula3.graph import ttypes
@@ -68,14 +70,18 @@ class NebulaTestSuite(object):
         for path in pathlist:
             print("open: ", path)
             with open(path, 'r') as data_file:
-                space_name = path.name.split('.')[0] + datetime.datetime.now().strftime('%H_%M_%S_%f')
+                space_name = path.name.split('.')[0] + datetime.datetime.now().strftime(
+                    '%H_%M_%S_%f'
+                )
                 self.spaces.append(space_name)
                 resp = self.execute(
-                'CREATE SPACE IF NOT EXISTS {space_name}(partition_num={partition_num}, '
-                'replica_factor={replica_factor}, vid_type=FIXED_STRING(30)); USE {space_name};'.format(
+                    'CREATE SPACE IF NOT EXISTS {space_name}(partition_num={partition_num}, '
+                    'replica_factor={replica_factor}, vid_type=FIXED_STRING(30)); USE {space_name};'.format(
                         partition_num=self.partition_num,
                         replica_factor=self.replica_factor,
-                        space_name=space_name))
+                        space_name=space_name,
+                    )
+                )
                 self.check_resp_succeeded(resp)
 
                 lines = data_file.readlines()
@@ -140,6 +146,16 @@ class NebulaTestSuite(object):
     def release_nebula_client(self, client):
         client.release()
 
+    @classmethod
+    def get_connection(self, ip, port):
+        ssl_config = self.client_pool._ssl_configs
+        try:
+            conn = Connection()
+            conn.open_SSL(ip, port, 0, ssl_config)
+        except Exception as ex:
+            assert False, 'Create connection to {}:{} failed, {}'.format(ip, port, ex)
+        return conn
+
     # @classmethod
     # def close_nebula_clients(self):
     #     self.client_pool.close()
@@ -154,8 +170,7 @@ class NebulaTestSuite(object):
 
     @classmethod
     def execute(self, ngql, profile=True):
-        return self.client.execute(
-            'PROFILE {{{}}}'.format(ngql) if profile else ngql)
+        return self.client.execute('PROFILE {{{}}}'.format(ngql) if profile else ngql)
 
     @classmethod
     def check_rows_with_header(cls, stmt: str, expected: dict):
@@ -184,16 +199,22 @@ class NebulaTestSuite(object):
         ), resp.error_msg()
 
     @classmethod
-    def check_resp_failed(self, resp, error_code: CommonTtypes.ErrorCode = CommonTtypes.ErrorCode.SUCCEEDED):
+    def check_resp_failed(
+        self,
+        resp,
+        error_code: CommonTtypes.ErrorCode = CommonTtypes.ErrorCode.SUCCEEDED,
+    ):
         if error_code == CommonTtypes.ErrorCode.SUCCEEDED:
             assert resp.error_code() != error_code, '{} == {}, {}'.format(
                 CommonTtypes.ErrorCode._VALUES_TO_NAMES[resp.error_code()],
-                CommonTtypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
+                CommonTtypes.ErrorCode._VALUES_TO_NAMES[error_code],
+                resp.error_msg(),
             )
         else:
             assert resp.error_code() == error_code, '{} != {}, {}'.format(
                 CommonTtypes.ErrorCode._VALUES_TO_NAMES[resp.error_code()],
-                CommonTtypes.ErrorCode._VALUES_TO_NAMES[error_code], resp.error_msg()
+                CommonTtypes.ErrorCode._VALUES_TO_NAMES[error_code],
+                resp.error_msg(),
             )
 
     @classmethod
@@ -221,19 +242,24 @@ class NebulaTestSuite(object):
 
         msg = 'Returned row from nebula could not be found, row: {}, resp: {}'
         for exp in new_expect:
-            values, exp_str = (exp, str(exp)) if is_regex else (exp.values, row_to_string(exp))
-            assert find_in_rows(values, rows) == exist, \
-                msg.format(exp_str, value_to_string(rows))
+            values, exp_str = (
+                (exp, str(exp)) if is_regex else (exp.values, row_to_string(exp))
+            )
+            assert find_in_rows(values, rows) == exist, msg.format(
+                exp_str, value_to_string(rows)
+            )
 
     @classmethod
     def check_column_names(self, resp, expect):
         column_names = resp.keys()
-        assert len(column_names) == len(expect), \
-            f'Column names does not match, expected: {expect}, actual: {column_names}'
+        assert len(column_names) == len(
+            expect
+        ), f'Column names does not match, expected: {expect}, actual: {column_names}'
         for i in range(len(expect)):
             result = column_names[i]
-            assert expect[i] == result, \
-                f"different column name, expect: {expect[i]} vs. result: {result}"
+            assert (
+                expect[i] == result
+            ), f"different column name, expect: {expect[i]} vs. result: {result}"
 
     @classmethod
     def convert_expect(self, expect):
@@ -260,7 +286,11 @@ class NebulaTestSuite(object):
             # convert expect to thrift value
             new_expect = self.convert_expect(expect)
         for row, i in zip(rows, range(0, len(new_expect))):
-            columns = new_expect[i].values if isinstance(new_expect[i], CommonTtypes.Row) else new_expect[i]
+            columns = (
+                new_expect[i].values
+                if isinstance(new_expect[i], CommonTtypes.Row)
+                else new_expect[i]
+            )
             assert len(row.values) - len(ignore_col) == len(columns)
             ignored_col_count = 0
             for j, col in enumerate(row.values):
@@ -269,12 +299,14 @@ class NebulaTestSuite(object):
                     continue
                 exp_val = columns[j - ignored_col_count]
                 expect_to_string = row_to_string(columns)
-                assert compare_value(col, exp_val), \
-                    'The returned row from nebula could not be found, row: {}, expect: {}'.format(
-                        row_to_string(row), expect_to_string)
+                assert compare_value(
+                    col, exp_val
+                ), 'The returned row from nebula could not be found, row: {}, expect: {}'.format(
+                    row_to_string(row), expect_to_string
+                )
 
     @classmethod
-    def check_out_of_order_result(self, resp, expect, ignore_col: Set[int]=set()):
+    def check_out_of_order_result(self, resp, expect, ignore_col: Set[int] = set()):
         if resp.is_empty() and len(expect) == 0:
             return
 
@@ -308,8 +340,9 @@ class NebulaTestSuite(object):
                     src.tags = []
                     path.src = src
                 else:
-                    assert len(col) == 3, \
-                        "{} invalid values size in expect result".format(exp.__repr__())
+                    assert (
+                        len(col) == 3
+                    ), "{} invalid values size in expect result".format(exp.__repr__())
                     step = CommonTtypes.Step()
                     step.name = bytes(col[0], encoding='utf-8')
                     step.ranking = col[1]
@@ -322,10 +355,12 @@ class NebulaTestSuite(object):
                     path.steps.append(step)
             find = False
             for row in rows:
-                assert len(row.values) == 1, \
-                    "invalid values size in rows: {}".format(row)
-                assert row.values[0].getType() == CommonTtypes.Value.PVAL, \
-                    "invalid column path type: {}".format(row.values[0].getType()())
+                assert len(row.values) == 1, "invalid values size in rows: {}".format(
+                    row
+                )
+                assert (
+                    row.values[0].getType() == CommonTtypes.Value.PVAL
+                ), "invalid column path type: {}".format(row.values[0].getType()())
                 if row.values[0].get_pVal() == path:
                     find = True
                     break
@@ -357,22 +392,26 @@ class NebulaTestSuite(object):
         expect_node = expect[expect_idx]
         name = bytes.decode(plan_node_desc.name)
 
-        assert name.lower().startswith(expect_node[0].lower()), \
-            "Different plan node: {} vs. {}".format(name, expect_node[0])
+        assert name.lower().startswith(
+            expect_node[0].lower()
+        ), "Different plan node: {} vs. {}".format(name, expect_node[0])
 
         if len(expect_node) > 2:
             descs = {bytes.decode(pair.value) for pair in plan_node_desc.description}
-            assert set(expect_node[2]).issubset(descs), \
-                'Invalid descriptions, expect: {} vs. resp: {}'.format(
-                    '; '.join(map(str, expect_node[2])),
-                    '; '.join(map(str, descs)))
+            assert set(expect_node[2]).issubset(
+                descs
+            ), 'Invalid descriptions, expect: {} vs. resp: {}'.format(
+                '; '.join(map(str, expect_node[2])), '; '.join(map(str, descs))
+            )
 
         if plan_node_desc.dependencies is None:
             return
 
-        assert len(expect_node[1]) == len(plan_node_desc.dependencies), \
-            "Different plan node dependencies: {} vs. {}".format(
-                len(plan_node_desc.dependencies), len(expect_node[1]))
+        assert len(expect_node[1]) == len(
+            plan_node_desc.dependencies
+        ), "Different plan node dependencies: {} vs. {}".format(
+            len(plan_node_desc.dependencies), len(expect_node[1])
+        )
 
         for i in range(len(plan_node_desc.dependencies)):
             line_num = plan_desc.node_index_map[plan_node_desc.dependencies[i]]

@@ -1,10 +1,141 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: Pipe or use variable to store the lookup results
+Feature: Pipe/Variable
 
   Background:
     Given a graph with space named "nba"
+
+  Scenario: Variable
+    When executing query:
+      """
+      $v1 = GO FROM "Tony Parker" OVER like YIELD id($$) AS dst, $^.player.age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 | age |
+      | "LaMarcus Aldridge" | 36  |
+      | "Manu Ginobili"     | 36  |
+      | "Tim Duncan"        | 36  |
+    When executing query:
+      """
+      $v1 = GO FROM "Tony Parker" OVER like YIELD id($$) AS dst, $^.player.age AS age;
+      YIELD $v1
+      """
+    Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$v1'
+    When executing query:
+      """
+      $v1 = GO FROM "Tony Parker" OVER like YIELD id($$) AS dst, $^.player.age AS age;
+      YIELD $v1.age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $v1.age |
+      | 36      |
+      | 36      |
+      | 36      |
+    When executing query:
+      """
+      $v1 = FETCH PROP ON player "Tony Parker"
+      YIELD properties(Vertex) AS props, properties(Vertex).name AS name, properties(Vertex).age AS age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props                          | name          | age |
+      | {age: 36, name: "Tony Parker"} | "Tony Parker" | 36  |
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      $v2 = YIELD "Tim Duncan" AS b;
+      GO FROM $v1.a OVER like WHERE $v1.a > $v2.b YIELD id($$) AS dst;
+      """
+    Then a SemanticError should be raised at runtime: Multiple variable property is not supported in WHERE or YIELD
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      GO FROM "Tim Duncan" OVER like WHERE id($$) != $v1.a
+      YIELD id($$) AS dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      GO FROM "Tim Duncan" OVER like WHERE id($$) != $v1.a
+      YIELD id($$) AS dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      GO FROM "Tim Duncan" OVER like
+      YIELD id($$) AS dst, $v1.a AS dst2
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      GO FROM $v1.a OVER like WHERE id($$) != $v1.a
+      YIELD id($$) AS dst, $v1.a AS dst2
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 | dst2          |
+      | "LaMarcus Aldridge" | "Tony Parker" |
+      | "Manu Ginobili"     | "Tony Parker" |
+      | "Tim Duncan"        | "Tony Parker" |
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      $v1 = YIELD "Tim Duncan" AS a;
+      """
+    Then a SemanticError should be raised at runtime: Variable `v1' already exists
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      $v2 = YIELD $v1.a AS a;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a             |
+      | "Tony Parker" |
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      $v2 = YIELD $v1.a AS a;
+      YIELD $v1.a AS a UNION ALL YIELD $v2.a AS a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a             |
+      | "Tony Parker" |
+      | "Tony Parker" |
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      $v2 = YIELD $v1.a AS a;
+      YIELD $v1.a, $v2.a
+      """
+    Then a SemanticError should be raised at runtime: Only one variable allowed to use.
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      FETCH PROP ON player $v1.a YIELD player.name AS name
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name          |
+      | "Tony Parker" |
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      FETCH PROP ON player $v1.a YIELD player.name AS name, $v1.a AS a
+      """
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield.
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      LOOKUP ON player WHERE player.name == $v1.a YIELD player.name AS name, $v1.a
+      """
+    Then a SemanticError should be raised at runtime: '$v1.a' is not an evaluable expression.
+    When executing query:
+      """
+      $v1 = YIELD "Tony Parker" AS a;
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD player.name AS name, $v1.a
+      """
+    Then a SemanticError should be raised at runtime: unsupported input/variable property expression in yield.
 
   @skip
   Scenario: pipe lookup results

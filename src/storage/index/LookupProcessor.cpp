@@ -7,6 +7,7 @@
 #include <thrift/lib/cpp2/protocol/JSONProtocol.h>
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
+#include "common/memory/MemoryTracker.h"
 #include "folly/Likely.h"
 #include "interface/gen-cpp2/common_types.tcc"
 #include "interface/gen-cpp2/meta_types.tcc"
@@ -20,6 +21,7 @@
 #include "storage/exec/IndexSelectionNode.h"
 #include "storage/exec/IndexTopNNode.h"
 #include "storage/exec/IndexVertexScanNode.h"
+
 namespace nebula {
 namespace storage {
 ProcessorCounters kLookupCounters;
@@ -27,7 +29,8 @@ ProcessorCounters kLookupCounters;
 inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
   if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
   } else {
     doProcess(req);
   }
@@ -215,6 +218,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::unique_ptr<IndexNode>> LookupProcessor::bu
 
 void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
                                         std::unique_ptr<IndexNode> plan) {
+  memory::MemoryCheckGuard guard;
   // printPlan(plan.get());
   std::vector<std::deque<Row>> datasetList;
   std::vector<::nebula::cpp2::ErrorCode> codeList;
@@ -262,61 +266,81 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
 
 void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
                                           std::unique_ptr<IndexNode> plan) {
+  memory::MemoryCheckOffGuard offGuard;
   std::vector<std::unique_ptr<IndexNode>> planCopy = reproducePlan(plan.get(), parts.size());
   using ReturnType = std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>, Row>;
   std::vector<folly::Future<ReturnType>> futures;
   for (size_t i = 0; i < parts.size(); i++) {
-    futures.emplace_back(folly::via(
-        executor_, [this, plan = std::move(planCopy[i]), part = parts[i]]() -> ReturnType {
-          ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
-          std::deque<Row> dataset;
-          plan->execute(part);
-          do {
-            auto result = plan->next();
-            if (!result.success()) {
-              code = result.code();
-              break;
-            }
-            if (result.hasData()) {
-              dataset.emplace_back(std::move(result).row());
-            } else {
-              break;
-            }
-          } while (true);
-          if (UNLIKELY(profileDetailFlag_)) {
-            profilePlan(plan.get());
-          }
-          Row statResult;
-          if (code == nebula::cpp2::ErrorCode::SUCCEEDED && statTypes_.size() > 0) {
-            auto indexAgg = dynamic_cast<IndexAggregateNode*>(plan.get());
-            statResult = indexAgg->calculateStats();
-          }
-          return {part, code, dataset, statResult};
-        }));
+    futures.emplace_back(
+        folly::via(executor_,
+                   [this, plan = std::move(planCopy[i]), part = parts[i]]() -> ReturnType {
+                     memory::MemoryCheckGuard guard;
+                     ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+                     std::deque<Row> dataset;
+                     plan->execute(part);
+                     do {
+                       auto result = plan->next();
+                       if (!result.success()) {
+                         code = result.code();
+                         break;
+                       }
+                       if (result.hasData()) {
+                         dataset.emplace_back(std::move(result).row());
+                       } else {
+                         break;
+                       }
+                     } while (true);
+                     if (UNLIKELY(profileDetailFlag_)) {
+                       profilePlan(plan.get());
+                     }
+                     Row statResult;
+                     if (code == nebula::cpp2::ErrorCode::SUCCEEDED && statTypes_.size() > 0) {
+                       auto indexAgg = dynamic_cast<IndexAggregateNode*>(plan.get());
+                       statResult = indexAgg->calculateStats();
+                     }
+                     return {part, code, dataset, statResult};
+                   })
+            .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+              memoryExceeded_ = true;
+              return folly::makeFuture<
+                  std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>, Row>>(
+                  std::runtime_error("Memory Limit Exceeded, " +
+                                     memory::MemoryStats::instance().toString()));
+            }));
   }
-  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
-    CHECK(!t.hasException());
-    const auto& tries = t.value();
-    std::vector<Row> statResults;
-    for (size_t j = 0; j < tries.size(); j++) {
-      CHECK(!tries[j].hasException());
-      auto& [partId, code, dataset, statResult] = tries[j].value();
-      if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-        for (auto& row : dataset) {
-          resultDataSet_.emplace_back(std::move(row));
+  folly::collectAll(futures)
+      .via(executor_)
+      .thenTry([this](auto&& t) {
+        memory::MemoryCheckGuard guard;
+        CHECK(!t.hasException());
+        const auto& tries = t.value();
+        std::vector<Row> statResults;
+        for (size_t j = 0; j < tries.size(); j++) {
+          if (tries[j].hasException()) {
+            onError();
+            return;
+          }
+          auto& [partId, code, dataset, statResult] = tries[j].value();
+          if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+            for (auto& row : dataset) {
+              resultDataSet_.emplace_back(std::move(row));
+            }
+          } else {
+            handleErrorCode(code, context_->spaceId(), partId);
+          }
+          statResults.emplace_back(std::move(statResult));
         }
-      } else {
-        handleErrorCode(code, context_->spaceId(), partId);
-      }
-      statResults.emplace_back(std::move(statResult));
-    }
-    DLOG(INFO) << "finish";
-    // IndexAggregateNode has been copyed and each part get it's own aggregate info,
-    // we need to merge it
-    this->mergeStatsResult(statResults);
-    this->onProcessFinished();
-    this->onFinished();
-  });
+        DLOG(INFO) << "finish";
+        // IndexAggregateNode has been copied and each part get it's own aggregate info,
+        // we need to merge it
+        this->mergeStatsResult(statResults);
+        this->onProcessFinished();
+        this->onFinished();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{}, [this](const std::bad_alloc&) {
+        memoryExceeded_ = true;
+        onError();
+      });
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<std::string, cpp2::StatType>>>

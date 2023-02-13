@@ -19,7 +19,7 @@ jobs:
   lint:
     name: lint
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
@@ -31,7 +31,7 @@ jobs:
         uses: apache/skywalking-eyes/header@main 
       - name: Ensure clang-format-10 is available
         run: |
-          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
+          command -v clang-format-10 > /dev/null || (sudo apt update && sudo apt install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
@@ -72,6 +72,19 @@ jobs:
       volumes:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -119,6 +132,7 @@ jobs:
                 -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
                 -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DENABLE_MEMORY_TRACKER=off \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -GNinja \
@@ -168,17 +182,17 @@ jobs:
             case ${{ matrix.os }} in
             centos7)
               # normal cluster
-              make CONTAINERIZED=true up
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' up
               ;;
             ubuntu2004)
               # ssl cluster
-              make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=true CA_SIGNED=true up
               ;;
             esac
             ;;
           clang-*)
             # graph ssl only cluster
-            make CONTAINERIZED=true ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
             ;;
           esac
         working-directory: tests/
@@ -190,7 +204,7 @@ jobs:
         timeout-minutes: 15
       - name: TCK
         run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+          make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=${{ steps.cmake.outputs.j }} tck
         working-directory: tests/
         timeout-minutes: 60
       - name: LDBC
@@ -223,92 +237,3 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path:  ./build/server_*/logs/
 
-  standalone:
-    name: standalone-build
-    needs: lint
-    runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - centos7
-        compiler:
-          - gcc-9.3
-    env:
-      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      CCACHE_MAXSIZE: 8G
-    container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
-      volumes:
-        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      options: --cap-add=SYS_PTRACE
-    steps:
-      - uses: webiny/action-post-run@2.0.1
-        with:
-          run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
-      - name: Prepare environment
-        run: |
-          [ -d build/ ] && rm -rf build/* || mkdir -p build
-          make init -C tests
-      - name: CMake
-        id: cmake
-        run: |
-          case ${{ matrix.compiler }} in
-          gcc-*)
-            case ${{ matrix.os }} in
-            centos7)
-              # build with Release type
-              cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -DCMAKE_BUILD_TYPE=Release \
-                  -DENABLE_TESTING=on \
-                  -DENABLE_STANDALONE_VERSION=on \
-                  -GNinja \
-                  -B build
-              echo "::set-output name=j::8"
-              ;;
-            esac
-            ;;
-          esac
-      - name: Make
-        run: |
-          ccache -z
-          ninja -j $(nproc)
-          ccache -s
-        working-directory: build/
-      - name: CTest
-        env:
-          ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: |
-          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
-          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
-        working-directory: build/
-        timeout-minutes: 20
-      - name: Setup Cluster
-        run: |
-          make standalone-up
-        working-directory: tests/
-        timeout-minutes: 4
-      - name: TCK
-        run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
-        working-directory: tests/
-        timeout-minutes: 60
-      - name: LDBC
-        run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
-        working-directory: tests/
-        timeout-minutes: 60
-      - name: Down cluster
-        run: |
-          make RM_DIR=false down
-        working-directory: tests/
-        timeout-minutes: 2
-      - name: Upload logs
-        uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
-        with:
-          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs/

@@ -325,7 +325,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
         } else {
           auto v = std::move(t).value();
           for (auto& resp : v) {
-            // The exception has been catched inside getResponseFromPart.
+            // The exception has been caught inside getResponseFromPart.
             CHECK(!resp.hasException());
             auto st = std::move(resp).value();
             if (!st.ok()) {

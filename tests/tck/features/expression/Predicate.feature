@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: Predicate
 
-  Scenario: yield a predicate
+  Scenario: basic
     Given a graph with space named "nba"
     When executing query:
       """
@@ -33,6 +33,105 @@ Feature: Predicate
     Then the result should be, in any order:
       | r    |
       | True |
+    When executing query:
+      """
+      YIELD ALL(n in null WHERE TRUE) AS a, ANY(n in null WHERE TRUE) AS b, SINGLE(n in null WHERE TRUE) AS c, NONE(n in null WHERE TRUE) AS d
+      """
+    Then the result should be, in any order:
+      | a    | b    | c    | d    |
+      | NULL | NULL | NULL | NULL |
+    When executing query:
+      """
+      WITH 1 AS a
+      RETURN ALL(a IN [2, 3] WHERE a > 1) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | True |
+    When executing query:
+      """
+      RETURN ALL(a IN [2, 3] WHERE a > 2) AS r
+      """
+    Then the result should be, in any order:
+      | r     |
+      | False |
+    When executing query:
+      """
+      RETURN ALL(a IN [2, 3, NULL] WHERE a > 0) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |
+    When executing query:
+      """
+      RETURN Any(a IN [2, 3] WHERE a > 1) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | True |
+    When executing query:
+      """
+      RETURN Any(a IN [2, 3] WHERE a > 3) AS r
+      """
+    Then the result should be, in any order:
+      | r     |
+      | False |
+    When executing query:
+      """
+      RETURN Any(a IN [2, 3, NULL] WHERE a > 3) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |
+    When executing query:
+      """
+      RETURN Single(a IN [2, 3] WHERE a > 4) AS r
+      """
+    Then the result should be, in any order:
+      | r     |
+      | False |
+    When executing query:
+      """
+      RETURN Single(a IN [2, 3, 4] WHERE a >= 2) AS r
+      """
+    Then the result should be, in any order:
+      | r     |
+      | False |
+    When executing query:
+      """
+      RETURN Single(a IN [2, 3, 4] WHERE a == 3) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | True |
+    When executing query:
+      """
+      RETURN Single(a IN [2, 3, NULL] WHERE a == 3) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |
+    When executing query:
+      """
+      RETURN None(a IN [2, 3, NULL] WHERE a > 1) AS r
+      """
+    Then the result should be, in any order:
+      | r     |
+      | False |
+    When executing query:
+      """
+      RETURN None(a IN [2, 3, 4] WHERE a > 100) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | True |
+    When executing query:
+      """
+      RETURN None(a IN [2, 3, NULL] WHERE a > 3) AS r
+      """
+    Then the result should be, in any order:
+      | r    |
+      | NULL |
 
   Scenario: use a predicate in GO
     Given a graph with space named "nba"
@@ -185,8 +284,10 @@ Feature: Predicate
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m)
-      RETURN nodes(p)[0].name AS n1, nodes(p)[1].name AS n2,
-      all(n IN nodes(p) WHERE n.name NOT STARTS WITH "D") AS b
+      RETURN
+        nodes(p)[0].player.name AS n1,
+        nodes(p)[1].player.name AS n2,
+        all(n IN nodes(p) WHERE n.player.name NOT STARTS WITH "D") AS b
       """
     Then the result should be, in any order:
       | n1             | n2                | b     |
@@ -199,7 +300,7 @@ Feature: Predicate
     When executing query:
       """
       MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)
-      RETURN single(n IN nodes(p) WHERE n.age > 40) AS b
+      RETURN single(n IN nodes(p) WHERE n.player.age > 40) AS b
       """
     Then the result should be, in any order:
       | b    |

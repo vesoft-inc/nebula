@@ -39,8 +39,12 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
                  nullptr)
       .via(qctx_->rctx()->runner())
       .thenValue([this, getPropsTime](PropRpcResponse&& resp) {
+        memory::MemoryCheckGuard guard;
         addStats(resp, getPropsTime.elapsedInUSec());
         return handlePropResp(std::move(resp));
+      })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<std::vector<Value>>(std::runtime_error(e.what()));
       });
 }
 
@@ -169,13 +173,17 @@ void ShortestPathBase::addStats(RpcResponse& resp,
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, timeInUSec);
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
     stats.push_back(std::move(info));
   }
 
+  folly::dynamic stepObj = folly::dynamic::object();
+  stepObj.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
+  stepObj.insert("storage", stats);
+
   auto key = folly::sformat("{}step[{}]", reverse ? "reverse " : "", stepNum);
   statsLock_.lock();
-  stats_->emplace(key, folly::toPrettyJson(stats));
+  stats_->emplace(key, folly::toPrettyJson(stepObj));
   statsLock_.unlock();
 }
 
@@ -184,13 +192,24 @@ void ShortestPathBase::addStats(PropRpcResponse& resp, int64_t timeInUSec) const
   auto& hostLatency = resp.hostLatency();
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     const auto& result = resp.responses()[i].get_result();
-    auto info = util::collectRespProfileData(result, hostLatency[i], 0, timeInUSec);
+    auto info = util::collectRespProfileData(result, hostLatency[i], 0);
     stats.push_back(std::move(info));
   }
 
+  folly::dynamic propObj = folly::dynamic::object();
+  propObj.insert("storage", stats);
+  propObj.insert("total_rpc_time", folly::sformat("{}(us)", timeInUSec));
+
   statsLock_.lock();
-  stats_->emplace("get_prop", folly::toPrettyJson(stats));
+  stats_->emplace("get_prop", folly::toPrettyJson(propObj));
   statsLock_.unlock();
+}
+
+folly::Executor* ShortestPathBase::runner() const {
+  if (!qctx_ || !qctx_->rctx() || !qctx_->rctx()->runner()) {
+    return &folly::InlineExecutor::instance();
+  }
+  return qctx_->rctx()->runner();
 }
 
 }  // namespace graph

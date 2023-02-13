@@ -7,7 +7,7 @@
 
 #include "clients/meta/MetaClient.h"
 #include "common/base/StatusOr.h"
-#include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
+#include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "graph/util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
 
@@ -19,37 +19,21 @@ class FTIndexUtils final {
   FTIndexUtils() = delete;
   // Checks if the filter expression is full-text search related
   static bool needTextSearch(const Expression* expr);
-  // Checks meta client and returns the full-text search client if there is one
-  static StatusOr<std::vector<nebula::plugin::HttpClient>> getTSClients(meta::MetaClient* client);
-  // Checks if the full-text index exists
-  static StatusOr<bool> checkTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                     const std::string& index);
-  // Drops the full-text index
-  static StatusOr<bool> dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                    const std::string& index);
 
-  // Clears the full-text index data, but keeps the index schema
-  static StatusOr<bool> clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                     const std::string& index);
+  static StatusOr<::nebula::plugin::ESAdapter> getESAdapter(meta::MetaClient* client);
 
   // Converts TextSearchExpression into a relational expression that could be pushed down
-  static StatusOr<Expression*> rewriteTSFilter(
-      ObjectPool* pool,
-      bool isEdge,
-      Expression* expr,
-      const std::string& index,
-      const std::vector<nebula::plugin::HttpClient>& tsClients);
+  static StatusOr<Expression*> rewriteTSFilter(ObjectPool* pool,
+                                               bool isEdge,
+                                               Expression* expr,
+                                               const std::string& index,
+                                               ::nebula::plugin::ESAdapter& esAdapter);
 
   // Performs full-text search using elastic search adapter
   // Search type is defined by the expression kind
-  static StatusOr<std::vector<std::string>> textSearch(
-      Expression* expr,
-      const std::string& index,
-      const std::vector<nebula::plugin::HttpClient>& tsClients);
-
-  // Picks a random full-text search client from the given list
-  static const nebula::plugin::HttpClient& randomFTClient(
-      const std::vector<nebula::plugin::HttpClient>& tsClients);
+  static StatusOr<nebula::plugin::ESQueryResult> textSearch(Expression* expr,
+                                                            const std::string& index,
+                                                            ::nebula::plugin::ESAdapter& esAdapter);
 };
 
 }  // namespace graph

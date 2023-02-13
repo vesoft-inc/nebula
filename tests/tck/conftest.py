@@ -86,7 +86,7 @@ def get_running_jobs(sess):
 
 
 def wait_all_jobs_finished(sess, jobs=[]):
-    times = 4 * get_running_jobs(sess)
+    times = 5 * get_running_jobs(sess)
     while jobs and times > 0:
         jobs = [job for job in jobs if not is_job_finished(sess, job)]
         time.sleep(1)
@@ -182,6 +182,7 @@ def preload_space(
     load_nba_int_vid_data,
     load_student_data,
     load_ldbc_v0_3_3,
+    load_ngdata_data,
     exec_ctx,
 ):
     space = normalize_outline_scenario(request, space)
@@ -193,6 +194,8 @@ def preload_space(
         exec_ctx["space_desc"] = load_student_data
     elif space == "ldbc_v0_3_3":
         exec_ctx["ldbc_v0_3_3"] = load_ldbc_v0_3_3
+    elif space == "ngdata":
+        exec_ctx["space_desc"] = load_ngdata_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
 
@@ -235,6 +238,21 @@ def new_space(request, options, exec_ctx):
     exec_ctx["space_desc"] = space_desc
     exec_ctx["drop_space"] = True
 
+
+@given(parse("add listeners to space"))
+def add_listeners(request, exec_ctx):
+    show_listener = "show hosts storage listener"
+    exec_query(request, show_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
+    values = result.row_values(0)
+    host = values[0]
+    port = values[1]
+    add_listener = f"ADD LISTENER ELASTICSEARCH  {host}:{port}"
+    exec_ctx['result_set'] = []
+    exec_query(request, add_listener, exec_ctx)
+    result = exec_ctx["result_set"][0]
+    assert result.is_succeeded()
 
 @given(parse("Any graph"))
 def new_space(request, exec_ctx):
@@ -280,7 +298,7 @@ def exec_query(request, ngql, exec_ctx, sess=None, need_try: bool = False, times
 
 @given(
     parse(
-        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged'
+        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged and {listener_num} listener'
     )
 )
 def given_nebulacluster(
@@ -288,6 +306,7 @@ def given_nebulacluster(
     graphd_num,
     metad_num,
     storaged_num,
+    listener_num,
     class_fixture_variables,
     pytestconfig,
 ):
@@ -297,6 +316,7 @@ def given_nebulacluster(
         graphd_num,
         metad_num,
         storaged_num,
+        listener_num,
         class_fixture_variables,
         pytestconfig,
     )
@@ -304,7 +324,7 @@ def given_nebulacluster(
 
 @given(
     parse(
-        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged:\n{params}'
+        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged and {listener_num} listener:\n{params}'
     )
 )
 def given_nebulacluster_with_param(
@@ -313,21 +333,24 @@ def given_nebulacluster_with_param(
     graphd_num,
     metad_num,
     storaged_num,
+    listener_num,
     class_fixture_variables,
     pytestconfig,
 ):
-    graphd_param, metad_param, storaged_param = {}, {}, {}
+    graphd_param, metad_param, storaged_param, listener_param = {}, {}, {}, {}
     if params is not None:
         for param in params.splitlines():
             module, config = param.strip().split(":")
-            assert module.lower() in ["graphd", "storaged", "metad"]
+            assert module.lower() in ["graphd", "storaged", "metad", "listener"]
             key, value = config.strip().split("=")
             if module.lower() == "graphd":
                 graphd_param[key] = value
             elif module.lower() == "storaged":
                 storaged_param[key] = value
-            else:
+            elif module.lower() == "metad":
                 metad_param[key] = value
+            else:
+                listener_param[key] = value
 
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
@@ -339,6 +362,7 @@ def given_nebulacluster_with_param(
         int(metad_num),
         int(storaged_num),
         int(graphd_num),
+        int(listener_num)
     )
     for process in nebula_svc.graphd_processes:
         process.update_param(graphd_param)
@@ -346,6 +370,8 @@ def given_nebulacluster_with_param(
         process.update_param(storaged_param)
     for process in nebula_svc.metad_processes:
         process.update_param(metad_param)
+    for process in nebula_svc.listener_processes:
+        process.update_param(listener_param)
     work_dir = os.path.join(
         build_dir,
         "C" + space_generator() + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),
@@ -409,10 +435,12 @@ def executing_query(query, exec_ctx, request):
     exec_query(request, ngql, exec_ctx)
 
 # execute query multiple times
+
+
 @when(parse("executing query {times:d} times:\n{query}"))
 def executing_query_multiple_times(times, query, exec_ctx, request):
     ngql = combine_query(query)
-    exec_query(request, ngql, exec_ctx, times = times)
+    exec_query(request, ngql, exec_ctx, times=times)
 
 
 @when(
@@ -436,7 +464,7 @@ def executing_query_with_retry(query, exec_ctx, request, secs, retryTimes):
                 break
 
 
-@when(parse("executing query with user {username} with password {password}:\n{query}"))
+@when(parse('executing query with user "{username}" and password "{password}":\n{query}'))
 def executing_query(
     username, password, conn_pool_to_first_graph_service, query, exec_ctx, request
 ):
@@ -444,7 +472,6 @@ def executing_query(
     ngql = combine_query(query)
     exec_query(request, ngql, exec_ctx, sess)
     sess.release()
-
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, exec_ctx, request):
@@ -798,7 +825,6 @@ def drop_used_space(exec_ctx):
         session = exec_ctx.get('current_session')
         response(session, stmt)
 
-
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(request, plan, exec_ctx):
     ngql = exec_ctx["ngql"]
@@ -954,3 +980,19 @@ def switch_to_new_session(conn_pool, user, password, class_fixture_variables, ex
     sess = conn_pool.get_session(user, password)
     class_fixture_variables["sessions"].append(sess)
     exec_ctx["current_session"] = sess
+
+@when(parse('verify login with user "{user}"'))
+def login_without_password(conn_pool, user):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, '')
+    except Exception as e:
+        assert e
+
+@when(parse('verify login with user "{user}" and password "{password}"'))
+def login_with_password(conn_pool, user, password):
+    sess = None
+    try:
+        sess = conn_pool.get_session(user, password)
+    except Exception as e:
+        assert e

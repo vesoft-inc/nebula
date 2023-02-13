@@ -1983,6 +1983,19 @@ TEST_F(FunctionManagerTest, PurityTest) {
   ASSERT_TRUE(result.ok() && result.value() == true);
 }
 
+TEST_F(FunctionManagerTest, Any) {
+  auto dataset = DataSet({"col0", "col1", "col2"});
+  dataset.emplace_back(Row({1, true, "233"}));
+  dataset.emplace_back(Row({4, false, "456"}));
+  Value datasetValue = Value(std::move(dataset));
+  // null all
+  { TEST_FUNCTION(_any, std::vector<Value>({Value(), Value::kNullValue}), Value::kNullBadData); }
+  // ok
+  { TEST_FUNCTION(_any, std::vector<Value>({Value(), Value::kNullValue, Value(1)}), Value(1)); }
+  // only one
+  { TEST_FUNCTION(_any, std::vector<Value>({Value(1)}), Value(1)); }
+}
+
 }  // namespace nebula
 
 int main(int argc, char **argv) {

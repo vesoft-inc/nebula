@@ -11,6 +11,8 @@
 #include <rocksdb/utilities/backup_engine.h>
 #include <rocksdb/utilities/checkpoint.h>
 
+#include <memory>
+
 #include "common/base/Base.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
@@ -26,6 +28,9 @@ class RocksRangeIter : public KVIterator {
  public:
   RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
       : iter_(iter), start_(start), end_(end) {}
+
+  RocksRangeIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice start, rocksdb::Slice end)
+      : iter_(std::move(iter)), start_(start), end_(end) {}
 
   ~RocksRangeIter() = default;
 
@@ -62,6 +67,9 @@ class RocksPrefixIter : public KVIterator {
  public:
   RocksPrefixIter(rocksdb::Iterator* iter, rocksdb::Slice prefix) : iter_(iter), prefix_(prefix) {}
 
+  RocksPrefixIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice prefix)
+      : iter_(std::move(iter)), prefix_(prefix) {}
+
   ~RocksPrefixIter() = default;
 
   bool valid() const override {
@@ -95,6 +103,8 @@ class RocksPrefixIter : public KVIterator {
 class RocksCommonIter : public KVIterator {
  public:
   explicit RocksCommonIter(rocksdb::Iterator* iter) : iter_(iter) {}
+
+  explicit RocksCommonIter(std::unique_ptr<rocksdb::Iterator> iter) : iter_(std::move(iter)) {}
 
   ~RocksCommonIter() = default;
 
@@ -177,7 +187,7 @@ class RocksEngine : public KVEngine {
    * @brief Construct a new rocksdb instance
    *
    * @param spaceId
-   * @param vIdLen Vertex id length, used for perfix bloom filter
+   * @param vIdLen Vertex id length, used for prefix bloom filter
    * @param dataPath Rocksdb data path
    * @param walPath Rocksdb wal path
    * @param mergeOp Rocksdb merge operation
@@ -392,7 +402,7 @@ class RocksEngine : public KVEngine {
    * Non-data operation
    ********************/
   /**
-   * @brief Write the part key into rocksdb for persistance
+   * @brief Write the part key into rocksdb for persistence
    *
    * @param partId
    * @param raftPeers partition raft peers, including peers created during balance which are not in
@@ -424,7 +434,7 @@ class RocksEngine : public KVEngine {
   std::vector<PartitionID> allParts() override;
 
   /**
-   * @brief Retrun all the balancing part->raft peers in rocksdb engine by scanning system part key.
+   * @brief Return all the balancing part->raft peers in rocksdb engine by scanning system part key.
    *
    * @return std::map<Partition, Peers>
    */
@@ -552,6 +562,7 @@ class RocksEngine : public KVEngine {
   std::unique_ptr<rocksdb::BackupEngine> backupDb_{nullptr};
   int32_t partsNum_ = -1;
   size_t extractorLen_;
+  bool isPlainTable_{false};
 };
 
 }  // namespace kvstore

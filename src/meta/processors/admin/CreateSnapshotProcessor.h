@@ -23,16 +23,15 @@ class CreateSnapshotProcessor : public BaseProcessor<cpp2::ExecResp> {
   }
   void process(const cpp2::CreateSnapshotReq& req);
 
+ private:
+  CreateSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
+      : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
   /**
    * @brief Cancel write blocking when create snapshot failed
    *
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode cancelWriteBlocking();
-
- private:
-  CreateSnapshotProcessor(kvstore::KVStore* kvstore, AdminClient* client)
-      : BaseProcessor<cpp2::ExecResp>(kvstore), client_(client) {}
 
  private:
   AdminClient* client_;

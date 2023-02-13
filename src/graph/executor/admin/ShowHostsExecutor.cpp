@@ -24,7 +24,6 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
   auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
     DataSet v({"Host",
                "Port",
-               "HTTP port",
                "Status",
                "Leader count",
                "Leader distribution",
@@ -38,7 +37,6 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     for (const auto &host : hostVec) {
       nebula::Row r({host.get_hostAddr().host,
                      host.get_hostAddr().port,
-                     19779,  // FIXME: update real http port.
                      apache::thrift::util::enumNameSafe(host.get_status())});
       int64_t leaderCount = 0;
       for (const auto &spaceEntry : host.get_leader_parts()) {

@@ -4,12 +4,14 @@
  */
 #include "graph/validator/MutateValidator.h"
 
+#include "common/datatypes/Value.h"
+#include "common/expression/Expression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/visitor/RewriteSymExprVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
 namespace graph {
@@ -117,7 +119,7 @@ Status InsertVerticesValidator::prepareVertices() {
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
     }
-    auto valsRet = SchemaUtil::toValueVec(row->values());
+    auto valsRet = SchemaUtil::toValueVec(qctx_, row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto values = std::move(valsRet).value();
 
@@ -209,8 +211,7 @@ Status InsertEdgesValidator::check() {
 // Check validity of vertices data.
 // Check edge key type, check properties value, fill to NewEdge structure.
 Status InsertEdgesValidator::prepareEdges() {
-  auto size =
-      FLAGS_enable_experimental_feature && FLAGS_enable_toss ? rows_.size() : rows_.size() * 2;
+  auto size = rows_.size() * 2;
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
@@ -251,7 +252,7 @@ Status InsertEdgesValidator::prepareEdges() {
       }
     }
 
-    auto valsRet = SchemaUtil::toValueVec(row->values());
+    auto valsRet = SchemaUtil::toValueVec(qctx_, row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto props = std::move(valsRet).value();
 
@@ -295,7 +296,7 @@ Status InsertEdgesValidator::prepareEdges() {
     edge.key_ref() = key;
     edge.props_ref() = std::move(entirePropValues);
     edges_.emplace_back(edge);
-    if (!(FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
+    {
       // inbound
       key.src_ref() = dstId;
       key.dst_ref() = srcId;
@@ -728,7 +729,7 @@ Status UpdateValidator::getUpdateProps() {
   return status;
 }
 
-// Rewrite symbol expresion to fit semantic.
+// Rewrite symbol expression to fit semantic.
 Status UpdateValidator::checkAndResetSymExpr(Expression *inExpr,
                                              const std::string &symName,
                                              std::string &encodeStr) {
@@ -750,10 +751,72 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
                                             const std::string &sym,
                                             bool &hasWrongType,
                                             bool isEdge) {
-  RewriteSymExprVisitor visitor(qctx_->objPool(), sym, isEdge);
-  expr->accept(&visitor);
-  hasWrongType = visitor.hasWrongType();
-  return std::move(visitor).expr();
+  std::unordered_set<Expression::Kind> invalidExprs{
+      Expression::Kind::kVersionedVar,
+      Expression::Kind::kVarProperty,
+      Expression::Kind::kInputProperty,
+      // Expression::Kind::kLabelAttribute, valid only for update edge
+      Expression::Kind::kSubscript,
+      Expression::Kind::kUUID,
+      Expression::Kind::kTagProperty,
+      Expression::Kind::kLabelTagProperty,
+      Expression::Kind::kDstProperty,
+      Expression::Kind::kEdgeSrc,
+      Expression::Kind::kEdgeType,
+      Expression::Kind::kEdgeRank,
+      Expression::Kind::kEdgeDst,
+  };
+  if (isEdge) {
+    invalidExprs.emplace(Expression::Kind::kSrcProperty);
+  } else {
+    invalidExprs.emplace(Expression::Kind::kLabelAttribute);
+    invalidExprs.emplace(Expression::Kind::kEdgeProperty);
+  }
+  if (ExpressionUtils::checkVarExprIfExist(expr, qctx_)) {
+    hasWrongType = true;
+    return nullptr;
+  }
+  auto *r = ExpressionUtils::findAny(expr, invalidExprs);
+  if (r != nullptr) {
+    hasWrongType = true;
+    return nullptr;
+  }
+
+  auto *pool = qctx_->objPool();
+  RewriteVisitor::Matcher matcher = [](const Expression *e) -> bool {
+    switch (e->kind()) {
+      case Expression::Kind::kLabel:
+      case Expression::Kind::kLabelAttribute:
+        return true;
+      default:
+        return false;
+    }
+  };
+  RewriteVisitor::Rewriter rewriter = [pool, sym, isEdge](const Expression *e) -> Expression * {
+    switch (e->kind()) {
+      case Expression::Kind::kLabel: {
+        auto laExpr = static_cast<const LabelExpression *>(e);
+        if (isEdge) {
+          return EdgePropertyExpression::make(pool, sym, laExpr->name());
+        } else {
+          return SourcePropertyExpression::make(pool, sym, laExpr->name());
+        }
+      }
+      case Expression::Kind::kLabelAttribute: {
+        auto laExpr = static_cast<const LabelAttributeExpression *>(e);
+        if (isEdge) {
+          return EdgePropertyExpression::make(
+              pool, laExpr->left()->name(), laExpr->right()->value().getStr());
+        } else {
+          return nullptr;
+        }
+      }
+      default:
+        return nullptr;
+    }
+  };
+  auto *newExpr = RewriteVisitor::transform(expr, matcher, rewriter);
+  return ExpressionUtils::rewriteParameter(newExpr, qctx_);
 }
 
 Status UpdateVertexValidator::validateImpl() {
@@ -830,26 +893,21 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  if ((FLAGS_enable_experimental_feature && FLAGS_enable_toss)) {
-    root_ = outNode;
-    tail_ = root_;
-  } else {
-    auto *inNode = UpdateEdge::make(qctx_,
-                                    outNode,
-                                    spaceId_,
-                                    std::move(name_),
-                                    std::move(dstId_),
-                                    std::move(srcId_),
-                                    -edgeType_,
-                                    rank_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_));
-    root_ = inNode;
-    tail_ = outNode;
-  }
+  auto *inNode = UpdateEdge::make(qctx_,
+                                  outNode,
+                                  spaceId_,
+                                  std::move(name_),
+                                  std::move(dstId_),
+                                  std::move(srcId_),
+                                  -edgeType_,
+                                  rank_,
+                                  insertable_,
+                                  std::move(updatedProps_),
+                                  std::move(returnProps_),
+                                  std::move(condition_),
+                                  std::move(yieldColNames_));
+  root_ = inNode;
+  tail_ = outNode;
   return Status::OK();
 }
 

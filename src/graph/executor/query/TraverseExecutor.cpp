@@ -5,9 +5,15 @@
 #include "graph/executor/query/TraverseExecutor.h"
 
 #include "clients/storage/StorageClient.h"
+#include "common/memory/MemoryTracker.h"
+#include "graph/context/iterator/GetNbrsRespDataSetIter.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
+
+DEFINE_uint64(traverse_parallel_threshold_rows,
+              150000,
+              "threshold row number of traverse executor in parallel");
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -18,56 +24,51 @@ namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
   range_ = traverse_->stepRange();
-  auto status = buildRequestVids();
-  if (!status.ok()) {
-    return error(std::move(status));
+  NG_RETURN_IF_ERROR(buildRequestVids());
+  if (vids_.empty()) {
+    DataSet emptyDs;
+    return finish(ResultBuilder().value(Value(std::move(emptyDs))).build());
   }
-  return traverse();
-}
-
-Status TraverseExecutor::close() {
-  // clear the members
-  vids_.clear();
-  return Executor::close();
+  return getNeighbors();
 }
 
 Status TraverseExecutor::buildRequestVids() {
-  time::Duration dur;
   SCOPED_TIMER(&execTime_);
   const auto& inputVar = traverse_->inputVar();
   auto inputIter = ectx_->getResult(inputVar).iterRef();
   auto iter = static_cast<SequentialIter*>(inputIter);
-
-  const auto& spaceInfo = qctx()->rctx()->session()->space();
-  const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
-  auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
+  size_t iterSize = iter->size();
+  vids_.reserve(iterSize);
   auto* src = traverse_->src();
-
   QueryExpressionContext ctx(ectx_);
-  HashMap prev;
 
   bool mv = movable(traverse_->inputVars().front());
-  for (; iter->valid(); iter->next()) {
-    const auto& vid = src->eval(ctx(iter));
-    if (vid.type() != vidType) {
-      LOG(ERROR) << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
-      continue;
+  if (traverse_->trackPrevPath()) {
+    for (; iter->valid(); iter->next()) {
+      const auto& vid = src->eval(ctx(iter));
+      auto prevPath = mv ? iter->moveRow() : *iter->row();
+      auto vidIter = dst2PathsMap_.find(vid);
+      if (vidIter == dst2PathsMap_.end()) {
+        dst2PathsMap_.emplace(vid, std::vector<Row>{std::move(prevPath)});
+      } else {
+        vidIter->second.emplace_back(std::move(prevPath));
+      }
+      vids_.emplace(vid);
     }
-    // Need copy here, Argument executor may depends on this variable.
-    auto prePath = mv ? iter->moveRow() : *iter->row();
-    buildPath(prev, vid, std::move(prePath));
-    vids_.emplace(vid);
+  } else {
+    const auto& spaceInfo = qctx()->rctx()->session()->space();
+    const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
+    auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
+    for (; iter->valid(); iter->next()) {
+      const auto& vid = src->eval(ctx(iter));
+      DCHECK_EQ(vid.type(), vidType)
+          << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
+      if (vid.type() == vidType) {
+        vids_.emplace(vid);
+      }
+    }
   }
-  paths_.emplace_back(std::move(prev));
   return Status::OK();
-}
-
-folly::Future<Status> TraverseExecutor::traverse() {
-  if (vids_.empty()) {
-    DataSet emptyResult;
-    return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
-  }
-  return getNeighbors();
 }
 
 folly::Future<Status> TraverseExecutor::getNeighbors() {
@@ -79,8 +80,8 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-  std::vector<Value> vids(vids_.begin(), vids_.end());
-  vids_.clear();
+  std::vector<Value> vids(vids_.size());
+  std::move(vids_.begin(), vids_.end(), vids.begin());
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -96,18 +97,31 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->orderBy() : std::vector<storage::cpp2::OrderBy>(),
                      finalStep ? traverse_->limit(qctx()) : -1,
                      selectFilter(),
-                     nullptr)
+                     currentStep_ == 1 ? traverse_->tagFilter() : nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+        vids_.clear();
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
-        return handleResponse(std::move(resp));
+        time::Duration expandTime;
+        return handleResponse(std::move(resp)).ensure([this, expandTime]() {
+          otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
+        });
+      })
+      .thenValue([this](Status s) -> folly::Future<Status> {
+        NG_RETURN_IF_ERROR(s);
+        if (!isFinalStep() && !vids_.empty()) {
+          return getNeighbors();
+        }
+        return buildResult();
       });
 }
 
 Expression* TraverseExecutor::selectFilter() {
   Expression* filter = nullptr;
-  if (!(currentStep_ == 1 && zeroStep())) {
+  if (!(currentStep_ == 1 && range_.min() == 0)) {
     filter = const_cast<Expression*>(traverse_->filter());
   }
   if (currentStep_ == 1) {
@@ -129,92 +143,188 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
     if (result.vertices_ref().has_value()) {
       size = (*result.vertices_ref()).size();
     }
-    auto info = util::collectRespProfileData(result.result, hostLatency[i], size, getNbrTimeInUSec);
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
     stepInfo.push_back(std::move(info));
   }
-  otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepInfo));
+  folly::dynamic stepObj = folly::dynamic::object();
+  stepObj.insert("storage", stepInfo);
+  stepObj.insert("total_rpc_time", folly::sformat("{}(us)", getNbrTimeInUSec));
+  otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepObj));
+}
+
+size_t TraverseExecutor::numRowsOfRpcResp(const RpcResponse& resps) const {
+  size_t numRows = 0;
+  for (const auto& resp : resps.responses()) {
+    auto dataset = resp.get_vertices();
+    if (dataset) {
+      numRows += dataset->rowSize();
+    }
+  }
+  return numRows;
+}
+
+template <typename T>
+size_t sizeOf(const std::vector<T>& v) {
+  size_t sz = 0u;
+  for (auto& e : v) {
+    sz += e.size();
+  }
+  return sz;
+}
+
+void TraverseExecutor::buildAdjList(DataSet& dataset,
+                                    std::vector<Value>& initVertices,
+                                    VidHashSet& vids,
+                                    VertexMap<Value>& adjList) const {
+  for (GetNbrsRespDataSetIter iter(&dataset); iter.valid(); iter.next()) {
+    Value v = iter.getVertex();
+    initVertices.emplace_back(v);
+    VidHashSet dstSet;
+    auto adjEdges = iter.getAdjEdges(&dstSet);
+    for (const Value& dst : dstSet) {
+      if (adjList_.find(dst) == adjList_.end()) {
+        vids.emplace(dst);
+      }
+    }
+    DCHECK(adjList_.find(v) == adjList_.end())
+        << "The adjacency list should not contain the source vertex: " << v;
+    adjList.emplace(v, std::move(adjEdges));
+  }
+}
+
+folly::Future<Status> TraverseExecutor::asyncExpandOneStep(RpcResponse&& resps) {
+  size_t numResps = resps.responses().size();
+  auto initVerticesList = std::make_shared<std::vector<std::vector<Value>>>(numResps);
+  auto vidsList = std::make_shared<std::vector<VidHashSet>>(numResps);
+  auto adjLists = std::make_shared<std::vector<VertexMap<Value>>>(numResps);
+  auto taskRunTime = std::make_shared<std::vector<size_t>>(numResps, 0u);
+
+  std::vector<folly::Future<folly::Unit>> futures;
+  futures.reserve(numResps);
+
+  for (size_t i = 0; i < numResps; i++) {
+    auto dataset = resps.responses()[i].get_vertices();
+    if (!dataset) continue;
+    auto func = [this,
+                 dataset = std::move(*dataset),
+                 i,
+                 initVerticesList,
+                 vidsList,
+                 adjLists,
+                 taskRunTime]() mutable {
+      SCOPED_TIMER(&((*taskRunTime)[i]));
+      buildAdjList(dataset, (*initVerticesList)[i], (*vidsList)[i], (*adjLists)[i]);
+    };
+    futures.emplace_back(folly::via(runner(), std::move(func)));
+  }
+
+  return folly::collect(futures).via(runner()).thenValue(
+      [this, initVerticesList, vidsList, adjLists, taskRunTime](std::vector<folly::Unit>&&) {
+        time::Duration postTaskTime;
+        initVertices_.reserve(sizeOf(*initVerticesList));
+        for (auto& initVertices : *initVerticesList) {
+          std::move(initVertices.begin(), initVertices.end(), std::back_inserter(initVertices_));
+        }
+
+        vids_.reserve(sizeOf(*vidsList));
+        for (auto& vids : *vidsList) {
+          for (auto& v : vids) {
+            vids_.emplace(std::move(v));
+          }
+        }
+
+        adjList_.reserve(adjList_.size() + sizeOf(*adjLists));
+        for (auto& adjList : *adjLists) {
+          for (auto& p : adjList) {
+            adjList_.emplace(std::move(p.first), std::move(p.second));
+          }
+        }
+
+        auto t = postTaskTime.elapsedInUSec();
+        otherStats_.emplace("expandPostTaskTime", folly::sformat("{}(us)", t));
+        folly::dynamic taskRunTimeArray = folly::dynamic::array();
+        for (auto time : *taskRunTime) {
+          taskRunTimeArray.push_back(time);
+        }
+        otherStats_.emplace("expandTaskRunTime", folly::toPrettyJson(taskRunTimeArray));
+
+        return Status::OK();
+      });
+}
+
+folly::Future<Status> TraverseExecutor::expandOneStep(RpcResponse&& resps) {
+  auto numRows = numRowsOfRpcResp(resps);
+  if (numRows < FLAGS_traverse_parallel_threshold_rows) {
+    return asyncExpandOneStep(std::move(resps));
+  }
+
+  initVertices_.reserve(numRows);
+  for (auto& resp : resps.responses()) {
+    auto dataset = resp.get_vertices();
+    if (dataset) {
+      buildAdjList(*dataset, initVertices_, vids_, adjList_);
+    }
+  }
+
+  return Status::OK();
 }
 
 folly::Future<Status> TraverseExecutor::handleResponse(RpcResponse&& resps) {
-  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
-  if (!result.ok()) {
-    return folly::makeFuture<Status>(std::move(result).status());
+  NG_RETURN_IF_ERROR(handleCompleteness(resps, FLAGS_accept_partial_success));
+
+  if (currentStep_ == 1 && !traverse_->eFilter() && !traverse_->vFilter()) {
+    return expandOneStep(std::move(resps)).thenValue([this](Status s) {
+      NG_RETURN_IF_ERROR(s);
+      if (range_.min() == 0) {
+        result_.rows = buildZeroStepPath();
+      }
+      return Status::OK();
+    });
   }
 
-  auto& responses = resps.responses();
   List list;
-  for (auto& resp : responses) {
+  for (auto& resp : resps.responses()) {
     auto dataset = resp.get_vertices();
-    if (dataset == nullptr) {
-      continue;
+    if (dataset) {
+      list.values.emplace_back(std::move(*dataset));
     }
-    list.values.emplace_back(std::move(*dataset));
   }
   auto listVal = std::make_shared<Value>(std::move(list));
-
-  if (FLAGS_max_job_size <= 1) {
-    auto iter = std::make_unique<GetNeighborsIter>(listVal);
-    auto status = buildInterimPath(iter.get());
-    if (!status.ok()) {
-      return folly::makeFuture<Status>(std::move(status));
-    }
-    if (!isFinalStep()) {
-      if (vids_.empty()) {
-        if (range_ != nullptr) {
-          return folly::makeFuture<Status>(buildResult());
-        } else {
-          return folly::makeFuture<Status>(Status::OK());
-        }
-      } else {
-        return getNeighbors();
+  auto iter = std::make_unique<GetNeighborsIter>(listVal);
+  if (currentStep_ == 1) {
+    initVertices_.reserve(iter->numRows());
+    auto vertices = iter->getVertices();
+    // match (v)-[e:Rel]-(v1:Label1)-[e1*2]->() where id(v0) in [6, 23] return v1
+    // save the vertex that meets the filter conditions as the starting vertex of the current
+    // traverse
+    for (auto& vertex : vertices.values) {
+      if (vertex.isVertex()) {
+        initVertices_.emplace_back(vertex);
       }
-    } else {
-      return folly::makeFuture<Status>(buildResult());
     }
-  } else {
-    return std::move(buildInterimPathMultiJobs(std::make_unique<GetNeighborsIter>(listVal)))
-        .via(runner())
-        .thenValue([this](auto&& status) {
-          if (!status.ok()) {
-            return folly::makeFuture<Status>(std::move(status));
-          }
-          if (!isFinalStep()) {
-            if (vids_.empty()) {
-              if (range_ != nullptr) {
-                return folly::makeFuture<Status>(buildResult());
-              } else {
-                return folly::makeFuture<Status>(Status::OK());
-              }
-            } else {
-              return getNeighbors();
-            }
-          } else {
-            return folly::makeFuture<Status>(buildResult());
-          }
-        });
+    if (range_.min() == 0) {
+      result_.rows = buildZeroStepPath();
+    }
   }
+
+  expand(iter.get());
+  return Status::OK();
 }
 
-Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
-  size_t count = 0;
-
-  const auto& prev = paths_.back();
-  if (currentStep_ == 1 && zeroStep()) {
-    paths_.emplace_back();
-    NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
-    // If 0..0 case, release memory and return immediately.
-    if (range_ != nullptr && range_->max() == 0) {
-      releasePrevPaths(count);
-      return Status::OK();
-    }
+void TraverseExecutor::expand(GetNeighborsIter* iter) {
+  if (iter->numRows() == 0) {
+    return;
   }
-  paths_.emplace_back();
-  auto& current = paths_.back();
-
   auto* vFilter = traverse_->vFilter();
   auto* eFilter = traverse_->eFilter();
   QueryExpressionContext ctx(ectx_);
 
+  Value curVertex;
+  std::vector<Value> adjEdges;
+  auto sz = iter->size();
+  adjEdges.reserve(sz);
+  vids_.reserve(vids_.size() + sz);
+  adjList_.reserve(adjList_.size() + iter->numRows() + 1u);
   for (; iter->valid(); iter->next()) {
     if (vFilter != nullptr && currentStep_ == 1) {
       const auto& vFilterVal = vFilter->eval(ctx(iter));
@@ -228,201 +338,283 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         continue;
       }
     }
-    auto& dst = iter->getEdgeProp("*", kDst);
-    if (dst.type() == Value::Type::__EMPTY__) {
-      // no edge return Empty
+    const auto& edge = iter->getEdge();
+    if (edge.empty()) {
       continue;
     }
-    auto srcV = iter->getVertex();
-    auto e = iter->getEdge();
-    // Join on dst = src
-    auto pathToSrcFound = prev.find(srcV.getVertex().vid);
-    if (pathToSrcFound == prev.end()) {
-      return Status::Error("Can't find prev paths.");
-    }
-    const auto& paths = pathToSrcFound->second;
-    for (auto& prevPath : paths) {
-      if (hasSameEdge(prevPath, e.getEdge())) {
-        continue;
-      }
+    const auto& dst = edge.getEdge().dst;
+    if (adjList_.find(dst) == adjList_.end()) {
       vids_.emplace(dst);
-
-      if (currentStep_ == 1) {
-        Row path;
-        if (traverse_->trackPrevPath()) {
-          path = prevPath;
-        }
-        path.values.emplace_back(srcV);
-        List neighbors;
-        neighbors.values.emplace_back(e);
-        path.values.emplace_back(std::move(neighbors));
-        buildPath(current, dst, std::move(path));
-        ++count;
-      } else {
-        auto path = prevPath;
-        auto& eList = path.values.back().mutableList().values;
-        eList.emplace_back(srcV);
-        eList.emplace_back(e);
-        buildPath(current, dst, std::move(path));
-        ++count;
-      }
-    }  // `prevPath'
-  }    // `iter'
-
-  releasePrevPaths(count);
-  return Status::OK();
+    }
+    const auto& vertex = iter->getVertex();
+    curVertex = curVertex.empty() ? vertex : curVertex;
+    if (curVertex != vertex) {
+      adjList_.emplace(curVertex, std::move(adjEdges));
+      curVertex = vertex;
+    }
+    adjEdges.emplace_back(edge);
+  }
+  if (!curVertex.empty()) {
+    adjList_.emplace(curVertex, std::move(adjEdges));
+  }
 }
 
-folly::Future<Status> TraverseExecutor::buildInterimPathMultiJobs(
-    std::unique_ptr<GetNeighborsIter> iter) {
-  size_t pathCnt = 0;
-  const auto* prev = &paths_.back();
-  if (currentStep_ == 1 && zeroStep()) {
-    paths_.emplace_back();
-    NG_RETURN_IF_ERROR(handleZeroStep(*prev, iter->getVertices(), paths_.back(), pathCnt));
-    // If 0..0 case, release memory and return immediately.
-    if (range_ != nullptr && range_->max() == 0) {
-      releasePrevPaths(pathCnt);
-      return Status::OK();
+std::vector<Row> TraverseExecutor::buildZeroStepPath() {
+  if (initVertices_.empty()) {
+    return std::vector<Row>();
+  }
+  std::vector<Row> result;
+  result.reserve(initVertices_.size());
+  if (traverse_->trackPrevPath()) {
+    for (auto& vertex : initVertices_) {
+      auto dstIter = dst2PathsMap_.find(vertex);
+      if (dstIter == dst2PathsMap_.end()) {
+        continue;
+      }
+      auto& prevPaths = dstIter->second;
+      for (auto& p : prevPaths) {
+        Row row = p;
+        List edgeList;
+        edgeList.values.emplace_back(vertex);
+        row.values.emplace_back(vertex);
+        row.values.emplace_back(std::move(edgeList));
+        result.emplace_back(std::move(row));
+      }
+    }
+  } else {
+    for (auto& vertex : initVertices_) {
+      Row row;
+      List edgeList;
+      edgeList.values.emplace_back(vertex);
+      row.values.emplace_back(vertex);
+      row.values.emplace_back(std::move(edgeList));
+      result.emplace_back(std::move(row));
     }
   }
-  paths_.emplace_back();
+  return result;
+}
 
-  auto scatter = [this, prev](
-                     size_t begin, size_t end, Iterator* tmpIter) mutable -> StatusOr<JobResult> {
-    return handleJob(begin, end, tmpIter, *prev);
+folly::Future<Status> TraverseExecutor::buildResult() {
+  size_t minStep = range_.min();
+  size_t maxStep = range_.max();
+
+  result_.colNames = traverse_->colNames();
+  if (maxStep == 0) {
+    return finish(ResultBuilder().value(Value(std::move(result_))).build());
+  }
+  if (FLAGS_max_job_size <= 1) {
+    for (const auto& initVertex : initVertices_) {
+      auto paths = buildPath(initVertex, minStep, maxStep);
+      if (paths.empty()) {
+        continue;
+      }
+      result_.rows.insert(result_.rows.end(),
+                          std::make_move_iterator(paths.begin()),
+                          std::make_move_iterator(paths.end()));
+    }
+    return finish(ResultBuilder().value(Value(std::move(result_))).build());
+  }
+  return buildPathMultiJobs(minStep, maxStep);
+}
+
+folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_t maxStep) {
+  DataSet vertices;
+  vertices.rows.reserve(initVertices_.size());
+  for (auto& initVertex : initVertices_) {
+    Row row;
+    row.values.emplace_back(std::move(initVertex));
+    vertices.rows.emplace_back(std::move(row));
+  }
+  auto val = std::make_shared<Value>(std::move(vertices));
+  auto iter = std::make_unique<SequentialIter>(val);
+
+  auto scatter = [this, minStep, maxStep](
+                     size_t begin, size_t end, Iterator* tmpIter) mutable -> std::vector<Row> {
+    // outside caller should already turn on throwOnMemoryExceeded
+    DCHECK(memory::MemoryTracker::isOn()) << "MemoryTracker is off";
+    // MemoryTrackerVerified
+    std::vector<Row> rows;
+    for (; tmpIter->valid() && begin++ < end; tmpIter->next()) {
+      auto& initVertex = tmpIter->getColumn(0);
+      auto paths = buildPath(initVertex, minStep, maxStep);
+      if (paths.empty()) {
+        continue;
+      }
+      rows.insert(
+          rows.end(), std::make_move_iterator(paths.begin()), std::make_move_iterator(paths.end()));
+    }
+    return rows;
   };
 
-  auto gather = [this, pathCnt](std::vector<StatusOr<JobResult>> results) mutable -> Status {
-    auto& current = paths_.back();
-    size_t mapCnt = 0;
-    for (auto& r : results) {
-      if (!r.ok()) {
-        return r.status();
-      } else {
-        mapCnt += r.value().newPaths.size();
+  auto gather = [this](std::vector<std::vector<Row>> resp) mutable -> Status {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    for (auto& rows : resp) {
+      if (rows.empty()) {
+        continue;
       }
+      result_.rows.insert(result_.rows.end(),
+                          std::make_move_iterator(rows.begin()),
+                          std::make_move_iterator(rows.end()));
     }
-    current.reserve(mapCnt);
-    for (auto& r : results) {
-      auto jobResult = std::move(r).value();
-      pathCnt += jobResult.pathCnt;
-      auto& vids = jobResult.vids;
-      if (!vids.empty()) {
-        vids_.insert(std::make_move_iterator(vids.begin()), std::make_move_iterator(vids.end()));
-      }
-      for (auto& kv : jobResult.newPaths) {
-        auto& paths = current[kv.first];
-        paths.insert(paths.end(),
-                     std::make_move_iterator(kv.second.begin()),
-                     std::make_move_iterator(kv.second.end()));
-      }
-    }
-    releasePrevPaths(pathCnt);
+    finish(ResultBuilder().value(Value(std::move(result_))).build());
     return Status::OK();
   };
 
   return runMultiJobs(std::move(scatter), std::move(gather), iter.get());
 }
 
-StatusOr<JobResult> TraverseExecutor::handleJob(size_t begin,
-                                                size_t end,
-                                                Iterator* iter,
-                                                const HashMap& prev) {
-  // Handle edges from begin to end, [begin, end)
-  JobResult jobResult;
-  size_t& pathCnt = jobResult.pathCnt;
-  auto& vids = jobResult.vids;
-  QueryExpressionContext ctx(ectx_);
-  auto* vFilter = traverse_->vFilter() ? traverse_->vFilter()->clone() : nullptr;
-  auto* eFilter = traverse_->eFilter() ? traverse_->eFilter()->clone() : nullptr;
-  auto& current = jobResult.newPaths;
-  for (; iter->valid() && begin++ < end; iter->next()) {
-    if (vFilter != nullptr && currentStep_ == 1) {
-      const auto& vFilterVal = vFilter->eval(ctx(iter));
-      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
-        continue;
-      }
+// build path based on BFS through adjacency list
+std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
+                                             size_t minStep,
+                                             size_t maxStep) {
+  auto vidIter = adjList_.find(initVertex);
+  if (vidIter == adjList_.end()) {
+    return std::vector<Row>();
+  }
+  auto& src = vidIter->first;
+  auto& adjEdges = vidIter->second;
+  if (adjEdges.empty()) {
+    return std::vector<Row>();
+  }
+
+  std::vector<Row> result;
+  result.reserve(adjEdges.size());
+  for (auto& edge : adjEdges) {
+    List edgeList;
+    edgeList.values.emplace_back(edge);
+    Row row;
+    row.values.emplace_back(src);
+    row.values.emplace_back(std::move(edgeList));
+    result.emplace_back(std::move(row));
+  }
+
+  if (maxStep == 1) {
+    if (traverse_->trackPrevPath()) {
+      return joinPrevPath(initVertex, result);
     }
-    if (eFilter != nullptr) {
-      const auto& eFilterVal = eFilter->eval(ctx(iter));
-      if (!eFilterVal.isBool() || !eFilterVal.getBool()) {
-        continue;
-      }
-    }
-    auto& dst = iter->getEdgeProp("*", kDst);
-    auto srcV = iter->getVertex();
-    auto e = iter->getEdge();
-    // Join on dst = src
-    auto pathToSrcFound = prev.find(srcV.getVertex().vid);
-    if (pathToSrcFound == prev.end()) {
-      return Status::Error("Can't find prev paths.");
-    }
-    const auto& paths = pathToSrcFound->second;
-    for (auto& prevPath : paths) {
-      if (hasSameEdge(prevPath, e.getEdge())) {
-        continue;
-      }
-      vids.emplace(dst);
-      if (currentStep_ == 1) {
-        Row path;
-        if (traverse_->trackPrevPath()) {
-          path = prevPath;
+    return result;
+  }
+
+  size_t step = 2;
+  std::vector<Row> newResult;
+  std::queue<std::vector<Value>*> queue;
+  std::list<std::unique_ptr<std::vector<Value>>> holder;
+  for (auto& edge : adjEdges) {
+    auto ptr = std::make_unique<std::vector<Value>>(std::vector<Value>({edge}));
+    queue.emplace(ptr.get());
+    holder.emplace_back(std::move(ptr));
+  }
+  size_t adjSize = queue.size();
+  while (!queue.empty()) {
+    auto edgeListPtr = queue.front();
+    auto& dst = edgeListPtr->back().getEdge().dst;
+    queue.pop();
+    --adjSize;
+    auto dstIter = adjList_.find(dst);
+    if (dstIter == adjList_.end()) {
+      if (adjSize == 0) {
+        if (++step > maxStep) {
+          break;
         }
-        path.values.emplace_back(srcV);
-        List neighbors;
-        neighbors.values.emplace_back(e);
-        path.values.emplace_back(std::move(neighbors));
-        buildPath(current, dst, std::move(path));
-        ++pathCnt;
-      } else {
-        auto path = prevPath;
-        auto& eList = path.values.back().mutableList().values;
-        eList.emplace_back(srcV);
-        eList.emplace_back(e);
-        buildPath(current, dst, std::move(path));
-        ++pathCnt;
+        adjSize = queue.size();
       }
-    }  // `prevPath'
-  }    // `iter'
-  return jobResult;
-}
+      continue;
+    }
 
-void TraverseExecutor::buildPath(HashMap& currentPaths, const Value& dst, Row&& path) {
-  auto pathToDstFound = currentPaths.find(dst);
-  if (pathToDstFound == currentPaths.end()) {
-    Paths interimPaths;
-    interimPaths.emplace_back(std::move(path));
-    currentPaths.emplace(dst, std::move(interimPaths));
-  } else {
-    auto& interimPaths = pathToDstFound->second;
-    interimPaths.emplace_back(std::move(path));
-  }
-}
+    auto& adjedges = dstIter->second;
+    for (auto& edge : adjedges) {
+      if (hasSameEdge(*edgeListPtr, edge.getEdge())) {
+        continue;
+      }
+      auto newEdgeListPtr = std::make_unique<std::vector<Value>>(*edgeListPtr);
+      newEdgeListPtr->emplace_back(dstIter->first);
+      newEdgeListPtr->emplace_back(edge);
 
-Status TraverseExecutor::buildResult() {
-  // This means we are reaching a dead end, return empty.
-  if (range_ != nullptr && currentStep_ < range_->min()) {
-    return finish(ResultBuilder().value(Value(DataSet())).build());
-  }
-
-  DataSet result;
-  result.colNames = traverse_->colNames();
-  result.rows.reserve(totalPathCnt_);
-  for (auto& currentStepPaths : paths_) {
-    for (auto& paths : currentStepPaths) {
-      std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
+      if (step >= minStep) {
+        Row row;
+        row.values.emplace_back(src);
+        row.values.emplace_back(List(*newEdgeListPtr));
+        newResult.emplace_back(std::move(row));
+      }
+      queue.emplace(newEdgeListPtr.get());
+      holder.emplace_back(std::move(newEdgeListPtr));
+    }
+    if (adjSize == 0) {
+      if (++step > maxStep) {
+        break;
+      }
+      adjSize = queue.size();
     }
   }
-
-  return finish(ResultBuilder().value(Value(std::move(result))).build());
+  if (minStep <= 1) {
+    newResult.insert(newResult.begin(),
+                     std::make_move_iterator(result.begin()),
+                     std::make_move_iterator(result.end()));
+  }
+  if (traverse_->trackPrevPath()) {
+    return joinPrevPath(initVertex, newResult);
+  }
+  return newResult;
 }
 
-bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge) {
-  for (const auto& v : prevPath.values) {
-    if (v.isList()) {
-      for (const auto& e : v.getList().values) {
-        if (e.isEdge() && e.getEdge().keyEqual(currentEdge)) {
+std::vector<Row> TraverseExecutor::joinPrevPath(const Value& initVertex,
+                                                const std::vector<Row>& newResult) const {
+  auto dstIter = dst2PathsMap_.find(initVertex);
+  if (dstIter == dst2PathsMap_.end()) {
+    return std::vector<Row>();
+  }
+
+  std::vector<Row> newPaths;
+  for (auto& prevPath : dstIter->second) {
+    for (auto& p : newResult) {
+      if (!hasSameEdgeInPath(prevPath, p)) {
+        // copy
+        Row row = prevPath;
+        row.values.emplace_back(p.values.front());
+        row.values.emplace_back(p.values.back());
+        newPaths.emplace_back(std::move(row));
+      }
+    }
+  }
+  return newPaths;
+}
+
+bool TraverseExecutor::hasSameEdge(const std::vector<Value>& edgeList, const Edge& edge) const {
+  for (const auto& leftEdge : edgeList) {
+    if (leftEdge.isEdge() && leftEdge.getEdge().keyEqual(edge)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TraverseExecutor::hasSameEdgeInPath(const Row& lhs, const Row& rhs) const {
+  for (const auto& leftListVal : lhs.values) {
+    if (leftListVal.isList()) {
+      auto& leftList = leftListVal.getList().values;
+      for (auto& rightListVal : rhs.values) {
+        if (rightListVal.isList()) {
+          auto& rightList = rightListVal.getList().values;
+          for (auto& edgeVal : rightList) {
+            if (edgeVal.isEdge() && hasSameEdge(leftList, edgeVal.getEdge())) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool TraverseExecutor::hasSameEdgeInSet(const Row& rhs,
+                                        const std::unordered_set<Value>& uniqueEdge) const {
+  for (const auto& rightListVal : rhs.values) {
+    if (rightListVal.isList()) {
+      auto& rightList = rightListVal.getList().values;
+      for (auto& edgeVal : rightList) {
+        if (edgeVal.isEdge() && uniqueEdge.find(edgeVal) != uniqueEdge.end()) {
           return true;
         }
       }
@@ -431,55 +623,5 @@ bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge)
   return false;
 }
 
-void TraverseExecutor::releasePrevPaths(size_t cnt) {
-  time::Duration dur;
-  if (range_ != nullptr) {
-    if (currentStep_ == range_->min() && paths_.size() > 1) {
-      auto rangeEnd = paths_.begin();
-      std::advance(rangeEnd, paths_.size() - 1);
-      paths_.erase(paths_.begin(), rangeEnd);
-    } else if (range_->min() == 0 && currentStep_ == 1 && paths_.size() > 1) {
-      paths_.pop_front();
-    }
-
-    if (currentStep_ >= range_->min()) {
-      totalPathCnt_ += cnt;
-    }
-  } else {
-    paths_.pop_front();
-    totalPathCnt_ = cnt;
-  }
-}
-
-Status TraverseExecutor::handleZeroStep(const HashMap& prev,
-                                        List&& vertices,
-                                        HashMap& zeroSteps,
-                                        size_t& count) {
-  HashSet uniqueSrc;
-  for (auto& srcV : vertices.values) {
-    auto src = srcV.getVertex().vid;
-    if (!uniqueSrc.emplace(src).second) {
-      continue;
-    }
-    auto pathToSrcFound = prev.find(src);
-    if (pathToSrcFound == prev.end()) {
-      return Status::Error("Can't find prev paths.");
-    }
-    const auto& paths = pathToSrcFound->second;
-    for (auto& p : paths) {
-      Row path;
-      if (traverse_->trackPrevPath()) {
-        path = p;
-      }
-      path.values.emplace_back(srcV);
-      List neighbors;
-      neighbors.values.emplace_back(srcV);
-      path.values.emplace_back(std::move(neighbors));
-      buildPath(zeroSteps, src, std::move(path));
-      ++count;
-    }
-  }
-  return Status::OK();
-}
 }  // namespace graph
 }  // namespace nebula

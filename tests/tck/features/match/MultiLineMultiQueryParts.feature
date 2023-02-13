@@ -9,11 +9,16 @@ Feature: Multi Line Multi Query Parts
   Scenario: Multi Line Multi Path Patterns
     When executing query:
       """
-      USE nba;
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2,
-      CASE WHEN l.team.name is not null THEN l.team.name
-      WHEN l.player.name is not null THEN l.player.name ELSE "null" END AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(m)=='Tim Duncan'
+      RETURN
+        m.player.name AS n1,
+        n.player.name AS n2,
+        CASE
+          WHEN l.team.name is not null THEN l.team.name
+          WHEN l.player.name is not null THEN l.player.name ELSE 'null'
+        END AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1           | n2            | n3           |
@@ -29,8 +34,10 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
       """
-      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=="Tim Duncan"
-      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
+      MATCH (m)-[]-(n), (n)-[]-(l) WHERE id(n)=='Tim Duncan'
+      RETURN m.player.name AS n1, n.player.name AS n2, l.player.name AS n3
+      ORDER BY n1, n2, n3
+      LIMIT 10
       """
     Then the result should be, in order:
       | n1            | n2           | n3                  |
@@ -84,6 +91,18 @@ Feature: Multi Line Multi Query Parts
       | "Tim Duncan" | "Boris Diaw"  | "Spurs"      |
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"})-[:like*1..3]->(n)
+      WITH DISTINCT v, n
+      MATCH (v)-[:serve]->(nn) return id(v) AS vid, id(nn) AS nnid
+      """
+    Then the result should be, in any order:
+      | vid          | nnid    |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
+      | "Tim Duncan" | "Spurs" |
     When executing query:
       """
       MATCH (m)-[]-(n),(n) WHERE id(m)=="Tim Duncan" and id(n)=="Tony Parker"
@@ -178,103 +197,74 @@ Feature: Multi Line Multi Query Parts
       OPTIONAL MATCH (n)-[]->(l) WHERE id(n)=="Tony Parker"
       RETURN id(m) AS m, id(n) AS n, id(l) AS l;
       """
-    Then the result should be, in any order:
-      | m            | n                   | l                   |
-      | "Tim Duncan" | "Spurs"             | NULL                |
-      | "Tim Duncan" | "LaMarcus Aldridge" | NULL                |
-      | "Tim Duncan" | "Tony Parker"       | "Spurs"             |
-      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
-      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
-      | "Tim Duncan" | "Tony Parker"       | "Kyle Anderson"     |
-      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
-      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
-      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
-      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
-      | "Tim Duncan" | "Tony Parker"       | "Hornets"           |
-      | "Tim Duncan" | "Tony Parker"       | "Spurs"             |
-      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
-      | "Tim Duncan" | "Tony Parker"       | "LaMarcus Aldridge" |
-      | "Tim Duncan" | "Tony Parker"       | "Kyle Anderson"     |
-      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
-      | "Tim Duncan" | "Tony Parker"       | "Tim Duncan"        |
-      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
-      | "Tim Duncan" | "Tony Parker"       | "Manu Ginobili"     |
-      | "Tim Duncan" | "Tony Parker"       | "Hornets"           |
-      | "Tim Duncan" | "Danny Green"       | NULL                |
-      | "Tim Duncan" | "Manu Ginobili"     | NULL                |
-      | "Tim Duncan" | "Manu Ginobili"     | NULL                |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE id(n)=="Tony Parker"'
     When executing query:
       """
       OPTIONAL match (v:player) WHERE v.player.age > 41
       MATCH (v:player) WHERE v.player.age>40
       RETURN count(*) AS count
       """
-    Then the result should be, in order:
-      | count |
-      | 7     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 41'
     When executing query:
       """
-      OPTIONAL match (v:player) WHERE v.player.age>43
+      OPTIONAL match (v:player) WHERE v.player.age > 43
       MATCH (n:player) WHERE n.player.age>40
       RETURN count(*) AS count
       """
-    Then the result should be, in order:
-      | count |
-      | 32    |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
     When executing query:
       """
-      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age < 46
       MATCH (v:player) WHERE v.player.age>43
       RETURN count(*) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 2     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 40 and v.player.age < 46'
     When executing query:
       """
-      MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
-      OPTIONAL MATCH (v:player) WHERE v.player.age>43
+      MATCH (v:player) WHERE v.player.age > 40 and v.player.age < 46
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 43
       RETURN count(*) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 6     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
     When executing query:
       """
       OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
       OPTIONAL MATCH (v:player) WHERE v.player.age>43
       RETURN count(*) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 6     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 40 and v.player.age<46'
     When executing query:
       """
-      OPTIONAL MATCH (v:player) WHERE v.player.age>43
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 43
       MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
       RETURN count(*) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 2     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
     When executing query:
       """
-      MATCH (v:player) WHERE v.player.age>43
-      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
+      MATCH (v:player) WHERE v.player.age > 43
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age < 46
       RETURN count(*) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 4     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 40 and v.player.age < 46'
     When executing query:
       """
-      OPTIONAL MATCH (v:player) WHERE v.player.age>43
-      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age<46
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 43
+      OPTIONAL MATCH (v:player) WHERE v.player.age > 40 and v.player.age < 46
       RETURN count(*) AS count
       """
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
+    # When the input of argument is NULL
+    When executing query:
+      """
+      MATCH (v1:player) WHERE id(v1) IN ["Tony Parker", "Tim Duncan"]
+      OPTIONAL MATCH (v1)-[e:like{likeness:90}]->(v2) MATCH (v2)-[e2:serve]->(v3)
+      RETURN *
+      """
     Then the result should be, in any order:
-      | count |
-      | 4     |
+      | v1                                                    | e                                                | v2                              | e2                                                  | v3                        |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}] | ("LaMarcus Aldridge" :player{}) | [:serve "LaMarcus Aldridge"->"Spurs" @0 {}]         | ("Spurs" :team{})         |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}] | ("LaMarcus Aldridge" :player{}) | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {}] | ("Trail Blazers" :team{}) |
 
   Scenario: Multi Line Multi Query Parts
     When executing query:
@@ -340,22 +330,18 @@ Feature: Multi Line Multi Query Parts
       | 12    |
     When executing query:
       """
-      OPTIONAL match (v:player) WHERE v.player.age>43 WITH v
+      OPTIONAL match (v:player) WHERE v.player.age > 43 WITH v
       MATCH (v:player) WHERE v.player.age>40  WITH v
       RETURN count(*) AS count
       """
-    Then the result should be, in order:
-      | count |
-      | 4     |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
     When executing query:
       """
-      OPTIONAL match (v:player) WHERE v.player.age>43 WITH v
+      OPTIONAL match (v:player) WHERE v.player.age > 43 WITH v
       MATCH (n:player) WHERE n.player.age>40  WITH v, n
       RETURN count(*) AS count
       """
-    Then the result should be, in order:
-      | count |
-      | 32    |
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age > 43'
     When executing query:
       """
       MATCH (a:player{age:42}) WITH a
@@ -367,7 +353,7 @@ Feature: Multi Line Multi Query Parts
       | count |
       | 12    |
 
-  Scenario: Multi Line Some Erros
+  Scenario: Multi Line Some Errors
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -381,10 +367,10 @@ Feature: Multi Line Multi Query Parts
       OPTIONAL MATCH (n)-->(v) WHERE v.player.age < m.player.age
       RETURN n,v
       """
-    Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE v.player.age < m.player.age'
     When executing query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
       OPTIONAL MATCH (n)-->(v) WHERE id(v) < id(m) RETURN count(*) AS count
       """
-    Then a SemanticError should be raised at runtime: The where clause of optional match statement that reference variables defined by other statements is not supported yet.
+    Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE id(v) < id(m)'

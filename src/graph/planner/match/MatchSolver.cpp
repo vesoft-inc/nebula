@@ -249,11 +249,11 @@ static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
 }
 
 // static
-void MatchSolver::buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan) {
+void MatchSolver::buildProjectColumns(QueryContext* qctx, const Path& path, SubPlan& plan) {
   auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
   std::vector<std::string> colNames;
-  auto& nodeInfos = path.nodeInfos;
-  auto& edgeInfos = path.edgeInfos;
+  const auto& nodeInfos = path.nodeInfos;
+  const auto& edgeInfos = path.edgeInfos;
 
   auto addNode = [columns, &colNames, qctx](auto& nodeInfo) {
     if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {

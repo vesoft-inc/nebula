@@ -6,6 +6,7 @@
 #include "storage/mutate/UpdateEdgeProcessor.h"
 
 #include "common/base/Base.h"
+#include "common/memory/MemoryTracker.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/FilterNode.h"
@@ -19,7 +20,8 @@ ProcessorCounters kUpdateEdgeCounters;
 
 void UpdateEdgeProcessor::process(const cpp2::UpdateEdgeRequest& req) {
   if (executor_ != nullptr) {
-    executor_->add([req, this]() { this->doProcess(req); });
+    executor_->add(
+        [this, req]() { MemoryCheckScope wrapper(this, [this, req] { this->doProcess(req); }); });
   } else {
     doProcess(req);
   }

@@ -241,6 +241,7 @@ if __name__ == "__main__":
             NEBULA_HOME,
             graphd_num=graphd_inst,
             storaged_num=1,
+            listener_num=1,
             debug_log=opt_is(configs.debug, "true"),
             ca_signed=opt_is(configs.ca_signed, "true"),
             enable_ssl=configs.enable_ssl,

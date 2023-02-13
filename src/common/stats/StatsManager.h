@@ -29,11 +29,11 @@ class CounterId final {
 
   CounterId& operator=(const CounterId& right) {
     if (!right.valid()) {
-      LOG(FATAL) << "Invalid counter id";
+      DLOG(FATAL) << "Invalid counter id";
     }
     if (valid()) {
       // Already assigned
-      LOG(FATAL) << "CounterId cannot be assigned twice";
+      DLOG(FATAL) << "CounterId cannot be assigned twice";
     }
     index_ = right.index_;
     isHisto_ = right.isHisto_;
@@ -41,14 +41,7 @@ class CounterId final {
   }
 
   CounterId& operator=(const std::string& right) {
-    if (right == "") {
-      LOG(FATAL) << "Invalid counter id";
-    }
-    if (valid()) {
-      // Already assigned
-      LOG(FATAL) << "CounterId cannot be assigned twice";
-    }
-    index_ = right;
+    this->operator=(CounterId(right));
     return *this;
   }
 

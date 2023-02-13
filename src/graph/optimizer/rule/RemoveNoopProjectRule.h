@@ -6,7 +6,7 @@
 #ifndef GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_
 #define GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_
 
-#include <initializer_list>
+#include <unordered_set>
 
 #include "graph/optimizer/OptRule.h"
 
@@ -20,7 +20,7 @@ namespace opt {
 //  Benefits:
 //   1. Remove unnecessary Project node
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 // +---------+---------+
@@ -43,7 +43,7 @@ class RemoveNoopProjectRule final : public OptRule {
  private:
   RemoveNoopProjectRule();
 
-  static const std::initializer_list<graph::PlanNode::Kind> kQueries;
+  static const std::unordered_set<graph::PlanNode::Kind> kQueries;
 
   static std::unique_ptr<OptRule> kInstance;
 };

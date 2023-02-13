@@ -56,9 +56,12 @@ TEST_F(ListComprehensionExpressionTest, ListComprehensionEvaluate) {
         nullptr,
         ArithmeticExpression::makeAdd(
             &pool,
-            AttributeExpression::make(&pool,
-                                      VariableExpression::makeInner(&pool, "n"),
-                                      ConstantExpression::make(&pool, "age")),
+            AttributeExpression::make(
+                &pool,
+                AttributeExpression::make(&pool,
+                                          VariableExpression::makeInner(&pool, "n"),
+                                          ConstantExpression::make(&pool, "player")),
+                ConstantExpression::make(&pool, "age")),
             ConstantExpression::make(&pool, 5)));
 
     auto value = Expression::eval(expr, gExpCtxt);

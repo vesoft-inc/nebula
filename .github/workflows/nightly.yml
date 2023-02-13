@@ -220,6 +220,19 @@ jobs:
       OSS_DIR: nebula-graph/package/nightly
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:

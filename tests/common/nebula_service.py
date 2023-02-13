@@ -41,6 +41,12 @@ class NebulaProcess(object):
             self.tcp_port, self.tcp_internal_port, self.http_port, self.https_port = ports[0:4]
             self.meta_port, self.meta_tcp_internal_port, self.meta_http_port, self.meta_https_port = ports[4:8]
             self.storage_port, self.storage_tcp_internal_port, self.storage_http_port, self.storage_https_port = ports[8:12]
+        if name == "listener":
+            self.binary_name = "storaged"
+            self.conf_name = "storaged-listener"
+        else:
+            self.binary_name = name
+            self.conf_name = name
         self.suffix_index = suffix_index
         self.params = params
         self.host = '127.0.0.1'
@@ -56,14 +62,14 @@ class NebulaProcess(object):
         if self.is_sa == False:
             process_params = {
                 'log_dir': 'logs{}'.format(self.suffix_index),
-                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
+                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.binary_name),
                 'port': self.tcp_port,
                 'ws_http_port': self.http_port,
             }
         else:
             process_params = {
                 'log_dir': 'logs{}'.format(self.suffix_index),
-                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.name),
+                'pid_file': 'pids{}/nebula-{}.pid'.format(self.suffix_index, self.binary_name),
                 'port': self.tcp_port,
                 'ws_http_port': self.http_port,
                 'meta_port': self.meta_port,
@@ -72,16 +78,16 @@ class NebulaProcess(object):
                 'ws_storage_http_port': self.storage_http_port,
             }
         # data path
-        if self.name.upper() != 'GRAPHD':
+        if self.binary_name.upper() != 'GRAPHD':
             process_params['data_path'] = 'data{}/{}'.format(
-                self.suffix_index, self.name
+                self.suffix_index, self.binary_name
             )
 
         process_params.update(self.params)
         cmd = [
-            'bin/nebula-{}'.format(self.name),
+            'bin/nebula-{}'.format(self.binary_name),
             '--flagfile',
-            'conf/nebula-{}.conf'.format(self.name),
+            'conf/nebula-{}.conf'.format(self.conf_name),
         ] + ['--{}={}'.format(key, value) for key, value in process_params.items()]
 
         return " ".join(cmd)
@@ -126,13 +132,14 @@ class NebulaService(object):
         metad_num=1,
         storaged_num=1,
         graphd_num=1,
+        listener_num=1,
         ca_signed=False,
         debug_log=True,
         use_standalone=False,
         query_concurrently=False,
         **kwargs,
     ):
-        assert graphd_num > 0 and metad_num > 0 and storaged_num > 0
+        assert graphd_num > 0 and metad_num > 0 and storaged_num > 0 and listener_num >= 0
         self.build_dir = str(build_dir)
         self.src_dir = str(src_dir)
         self.work_dir = os.path.join(
@@ -140,21 +147,24 @@ class NebulaService(object):
             'server_' + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),
         )
         self.pids = {}
-        self.metad_num, self.storaged_num, self.graphd_num = (
+        self.metad_num, self.storaged_num, self.graphd_num, self.listener_num = (
             metad_num,
             storaged_num,
             graphd_num,
+            listener_num,
         )
-        self.metad_processes, self.storaged_processes, self.graphd_processes = (
+        self.metad_processes, self.storaged_processes, self.graphd_processes, self.listener_processes = (
+            [],
             [],
             [],
             [],
         )
         self.all_processes = []
         self.all_ports = []
-        self.metad_param, self.storaged_param, self.graphd_param = {}, {}, {}
+        self.metad_param, self.storaged_param, self.graphd_param, self.listener_param = {}, {}, {}, {}
         self.storaged_port = 0
         self.graphd_port = 0
+        self.listener_port = 0
         self.ca_signed = ca_signed
         self.is_graph_ssl = (
             kwargs.get("enable_graph_ssl", "false").upper() == "TRUE"
@@ -175,23 +185,31 @@ class NebulaService(object):
             self._make_sa_params(**kwargs)
             self.init_standalone()
 
-
     def init_standalone(self):
-        process_count = self.metad_num + self.storaged_num + self.graphd_num
+        process_count = self.metad_num + self.storaged_num + self.graphd_num + self.listener_num
         ports_count = process_count * self.ports_per_process
         self.all_ports = self._find_free_port(ports_count)
         print(self.all_ports)
+        sa_ports_count= self.metad_num + self.storaged_num + self.graphd_num
         index = 0
         standalone = NebulaProcess(
             "standalone",
-            self.all_ports[index : index + ports_count ],
+            self.all_ports[index: index + sa_ports_count],
             index,
             self.graphd_param,
             is_standalone=True
         )
+        index = index + 1
+        listener = NebulaProcess(
+            "listener",
+            self.all_ports[index: index + self.ports_per_process],
+            0,
+            self.listener_param
+        )
         self.graphd_processes.append(standalone)
+        self.listener_processes.append(listener)
         self.all_processes = (
-            self.graphd_processes
+            self.graphd_processes + self.listener_processes
         )
         # update meta address
         meta_server_addrs = ','.join(
@@ -205,7 +223,7 @@ class NebulaService(object):
             p.update_meta_server_addrs(meta_server_addrs)
 
     def init_process(self):
-        process_count = self.metad_num + self.storaged_num + self.graphd_num
+        process_count = self.metad_num + self.storaged_num + self.graphd_num + self.listener_num
         ports_count = process_count * self.ports_per_process
         self.all_ports = self._find_free_port(ports_count)
         index = 0
@@ -213,7 +231,7 @@ class NebulaService(object):
         for suffix_index in range(self.metad_num):
             metad = NebulaProcess(
                 "metad",
-                self.all_ports[index : index + self.ports_per_process],
+                self.all_ports[index: index + self.ports_per_process],
                 suffix_index,
                 self.metad_param,
             )
@@ -223,7 +241,7 @@ class NebulaService(object):
         for suffix_index in range(self.storaged_num):
             storaged = NebulaProcess(
                 "storaged",
-                self.all_ports[index : index + self.ports_per_process],
+                self.all_ports[index: index + self.ports_per_process],
                 suffix_index,
                 self.storaged_param,
             )
@@ -235,7 +253,7 @@ class NebulaService(object):
         for suffix_index in range(self.graphd_num):
             graphd = NebulaProcess(
                 "graphd",
-                self.all_ports[index : index + self.ports_per_process],
+                self.all_ports[index: index + self.ports_per_process],
                 suffix_index,
                 self.graphd_param,
             )
@@ -244,8 +262,20 @@ class NebulaService(object):
             if suffix_index == 0:
                 self.graphd_port = self.all_ports[0]
 
+        for suffix_index in range(self.storaged_num, self.storaged_num+self.listener_num):
+            listener = NebulaProcess(
+                "listener",
+                self.all_ports[index: index + self.ports_per_process],
+                suffix_index,
+                self.listener_param
+            )
+            self.listener_processes.append(listener)
+            index += self.ports_per_process
+            if suffix_index == 0:
+                self.listener_port = self.all_ports[0]
+
         self.all_processes = (
-            self.metad_processes + self.storaged_processes + self.graphd_processes
+            self.metad_processes + self.storaged_processes + self.graphd_processes + self.listener_processes
         )
         # update meta address
         meta_server_addrs = ','.join(
@@ -301,11 +331,14 @@ class NebulaService(object):
         self.storaged_param['raft_heartbeat_interval_secs'] = '30'
         self.storaged_param['skip_wait_in_rate_limiter'] = 'true'
 
+        # params for listener only
+        self.listener_param = copy.copy(self.storaged_param)
+
         # params for meta only
         self.metad_param = copy.copy(_params)
         self.metad_param["default_parts_num"] = 1
 
-        for p in [self.metad_param, self.storaged_param, self.graphd_param]:
+        for p in [self.metad_param, self.storaged_param, self.graphd_param, self.listener_param]:
             p.update(kwargs)
 
     def _make_sa_params(self, **kwargs):
@@ -358,6 +391,7 @@ class NebulaService(object):
                 conf_path + '{}.conf.default'.format(item),
                 self.work_dir + '/conf/{}.conf'.format(item),
             )
+        shutil.copy(conf_path+'nebula-storaged-listener.conf.default', self.work_dir+'/conf/nebula-storaged-listener.conf')
 
         resources_dir = self.work_dir + '/share/resources/'
         os.makedirs(resources_dir)
@@ -560,6 +594,15 @@ class NebulaService(object):
         print("add hosts cmd is {}".format(cmd))
         resp = client.execute(cmd)
         assert resp.is_succeeded(), resp.error_msg()
+        
+        # sign text search service
+        NEBULA_TEST_ES_ADDRESS = os.environ.get("NEBULA_TEST_ES_ADDRESS")
+        if NEBULA_TEST_ES_ADDRESS is not None:
+            cmd = f"SIGN IN TEXT SERVICE({NEBULA_TEST_ES_ADDRESS});"
+            print("sign text service cmd is {}".format(cmd))
+            resp = client.execute(cmd)
+            assert resp.is_succeeded(), resp.error_msg()
+
         client.release()
 
         # wait nebula start

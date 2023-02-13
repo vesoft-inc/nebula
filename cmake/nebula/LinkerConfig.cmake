@@ -1,7 +1,7 @@
 set(NEBULA_USE_LINKER
   "bfd"
   CACHE STRING "Linker to be used")
-set(USER_LINKER_OPTION_VALUES "lld" "gold" "bfd")
+set(USER_LINKER_OPTION_VALUES "lld" "gold" "bfd" "mold")
 set_property(CACHE NEBULA_USE_LINKER PROPERTY STRINGS ${USER_LINKER_OPTION_VALUES})
 list(
   FIND
@@ -17,8 +17,13 @@ endif()
 
 print_config(NEBULA_USE_LINKER)
 
-nebula_add_exe_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
-nebula_add_shared_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
+if (${NEBULA_USE_LINKER} STREQUAL "mold")
+  include(FindMoldLinker)
+else()
+  nebula_add_exe_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
+  nebula_add_shared_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
+endif()
+
 nebula_add_exe_linker_flag(-static-libstdc++)
 nebula_add_exe_linker_flag(-static-libgcc)
 nebula_add_exe_linker_flag(-no-pie)

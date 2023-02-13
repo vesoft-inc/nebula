@@ -389,10 +389,15 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
     ctx.retColMap[ctx.returnColumns[i]] = i;
   }
   colPosMap_ = ctx.retColMap;
-  // Analyze whether the scan needs to access base data.
+  // Analyze whether the scan needs to access base data. We check it by if requiredColumns is subset
+  // of index fields. In other words, if scan node is required to return property that index does
+  // not contain, we need to access base data.
   // TODO(hs.zhang): The performance is better to judge based on whether the string is truncated
   auto tmp = ctx.requiredColumns;
   for (auto& field : index_->get_fields()) {
+    // TODO(doodle): Both STRING and FIXED_STRING properties in tag/edge will be transformed into
+    // FIXED_STRING in ColumnDef of IndexItem. As for FIXED_STRING in tag/edge property, we don't
+    // need to access base data actually.
     if (field.get_type().get_type() == ::nebula::cpp2::PropertyType::FIXED_STRING) {
       continue;
     }
@@ -498,12 +503,12 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
   if (colPosMap.empty()) {
     return;
   }
-  // offset is the start posistion of index values
+  // offset is the start position of index values
   size_t offset = sizeof(PartitionID) + sizeof(IndexID);
   std::bitset<16> nullableBit;
   int8_t nullableColPosit = 15;
   if (indexNullable_) {
-    // key has been truncated ouside, it **ONLY** contains partId, indexId, indexValue and
+    // key has been truncated outside, it **ONLY** contains partId, indexId, indexValue and
     // nullableBits. So the last two bytes is the nullableBits
     auto bitOffset = key.size() - sizeof(uint16_t);
     auto v = *reinterpret_cast<const uint16_t*>(key.data() + bitOffset);

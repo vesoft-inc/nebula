@@ -53,6 +53,10 @@ class MatchPathPatternExpression final : public Expression {
     return *matchPath_;
   }
 
+  MatchPath* matchPathPtr() const {
+    return matchPath_.get();
+  }
+
  private:
   friend ObjectPool;
   explicit MatchPathPatternExpression(ObjectPool* pool, std::unique_ptr<MatchPath>&& matchPath)

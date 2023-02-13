@@ -89,6 +89,21 @@ class TestUtils {
     baton.wait();
   }
 
+  static void doRemove(kvstore::KVStore* kv, std::vector<std::string>&& keys) {
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiRemove(
+        kDefaultSpaceId, kDefaultPartId, std::move(keys), [&](auto) { baton.post(); });
+    baton.wait();
+  }
+
+  static std::unique_ptr<kvstore::KVIterator> doPrefix(kvstore::KVStore* kv,
+                                                       const std::string& prefix) {
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter, true);
+    CHECK(code == nebula::cpp2::ErrorCode::SUCCEEDED);
+    return iter;
+  }
+
   static int32_t createSomeHosts(kvstore::KVStore* kv,
                                  std::vector<HostAddr> hosts = {
                                      {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}) {

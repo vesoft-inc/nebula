@@ -35,13 +35,15 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
   std::vector<kvstore::KV> data;
   folly::SharedMutex::WriteHolder holder(LockUtils::lock());
-  if (role == cpp2::HostRole::STORAGE) {
-    if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
-      LOG(INFO) << "Machine " << host << " is not registed";
-      handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
-      setLeaderInfo();
-      onFinished();
-      return;
+  if (role == cpp2::HostRole::STORAGE || role == cpp2::HostRole::STORAGE_LISTENER) {
+    if (role == cpp2::HostRole::STORAGE) {
+      if (!ActiveHostsMan::machineRegistered(kvstore_, host)) {
+        LOG(INFO) << "Machine " << host << " is not registered";
+        handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
+        setLeaderInfo();
+        onFinished();
+        return;
+      }
     }
 
     // set or check storaged's cluster id
@@ -82,7 +84,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   }
 
   // update host dir info
-  if (req.get_role() == cpp2::HostRole::STORAGE || req.get_role() == cpp2::HostRole::GRAPH) {
+  if (role == cpp2::HostRole::STORAGE || role == cpp2::HostRole::GRAPH) {
     if (req.dir_ref().has_value()) {
       LOG(INFO) << folly::sformat("Update host {} dir info, root path: {}, data path size: {}",
                                   host.toString(),
@@ -106,7 +108,12 @@ void HBProcessor::process(const cpp2::HBReq& req) {
 
   auto version = metaVersion_.load();
   if (version == -1) {
-    metaVersion_.store(static_cast<int64_t>(MetaVersionMan::getMetaVersionFromKV(kvstore_)));
+    auto v = MetaVersionMan::getMetaVersionFromKV(kvstore_);
+    if (nebula::ok(v)) {
+      metaVersion_.store(static_cast<int64_t>(nebula::value(v)));
+    } else {
+      metaVersion_.store(static_cast<int64_t>(MetaVersion::V3_4));
+    }
   }
 
   resp_.meta_version_ref() = metaVersion_.load();

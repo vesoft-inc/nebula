@@ -4,6 +4,7 @@
 
 #include "graph/executor/algo/SubgraphExecutor.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/Utils.h"
 
@@ -52,6 +53,8 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
                      currentStep_ == 1 ? nullptr : subgraph_->tagFilter())
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
         otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {
@@ -97,17 +100,20 @@ folly::Future<Status> SubgraphExecutor::handleResponse(RpcResponse&& resps) {
 
 void SubgraphExecutor::filterEdges(int version) {
   auto iter = ectx_->getVersionedResult(subgraph_->outputVar(), version).iter();
-  auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
-  while (gnIter->valid()) {
-    const auto& dst = gnIter->getEdgeProp("*", nebula::kDst);
-    if (validVids_.find(dst) == validVids_.end()) {
-      auto edge = gnIter->getEdge();
-      gnIter->erase();
-    } else {
-      gnIter->next();
+  auto* iterPtr = iter.get();
+  if (iterPtr->isGetNeighborsIter()) {
+    auto* gnIter = static_cast<GetNeighborsIter*>(iterPtr);
+    while (gnIter->valid()) {
+      const auto& dst = gnIter->getEdgeProp("*", nebula::kDst);
+      if (validVids_.find(dst) == validVids_.end()) {
+        auto edge = gnIter->getEdge();
+        gnIter->erase();
+      } else {
+        gnIter->next();
+      }
     }
+    gnIter->reset();
   }
-  gnIter->reset();
   ResultBuilder builder;
   builder.iter(std::move(iter));
   ectx_->setVersionedResult(subgraph_->outputVar(), builder.build(), version);

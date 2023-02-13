@@ -198,35 +198,41 @@ Feature: Fetch Int Vid Edges
       | serve.start_year | serve.end_year |
 
   Scenario: Fetch prop Error
+    # fetch on a not existing edgetype
+    When executing query:
+      """
+      FETCH PROP ON not_exist_edge hash("Boris Diaw")->hash("Spurs") YIELD edge as e
+      """
+    Then a ExecutionError should be raised at runtime: EdgeNotFound: EdgeName `not_exist_edge`
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs") YIELD $^.serve.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `serve`
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs") YIELD $$.serve.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `serve`
     # yield not existing edgetype
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs") YIELD abc.start_year
       """
-    Then a ExecutionError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: EdgeNotFound: EdgeName `abc`
     # Fetch prop returns not existing property
     When executing query:
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks') YIELD serve.start_year1
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `serve.start_year1', not found the property `start_year1'.
     # Fetch prop on illegal input
     When executing query:
       """
       GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS src |
       FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `$-.dst', not exist prop `dst'
 
   Scenario: Fetch prop on a edge and return duplicate columns
     When executing query:

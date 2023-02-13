@@ -12,6 +12,7 @@ DECLARE_bool(containerized);
 DECLARE_double(system_memory_high_watermark_ratio);
 
 namespace nebula {
+namespace memory {
 
 TEST(MemoryHighWatermarkTest, TestHitsHighWatermarkInHost) {
   FLAGS_containerized = false;
@@ -45,4 +46,5 @@ TEST(MemoryHighWatermarkTest, DISABLED_TestNotHitsHighWatermarkInContainer) {
   ASSERT_FALSE(std::move(status).value());
 }
 
+}  // namespace memory
 }  // namespace nebula

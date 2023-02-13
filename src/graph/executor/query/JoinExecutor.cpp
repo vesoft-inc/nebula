@@ -33,7 +33,7 @@ Status JoinExecutor::checkInputDataSets() {
 }
 
 Status JoinExecutor::checkBiInputDataSets() {
-  auto* join = asNode<BiJoin>(node());
+  auto* join = asNode<HashJoin>(node());
   lhsIter_ = ectx_->getResult(join->leftInputVar()).iter();
   DCHECK(!!lhsIter_);
   if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
@@ -49,6 +49,25 @@ Status JoinExecutor::checkBiInputDataSets() {
     return Status::Error(ss.str());
   }
   colSize_ = join->colNames().size();
+
+  auto& lhsResult = ectx_->getResult(join->leftInputVar());
+  auto& lhsColNames = lhsResult.valuePtr()->getDataSet().colNames;
+  auto lhsColSize = lhsColNames.size();
+
+  auto& rhsResult = ectx_->getResult(join->rightInputVar());
+  auto& rhsColNames = rhsResult.valuePtr()->getDataSet().colNames;
+  auto rhsColSize = rhsColNames.size();
+
+  DCHECK_LE(colSize_, lhsColSize + rhsColSize);
+  if (colSize_ < lhsColSize + rhsColSize) {
+    for (size_t i = 0; i < rhsColSize; ++i) {
+      auto it = std::find(lhsColNames.begin(), lhsColNames.end(), rhsColNames[i]);
+      if (it == lhsColNames.end()) {
+        rhsOutputColIdxs_.push_back(i);
+      }
+    }
+  }
+
   return Status::OK();
 }
 
@@ -83,15 +102,21 @@ void JoinExecutor::buildSingleKeyHashTable(
 }
 
 Row JoinExecutor::newRow(Row left, Row right) const {
-  Row r;
-  r.reserve(left.size() + right.size());
-  r.values.insert(r.values.end(),
-                  std::make_move_iterator(left.values.begin()),
-                  std::make_move_iterator(left.values.end()));
-  r.values.insert(r.values.end(),
-                  std::make_move_iterator(right.values.begin()),
-                  std::make_move_iterator(right.values.end()));
-  return r;
+  Row row;
+  row.reserve(left.size() + right.size());
+  row.values.insert(row.values.end(),
+                    std::make_move_iterator(left.values.begin()),
+                    std::make_move_iterator(left.values.end()));
+  if (!rhsOutputColIdxs_.empty()) {
+    for (auto idx : rhsOutputColIdxs_) {
+      row.values.emplace_back(std::move(right.values[idx]));
+    }
+  } else {
+    row.values.insert(row.values.end(),
+                      std::make_move_iterator(right.values.begin()),
+                      std::make_move_iterator(right.values.end()));
+  }
+  return row;
 }
 
 }  // namespace graph

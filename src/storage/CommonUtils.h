@@ -251,6 +251,15 @@ struct RuntimeContext {
 
 class CommonUtils final {
  public:
+  /**
+   * @brief check whether data is expired by comparing ttl property and current time
+   *
+   * @param schema **Latest** schema
+   * @param reader RowReader of current value
+   * @param ttlCol Ttl property name
+   * @param ttlDuration Ttl property duration
+   * @return Whether data is expired
+   */
   static bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                                      RowReader* reader,
                                      const std::string& ttlCol,

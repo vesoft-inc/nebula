@@ -125,8 +125,9 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
   Expression* filterInWhere = nullptr;
   Expression* filterInPattern = nullptr;
   if (nodeCtx->bindWhereClause != nullptr && nodeCtx->bindWhereClause->filter != nullptr) {
-    filterInWhere = MatchSolver::makeIndexFilter(
-        node.labels.back(), node.alias, nodeCtx->bindWhereClause->filter, nodeCtx->qctx);
+    auto* newFilter = ExpressionUtils::rewriteInnerInExpr(nodeCtx->bindWhereClause->filter);
+    filterInWhere =
+        MatchSolver::makeIndexFilter(node.labels.back(), node.alias, newFilter, nodeCtx->qctx);
   }
   if (!node.labelProps.empty()) {
     auto props = node.labelProps.back();

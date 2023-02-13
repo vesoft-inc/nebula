@@ -202,7 +202,7 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     } else if (kv.first == "microseconds") {
       d.addMicroseconds(kv.second.getInt());
     } else {
-      return Status::Error("Unkown field %s.", kv.first.c_str());
+      return Status::Error("Unknown field %s.", kv.first.c_str());
     }
   }
   return d;

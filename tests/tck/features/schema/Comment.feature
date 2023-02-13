@@ -124,7 +124,7 @@ Feature: Schema Comment
       """
       ALTER TAG test_comment_tag comment = <tag_of_person_comment_modified>;
       ALTER TAG test_comment_tag ADD (gender string COMMENT 'The gender.');
-      ALTER TAG test_comment_tag CHANGE (name string NOT NULL);
+      ALTER TAG test_comment_tag CHANGE (name string NOT NULL DEFAULT "jack");
       ALTER TAG test_comment_tag DROP (age);
       """
     Then the execution should be successful
@@ -134,15 +134,15 @@ Feature: Schema Comment
       SHOW CREATE tag test_comment_tag;
       """
     Then the result should be, in any order:
-      | Tag                | Create Tag                                                                                                                                                                             |
-      | "test_comment_tag" | 'CREATE TAG `test_comment_tag` (\n `name` string NOT NULL,\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <tag_of_person_comment_modified>' |
+      | Tag                | Create Tag                                                                                                                                                                                              |
+      | "test_comment_tag" | 'CREATE TAG `test_comment_tag` (\n `name` string NOT NULL DEFAULT \"jack\",\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <tag_of_person_comment_modified>' |
     When executing query:
       """
       DESC tag test_comment_tag;
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment       |
-      | "name"   | "string" | "NO"  | EMPTY   | EMPTY         |
+      | "name"   | "string" | "NO"  | "jack"  | EMPTY         |
       | "gender" | "string" | "YES" | EMPTY   | "The gender." |
     # tag index
     When executing query:
@@ -188,7 +188,7 @@ Feature: Schema Comment
       """
       ALTER EDGE test_comment_edge comment = <edge_of_person_comment_modified>;
       ALTER EDGE test_comment_edge ADD (gender string COMMENT 'The gender.');
-      ALTER EDGE test_comment_edge CHANGE (name string NOT NULL);
+      ALTER EDGE test_comment_edge CHANGE (name string NOT NULL DEFAULT "jack");
       ALTER EDGE test_comment_edge DROP (age);
       """
     Then the execution should be successful
@@ -198,15 +198,15 @@ Feature: Schema Comment
       SHOW CREATE edge test_comment_edge;
       """
     Then the result should be, in any order:
-      | Edge                | Create Edge                                                                                                                                                                               |
-      | "test_comment_edge" | 'CREATE EDGE `test_comment_edge` (\n `name` string NOT NULL,\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <edge_of_person_comment_modified>' |
+      | Edge                | Create Edge                                                                                                                                                                                                |
+      | "test_comment_edge" | 'CREATE EDGE `test_comment_edge` (\n `name` string NOT NULL DEFAULT \"jack\",\n `gender` string NULL COMMENT "The gender."\n) ttl_duration = 0, ttl_col = "", comment = <edge_of_person_comment_modified>' |
     When executing query:
       """
       DESC edge test_comment_edge;
       """
     Then the result should be, in any order:
       | Field    | Type     | Null  | Default | Comment       |
-      | "name"   | "string" | "NO"  | EMPTY   | EMPTY         |
+      | "name"   | "string" | "NO"  | "jack"  | EMPTY         |
       | "gender" | "string" | "YES" | EMPTY   | "The gender." |
     # edge index
     When executing query:

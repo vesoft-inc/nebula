@@ -21,7 +21,7 @@ namespace opt {
 //   1. reduce the copy of memory between nodes
 //   2. reduces expression overhead in some cases(similar to column pruning)
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //         +------------+------------+

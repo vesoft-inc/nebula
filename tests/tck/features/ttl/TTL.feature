@@ -141,7 +141,7 @@ Feature: TTLTest
       | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
     When executing query:
       """
-      ALTER TAG woman CHANGE (age string);
+      ALTER TAG woman CHANGE (age int64);
       """
     Then a ExecutionError should be raised at runtime:
     When executing query:
@@ -158,16 +158,21 @@ Feature: TTLTest
       | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
-      ALTER TAG woman CHANGE (age string);
+      ALTER TAG woman CHANGE (age int64);
       """
     Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG woman CHANGE (age string);
+      """
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       SHOW CREATE TAG woman;
       """
     Then the result should be, in any order:
-      | Tag     | Create Tag                                                                                                                                        |
-      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` string NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | Tag     | Create Tag                                                                                                                                       |
+      | "woman" | 'CREATE TAG `woman` (\n `name` string NULL,\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       CREATE EDGE work(number string, start_time timestamp);
@@ -299,7 +304,7 @@ Feature: TTLTest
       | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 100, ttl_col = "age"' |
     When executing query:
       """
-      ALTER EDGE work2  CHANGE (age string);
+      ALTER EDGE work2  CHANGE (age int64);
       """
     Then a ExecutionError should be raised at runtime:
     When executing query:
@@ -316,16 +321,21 @@ Feature: TTLTest
       | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
-      ALTER EDGE work2 CHANGE (age string);
+      ALTER EDGE work2 CHANGE (age int64);
       """
     Then the execution should be successful
+    When executing query:
+      """
+      ALTER EDGE work2  CHANGE (age string);
+      """
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       SHOW CREATE EDGE work2;
       """
     Then the result should be, in any order:
-      | Edge    | Create Edge                                                                                                                  |
-      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` string NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | Edge    | Create Edge                                                                                                                 |
+      | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` int64 NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       CREATE EDGE player(id int, name string, age int, address string, score float);
@@ -340,27 +350,27 @@ Feature: TTLTest
       | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `name` string NULL,\n `age` int64 NULL,\n `address` string NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
-      ALTER EDGE player change(name int), drop(name);
+      ALTER EDGE player change(name string), drop(name);
       """
     Then a SemanticError should be raised at runtime: Duplicate column name `name'
     When executing query:
       """
-      ALTER EDGE player drop(name), change(name int);
+      ALTER EDGE player drop(name), change(name string);
       """
     Then a SemanticError should be raised at runtime: Duplicate column name `name'
     When executing query:
       """
-      ALTER EDGE player drop(name, name), change(address int);
+      ALTER EDGE player drop(name, name), change(address string);
       """
     Then a SemanticError should be raised at runtime: Duplicate column name `name'
     When executing query:
       """
-      ALTER EDGE player change(address int, address string);
+      ALTER EDGE player change(address string, address string);
       """
     Then a SemanticError should be raised at runtime: Duplicate column name `address'
     When executing query:
       """
-      ALTER EDGE player change(address int), drop(name);
+      ALTER EDGE player change(address string), drop(name);
       """
     Then the execution should be successful
     When executing query:
@@ -368,8 +378,8 @@ Feature: TTLTest
       SHOW CREATE EDGE player;
       """
     Then the result should be, in any order:
-      | Edge     | Create Edge                                                                                                                                    |
-      | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `age` int64 NULL,\n `address` int64 NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
+      | Edge     | Create Edge                                                                                                                                     |
+      | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `age` int64 NULL,\n `address` string NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
     And drop the used space
 
   Scenario: TTLTest Datatest
@@ -490,3 +500,37 @@ Feature: TTLTest
     Then the result should be, in any order:
       | age |
     And drop the used space
+
+  Scenario: TTLTest ttl column has default
+    Given having executed:
+      """
+      CREATE TAG t1(name string, age int)
+      """
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(name, age) VALUES "1":("tom", 18)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG t1 ADD(n int default 1669726461)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ALTER TAG t1 TTL_DURATION = 30, TTL_COL = "n";
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(name, age) VALUES "2":("jerry", 18)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      match (v) return v limit 10
+      """
+    Then the result should be, in any order:
+      | v |

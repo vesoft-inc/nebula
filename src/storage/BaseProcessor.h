@@ -30,12 +30,16 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
+  void memoryExceeded() {
+    memoryExceeded_ = true;
+  }
+
   folly::Future<RESP> getFuture() {
     return promise_.getFuture();
   }
 
- protected:
   virtual void onFinished() {
+    memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
       if (!this->result_.get_failed_parts().empty()) {
@@ -58,6 +62,33 @@ class BaseProcessor {
     delete this;
   }
 
+  virtual void onError() {
+    memory::MemoryCheckOffGuard guard;
+    if (counters_) {
+      stats::StatsManager::addValue(counters_->numCalls_);
+      if (!this->result_.get_failed_parts().empty()) {
+        stats::StatsManager::addValue(counters_->numErrors_);
+      }
+    }
+
+    this->result_.latency_in_us_ref() = this->duration_.elapsedInUSec();
+    if (!profileDetail_.empty()) {
+      this->result_.latency_detail_us_ref() = std::move(profileDetail_);
+    }
+
+    cpp2::PartitionResult thriftRet;
+    thriftRet.code_ref() = memoryExceeded_ ? nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED
+                                           : nebula::cpp2::ErrorCode::E_UNKNOWN;
+    thriftRet.part_id_ref() = 0;
+    this->result_.failed_parts_ref() = {thriftRet};
+
+    this->resp_.result_ref() = std::move(this->result_);
+    this->promise_.setValue(std::move(this->resp_));
+
+    delete this;
+  }
+
+ protected:
   nebula::cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
     auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
     if (!len.ok()) {
@@ -70,6 +101,8 @@ class BaseProcessor {
       return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
     isIntId_ = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
+    DCHECK(vIdType.value() == nebula::cpp2::PropertyType::INT64 ||
+           vIdType.value() == nebula::cpp2::PropertyType::FIXED_STRING);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -130,6 +163,31 @@ class BaseProcessor {
   std::map<std::string, int32_t> profileDetail_;
   std::mutex profileMut_;
   bool profileDetailFlag_{false};
+  bool memoryExceeded_{false};
+};
+
+/// Helper class wrap the passed in Func in a MemoryTracker turned on scope.
+template <typename RESP, typename Func>
+struct MemoryCheckScope {
+  MemoryCheckScope(BaseProcessor<RESP>* processor, Func f)
+      : processor_(processor), f_(std::move(f)) {}
+
+  ~MemoryCheckScope() {
+    try {
+      f_();
+    } catch (std::bad_alloc& e) {
+      processor_->memoryExceeded();
+      processor_->onError();
+    } catch (std::exception& e) {
+      LOG(ERROR) << e.what();
+      processor_->onError();
+    } catch (...) {
+      processor_->onError();
+    }
+  }
+
+  BaseProcessor<RESP>* processor_;
+  Func f_;
 };
 
 }  // namespace storage

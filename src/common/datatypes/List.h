@@ -80,6 +80,10 @@ struct List {
     return values[i];
   }
 
+  Value& operator[](size_t i) {
+    return values[i];
+  }
+
   bool contains(const Value& value) const {
     return std::find(values.begin(), values.end(), value) != values.end();
   }
@@ -103,7 +107,7 @@ inline std::ostream& operator<<(std::ostream& os, const List& l) {
 namespace std {
 template <>
 struct hash<nebula::List> {
-  std::size_t operator()(const nebula::List& h) const noexcept {
+  std::size_t operator()(const nebula::List& h) const {
     if (h.values.size() == 1) {
       return std::hash<nebula::Value>()(h.values[0]);
     }

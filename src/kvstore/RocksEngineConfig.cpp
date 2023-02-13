@@ -292,7 +292,6 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
     baseOpts.rate_limiter = rate_limiter;
   }
 
-  size_t prefixLength = sizeof(PartitionID) + vidLen;
   if (FLAGS_rocksdb_table_format == "BlockBasedTable") {
     // BlockBasedTableOptions
     std::unordered_map<std::string, std::string> bbtOptsMap;
@@ -330,6 +329,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
           baseOpts.compaction_style == rocksdb::CompactionStyle::kCompactionStyleLevel;
     }
     if (FLAGS_enable_rocksdb_prefix_filtering) {
+      size_t prefixLength = sizeof(PartitionID) + vidLen;
       baseOpts.prefix_extractor.reset(rocksdb::NewCappedPrefixTransform(prefixLength));
     }
     bbtOpts.whole_key_filtering = FLAGS_enable_rocksdb_whole_key_filtering;
@@ -346,6 +346,11 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
     if (!FLAGS_enable_rocksdb_prefix_filtering) {
       return rocksdb::Status::InvalidArgument("PlainTable should use prefix bloom filter");
     }
+    // PlainTable only support prefix-based seek, which means if the prefix is not inserted into
+    // rocksdb, we can't read them from "prefix" api anymore. For simplicity, we just set the length
+    // of prefix extractor to the minimum length we used in "prefix" api, which is 4 when we seek by
+    // tagPrefix(partId) or edgePrefix(partId).
+    size_t prefixLength = sizeof(PartitionID);
     baseOpts.prefix_extractor.reset(rocksdb::NewCappedPrefixTransform(prefixLength));
     baseOpts.table_factory.reset(rocksdb::NewPlainTableFactory());
     baseOpts.create_if_missing = true;

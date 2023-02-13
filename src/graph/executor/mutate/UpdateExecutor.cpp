@@ -61,6 +61,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
         VLOG(1) << "Update vertice time: " << updateVertTime.elapsedInUSec() << "us";
       })
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           LOG(WARNING) << "Update vertices fail: " << resp.status();
@@ -98,7 +99,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   auto plan = qctx()->plan();
   StorageClient::CommonRequestParam param(
       ueNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = FLAGS_enable_experimental_feature && FLAGS_enable_toss;
+  param.useExperimentalFeature = false;
   return qctx()
       ->getStorageClient()
       ->updateEdge(param,
@@ -112,6 +113,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
         VLOG(1) << "Update edge time: " << updateEdgeTime.elapsedInUSec() << "us";
       })
       .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+        memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           LOG(WARNING) << "Update edge failed: " << resp.status();

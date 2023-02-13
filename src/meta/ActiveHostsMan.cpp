@@ -71,7 +71,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-bool ActiveHostsMan::machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr) {
+bool ActiveHostsMan::machineRegistered(kvstore::KVStore* kv, const HostAddr& hostAddr) {
   auto machineKey = MetaKeyUtils::machineKey(hostAddr.host, hostAddr.port);
   std::string machineValue;
   auto code = kv->get(kDefaultSpaceId, kDefaultPartId, machineKey, &machineValue);

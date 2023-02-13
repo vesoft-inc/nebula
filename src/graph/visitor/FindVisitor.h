@@ -15,8 +15,12 @@ class FindVisitor final : public ExprVisitorImpl {
  public:
   using Finder = std::function<bool(Expression*)>;
 
-  explicit FindVisitor(Finder finder, bool needFindAll = false)
-      : finder_(finder), needFindAll_(needFindAll) {}
+  explicit FindVisitor(Finder finder,
+                       bool needFindAll = false,
+                       bool stopVisitChildrenAfterFind = false)
+      : finder_(finder),
+        needFindAll_(needFindAll),
+        stopVisitChildrenAfterFind_(stopVisitChildrenAfterFind) {}
 
   bool ok() const override {
     // TODO: delete this interface
@@ -80,11 +84,12 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(MatchPathPatternExpression* expr) override;
 
   void visitBinaryExpr(BinaryExpression* expr) override;
-  void findInCurrentExpr(Expression* expr);
+  bool findInCurrentExpr(Expression* expr);
 
  private:
   Finder finder_;
   bool needFindAll_;
+  bool stopVisitChildrenAfterFind_{false};
   std::vector<const Expression*> foundExprs_;
 };
 

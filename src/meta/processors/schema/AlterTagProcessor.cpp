@@ -47,11 +47,17 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  folly::StringPiece iterVal;
-  auto version = MetaKeyUtils::getLatestTagScheInfo(iter, iterVal) + 1;
-  auto schema = MetaKeyUtils::parseSchema(iterVal);
+  std::unordered_map<SchemaVer, folly::StringPiece> schemasRaw;
+  auto latestVersion = MetaKeyUtils::getLatestTagScheInfo(iter, schemasRaw);
+  auto newVersion = latestVersion + 1;
+  auto schema = MetaKeyUtils::parseSchema(schemasRaw[latestVersion]);
   auto columns = schema.get_columns();
   auto prop = schema.get_schema_prop();
+
+  std::vector<std::vector<cpp2::ColumnDef>> allVersionedColumns;
+  for (auto entry : schemasRaw) {
+    allVersionedColumns.emplace_back(MetaKeyUtils::parseSchema(entry.second).get_columns());
+  }
 
   // Update schema column
   auto& tagItems = req.get_tag_items();
@@ -100,7 +106,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   auto ftIdxRet = getFTIndex(spaceId, tagId);
   if (nebula::ok(ftIdxRet)) {
     auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti.get_fields(), tagItems);
+    auto ftStatus = ftIndexCheck(fti, tagItems);
     if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleErrorCode(ftStatus);
       onFinished();
@@ -115,7 +121,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   for (auto& tagItem : tagItems) {
     auto& cols = tagItem.get_schema().get_columns();
     for (auto& col : cols) {
-      auto retCode = MetaServiceUtils::alterColumnDefs(columns, prop, col, *tagItem.op_ref());
+      auto retCode = MetaServiceUtils::alterColumnDefs(
+          columns, prop, col, *tagItem.op_ref(), allVersionedColumns);
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "Alter tag column error " << apache::thrift::util::enumNameSafe(retCode);
         handleErrorCode(retCode);
@@ -144,8 +151,8 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
-  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId << ", new version " << version;
-  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
+  LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId << ", new version " << newVersion;
+  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, newVersion),
                     MetaKeyUtils::schemaVal(tagName, schema));
   resp_.id_ref() = to(tagId, EntryType::TAG);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();

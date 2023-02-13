@@ -13,6 +13,7 @@
 #include "common/base/StatusOr.h"
 
 namespace nebula {
+namespace memory {
 
 /**
  * MemoryUtils will compute the memory consumption of containerization and physical machine
@@ -31,7 +32,18 @@ class MemoryUtils final {
   void operator=(const MemoryUtils &) = delete;
 
   static StatusOr<uint64_t> readSysContents(const std::string &path);
+
+  // Handle memory tracker related logic by inform system's total memory and current available
+  // memory in bytes
+  static void handleMemoryTracker(int64_t total, int64_t available);
+
+ private:
+  static int64_t kLastPurge_;
+  static int64_t kLastPrintMemoryTrackerStats_;
+  static int64_t kCurrentTotal_;
+  static double kCurrentLimitRatio_;
 };
 
+}  // namespace memory
 }  // namespace nebula
 #endif

@@ -31,7 +31,7 @@ Feature: Clear space test
       """
       CLEAR SPACE clear_space_0;
       """
-    Then a ExecutionError should be raised at runtime: Space not existed!
+    Then a ExecutionError should be raised at runtime: SpaceNotFound: Space not existed!
     And drop the used space
 
   Scenario: Clear space function test

@@ -144,8 +144,8 @@ class KVStore {
    * @param keys Keys to read
    * @param values Pointers of value
    * @param canReadFromFollower
-   * @return Return std::vector<Status> when suceeded: Result status of each key, if key[i] does not
-   * exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
+   * @return Return std::vector<Status> when succeeded: Result status of each key, if key[i] does
+   * not exist, the i-th value in return value would be Status::KeyNotFound. Return ErrorCode when
    * failed
    */
   virtual std::pair<nebula::cpp2::ErrorCode, std::vector<Status>> multiGet(
@@ -275,7 +275,7 @@ class KVStore {
                            KVCallback cb) = 0;
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param spaceId
    * @param partId
@@ -339,7 +339,7 @@ class KVStore {
   virtual nebula::cpp2::ErrorCode ingest(GraphSpaceID spaceId) = 0;
 
   /**
-   * @brief Retrive the leader distribution
+   * @brief Retrieve the leader distribution
    *
    * @param leaderIds The leader address of all partitions
    * @return int32_t The leader count of all spaces
@@ -352,7 +352,7 @@ class KVStore {
    *
    * @param spaceId
    * @param partId
-   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeed,
+   * @return ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> Return the part if succeeded,
    * else return ErrorCode
    */
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
@@ -454,7 +454,7 @@ class KVStore {
   virtual std::vector<std::string> getDataRoot() const = 0;
 
   /**
-   * @brief Get the kvstore propery, only used in rocksdb
+   * @brief Get the kvstore property, only used in rocksdb
    *
    * @param spaceId
    * @param property Property name

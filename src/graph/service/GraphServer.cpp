@@ -41,7 +41,10 @@ bool GraphServer::start() {
   }
 
   // Init worker id for snowflake generating unique id
-  nebula::Snowflake::initWorkerId(interface->metaClient_.get());
+  if (!nebula::Snowflake::initWorkerId(interface->metaClient_.get())) {
+    LOG(ERROR) << "WorkerId init failed";
+    return false;
+  }
 
   graphThread_ = std::make_unique<std::thread>([&] {
     thriftServer_->setPort(localHost_.port);
@@ -49,6 +52,7 @@ bool GraphServer::start() {
     thriftServer_->setReusePort(FLAGS_reuse_port);
     thriftServer_->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
     thriftServer_->setNumAcceptThreads(FLAGS_num_accept_threads);
+    thriftServer_->setMaxConnections(FLAGS_num_max_connections);
     thriftServer_->setListenBacklog(FLAGS_listen_backlog);
     if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl) {
       thriftServer_->setSSLConfig(nebula::sslContextConfig());

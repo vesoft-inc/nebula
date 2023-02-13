@@ -4,21 +4,36 @@
  */
 
 #include <folly/synchronization/Baton.h>
+#include <gflags/gflags_declare.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <unistd.h>
+
+#include <future>
+#include <memory>
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/common_types.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/Common.h"
+#include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/job/DownloadJobExecutor.h"
 #include "meta/processors/job/IngestJobExecutor.h"
+#include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/JobExecutor.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/TaskDescription.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/MockHdfsHelper.h"
 #include "meta/test/TestUtils.h"
 #include "webservice/WebService.h"
+
+DECLARE_int32(job_check_intervals);
+DECLARE_double(job_expired_secs);
 
 namespace nebula {
 namespace meta {
@@ -33,9 +48,145 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::StrictMock;
 
+class MockExecutorFactory : public JobExecutorFactory {
+ public:
+  MockExecutorFactory() = default;
+  ~MockExecutorFactory() override = default;
+
+  MOCK_METHOD(std::unique_ptr<JobExecutor>,
+              createJobExecutor,
+              (const JobDescription& jd, kvstore::KVStore* store, AdminClient* client),
+              (override));
+};
+
+class DummyExecutor : public JobExecutor {
+ public:
+  DummyExecutor() = default;
+  ~DummyExecutor() override = default;
+
+  explicit DummyExecutor(const JobDescription& desc, kvstore::KVStore* store)
+      : JobExecutor(store, desc.getSpace()), jobDesc_(desc) {}
+
+  nebula::cpp2::ErrorCode check() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  nebula::cpp2::ErrorCode prepare() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  folly::Future<nebula::cpp2::ErrorCode> execute() override {
+    folly::Promise<nebula::cpp2::ErrorCode> promise;
+    promise.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+    jobDesc_.setStatus(cpp2::JobStatus::FINISHED, true);
+    return promise.getFuture();
+  }
+
+  nebula::cpp2::ErrorCode stop() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  nebula::cpp2::ErrorCode finish(bool ret) override {
+    UNUSED(ret);
+    setJobDescStatus(cpp2::JobStatus::FINISHED);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  nebula::cpp2::ErrorCode recovery() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  bool isMetaJob() override = 0;
+
+  JobDescription getJobDescription() override {
+    return jobDesc_;
+  }
+
+  nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  bool isRunning() override {
+    return isRunning_.load();
+  }
+
+  void resetRunningStatus() override {
+    isRunning_.store(false);
+  }
+
+ public:
+  void setJobDescStatus(cpp2::JobStatus status) {
+    jobDesc_.setStatus(status, true);
+  }
+
+ protected:
+  JobDescription jobDesc_;
+};
+
+class DummyMetaExecutor : public DummyExecutor {
+ public:
+  DummyMetaExecutor() = default;
+  ~DummyMetaExecutor() override = default;
+
+  explicit DummyMetaExecutor(const JobDescription& desc, kvstore::KVStore* store)
+      : DummyExecutor(desc, store) {}
+
+  bool isMetaJob() override {
+    return true;
+  }
+};
+
+class DummyStorageExecutor : public DummyExecutor {
+ public:
+  DummyStorageExecutor() = default;
+  ~DummyStorageExecutor() override = default;
+
+  explicit DummyStorageExecutor(const JobDescription& desc, kvstore::KVStore* store)
+      : DummyExecutor(desc, store) {}
+
+  bool isMetaJob() override {
+    return false;
+  }
+
+  folly::Future<nebula::cpp2::ErrorCode> execute() override {
+    folly::Promise<nebula::cpp2::ErrorCode> promise;
+    promise.setValue(nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    TaskDescription task(space_, jobDesc_.getJobId(), 0, HostAddr("", 0));
+    auto taskKey = MetaKeyUtils::taskKey(task.getSpace(), task.getJobId(), task.getTaskId());
+    auto taskVal = MetaKeyUtils::taskVal(task.getHost(),
+                                         task.getStatus(),
+                                         task.getStartTime(),
+                                         task.getStopTime(),
+                                         task.getErrorCode());
+    std::vector<kvstore::KV> data;
+    data.emplace_back(std::move(taskKey), std::move(taskVal));
+    folly::Baton<true, std::atomic> baton;
+    auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kvstore_->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          rc = code;
+          baton.post();
+        });
+    baton.wait();
+    return promise.getFuture();
+  }
+};
+
+class UnstoppableDummyStorageExecutor : public DummyStorageExecutor {
+ public:
+  UnstoppableDummyStorageExecutor(const JobDescription& desc, kvstore::KVStore* store)
+      : DummyStorageExecutor(desc, store) {}
+  nebula::cpp2::ErrorCode stop() override {
+    return nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE;
+  }
+};
+
 class JobManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    job_interval = FLAGS_job_check_intervals;  // save the original value
+    FLAGS_job_check_intervals = 50 * 1000;     // 50ms for test to control schedule.
     rootPath_ = std::make_unique<fs::TempDir>("/tmp/JobManager.XXXXXX");
     mock::MockCluster cluster;
     kv_ = cluster.initMetaKV(rootPath_->path());
@@ -69,7 +220,7 @@ class JobManagerTest : public ::testing::Test {
         [] { return folly::Future<StatusOr<bool>>(true); });
   }
 
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> getJobManager() {
+  JobManager* initJobManager(std::shared_ptr<MockExecutorFactory> factory = nullptr) {
     std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr(
         new JobManager(), [](JobManager* p) {
           std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
@@ -80,69 +231,1043 @@ class JobManagerTest : public ::testing::Test {
         });
     jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
     jobMgr->kvStore_ = kv_.get();
-    jobMgr->init(kv_.get());
-    return jobMgr;
+    if (factory == nullptr) {
+      jobMgr->init(kv_.get(), adminClient_.get());
+    } else {
+      jobMgr->init(kv_.get(), adminClient_.get(), factory);
+    }
+    jobMgr_ = std::move(jobMgr);
+    return jobMgr_.get();
+  }
+
+  void disableSchedule(JobManager* jobMgr) {
+    jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
+    jobMgr->bgThread_.join();
+  }
+
+  void enableSchedule(JobManager* jobMgr) {
+    jobMgr->status_.store(JobManager::JbmgrStatus::IDLE, std::memory_order_release);
+    jobMgr->bgThread_ = std::thread(&JobManager::scheduleThread, jobMgr);
+  }
+
+  void reportTaskFinish(nebula::cpp2::ErrorCode code,
+                        GraphSpaceID spaceId,
+                        int32_t jobId,
+                        int32_t taskId) {
+    cpp2::ReportTaskReq req;
+    req.code_ref() = code;
+    req.space_id_ref() = spaceId;
+    req.job_id_ref() = jobId;
+    req.task_id_ref() = taskId;
+    jobMgr_->reportTaskFinish(req);
+  }
+
+  nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v) {
+    return jobMgr_->save(k, v);
   }
 
   void TearDown() override {
+    FLAGS_job_check_intervals = job_interval;  // restore the original value
+    if (jobMgr_) {
+      if (jobMgr_->status_ != JobManager::JbmgrStatus::STOPPED) {
+        jobMgr_->shutDown();
+      }
+      jobMgr_.reset();
+    }
+
     kv_.reset();
     rootPath_.reset();
   }
 
+  int32_t job_interval{0};
   std::unique_ptr<fs::TempDir> rootPath_{nullptr};
   std::unique_ptr<kvstore::KVStore> kv_{nullptr};
   std::unique_ptr<MockAdminClient> adminClient_{nullptr};
+  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr_{nullptr};
 };
 
 HostAddr toHost(std::string strIp) {
   return HostAddr(strIp, 0);
 }
 
-TEST_F(JobManagerTest, AddJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
-  // For preventing job schedule in JobManager
-  jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
-  jobMgr->bgThread_.join();
+TEST_F(JobManagerTest, AddAndSchedule) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
   GraphSpaceID spaceId = 1;
-  JobID jobId = 2;
-  JobDescription jobDesc(spaceId, jobId, cpp2::JobType::COMPACT);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
-  ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
+  JobID jobId = 1;
+  std::vector<std::string> paras{"tag_index_name"};
 
-  // If there is a failed data balance job, a new job cannot be added
-  JobID jobId3 = 3;
-  JobDescription jobDesc3(spaceId, jobId3, cpp2::JobType::DATA_BALANCE);
-  jobDesc3.setStatus(cpp2::JobStatus::FAILED);
-  auto jobKey = MetaKeyUtils::jobKey(jobDesc3.getSpace(), jobDesc3.getJobId());
-  auto jobVal = MetaKeyUtils::jobVal(jobDesc3.getJobType(),
-                                     jobDesc3.getParas(),
-                                     jobDesc3.getStatus(),
-                                     jobDesc3.getStartTime(),
-                                     jobDesc3.getStopTime(),
-                                     jobDesc3.getErrorCode());
-  jobMgr->save(std::move(jobKey), std::move(jobVal));
+  JobDescription desc{spaceId, jobId, cpp2::JobType::REBUILD_TAG_INDEX, paras};
+  disableSchedule(jobMgr);
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
 
-  rc = jobMgr->checkNeedRecoverJobExist(spaceId, jobDesc3.getJobType());
-  ASSERT_EQ(rc, nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER);
+  {
+    // Add job with different paras is okay for job not data/zone balance.
+    JobID newJobId = 2;
+    JobDescription desc2{spaceId, newJobId, cpp2::JobType::REBUILD_TAG_INDEX};
+    auto runningJobExist =
+        jobMgr->checkOnRunningJobExist(spaceId, desc2.getJobType(), desc2.getParas(), newJobId);
+    ASSERT_FALSE(runningJobExist);
+  }
+
+  {
+    // Add job with same paras is not okay for job not data/zone balance.
+    JobID newJobId = 2;
+    JobDescription desc2{spaceId, newJobId, cpp2::JobType::REBUILD_TAG_INDEX, paras};
+    auto runningJobExist =
+        jobMgr->checkOnRunningJobExist(spaceId, desc2.getJobType(), desc2.getParas(), newJobId);
+    ASSERT_TRUE(runningJobExist);
+  }
+
+  {
+    // Job should not affect other space.
+    JobID otherSpaceJobId = 3;
+    GraphSpaceID otherSpaceId = 2;
+    JobDescription desc3{otherSpaceId, otherSpaceJobId, cpp2::JobType::REBUILD_TAG_INDEX};
+    auto otherRunningJobExist = jobMgr->checkOnRunningJobExist(
+        otherSpaceId, desc3.getJobType(), desc3.getParas(), otherSpaceJobId);
+    ASSERT_FALSE(otherRunningJobExist);
+  }
+
+  {
+    // Test show jobs when job is still in queue
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    // Test job in queue can not be recovered.
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+  {
+    enableSchedule(jobMgr);
+    // Wait schedule thread to schedule the job
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::RUNNING);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    // Test job running can not be recovered.
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+  {
+    // report task finish.
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+
+    // Check job is finished.
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    // Test job finished can not be recovered.
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+}
+
+class DummyFailedDataBalanceExecutor : public DummyMetaExecutor {
+ public:
+  explicit DummyFailedDataBalanceExecutor(const JobDescription& desc, kvstore::KVStore* store)
+      : DummyMetaExecutor(desc, store) {}
+
+  folly::Future<nebula::cpp2::ErrorCode> execute() override {
+    folly::Promise<nebula::cpp2::ErrorCode> promise;
+    promise.setValue(nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+    setJobDescStatus(cpp2::JobStatus::FAILED);
+    return promise.getFuture();
+  }
+};
+
+TEST_F(JobManagerTest, FailedDataBalanceBlockFollowing) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyFailedDataBalanceExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a failed data balance job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::DATA_BALANCE};
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {  // wait schedule thread to schedule the job
+    usleep(FLAGS_job_check_intervals * 2);
+  }
+  {
+    // make sure job is failed
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    EXPECT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+  }
+  {
+    // Check new job should be blocked
+    JobID newJobId = 2;
+    JobDescription desc2{spaceId, newJobId, cpp2::JobType::DATA_BALANCE};
+    auto rc = jobMgr->checkNeedRecoverJobExist(spaceId, desc2.getJobType());
+    ASSERT_EQ(rc, nebula::cpp2::ErrorCode::E_JOB_NEED_RECOVER);
+  }
+}
+
+TEST_F(JobManagerTest, StopAndRecoverQueueJob) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::STATS};
+  disableSchedule(jobMgr);
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // Stop job and check result
+    ec = jobMgr->stopJob(spaceId, jobId);
+    ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    // Note: there's 1 job in queue, but it should be skipped when schedule.
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+
+    enableSchedule(jobMgr);
+    usleep(FLAGS_job_check_intervals * 2);
+    // job is skipped now. since it's stopped.
+    jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    disableSchedule(jobMgr);
+    // recover job and check result
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto ret = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(ret));
+    auto recoverNum = nebula::value(ret);
+    ASSERT_EQ(recoverNum, 1);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    enableSchedule(jobMgr);
+    usleep(FLAGS_job_check_intervals * 2);
+    // running recoveryed job and return success
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+  }
+
+  {
+    // recovered job will succeed
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+}
+
+TEST_F(JobManagerTest, StopAndRecoverRunningJob) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::STATS};
+
+  disableSchedule(jobMgr);
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // Check job in queue
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    enableSchedule(jobMgr);
+    // Wait job running and then stop
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::RUNNING);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    // stop running job and check result
+    ec = jobMgr->stopJob(spaceId, jobId);
+    ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+    // Wait job stopped and then recover
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    // running job will report user cancel and finally failed.
+    reportTaskFinish(nebula::cpp2::ErrorCode::E_USER_CANCEL, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_USER_CANCEL);
+  }
+
+  {
+    // recover failed job and check result
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    disableSchedule(jobMgr);
+    auto ret = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(ret));
+    auto recoverNum = nebula::value(ret);
+    ASSERT_EQ(recoverNum, 1);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    enableSchedule(jobMgr);
+    // wait runnning and then report success
+    usleep(FLAGS_job_check_intervals * 2);
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+    // recover job will succeed
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+}
+
+TEST_F(JobManagerTest, StopAndRecoverUnstoppableJob) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<UnstoppableDummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::COMPACT};
+  disableSchedule(jobMgr);
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // Check job is in queue
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+
+  {
+    // Stop job will succeed if job is in queue
+    ec = jobMgr->stopJob(spaceId, jobId);
+    ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    // Check job is stopped
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 1);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+  }
+  {
+    // recover job will succeed
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 1);
+
+    // Check job is in queue
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 2);  // queue 1 add and 1 recover
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+    // a recover job can not be stopped?
+  }
+  {
+    enableSchedule(jobMgr);
+    // wait job running and stop it
+    usleep(FLAGS_job_check_intervals * 2);
+
+    auto jobSize = jobMgr->jobSize();
+    EXPECT_EQ(jobSize, 1);  // a running job and a queue job(recover)
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::RUNNING);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    // stop a running unstoppable job will fail
+    ec = jobMgr->stopJob(spaceId, jobId);
+    ASSERT_EQ(ec, nebula::cpp2::ErrorCode::E_JOB_NOT_STOPPABLE);
+  }
+  {
+    // wait job finish
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    // BUG: This job is finished once, and recover job is running again and skipped(fixed)
+    // BUG: The order is not correct.
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+  {
+    ec = jobMgr->stopJob(spaceId, jobId);
+    ASSERT_EQ(ec, nebula::cpp2::ErrorCode::E_JOB_ALREADY_FINISH);
+  }
+}
+
+TEST_F(JobManagerTest, RecoverRunningFailedJob) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::STATS};
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // Check job running and failed
+    usleep(FLAGS_job_check_intervals * 2);
+    reportTaskFinish(nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED);
+  }
+  {
+    // recover job will succeed
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 1);
+
+    usleep(FLAGS_job_check_intervals * 2);
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+}
+
+TEST_F(JobManagerTest, RecoverBalanceJob) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyFailedDataBalanceExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  // Add a job
+  GraphSpaceID spaceId = 1;
+  JobID jobId = 1;
+  JobDescription desc{spaceId, jobId, cpp2::JobType::ZONE_BALANCE};
+  auto ec = jobMgr->addJob(desc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // check job failed
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+  }
+
+  // add another job and show failed.
+  JobID newJobId = 2;
+  JobDescription newDesc{spaceId, newJobId, cpp2::JobType::ZONE_BALANCE};
+  ec = jobMgr->addJob(newDesc);
+  ASSERT_EQ(ec, nebula::cpp2::ErrorCode::SUCCEEDED);
+
+  {
+    // check job failed
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 2);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+    ASSERT_EQ(showJobs[1].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[1].get_code(), nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+  }
+  // new job should succeed.
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyMetaExecutor>(jd, store);
+      });
+
+  {
+    // recover first job should failed.
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+  {
+    // recover new job should ok.
+    std::vector<JobID> ids;
+    ids.emplace_back(newJobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 1);
+  }
+  {
+    // recover job should finish.
+    usleep(FLAGS_job_check_intervals * 2);
+    auto jobSize = jobMgr->jobSize();
+    ASSERT_EQ(jobSize, 0);
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 2);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(showJobs[1].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[1].get_code(), nebula::cpp2::ErrorCode::E_BALANCER_FAILURE);
+  }
+  {
+    // recover first job now should failed since a new finished balance job exists.
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+}
+
+TEST_F(JobManagerTest, RecoverExpiredJobTest) {
+  auto factory = std::make_shared<MockExecutorFactory>();
+  EXPECT_CALL(*factory, createJobExecutor(_, _, _))
+      .WillRepeatedly([](const JobDescription& jd, kvstore::KVStore* store, AdminClient* client) {
+        UNUSED(client);
+        return std::make_unique<DummyStorageExecutor>(jd, store);
+      });
+  auto jobMgr = initJobManager(factory);
+
+  auto nowTimeInSec = nebula::time::WallClock::fastNowInSec();
+  auto expiredJobTime = std::difftime(nowTimeInSec, FLAGS_job_expired_secs + 1);
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 1;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 1;
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 0);
+  }
+  // recover job should finish.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 2;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 2;
+    std::vector<JobID> ids;
+    ids.emplace_back(jobId);
+    auto recoverRet = jobMgr->recoverJob(spaceId, ids);
+    ASSERT_TRUE(nebula::ok(recoverRet));
+    auto recoverNum = nebula::value(recoverRet);
+    ASSERT_EQ(recoverNum, 1);
+
+    usleep(FLAGS_job_check_intervals * 2);
+    reportTaskFinish(nebula::cpp2::ErrorCode::SUCCEEDED, spaceId, jobId, 0);
+    usleep(FLAGS_job_check_intervals * 2);
+
+    // should be ok
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_code(), nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+}
+
+TEST_F(JobManagerTest, ExpiredJobTest) {
+  auto jobMgr = initJobManager();
+  // For preventing job schedule in JobManager
+  auto nowTimeInSec = nebula::time::WallClock::fastNowInSec();
+  auto expiredJobTime = std::difftime(nowTimeInSec, FLAGS_job_expired_secs + 1);
+
+  // 1. failed job should be expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 1;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+  // 2. finished job should be expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 2;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FINISHED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+  // 3. stopped job should expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 3;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::STOPPED,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_USER_CANCEL);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 0);
+  }
+
+  // 4. failed job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 4;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FAILED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::E_UNKNOWN);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 1);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 4);
+  }
+  // 5. stop job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 5;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::STOPPED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::E_USER_CANCEL);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 2);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::STOPPED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 5);
+    ASSERT_EQ(showJobs[1].get_status(), cpp2::JobStatus::FAILED);
+    ASSERT_EQ(showJobs[1].get_job_id(), 4);
+  }
+  // 6. finished job not expired.
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 6;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::FINISHED,
+                           expiredJobTime + 10,
+                           expiredJobTime + 11,
+                           nebula::cpp2::ErrorCode::SUCCEEDED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 3);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::FINISHED);
+    ASSERT_EQ(showJobs[0].get_job_id(), 6);
+  }
+
+  // 7. queue job should stay even timeout
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 7;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::QUEUE,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 4);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::QUEUE);
+    ASSERT_EQ(showJobs[0].get_job_id(), 7);
+  }
+  // 8. running job should stay even timeout
+  {
+    GraphSpaceID spaceId = 1;
+    JobID jobId = 8;
+    JobDescription jobDesc(spaceId,
+                           jobId,
+                           cpp2::JobType::STATS,
+                           {},
+                           cpp2::JobStatus::RUNNING,
+                           expiredJobTime,
+                           expiredJobTime + 2,
+                           nebula::cpp2::ErrorCode::E_JOB_SUBMITTED);
+
+    auto jobKey = MetaKeyUtils::jobKey(jobDesc.getSpace(), jobDesc.getJobId());
+    auto jobVal = MetaKeyUtils::jobVal(jobDesc.getJobType(),
+                                       jobDesc.getParas(),
+                                       jobDesc.getStatus(),
+                                       jobDesc.getStartTime(),
+                                       jobDesc.getStopTime(),
+                                       jobDesc.getErrorCode());
+    save(std::move(jobKey), std::move(jobVal));
+  }
+  {
+    GraphSpaceID spaceId = 1;
+    auto showRet = jobMgr->showJobs(spaceId);
+    ASSERT_TRUE(nebula::ok(showRet));
+    auto showJobs = nebula::value(showRet);
+    ASSERT_EQ(showJobs.size(), 5);
+    ASSERT_EQ(showJobs[0].get_status(), cpp2::JobStatus::RUNNING);
+    ASSERT_EQ(showJobs[0].get_job_id(), 8);
+  }
 }
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // For preventing job schedule in JobManager
-  jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
-  jobMgr->bgThread_.join();
+  disableSchedule(jobMgr);
   std::vector<std::string> paras{"tag_index_name"};
   GraphSpaceID spaceId = 1;
   JobID jobId = 11;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_TAG_INDEX, paras);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
 }
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
   jobMgr->bgThread_.join();
@@ -150,7 +1275,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   GraphSpaceID spaceId = 1;
   JobID jobId = 11;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::REBUILD_EDGE_INDEX, paras);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -206,14 +1331,14 @@ TEST_F(JobManagerTest, IngestJob) {
 }
 
 TEST_F(JobManagerTest, StatsJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
   jobMgr->bgThread_.join();
   GraphSpaceID spaceId = 1;
   JobID jobId = 12;
   JobDescription jobDesc(spaceId, jobId, cpp2::JobType::STATS);
-  auto rc = jobMgr->addJob(jobDesc, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   auto result = jobMgr->runJobInternal(jobDesc, JobManager::JbOp::ADD).get();
   ASSERT_EQ(result, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -238,7 +1363,7 @@ TEST_F(JobManagerTest, StatsJob) {
 
 // Jobs are parallelized between spaces, and serialized by priority within spaces
 TEST_F(JobManagerTest, JobPriority) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
   jobMgr->bgThread_.join();
@@ -247,18 +1372,18 @@ TEST_F(JobManagerTest, JobPriority) {
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 13;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
-  auto rc1 = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc1 = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   JobID jobId2 = 14;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::LEADER_BALANCE);
-  auto rc2 = jobMgr->addJob(jobDesc2, adminClient_.get());
+  auto rc2 = jobMgr->addJob(jobDesc2);
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   GraphSpaceID spaceId2 = 2;
   JobID jobId3 = 15;
   JobDescription jobDesc3(spaceId2, jobId3, cpp2::JobType::STATS);
-  auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
+  auto rc3 = jobMgr->addJob(jobDesc3);
   ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   ASSERT_EQ(3, jobMgr->jobSize());
@@ -298,7 +1423,7 @@ TEST_F(JobManagerTest, JobPriority) {
 }
 
 TEST_F(JobManagerTest, JobDeduplication) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
   jobMgr->bgThread_.join();
@@ -307,12 +1432,12 @@ TEST_F(JobManagerTest, JobDeduplication) {
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 15;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
-  auto rc1 = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc1 = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc1, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   JobID jobId2 = 16;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::LEADER_BALANCE);
-  auto rc2 = jobMgr->addJob(jobDesc2, adminClient_.get());
+  auto rc2 = jobMgr->addJob(jobDesc2);
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
 
   ASSERT_EQ(2, jobMgr->jobSize());
@@ -323,7 +1448,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   auto jobExist =
       jobMgr->checkOnRunningJobExist(spaceId, jobDesc3.getJobType(), jobDesc3.getParas(), jId3);
   if (!jobExist) {
-    auto rc3 = jobMgr->addJob(jobDesc3, adminClient_.get());
+    auto rc3 = jobMgr->addJob(jobDesc3);
     ASSERT_EQ(rc3, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -333,7 +1458,7 @@ TEST_F(JobManagerTest, JobDeduplication) {
   jobExist =
       jobMgr->checkOnRunningJobExist(spaceId, jobDesc4.getJobType(), jobDesc4.getParas(), jId4);
   if (!jobExist) {
-    auto rc4 = jobMgr->addJob(jobDesc4, adminClient_.get());
+    auto rc4 = jobMgr->addJob(jobDesc4);
     ASSERT_NE(rc4, nebula::cpp2::ErrorCode::SUCCEEDED);
   }
 
@@ -354,13 +1479,13 @@ TEST_F(JobManagerTest, JobDeduplication) {
 }
 
 TEST_F(JobManagerTest, LoadJobDescription) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 1;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
   jobDesc1.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc1.setStatus(cpp2::JobStatus::FINISHED);
-  auto rc = jobMgr->addJob(jobDesc1, adminClient_.get());
+  auto rc = jobMgr->addJob(jobDesc1);
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
   ASSERT_EQ(jobDesc1.getSpace(), 1);
   ASSERT_EQ(jobDesc1.getJobId(), 1);
@@ -381,19 +1506,19 @@ TEST_F(JobManagerTest, LoadJobDescription) {
 }
 
 TEST_F(JobManagerTest, ShowJobs) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 1;
   JobDescription jobDesc1(spaceId, jobId1, cpp2::JobType::COMPACT);
   jobDesc1.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc1.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jobDesc1, adminClient_.get());
+  jobMgr->addJob(jobDesc1);
 
   JobID jobId2 = 2;
   JobDescription jobDesc2(spaceId, jobId2, cpp2::JobType::FLUSH);
   jobDesc2.setStatus(cpp2::JobStatus::RUNNING);
   jobDesc2.setStatus(cpp2::JobStatus::FAILED);
-  jobMgr->addJob(jobDesc2, adminClient_.get());
+  jobMgr->addJob(jobDesc2);
 
   auto statusOrShowResult = jobMgr->showJobs(spaceId);
   LOG(INFO) << "after show jobs";
@@ -418,20 +1543,20 @@ TEST_F(JobManagerTest, ShowJobs) {
 }
 
 TEST_F(JobManagerTest, ShowJobsFromMultiSpace) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId1 = 1;
   JobID jobId1 = 1;
   JobDescription jd1(spaceId1, jobId1, cpp2::JobType::COMPACT);
   jd1.setStatus(cpp2::JobStatus::RUNNING);
   jd1.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd1, adminClient_.get());
+  jobMgr->addJob(jd1);
 
   GraphSpaceID spaceId2 = 2;
   JobID jobId2 = 2;
   JobDescription jd2(spaceId2, jobId2, cpp2::JobType::FLUSH);
   jd2.setStatus(cpp2::JobStatus::RUNNING);
   jd2.setStatus(cpp2::JobStatus::FAILED);
-  jobMgr->addJob(jd2, adminClient_.get());
+  jobMgr->addJob(jd2);
 
   auto statusOrShowResult = jobMgr->showJobs(spaceId2);
   LOG(INFO) << "after show jobs";
@@ -450,13 +1575,13 @@ TEST_F(JobManagerTest, ShowJobsFromMultiSpace) {
 }
 
 TEST_F(JobManagerTest, ShowJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId = 1;
   JobID jobId1 = 1;
   JobDescription jd(spaceId, jobId1, cpp2::JobType::COMPACT);
   jd.setStatus(cpp2::JobStatus::RUNNING);
   jd.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd, adminClient_.get());
+  jobMgr->addJob(jd);
 
   JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
@@ -516,13 +1641,13 @@ TEST_F(JobManagerTest, ShowJob) {
 }
 
 TEST_F(JobManagerTest, ShowJobInOtherSpace) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId1 = 1;
   JobID jobId1 = 1;
   JobDescription jd(spaceId1, jobId1, cpp2::JobType::COMPACT);
   jd.setStatus(cpp2::JobStatus::RUNNING);
   jd.setStatus(cpp2::JobStatus::FINISHED);
-  jobMgr->addJob(jd, adminClient_.get());
+  jobMgr->addJob(jd);
 
   JobID jobId2 = jd.getJobId();
   int32_t task1 = 0;
@@ -555,7 +1680,7 @@ TEST_F(JobManagerTest, ShowJobInOtherSpace) {
 }
 
 TEST_F(JobManagerTest, RecoverJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   // set status to prevent running the job since AdminClient is a injector
   jobMgr->status_.store(JobManager::JbmgrStatus::STOPPED, std::memory_order_release);
   jobMgr->bgThread_.join();
@@ -601,7 +1726,7 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
+    auto nJobRecovered = jobMgr->recoverJob(spaceId);
     ASSERT_EQ(nebula::value(nJobRecovered), 3);
     std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
     while (jobMgr->jobSize() != 0) {
@@ -650,14 +1775,14 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, {base + 1});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 2});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + 2});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 3});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + 3});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + nJob + 4});
+    nJobRecovered = jobMgr->recoverJob(spaceId, {base + nJob + 4});
     ASSERT_EQ(nebula::value(nJobRecovered), 1);
 
     std::tuple<JobManager::JbOp, JobID, GraphSpaceID> opJobId;
@@ -724,16 +1849,16 @@ TEST_F(JobManagerTest, RecoverJob) {
                                          jd.getErrorCode());
       jobMgr->save(jobKey, jobVal);
     }
-    auto nJobRecovered = jobMgr->recoverJob(spaceId, nullptr, {base + 1});
+    auto nJobRecovered = jobMgr->recoverJob(spaceId, {base + 1});
     ASSERT_EQ(nebula::value(nJobRecovered), 0);
 
-    nJobRecovered = jobMgr->recoverJob(spaceId, nullptr);
+    nJobRecovered = jobMgr->recoverJob(spaceId);
     ASSERT_EQ(nebula::value(nJobRecovered), 1);
   }
 }
 
 TEST_F(JobManagerTest, NotStoppableJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId = 1;
   PartitionID partId = 1;
   JobID jobId = 1;
@@ -752,7 +1877,7 @@ TEST_F(JobManagerTest, NotStoppableJob) {
   };
 
   initListener();
-  TestUtils::setupHB(kv_.get(), {listener}, cpp2::HostRole::LISTENER, "sha");
+  TestUtils::setupHB(kv_.get(), {listener}, cpp2::HostRole::STORAGE_LISTENER, "sha");
 
   std::vector<cpp2::JobType> notStoppableJob{
       cpp2::JobType::COMPACT,
@@ -771,7 +1896,7 @@ TEST_F(JobManagerTest, NotStoppableJob) {
     }
 
     JobDescription jobDesc(spaceId, jobId, type);
-    auto code = jobMgr->addJob(jobDesc, adminClient_.get());
+    auto code = jobMgr->addJob(jobDesc);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun
@@ -811,7 +1936,7 @@ TEST_F(JobManagerTest, NotStoppableJob) {
 }
 
 TEST_F(JobManagerTest, StoppableJob) {
-  std::unique_ptr<JobManager, std::function<void(JobManager*)>> jobMgr = getJobManager();
+  auto jobMgr = initJobManager();
   GraphSpaceID spaceId = 1;
   JobID jobId = 1;
 
@@ -852,7 +1977,7 @@ TEST_F(JobManagerTest, StoppableJob) {
     }
 
     JobDescription jobDesc(spaceId, jobId, type);
-    auto code = jobMgr->addJob(jobDesc, adminClient_.get());
+    auto code = jobMgr->addJob(jobDesc);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
 
     // sleep a while to make sure the task has begun

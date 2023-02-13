@@ -14,6 +14,10 @@
 
 namespace nebula {
 namespace graph {
+
+ShortestPathPlanner::ShortestPathPlanner(CypherClauseContextBase* ctx, const Path& path)
+    : ctx_(DCHECK_NOTNULL(ctx)), path_(path) {}
+
 //              The plan looks like this:
 //    +--------+---------+        +---------+--------+
 //    |      Start       |        |       Start      |
@@ -30,7 +34,7 @@ namespace graph {
 //             +------------+---------------+
 //                          |
 //                 +--------+---------+
-//                 |BiCartesianProduct|
+//                 |    CrossJoin     |
 //                 +--------+---------+
 //                          |
 //                 +--------+---------+
@@ -40,27 +44,18 @@ namespace graph {
 //                 +--------+---------+
 //                 |     Project      |
 //                 +--------+---------+
-
-StatusOr<SubPlan> ShortestPathPlanner::transform(
-    QueryContext* qctx,
-    GraphSpaceID spaceId,
-    WhereClauseContext* bindWhereClause,
-    const std::unordered_map<std::string, AliasType>& aliasesAvailable,
-    std::unordered_set<std::string> nodeAliasesSeen,
-    Path& path) {
-  std::unordered_set<std::string> allNodeAliasesAvailable;
-  allNodeAliasesAvailable.merge(nodeAliasesSeen);
-  std::for_each(
-      aliasesAvailable.begin(), aliasesAvailable.end(), [&allNodeAliasesAvailable](auto& kv) {
-        if (kv.second == AliasType::kNode) {
-          allNodeAliasesAvailable.emplace(kv.first);
-        }
-      });
+StatusOr<SubPlan> ShortestPathPlanner::transform(WhereClauseContext* bindWhereClause,
+                                                 std::unordered_set<std::string> nodeAliasesSeen) {
+  for (auto& kv : ctx_->aliasesAvailable) {
+    if (kv.second == AliasType::kNode) {
+      nodeAliasesSeen.emplace(kv.first);
+    }
+  }
 
   SubPlan subplan;
-  bool singleShortest = path.pathType == Path::PathType::kSingleShortest;
-  auto& nodeInfos = path.nodeInfos;
-  auto& edge = path.edgeInfos.front();
+  bool singleShortest = path_.pathType == Path::PathType::kSingleShortest;
+  auto& nodeInfos = path_.nodeInfos;
+  auto& edge = path_.edgeInfos.front();
   std::vector<std::string> colNames;
   colNames.emplace_back(nodeInfos.front().alias);
   colNames.emplace_back(edge.alias);
@@ -69,19 +64,19 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   auto& startVidFinders = StartVidFinder::finders();
   std::vector<SubPlan> plans;
 
+  auto qctx = ctx_->qctx;
+  auto spaceId = ctx_->space.id;
   for (auto& nodeInfo : nodeInfos) {
     bool foundIndex = false;
     for (auto& finder : startVidFinders) {
       auto nodeCtx = NodeContext(qctx, bindWhereClause, spaceId, &nodeInfo);
-      nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
+      nodeCtx.nodeAliasesAvailable = &nodeAliasesSeen;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto status = nodeFinder->transform(&nodeCtx);
         NG_RETURN_IF_ERROR(status);
-        auto plan = status.value();
-        auto start = StartNode::make(qctx);
-        plan.tail->setDep(0, start);
-        plan.tail = start;
+        auto plan = std::move(status).value();
+        plan.appendStartNode(qctx);
 
         auto initExpr = nodeCtx.initialExpr->clone();
         auto columns = qctx->objPool()->makeAndAdd<YieldColumns>();
@@ -100,7 +95,12 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   auto& leftPlan = plans.front();
   auto& rightPlan = plans.back();
 
-  auto cp = BiCartesianProduct::make(qctx, leftPlan.root, rightPlan.root);
+  auto cp = CrossJoin::make(qctx, leftPlan.root, rightPlan.root);
+
+  MatchStepRange stepRange(1, 1);
+  if (edge.range != nullptr) {
+    stepRange = *edge.range;
+  }
 
   auto shortestPath = ShortestPath::make(qctx, cp, spaceId, singleShortest);
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
@@ -109,13 +109,13 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(
   shortestPath->setEdgeProps(SchemaUtil::getEdgeProps(edge, false, qctx, spaceId));
   shortestPath->setReverseEdgeProps(SchemaUtil::getEdgeProps(edge, true, qctx, spaceId));
   shortestPath->setEdgeDirection(edge.direction);
-  shortestPath->setStepRange(edge.range);
+  shortestPath->setStepRange(stepRange);
   shortestPath->setColNames(std::move(colNames));
 
   subplan.root = shortestPath;
   subplan.tail = leftPlan.tail;
 
-  MatchSolver::buildProjectColumns(qctx, path, subplan);
+  MatchSolver::buildProjectColumns(qctx, path_, subplan);
   return subplan;
 }
 

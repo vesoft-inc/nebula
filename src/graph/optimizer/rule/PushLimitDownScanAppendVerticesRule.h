@@ -18,7 +18,7 @@ namespace opt {
 //  Benefits:
 //   1. Limit data early to optimize performance
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +--------+--------+
@@ -30,9 +30,9 @@ namespace opt {
 // |   AppendVertices  |
 // +---------+---------+
 //           |
-// +---------+---------+
-// |    ScanVertices   |
-// +---------+---------+
+// +---------+-------------------+
+// |    ScanVertices/IndexScan   |
+// +---------+-------------------+
 //
 //  After:
 //
@@ -47,6 +47,7 @@ namespace opt {
 //           |
 // +---------+---------+
 // |    ScanVertices   |
+// |    IndexScan      |
 // |     (limit=3)     |
 // +---------+---------+
 

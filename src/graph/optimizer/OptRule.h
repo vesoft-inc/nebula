@@ -40,8 +40,9 @@ struct MatchedResult {
   // {0, 1, 0}    | this->dependencies[1].dependencies[0]
   // {0, 1, 0, 1} | this->dependencies[1].dependencies[0].dependencies[1]
   const graph::PlanNode *planNode(const std::vector<int32_t> &pos = {}) const;
+  const MatchedResult &result(const std::vector<int32_t> &pos = {}) const;
 
-  void collectBoundary(std::vector<OptGroup *> &boundary) const;
+  void collectPatternLeaves(std::vector<OptGroup *> &leaves) const;
 };
 
 // Match plan node by trait or kind of plan node.
@@ -52,8 +53,13 @@ class MatchNode {
       : node_(std::move(kinds)) {}
 
   bool match(const graph::PlanNode *node) const {
-    auto find = node_.find(node->kind());
-    return find != node_.end();
+    for (auto kind : node_) {
+      // Any plan node is expected if the kind of node is unknown
+      if (kind == node->kind() || kind == graph::PlanNode::Kind::kUnknown) {
+        return true;
+      }
+    }
+    return false;
   }
 
  private:

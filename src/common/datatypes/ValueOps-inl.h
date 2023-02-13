@@ -103,6 +103,7 @@ template <class Protocol>
 uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj) {
   uint32_t xfer = 0;
   xfer += proto->writeStructBegin("Value");
+  // MemoryTrackerVerified: throw bad_alloc verified
 
   switch (obj->type()) {
     case nebula::Value::Type::NULLVALUE: {
@@ -368,10 +369,10 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
       }
       case 9: {
         if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
-          obj->setVertex(nebula::Vertex());
           auto ptr = std::make_unique<nebula::Vertex>();
+          ptr->unref();
           Cpp2Ops<nebula::Vertex>::read(proto, ptr.get());
-          obj->setVertex(std::move(ptr));
+          obj->setVertex(ptr.release());
         } else {
           proto->skip(readState.fieldType);
         }
@@ -379,10 +380,10 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
       }
       case 10: {
         if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
-          obj->setEdge(nebula::Edge());
           auto ptr = std::make_unique<nebula::Edge>();
+          ptr->unref();
           Cpp2Ops<nebula::Edge>::read(proto, ptr.get());
-          obj->setEdge(std::move(ptr));
+          obj->setEdge(ptr.release());
         } else {
           proto->skip(readState.fieldType);
         }

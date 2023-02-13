@@ -210,7 +210,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                 // All logs up to logIdToSend_ has been sent, fulfill the promise
                 self->promise_.setValue(resp);
                 // Check if there are any pending request:
-                // Eithor send pending requst if any, or set Host to vacant
+                // Either send pending request if any, or set Host to vacant
                 newReq = self->getPendingReqIfAny(self);
               }
             }

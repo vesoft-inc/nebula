@@ -419,7 +419,6 @@ bool OptimizerUtils::relExprHasIndex(
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
                                        nebula::graph::IndexScan* to,
                                        QueryContext* qctx) {
-  to->setEmptyResultSet(from->isEmptyResultSet());
   to->setSpace(from->space());
   to->setReturnCols(from->returnColumns());
   to->setIsEdge(from->isEdge());

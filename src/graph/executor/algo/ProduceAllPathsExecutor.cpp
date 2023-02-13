@@ -27,24 +27,41 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
     }
   }
   std::vector<folly::Future<Status>> futures;
-  auto leftFuture = folly::via(runner(), [this]() { return buildPath(false); });
-  auto rightFuture = folly::via(runner(), [this]() { return buildPath(true); });
+  auto leftFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    return buildPath(false);
+  });
+  auto rightFuture = folly::via(runner(), [this]() {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    return buildPath(true);
+  });
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
   return folly::collect(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
+        memory::MemoryCheckGuard guard;
         UNUSED(status);
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
         ds.rows.swap(currentDs_.rows);
         return finish(ResultBuilder().value(Value(std::move(ds))).build());
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -140,11 +157,16 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
     if (++i == batchSize) {
       auto endIter = leftIter;
       endIter++;
-      auto oddStepFuture = folly::via(
-          runner(), [this, startIter, endIter]() { return doConjunct(startIter, endIter, true); });
+      auto oddStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+        return doConjunct(startIter, endIter, true);
+      });
       futures.emplace_back(std::move(oddStepFuture));
       if (step_ * 2 <= pathNode_->steps()) {
         auto evenStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+          // MemoryTrackerVerified
+          memory::MemoryCheckGuard guard;
           return doConjunct(startIter, endIter, false);
         });
         futures.emplace_back(std::move(evenStepFuture));
@@ -156,17 +178,24 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
   }
   if (i != 0) {
     auto endIter = leftPaths_.end();
-    auto oddStepFuture = folly::via(
-        runner(), [this, startIter, endIter]() { return doConjunct(startIter, endIter, true); });
+    auto oddStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+      // MemoryTrackerVerified
+      memory::MemoryCheckGuard guard;
+      return doConjunct(startIter, endIter, true);
+    });
     futures.emplace_back(std::move(oddStepFuture));
     if (step_ * 2 <= pathNode_->steps()) {
-      auto evenStepFuture = folly::via(
-          runner(), [this, startIter, endIter]() { return doConjunct(startIter, endIter, false); });
+      auto evenStepFuture = folly::via(runner(), [this, startIter, endIter]() {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+        return doConjunct(startIter, endIter, false);
+      });
       futures.emplace_back(std::move(evenStepFuture));
     }
   }
 
   return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
     for (auto& resp : resps) {
       currentDs_.append(std::move(resp));
     }

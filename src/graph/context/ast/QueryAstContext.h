@@ -115,12 +115,17 @@ struct GoContext final : AstContext {
 struct LookupContext final : public AstContext {
   bool isEdge{false};
   bool dedup{false};
-  bool isEmptyResultSet{false};
   int32_t schemaId{-1};
   Expression* filter{nullptr};
   YieldColumns* yieldExpr{nullptr};
   std::vector<std::string> idxReturnCols;
   std::vector<std::string> idxColNames;
+
+  // fulltext index
+  bool isFulltextIndex{false};
+  std::string fulltextIndex;
+  Expression* fulltextExpr{nullptr};
+
   // order by
 };
 
@@ -132,6 +137,7 @@ struct SubgraphContext final : public AstContext {
   Expression* tagFilter{nullptr};
   Expression* edgeFilter{nullptr};
   std::vector<std::string> colNames;
+  std::unordered_set<std::string> edgeNames;
   std::unordered_set<EdgeType> edgeTypes;
   std::unordered_set<EdgeType> biDirectEdgeTypes;
   std::vector<Value::Type> colType;

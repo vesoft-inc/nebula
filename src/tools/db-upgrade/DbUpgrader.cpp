@@ -923,19 +923,19 @@ void UpgraderSpace::runPartV3() {
                                        std::time(nullptr));
       ::rocksdb::Status s = sst_file_writer.Open(file);
       if (!s.ok()) {
-        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+        LOG(FATAL) << "Failed to upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
                    << s.code();
       }
       for (auto item : data) {
         s = sst_file_writer.Put(item.first, item.second);
         if (!s.ok()) {
-          LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+          LOG(FATAL) << "Failed to upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
                      << s.code();
         }
       }
       s = sst_file_writer.Finish();
       if (!s.ok()) {
-        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+        LOG(FATAL) << "Failed to upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
                    << s.code();
       }
       std::lock_guard<std::mutex> lck(this->ingest_sst_file_mut_);
@@ -995,7 +995,7 @@ void UpgraderSpace::doProcessV3() {
   if (ingest_sst_file_.size() != 0) {
     auto code = readEngine_->ingest(ingest_sst_file_, true);
     if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
+      LOG(FATAL) << "Failed to upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
     }
   }
   readEngine_->put(NebulaKeyUtils::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());

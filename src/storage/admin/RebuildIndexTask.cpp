@@ -18,6 +18,7 @@ bool RebuildIndexTask::check() {
   return env_->kvstore_ != nullptr;
 }
 void RebuildIndexTask::finish(nebula::cpp2::ErrorCode rc) {
+  LOG(INFO) << "Finish rebuild index task in space " << *ctx_.parameters_.space_id_ref();
   if (changedSpaceGuard_) {
     auto space = *ctx_.parameters_.space_id_ref();
     for (auto it = env_->rebuildIndexGuard_->begin(); it != env_->rebuildIndexGuard_->end(); ++it) {
@@ -74,7 +75,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   std::vector<AdminSubTask> tasks;
   for (auto it = env_->rebuildIndexGuard_->cbegin(); it != env_->rebuildIndexGuard_->cend(); ++it) {
     if (std::get<0>(it->first) == space_ && it->second != IndexState::FINISHED) {
-      LOG(INFO) << "This space is building index";
+      LOG(INFO) << "This space " << space_ << " is building index on part "
+                << std::get<1>(it->first) << ", index status: " << static_cast<int32_t>(it->second);
       return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
     }
   }
@@ -164,7 +166,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
         VLOG(1) << "Processing Delete Operation " << opVal;
         batchHolder->remove(opVal.str());
       } else {
-        LOG(INFO) << "Unknow Operation Type";
+        LOG(INFO) << "Unknown Operation Type";
         return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
       }
 

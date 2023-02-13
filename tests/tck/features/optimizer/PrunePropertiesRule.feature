@@ -19,12 +19,12 @@ Feature: Prune Properties rule
       | 33            |
       | 41            |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                    |
-      | 8  | Project        | 4            |                                                                                                  |
-      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"age\"],\"tagId\":9}]" }                                              |
-      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"],\"type\":3}]" } |
-      | 7  | IndexScan      | 2            |                                                                                                  |
-      | 2  | Start          |              |                                                                                                  |
+      | id | name           | dependencies | operator info                                                                         |
+      | 8  | Project        | 4            |                                                                                       |
+      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"age\"]}]" }                                               |
+      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 7  | IndexScan      | 2            |                                                                                       |
+      | 2  | Start          |              |                                                                                       |
     When profiling query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
@@ -36,12 +36,12 @@ Feature: Prune Properties rule
       | "Tony Parker" |
       | "Tony Parker" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                         |
-      | 8  | Project        | 4            |                                                                                                                                       |
-      | 4  | AppendVertices | 3            | {  "props": "[{\"tagId\": 8, \"props\": [\"_tag\"]}, {\"tagId\": 9, \"props\": [\"_tag\"]}, {\"tagId\": 10, \"props\": [\"_tag\"]}]"} |
-      | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"],\"type\":3}]" }  |
-      | 7  | IndexScan      | 2            |                                                                                                                                       |
-      | 2  | Start          |              |                                                                                                                                       |
+      | id | name           | dependencies | operator info                                                                                                 |
+      | 8  | Project        | 4            |                                                                                                               |
+      | 4  | AppendVertices | 3            | {  "props": "[{ \"props\": [\"_tag\"]}, {\"props\": [\"_tag\"]}, {\"props\": [\"_tag\"]}]"}                   |
+      | 3  | Traverse       | 7            | {  "vertexProps": "[{\"props\":[\"name\"]}]", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 7  | IndexScan      | 2            |                                                                                                               |
+      | 2  | Start          |              |                                                                                                               |
     When profiling query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]-(v2)
@@ -58,12 +58,12 @@ Feature: Prune Properties rule
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                |
-      | 8  | Project        | 4            |                                                                                                                                                                                                                                                                                                                                              |
-      | 4  | AppendVertices | 3            | {  "props": "[{\"tagId\": 8, \"props\": [\"_tag\"]}, {\"tagId\": 9, \"props\": [\"_tag\"]}, {\"tagId\": 10, \"props\": [\"_tag\"]}]" }                                                                                                                                                                                                       |
-      | 3  | Traverse       | 7            | { "vertexProps": "[{\"props\": [\"name\", \"age\", \"_tag\"], \"tagId\": 9}, {\"props\": [\"name\", \"speciality\", \"_tag\"], \"tagId\": 8}, {\"tagId\": 10, \"props\": [\"name\", \"_tag\"]}]", "edgeProps": "[{\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}]" } |
-      | 7  | IndexScan      | 2            |                                                                                                                                                                                                                                                                                                                                              |
-      | 2  | Start          |              |                                                                                                                                                                                                                                                                                                                                              |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                          |
+      | 8  | Project        | 4            |                                                                                                                                                                                                                                                                        |
+      | 4  | AppendVertices | 3            | {  "props": "[{\"props\": [\"_tag\"]}, {\"props\": [\"_tag\"]}, {\"props\": [\"_tag\"]}]" }                                                                                                                                                                            |
+      | 3  | Traverse       | 7            | { "vertexProps": "[{\"props\": [\"name\", \"age\", \"_tag\"]}, {\"props\": [\"name\", \"speciality\", \"_tag\"]}, {\"props\": [\"name\", \"_tag\"]}]", "edgeProps": "[{\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 7  | IndexScan      | 2            |                                                                                                                                                                                                                                                                        |
+      | 2  | Start          |              |                                                                                                                                                                                                                                                                        |
     When profiling query:
       """
       MATCH p = (v:player{name: "Tony Parker"})-[e:like]->(v2)
@@ -75,12 +75,12 @@ Feature: Prune Properties rule
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                         |
-      | 8  | Project        | 4            |                                                                                                                                                                                       |
-      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"], \"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" } |
-      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"],\"type\":3}]" }                                                                                      |
-      | 7  | IndexScan      | 2            |                                                                                                                                                                                       |
-      | 2  | Start          |              |                                                                                                                                                                                       |
+      | id | name           | dependencies | operator info                                                                                                                                   |
+      | 8  | Project        | 4            |                                                                                                                                                 |
+      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"name\", \"age\", \"_tag\"]}, {\"props\":[\"name\", \"speciality\", \"_tag\"]}, {\"props\":[\"name\", \"_tag\"]}]" } |
+      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"]}]" }                                                           |
+      | 7  | IndexScan      | 2            |                                                                                                                                                 |
+      | 2  | Start          |              |                                                                                                                                                 |
     # The rule will not take affect in this case because it returns the whole path
     When executing query:
       """
@@ -108,12 +108,12 @@ Feature: Prune Properties rule
       | "like"  |
       | "like"  |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                  |
-      | 8  | Project        | 4            |                                                                                                                                |
-      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10} ]" } |
-      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"],\"type\":3}]" }                               |
-      | 7  | IndexScan      | 2            |                                                                                                                                |
-      | 2  | Start          |              |                                                                                                                                |
+      | id | name           | dependencies | operator info                                                                             |
+      | 8  | Project        | 4            |                                                                                           |
+      | 4  | AppendVertices | 3            | {  "props": "[{\"props\":[\"_tag\"]}, {\"props\":[\"_tag\"]}, {\"props\":[\"_tag\"]} ]" } |
+      | 3  | Traverse       | 7            | {  "vertexProps": "", "edgeProps": "[{\"props\":[\"_dst\", \"_rank\", \"_type\"]}]" }     |
+      | 7  | IndexScan      | 2            |                                                                                           |
+      | 2  | Start          |              |                                                                                           |
     When executing query:
       """
       MATCH (v:player{name: "Tony Parker"})-[:like]-(v2)--(v3)
@@ -170,20 +170,21 @@ Feature: Prune Properties rule
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 16 | TopN           | 12           |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 12 | Project        | 9            |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 9  | BiInnerJoin    | 22, 23       |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 22 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                                  |
-      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                            |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 23 | Project        | 8            |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-      | 8  | AppendVertices | 7            | {  "props": "[{\"tagId\":9,\"props\":[\"name\"]}, {\"tagId\":10,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                             |
-      | 7  | Traverse       | 6            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" } |
-      | 6  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                                                                  |
+      | 16 | TopN           | 12           |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 12 | Project        | 9            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 9  | HashInnerJoin  | 22, 23       |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 22 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                       |
+      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"] }]" }                                                                                                                                                                                                                                                                                                                                                                |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 23 | Project        | 8            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 8  | AppendVertices | 7            | {  "props": "[{ \"props\":[\"name\"]}, { \"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                             |
+      | 7  | Traverse       | 6            | { "vertexProps": "[{ \"props\":[\"name\"]}]", "edgeProps": "[{  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 6  | Argument       | 0            |                                                                                                                                                                                                                                                                                                                                                                                                                |
+      | 0  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                |
     When profiling query:
       """
       MATCH (m)-[]-(n), (n)-[]-(l), (l)-[]-(h) WHERE id(m)=="Tim Duncan"
@@ -203,26 +204,26 @@ Feature: Prune Properties rule
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-      | 20 | TopN           | 23           |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 23 | Project        | 13           |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 13 | BiInnerJoin    | 9, 30        |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 9  | BiInnerJoin    | 28, 29       |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 28 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                                    |
-      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" }  |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 29 | Project        | 8            |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 8  | AppendVertices | 7            | {  "props": "[{\"tagId\":10,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                   |
-      | 7  | Traverse       | 6            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" }   |
-      | 6  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 31 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 30 | Project        | 12           |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | 12 | AppendVertices | 11           | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                                    |
-      | 11 | Traverse       | 10           | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":10}]", "edgeProps": "[{\"type\": -5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"type\": 5, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"type\": -4, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" } |
-      | 10 | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                    |
+      | 20 | TopN           | 23           |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 23 | Project        | 13           |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 13 | HashInnerJoin  | 9, 30        |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 9  | HashInnerJoin  | 28, 29       |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 28 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                                                                                                                                                                                                                                        |
+      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"] }]", "edgeProps": "[{  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 29 | Project        | 8            |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 8  | AppendVertices | 7            | {  "props": "[{ \"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                        |
+      | 7  | Traverse       | 6            | { "vertexProps": "[{ \"props\":[\"name\"]}]", "edgeProps": "[{  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}]" }  |
+      | 6  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 30 | Project        | 12           |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 12 | AppendVertices | 11           | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                                                                                                                                                                                                                                        |
+      | 11 | Traverse       | 10           | {  "vertexProps": "[{\"props\":[\"name\"] }]", "edgeProps": "[{  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"]}]" } |
+      | 10 | Argument       | 0            |                                                                                                                                                                                                                                                                                                                                                                  |
+      | 0  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                  |
 
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
@@ -249,21 +250,20 @@ Feature: Prune Properties rule
       | "Tim Duncan" | "Boris Diaw"  | "Suns"       |
       | "Tim Duncan" | "Boris Diaw"  | "Tim Duncan" |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                             |
-      | 17 | TopN           | 13           |                                                                                           |
-      | 13 | Project        | 12           |                                                                                           |
-      | 12 | BiInnerJoin    | 19, 11       |                                                                                           |
-      | 19 | Project        | 5            |                                                                                           |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                      |
-      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                |
-      | 2  | Dedup          | 1            |                                                                                           |
-      | 1  | PassThrough    | 3            |                                                                                           |
-      | 3  | Start          |              |                                                                                           |
-      | 11 | Project        | 10           |                                                                                           |
-      | 10 | AppendVertices | 9            | {  "props": "[{\"tagId\":9,\"props\":[\"name\"]}, {\"tagId\":10,\"props\":[\"name\"]}]" } |
-      | 9  | Traverse       | 8            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                 |
-      | 8  | Argument       |              |                                                                                           |
-      | 33 | Start          |              |                                                                                           |
+      | id | name           | dependencies | operator info                                                      |
+      | 17 | TopN           | 13           |                                                                    |
+      | 13 | Project        | 12           |                                                                    |
+      | 12 | HashInnerJoin  | 19, 11       |                                                                    |
+      | 19 | Project        | 5            |                                                                    |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"] }]" }                          |
+      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"] }]" }                    |
+      | 2  | Dedup          | 1            |                                                                    |
+      | 1  | PassThrough    | 3            |                                                                    |
+      | 3  | Start          |              |                                                                    |
+      | 11 | Project        | 10           |                                                                    |
+      | 10 | AppendVertices | 9            | {  "props": "[{ \"props\":[\"name\"]}, { \"props\":[\"name\"]}]" } |
+      | 9  | Traverse       | 8            | { "vertexProps": "[{ \"props\":[\"name\"]}]" }                     |
+      | 8  | Argument       |              |                                                                    |
     When profiling query:
       """
       MATCH (m)-[]-(n) WHERE id(m)=="Tim Duncan"
@@ -284,27 +284,25 @@ Feature: Prune Properties rule
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Aron Baynes"      |
       | "Tim Duncan" | "Aron Baynes" | "Spurs"   | "Boris Diaw"       |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-      | 21 | TopN           | 17           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 17 | Project        | 16           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 16 | BiInnerJoin    | 23, 14       |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 23 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                                   |
-      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                                                                                                                                                                                                                                             |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 14 | BiInnerJoin    | 33, 34       |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 33 | Project        | 10           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 10 | AppendVertices | 9            | {  "props": "[{\"tagId\":10,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                  |
-      | 9  | Traverse       | 8            | { "vertexProps": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                              |
-      | 8  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 35 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 34 | Project        | 13           |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 13 | AppendVertices | 12           | {  "props": "[{\"tagId\":9,\"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                                                                                                   |
-      | 12 | Traverse       | 11           | { "vertexProps": "[{\"tagId\":10,\"props\":[\"name\"]}]", "edgeProps": "[{\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -5}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 5}, {\"type\": -3, \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 3}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": -4}, {\"props\": [\"_dst\", \"_rank\", \"_type\"], \"type\": 4}]" } |
-      | 11 | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-      | 36 | Start          |              |                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                                                                                   |
+      | 21 | TopN           | 17           |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 17 | Project        | 16           |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 16 | HashInnerJoin  | 23, 14       |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 23 | Project        | 5            |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                                                                                                                                                                                                                                       |
+      | 4  | Traverse       | 2            | {  "vertexProps": "[{\"props\":[\"name\"] }]" }                                                                                                                                                                                                                                                                                                                 |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 14 | HashInnerJoin  | 33, 34       |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 33 | Project        | 10           |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 10 | AppendVertices | 9            | {  "props": "[{ \"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                       |
+      | 9  | Traverse       | 8            | { "vertexProps": "[{ \"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                  |
+      | 8  | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 34 | Project        | 13           |                                                                                                                                                                                                                                                                                                                                                                 |
+      | 13 | AppendVertices | 12           | {  "props": "[{ \"props\":[\"name\"]}]" }                                                                                                                                                                                                                                                                                                                       |
+      | 12 | Traverse       | 11           | { "vertexProps": "[{ \"props\":[\"name\"]}]", "edgeProps": "[{\"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"] }, {  \"props\": [\"_dst\", \"_rank\", \"_type\"]}, {\"props\": [\"_dst\", \"_rank\", \"_type\"] }, {\"props\": [\"_dst\", \"_rank\", \"_type\"] }, {\"props\": [\"_dst\", \"_rank\", \"_type\"] }]" } |
+      | 11 | Argument       |              |                                                                                                                                                                                                                                                                                                                                                                 |
     When profiling query:
       """
       MATCH (v:player{name:"Tony Parker"})
@@ -317,17 +315,43 @@ Feature: Prune Properties rule
       | "Tim Duncan"  |
       | "Tim Duncan"  |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                  |
-      | 10 | Project        | 11           |                                                                                                                                                                                                                                |
-      | 11 | BiInnerJoin    | 14, 9        |                                                                                                                                                                                                                                |
-      | 14 | Project        | 3            |                                                                                                                                                                                                                                |
-      | 3  | AppendVertices | 12           | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                           |
-      | 12 | IndexScan      | 2            |                                                                                                                                                                                                                                |
-      | 2  | Start          |              |                                                                                                                                                                                                                                |
-      | 9  | Project        | 8            |                                                                                                                                                                                                                                |
-      | 8  | AppendVertices | 7            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                                                           |
-      | 7  | Traverse       | 6            | {  "vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"props\": [\"_type\", \"_rank\", \"_dst\"], \"type\": -3}, {\"props\": [\"_type\", \"_rank\", \"_dst\"], \"type\": -4}]" } |
-      | 6  | Argument       |              |                                                                                                                                                                                                                                |
+      | id | name           | dependencies | operator info                                                                                                                                                                        |
+      | 10 | Project        | 11           |                                                                                                                                                                                      |
+      | 11 | HashInnerJoin  | 14, 9        |                                                                                                                                                                                      |
+      | 14 | Project        | 3            |                                                                                                                                                                                      |
+      | 3  | AppendVertices | 12           | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                                                            |
+      | 12 | IndexScan      | 2            |                                                                                                                                                                                      |
+      | 2  | Start          |              |                                                                                                                                                                                      |
+      | 9  | Project        | 8            |                                                                                                                                                                                      |
+      | 8  | AppendVertices | 7            | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                                                            |
+      | 7  | Traverse       | 6            | {  "vertexProps": "", "edgeProps": "[{\"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"props\": [\"_type\", \"_rank\", \"_dst\"] }]"} |
+      | 6  | Argument       | 0            |                                                                                                                                                                                      |
+      | 0  | Start          |              |                                                                                                                                                                                      |
+
+  Scenario: Project after aggregate
+    Given a graph with space named "nba"
+    When profiling query:
+      """
+      MATCH (v1:player)-[e:like]->(v2:player)
+      WHERE id(v1) == "Tony Parker"
+      WITH v1, v2, count(e.likeness) AS cnt
+      RETURN v1.player.age, v2.player.age, cnt
+      """
+    Then the result should be, in any order:
+      | v1.player.age | v2.player.age | cnt |
+      | 36            | 42            | 1   |
+      | 36            | 41            | 1   |
+      | 36            | 33            | 1   |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info                                                                                                                         |
+      | 8  | Project        | 7            |                |                                                                                                                                       |
+      | 7  | Aggregate      | 6            |                |                                                                                                                                       |
+      | 6  | Project        | 10           |                |                                                                                                                                       |
+      | 10 | AppendVertices | 9            |                | {  "props": "[{ \"props\":[\"age\", \"_tag\"]}]" }                                                                                    |
+      | 9  | Traverse       | 2            |                | { "vertexProps": "[{ \"props\":[\"age\"]}]", "edgeProps": "[{\"props\": [\"_src\", \"_dst\", \"_rank\", \"_type\", \"likeness\"]}]" } |
+      | 2  | Dedup          | 1            |                |                                                                                                                                       |
+      | 1  | PassThrough    | 3            |                |                                                                                                                                       |
+      | 3  | Start          |              |                |                                                                                                                                       |
 
   # The schema id is not fixed in standalone cluster, so we skip it
   @distonly
@@ -352,20 +376,20 @@ Feature: Prune Properties rule
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
       | "Tim Duncan" | "Manu Ginobili"     | NULL |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                        |
-      | 17 | TopN           | 13           |                                                                                                                                                                                      |
-      | 13 | Project        | 12           |                                                                                                                                                                                      |
-      | 12 | BiLeftJoin     | 19, 11       |                                                                                                                                                                                      |
-      | 19 | Project        | 5            |                                                                                                                                                                                      |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                                 |
-      | 4  | Traverse       | 2            |                                                                                                                                                                                      |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                      |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                      |
-      | 3  | Start          |              |                                                                                                                                                                                      |
-      | 11 | Project        | 10           |                                                                                                                                                                                      |
-      | 10 | AppendVertices | 9            | {  "props": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" } |
-      | 9  | Traverse       | 8            | {  "vertexProps": "[{\"props\":[\"name\"],\"tagId\":9}]" }                                                                                                                           |
-      | 8  | Argument       |              |                                                                                                                                                                                      |
+      | id | name           | dependencies | operator info                                                                                                                                      |
+      | 17 | TopN           | 13           |                                                                                                                                                    |
+      | 13 | Project        | 12           |                                                                                                                                                    |
+      | 12 | HashLeftJoin   | 19, 11       |                                                                                                                                                    |
+      | 19 | Project        | 5            |                                                                                                                                                    |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"name\"] }]" }                                                                                                          |
+      | 4  | Traverse       | 2            |                                                                                                                                                    |
+      | 2  | Dedup          | 1            |                                                                                                                                                    |
+      | 1  | PassThrough    | 3            |                                                                                                                                                    |
+      | 3  | Start          |              |                                                                                                                                                    |
+      | 11 | Project        | 10           |                                                                                                                                                    |
+      | 10 | AppendVertices | 9            | {  "props": "[{\"props\":[\"name\", \"age\", \"_tag\"] }, {\"props\":[\"name\", \"speciality\", \"_tag\"] }, {\"props\":[\"name\", \"_tag\"] }]" } |
+      | 9  | Traverse       | 8            | {  "vertexProps": "[{\"props\":[\"name\"] }]" }                                                                                                    |
+      | 8  | Argument       |              |                                                                                                                                                    |
     When profiling query:
       """
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
@@ -377,22 +401,39 @@ Feature: Prune Properties rule
       | scount |
       | 270    |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                 |
-      | 12 | Aggregate      | 13           |                                                                                                                               |
-      | 13 | BiInnerJoin    | 15, 11       |                                                                                                                               |
-      | 15 | Project        | 4            |                                                                                                                               |
-      | 4  | Traverse       | 3            | { "vertexProps": "" }                                                                                                         |
-      | 3  | Traverse       | 14           | {  "vertexProps": "" }                                                                                                        |
-      | 14 | IndexScan      | 2            |                                                                                                                               |
-      | 2  | Start          |              |                                                                                                                               |
-      | 11 | Project        | 10           |                                                                                                                               |
-      | 10 | AppendVertices | 9            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10}]" } |
-      | 9  | Traverse       | 8            | {  "vertexProps": "" }                                                                                                        |
-      | 8  | Argument       |              |                                                                                                                               |
+      | id | name          | dependencies | operator info          |
+      | 12 | Aggregate     | 13           |                        |
+      | 13 | HashInnerJoin | 15, 11       |                        |
+      | 15 | Project       | 4            |                        |
+      | 4  | Traverse      | 3            | { "vertexProps": "" }  |
+      | 3  | Traverse      | 14           | {  "vertexProps": "" } |
+      | 14 | IndexScan     | 2            |                        |
+      | 2  | Start         |              |                        |
+      | 11 | Project       | 9            |                        |
+      | 9  | Traverse      | 8            | {  "vertexProps": "" } |
+      | 8  | Argument      |              |                        |
 
   @distonly
   Scenario: return function
     Given a graph with space named "nba"
+    When profiling query:
+      """
+      MATCH (v1)-[:like]->(v2)
+      WHERE id(v1) == "Tim Duncan"
+      RETURN count(v2), v1
+      """
+    Then the result should be, in order:
+      | count(v2) | v1                                                                                                          |
+      | 2         | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info                                                                                                                                                                                                              |
+      | 7  | Aggregate      | 6            |                                                                                                                                                                                                                            |
+      | 6  | Project        | 5            |                                                                                                                                                                                                                            |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" }                                                                                                                                |
+      | 4  | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"] }, {\"props\":[\"name\", \"speciality\", \"_tag\"] }, {\"props\":[\"name\", \"_tag\"] }]" , "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                            |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                            |
+      | 3  | Start          |              |                                                                                                                                                                                                                            |
     When profiling query:
       """
       MATCH (v1)-[e:like*1..5]->(v2)
@@ -403,14 +444,14 @@ Feature: Prune Properties rule
       | count(v2.player.age) |
       | 24                   |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                      |
-      | 7  | Aggregate      | 6            |                                                                                                    |
-      | 6  | Project        | 5            |                                                                                                    |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"],\"tagId\":9}]" }                                                |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
-      | 2  | Dedup          | 1            |                                                                                                    |
-      | 1  | PassThrough    | 3            |                                                                                                    |
-      | 3  | Start          |              |                                                                                                    |
+      | id | name           | dependencies | operator info                                                                           |
+      | 7  | Aggregate      | 6            |                                                                                         |
+      | 6  | Project        | 5            |                                                                                         |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"] }]" }                                                |
+      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                         |
+      | 1  | PassThrough    | 3            |                                                                                         |
+      | 3  | Start          |              |                                                                                         |
     When profiling query:
       """
       MATCH (v1)-[e:like*1..5]->(v2)
@@ -421,14 +462,14 @@ Feature: Prune Properties rule
       | count(v2) |
       | 24        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                 |
-      | 7  | Aggregate      | 6            |                                                                                                                               |
-      | 6  | Project        | 5            |                                                                                                                               |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10}]" } |
-      | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                            |
-      | 2  | Dedup          | 1            |                                                                                                                               |
-      | 1  | PassThrough    | 3            |                                                                                                                               |
-      | 3  | Start          |              |                                                                                                                               |
+      | id | name           | dependencies | operator info                                                                               |
+      | 7  | Aggregate      | 6            |                                                                                             |
+      | 6  | Project        | 5            |                                                                                             |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" } |
+      | 4  | Traverse       | 2            | {"vertexProps": "" , "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }    |
+      | 2  | Dedup          | 1            |                                                                                             |
+      | 1  | PassThrough    | 3            |                                                                                             |
+      | 3  | Start          |              |                                                                                             |
     When profiling query:
       """
       MATCH p = (v1)-[e:like*1..5]->(v2)
@@ -439,14 +480,14 @@ Feature: Prune Properties rule
       | length(p) |
       | 1         |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                  |
-      | 13 | Project        | 11           |                                                                                                                                                                                                                                                                                                |
-      | 11 | Limit          | 5            |                                                                                                                                                                                                                                                                                                |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\", \"name\", \"speciality\"],\"tagId\":8}, {\"props\":[\"_tag\", \"name\", \"age\"],\"tagId\":9}, {\"props\":[\"_tag\", \"name\"],\"tagId\":10}]" }                                                                                                           |
-      | 4  | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\", \"_src\", \"likeness\"]}]"  } |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                |
-      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                     |
+      | 13 | Project        | 11           |                                                                                                                                                                                                                                                   |
+      | 11 | Limit          | 5            |                                                                                                                                                                                                                                                   |
+      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\", \"name\", \"speciality\"] }, {\"props\":[\"_tag\", \"name\", \"age\"] }, {\"props\":[\"_tag\", \"name\"] }]" }                                                                                                |
+      | 4  | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"] }, {\"props\":[\"name\", \"speciality\", \"_tag\"] }, {\"props\":[\"name\", \"_tag\"] }]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\", \"_src\", \"likeness\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                   |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                   |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                   |
     When profiling query:
       """
       MATCH p = (a:player)-[e:like*1..3]->(b:player{age:39})
@@ -466,20 +507,19 @@ Feature: Prune Properties rule
       | "Tracy McGrady" | 1        |
       | "Tracy McGrady" | 3        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                                                                                                                                                  |
-      | 14 | Project        | 13           |                                                                                                                                                                                                                                                                                                |
-      | 13 | BiInnerJoin    | 15,12        |                                                                                                                                                                                                                                                                                                |
-      | 15 | Project        | 17           |                                                                                                                                                                                                                                                                                                |
-      | 17 | AppendVertices | 16           | {  "props": "[{\"props\":[\"_tag\", \"name\", \"speciality\"],\"tagId\":8}, {\"props\":[\"_tag\", \"name\", \"age\"],\"tagId\":9}, {\"props\":[\"_tag\", \"name\"],\"tagId\":10}]" }                                                                                                           |
-      | 16 | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\", \"_src\", \"likeness\"]}]"  } |
-      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                                                                |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                                                                |
-      | 3  | Start          |              |                                                                                                                                                                                                                                                                                                |
-      | 12 | Project        | 18           |                                                                                                                                                                                                                                                                                                |
-      | 18 | AppendVertices | 10           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":10}]" }                                                                                                                                                                                                                                          |
-      | 10 | Traverse       | 8            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"],\"tagId\":9}, {\"props\":[\"name\", \"speciality\", \"_tag\"],\"tagId\":8}, {\"props\":[\"name\", \"_tag\"],\"tagId\":10}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                         |
-      | 8  | Argument       |              |                                                                                                                                                                                                                                                                                                |
-      | 9  | Start          |              |                                                                                                                                                                                                                                                                                                |
+      | id | name           | dependencies | operator info                                                                                                                                                                                                                                     |
+      | 14 | Project        | 13           |                                                                                                                                                                                                                                                   |
+      | 13 | HashInnerJoin  | 15,12        |                                                                                                                                                                                                                                                   |
+      | 15 | Project        | 17           |                                                                                                                                                                                                                                                   |
+      | 17 | AppendVertices | 16           | {  "props": "[{\"props\":[\"_tag\", \"name\", \"speciality\"] }, {\"props\":[\"_tag\", \"name\", \"age\"] }, {\"props\":[\"_tag\", \"name\"] }]" }                                                                                                |
+      | 16 | Traverse       | 2            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"] }, {\"props\":[\"name\", \"speciality\", \"_tag\"] }, {\"props\":[\"name\", \"_tag\"] }]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\", \"_src\", \"likeness\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                                                                                                                                                                   |
+      | 1  | PassThrough    | 3            |                                                                                                                                                                                                                                                   |
+      | 3  | Start          |              |                                                                                                                                                                                                                                                   |
+      | 12 | Project        | 18           |                                                                                                                                                                                                                                                   |
+      | 18 | AppendVertices | 10           | {  "props": "[{\"props\":[\"_tag\"] }]" }                                                                                                                                                                                                         |
+      | 10 | Traverse       | 8            | {"vertexProps": "[{\"props\":[\"name\", \"age\", \"_tag\"] }, {\"props\":[\"name\", \"speciality\", \"_tag\"] }, {\"props\":[\"name\", \"_tag\"] }]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                         |
+      | 8  | Argument       |              |                                                                                                                                                                                                                                                   |
 
   @distonly
   Scenario: union match
@@ -501,19 +541,19 @@ Feature: Prune Properties rule
       | "LaMarcus Aldridge" |
       | "Steve Nash"        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                   |
-      | 14 | Dedup          | 13           |                                                                                                                                                                 |
-      | 13 | Union          | 18, 19       |                                                                                                                                                                 |
-      | 18 | Project        | 4            |                                                                                                                                                                 |
-      | 4  | AppendVertices | 20           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10}]" }                                   |
-      | 20 | Traverse       | 16           | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                              |
-      | 16 | IndexScan      | 2            |                                                                                                                                                                 |
-      | 2  | Start          |              |                                                                                                                                                                 |
-      | 19 | Project        | 10           |                                                                                                                                                                 |
-      | 10 | AppendVertices | 21           | {  "props": "[{\"props\":[\"_tag\"],\"tagId\":8}, {\"props\":[\"_tag\"],\"tagId\":9}, {\"props\":[\"_tag\"],\"tagId\":10}]" }                                   |
-      | 21 | Traverse       | 17           | {"vertexProps": "", "edgeProps": "[{\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
-      | 17 | IndexScan      | 8            |                                                                                                                                                                 |
-      | 8  | Start          |              |                                                                                                                                                                 |
+      | id | name           | dependencies | operator info                                                                                                                            |
+      | 14 | Dedup          | 13           |                                                                                                                                          |
+      | 13 | Union          | 18, 19       |                                                                                                                                          |
+      | 18 | Project        | 4            |                                                                                                                                          |
+      | 4  | AppendVertices | 20           | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" }                                              |
+      | 20 | Traverse       | 16           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
+      | 16 | IndexScan      | 2            |                                                                                                                                          |
+      | 2  | Start          |              |                                                                                                                                          |
+      | 19 | Project        | 10           |                                                                                                                                          |
+      | 10 | AppendVertices | 21           | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" }                                              |
+      | 21 | Traverse       | 17           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 17 | IndexScan      | 8            |                                                                                                                                          |
+      | 8  | Start          |              |                                                                                                                                          |
 
   @distonly
   Scenario: optional match
@@ -524,7 +564,6 @@ Feature: Prune Properties rule
         WHERE id(v) == 'Tim Duncan' AND b.player.age > 20
       WITH v, count(b) AS countB, t
       OPTIONAL MATCH (v)-[:like]-()<-[:like]-(oldB)-[:serve]->(t)
-        WHERE oldB.player.age > 10
       WITH v, countB, t, count(oldB) AS cb
       RETURN t.team.name, sum(countB)
       """
@@ -533,28 +572,25 @@ Feature: Prune Properties rule
       | "Spurs"     | 11          |
       | "Hornets"   | 3           |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                                   |
-      | 21 | Aggregate      | 20           |                                                                                                                                                                 |
-      | 20 | Aggregate      | 19           |                                                                                                                                                                 |
-      | 19 | BiLeftJoin     | 10, 25       |                                                                                                                                                                 |
-      | 10 | Aggregate      | 23           |                                                                                                                                                                 |
-      | 23 | Project        | 22           |                                                                                                                                                                 |
-      | 22 | Filter         | 29           |                                                                                                                                                                 |
-      | 29 | AppendVertices | 28           | {  "props": "[{\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" }                                                                                                 |
-      | 28 | Traverse       | 27           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                           |
-      | 27 | Traverse       | 26           | {"vertexProps": "", "edgeProps": "[{\"type\": -5, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                             |
-      | 26 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
-      | 2  | Dedup          | 1            |                                                                                                                                                                 |
-      | 1  | PassThrough    | 3            |                                                                                                                                                                 |
-      | 3  | Start          |              |                                                                                                                                                                 |
-      | 25 | Project        | 24           |                                                                                                                                                                 |
-      | 24 | Filter         | 16           |                                                                                                                                                                 |
-      | 16 | AppendVertices | 15           | {  "props": "[{\"props\":[\"name\", \"_tag\"],\"tagId\":10}]" }                                                                                                 |
-      | 15 | Traverse       | 14           | {"vertexProps": "[{\"props\":[\"age\"],\"tagId\":9}]", "edgeProps": "[{\"type\": 4, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                           |
-      | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                             |
-      | 13 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{\"type\": -3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {\"type\": 3, \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
-      | 11 | Argument       |              |                                                                                                                                                                 |
-      | 12 | Start          |              |                                                                                                                                                                 |
+      | id | name           | dependencies | operator info                                                                                                                            |
+      | 19 | Aggregate      | 18           |                                                                                                                                          |
+      | 18 | Aggregate      | 27           |                                                                                                                                          |
+      | 27 | HashLeftJoin   | 10,26        |                                                                                                                                          |
+      | 10 | Aggregate      | 21           |                                                                                                                                          |
+      | 21 | Project        | 20           |                                                                                                                                          |
+      | 20 | Filter         | 25           |                                                                                                                                          |
+      | 25 | AppendVertices | 24           | {  "props": "[{ \"props\":[\"name\",\"_tag\"]}]" }                                                                                       |
+      | 24 | Traverse       | 23           | {"vertexProps": "[{ \"props\":[\"age\"]}]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                          |
+      | 23 | Traverse       | 22           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
+      | 22 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 2  | Dedup          | 1            |                                                                                                                                          |
+      | 1  | PassThrough    | 3            |                                                                                                                                          |
+      | 3  | Start          |              |                                                                                                                                          |
+      | 26 | Project        | 14           |                                                                                                                                          |
+      | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"start_year\", \"end_year\"]}]"  }          |
+      | 13 | Traverse       | 12           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
+      | 12 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
+      | 11 | Argument       |              |                                                                                                                                          |
 
   @distonly
   Scenario: test properties:
@@ -742,80 +778,80 @@ Feature: Prune Properties rule
       """
     Then the result should be, in order, with relax comparison:
       | properties(src_v).age | properties(e).degree | name              | src_v.player.sex | e.start_year | dst_v.player.age |
-      | 41                    | UNKNOWN_PROP         | "Dejounte Murray" | "男"             | 2022         | 29               |
+      | 41                    | NULL                 | "Dejounte Murray" | "男"             | 2022         | 29               |
       | 41                    | 88                   | "Spurs"           | "男"             | 2002         | NULL             |
-      | 41                    | UNKNOWN_PROP         | "Tiago Splitter"  | "男"             | 2022         | 34               |
+      | 41                    | NULL                 | "Tiago Splitter"  | "男"             | 2022         | 34               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e*2]-(dst_v)
-        return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
-        order by age limit 5;
+        return properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
+        order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | 88                      | "Danny Green"          | 41  | 2010            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | 88                      | "Cory Joseph"          | 41  | 2011            | 27               |
-      | "男"                  | UNKNOWN_PROP            | "76ers"                | 41  | 2017            | NULL             |
+      | properties(src_v).sex | degree | name          | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | 88     | "Aron Baynes" | 41  | 2013            | 32               |
+      | "男"                  | 88     | "Boris Diaw"  | 41  | 2012            | 36               |
+      | "男"                  | 88     | "Cory Joseph" | 41  | 2011            | 27               |
+      | "男"                  | 88     | "Danny Green" | 41  | 2010            | 31               |
+      | "男"                  | 88     | "David West"  | 41  | 2015            | 38               |
     When executing query:
       """
       match (src_v:player{name:"Manu Ginobili"})-[e:like*2..3]-(dst_v)
-        return properties(src_v).sex,properties(e[0]).degree,properties(dst_v).name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
-        order by age limit 5;
+        return distinct properties(src_v).sex,properties(e[0]).degree as degree,properties(dst_v).name as name,src_v.player.age AS age, e[1].start_year,dst_v.player.age
+        order by degree, name, age limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(src_v).sex | properties(e[0]).degree | properties(dst_v).name | age | e[1].start_year | dst_v.player.age |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Danny Green"          | 41  | 2022            | 31               |
-      | "男"                  | UNKNOWN_PROP            | "Kyle Anderson"        | 41  | 2022            | 25               |
-      | "男"                  | UNKNOWN_PROP            | "LeBron James"         | 41  | 2022            | 34               |
-      | "男"                  | UNKNOWN_PROP            | "Kevin Durant"         | 41  | 2022            | 30               |
+      | properties(src_v).sex | degree | name              | age | e[1].start_year | dst_v.player.age |
+      | "男"                  | NULL   | "Aron Baynes"     | 41  | 2022            | 32               |
+      | "男"                  | NULL   | "Blake Griffin"   | 41  | 2022            | 30               |
+      | "男"                  | NULL   | "Boris Diaw"      | 41  | 2022            | 36               |
+      | "男"                  | NULL   | "Carmelo Anthony" | 41  | 2022            | 34               |
+      | "男"                  | NULL   | "Chris Paul"      | 41  | 2022            | 33               |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
-        return properties(v1).name,properties(v2).age AS age,properties(v3).name
-        order by age limit 1;
+        return properties(v1).name,properties(v2).age AS age,properties(v3).name as name
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | age | properties(v3).name |
-      | "Manu Ginobili"     | 36  | "Spurs"             |
+      | properties(v1).name | age | name      |
+      | "Manu Ginobili"     | 36  | "Hornets" |
     When executing query:
       """
       match (v1)-->(v2)-->(v3) where id(v1)=="Manu Ginobili"
-        return properties(v1).name,properties(v2).age AS age,properties(v3).name,v1.player.sex,v2.player.sex,id(v3)
-        order by age limit 1;
+        return properties(v1).name,properties(v2).age AS age,properties(v3).name as name,v1.player.sex,v2.player.sex,id(v3)
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | age | properties(v3).name | v1.player.sex | v2.player.sex | id(v3)  |
-      | "Manu Ginobili"     | 36  | "Spurs"             | "男"          | "男"          | "Spurs" |
+      | properties(v1).name | age | name      | v1.player.sex | v2.player.sex | id(v3)    |
+      | "Manu Ginobili"     | 36  | "Hornets" | "男"          | "男"          | "Hornets" |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name,v2.player.sex,v1.player.age
-        order by name limit 1;
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name,v2.player.sex,v1.player.age
+        order by age, name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name        | v2.player.sex | v1.player.age |
-      | "Yao Ming"          | 47                 | "Cavaliers" | "男"          | 38            |
+      | properties(v1).name | age | name        | v2.player.sex | v1.player.age |
+      | "Yao Ming"          | 47  | "Cavaliers" | "男"          | 38            |
     When executing query:
       """
       match (v1)-->(v2:player)-->(v3) where v2.player.name=="Shaquille O'Neal"
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name
         order by name limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name        |
-      | "Yao Ming"          | 47                 | "Cavaliers" |
+      | properties(v1).name | age | name        |
+      | "Yao Ming"          | 47  | "Cavaliers" |
     When executing query:
       """
       match (v1)-->(v2)-->(v3:team{name:"Celtics"})
-        return properties(v1).name,properties(v2).age,properties(v3).name AS name
-        order by name limit 1;
+        return properties(v1).name,properties(v2).age as age,properties(v3).name AS name
+        order by name, age limit 1;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(v1).name | properties(v2).age | name      |
-      | "Yao Ming"          | 47                 | "Celtics" |
+      | properties(v1).name | age | name      |
+      | "Ray Allen"         | 33  | "Celtics" |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v) where  id(src_v)=="Rajon Rondo"
@@ -830,25 +866,118 @@ Feature: Prune Properties rule
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo"
-        return properties(e).degree,properties(e2).degree AS degree
-        order by degree limit 5;
+        return properties(e).degree as degree,properties(e2).degree AS degree1
+        order by degree, degree1 limit 5;
       """
     Then the result should be, in order, with relax comparison:
-      | properties(e).degree | degree |
-      | 88                   | 88     |
-      | UNKNOWN_PROP         | 88     |
-      | 88                   | 88     |
-      | UNKNOWN_PROP         | 88     |
-      | 88                   | 88     |
+      | degree | degree1 |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
+      | 88     | 88      |
     When executing query:
       """
       match (src_v)-[e:like|serve]->(dst_v)-[e2]-(dst_v2) where  id(src_v)=="Rajon Rondo" return properties(e).degree1,properties(e).degree1,e2.a,dst_v.p.name,dst_v.player.sex1,properties(src_v).name2 limit 5;
       """
     Then the result should be, in order, with relax comparison:
       | properties(e).degree1 | properties(e).degree1 | e2.a | dst_v.p.name | dst_v.player.sex1 | properties(src_v).name2 |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
-      | UNKNOWN_PROP          | UNKNOWN_PROP          | NULL | NULL         | NULL              | UNKNOWN_PROP            |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
+      | NULL                  | NULL                  | NULL | NULL         | NULL              | NULL                    |
     Then drop the used space
+
+  Scenario: Project on not exist tag
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(t) WHERE v.player.name=='Tim Duncan'  RETURN v.player.name, v.x.y, v.player.age
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | v.x.y | v.player.age |
+      | "Tim Duncan"  | NULL  | 42           |
+      | "Tim Duncan"  | NULL  | 42           |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, properties(v), t
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(t) WHERE v.player.name=="Tim Duncan" RETURN v.player.name, t.errortag.name, properties(v), t
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.name | t.errortag.name | properties(v)                                           | t                                                         |
+      | "Tim Duncan"  | NULL            | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Tim Duncan"  | NULL            | {age: 42, name: "Tim Duncan", speciality: "psychology"} | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+
+  Scenario: no pruning on agg after unwind
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return count(a)
+      """
+    Then the result should be, in any order:
+      | count(a) |
+      | 5        |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return sum(a)
+      """
+    Then the result should be, in any order:
+      | sum(a) |
+      | 10025  |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return max(a)
+      """
+    Then the result should be, in any order:
+      | max(a) |
+      | 2015   |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return min(a)
+      """
+    Then the result should be, in any order:
+      | min(a) |
+      | 1997   |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return avg(a)
+      """
+    Then the result should be, in any order:
+      | avg(a) |
+      | 2005.0 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return std(a)
+      """
+    Then the result should be, in any order:
+      | std(a)            |
+      | 6.542170893518461 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return std(a)
+      """
+    Then the result should be, in any order:
+      | std(a)            |
+      | 6.542170893518461 |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return bit_or(a)
+      """
+    Then the result should be, in any order:
+      | bit_or(a) |
+      | 2015      |
+    When executing query:
+      """
+      match (v0:player)-[e0]->(v1) where id(v0) == "Tim Duncan" unwind e0.start_year as a return bit_and(a)
+      """
+    Then the result should be, in any order:
+      | bit_and(a) |
+      | 1984       |

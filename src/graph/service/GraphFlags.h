@@ -14,6 +14,7 @@ DECLARE_int32(session_idle_timeout_secs);
 DECLARE_int32(session_reclaim_interval_secs);
 DECLARE_int32(num_netio_threads);
 DECLARE_int32(num_accept_threads);
+DECLARE_uint32(num_max_connections);
 DECLARE_int32(num_worker_threads);
 DECLARE_int32(num_operator_threads);
 DECLARE_bool(reuse_port);
@@ -56,7 +57,6 @@ DECLARE_bool(optimize_appendvertice);
 DECLARE_int64(max_allowed_connections);
 
 DECLARE_bool(enable_experimental_feature);
-DECLARE_bool(enable_toss);
 DECLARE_bool(enable_data_balance);
 
 DECLARE_bool(enable_client_white_list);

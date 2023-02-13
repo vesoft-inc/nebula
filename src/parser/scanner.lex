@@ -35,7 +35,11 @@ static constexpr size_t MAX_STRING = 4096;
 %x LB_STR
 %x COMMENT
 
-blanks                      ([ \t\n]+)
+nbsp                        (\xc2\xa0)
+blank_without_newline       ([ \t\r]|{nbsp})
+blank                       ({blank_without_newline}|[\n])
+
+blanks                      ({blank}+)
 
 NOT_IN                      (NOT{blanks}IN)
 NOT_CONTAINS                (NOT{blanks}CONTAINS)
@@ -54,17 +58,19 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
-U                           [\x80-\xbf]
-U2                          [\xc2-\xdf]
+U                           [\x80-\x9f\xa1-\xbf]
+UA0                         \xa0
+U2                          [\xc3-\xdf]
+UC2                         \xc2
 U3                          [\xe0-\xee]
 U4                          [\xf0-\xf4]
-CHINESE                     {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
+CHINESE                     {U2}{UA0}|{UC2}{U}|{U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
 CN_EN                       {CHINESE}|[a-zA-Z]
 CN_EN_NUM                   {CHINESE}|[_a-zA-Z0-9]
 LABEL                       {CN_EN}{CN_EN_NUM}*
 
 U3_FULL_WIDTH               [\xe0-\xef]
-CHINESE_FULL_WIDTH          {U2}{U}|{U3_FULL_WIDTH}{U}{U}|{U4}{U}{U}{U}
+CHINESE_FULL_WIDTH          {U2}{UA0}|{UC2}{U}|{U2}{U}|{U3_FULL_WIDTH}{U}{U}|{U4}{U}{U}{U}
 CN_EN_FULL_WIDTH            {CHINESE_FULL_WIDTH}|[a-zA-Z]
 CN_EN_NUM_FULL_WIDTH        {CHINESE_FULL_WIDTH}|[_a-zA-Z0-9 ]
 LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
@@ -351,6 +357,16 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 "<-"                        { return TokenType::L_ARROW; }
 "->"                        { return TokenType::R_ARROW; }
+
+"-["                        { return TokenType::MINUS_L_BRACKET; }
+"]-"                        { return TokenType::R_BRACKET_MINUS; }
+"<-["                       { return TokenType::L_ARROW_L_BRACKET; }
+"]->"                       { return TokenType::R_BRACKET_R_ARROW; }
+"--"                        { return TokenType::MINUS_MINUS; }
+"-->"                       { return TokenType::MINUS_R_ARROW; }
+"<--"                       { return TokenType::L_ARROW_MINUS; }
+"<-->"                      { return TokenType::L_ARROW_R_ARROW; }
+
 "_id"                       { return TokenType::ID_PROP; }
 "_type"                     { return TokenType::TYPE_PROP; }
 "_src"                      { return TokenType::SRC_ID_PROP; }
@@ -514,7 +530,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                 throw GraphParser::syntax_error(*yylloc, "Don't allow DOT in label:");
                             }
 
-[ \r\t]                     { }
+{blank_without_newline}     { }
 \n                          {
                                 yylineno++;
                                 yylloc->lines(yyleng);

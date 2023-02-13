@@ -16,7 +16,8 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
-/*static*/ const std::initializer_list<graph::PlanNode::Kind> RemoveNoopProjectRule::kQueries{
+/*static*/
+const std::unordered_set<graph::PlanNode::Kind> RemoveNoopProjectRule::kQueries{
     PlanNode::Kind::kGetNeighbors,
     PlanNode::Kind::kGetVertices,
     PlanNode::Kind::kGetEdges,
@@ -55,13 +56,14 @@ namespace opt {
     PlanNode::Kind::kCartesianProduct,
     PlanNode::Kind::kSubgraph,
     PlanNode::Kind::kDataCollect,
-    PlanNode::Kind::kLeftJoin,
     PlanNode::Kind::kInnerJoin,
-    PlanNode::Kind::kBiLeftJoin,
-    PlanNode::Kind::kBiInnerJoin,
-    PlanNode::Kind::kBiCartesianProduct,
+    PlanNode::Kind::kHashLeftJoin,
+    PlanNode::Kind::kHashInnerJoin,
+    PlanNode::Kind::kCrossJoin,
     PlanNode::Kind::kRollUpApply,
-    PlanNode::Kind::kArgument};
+    PlanNode::Kind::kPatternApply,
+    PlanNode::Kind::kArgument,
+};
 
 std::unique_ptr<OptRule> RemoveNoopProjectRule::kInstance =
     std::unique_ptr<RemoveNoopProjectRule>(new RemoveNoopProjectRule());
@@ -72,21 +74,24 @@ RemoveNoopProjectRule::RemoveNoopProjectRule() {
 
 const Pattern& RemoveNoopProjectRule::pattern() const {
   static Pattern pattern =
-      Pattern::create(graph::PlanNode::Kind::kProject, {Pattern::create(kQueries)});
+      Pattern::create(graph::PlanNode::Kind::kProject, {Pattern::create(PlanNode::Kind::kUnknown)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> RemoveNoopProjectRule::transform(
     OptContext* octx, const MatchedResult& matched) const {
-  const auto* projGroupNode = matched.node;
-  const auto* oldProjNode = projGroupNode->node();
-  const auto* projGroup = projGroupNode->group();
+  const auto* oldProjNode = matched.planNode({0});
   DCHECK_EQ(oldProjNode->kind(), PlanNode::Kind::kProject);
-  const auto* depGroupNode = matched.dependencies.front().node;
-  auto* newNode = depGroupNode->node()->clone();
+  auto* projGroup = const_cast<OptGroup*>(matched.node->group());
+
+  const auto* depPlanNode = matched.planNode({0, 0});
+  auto* newNode = depPlanNode->clone();
   newNode->setOutputVar(oldProjNode->outputVar());
+  newNode->setColNames(oldProjNode->colNames());
+  newNode->setInputVar(depPlanNode->inputVar());
   auto* newGroupNode = OptGroupNode::create(octx, newNode, projGroup);
-  newGroupNode->setDeps(depGroupNode->dependencies());
+  newGroupNode->setDeps(matched.result({0, 0}).node->dependencies());
+
   TransformResult result;
   result.eraseAll = true;
   result.newGroupNodes.emplace_back(newGroupNode);
@@ -103,27 +108,29 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
   DCHECK_EQ(projGroupNode->node()->kind(), PlanNode::Kind::kProject);
 
   auto* projNode = static_cast<const graph::Project*>(projGroupNode->node());
-  std::vector<YieldColumn*> cols = projNode->columns()->columns();
-  for (auto* col : cols) {
-    if (col->expr()->kind() != Expression::Kind::kVarProperty &&
-        col->expr()->kind() != Expression::Kind::kInputProperty) {
-      return false;
-    }
-  }
-  const auto* depGroupNode = matched.dependencies.front().node;
-  const auto* depNode = depGroupNode->node();
-  const auto& depColNames = depNode->colNames();
-  const auto& projColNames = projNode->colNames();
-  auto colsNum = depColNames.size();
-  if (colsNum != projColNames.size()) {
+
+  const auto* depNode = matched.planNode({0, 0});
+  if (kQueries.find(depNode->kind()) == kQueries.end()) {
     return false;
   }
-  for (size_t i = 0; i < colsNum; ++i) {
-    if (depColNames[i].compare(projColNames[i])) {
+
+  const auto& depColNames = depNode->colNames();
+  const auto& projColNames = projNode->colNames();
+  auto numCols = depColNames.size();
+  if (numCols != projColNames.size()) {
+    return false;
+  }
+
+  std::vector<YieldColumn*> cols = projNode->columns()->columns();
+  for (size_t i = 0; i < numCols; ++i) {
+    const auto* expr = DCHECK_NOTNULL(cols[i]->expr());
+    if (expr->kind() != Expression::Kind::kVarProperty &&
+        expr->kind() != Expression::Kind::kInputProperty) {
       return false;
     }
+
     const auto* propExpr = static_cast<PropertyExpression*>(cols[i]->expr());
-    if (propExpr->prop() != projColNames[i]) {
+    if (propExpr->prop() != projColNames[i] || depColNames[i].compare(projColNames[i])) {
       return false;
     }
   }

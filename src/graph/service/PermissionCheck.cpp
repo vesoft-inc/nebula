@@ -11,7 +11,7 @@ namespace graph {
 /**
  * Read space : kUse, kDescribeSpace
  * Write space : kCreateSpace, kDropSpace, kClearSpace, kCreateSnapshot,
- *               kDropSnapshot, kBalance, kAdmin, kConfig
+ *               kDropSnapshot, kAdminJob(data balance), kConfig
  * Read schema : kDescribeTag, kDescribeEdge,
  *               kDescribeTagIndex, kDescribeEdgeIndex
  * Write schema : kCreateTag, kAlterTag, kCreateEdge,
@@ -24,7 +24,7 @@ namespace graph {
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
  * Write data: kBuildTagIndex, kBuildEdgeIndex,
  *             kInsertVertex, kUpdateVertex, kInsertEdge,
- *             kUpdateEdge, kDeleteVertex, kDeleteEdges
+ *             kUpdateEdge, kDeleteVertex, kDeleteEdges, kAdminJob(other)
  * Special operation : kShow, kChangePassword
  */
 
@@ -109,8 +109,21 @@ namespace graph {
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
     case Sentence::Kind::kDeleteTags:
-    case Sentence::Kind::kDeleteEdges:
+    case Sentence::Kind::kDeleteEdges: {
+      return PermissionManager::canWriteData(session, vctx);
+    }
     case Sentence::Kind::kAdminJob: {
+      auto *adminJobSentence = dynamic_cast<AdminJobSentence *>(sentence);
+      if (adminJobSentence == nullptr) {
+        // should not happend.
+        LOG(WARNING) << "sentence is not AdminJobSentence";
+        return Status::PermissionError("Invalid adminjob sentence.");
+      }
+      // admin job like data balance need permission to write space
+      // here to restore default permission check before balance is refactored into job
+      if (adminJobSentence->needWriteSpace()) {
+        return PermissionManager::canWriteSpace(session);
+      }
       return PermissionManager::canWriteData(session, vctx);
     }
     case Sentence::Kind::kDescribeTag:
@@ -194,6 +207,16 @@ namespace graph {
         return Status::PermissionError("No permission to show users/snapshots/serviceClients");
       }
     }
+    case Sentence::Kind::kKillSession: {
+      /**
+       * Only GOD role can be kill session.
+       */
+      if (session->isGod()) {
+        return Status::OK();
+      } else {
+        return Status::PermissionError("No permission to kill session");
+      }
+    }
     case Sentence::Kind::kChangePassword: {
       if (!FLAGS_enable_authorize) {
         return Status::OK();
@@ -213,6 +236,7 @@ namespace graph {
     }
     case Sentence::Kind::kKillQuery:
       // Only GOD could kill all queries, other roles only could kill own queries.
+      // Permission check will be done in the executor.
       return Status::OK();
     case Sentence::Kind::kShowQueries: {
       return Status::OK();

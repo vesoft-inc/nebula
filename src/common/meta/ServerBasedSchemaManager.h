@@ -71,7 +71,7 @@ class ServerBasedSchemaManager : public SchemaManager {
   StatusOr<std::vector<nebula::meta::cpp2::ServiceClient>> getServiceClients(
       cpp2::ExternalServiceType type) override;
 
-  StatusOr<std::pair<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
+  StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) override;
 
   void init(MetaClient *client);

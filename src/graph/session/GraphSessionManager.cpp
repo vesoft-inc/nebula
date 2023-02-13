@@ -5,6 +5,7 @@
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
@@ -163,26 +164,22 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
 }
 
 void GraphSessionManager::removeSession(SessionID id) {
-  auto iter = activeSessions_.find(id);
-  if (iter == activeSessions_.end()) {
-    return;
-  }
+  removeMultiSessions({id});
+}
 
-  // Before removing the session, all queries on the session
-  // need to be marked as killed.
-  iter->second->markAllQueryKilled();
-  auto resp = metaClient_->removeSession(id).get();
+int32_t GraphSessionManager::removeMultiSessions(const std::vector<SessionID>& ids) {
+  // remove sessions from meta server
+  auto resp = metaClient_->removeSessions(ids).get();
   if (!resp.ok()) {
     // it will delete by reclaim
-    LOG(ERROR) << "Remove session `" << id << "' failed: " << resp.status();
-    return;
+    LOG(ERROR) << "Remove sessions failed: " << resp.status();
+    return -1;
   }
-  auto sessionCopy = iter->second->getSession();
-  std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
-  activeSessions_.erase(iter);
-  stats::StatsManager::decValue(kNumActiveSessions);
-  // delete session count from cache
-  subSessionCount(key);
+
+  auto killedSessions = resp.value().get_removed_session_ids();
+
+  removeSessionFromLocalCache(killedSessions);
+  return killedSessions.size();
 }
 
 void GraphSessionManager::threadFunc() {
@@ -207,32 +204,36 @@ void GraphSessionManager::reclaimExpiredSessions() {
   }
 
   FVLOG3("Try to reclaim expired sessions out of %lu ones", activeSessions_.size());
-  auto iter = activeSessions_.begin();
-  auto end = activeSessions_.end();
-  while (iter != end) {
-    int32_t idleSecs = iter->second->idleSeconds();
-    VLOG(2) << "SessionId: " << iter->first << ", idleSecs: " << idleSecs;
+  std::vector<SessionID> expiredSessions;
+
+  // collect expired sessions
+  for (const auto& iter : activeSessions_) {
+    int32_t idleSecs = iter.second->idleSeconds();
+    VLOG(2) << "SessionId: " << iter.first << ", idleSecs: " << idleSecs;
     if (idleSecs < FLAGS_session_idle_timeout_secs) {
-      ++iter;
       continue;
     }
-    FLOG_INFO("ClientSession %ld has expired", iter->first);
+    FLOG_INFO("ClientSession %ld has expired", iter.first);
 
-    iter->second->markAllQueryKilled();
-    auto resp = metaClient_->removeSession(iter->first).get();
-    if (!resp.ok()) {
-      // TODO: Handle cases where the delete client failed
-      LOG(ERROR) << "Remove session `" << iter->first << "' failed: " << resp.status();
-    }
-    auto sessionCopy = iter->second->getSession();
-    std::string key = sessionCopy.get_user_name() + sessionCopy.get_client_ip();
-    iter = activeSessions_.erase(iter);
-    stats::StatsManager::decValue(kNumActiveSessions);
-    stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
+    expiredSessions.emplace_back(iter.first);
     // TODO: Disconnect the connection of the session
-    // delete session count from cache
-    subSessionCount(key);
   }
+
+  // Remove expired sessions from meta server
+  if (expiredSessions.empty()) {
+    return;
+  }
+
+  auto resp = metaClient_->removeSessions(std::move(expiredSessions)).get();
+  if (!resp.ok()) {
+    // TODO: Handle cases where the delete client failed
+    LOG(ERROR) << "Remove session failed: " << resp.status();
+    return;
+  }
+
+  auto killedSessions = resp.value().get_removed_session_ids();
+  // Remove expired sessions from local cache
+  removeSessionFromLocalCache(killedSessions);
 }
 
 void GraphSessionManager::updateSessionsToMeta() {
@@ -258,8 +259,9 @@ void GraphSessionManager::updateSessionsToMeta() {
   auto handleKilledQueries = [this](auto&& resp) {
     if (!resp.ok()) {
       LOG(ERROR) << "Update sessions failed: " << resp.status();
-      return Status::Error("Update sessions failed: %s", resp.status().toString().c_str());
+      return;
     }
+
     auto& killedQueriesForEachSession = *resp.value().killed_queries_ref();
     for (auto& killedQueries : killedQueriesForEachSession) {
       auto sessionId = killedQueries.first;
@@ -276,13 +278,27 @@ void GraphSessionManager::updateSessionsToMeta() {
         VLOG(1) << "Kill query, session: " << sessionId << " plan: " << epId;
       }
     }
-    return Status::OK();
   };
 
-  auto result = metaClient_->updateSessions(sessions).thenValue(handleKilledQueries).get();
+  // The response from meta contains sessions that are marked as killed, so we need to clean the
+  // local cache and update statistics
+  auto handleKilledSessions = [this](auto&& resp) {
+    if (!resp.ok()) {
+      LOG(ERROR) << "Update sessions failed: " << resp.status();
+      return;
+    }
+
+    auto killSessions = resp.value().get_killed_sessions();
+    removeSessionFromLocalCache(killSessions);
+  };
+
+  auto result = metaClient_->updateSessions(sessions).get();
   if (!result.ok()) {
-    LOG(ERROR) << "Update sessions failed: " << result;
+    LOG(ERROR) << "Update sessions failed: " << result.status();
+    return;
   }
+  handleKilledQueries(result);
+  handleKilledSessions(result);
 }
 
 void GraphSessionManager::updateSessionInfo(ClientSession* session) {
@@ -311,7 +327,7 @@ Status GraphSessionManager::init() {
     if (FLAGS_session_idle_timeout_secs > 0 && idleSecs > FLAGS_session_idle_timeout_secs) {
       // remove session if expired
       VLOG(1) << "Remove session: " << sessionId;
-      metaClient_->removeSession(sessionId);
+      metaClient_->removeSessions({sessionId});
       continue;
     }
     session.queries_ref()->clear();
@@ -330,6 +346,29 @@ Status GraphSessionManager::init() {
   }
   LOG(INFO) << "Total of " << loadSessionCount << " sessions are loaded";
   return Status::OK();
+}
+
+void GraphSessionManager::removeSessionFromLocalCache(const std::vector<SessionID>& ids) {
+  for (auto& id : ids) {
+    // if the session is not in the current graph, ignore it
+    auto iter = activeSessions_.find(id);
+    if (iter == activeSessions_.end()) {
+      continue;
+    }
+    auto sessionPtr = iter->second;
+    activeSessions_.erase(iter);
+
+    // All queries on the session need to be marked as killed.
+    sessionPtr->markAllQueryKilled();
+
+    // delete session count from cache
+    std::string key =
+        sessionPtr->getSession().get_user_name() + sessionPtr->getSession().get_client_ip();
+    subSessionCount(key);
+
+    // update stats
+    stats::StatsManager::decValue(kNumActiveSessions);
+  }
 }
 
 bool GraphSessionManager::addSessionCount(std::string& key) {

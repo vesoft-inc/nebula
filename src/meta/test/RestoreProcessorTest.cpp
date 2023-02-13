@@ -111,7 +111,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
     ASSERT_EQ(it, files.cend());  // should not include system tables
     req.files_ref() = std::move(files);
 
-    // mock an new cluster {host4, host5. host6}, and constuct restore pairs
+    // mock an new cluster {host4, host5. host6}, and construct restore pairs
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);

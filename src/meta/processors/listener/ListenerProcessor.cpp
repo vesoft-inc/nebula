@@ -120,7 +120,7 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
   auto activeHostsRet =
       ActiveHostsMan::getActiveHosts(kvstore_,
                                      FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor,
-                                     cpp2::HostRole::LISTENER);
+                                     cpp2::HostRole::STORAGE_LISTENER);
   if (!nebula::ok(activeHostsRet)) {
     handleErrorCode(nebula::error(activeHostsRet));
     onFinished();

@@ -19,6 +19,7 @@ folly::Future<Status> CreateFTIndexExecutor::execute() {
       ->createFTIndex(inode->getIndexName(), inode->getIndex())
       .via(runner())
       .thenValue([inode](StatusOr<IndexID> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "Create fulltext index `" << inode->getIndexName()
                        << "' failed: " << resp.status();
@@ -36,19 +37,20 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
       ->dropFTIndex(spaceId, inode->getName())
       .via(runner())
       .thenValue([this, inode, spaceId](StatusOr<bool> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
                        << "' failed: " << resp.status();
           return resp.status();
         }
-        auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-        if (!tsRet.ok()) {
-          LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
+        auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+        if (!esAdapterRet.ok()) {
+          LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
         }
-        auto ftRet = FTIndexUtils::dropTSIndex(std::move(tsRet).value(), inode->getName());
+        auto esAdapter = std::move(esAdapterRet).value();
+        auto ftRet = esAdapter.dropIndex(inode->getName());
         if (!ftRet.ok()) {
-          LOG(WARNING) << "Drop fulltext index '" << inode->getName()
-                       << "' failed: " << ftRet.status();
+          LOG(WARNING) << "Drop fulltext index '" << inode->getName() << "' failed: " << ftRet;
         }
         return Status::OK();
       });
@@ -59,6 +61,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
   auto spaceId = qctx()->rctx()->session()->space().id;
   return qctx()->getMetaClient()->listFTIndexes().via(runner()).thenValue(
       [this, spaceId](StatusOr<std::unordered_map<std::string, meta::cpp2::FTIndex>> resp) {
+        memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Show fulltext indexes failed"
                        << resp.status();

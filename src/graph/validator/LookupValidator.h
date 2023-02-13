@@ -5,7 +5,6 @@
 #ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
 #define _VALIDATOR_LOOKUP_VALIDATOR_H_
 
-#include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "graph/validator/Validator.h"
 
 namespace nebula {
@@ -56,7 +55,6 @@ class LookupValidator final : public Validator {
   void extractExprProps();
 
   std::unique_ptr<LookupContext> lookupCtx_;
-  std::vector<nebula::plugin::HttpClient> tsClients_;
   ExpressionProps exprProps_;
   std::vector<std::string> idxReturnCols_;
   std::vector<int32_t> schemaIds_;

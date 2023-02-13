@@ -15,12 +15,16 @@ struct PlanDescription;
 struct PlanNodeDescription;
 
 namespace graph {
+
 class PlanNode;
+class QueryContext;
 
 struct SubPlan {
   // root and tail of a subplan.
   PlanNode* root{nullptr};
   PlanNode* tail{nullptr};
+
+  void appendStartNode(QueryContext* qctx);
 };
 
 // An ExecutionPlan is a Directed Cyclic Graph which composed by PlanNodes.

@@ -11,3 +11,7 @@ nebula_add_library(
 )
 
 
+nebula_add_library(
+    fake_http_server_obj OBJECT
+    FakeHttpServer.cpp
+)

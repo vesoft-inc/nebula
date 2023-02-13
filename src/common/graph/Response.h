@@ -77,6 +77,7 @@
   X(E_WRONGCLUSTER, -2010)                                                    \
   X(E_ZONE_NOT_ENOUGH, -2011)                                                 \
   X(E_ZONE_IS_EMPTY, -2012)                                                   \
+  X(E_HISTORY_CONFLICT, -2018)                                                \
                                                                               \
   X(E_STORE_FAILURE, -2021)                                                   \
   X(E_STORE_SEGMENT_ILLEGAL, -2022)                                           \
@@ -97,6 +98,8 @@
                                                                               \
   /* Admin Failure */                                                         \
   X(E_SNAPSHOT_FAILURE, -2040)                                                \
+  X(E_SNAPSHOT_RUNNING_JOBS, -2056)                                           \
+  X(E_SNAPSHOT_NOT_FOUND, -2057)                                              \
   X(E_BLOCK_WRITE_FAILURE, -2041)                                             \
   X(E_REBUILD_INDEX_FAILURE, -2042)                                           \
   X(E_INDEX_WITH_TTL, -2043)                                                  \
@@ -113,7 +116,7 @@
   X(E_INVALID_JOB, -2065)                                                     \
                                                                               \
   /* Backup Failure */                                                        \
-  X(E_BACKUP_BUILDING_INDEX, -2066)                                           \
+  X(E_BACKUP_RUNNING_JOBS, -2066)                                             \
   X(E_BACKUP_SPACE_NOT_FOUND, -2067)                                          \
                                                                               \
   /* RESTORE Failure */                                                       \
@@ -252,6 +255,7 @@ struct AuthResponse {
 struct ProfilingStats {
   ProfilingStats() = default;
   ProfilingStats(ProfilingStats &&) = default;
+  ProfilingStats &operator=(ProfilingStats &&rhs) = default;
 
   void __clear() {
     rows = 0;
@@ -262,14 +266,6 @@ struct ProfilingStats {
 
   void clear() {
     __clear();
-  }
-
-  auto &operator=(ProfilingStats &&rhs) {
-    this->rows = rhs.rows;
-    this->execDurationInUs = rhs.execDurationInUs;
-    this->totalDurationInUs = rhs.totalDurationInUs;
-    this->otherStats = std::move(rhs.otherStats);
-    return *this;
   }
 
   bool operator==(const ProfilingStats &rhs) const {
@@ -318,12 +314,6 @@ struct PlanNodeBranchInfo {
     __clear();
   }
 
-  auto &operator=(const PlanNodeBranchInfo &rhs) {
-    this->isDoBranch = rhs.isDoBranch;
-    this->conditionNodeId = rhs.conditionNodeId;
-    return *this;
-  }
-
   bool operator==(const PlanNodeBranchInfo &rhs) const {
     return isDoBranch == rhs.isDoBranch && conditionNodeId == rhs.conditionNodeId;
   }
@@ -368,6 +358,7 @@ struct Pair {
 struct PlanNodeDescription {
   PlanNodeDescription() = default;
   PlanNodeDescription(PlanNodeDescription &&) = default;
+  PlanNodeDescription &operator=(PlanNodeDescription &&rhs) = default;
 
   void __clear() {
     name.clear();
@@ -381,17 +372,6 @@ struct PlanNodeDescription {
 
   void clear() {
     __clear();
-  }
-
-  auto &operator=(PlanNodeDescription &&rhs) {
-    this->name = std::move(rhs.name);
-    this->id = rhs.id;
-    this->outputVar = std::move(rhs.outputVar);
-    this->description = std::move(rhs.description);
-    this->profiles = std::move(rhs.profiles);
-    this->branchInfo = std::move(rhs.branchInfo);
-    this->dependencies = std::move(rhs.dependencies);
-    return *this;
   }
 
   bool operator==(const PlanNodeDescription &rhs) const;
@@ -444,6 +424,7 @@ struct PlanNodeDescription {
 struct PlanDescription {
   PlanDescription() = default;
   PlanDescription(PlanDescription &&rhs) = default;
+  PlanDescription &operator=(PlanDescription &&rhs) = default;
 
   void __clear() {
     planNodeDescs.clear();
@@ -454,14 +435,6 @@ struct PlanDescription {
 
   void clear() {
     __clear();
-  }
-
-  auto &operator=(PlanDescription &&rhs) {
-    this->planNodeDescs = std::move(rhs.planNodeDescs);
-    this->nodeIndexMap = std::move(rhs.nodeIndexMap);
-    this->format = std::move(rhs.format);
-    this->optimize_time_in_us = rhs.optimize_time_in_us;
-    return *this;
   }
 
   bool operator==(const PlanDescription &rhs) const {

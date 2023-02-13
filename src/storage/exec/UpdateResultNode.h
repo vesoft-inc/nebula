@@ -62,12 +62,10 @@ class UpdateResNode : public RelNode<T> {
     std::vector<Value> row;
     row.emplace_back(insert_);
 
-    for (auto& retExp : returnPropsExp_) {
-      auto exp = static_cast<PropertyExpression*>(retExp);
+    for (auto& exp : returnPropsExp_) {
       auto& val = exp->eval(*expCtx_);
       if (exp) {
-        result_->colNames.emplace_back(
-            folly::stringPrintf("%s.%s", exp->sym().c_str(), exp->prop().c_str()));
+        result_->colNames.emplace_back(exp->toString());
       } else {
         VLOG(1) << "Can't get expression name";
         result_->colNames.emplace_back("NULL");

@@ -35,7 +35,7 @@ void ClearSpaceProcessor::process(const cpp2::ClearSpaceReq& req) {
     }
     spaceId = nebula::value(spaceRet);
 
-    // 2. Fetch all parts info accroding the spaceId.
+    // 2. Fetch all parts info according the spaceId.
     auto ret = getAllParts(spaceId);
     if (!nebula::ok(ret)) {
       handleErrorCode(nebula::error(ret));

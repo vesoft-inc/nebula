@@ -27,7 +27,7 @@
 --stdout_log_file=standalone-stdout.log
 --stderr_log_file=standalone-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
---stderrthreshold=2
+--stderrthreshold=3
 
 ########## query ##########
 # Whether to treat partial success as an error.
@@ -91,9 +91,6 @@
 ########## experimental feature ##########
 # if use experimental features
 --enable_experimental_feature=false
-
-# if use toss feature, only work if enable_experimental_feature is true
---enable_toss=false
 
 # if use balance data feature, only work if enable_experimental_feature is true
 --enable_data_balance=true

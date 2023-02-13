@@ -22,6 +22,7 @@ std::string Variable::toString() const {
 }
 
 std::string SymbolTable::toString() const {
+  folly::RWSpinLock::ReadHolder holder(lock_);
   std::stringstream ss;
   ss << "SymTable: [";
   for (const auto& p : vars_) {
@@ -34,9 +35,20 @@ std::string SymbolTable::toString() const {
   return ss.str();
 }
 
+bool SymbolTable::existsVar(const std::string& varName) const {
+  folly::RWSpinLock::ReadHolder holder(lock_);
+  return vars_.find(varName) != vars_.end();
+}
+
 Variable* SymbolTable::newVariable(const std::string& name) {
-  VLOG(1) << "New variable for: " << name;
-  DCHECK(vars_.find(name) == vars_.end());
+#ifdef NDEBUG
+  {
+    // addVar has a write lock, should warp this read lock block
+    folly::RWSpinLock::ReadHolder holder(lock_);
+    VLOG(1) << "New variable for: " << name;
+    DCHECK(vars_.find(name) == vars_.end());
+  }
+#endif
   auto* variable = objPool_->makeAndAdd<Variable>(name);
   addVar(name, variable);
   // Initialize all variable in variable map (output of node, inner variable etc.)
@@ -46,10 +58,12 @@ Variable* SymbolTable::newVariable(const std::string& name) {
 }
 
 void SymbolTable::addVar(std::string varName, Variable* variable) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   vars_.emplace(std::move(varName), variable);
 }
 
 bool SymbolTable::readBy(const std::string& varName, PlanNode* node) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto var = vars_.find(varName);
   if (var == vars_.end()) {
     return false;
@@ -59,6 +73,7 @@ bool SymbolTable::readBy(const std::string& varName, PlanNode* node) {
 }
 
 bool SymbolTable::writtenBy(const std::string& varName, PlanNode* node) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto var = vars_.find(varName);
   if (var == vars_.end()) {
     return false;
@@ -68,6 +83,7 @@ bool SymbolTable::writtenBy(const std::string& varName, PlanNode* node) {
 }
 
 bool SymbolTable::deleteReadBy(const std::string& varName, PlanNode* node) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto var = vars_.find(varName);
   if (var == vars_.end()) {
     return false;
@@ -77,17 +93,10 @@ bool SymbolTable::deleteReadBy(const std::string& varName, PlanNode* node) {
 }
 
 bool SymbolTable::deleteWrittenBy(const std::string& varName, PlanNode* node) {
+  folly::RWSpinLock::WriteHolder holder(lock_);
   auto var = vars_.find(varName);
   if (var == vars_.end()) {
     return false;
-  }
-  for (auto& alias : var->second->colNames) {
-    auto found = aliasGeneratedBy_.find(alias);
-    if (found != aliasGeneratedBy_.end()) {
-      if (found->second == varName) {
-        aliasGeneratedBy_.erase(alias);
-      }
-    }
   }
   var->second->writtenBy.erase(node);
   return true;
@@ -106,6 +115,8 @@ bool SymbolTable::updateWrittenBy(const std::string& oldVar,
 }
 
 Variable* SymbolTable::getVar(const std::string& varName) {
+  folly::RWSpinLock::ReadHolder holder(lock_);
+  DCHECK(!varName.empty()) << "the variable name is empty";
   auto var = vars_.find(varName);
   if (var == vars_.end()) {
     return nullptr;
@@ -114,22 +125,5 @@ Variable* SymbolTable::getVar(const std::string& varName) {
   }
 }
 
-void SymbolTable::setAliasGeneratedBy(const std::vector<std::string>& aliases,
-                                      const std::string& varName) {
-  for (auto& alias : aliases) {
-    if (aliasGeneratedBy_.count(alias) == 0) {
-      aliasGeneratedBy_.emplace(alias, varName);
-    }
-  }
-}
-
-StatusOr<std::string> SymbolTable::getAliasGeneratedBy(const std::string& alias) {
-  auto found = aliasGeneratedBy_.find(alias);
-  if (found == aliasGeneratedBy_.end()) {
-    return Status::Error("Not found a variable that generates the alias: %s", alias.c_str());
-  } else {
-    return found->second;
-  }
-}
 }  // namespace graph
 }  // namespace nebula

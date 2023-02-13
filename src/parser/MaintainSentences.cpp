@@ -26,7 +26,7 @@ std::string SchemaPropItem::toString() const {
       return folly::stringPrintf("comment = \"%s\"", std::get<std::string>(propValue_).c_str());
   }
   DLOG(FATAL) << "Schema property type illegal";
-  return "Unknown";
+  return "";
 }
 
 std::string SchemaPropList::toString() const {
@@ -240,7 +240,7 @@ std::string IndexParamItem::toString() const {
       return folly::stringPrintf("s2_max_cells = \"%ld\"", paramValue_.getInt());
   }
   DLOG(FATAL) << "Index param type illegal";
-  return "Unknown";
+  return "";
 }
 
 std::string IndexParamList::toString() const {
@@ -495,9 +495,7 @@ std::string CreateFTIndexSentence::toString() const {
   buf += *schemaName_;
   buf += "(";
   std::vector<std::string> fieldDefs;
-  for (const auto& field : fields()) {
-    fieldDefs.emplace_back(field);
-  }
+  fieldDefs.emplace_back(field());
   std::string fields;
   folly::join(", ", fieldDefs, fields);
   buf += fields;

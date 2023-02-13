@@ -53,9 +53,6 @@ bool IndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
 StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
                                                             const MatchedResult& matched) const {
   auto groupNode = matched.node;
-  if (isEmptyResultSet(groupNode)) {
-    return TransformResult::noTransform();
-  }
 
   auto filter = filterExpr(groupNode);
   auto qctx = ctx->qctx();
@@ -147,7 +144,7 @@ Status IndexScanRule::createMultipleIQC(IndexQueryCtx& iqctx,
   return Status::OK();
 }
 
-size_t IndexScanRule::hintCount(const FilterItems& items) const noexcept {
+size_t IndexScanRule::hintCount(const FilterItems& items) const {
   std::unordered_set<std::string> hintCols;
   for (const auto& i : items.items) {
     hintCols.emplace(i.col_);
@@ -609,9 +606,5 @@ std::vector<IndexItem> IndexScanRule::findIndexForRangeScan(const std::vector<In
   return priorityIdxs;
 }
 
-bool IndexScanRule::isEmptyResultSet(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  return in->isEmptyResultSet();
-}
 }  // namespace opt
 }  // namespace nebula

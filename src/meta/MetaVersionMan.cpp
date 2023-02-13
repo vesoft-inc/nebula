@@ -21,7 +21,8 @@ namespace meta {
 static const std::string kMetaVersionKey = "__meta_version__";  // NOLINT
 
 // static
-MetaVersion MetaVersionMan::getMetaVersionFromKV(kvstore::KVStore* kv) {
+ErrorOr<nebula::cpp2::ErrorCode, MetaVersion> MetaVersionMan::getMetaVersionFromKV(
+    kvstore::KVStore* kv) {
   CHECK_NOTNULL(kv);
   std::string value;
   auto code = kv->get(kDefaultSpaceId, kDefaultPartId, kMetaVersionKey, &value, true);
@@ -29,24 +30,8 @@ MetaVersion MetaVersionMan::getMetaVersionFromKV(kvstore::KVStore* kv) {
     auto version = *reinterpret_cast<const MetaVersion*>(value.data());
     return version;
   } else {
-    return getVersionByHost(kv);
+    return code;
   }
-}
-
-// static
-MetaVersion MetaVersionMan::getVersionByHost(kvstore::KVStore* kv) {
-  const auto& hostPrefix = nebula::MetaKeyUtils::hostPrefix();
-  std::unique_ptr<nebula::kvstore::KVIterator> iter;
-  auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter, true);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return MetaVersion::UNKNOWN;
-  }
-  if (iter->valid()) {
-    auto v1KeySize = hostPrefix.size() + sizeof(int64_t);
-    return (iter->key().size() == v1KeySize) ? MetaVersion::V1 : MetaVersion::V3;
-  }
-  // No hosts exists, regard as version 3
-  return MetaVersion::V3;
 }
 
 // static
@@ -58,7 +43,7 @@ bool MetaVersionMan::setMetaVersionToKV(kvstore::KVEngine* engine, MetaVersion v
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
+Status MetaVersionMan::updateMetaV2ToV3_4(kvstore::KVEngine* engine) {
   CHECK_NOTNULL(engine);
   auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
 
@@ -76,6 +61,44 @@ Status MetaVersionMan::updateMetaV2ToV3(kvstore::KVEngine* engine) {
   }
 
   auto status = doUpgradeV2ToV3(engine);
+  if (!status.ok()) {
+    // rollback by snapshot
+    return status;
+  }
+
+  status = doUpgradeV3ToV3_4(engine);
+
+  if (!status.ok()) {
+    // rollback by snapshot
+    return status;
+  }
+
+  // delete snapshot file
+  auto checkpointPath = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
+  if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
+    LOG(INFO) << "Delete snapshot: " << snapshot << " failed, You need to delete it manually";
+  }
+  return Status::OK();
+}
+
+Status MetaVersionMan::updateMetaV3ToV3_4(kvstore::KVEngine* engine) {
+  CHECK_NOTNULL(engine);
+  auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
+
+  std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), snapshot);
+  if (!fs::FileUtils::exist(path) && !fs::FileUtils::makeDir(path)) {
+    LOG(INFO) << "Make checkpoint dir: " << path << " failed";
+    return Status::Error("Create snapshot file failed");
+  }
+
+  std::string dataPath = folly::sformat("{}/data", path);
+  auto code = engine->createCheckpoint(dataPath);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(INFO) << "Create snapshot failed: " << snapshot;
+    return Status::Error("Create snapshot failed");
+  }
+
+  auto status = doUpgradeV3ToV3_4(engine);
   if (!status.ok()) {
     // rollback by snapshot
     return status;
@@ -170,6 +193,31 @@ Status MetaVersionMan::doUpgradeV2ToV3(kvstore::KVEngine* engine) {
     }
   }
   if (!setMetaVersionToKV(engine, MetaVersion::V3)) {
+    return Status::Error("Persist meta version failed");
+  } else {
+    return Status::OK();
+  }
+}
+
+Status MetaVersionMan::doUpgradeV3ToV3_4(kvstore::KVEngine* engine) {
+  std::unique_ptr<kvstore::KVIterator> fulltextIter;
+  auto code = engine->prefix(MetaKeyUtils::fulltextIndexPrefix(), &fulltextIter);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Upgrade meta failed";
+    return Status::Error("Update meta failed");
+  }
+  std::vector<std::string> fulltextList;
+  while (fulltextIter->valid()) {
+    fulltextList.push_back(fulltextIter->key().toString());
+    fulltextIter->next();
+  }
+  code = engine->multiRemove(fulltextList);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Upgrade meta failed";
+    return Status::Error("Upgrade meta failed");
+  }
+
+  if (!setMetaVersionToKV(engine, MetaVersion::V3_4)) {
     return Status::Error("Persist meta version failed");
   } else {
     return Status::OK();

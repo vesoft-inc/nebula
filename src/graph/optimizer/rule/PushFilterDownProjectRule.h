@@ -17,7 +17,7 @@ namespace opt {
 //  Benefits:
 //   1. Filter data early to optimize performance
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +-------------+-------------+
@@ -58,6 +58,8 @@ class PushFilterDownProjectRule final : public OptRule {
 
  private:
   PushFilterDownProjectRule();
+
+  static bool checkColumnExprKind(const Expression *expr);
 
   static std::unique_ptr<OptRule> kInstance;
 };

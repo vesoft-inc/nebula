@@ -32,19 +32,76 @@ nebula::cpp2::ErrorCode backupTable(kvstore::KVStore* kvstore,
                std::make_move_iterator(backupTableFiles.end()));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
+bool isLegalTypeConversion(cpp2::ColumnTypeDef from, cpp2::ColumnTypeDef to) {
+  // If not type change, return true. Fixed string will be handled separately.
+  if (from.get_type() == to.get_type() &&
+      from.get_type() != nebula::cpp2::PropertyType::FIXED_STRING) {
+    return true;
+  }
+  // For unset type, always return true
+  if (from.get_type() == nebula::cpp2::PropertyType::UNKNOWN) {
+    return true;
+  }
+  // fixed string can be converted to string or wider fixed string
+  if (from.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
+    if (to.get_type() == nebula::cpp2::PropertyType::STRING) {
+      return true;
+    } else if (to.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
+      if (!from.type_length_ref().has_value() || !to.type_length_ref().has_value()) {
+        return false;
+      }
+      return *from.type_length_ref() <= *to.type_length_ref();
+    } else {
+      return false;
+    }
+  }
+  // int is only allowed to convert to wider int
+  if (from.get_type() == nebula::cpp2::PropertyType::INT32) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64;
+  }
+  if (from.get_type() == nebula::cpp2::PropertyType::INT16) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT32;
+  }
+  if (from.get_type() == nebula::cpp2::PropertyType::INT8) {
+    return to.get_type() == nebula::cpp2::PropertyType::INT64 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT32 ||
+           to.get_type() == nebula::cpp2::PropertyType::INT16;
+  }
+  // Float is only allowed to convert to double
+  if (from.get_type() == nebula::cpp2::PropertyType::FLOAT) {
+    return to.get_type() == nebula::cpp2::PropertyType::DOUBLE;
+  }
+  // Forbid all the other conversion, as the old data are too different from the new data.
+  return false;
+}
 }  // namespace
 
-nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::ColumnDef>& cols,
-                                                          cpp2::SchemaProp& prop,
-                                                          const cpp2::ColumnDef col,
-                                                          const cpp2::AlterSchemaOp op,
-                                                          bool isEdge) {
+nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(
+    std::vector<cpp2::ColumnDef>& cols,
+    cpp2::SchemaProp& prop,
+    const cpp2::ColumnDef col,
+    const cpp2::AlterSchemaOp op,
+    const std::vector<std::vector<cpp2::ColumnDef>>& allVersionedCols,
+    bool isEdge) {
   switch (op) {
     case cpp2::AlterSchemaOp::ADD:
+      // Check the current schema first. Then check all schemas.
       for (auto it = cols.begin(); it != cols.end(); ++it) {
         if (it->get_name() == col.get_name()) {
-          LOG(INFO) << "Column existing: " << col.get_name();
+          LOG(ERROR) << "Column existing: " << col.get_name();
           return nebula::cpp2::ErrorCode::E_EXISTED;
+        }
+      }
+      // There won't any two columns having the same name across all schemas. If there is a column
+      // having the same name with the intended change, it must be from history schemas.
+      for (auto& versionedCols : allVersionedCols) {
+        for (auto it = versionedCols.begin(); it != versionedCols.end(); ++it) {
+          if (it->get_name() == col.get_name()) {
+            LOG(ERROR) << "Column previously existing: " << col.get_name();
+            return nebula::cpp2::ErrorCode::E_HISTORY_CONFLICT;
+          }
         }
       }
       cols.emplace_back(std::move(col));
@@ -56,6 +113,13 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
           // If this col is ttl_col, change not allowed
           if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
             LOG(INFO) << "Column: " << colName << " as ttl_col, change not allowed";
+            return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
+          }
+          if (!isLegalTypeConversion(it->get_type(), col.get_type())) {
+            LOG(ERROR) << "Update colume type " << colName << " from "
+                       << apache::thrift::util::enumNameSafe(it->get_type().get_type()) << " to "
+                       << apache::thrift::util::enumNameSafe(col.get_type().get_type())
+                       << " is not allowed!";
             return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
           }
           *it = col;

@@ -15,6 +15,12 @@ namespace nebula {
 namespace storage {
 
 void ChainAddEdgesGroupProcessor::process(const cpp2::AddEdgesRequest& req) {
+  // toss is turned off
+  for (const auto& partEntry : req.get_parts()) {
+    pushResultCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED, partEntry.first);
+  }
+  onFinished();
+  /*
   auto space = req.get_space_id();
   ShuffledReq shuffledReq;
   shuffleRequest(req, shuffledReq);
@@ -35,6 +41,7 @@ void ChainAddEdgesGroupProcessor::process(const cpp2::AddEdgesRequest& req) {
   };
 
   std::for_each(shuffledReq.begin(), shuffledReq.end(), delegateProcess);
+  */
 }
 
 void ChainAddEdgesGroupProcessor::shuffleRequest(const cpp2::AddEdgesRequest& req,

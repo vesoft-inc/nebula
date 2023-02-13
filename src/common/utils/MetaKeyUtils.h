@@ -191,7 +191,8 @@ class MetaKeyUtils final {
 
   static SchemaVer parseEdgeVersion(folly::StringPiece key);
 
-  static SchemaVer getLatestEdgeScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
+  static SchemaVer getLatestEdgeScheInfo(
+      kvstore::KVIterator* iter, std::unordered_map<SchemaVer, folly::StringPiece>& schemasRaw);
 
   static std::string schemaTagKey(GraphSpaceID spaceId, TagID tagId, SchemaVer version);
 
@@ -199,7 +200,8 @@ class MetaKeyUtils final {
 
   static SchemaVer parseTagVersion(folly::StringPiece key);
 
-  static SchemaVer getLatestTagScheInfo(kvstore::KVIterator* iter, folly::StringPiece& val);
+  static SchemaVer getLatestTagScheInfo(
+      kvstore::KVIterator* iter, std::unordered_map<SchemaVer, folly::StringPiece>& schemasRaw);
 
   static std::string schemaTagPrefix(GraphSpaceID spaceId, TagID tagId);
 

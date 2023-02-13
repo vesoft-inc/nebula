@@ -25,8 +25,7 @@ bool FTIndexUtils::needTextSearch(const Expression* expr) {
   }
 }
 
-StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
-    meta::MetaClient* client) {
+StatusOr<::nebula::plugin::ESAdapter> FTIndexUtils::getESAdapter(meta::MetaClient* client) {
   auto tcs = client->getServiceClientsFromCache(meta::cpp2::ExternalServiceType::ELASTICSEARCH);
   if (!tcs.ok()) {
     return tcs.status();
@@ -34,76 +33,30 @@ StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
   if (tcs.value().empty()) {
     return Status::SemanticError("No text search client found");
   }
-  std::vector<nebula::plugin::HttpClient> tsClients;
+  std::vector<::nebula::plugin::ESClient> clients;
   for (const auto& c : tcs.value()) {
-    nebula::plugin::HttpClient hc;
-    hc.host = c.host;
-    if (c.user_ref().has_value() && c.pwd_ref().has_value()) {
-      hc.user = *c.user_ref();
-      hc.password = *c.pwd_ref();
-    }
-    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
-    tsClients.emplace_back(std::move(hc));
+    std::string protocol = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
+    std::string address = c.host.toRawString();
+    std::string user = c.user_ref().has_value() ? *c.user_ref() : "";
+    std::string password = c.pwd_ref().has_value() ? *c.pwd_ref() : "";
+    clients.emplace_back(HttpClient::instance(), protocol, address, user, password);
   }
-  return tsClients;
+  return ::nebula::plugin::ESAdapter(std::move(clients));
 }
 
-StatusOr<bool> FTIndexUtils::checkTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                          const std::string& index) {
-  auto retryCnt = FLAGS_ft_request_retry_times;
-  while (--retryCnt > 0) {
-    auto ret =
-        nebula::plugin::ESGraphAdapter::kAdapter->indexExists(randomFTClient(tsClients), index);
-    if (!ret.ok()) {
-      continue;
-    }
-    return std::move(ret).value();
-  }
-  return Status::Error("fulltext index get failed : %s", index.c_str());
-}
-
-StatusOr<bool> FTIndexUtils::dropTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                         const std::string& index) {
-  auto retryCnt = FLAGS_ft_request_retry_times;
-  while (--retryCnt > 0) {
-    auto ret =
-        nebula::plugin::ESGraphAdapter::kAdapter->dropIndex(randomFTClient(tsClients), index);
-    if (!ret.ok()) {
-      continue;
-    }
-    return std::move(ret).value();
-  }
-  return Status::Error("drop fulltext index failed : %s", index.c_str());
-}
-
-StatusOr<bool> FTIndexUtils::clearTSIndex(const std::vector<nebula::plugin::HttpClient>& tsClients,
-                                          const std::string& index) {
-  auto retryCnt = FLAGS_ft_request_retry_times;
-  while (--retryCnt > 0) {
-    auto ret =
-        nebula::plugin::ESGraphAdapter::kAdapter->clearIndex(randomFTClient(tsClients), index);
-    if (!ret.ok()) {
-      continue;
-    }
-    return std::move(ret).value();
-  }
-  return Status::Error("clear fulltext index failed : %s", index.c_str());
-}
-
-StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(
-    ObjectPool* pool,
-    bool isEdge,
-    Expression* expr,
-    const std::string& index,
-    const std::vector<nebula::plugin::HttpClient>& tsClients) {
-  auto vRet = textSearch(expr, index, tsClients);
+StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(ObjectPool* pool,
+                                                    bool isEdge,
+                                                    Expression* expr,
+                                                    const std::string& index,
+                                                    ::nebula::plugin::ESAdapter& esAdapter) {
+  auto vRet = textSearch(expr, index, esAdapter);
   if (!vRet.ok()) {
-    return Status::SemanticError("Text search error.");
+    return vRet.status();
   }
-  if (vRet.value().empty()) {
+  auto result = std::move(vRet).value();
+  if (result.items.empty()) {
     return nullptr;
   }
-
   auto tsArg = static_cast<TextSearchExpression*>(expr)->arg();
   Expression* propExpr;
   if (isEdge) {
@@ -112,8 +65,8 @@ StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(
     propExpr = TagPropertyExpression::make(pool, tsArg->from(), tsArg->prop());
   }
   std::vector<Expression*> rels;
-  for (const auto& row : vRet.value()) {
-    auto constExpr = ConstantExpression::make(pool, Value(row));
+  for (auto& item : result.items) {
+    auto constExpr = ConstantExpression::make(pool, Value(item.text));
     rels.emplace_back(RelationalExpression::makeEQ(pool, propExpr, constExpr));
   }
   if (rels.size() == 1) {
@@ -122,67 +75,64 @@ StatusOr<Expression*> FTIndexUtils::rewriteTSFilter(
   return ExpressionUtils::pushOrs(pool, rels);
 }
 
-StatusOr<std::vector<std::string>> FTIndexUtils::textSearch(
-    Expression* expr,
-    const std::string& index,
-    const std::vector<nebula::plugin::HttpClient>& tsClients) {
+StatusOr<nebula::plugin::ESQueryResult> FTIndexUtils::textSearch(
+    Expression* expr, const std::string& index, ::nebula::plugin::ESAdapter& esAdapter) {
   auto tsExpr = static_cast<TextSearchExpression*>(expr);
-
-  nebula::plugin::DocItem doc(index, tsExpr->arg()->prop(), tsExpr->arg()->val());
-  nebula::plugin::LimitItem limit(tsExpr->arg()->timeout(), tsExpr->arg()->limit());
-  std::vector<std::string> result;
-  // TODO (sky) : External index load balancing
-  auto retryCnt = FLAGS_ft_request_retry_times;
-  while (--retryCnt > 0) {
-    StatusOr<bool> ret = Status::Error();
-    switch (tsExpr->kind()) {
-      case Expression::Kind::kTSFuzzy: {
-        folly::dynamic fuzz = folly::dynamic::object();
-        if (tsExpr->arg()->fuzziness() < 0) {
-          fuzz = "AUTO";
-        } else {
-          fuzz = tsExpr->arg()->fuzziness();
-        }
-        std::string op = tsExpr->arg()->op().empty() ? "or" : tsExpr->arg()->op();
-        ret = nebula::plugin::ESGraphAdapter::kAdapter->fuzzy(
-            randomFTClient(tsClients), doc, limit, fuzz, op, result);
-        break;
-      }
-      case Expression::Kind::kTSPrefix: {
-        ret = nebula::plugin::ESGraphAdapter::kAdapter->prefix(
-            randomFTClient(tsClients), doc, limit, result);
-        break;
-      }
-      case Expression::Kind::kTSRegexp: {
-        ret = nebula::plugin::ESGraphAdapter::kAdapter->regexp(
-            randomFTClient(tsClients), doc, limit, result);
-        break;
-      }
-      case Expression::Kind::kTSWildcard: {
-        ret = nebula::plugin::ESGraphAdapter::kAdapter->wildcard(
-            randomFTClient(tsClients), doc, limit, result);
-        break;
-      }
-      default:
-        return Status::SemanticError("text search expression error");
+  std::function<StatusOr<nebula::plugin::ESQueryResult>()> execFunc;
+  switch (tsExpr->kind()) {
+    case Expression::Kind::kTSFuzzy: {
+      std::string pattern = tsExpr->arg()->val();
+      int fuzziness = tsExpr->arg()->fuzziness();
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, pattern, &esAdapter, fuzziness, size, timeout]() {
+        return esAdapter.fuzzy(
+            index, pattern, fuzziness < 0 ? "AUTO" : std::to_string(fuzziness), size, timeout);
+      };
+      break;
     }
-    if (!ret.ok()) {
+    case Expression::Kind::kTSPrefix: {
+      std::string pattern = tsExpr->arg()->val();
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
+        return esAdapter.prefix(index, pattern, size, timeout);
+      };
+      break;
+    }
+    case Expression::Kind::kTSRegexp: {
+      std::string pattern = tsExpr->arg()->val();
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
+        return esAdapter.regexp(index, pattern, size, timeout);
+      };
+      break;
+    }
+    case Expression::Kind::kTSWildcard: {
+      std::string pattern = tsExpr->arg()->val();
+      int64_t size = tsExpr->arg()->limit();
+      int64_t timeout = tsExpr->arg()->timeout();
+      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
+        return esAdapter.wildcard(index, pattern, size, timeout);
+      };
+      break;
+    }
+    default: {
+      return Status::SemanticError("text search expression error");
+    }
+  }
+
+  auto retryCnt = FLAGS_ft_request_retry_times > 0 ? FLAGS_ft_request_retry_times : 1;
+  StatusOr<nebula::plugin::ESQueryResult> result;
+  while (retryCnt-- > 0) {
+    result = execFunc();
+    if (!result.ok()) {
       continue;
     }
-    if (ret.value()) {
-      return result;
-    }
-    return Status::SemanticError(
-        "External index error. "
-        "please check the status of fulltext cluster");
+    break;
   }
-  return Status::SemanticError("scan external index failed");
-}
-
-const nebula::plugin::HttpClient& FTIndexUtils::randomFTClient(
-    const std::vector<nebula::plugin::HttpClient>& tsClients) {
-  auto i = folly::Random::rand32(tsClients.size() - 1);
-  return tsClients[i];
+  return result;
 }
 
 }  // namespace graph

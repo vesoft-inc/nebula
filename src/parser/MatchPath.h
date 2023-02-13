@@ -111,7 +111,7 @@ class MatchEdge final {
     return props_;
   }
 
-  auto* range() const {
+  MatchStepRange* range() const {
     return range_.get();
   }
 
@@ -218,12 +218,13 @@ class MatchNodeLabelList final {
 
 class MatchNode final {
  public:
-  MatchNode(const std::string& alias, MatchNodeLabelList* labels, Expression* props = nullptr) {
+  MatchNode(const std::string& alias = "",
+            MatchNodeLabelList* labels = nullptr,
+            Expression* props = nullptr) {
     alias_ = alias;
     labels_.reset(labels);
     props_ = static_cast<MapExpression*>(props);
   }
-  MatchNode() = default;
 
   void setAlias(const std::string& alias) {
     alias_ = alias;
@@ -335,6 +336,23 @@ class MatchPath final {
     pathType_ = type;
   }
 
+  bool isPredicate() const {
+    return isPred_;
+  }
+
+  void setPredicate() {
+    isPred_ = true;
+  }
+
+  bool isAntiPredicate() const {
+    return isPred_ && isAntiPred_;
+  }
+
+  void setAntiPredicate() {
+    isPred_ = true;
+    isAntiPred_ = true;
+  }
+
   std::string toString() const;
 
   MatchPath clone() const {
@@ -353,6 +371,9 @@ class MatchPath final {
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
   PathType pathType_{PathType::kDefault};
+
+  bool isPred_{false};
+  bool isAntiPred_{false};
 };
 
 }  // namespace nebula

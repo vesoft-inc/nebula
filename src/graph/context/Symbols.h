@@ -6,6 +6,7 @@
 #ifndef GRAPH_CONTEXT_SYMBOLS_H_
 #define GRAPH_CONTEXT_SYMBOLS_H_
 
+#include <mutex>
 #include <unordered_set>
 #include <vector>
 
@@ -56,6 +57,8 @@ class SymbolTable final {
   explicit SymbolTable(ObjectPool* objPool, ExecutionContext* ectx)
       : objPool_(DCHECK_NOTNULL(objPool)), ectx_(DCHECK_NOTNULL(ectx)) {}
 
+  bool existsVar(const std::string& varName) const;
+
   Variable* newVariable(const std::string& name);
 
   bool readBy(const std::string& varName, PlanNode* node);
@@ -72,10 +75,6 @@ class SymbolTable final {
 
   Variable* getVar(const std::string& varName);
 
-  void setAliasGeneratedBy(const std::vector<std::string>& aliases, const std::string& varName);
-
-  StatusOr<std::string> getAliasGeneratedBy(const std::string& alias);
-
   std::string toString() const;
 
  private:
@@ -84,9 +83,8 @@ class SymbolTable final {
   ObjectPool* objPool_{nullptr};
   ExecutionContext* ectx_{nullptr};
   // var name -> variable
+  mutable folly::RWSpinLock lock_;
   std::unordered_map<std::string, Variable*> vars_;
-  // alias -> first variable that generate the alias
-  std::unordered_map<std::string, std::string> aliasGeneratedBy_;
 };
 
 }  // namespace graph

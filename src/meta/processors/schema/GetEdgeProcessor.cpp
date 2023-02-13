@@ -45,9 +45,9 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
       onFinished();
       return;
     }
-    folly::StringPiece iterVal;
-    MetaKeyUtils::getLatestEdgeScheInfo(iter, iterVal);
-    schemaValue = iterVal.str();
+    std::unordered_map<SchemaVer, folly::StringPiece> schemasRaw;
+    auto latestVersion = MetaKeyUtils::getLatestEdgeScheInfo(iter, schemasRaw);
+    schemaValue = schemasRaw[latestVersion].str();
   } else {  // Get given version
     auto edgeKey = MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver);
     auto ret = doGet(edgeKey);

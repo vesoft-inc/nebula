@@ -292,6 +292,14 @@ Value::Value(Duration&& v) {
   setDU(std::make_unique<Duration>(std::move(v)));
 }
 
+Value::Value(const std::unordered_map<std::string, Value>& map) {
+  setM(std::make_unique<Map>(map));
+}
+
+Value::Value(std::unordered_map<std::string, Value>&& map) {
+  setM(std::make_unique<Map>(std::move(map)));
+}
+
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
       {Type::__EMPTY__, "__EMPTY__"},
@@ -465,9 +473,9 @@ void Value::setVertex(Vertex&& v) {
   setV(std::move(v));
 }
 
-void Value::setVertex(std::unique_ptr<Vertex>&& v) {
+void Value::setVertex(Vertex* v) {
   clear();
-  setV(std::move(v));
+  setV(v);
 }
 
 void Value::setEdge(const Edge& v) {
@@ -480,9 +488,9 @@ void Value::setEdge(Edge&& v) {
   setE(std::move(v));
 }
 
-void Value::setEdge(std::unique_ptr<Edge>&& v) {
+void Value::setEdge(Edge* v) {
   clear();
-  setE(std::move(v));
+  setE(v);
 }
 
 void Value::setPath(const Path& v) {
@@ -622,7 +630,7 @@ const Vertex& Value::getVertex() const {
 
 const Vertex* Value::getVertexPtr() const {
   CHECK_EQ(type_, Type::VERTEX);
-  return value_.vVal.get();
+  return value_.vVal;
 }
 
 const Edge& Value::getEdge() const {
@@ -632,7 +640,7 @@ const Edge& Value::getEdge() const {
 
 const Edge* Value::getEdgePtr() const {
   CHECK_EQ(type_, Type::EDGE);
-  return value_.eVal.get();
+  return value_.eVal;
 }
 
 const Path& Value::getPath() const {
@@ -947,11 +955,23 @@ void Value::clearSlow() {
       break;
     }
     case Type::VERTEX: {
-      destruct(value_.vVal);
+      if (value_.vVal) {
+        if (value_.vVal->unref() == 0) {
+          delete value_.vVal;
+        }
+        value_.vVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::EDGE: {
-      destruct(value_.eVal);
+      if (value_.eVal) {
+        if (value_.eVal->unref() == 0) {
+          delete value_.eVal;
+        }
+        value_.eVal = nullptr;
+        type_ = Type::__EMPTY__;
+      }
       break;
     }
     case Type::PATH: {
@@ -1028,12 +1048,18 @@ Value& Value::operator=(Value&& rhs) noexcept {
       break;
     }
     case Type::VERTEX: {
-      setV(std::move(rhs.value_.vVal));
-      break;
+      value_.vVal = rhs.value_.vVal;
+      type_ = Type::VERTEX;
+      rhs.value_.vVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::EDGE: {
-      setE(std::move(rhs.value_.eVal));
-      break;
+      value_.eVal = rhs.value_.eVal;
+      type_ = Type::EDGE;
+      rhs.value_.eVal = nullptr;
+      rhs.type_ = Type::__EMPTY__;
+      return *this;
     }
     case Type::PATH: {
       setP(std::move(rhs.value_.pVal));
@@ -1159,273 +1185,265 @@ Value& Value::operator=(const Value& rhs) {
 }
 
 void Value::setN(const NullType& v) {
-  type_ = Type::NULLVALUE;
   new (std::addressof(value_.nVal)) NullType(v);
+  type_ = Type::NULLVALUE;
 }
 
 void Value::setN(NullType&& v) {
-  type_ = Type::NULLVALUE;
   new (std::addressof(value_.nVal)) NullType(std::move(v));
+  type_ = Type::NULLVALUE;
 }
 
 void Value::setB(const bool& v) {
-  type_ = Type::BOOL;
   new (std::addressof(value_.bVal)) bool(v);  // NOLINT
+  type_ = Type::BOOL;
 }
 
 void Value::setB(bool&& v) {
-  type_ = Type::BOOL;
   new (std::addressof(value_.bVal)) bool(std::move(v));  // NOLINT
+  type_ = Type::BOOL;
 }
 
 void Value::setI(const int64_t& v) {
-  type_ = Type::INT;
   new (std::addressof(value_.iVal)) int64_t(v);  // NOLINT
+  type_ = Type::INT;
 }
 
 void Value::setI(int64_t&& v) {
-  type_ = Type::INT;
   new (std::addressof(value_.iVal)) int64_t(std::move(v));  // NOLINT
+  type_ = Type::INT;
 }
 
 void Value::setF(const double& v) {
-  type_ = Type::FLOAT;
   new (std::addressof(value_.fVal)) double(v);  // NOLINT
+  type_ = Type::FLOAT;
 }
 
 void Value::setF(double&& v) {
-  type_ = Type::FLOAT;
   new (std::addressof(value_.fVal)) double(std::move(v));  // NOLINT
+  type_ = Type::FLOAT;
 }
 
 void Value::setS(std::unique_ptr<std::string> v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(std::move(v));
+  type_ = Type::STRING;
 }
 
 void Value::setS(const std::string& v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
+  type_ = Type::STRING;
 }
 
 void Value::setS(std::string&& v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(std::move(v)));
+  type_ = Type::STRING;
 }
 
 void Value::setS(const char* v) {
-  type_ = Type::STRING;
   new (std::addressof(value_.sVal)) std::unique_ptr<std::string>(new std::string(v));
+  type_ = Type::STRING;
 }
 
 void Value::setD(const Date& v) {
-  type_ = Type::DATE;
   new (std::addressof(value_.dVal)) Date(v);
+  type_ = Type::DATE;
 }
 
 void Value::setD(Date&& v) {
-  type_ = Type::DATE;
   new (std::addressof(value_.dVal)) Date(std::move(v));
+  type_ = Type::DATE;
 }
 
 void Value::setT(const Time& v) {
-  type_ = Type::TIME;
   new (std::addressof(value_.tVal)) Time(v);
+  type_ = Type::TIME;
 }
 
 void Value::setT(Time&& v) {
-  type_ = Type::TIME;
   new (std::addressof(value_.tVal)) Time(std::move(v));
+  type_ = Type::TIME;
 }
 
 void Value::setDT(const DateTime& v) {
-  type_ = Type::DATETIME;
   new (std::addressof(value_.dtVal)) DateTime(v);
+  type_ = Type::DATETIME;
 }
 
 void Value::setDT(DateTime&& v) {
-  type_ = Type::DATETIME;
   new (std::addressof(value_.dtVal)) DateTime(std::move(v));
+  type_ = Type::DATETIME;
 }
 
-void Value::setV(const std::unique_ptr<Vertex>& v) {
+void Value::setV(Vertex* v) {
+  value_.vVal = v;
+  value_.vVal->ref();
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(*v));
-}
-
-void Value::setV(std::unique_ptr<Vertex>&& v) {
-  type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(std::move(v));
 }
 
 void Value::setV(const Vertex& v) {
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(v));
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(v));
 }
 
 void Value::setV(Vertex&& v) {
+  new (std::addressof(value_.vVal)) Vertex*(new Vertex(std::move(v)));
   type_ = Type::VERTEX;
-  new (std::addressof(value_.vVal)) std::unique_ptr<Vertex>(new Vertex(std::move(v)));
 }
 
-void Value::setE(const std::unique_ptr<Edge>& v) {
+void Value::setE(Edge* v) {
+  value_.eVal = v;
+  value_.eVal->ref();
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(*v));
-}
-
-void Value::setE(std::unique_ptr<Edge>&& v) {
-  type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(std::move(v));
 }
 
 void Value::setE(const Edge& v) {
+  new (std::addressof(value_.eVal)) Edge*(new Edge(v));
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(v));
 }
 
 void Value::setE(Edge&& v) {
+  new (std::addressof(value_.eVal)) Edge*(new Edge(std::move(v)));
   type_ = Type::EDGE;
-  new (std::addressof(value_.eVal)) std::unique_ptr<Edge>(new Edge(std::move(v)));
 }
 
 void Value::setP(const std::unique_ptr<Path>& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(*v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(std::unique_ptr<Path>&& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(std::move(v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(const Path& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(v));
+  type_ = Type::PATH;
 }
 
 void Value::setP(Path&& v) {
-  type_ = Type::PATH;
   new (std::addressof(value_.pVal)) std::unique_ptr<Path>(new Path(std::move(v)));
+  type_ = Type::PATH;
 }
 
 void Value::setL(const std::unique_ptr<List>& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(*v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(std::unique_ptr<List>&& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(std::move(v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(const List& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(v));
+  type_ = Type::LIST;
 }
 
 void Value::setL(List&& v) {
-  type_ = Type::LIST;
   new (std::addressof(value_.lVal)) std::unique_ptr<List>(new List(std::move(v)));
+  type_ = Type::LIST;
 }
 
 void Value::setM(const std::unique_ptr<Map>& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(*v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(std::unique_ptr<Map>&& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(std::move(v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(const Map& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(v));
+  type_ = Type::MAP;
 }
 
 void Value::setM(Map&& v) {
-  type_ = Type::MAP;
   new (std::addressof(value_.mVal)) std::unique_ptr<Map>(new Map(std::move(v)));
+  type_ = Type::MAP;
 }
 
 void Value::setU(const std::unique_ptr<Set>& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(new Set(*v));
+  type_ = Type::SET;
 }
 
 void Value::setU(std::unique_ptr<Set>&& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(std::move(v));
+  type_ = Type::SET;
 }
 
 void Value::setU(const Set& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.uVal)) std::unique_ptr<Set>(new Set(v));
+  type_ = Type::SET;
 }
 
 void Value::setU(Set&& v) {
-  type_ = Type::SET;
   new (std::addressof(value_.vVal)) std::unique_ptr<Set>(new Set(std::move(v)));
+  type_ = Type::SET;
 }
 
 void Value::setG(const std::unique_ptr<DataSet>& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(*v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(std::unique_ptr<DataSet>&& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(std::move(v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(const DataSet& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(v));
+  type_ = Type::DATASET;
 }
 
 void Value::setG(DataSet&& v) {
-  type_ = Type::DATASET;
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
+  type_ = Type::DATASET;
 }
 
 void Value::setGG(const std::unique_ptr<Geography>& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(*v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(std::unique_ptr<Geography>&& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(std::move(v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(const Geography& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(v));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setGG(Geography&& v) {
-  type_ = Type::GEOGRAPHY;
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(std::move(v)));
+  type_ = Type::GEOGRAPHY;
 }
 
 void Value::setDU(const std::unique_ptr<Duration>& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(*v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(std::unique_ptr<Duration>&& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(std::move(v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(const Duration& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(v));
+  type_ = Type::DURATION;
 }
 
 void Value::setDU(Duration&& v) {
-  type_ = Type::DURATION;
   new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(std::move(v)));
+  type_ = Type::DURATION;
 }
 
 // Convert Nebula::Value to a value compatible with Json standard
@@ -1497,7 +1515,8 @@ folly::dynamic Value::toJson() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 folly::dynamic Value::getMetaData() const {
@@ -1542,7 +1561,8 @@ folly::dynamic Value::getMetaData() const {
       break;
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return folly::dynamic(nullptr);
 }
 
 std::string Value::toString() const {
@@ -1569,7 +1589,8 @@ std::string Value::toString() const {
         case NullType::OUT_OF_RANGE:
           return "__NULL_OUT_OF_RANGE__";
       }
-      LOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      DLOG(FATAL) << "Unknown Null type " << static_cast<int>(getNull());
+      return "__NULL_BAD_TYPE__";
     }
     case Value::Type::BOOL: {
       return getBool() ? "true" : "false";
@@ -1622,7 +1643,8 @@ std::string Value::toString() const {
       // no default so the compiler will warning when lack
   }
 
-  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+  return "__NULL_BAD_TYPE__";
 }
 
 Value Value::toBool() const {
@@ -1906,9 +1928,15 @@ Value Value::equal(const Value& v) const {
       return getDateTime() == v.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == v.value_.vVal) {
+        return true;
+      }
       return getVertex() == v.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == v.value_.eVal) {
+        return true;
+      }
       return getEdge() == v.getEdge();
     }
     case Value::Type::PATH: {
@@ -1959,7 +1987,8 @@ bool Value::implicitBool() const {
     case Type::LIST:
       return !getList().empty();
     default:
-      LOG(FATAL) << "Impossible to reach here!";
+      DLOG(FATAL) << "Impossible to reach here!";
+      return false;
   }
 }
 
@@ -2241,7 +2270,8 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return Value::kNullValue;
         }
       }
-      LOG(FATAL) << "Unknown type: " << rhs.type();
+      DLOG(FATAL) << "Unknown type: " << rhs.type();
+      return Value::kNullBadType;
     }
     case Value::Type::VERTEX: {
       switch (rhs.type()) {
@@ -2741,9 +2771,15 @@ bool Value::equals(const Value& rhs) const {
       return getDateTime() == rhs.getDateTime();
     }
     case Value::Type::VERTEX: {
+      if (value_.vVal == rhs.value_.vVal) {
+        return true;
+      }
       return getVertex() == rhs.getVertex();
     }
     case Value::Type::EDGE: {
+      if (value_.eVal == rhs.value_.eVal) {
+        return true;
+      }
       return getEdge() == rhs.getEdge();
     }
     case Value::Type::PATH: {
@@ -2830,12 +2866,14 @@ std::size_t Value::hash() const {
       return std::hash<Duration>()(getDuration());
     }
     case Type::DATASET: {
-      LOG(FATAL) << "Hash for DATASET has not been implemented";
+      DLOG(FATAL) << "Hash for DATASET has not been implemented";
+      break;
     }
     default: {
-      LOG(FATAL) << "Unknown type";
+      DLOG(FATAL) << "Unknown type";
     }
   }
+  return ~0UL;
 }
 
 bool operator!=(const Value& lhs, const Value& rhs) {
@@ -2962,4 +3000,43 @@ Value operator^(const Value& lhs, const Value& rhs) {
     }
   }
 }
+
+std::size_t VertexHash::operator()(const Value& v) const {
+  switch (v.type()) {
+    case Value::Type::VERTEX: {
+      auto& vid = v.getVertex().vid;
+      if (vid.type() == Value::Type::STRING) {
+        return std::hash<std::string>()(vid.getStr());
+      } else {
+        return vid.getInt();
+      }
+    }
+    case Value::Type::STRING: {
+      return std::hash<std::string>()(v.getStr());
+    }
+    case Value::Type::INT: {
+      return v.getInt();
+    }
+    default: {
+      return v.hash();
+    }
+  }
+}
+
+bool VertexEqual::operator()(const Value& lhs, const Value& rhs) const {
+  if (lhs.type() == rhs.type()) {
+    if (lhs.isVertex()) {
+      return lhs.getVertex().vid == rhs.getVertex().vid;
+    }
+    return lhs == rhs;
+  }
+  if (lhs.type() == Value::Type::VERTEX) {
+    return lhs.getVertex().vid == rhs;
+  }
+  if (rhs.type() == Value::Type::VERTEX) {
+    return lhs == rhs.getVertex().vid;
+  }
+  return lhs == rhs;
+}
+
 }  // namespace nebula

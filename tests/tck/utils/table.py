@@ -13,6 +13,8 @@ pattern = re.compile(r"^<\[(\w+)\]>$")
 
 
 def _parse_value(cell: str, variables: dict) -> Value:
+    if not cell:
+        cell = "EMPTY"
     m = pattern.match(cell)
     if m:
         var = m.group(1)

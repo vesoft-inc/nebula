@@ -22,12 +22,12 @@ extern ProcessorCounters kGetPropCounters;
 class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse> {
  public:
   /**
-   * @brief Consturct instance of GetPropProcessor
+   * @brief Construct instance of GetPropProcessor
    *
    * @param env Related environment variables for storage.
    * @param counters Statistic counter pointer for getting properties.
    * @param executor Expected executor for this processor, running directly if nullptr.
-   * @return GetPropProcessor* Consturcted instance.
+   * @return GetPropProcessor* Constructed instance.
    */
   static GetPropProcessor* instance(StorageEnv* env,
                                     const ProcessorCounters* counters = &kGetPropCounters,
@@ -38,14 +38,14 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
   /**
    * @brief Entry point of getting properties.
    *
-   * @param req Reuqest for getting properties.
+   * @param req Request for getting properties.
    */
   void process(const cpp2::GetPropRequest& req) override;
 
   /**
    * @brief Logic part of getting properties.
    *
-   * @param req Reuqest for getting properties.
+   * @param req Request for getting properties.
    */
   void doProcess(const cpp2::GetPropRequest& req);
 

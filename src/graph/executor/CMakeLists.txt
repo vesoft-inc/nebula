@@ -14,6 +14,7 @@ nebula_add_library(
     query/AggregateExecutor.cpp
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
+    query/FulltextIndexScanExecutor.cpp
     query/GetEdgesExecutor.cpp
     query/GetNeighborsExecutor.cpp
     query/GetVerticesExecutor.cpp
@@ -40,6 +41,7 @@ nebula_add_library(
     query/TraverseExecutor.cpp
     query/AppendVerticesExecutor.cpp
     query/RollUpApplyExecutor.cpp
+    query/PatternApplyExecutor.cpp
     query/GetDstBySrcExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
     algo/MultiShortestPathExecutor.cpp

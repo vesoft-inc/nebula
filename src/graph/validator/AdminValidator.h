@@ -7,7 +7,6 @@
 #define GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 
 #include "clients/meta/MetaClient.h"
-#include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
 #include "parser/MaintainSentences.h"
@@ -374,10 +373,18 @@ class ShowSessionsValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override {
-    return Status::OK();
+  Status validateImpl() override;
+  Status toPlan() override;
+};
+
+class KillSessionValidator final : public Validator {
+ public:
+  KillSessionValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
   }
 
+ private:
+  Status validateImpl() override;
   Status toPlan() override;
 };
 

@@ -33,7 +33,7 @@ class SignalHandler final {
   /**
    * To install one or several signals to handle.
    * Upon any signal arrives, the corresponding handler would be invoked,
-   * with an argument holding the informations about the signal and the sender.
+   * with an argument holding the information about the signal and the sender.
    * The handler typically prints out the info and do some other things,
    * e.g. stop the process on SIGTERM.
    */

@@ -54,11 +54,11 @@ class LeftJoinExecutor : public JoinExecutor {
   size_t rightColSize_{0};
 };
 
-// No diffrence with left join in processing data, but the dependencies would be executed in
-// paralell.
-class BiLeftJoinExecutor final : public LeftJoinExecutor {
+// No difference with left join in processing data, but the dependencies would be executed in
+// parallel.
+class HashLeftJoinExecutor final : public LeftJoinExecutor {
  public:
-  BiLeftJoinExecutor(const PlanNode* node, QueryContext* qctx);
+  HashLeftJoinExecutor(const PlanNode* node, QueryContext* qctx);
 
   folly::Future<Status> execute() override;
 };

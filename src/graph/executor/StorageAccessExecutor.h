@@ -56,6 +56,8 @@ class StorageAccessExecutor : public Executor {
 
   Status handleErrorCode(nebula::cpp2::ErrorCode code, PartitionID partId) const {
     switch (code) {
+      case nebula::cpp2::ErrorCode::E_RPC_FAILURE:
+        return Status::Error("Storage Error: RPC failure, probably timeout.");
       case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
         return Status::Error("Storage Error: Vertex or edge not found.");
       case nebula::cpp2::ErrorCode::E_DATA_TYPE_MISMATCH: {
@@ -129,6 +131,11 @@ class StorageAccessExecutor : public Executor {
             "Storage Error: Part {} raft buffer is full. Please retry later.", partId));
       case nebula::cpp2::ErrorCode::E_RAFT_ATOMIC_OP_FAILED:
         return Status::Error("Storage Error: Atomic operation failed.");
+        // E_GRAPH_MEMORY_EXCEEDED may happen during rpc response deserialize.
+      case nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED:
+        return Status::GraphMemoryExceeded("(%d)", static_cast<int32_t>(code));
+      case nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED:
+        return Status::StorageMemoryExceeded("(%d)", static_cast<int32_t>(code));
       default:
         auto status = Status::Error("Storage Error: part: %d, error: %s(%d).",
                                     partId,

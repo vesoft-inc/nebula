@@ -2,7 +2,7 @@
 # Whether to run as a daemon process
 --daemonize=true
 # The file to host the process id
---pid_file=pids/nebula-storaged.pid
+--pid_file=pids/nebula-storaged-listener.pid
 # Whether to use the configuration obtained from the configuration file
 --local_config=true
 
@@ -18,10 +18,10 @@
 # Whether to redirect stdout and stderr to separate output files
 --redirect_stdout=true
 # Destination filename of stdout and stderr, which will also reside in log_dir.
---stdout_log_file=storaged-stdout.log
---stderr_log_file=storaged-stderr.log
+--stdout_log_file=storaged-listener-stdout.log
+--stderr_log_file=storaged-listener-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
---stderrthreshold=2
+--stderrthreshold=3
 # Wether logging files' name contain timestamp.
 --timestamp_in_logfile_name=true
 
@@ -104,21 +104,16 @@
 # Whether or not to enable rocksdb's whole key bloom filter, disabled by default.
 --enable_rocksdb_whole_key_filtering=false
 
-############## Key-Value separation ##############
-# Whether or not to enable BlobDB (RocksDB key-value separation support)
---rocksdb_enable_kv_separation=false
-# RocksDB key value separation threshold in bytes. Values at or above this threshold will be written to blob files during flush or compaction.
---rocksdb_kv_separation_threshold=100
-# Compression algorithm for blobs, options: no,snappy,lz4,lz4hc,zlib,bzip2,zstd
---rocksdb_blob_compression=lz4
-# Whether to garbage collect blobs during compaction
---rocksdb_enable_blob_garbage_collection=true
-
 ############### misc ####################
+# Whether turn on query in multiple thread
+--query_concurrently=true
 # Whether remove outdated space data
 --auto_remove_invalid_space=true
 # Network IO threads number
 --num_io_threads=16
+# Max active connections for all networking threads. 0 means no limit.
+# Max connections for each networking thread = num_max_connections / num_netio_threads
+--num_max_connections=0
 # Worker threads number to handle request
 --num_worker_threads=32
 # Maximum subtasks to run admin jobs concurrently
@@ -131,3 +126,19 @@
 --rebuild_index_part_rate_limit=4194304
 # The amount of data sent in each batch when leader synchronizes rebuilding index
 --rebuild_index_batch_size=1048576
+
+########## memory tracker ##########
+# trackable memory ratio (trackable_memory / (total_memory - untracked_reserved_memory) )
+--memory_tracker_limit_ratio=0.8
+# untracked reserved memory in Mib
+--memory_tracker_untracked_reserved_memory_mb=50
+
+# enable log memory tracker stats periodically
+--memory_tracker_detail_log=false
+# log memory tacker stats interval in milliseconds
+--memory_tracker_detail_log_interval_ms=60000
+
+# enable memory background purge (if jemalloc is used)
+--memory_purge_enabled=true
+# memory background purge interval in seconds
+--memory_purge_interval_seconds=10

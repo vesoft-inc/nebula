@@ -28,8 +28,8 @@ void YieldClausePlanner::rewriteYieldColumns(const YieldClauseContext* yctx,
                                              const YieldColumns* yields,
                                              YieldColumns* newYields) {
   for (auto* col : yields->columns()) {
-    newYields->addColumn(
-        new YieldColumn(MatchSolver::doRewrite(yctx->qctx, yctx->aliasesAvailable, col->expr())));
+    auto* expr = MatchSolver::doRewrite(yctx->qctx, yctx->aliasesAvailable, col->expr());
+    newYields->addColumn(new YieldColumn(expr, col->alias()));
   }
 }
 
@@ -78,16 +78,10 @@ Status YieldClausePlanner::buildYield(YieldClauseContext* yctx, SubPlan& subplan
   SubPlan patternPlan;
   // Build plan for pattern from expression
   for (auto& path : yctx->paths) {
-    auto pathPlan = std::make_unique<MatchPathPlanner>()->transform(
-        yctx->qctx, yctx->space.id, nullptr, yctx->aliasesAvailable, {}, path);
-    NG_RETURN_IF_ERROR(pathPlan);
-    auto pathplan = std::move(pathPlan).value();
-    patternPlan = SegmentsConnector::rollUpApply(yctx->qctx,
-                                                 patternPlan,
-                                                 yctx->inputColNames,
-                                                 pathplan,
-                                                 path.compareVariables,
-                                                 path.collectVariable);
+    auto status = MatchPathPlanner(yctx, path).transform(nullptr, {});
+    NG_RETURN_IF_ERROR(status);
+    patternPlan =
+        SegmentsConnector::rollUpApply(yctx, patternPlan, std::move(status).value(), path);
   }
   if (patternPlan.root != nullptr) {
     subplan = SegmentsConnector::addInput(subplan, patternPlan);

@@ -57,7 +57,7 @@ nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() const {
   return hint;
 }
 
-std::vector<uint64_t> GeoIndex::indexCells(const Geography& g) const noexcept {
+std::vector<uint64_t> GeoIndex::indexCells(const Geography& g) const {
   auto r = g.asS2();
   if (UNLIKELY(!r)) {
     return {};
@@ -72,7 +72,7 @@ std::vector<uint64_t> GeoIndex::indexCells(const Geography& g) const noexcept {
   return cellIds;
 }
 
-std::vector<ScanRange> GeoIndex::intersects(const Geography& g) const noexcept {
+std::vector<ScanRange> GeoIndex::intersects(const Geography& g) const {
   auto r = g.asS2();
   if (UNLIKELY(!r)) {
     return {};
@@ -82,16 +82,16 @@ std::vector<ScanRange> GeoIndex::intersects(const Geography& g) const noexcept {
 }
 
 // covers degenerates to intersects currently
-std::vector<ScanRange> GeoIndex::covers(const Geography& g) const noexcept {
+std::vector<ScanRange> GeoIndex::covers(const Geography& g) const {
   return intersects(g);
 }
 
 // coveredBy degenerates to intersects currently
-std::vector<ScanRange> GeoIndex::coveredBy(const Geography& g) const noexcept {
+std::vector<ScanRange> GeoIndex::coveredBy(const Geography& g) const {
   return intersects(g);
 }
 
-std::vector<ScanRange> GeoIndex::dWithin(const Geography& g, double distance) const noexcept {
+std::vector<ScanRange> GeoIndex::dWithin(const Geography& g, double distance) const {
   auto r = g.asS2();
   if (UNLIKELY(!r)) {
     return {};
@@ -118,13 +118,13 @@ std::vector<ScanRange> GeoIndex::dWithin(const Geography& g, double distance) co
       return intersects(gBuffer);
     }
     default:
-      LOG(FATAL)
+      DLOG(FATAL)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
       return {};
   }
 }
 
-std::vector<ScanRange> GeoIndex::intersects(const S2Region& r, bool isPoint) const noexcept {
+std::vector<ScanRange> GeoIndex::intersects(const S2Region& r, bool isPoint) const {
   auto cells = coveringCells(r, isPoint);
   std::vector<ScanRange> scanRanges;
   for (const S2CellId& cellId : cells) {
@@ -147,7 +147,7 @@ std::vector<ScanRange> GeoIndex::intersects(const S2Region& r, bool isPoint) con
   return scanRanges;
 }
 
-std::vector<S2CellId> GeoIndex::coveringCells(const S2Region& r, bool isPoint) const noexcept {
+std::vector<S2CellId> GeoIndex::coveringCells(const S2Region& r, bool isPoint) const {
   // Currently we don't apply region coverer params to point, because it's useless.
   // Point always use level 30.
   if (isPoint) {
@@ -166,7 +166,7 @@ std::vector<S2CellId> GeoIndex::coveringCells(const S2Region& r, bool isPoint) c
   return covering;
 }
 
-std::vector<S2CellId> GeoIndex::ancestorCells(const std::vector<S2CellId>& cells) const noexcept {
+std::vector<S2CellId> GeoIndex::ancestorCells(const std::vector<S2CellId>& cells) const {
   // DCHECK(rc.IsCanonical(cells));
   std::vector<S2CellId> ancestors;
   std::unordered_set<S2CellId> seen;

@@ -39,7 +39,7 @@ std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
 std::unique_ptr<PlanNodeDescription> ShortestPath::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
-  addDescription("steps", range_ != nullptr ? range_->toString() : "", desc.get());
+  addDescription("steps", range_.toString(), desc.get());
   addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
@@ -104,37 +104,36 @@ std::vector<std::string> CartesianProduct::inputVars() const {
   return varNames;
 }
 
-std::unique_ptr<PlanNodeDescription> BiCartesianProduct::explain() const {
+std::unique_ptr<PlanNodeDescription> CrossJoin::explain() const {
   return BinaryInputNode::explain();
 }
 
-PlanNode* BiCartesianProduct::clone() const {
+PlanNode* CrossJoin::clone() const {
   auto* node = make(qctx_);
   node->cloneMembers(*this);
   return node;
 }
 
-void BiCartesianProduct::cloneMembers(const BiCartesianProduct& r) {
+void CrossJoin::cloneMembers(const CrossJoin& r) {
   BinaryInputNode::cloneMembers(r);
 }
 
-BiCartesianProduct::BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right)
-    : BinaryInputNode(qctx, Kind::kBiCartesianProduct, left, right) {
+CrossJoin::CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right)
+    : BinaryInputNode(qctx, Kind::kCrossJoin, left, right) {
   auto lColNames = left->colNames();
   auto rColNames = right->colNames();
   lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
   setColNames(lColNames);
 }
 
-void BiCartesianProduct::accept(PlanNodeVisitor* visitor) {
+void CrossJoin::accept(PlanNodeVisitor* visitor) {
   visitor->visit(this);
 }
 
-BiCartesianProduct::BiCartesianProduct(QueryContext* qctx)
-    : BinaryInputNode(qctx, Kind::kBiCartesianProduct) {}
+CrossJoin::CrossJoin(QueryContext* qctx) : BinaryInputNode(qctx, Kind::kCrossJoin) {}
 
 std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
-  auto desc = SingleDependencyNode::explain();
+  auto desc = SingleInputNode::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
   addDescription("tag_filter", tagFilter_ ? tagFilter_->toString() : "", desc.get());
   addDescription("edge_filter", edgeFilter_ ? edgeFilter_->toString() : "", desc.get());

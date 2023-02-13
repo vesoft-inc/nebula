@@ -10,6 +10,7 @@ using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
                                                   const HashSet& endVids,
                                                   DataSet* result) {
@@ -21,18 +22,17 @@ folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
     resultDs_[rowNum].colNames = pathNode_->colNames();
     futures.emplace_back(shortestPath(rowNum, 1));
   }
-  return folly::collect(futures)
-      .via(qctx_->rctx()->runner())
-      .thenValue([this, result](auto&& resps) {
-        for (auto& resp : resps) {
-          NG_RETURN_IF_ERROR(resp);
-        }
-        result->colNames = pathNode_->colNames();
-        for (auto& ds : resultDs_) {
-          result->append(std::move(ds));
-        }
-        return Status::OK();
-      });
+  return folly::collect(futures).via(runner()).thenValue([this, result](auto&& resps) {
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      NG_RETURN_IF_ERROR(resp);
+    }
+    result->colNames = pathNode_->colNames();
+    for (auto& ds : resultDs_) {
+      result->append(std::move(ds));
+    }
+    return Status::OK();
+  });
 }
 
 void SingleShortestPath::init(const HashSet& startVids, const HashSet& endVids, size_t rowSize) {
@@ -67,14 +67,22 @@ folly::Future<Status> SingleShortestPath::shortestPath(size_t rowNum, size_t ste
   futures.emplace_back(getNeighbors(rowNum, stepNum, false));
   futures.emplace_back(getNeighbors(rowNum, stepNum, true));
   return folly::collect(futures)
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum, stepNum](auto&& resps) {
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           if (!resp.ok()) {
             return folly::makeFuture<Status>(std::move(resp));
           }
         }
         return handleResponse(rowNum, stepNum);
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -106,8 +114,9 @@ folly::Future<Status> SingleShortestPath::getNeighbors(size_t rowNum,
                      -1,
                      nullptr,
                      nullptr)
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum, stepNum, getNbrTime, reverse](auto&& resp) {
+        memory::MemoryCheckGuard guard;
         addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
@@ -174,12 +183,16 @@ Status SingleShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, bo
 
 folly::Future<Status> SingleShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
   return folly::makeFuture<Status>(Status::OK())
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum, stepNum](auto&& status) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+
         UNUSED(status);
         return conjunctPath(rowNum, stepNum);
       })
       .thenValue([this, rowNum, stepNum](auto&& result) {
+        memory::MemoryCheckGuard guard;
         if (result || stepNum * 2 >= maxStep_) {
           return folly::makeFuture<Status>(Status::OK());
         }
@@ -249,7 +262,10 @@ void SingleShortestPath::buildOddPath(size_t rowNum, const std::vector<Value>& m
 folly::Future<bool> SingleShortestPath::buildEvenPath(size_t rowNum,
                                                       const std::vector<Value>& meetVids) {
   auto future = getMeetVidsProps(meetVids);
-  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum](auto&& vertices) {
+  return future.via(runner()).thenValue([this, rowNum](auto&& vertices) {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+
     if (vertices.empty()) {
       return false;
     }

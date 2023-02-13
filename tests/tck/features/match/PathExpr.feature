@@ -50,22 +50,42 @@ Feature: Basic match
       """
       MATCH (v:player) WITH (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) UNWIND (v)-[v]-() AS p RETURN p
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) WHERE (v)-[v]-() RETURN v
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
     When executing query:
       """
       MATCH (v:player) RETURN (v)-[v]-()
       """
-    Then a SemanticError should be raised at runtime: Alias `v' should be Edge.
+    Then a SemanticError should be raised at runtime: `v' is defined with type Node, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e*3]->() RETURN (v)-[e]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e]->() RETURN (v)-[e*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e]->() RETURN (e)-[*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type Node
+    When executing query:
+      """
+      MATCH (v:player)-[e*3]->() RETURN (e)-[*1..3]-()
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Node
 
   Scenario: In Where
     When executing query:
@@ -342,3 +362,88 @@ Feature: Basic match
       | p                                                                                                                                                                                           |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
+
+  Scenario: pattern in where
+    When executing query:
+      """
+      MATCH (v:player)-[e]->(b)
+        WHERE id(v) IN ['Tim Duncan', 'Tony Parker'] AND (b)-[*1..2]->(v)
+        RETURN b
+      """
+    Then the result should be, in any order:
+      | b                                                                                                           |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})                                                       |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(b)
+        WHERE (b)-[:teammate]->(v)
+        RETURN e
+      """
+    Then the result should be, in any order:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]        |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]  |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*2]->(b)
+        WHERE id(v) == 'Tony Parker' AND (b)-[*1..2]->(v)
+        RETURN distinct e
+      """
+    Then the result should be, in any order:
+      | e                                                                                                                            |
+      | [[:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}], [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]]  |
+      | [[:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}], [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]] |
+      | [[:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]          |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]]             |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]               |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*3]->(n), (t:team {name: "Spurs"})
+      WITH v, e, collect(distinct n) AS ns
+        UNWIND [n in ns | ()-[e*3]->(n:player)] AS p
+        RETURN p
+      """
+    Then the result should be, in any order:
+      | p  |
+      | [] |
+      | [] |
+      | [] |
+      | [] |
+      | [] |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n)
+        WHERE (n)-[e*3]->(:player)
+        RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
+      """
+    Then the result should be, in any order:
+      | v |

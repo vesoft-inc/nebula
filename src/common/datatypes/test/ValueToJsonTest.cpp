@@ -38,7 +38,7 @@ TEST(ValueToJson, vertex) {
     ASSERT_EQ(expectedTagJson, tag2.toJson());
   }
 
-  // vertex wtih string vid
+  // vertex with string vid
   auto vertexStrVid = Value(Vertex({"Vid",
                                     {
                                         tag1,

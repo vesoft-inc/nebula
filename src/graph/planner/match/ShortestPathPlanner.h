@@ -12,14 +12,14 @@ namespace nebula {
 namespace graph {
 class ShortestPathPlanner final {
  public:
-  ShortestPathPlanner() = default;
+  ShortestPathPlanner(CypherClauseContextBase* ctx, const Path& path);
 
-  StatusOr<SubPlan> transform(QueryContext* qctx,
-                              GraphSpaceID spaceId,
-                              WhereClauseContext* bindWhereClause,
-                              const std::unordered_map<std::string, AliasType>& aliasesAvailable,
-                              std::unordered_set<std::string> nodeAliasesSeen,
-                              Path& path);
+  StatusOr<SubPlan> transform(WhereClauseContext* bindWhereClause,
+                              std::unordered_set<std::string> nodeAliasesSeen = {});
+
+ private:
+  CypherClauseContextBase* ctx_{nullptr};
+  const Path& path_;
 };
 }  // namespace graph
 }  // namespace nebula

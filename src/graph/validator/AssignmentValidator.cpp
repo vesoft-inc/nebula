@@ -17,6 +17,9 @@ Status AssignmentValidator::validateImpl() {
 
   auto outputs = validator_->outputCols();
   var_ = *assignSentence->var();
+  if (qctx_->symTable()->existsVar(var_)) {
+    return Status::SemanticError("Variable `%s' already exists", var_.c_str());
+  }
   vctx_->registerVariable(var_, std::move(outputs));
   return Status::OK();
 }

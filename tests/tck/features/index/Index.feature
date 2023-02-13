@@ -1197,3 +1197,2423 @@ Feature: IndexTest_Vid_String
       | "1" | "2" |
       | "2" | "1" |
     Then drop the used space
+
+  Scenario: IndexTest TagStringIndexWithTruncate
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(col1)
+      VALUES
+        "1": ("aaa"),
+        "2": ("aaaaa"),
+        "3": ("aaaaaaa"),
+        "4": ("abc"),
+        "5": ("abcde"),
+        "6": ("abcdefg");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "aaa" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "aaaaa" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "aaaaaaa" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "abc" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "abcdefg" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > "aaaaa" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+      | "4" |
+      | "5" |
+      | "6" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= "aaaaa" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+      | "6" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "aaaaa" < t1.col1 AND t1.col1 < "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "aaaaa" <= t1.col1 AND t1.col1 < "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "aaaaa" < t1.col1 AND t1.col1 <= "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "aaaaa" <= t1.col1 AND t1.col1 <= "abcde" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    Then drop the used space
+
+  Scenario: IndexTest EdgeStringIndexWithTruncate
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT EDGE e1(col1)
+      VALUES
+        "1" -> "1": ("aaa"),
+        "2" -> "2": ("aaaaa"),
+        "3" -> "3": ("aaaaaaa"),
+        "4" -> "4": ("abc"),
+        "5" -> "5": ("abcde"),
+        "6" -> "6": ("abcdefg");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "aaa" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "aaaaa" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "aaaaaaa" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "abc" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "abcdefg" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > "aaaaa" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+      | "6" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= "aaaaa" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+      | "6" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "aaaaa" < e1.col1 AND e1.col1 < "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "aaaaa" <= e1.col1 AND e1.col1 < "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "aaaaa" < e1.col1 AND e1.col1 <= "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "aaaaa" <= e1.col1 AND e1.col1 <= "abcde" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    Then drop the used space
+
+  Scenario: IndexTest TagStringIndexWithTruncateUTF8
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT VERTEX t1(col1)
+      VALUES
+        "1": ("羊"),
+        "2": ("羊羊"),
+        "3": ("羊羊羊"),
+        "4": ("羊羊🐏"),
+        "5": ("羊🐏"),
+        "6": ("羊🐏羊"),
+        "7": ("羊🐏🐏"),
+        "8": ("🐏"),
+        "9": ("🐏羊"),
+        "10": ("🐏羊羊"),
+        "11": ("🐏羊🐏"),
+        "12": ("🐏🐏"),
+        "13": ("🐏🐏羊"),
+        "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "13" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "10" |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+      | "9" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+      | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest TagStringIndexWithoutTruncateUTF8AndCertain
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1(16));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT VERTEX t1(col1)
+      VALUES
+        "1": ("羊"),
+        "2": ("羊羊"),
+        "3": ("羊羊羊"),
+        "4": ("羊羊🐏"),
+        "5": ("羊🐏"),
+        "6": ("羊🐏羊"),
+        "7": ("羊🐏🐏"),
+        "8": ("🐏"),
+        "9": ("🐏羊"),
+        "10": ("🐏羊羊"),
+        "11": ("🐏羊🐏"),
+        "12": ("🐏🐏"),
+        "13": ("🐏🐏羊"),
+        "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == "🐏🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "13" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= "🐏羊羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id   |
+      | "10" |
+      | "11" |
+      | "12" |
+      | "13" |
+      | "14" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= "羊🐏" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+      | "3" |
+      | "4" |
+      | "5" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 < "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" < t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "7" |
+      | "8" |
+      | "9" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE "羊🐏羊" <= t1.col1 and t1.col1 <= "🐏羊" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "6" |
+      | "7" |
+      | "8" |
+      | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest EdgeStringIndexWithTruncateUTF8
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1(5));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT EDGE e1(col1)
+      VALUES
+        "1" -> "1" : ("羊"),
+        "2" -> "2" : ("羊羊"),
+        "3" -> "3" : ("羊羊羊"),
+        "4" -> "4" : ("羊羊🐏"),
+        "5" -> "5" : ("羊🐏"),
+        "6" -> "6" : ("羊🐏羊"),
+        "7" -> "7" : ("羊🐏🐏"),
+        "8" -> "8" : ("🐏"),
+        "9" -> "9" : ("🐏羊"),
+        "10" -> "10": ("🐏羊羊"),
+        "11" -> "11": ("🐏羊🐏"),
+        "12" -> "12": ("🐏🐏"),
+        "13" -> "13": ("🐏🐏羊"),
+        "14" -> "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "13" | "13" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "10" | "10" |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest EdgeStringIndexWithoutTruncateUTF8AndCertain
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1(16));
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    # Unicode of 羊 is\u7f8a, 🐏 is \ud83d\udc0f
+    When executing query:
+      """
+      INSERT EDGE e1(col1)
+      VALUES
+        "1" -> "1" : ("羊"),
+        "2" -> "2" : ("羊羊"),
+        "3" -> "3" : ("羊羊羊"),
+        "4" -> "4" : ("羊羊🐏"),
+        "5" -> "5" : ("羊🐏"),
+        "6" -> "6" : ("羊🐏羊"),
+        "7" -> "7" : ("羊🐏🐏"),
+        "8" -> "8" : ("🐏"),
+        "9" -> "9" : ("🐏羊"),
+        "10" -> "10": ("🐏羊羊"),
+        "11" -> "11": ("🐏羊🐏"),
+        "12" -> "12": ("🐏🐏"),
+        "13" -> "13": ("🐏🐏羊"),
+        "14" -> "14": ("🐏🐏🐏");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "2" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == "🐏🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "13" | "13" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= "🐏羊羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src  | dst  |
+      | "10" | "10" |
+      | "11" | "11" |
+      | "12" | "12" |
+      | "13" | "13" |
+      | "14" | "14" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= "羊🐏" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "1" |
+      | "2" | "2" |
+      | "3" | "3" |
+      | "4" | "4" |
+      | "5" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 < "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" < e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE "羊🐏羊" <= e1.col1 and e1.col1 <= "🐏羊" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "6" | "6" |
+      | "7" | "7" |
+      | "8" | "8" |
+      | "9" | "9" |
+    Then drop the used space
+
+  Scenario: IndexTest FailureTest
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 int, col2 double, col3 bool, col4 string,
+                    col5 time, col6 date, col7 datetime, col8 fixed_string(10),
+                    col9 geography, col10 int, col11 int, col12 int,
+                    col13 int, col14 int, col15 int, col16 int,
+                    col17 int, col18 int, col19 int, col20 int);
+      CREATE EDGE e1(col1 int, col2 double, col3 bool, col4 string,
+                     col5 time, col6 date, col7 datetime, col8 fixed_string(10),
+                     col9 geography, col10 int, col11 int, col12 int,
+                     col13 int, col14 int, col15 int, col16 int,
+                     col17 int, col18 int, col19 int, col20 int);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX string_index_with_no_length ON t1(col4);
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX string_index_with_no_length ON e1(col4);
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX string_index_with_length_0 ON t1(col4(0));
+      """
+    Then an SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX string_index_with_length_0 ON e1(col4(0));
+      """
+    Then an SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX string_index_too_long ON t1(col4(257));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX string_index_too_long ON e1(col4(257));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX fixed_string_index_with_length_0 ON t1(col8(0));
+      """
+    Then an SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX fixed_string_index_with_length_0 ON e1(col8(0));
+      """
+    Then an SyntaxError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX fixed_string_index_with_length_10 ON t1(col8(10));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX fixed_string_index_with_length_10 ON e1(col8(10));
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX index_with_too_many_properties ON t1(col1, col2, col3, col4(10), col5, col6, col7, col8, col9, col10, col11, col12, col13, col14, col15, col16, col17, col18);
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX index_with_too_many_properties ON e1(col1, col2, col3, col4(10), col5, col6, col7, col8, col9, col10, col11, col12, col13, col14, col15, col16, col17, col18);
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE TAG INDEX index_with_duplicate_properties ON t1(col1, col2, col3, col1);
+      """
+    Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      CREATE EDGE INDEX index_with_duplicate_properties ON e1(col1, col2, col3, col1);
+      """
+    Then a ExecutionError should be raised at runtime:
+
+  Scenario: IndexTest CompoundIndexTest1
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 int, col2 double, col3 bool, col4 string, col5 time, col6 date, col7 datetime, col8 fixed_string(10));
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti1 ON t1(col1);
+      CREATE TAG INDEX ti12 ON t1(col1, col2);
+      CREATE TAG INDEX ti13 ON t1(col1, col3);
+      CREATE TAG INDEX ti14 ON t1(col1, col4(10));
+      CREATE TAG INDEX ti15 ON t1(col1, col5);
+      CREATE TAG INDEX ti16 ON t1(col1, col6);
+      CREATE TAG INDEX ti17 ON t1(col1, col7);
+      CREATE TAG INDEX ti18 ON t1(col1, col8);
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(col1, col2, col3, col4, col5, col6, col7, col8)
+      VALUES
+        "1": (1, 1.0, false, "apple", time("11:11:11"), date("2022-01-01"), datetime("2022-01-01T11:11:11"), "apple"),
+        "2": (2, 2.0, true, "banana", time("22:22:22"), date("2022-12-31"), datetime("2022-12-31T22:22:22"), "banana");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 > 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 < 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col2 == 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col2 > 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col2 >= 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col2 < 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col2 <= 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col3 == false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col3 > false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col3 >= false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col3 < true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col3 <= true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col4 == "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col4 > "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col4 >= "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col4 < "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col4 <= "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col5 == time("11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col5 > time("11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col5 >= time("11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col5 < time("22:22:22") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col5 <= time("22:22:22") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col6 == date("2022-01-01") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col6 > date("2022-01-01") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col6 >= date("2022-01-01") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col6 < date("2022-12-31") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col6 <= date("2022-12-31") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col7 == datetime("2022-01-01T11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col7 > datetime("2022-01-01T11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col7 >= datetime("2022-01-01T11:11:11") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col7 < datetime("2022-12-31T22:22:22") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col7 <= datetime("2022-12-31T22:22:22") YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 == 1 AND t1.col8 == "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col8 > "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 >= 1 AND t1.col8 >= "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col8 < "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col1 <= 2 AND t1.col8 <= "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    Then drop the used space
+
+  Scenario: IndexTest CompoundIndexTest2
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG t1(col1 int, col2 double, col3 bool, col4 string);
+      """
+    When executing query:
+      """
+      CREATE TAG INDEX ti21 ON t1(col2, col1);
+      CREATE TAG INDEX ti23 ON t1(col2, col3);
+      CREATE TAG INDEX ti24 ON t1(col2, col4(10));
+      CREATE TAG INDEX ti31 ON t1(col3, col1);
+      CREATE TAG INDEX ti32 ON t1(col3, col2);
+      CREATE TAG INDEX ti34 ON t1(col3, col4(10));
+      CREATE TAG INDEX ti41 ON t1(col4(10), col1);
+      CREATE TAG INDEX ti42 ON t1(col4(10), col2);
+      CREATE TAG INDEX ti43 ON t1(col4(10), col3);
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT VERTEX t1(col1, col2, col3, col4)
+      VALUES
+        "1": (1, 1.0, false, "apple"),
+        "2": (2, 1.0, true, "banana"),
+        "3": (3, 2.0, false, "carrot"),
+        "4": (4, 2.0, true, "durian");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col1 == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col1 > 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col1 >= 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col1 < 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col1 <= 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col3 == false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col3 > false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col3 >= false YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col3 < true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col3 <= true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col4 == "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col4 > "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col4 >= "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col4 < "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col2 == 1.0 AND t1.col4 <= "banana" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col1 == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col1 > 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col1 >= 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col1 < 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col1 <= 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col2 == 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col2 > 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col2 >= 1.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col2 < 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col2 <= 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col4 == "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col4 > "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col4 >= "apple" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col4 < "carrot" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col3 == false AND t1.col4 <= "carrot" YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "1" |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "carrot" AND t1.col1 == 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "carrot" AND t1.col1 > 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "carrot" AND t1.col1 >= 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "carrot" AND t1.col1 < 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "carrot" AND t1.col1 <= 3 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "3" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "durian" AND t1.col2 == 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "durian" AND t1.col2 > 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "durian" AND t1.col2 >= 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "durian" AND t1.col2 < 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "durian" AND t1.col2 <= 2.0 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "4" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "banana" AND t1.col3 == true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "banana" AND t1.col3 > true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "banana" AND t1.col3 >= true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "banana" AND t1.col3 < true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id |
+    When executing query:
+      """
+      LOOKUP ON t1 WHERE t1.col4 == "banana" AND t1.col3 <= true YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | "2" |
+    Then drop the used space
+
+  Scenario: IndexTest CompoundIndexTest3
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 int, col2 double, col3 bool, col4 string, col5 time, col6 date, col7 datetime, col8 fixed_string(10));
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei1 ON e1(col1);
+      CREATE EDGE INDEX ei12 ON e1(col1, col2);
+      CREATE EDGE INDEX ei13 ON e1(col1, col3);
+      CREATE EDGE INDEX ei14 ON e1(col1, col4(10));
+      CREATE EDGE INDEX ei15 ON e1(col1, col5);
+      CREATE EDGE INDEX ei16 ON e1(col1, col6);
+      CREATE EDGE INDEX ei17 ON e1(col1, col7);
+      CREATE EDGE INDEX ei18 ON e1(col1, col8);
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT EDGE e1(col1, col2, col3, col4, col5, col6, col7, col8)
+      VALUES
+        "1" -> "3": (1, 1.0, false, "apple", time("11:11:11"), date("2022-01-01"), datetime("2022-01-01T11:11:11"), "apple"),
+        "2" -> "4": (2, 2.0, true, "banana", time("22:22:22"), date("2022-12-31"), datetime("2022-12-31T22:22:22"), "banana");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 > 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 < 2 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col2 == 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col2 > 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col2 >= 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col2 < 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col2 <= 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col3 == false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col3 > false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col3 >= false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col3 < true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col3 <= true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col4 == "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col4 > "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col4 >= "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col4 < "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col4 <= "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col5 == time("11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col5 > time("11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col5 >= time("11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col5 < time("22:22:22") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col5 <= time("22:22:22") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col6 == date("2022-01-01") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col6 > date("2022-01-01") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col6 >= date("2022-01-01") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col6 < date("2022-12-31") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col6 <= date("2022-12-31") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col7 == datetime("2022-01-01T11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col7 > datetime("2022-01-01T11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col7 >= datetime("2022-01-01T11:11:11") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col7 < datetime("2022-12-31T22:22:22") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col7 <= datetime("2022-12-31T22:22:22") YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 == 1 AND e1.col8 == "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col8 > "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 >= 1 AND e1.col8 >= "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col8 < "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col1 <= 2 AND e1.col8 <= "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "3" |
+      | "2" | "4" |
+    Then drop the used space
+
+  Scenario: IndexTest CompoundIndexTest4
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE EDGE e1(col1 int, col2 double, col3 bool, col4 string);
+      """
+    When executing query:
+      """
+      CREATE EDGE INDEX ei21 ON e1(col2, col1);
+      CREATE EDGE INDEX ei23 ON e1(col2, col3);
+      CREATE EDGE INDEX ei24 ON e1(col2, col4(10));
+      CREATE EDGE INDEX ei31 ON e1(col3, col1);
+      CREATE EDGE INDEX ei32 ON e1(col3, col2);
+      CREATE EDGE INDEX ei34 ON e1(col3, col4(10));
+      CREATE EDGE INDEX ei41 ON e1(col4(10), col1);
+      CREATE EDGE INDEX ei42 ON e1(col4(10), col2);
+      CREATE EDGE INDEX ei43 ON e1(col4(10), col3);
+      """
+    Then the execution should be successful
+    And wait 5 seconds
+    When executing query:
+      """
+      INSERT EDGE e1(col1, col2, col3, col4)
+      VALUES
+        "1" -> "5": (1, 1.0, false, "apple"),
+        "2" -> "6": (2, 1.0, true, "banana"),
+        "3" -> "7": (3, 2.0, false, "carrot"),
+        "4" -> "8": (4, 2.0, true, "durian");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col1 == 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col1 > 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col1 >= 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col1 < 2 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col1 <= 2 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col3 == false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col3 > false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col3 >= false YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col3 < true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col3 <= true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col4 == "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col4 > "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col4 >= "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col4 < "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col2 == 1.0 AND e1.col4 <= "banana" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col1 == 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col1 > 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col1 >= 1 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col1 < 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col1 <= 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col2 == 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col2 > 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col2 >= 1.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col2 < 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col2 <= 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col4 == "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col4 > "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col4 >= "apple" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col4 < "carrot" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col3 == false AND e1.col4 <= "carrot" YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "1" | "5" |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "carrot" AND e1.col1 == 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "carrot" AND e1.col1 > 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "carrot" AND e1.col1 >= 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "carrot" AND e1.col1 < 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "carrot" AND e1.col1 <= 3 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "3" | "7" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "durian" AND e1.col2 == 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "4" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "durian" AND e1.col2 > 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "durian" AND e1.col2 >= 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "4" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "durian" AND e1.col2 < 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "durian" AND e1.col2 <= 2.0 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "4" | "8" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "banana" AND e1.col3 == true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "banana" AND e1.col3 > true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "banana" AND e1.col3 >= true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "banana" AND e1.col3 < true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+    When executing query:
+      """
+      LOOKUP ON e1 WHERE e1.col4 == "banana" AND e1.col3 <= true YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | "2" | "6" |
+    Then drop the used space

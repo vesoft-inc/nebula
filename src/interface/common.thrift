@@ -325,6 +325,9 @@ enum ErrorCode {
     E_USER_NOT_FOUND                  = -18,    // User does not exist
     E_STATS_NOT_FOUND                 = -19,    // Statistics do not exist
     E_SERVICE_NOT_FOUND               = -20,    // No current service found
+    E_DRAINER_NOT_FOUND               = -21,    // Drainer does not exist[only ent]
+    E_DRAINER_CLIENT_NOT_FOUND        = -22,    // Drainer client does not exist[only ent]
+    E_PART_STOPPED                    = -23,    // The current partition has already been stopped[only ent]
 
     // backup failed
     E_BACKUP_FAILED                   = -24,    // Backup failed
@@ -334,6 +337,13 @@ enum ErrorCode {
     E_REBUILD_INDEX_FAILED            = -28,    // Index rebuild failed
     E_INVALID_PASSWORD                = -29,    // Password is invalid
     E_FAILED_GET_ABS_PATH             = -30,    // Unable to get absolute path
+    E_LISTENER_PROGRESS_FAILED        = -31,    // Get listener sync progress failed[only ent]
+    E_SYNC_LISTENER_NOT_FOUND         = -32,    // Sync Listener does not exist[only ent]
+    E_DRAINER_PROGRESS_FAILED         = -33,    // Get drainer sync progress failed[only ent]
+
+    E_PART_DISABLED                   = -34,    // [only ent]
+    E_PART_ALREADY_STARTED            = -35,    // [only ent]
+    E_PART_ALREADY_STOPPED            = -36,    // [only ent]
 
     // 1xxx for graphd
     E_BAD_USERNAME_PASSWORD           = -1001,  // Authentication failed
@@ -359,11 +369,14 @@ enum ErrorCode {
     E_CONFLICT                        = -2008,  // Parameters conflict with meta data
     E_INVALID_PARM                    = -2009,  // Invalid parameter
     E_WRONGCLUSTER                    = -2010,  // Wrong cluster
-    E_ZONE_NOT_ENOUGH                 = -2011,  // Listener conflicts
-    E_ZONE_IS_EMPTY                   = -2012,  // Host not exist
-    E_SCHEMA_NAME_EXISTS              = -2013,  // Schema name already exists
-    E_RELATED_INDEX_EXISTS            = -2014,  // There are still indexes related to tag or edge, cannot drop it
-    E_RELATED_SPACE_EXISTS            = -2015,  // There are still some space on the host, cannot drop it
+    E_ZONE_NOT_ENOUGH                 = -2011,  // Host is not enough
+    E_ZONE_IS_EMPTY                   = -2012,  // Host does not exist
+    E_LISTENER_CONFLICT               = -2013,  // Listener conflicts[only ent]
+    E_SCHEMA_NAME_EXISTS              = -2014,  // Schema name already exists
+    E_RELATED_INDEX_EXISTS            = -2015,  // There are still indexes related to tag or edge, cannot drop it
+    E_RELATED_SPACE_EXISTS            = -2016,  // There are still some space on the host, cannot drop it
+    E_RELATED_FULLTEXT_INDEX_EXISTS   = -2017,  // There are still fulltext index on tag/edge
+    E_HISTORY_CONFLICT                = -2018,  // Existed before (e.g., schema)
 
     E_STORE_FAILURE                   = -2021,  // Failed to store data
     E_STORE_SEGMENT_ILLEGAL           = -2022,  // Illegal storage segment
@@ -373,6 +386,7 @@ enum ErrorCode {
     E_NO_VALID_HOST                   = -2026,  // Lack of valid hosts
     E_CORRUPTED_BALANCE_PLAN          = -2027,  // A data balancing plan that has been corrupted
     E_NO_INVALID_BALANCE_PLAN         = -2028,  // No invalid balance plan
+    E_NO_VALID_DRAINER                = -2029,  // Lack of valid drainers[only ent]
 
 
     // Authentication Failure
@@ -382,9 +396,15 @@ enum ErrorCode {
     E_INVALID_CHARSET                 = -2033,  // Invalid character set
     E_INVALID_COLLATE                 = -2034,  // Invalid character sorting rules
     E_CHARSET_COLLATE_NOT_MATCH       = -2035,  // Character set and character sorting rule mismatch
+    E_PRIVILEGE_ALL_TAG_EDGE_SETTLED  = -2036,  // drop all tag/edge before do some grant/revoke[only ent]
+    E_PRIVILEGE_NOT_EXIST             = -2037,  // remove un-exist privilege[only ent]
+    E_PRIVILEGE_NEED_BASIC_ROLE       = -2038,  // only basic role support tag/edge privilege[only ent]
+    E_PRIVILEGE_ACTION_INVALID        = -2039,  // only add and drop now.[only ent]
 
     // Admin Failure
     E_SNAPSHOT_FAILURE                = -2040,  // Failed to generate a snapshot
+    E_SNAPSHOT_RUNNING_JOBS           = -2056,  // Failed to generate a snapshot because encounter running jobs
+    E_SNAPSHOT_NOT_FOUND              = -2057,  // Snapshot not found when try to drop it
     E_BLOCK_WRITE_FAILURE             = -2041,  // Failed to write block data
     E_REBUILD_INDEX_FAILURE           = -2042,
     E_INDEX_WITH_TTL                  = -2043,  
@@ -403,7 +423,7 @@ enum ErrorCode {
     E_INVALID_JOB                     = -2065,  // Invalid task
 
     // Backup Failure
-    E_BACKUP_BUILDING_INDEX           = -2066,  // Backup terminated (index being created)
+    E_BACKUP_RUNNING_JOBS             = -2066,  // Backup terminated (some data modification jobs running)
     E_BACKUP_SPACE_NOT_FOUND          = -2067,  // Graph space does not exist at the time of backup
 
     // RESTORE Failure
@@ -418,6 +438,14 @@ enum ErrorCode {
 
     E_QUERY_NOT_FOUND                 = -2073,  // Query not found
     E_AGENT_HB_FAILUE                 = -2074,  // Failed to receive heartbeat from agent
+
+    E_INVALID_VARIABLE                = -2080,  // [only ent]
+    E_VARIABLE_TYPE_VALUE_MISMATCH    = -2081,  // [only ent]
+    E_HOST_CAN_NOT_BE_ADDED           = -2082,  // the host can not be added for it's not a storage host
+
+    E_ACCESS_ES_FAILURE               = -2090,  // Failed to access elasticsearch
+
+    E_GRAPH_MEMORY_EXCEEDED           = -2600,  // Graph memory exceeded
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,  // Consensus cannot be reached during an election
@@ -508,6 +536,31 @@ enum ErrorCode {
     E_RAFT_BUFFER_OVERFLOW            = -3529,  // Cache overflow
     E_RAFT_ATOMIC_OP_FAILED           = -3530,  // Atomic operation failed
     E_LEADER_LEASE_FAILED             = -3531,  // Leader lease expired
+    E_RAFT_CAUGHT_UP                  = -3532,  // Data has been synchronized on Raft[only ent]
+    
+    // 4xxx for drainer
+    E_LOG_GAP                         = -4001,  // Drainer logs lag behind[only ent]
+    E_LOG_STALE                       = -4002,  // Drainer logs are out of date[only ent]
+    E_INVALID_DRAINER_STORE           = -4003,  // The drainer data storage is invalid[only ent]
+    E_SPACE_MISMATCH                  = -4004,  // Graph space mismatch[only ent]
+    E_PART_MISMATCH                   = -4005,  // Partition mismatch[only ent]
+    E_DATA_CONFLICT                   = -4006,  // Data conflict[only ent]
+    E_REQ_CONFLICT                    = -4007,  // Request conflict[only ent]
+    E_DATA_ILLEGAL                    = -4008,  // Illegal data[only ent]
+
+    // 5xxx for cache
+    E_CACHE_CONFIG_ERROR              = -5001,  // Cache configuration error[only ent]
+    E_NOT_ENOUGH_SPACE                = -5002,  // Insufficient space[only ent]
+    E_CACHE_MISS                      = -5003,  // No cache hit[only ent]
+    E_POOL_NOT_FOUND                  = -5004,  // [only ent]
+    E_CACHE_WRITE_FAILURE             = -5005,  // Write cache failed[only ent]
+
+    // 7xxx for nebula enterprise
+    // license related
+    E_NODE_NUMBER_EXCEED_LIMIT        = -7001,  // Number of machines exceeded the limit[only ent]
+    E_PARSING_LICENSE_FAILURE         = -7002,  // Failed to resolve certificate[only ent]
+
+    E_STORAGE_MEMORY_EXCEEDED         = -3600,  // Storage memory exceeded
 
     E_UNKNOWN                         = -8000,  // Unknown error
 } (cpp.enum_strict)

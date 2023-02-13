@@ -51,3 +51,15 @@ Feature: data
     Then the result should be, in any order, with relax comparison:
       | a    | b    | c    |
       | true | true | true |
+    When profiling query:
+      """
+      WITH 1 AS a WHERE a IN [2, 3, 4] RETURN a
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a |
+    And the execution plan should be:
+      | id | name    | dependencies | operator info                    |
+      | 4  | Project | 2            |                                  |
+      | 2  | Filter  | 1            | {"condition": "($a IN [2,3,4])"} |
+      | 1  | Project | 3            |                                  |
+      | 3  | Start   |              |                                  |

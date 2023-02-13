@@ -5,14 +5,12 @@
 nebula_add_library(
     kvstore_obj OBJECT
     Part.cpp
-    Listener.cpp
     RocksEngine.cpp
     PartManager.cpp
     NebulaStore.cpp
     RocksEngineConfig.cpp
     NebulaSnapshotManager.cpp
     RateLimiter.cpp
-    plugins/elasticsearch/ESListener.cpp
 )
 
 nebula_add_library(
@@ -21,6 +19,7 @@ nebula_add_library(
 )
 
 nebula_add_subdirectory(raftex)
+nebula_add_subdirectory(listener)
 nebula_add_subdirectory(wal)
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

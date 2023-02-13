@@ -283,14 +283,14 @@ TEST_F(ParserTest, SpaceOperation) {
         "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
         "atomic_edge=true)";
     auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
+    EXPECT_FALSE(result.ok()) << result.status();
   }
   {
     std::string query =
         "CREATE SPACE default_space(partition_num=9, replica_factor=3,"
         "atomic_edge=FALSE)";
     auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
+    EXPECT_FALSE(result.ok()) << result.status();
   }
   {
     std::string query = "USE default_space";
@@ -1510,6 +1510,11 @@ TEST_F(ParserTest, AdminOperation) {
   }
   {
     std::string query = "SHOW HOSTS storage";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "SHOW HOSTS storage listener";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -3180,6 +3185,25 @@ TEST_F(ParserTest, SessionTest) {
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ(result.value()->toString(), "SHOW SESSION 123");
   }
+  {
+    std::string query = "KILL SESSION 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  {
+    std::string query = "KILL SESSIONS 123";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "KILL SESSION 123");
+  }
+  // Error session id type will be checked during wrong time
 }
 
 TEST_F(ParserTest, JobTest) {
@@ -3316,6 +3340,27 @@ TEST_F(ParserTest, TestNameLabel) {
     std::string query = "CREATE TAG `person127.0.0.1`(name STRING);";
     auto result = parse(query);
     ASSERT_FALSE(result.ok()) << result.status();
+  }
+}
+
+TEST_F(ParserTest, TestShowSentenceWithPipe) {
+  {
+    std::string query = "SHOW sessions | YIELD $-.SessionId AS sid";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
+TEST_F(ParserTest, TestSpecialWhiteSpaceChar) {
+  {
+    std::string query = "SHOW\xC2\xA0SPACES";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "SHOW \xC2\xA0SPACES\xC2\xA0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
   }
 }
 

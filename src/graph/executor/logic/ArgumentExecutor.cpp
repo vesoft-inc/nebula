@@ -13,23 +13,34 @@ ArgumentExecutor::ArgumentExecutor(const PlanNode *node, QueryContext *qctx)
     : Executor("ArgumentExecutor", node, qctx) {}
 
 folly::Future<Status> ArgumentExecutor::execute() {
+  // MemoryTrackerVerified
   auto *argNode = asNode<Argument>(node());
   auto &alias = argNode->getAlias();
   auto iter = ectx_->getResult(argNode->inputVar()).iter();
   DCHECK(iter != nullptr);
 
+  const auto &successor = successors();
+  auto sucessorExecutor = *successor.begin();
+  bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
+
   DataSet ds;
   ds.colNames = argNode->colNames();
   ds.rows.reserve(iter->size());
-  std::unordered_set<Value> unique;
+  VidHashSet unique;
   for (; iter->valid(); iter->next()) {
-    auto val = iter->getColumn(alias);
-    if (!val.isVertex()) {
+    auto &val = iter->getColumn(alias);
+    if (val.isNull()) {
       continue;
     }
-    if (unique.emplace(val.getVertex().vid).second) {
+    // TODO(jmq) analyze the type of val in the validation phase
+    if (flag && !val.isVertex()) {
+      return Status::Error("Argument only support vertex, but got %s, which is type %s",
+                           val.toString().c_str(),
+                           val.typeName().c_str());
+    }
+    if (unique.emplace(val).second) {
       Row row;
-      row.values.emplace_back(std::move(val));
+      row.values.emplace_back(val);
       ds.rows.emplace_back(std::move(row));
     }
   }

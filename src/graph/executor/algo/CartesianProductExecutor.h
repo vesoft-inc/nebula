@@ -23,9 +23,9 @@ class CartesianProductExecutor : public Executor {
   std::vector<std::vector<std::string>> colNames_;
 };
 
-class BiCartesianProductExecutor : public CartesianProductExecutor {
+class CrossJoinExecutor : public CartesianProductExecutor {
  public:
-  BiCartesianProductExecutor(const PlanNode* node, QueryContext* qctx);
+  CrossJoinExecutor(const PlanNode* node, QueryContext* qctx);
 
   folly::Future<Status> execute() override;
 };

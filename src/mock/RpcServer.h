@@ -33,7 +33,7 @@ struct RpcServer {
     server_->setPort(port);
     thread_ = std::make_unique<thread::NamedThread>(name, [this, name] {
       server_->serve();
-      LOG(INFO) << "The " << name << " server has been stopped";
+      LOG(INFO) << "The " << name << " server has been stopped, port=" << port_;
     });
 
     while (!server_->getServeEventBase() || !server_->getServeEventBase()->isRunning()) {

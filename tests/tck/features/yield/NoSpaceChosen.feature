@@ -88,12 +88,12 @@ Feature: Yield
       """
       YIELD $$.dummyTag.p
       """
-    Then a ExecutionError should be raised at runtime: TagName `dummyTag'  is nonexistent
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `dummyTag`
     When executing query:
       """
       YIELD $^.dummyTag.p
       """
-    Then a ExecutionError should be raised at runtime: TagName `dummyTag'  is nonexistent
+    Then a ExecutionError should be raised at runtime: TagNotFound: TagName `dummyTag`
     When executing query:
       """
       YIELD $-.dummyTag.p

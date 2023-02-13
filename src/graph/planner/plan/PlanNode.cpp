@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "PlanNode.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
@@ -61,6 +60,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ScanVertices";
     case Kind::kScanEdges:
       return "ScanEdges";
+    case Kind::kFulltextIndexScan:
+      return "FulltextIndexScan";
     case Kind::kFilter:
       return "Filter";
     case Kind::kUnion:
@@ -200,8 +201,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowSnapshots";
     case Kind::kSubmitJob:
       return "SubmitJob";
-    case Kind::kLeftJoin:
-      return "LeftJoin";
     case Kind::kInnerJoin:
       return "InnerJoin";
     case Kind::kDeleteVertices:
@@ -278,6 +277,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "SignOutService";
     case Kind::kShowSessions:
       return "ShowSessions";
+    case Kind::kKillSession:
+      return "KillSession";
     case Kind::kUpdateSession:
       return "UpdateSession";
     case Kind::kShowQueries:
@@ -288,23 +289,26 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Traverse";
     case Kind::kAppendVertices:
       return "AppendVertices";
-    case Kind::kBiLeftJoin:
-      return "BiLeftJoin";
-    case Kind::kBiInnerJoin:
-      return "BiInnerJoin";
-    case Kind::kBiCartesianProduct:
-      return "BiCartesianProduct";
+    case Kind::kHashLeftJoin:
+      return "HashLeftJoin";
+    case Kind::kHashInnerJoin:
+      return "HashInnerJoin";
+    case Kind::kCrossJoin:
+      return "CrossJoin";
     case Kind::kShortestPath:
       return "ShortestPath";
     case Kind::kArgument:
       return "Argument";
     case Kind::kRollUpApply:
       return "RollUpApply";
+    case Kind::kPatternApply:
+      return "PatternApply";
     case Kind::kGetDstBySrc:
       return "GetDstBySrc";
       // no default so the compiler will warning when lack
   }
-  LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  DLOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
+  return "Unknown";
 }
 
 std::string PlanNode::toString() const {
@@ -353,6 +357,17 @@ void PlanNode::setInputVar(const std::string& varname, size_t idx) {
   } else {
     symTable->readBy(varname, this);
   }
+}
+
+bool PlanNode::isColumnsIncludedIn(const PlanNode* other) const {
+  const auto& otherColNames = other->colNames();
+  for (auto& colName : colNames()) {
+    auto iter = std::find(otherColNames.begin(), otherColNames.end(), colName);
+    if (iter == otherColNames.end()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::unique_ptr<PlanNodeDescription> PlanNode::explain() const {
@@ -464,7 +479,6 @@ std::unique_ptr<PlanNodeDescription> VariableDependencyNode::explain() const {
 }
 
 void PlanNode::setColNames(std::vector<std::string> cols) {
-  qctx_->symTable()->setAliasGeneratedBy(cols, outputVarPtr()->name);
   outputVarPtr()->colNames = std::move(cols);
 }
 }  // namespace graph

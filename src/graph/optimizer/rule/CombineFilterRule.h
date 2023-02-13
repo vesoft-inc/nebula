@@ -17,7 +17,7 @@ namespace opt {
 //  Benefits:
 //   1. reduces the expression iterated times
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +-----+-----+

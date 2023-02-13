@@ -375,3 +375,144 @@ Feature: Variable length Pattern match (m to n)
       """
     Then the result should be, in any order:
       | v.player.name |
+
+  Scenario: same src and dst for variable length pattern
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..0]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 1   |
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..2]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 5   |
+    When executing query:
+      """
+      MATCH (v)-[e:like*2..3]-(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 48  |
+    When executing query:
+      """
+      MATCH (v)-[e:like*2..3]->(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 4   |
+    When executing query:
+      """
+      MATCH (v)-[e:like*0..]->(v)
+      WHERE id(v) == 'Tim Duncan'
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 13  |
+
+  Scenario: variable length pattern and list expression
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE size([i in e WHERE i.likeness>90 | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 18  |
+
+  @skip
+  # https://github.com/vesoft-inc/nebula/issues/5221
+  Scenario: variable scope test in path pattern
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+      WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+      WHERE size([i in e WHERE (v)-[i:like]-(v2) | i])>1
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+    When executing query:
+      """
+      MATCH (v:player)-[e*2]->(n)
+      WHERE size([n in e WHERE (v{name:'Tim Duncan'})-[n]-()])>3
+      RETURN v
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
+      MATCH (v:player)-[e*2]->()-[n]-()
+      WHERE size([n in e WHERE (v)-[n]-()])>0
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+
+  @skip
+  Scenario: variable pattern in where clause
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e*0..2]-(v2)
+      WHERE NOT (v)-[:like*0..1]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 76  |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e*0..2]-(v2)
+      WHERE NOT (v)-[:like*1..2]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 182 |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE NOT (v)-[:like*0..1]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 56  |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)
+      WHERE NOT (v)-[:like*1..2]-(v2)
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order:
+      | cnt |
+      | 56  |

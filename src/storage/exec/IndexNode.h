@@ -65,7 +65,7 @@ struct InitContext {
  * The functions of IndexNode is divided into three parts.
  *
  * First part is used to build node. This part contains two stages. First, the user needs to make
- * various derived classes and nd organize them into a plan tree(by `children_`).After that, the
+ * various derived classes and organize them into a plan tree(by `children_`).After that, the
  * root node of plan tree needs to call the init function and recursively call the init function of
  * all child nodes, `Initcontext` will pass parameters between nodes to determine the data format or
  * other information to be returned between nodes during execution.Note that `init` needs to be
@@ -87,7 +87,7 @@ class IndexNode {
    * @brief Iterate result of IndexNode::next()
    *
    * There are three options for Result:
-   * - not succeeded. Some error occured during iterating.
+   * - not succeeded. Some error occurred during iterating.
    * - succeeded but there isn't any remain Row.
    * - succeeded and there is a Row.
    */
@@ -287,7 +287,7 @@ class IndexNode {
   bool profileDetail_{false};
 };
 
-/* Defination of inline function */
+/* Definition of inline function */
 inline IndexNode::Result IndexNode::next() {
   beforeNext();
   if (context_->isPlanKilled()) {

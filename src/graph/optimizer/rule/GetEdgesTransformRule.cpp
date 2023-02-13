@@ -54,7 +54,16 @@ bool GetEdgesTransformRule::match(OptContext *ctx, const MatchedResult &matched)
   if (colNames[colSize - 2][0] != '_') {  // src
     return false;
   }
-  if (traverse->stepRange() != nullptr) {
+  const auto &stepRange = traverse->stepRange();
+  if (stepRange.min() != 1 || stepRange.max() != 1) {
+    return false;
+  }
+  // Can't apply vertex filter in GetEdges
+  if (traverse->vFilter() != nullptr) {
+    return false;
+  }
+  // If edge filter is not null, means it's can't be pushed down to storage
+  if (traverse->eFilter() != nullptr) {
     return false;
   }
   for (auto yieldColumn : project->columns()->columns()) {
@@ -91,7 +100,8 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   newProjectGroupNode->dependsOn(newLimitGroup);
   newProject->setInputVar(newLimit->outputVar());
 
-  auto *newScanEdges = GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->count(qctx));
+  auto *newScanEdges =
+      GetEdgesTransformUtils::traverseToScanEdges(traverse, limit->offset() + limit->count(qctx));
   if (newScanEdges == nullptr) {
     return TransformResult::noTransform();
   }

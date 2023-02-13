@@ -17,7 +17,7 @@ namespace opt {
 //  Benefits:
 //   1. Equivalently transform the plan to implement a better topN algorithm at the computing layer
 //
-//  Tranformation:
+//  Transformation:
 //  Before:
 //
 //  +--------+--------+

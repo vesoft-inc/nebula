@@ -9,6 +9,7 @@
 
 namespace nebula {
 namespace graph {
+
 class BatchShortestPath final : public ShortestPathBase {
  public:
   BatchShortestPath(const ShortestPath* node,

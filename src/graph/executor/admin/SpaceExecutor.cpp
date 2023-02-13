@@ -134,15 +134,16 @@ folly::Future<Status> DropSpaceExecutor::execute() {
           qctx()->rctx()->session()->setSpace(std::move(spaceInfo));
         }
         if (!ftIndexes.empty()) {
-          auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-          if (!tsRet.ok()) {
-            LOG(WARNING) << "Get text search clients failed: " << tsRet.status();
+          auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+          if (!esAdapterRet.ok()) {
+            LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
             return Status::OK();
           }
+          auto esAdapter = std::move(esAdapterRet).value();
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::dropTSIndex(tsRet.value(), ftindex);
+            auto ftRet = esAdapter.dropIndex(ftindex);
             if (!ftRet.ok()) {
-              LOG(WARNING) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet.status();
+              LOG(ERROR) << "Drop fulltext index `" << ftindex << "' failed: " << ftRet;
             }
           }
         }
@@ -189,15 +190,16 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
           return resp.status();
         }
         if (!ftIndexes.empty()) {
-          auto tsRet = FTIndexUtils::getTSClients(qctx()->getMetaClient());
-          if (!tsRet.ok()) {
+          auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
+          if (!esAdapterRet.ok()) {
             LOG(WARNING) << "Get text search clients failed";
             return Status::OK();
           }
+          auto esAdapter = std::move(esAdapterRet).value();
           for (const auto &ftindex : ftIndexes) {
-            auto ftRet = FTIndexUtils::clearTSIndex(tsRet.value(), ftindex);
+            auto ftRet = esAdapter.clearIndex(ftindex);
             if (!ftRet.ok()) {
-              LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet.status();
+              LOG(WARNING) << "Clear fulltext index `" << ftindex << "' failed: " << ftRet;
             }
           }
         }
@@ -254,19 +256,11 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
         DataSet dataSet({"Space", "Create Space"});
         Row row;
         row.values.emplace_back(properties.get_space_name());
-        std::string sAtomicEdge{"false"};
-        if (properties.isolation_level_ref().has_value() &&
-            (*properties.isolation_level_ref() == meta::cpp2::IsolationLevel::TOSS)) {
-          sAtomicEdge = "true";
-        }
         auto fmt = properties.comment_ref().has_value()
                        ? "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ") ON %s"
-                         " comment = '%s'"
+                         "charset = %s, collate = %s, vid_type = %s) comment = '%s'"
                        : "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
-                         "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ") ON %s";
+                         "charset = %s, collate = %s, vid_type = %s)";
         auto zoneNames = folly::join(",", properties.get_zone_names());
         if (properties.comment_ref().has_value()) {
           row.values.emplace_back(
@@ -277,8 +271,6 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
                                   SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  sAtomicEdge.c_str(),
-                                  zoneNames.c_str(),
                                   properties.comment_ref()->c_str()));
         } else {
           row.values.emplace_back(
@@ -288,9 +280,7 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
                                   properties.get_replica_factor(),
                                   properties.get_charset_name().c_str(),
                                   properties.get_collate_name().c_str(),
-                                  SchemaUtil::typeToString(properties.get_vid_type()).c_str(),
-                                  sAtomicEdge.c_str(),
-                                  zoneNames.c_str()));
+                                  SchemaUtil::typeToString(properties.get_vid_type()).c_str()));
         }
         dataSet.rows.emplace_back(std::move(row));
         return finish(ResultBuilder()

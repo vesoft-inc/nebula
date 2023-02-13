@@ -98,3 +98,16 @@ install(
     COMPONENT
         meta
 )
+
+install(
+    FILES
+        nebula-storaged-listener.service
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        scripts
+    COMPONENT
+        storage
+)

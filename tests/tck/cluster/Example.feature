@@ -5,7 +5,7 @@
 Feature: Example
 
   Scenario: test with disable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=false
       """
@@ -23,7 +23,7 @@ Feature: Example
     Then an PermissionError should be raised at runtime: No permission to grant/revoke god user.
 
   Scenario: test with enable authorize
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:enable_authorize=true
       """
@@ -41,7 +41,7 @@ Feature: Example
     Then an PermissionError should be raised at runtime: No permission to grant/revoke god user.
 
   Scenario: test with auth type is cloud
-    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged:
+    Given a nebulacluster with 1 graphd and 1 metad and 1 storaged and 0 listener:
       """
       graphd:auth_type=cloud
       """

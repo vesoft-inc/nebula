@@ -176,7 +176,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
       return Status::OK();
     }
     default:
-      LOG(FATAL) << "Unknow plan node kind " << static_cast<int>(l->kind());
+      LOG(FATAL) << "Unknown plan node kind " << static_cast<int>(l->kind());
   }
 }
 

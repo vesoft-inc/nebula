@@ -116,6 +116,9 @@ class GetNeighborsNode : public QueryNode<VertexID> {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
       auto key = upstream_->key();
+      if (isDuplicatedSelfReflectiveEdge(key)) {
+        continue;
+      }
       auto reader = upstream_->reader();
       auto props = context_->props_;
       auto columnIdx = context_->columnIdx_;
@@ -138,6 +141,24 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  bool isDuplicatedSelfReflectiveEdge(const folly::StringPiece& key) {
+    folly::StringPiece srcID = NebulaKeyUtils::getSrcId(context_->vIdLen(), key);
+    folly::StringPiece dstID = NebulaKeyUtils::getDstId(context_->vIdLen(), key);
+    if (srcID == dstID) {
+      // self-reflective edge
+      std::string rank = std::to_string(NebulaKeyUtils::getRank(context_->vIdLen(), key));
+      auto edgeType = NebulaKeyUtils::getEdgeType(context_->vIdLen(), key);
+      edgeType = edgeType > 0 ? edgeType : -edgeType;
+      std::string type = std::to_string(edgeType);
+      std::string localKey = type + rank + srcID.str();
+      if (!visitedSelfReflectiveEdges_.insert(localKey).second) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  std::unordered_set<std::string> visitedSelfReflectiveEdges_;
   RuntimeContext* context_;
   IterateNode<VertexID>* hashJoinNode_;
   IterateNode<VertexID>* upstream_;

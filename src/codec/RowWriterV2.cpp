@@ -7,6 +7,7 @@
 
 #include <cmath>
 
+#include "codec/Common.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
 #include "common/utils/DefaultValueContext.h"
@@ -63,6 +64,8 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
       headerLen_ = 8;
     } else {
       LOG(FATAL) << "Schema version too big";
+      header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
+      headerLen_ = 8;
     }
     buf_.append(&header, 1);
     buf_.append(reinterpret_cast<char*>(&ver), buf_[0] & 0x07);
@@ -137,12 +140,14 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
         break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
+        isSet_[i] = false;
+        continue;
     }
     isSet_[i] = true;
   }
 }
 
-void RowWriterV2::processV2EncodedStr() noexcept {
+void RowWriterV2::processV2EncodedStr() {
   CHECK_EQ(0x08, buf_[0] & 0x18);
   int32_t verBytes = buf_[0] & 0x07;
   SchemaVer ver = 0;
@@ -167,21 +172,21 @@ void RowWriterV2::processV2EncodedStr() noexcept {
   isSet_.resize(schema_->getNumFields(), true);
 }
 
-void RowWriterV2::setNullBit(ssize_t pos) noexcept {
+void RowWriterV2::setNullBit(ssize_t pos) {
   static const uint8_t orBits[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
   size_t offset = headerLen_ + (pos >> 3);
   buf_[offset] = buf_[offset] | orBits[pos & 0x0000000000000007L];
 }
 
-void RowWriterV2::clearNullBit(ssize_t pos) noexcept {
+void RowWriterV2::clearNullBit(ssize_t pos) {
   static const uint8_t andBits[] = {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE};
 
   size_t offset = headerLen_ + (pos >> 3);
   buf_[offset] = buf_[offset] & andBits[pos & 0x0000000000000007L];
 }
 
-bool RowWriterV2::checkNullBit(ssize_t pos) const noexcept {
+bool RowWriterV2::checkNullBit(ssize_t pos) const {
   static const uint8_t bits[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 
   size_t offset = headerLen_ + (pos >> 3);
@@ -189,15 +194,20 @@ bool RowWriterV2::checkNullBit(ssize_t pos) const noexcept {
   return flag != 0;
 }
 
-WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
+WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
   CHECK(!finished_) << "You have called finish()";
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return WriteResult::UNKNOWN_FIELD;
   }
 
   switch (val.type()) {
-    case Value::Type::NULLVALUE:
+    case Value::Type::NULLVALUE: {
+      if (val.isBadNull()) {
+        // Property value never be bad null
+        return WriteResult::TYPE_MISMATCH;
+      }
       return setNull(index);
+    }
     case Value::Type::BOOL:
       return write(index, val.getBool());
     case Value::Type::INT:
@@ -221,13 +231,13 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
   }
 }
 
-WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) noexcept {
+WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) {
   CHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
   return setValue(index, val);
 }
 
-WriteResult RowWriterV2::setNull(ssize_t index) noexcept {
+WriteResult RowWriterV2::setNull(ssize_t index) {
   CHECK(!finished_) << "You have called finish()";
   if (index < 0 || static_cast<size_t>(index) >= schema_->getNumFields()) {
     return WriteResult::UNKNOWN_FIELD;
@@ -244,13 +254,13 @@ WriteResult RowWriterV2::setNull(ssize_t index) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::setNull(const std::string& name) noexcept {
+WriteResult RowWriterV2::setNull(const std::string& name) {
   CHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
   return setNull(index);
 }
 
-WriteResult RowWriterV2::write(ssize_t index, bool v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, bool v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -280,7 +290,7 @@ WriteResult RowWriterV2::write(ssize_t index, bool v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, float v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -337,7 +347,7 @@ WriteResult RowWriterV2::write(ssize_t index, float v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, double v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -396,11 +406,11 @@ WriteResult RowWriterV2::write(ssize_t index, double v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, uint8_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, uint8_t v) {
   return write(index, static_cast<int8_t>(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, int8_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, int8_t v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -447,11 +457,11 @@ WriteResult RowWriterV2::write(ssize_t index, int8_t v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, uint16_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, uint16_t v) {
   return write(index, static_cast<int16_t>(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, int16_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, int16_t v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -501,11 +511,11 @@ WriteResult RowWriterV2::write(ssize_t index, int16_t v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, uint32_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, uint32_t v) {
   return write(index, static_cast<int32_t>(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, int32_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, int32_t v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -568,11 +578,11 @@ WriteResult RowWriterV2::write(ssize_t index, int32_t v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, uint64_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, uint64_t v) {
   return write(index, static_cast<int64_t>(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, int64_t v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -638,15 +648,15 @@ WriteResult RowWriterV2::write(ssize_t index, int64_t v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const std::string& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const std::string& v) {
   return write(index, folly::StringPiece(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const char* v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const char* v) {
   return write(index, folly::StringPiece(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -679,7 +689,7 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
     case PropertyType::FIXED_STRING: {
       // In-place string. If the pass-in string is longer than the pre-defined
       // fixed length, the string will be truncated to the fixed length
-      size_t len = v.size() > field->size() ? field->size() : v.size();
+      size_t len = v.size() > field->size() ? utf8CutSize(v, field->size()) : v.size();
       strncpy(&buf_[offset], v.data(), len);
       if (len < field->size()) {
         memset(&buf_[offset + len], 0, field->size() - len);
@@ -696,7 +706,7 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const Date& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const Date& v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -715,7 +725,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Date& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const Time& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const Time& v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -737,7 +747,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Time& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   int16_t year = v.year;
@@ -769,7 +779,7 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const Duration& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const Duration& v) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
@@ -792,7 +802,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Duration& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
+WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   auto field = schema_->field(index);
   auto geoShape = field->geoShape();
   if (geoShape != meta::cpp2::GeoShape::ANY &&
@@ -803,7 +813,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
   return write(index, folly::StringPiece(wkb));
 }
 
-WriteResult RowWriterV2::checkUnsetFields() noexcept {
+WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     if (!isSet_[i]) {
@@ -854,6 +864,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()
                        << ", default value: " << defVal
                        << ", default value expr: " << field->defaultValue();
+            return WriteResult::TYPE_MISMATCH;
         }
       } else {
         // Set NULL
@@ -869,7 +880,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
   return WriteResult::SUCCEEDED;
 }
 
-std::string RowWriterV2::processOutOfSpace() noexcept {
+std::string RowWriterV2::processOutOfSpace() {
   std::string temp;
   // Reserve enough space to avoid memory re-allocation
   temp.reserve(headerLen_ + numNullBytes_ + schema_->size() + approxStrLen_ + sizeof(int64_t));
@@ -913,7 +924,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
   return temp;
 }
 
-WriteResult RowWriterV2::finish() noexcept {
+WriteResult RowWriterV2::finish() {
   CHECK(!finished_) << "You have called finish()";
 
   // First to check whether all fields are set. If not, to check whether

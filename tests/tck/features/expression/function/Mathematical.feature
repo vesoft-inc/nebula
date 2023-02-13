@@ -3,6 +3,9 @@
 # This source code is licensed under Apache 2.0 License.
 Feature: Mathematical function Expression
 
+  Background:
+    Given a graph with space named "nba"
+
   Scenario: bit functions
     When executing query:
       """

@@ -31,7 +31,7 @@ StatusOr<Geography> WKBReader::read(const std::string &wkb) {
       return readPolygon();
     }
     default:
-      LOG(FATAL)
+      DLOG(FATAL)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
       return Status::Error(
           "Geography shapes other than Point/LineString/Polygon are not currently supported");

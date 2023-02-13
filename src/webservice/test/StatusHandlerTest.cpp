@@ -44,7 +44,7 @@ TEST(StatusHandlerTest, SimpleTest) {
     auto url = "/status";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto httpResp = HttpClient::get(request);
+    auto httpResp = HttpClient::instance().get(request);
     ASSERT_EQ(httpResp.curlCode, 0);
     auto json = folly::parseJson(httpResp.body);
     LOG(INFO) << folly::toPrettyJson(json);
@@ -56,7 +56,7 @@ TEST(StatusHandlerTest, SimpleTest) {
     auto url = "";
     auto request =
         folly::stringPrintf("http://%s:%d%s", FLAGS_ws_ip.c_str(), FLAGS_ws_http_port, url);
-    auto httpResp = HttpClient::get(request);
+    auto httpResp = HttpClient::instance().get(request);
     ASSERT_EQ(httpResp.curlCode, 0);
     auto json = folly::parseJson(httpResp.body);
     ASSERT_EQ("running", json["status"].asString());

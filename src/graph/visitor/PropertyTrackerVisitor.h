@@ -30,6 +30,8 @@ struct PropertyTracker {
   void insertVertexProp(const std::string& name, TagID tagId, const std::string& propName);
   void insertEdgeProp(const std::string& name, EdgeType type, const std::string& propName);
   void insertCols(const std::string& name);
+
+  std::string toString() const;
 };
 
 class PropertyTrackerVisitor : public ExprVisitorImpl {
@@ -75,7 +77,7 @@ class PropertyTrackerVisitor : public ExprVisitorImpl {
   void visit(AggregateExpression* expr) override;
 
   const QueryContext* qctx_{nullptr};
-  const int unKnowType_{0};
+  const int unknownType_{0};
   GraphSpaceID space_;
   PropertyTracker& propsUsed_;
   std::string entityAlias_;

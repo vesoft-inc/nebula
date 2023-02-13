@@ -159,8 +159,8 @@ class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
 
-  virtual void onSpaceAdded(GraphSpaceID spaceId, bool isListener = false) = 0;
-  virtual void onSpaceRemoved(GraphSpaceID spaceId, bool isListener = false) = 0;
+  virtual void onSpaceAdded(GraphSpaceID spaceId) = 0;
+  virtual void onSpaceRemoved(GraphSpaceID spaceId) = 0;
   virtual void onSpaceOptionUpdated(
       GraphSpaceID spaceId, const std::unordered_map<std::string, std::string>& options) = 0;
   virtual void onPartAdded(const PartHosts& partHosts) = 0;
@@ -169,12 +169,15 @@ class MetaChangedListener {
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;
   virtual void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) = 0;
-  virtual void onListenerAdded(GraphSpaceID spaceId,
-                               PartitionID partId,
-                               const ListenerHosts& listenerHosts) = 0;
-  virtual void onListenerRemoved(GraphSpaceID spaceId,
-                                 PartitionID partId,
-                                 cpp2::ListenerType type) = 0;
+  virtual void onListenerSpaceAdded(GraphSpaceID spaceId, cpp2::ListenerType type) = 0;
+  virtual void onListenerSpaceRemoved(GraphSpaceID spaceId, cpp2::ListenerType type) = 0;
+  virtual void onListenerPartAdded(GraphSpaceID spaceId,
+                                   PartitionID partId,
+                                   cpp2::ListenerType type,
+                                   const std::vector<HostAddr>& peers) = 0;
+  virtual void onListenerPartRemoved(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     cpp2::ListenerType type) = 0;
   virtual void onCheckRemoteListeners(GraphSpaceID spaceId,
                                       PartitionID partId,
                                       const std::vector<HostAddr>& remoteListeners) = 0;
@@ -439,12 +442,16 @@ class MetaClient : public BaseMetaClient {
   StatusOr<std::vector<std::pair<PartitionID, cpp2::ListenerType>>>
   getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAddr& host);
 
+  // Given host, get the all peers info. This function is used for listener to start up related
+  // listener part
   StatusOr<ListenersMap> getListenersByHostFromCache(const HostAddr& host);
 
+  // Get listener address of given (spaceId + partId + type)
   StatusOr<HostAddr> getListenerHostsBySpacePartType(GraphSpaceID spaceId,
                                                      PartitionID partId,
                                                      cpp2::ListenerType type);
 
+  // Get all listener type + address of given (spaceId + partId)
   StatusOr<std::vector<RemoteListenerInfo>> getListenerHostTypeBySpacePartType(GraphSpaceID spaceId,
                                                                                PartitionID partId);
 
@@ -473,8 +480,12 @@ class MetaClient : public BaseMetaClient {
   StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> getFTIndexBySpaceFromCache(
       GraphSpaceID spaceId);
 
-  StatusOr<std::pair<std::string, cpp2::FTIndex>> getFTIndexBySpaceSchemaFromCache(
-      GraphSpaceID spaceId, int32_t schemaId);
+  StatusOr<std::pair<std::string, cpp2::FTIndex>> getFTIndexFromCache(GraphSpaceID spaceId,
+                                                                      int32_t schemaId,
+                                                                      const std::string& field);
+
+  StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> getFTIndexFromCache(GraphSpaceID spaceId,
+                                                                               int32_t schemaId);
 
   StatusOr<cpp2::FTIndex> getFTIndexByNameFromCache(GraphSpaceID spaceId, const std::string& name);
 
@@ -490,7 +501,8 @@ class MetaClient : public BaseMetaClient {
 
   folly::Future<StatusOr<cpp2::GetSessionResp>> getSession(SessionID sessionId);
 
-  folly::Future<StatusOr<cpp2::ExecResp>> removeSession(SessionID sessionId);
+  folly::Future<StatusOr<cpp2::RemoveSessionResp>> removeSessions(
+      const std::vector<SessionID>& sessionIds);
 
   folly::Future<StatusOr<cpp2::ExecResp>> killQuery(
       std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries);
@@ -762,7 +774,7 @@ class MetaClient : public BaseMetaClient {
   std::atomic<int64_t> metadLastUpdateTime_{0};
 
   int64_t metaServerVersion_{-1};
-  static constexpr int64_t EXPECT_META_VERSION = 3;
+  static constexpr int64_t EXPECT_META_VERSION = 4;
 
   // leadersLock_ is used to protect leadersInfo
   folly::SharedMutex leadersLock_;

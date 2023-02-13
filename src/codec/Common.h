@@ -77,5 +77,35 @@ inline std::string toHexStr(folly::StringPiece str) {
   return buf;
 }
 
+// If v is longer than maxLen, return a safepoint to be cut which contains legal utf-8 characters,
+// and make sure the returned size is less than or equal to maxLen
+inline size_t utf8CutSize(folly::StringPiece v, size_t maxLen) {
+  DCHECK_GT(v.size(), maxLen);
+  size_t len = 0;
+  size_t curLen = 0;  // current length of utf-8 character
+  while (len < maxLen) {
+    auto tmp = static_cast<unsigned char>(v[len]);
+    if (tmp >= 0xFC) {
+      curLen = 6;
+    } else if (tmp >= 0xF8) {
+      curLen = 5;
+    } else if (tmp >= 0xF0) {
+      curLen = 4;
+    } else if (tmp >= 0xE0) {
+      curLen = 3;
+    } else if (tmp >= 0xC0) {
+      curLen = 2;
+    } else {
+      curLen = 1;
+    }
+    if (len + curLen <= maxLen) {
+      len += curLen;
+    } else {
+      break;
+    }
+  }
+  return len;
+}
+
 }  // namespace nebula
 #endif  // CODEC_COMMON_H_

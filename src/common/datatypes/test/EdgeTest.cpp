@@ -104,4 +104,43 @@ TEST(Edge, hashEdge) {
   EXPECT_NE(edge1, edge5);
 }
 
+TEST(Edge, id) {
+  {
+    Edge edge1(0, 1, 1, "like", 100, {});
+
+    Edge edge2(0, 1, 1, "like", 100, {});
+    EXPECT_EQ(edge1.id(), edge2.id());
+
+    Edge edge3(1, 1, 1, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge3.id());
+
+    Edge edge4(0, 2, 1, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge4.id());
+
+    Edge edge5(0, 1, -1, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge5.id());
+
+    Edge edge6(0, 1, 1, "like", 101, {});
+    EXPECT_NE(edge1.id(), edge6.id());
+  }
+  {
+    Edge edge1("aaa", "bbb", 1, "like", 100, {});
+
+    Edge edge2("aaa", "bbb", 1, "like", 100, {});
+    EXPECT_EQ(edge1.id(), edge2.id());
+
+    Edge edge3("aab", "bbb", 1, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge3.id());
+
+    Edge edge4("aaa", "bba", 1, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge4.id());
+
+    Edge edge5("aaa", "bbb", 2, "like", 100, {});
+    EXPECT_NE(edge1.id(), edge5.id());
+
+    Edge edge6("aaa", "bbb", 1, "like", 99, {});
+    EXPECT_NE(edge1.id(), edge6.id());
+  }
+}
+
 }  // namespace nebula

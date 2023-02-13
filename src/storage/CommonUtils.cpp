@@ -5,6 +5,8 @@
 
 #include "storage/CommonUtils.h"
 
+#include "storage/exec/QueryUtils.h"
+
 namespace nebula {
 namespace storage {
 
@@ -12,8 +14,12 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                                          RowReader* reader,
                                          const std::string& ttlCol,
                                          int64_t ttlDuration) {
-  auto v = reader->getValueByName(ttlCol);
-  return checkDataExpiredForTTL(schema, v, ttlCol, ttlDuration);
+  auto v = QueryUtils::readValue(reader, ttlCol, schema);
+  if (!v.ok()) {
+    VLOG(3) << "failed to read ttl property";
+    return false;
+  }
+  return checkDataExpiredForTTL(schema, v.value(), ttlCol, ttlDuration);
 }
 
 bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,

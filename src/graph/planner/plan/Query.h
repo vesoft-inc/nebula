@@ -346,6 +346,28 @@ class GetVertices : public Explore {
     return props_.get();
   }
 
+  bool noNeedFetchProp() const {
+    if (props_.get() == nullptr) {
+      return true;
+    }
+    auto& vprops = *props_;
+    for (const auto& vprop : vprops) {
+      auto& props = vprop.get_props();
+      if (props.size() > 1) {
+        return false;
+      }
+      if (props.empty()) {
+        continue;
+      }
+      DCHECK_EQ(props.size(), 1);
+      auto& prop = props.front();
+      if (prop.compare("_tag")) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   const std::vector<Expr>* exprs() const {
     return exprs_.get();
   }
@@ -505,7 +527,6 @@ class IndexScan : public Explore {
                          std::vector<std::string> returnCols = {},
                          bool isEdge = false,
                          int32_t schemaId = -1,
-                         bool isEmptyResultSet = false,
                          bool dedup = false,
                          std::vector<storage::cpp2::OrderBy> orderBy = {},
                          int64_t limit = std::numeric_limits<int64_t>::max(),
@@ -517,7 +538,6 @@ class IndexScan : public Explore {
                                                   std::move(returnCols),
                                                   isEdge,
                                                   schemaId,
-                                                  isEmptyResultSet,
                                                   dedup,
                                                   std::move(orderBy),
                                                   limit,
@@ -544,16 +564,8 @@ class IndexScan : public Explore {
     schemaId_ = schema;
   }
 
-  bool isEmptyResultSet() const {
-    return isEmptyResultSet_;
-  }
-
   YieldColumns* yieldColumns() const {
     return yieldColumns_;
-  }
-
-  void setEmptyResultSet(bool isEmptyResultSet) {
-    isEmptyResultSet_ = isEmptyResultSet;
   }
 
   void setIndexQueryContext(std::vector<IndexQueryContext> contexts) {
@@ -584,7 +596,6 @@ class IndexScan : public Explore {
             std::vector<std::string>&& returnCols,
             bool isEdge,
             int32_t schemaId,
-            bool isEmptyResultSet,
             bool dedup,
             std::vector<storage::cpp2::OrderBy> orderBy,
             int64_t limit,
@@ -595,7 +606,6 @@ class IndexScan : public Explore {
     returnCols_ = std::move(returnCols);
     isEdge_ = isEdge;
     schemaId_ = schemaId;
-    isEmptyResultSet_ = isEmptyResultSet;
   }
 
   void cloneMembers(const IndexScan&);
@@ -606,9 +616,46 @@ class IndexScan : public Explore {
   bool isEdge_;
   int32_t schemaId_;
 
-  // TODO(yee): Generate special plan for this scenario
-  bool isEmptyResultSet_{false};
   YieldColumns* yieldColumns_;
+};
+
+class FulltextIndexScan : public Explore {
+ public:
+  static FulltextIndexScan* make(QueryContext* qctx,
+                                 const std::string& index,
+                                 TextSearchExpression* searchExpr,
+                                 bool isEdge) {
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr, isEdge);
+  }
+  const std::string& index() const {
+    return index_;
+  }
+
+  TextSearchExpression* searchExpression() const {
+    return searchExpr_;
+  }
+
+  bool isEdge() const {
+    return isEdge_;
+  }
+
+  PlanNode* clone() const override;
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  friend ObjectPool;
+  FulltextIndexScan(QueryContext* qctx,
+                    const std::string& index,
+                    TextSearchExpression* searchExpr,
+                    bool isEdge)
+      : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
+        index_(index),
+        searchExpr_(searchExpr),
+        isEdge_(isEdge) {}
+  std::string index_;
+  TextSearchExpression* searchExpr_{nullptr};
+  bool isEdge_{false};
 };
 
 // Scan vertices
@@ -1300,7 +1347,7 @@ class DataCollect final : public VariableDependencyNode {
 };
 
 // Join two result set based on the keys
-// We have LeftJoin and InnerJoin now.
+// We have InnerJoin now.
 class Join : public SingleDependencyNode {
  public:
   const std::pair<std::string, int64_t>& leftVar() const {
@@ -1356,45 +1403,6 @@ class Join : public SingleDependencyNode {
   std::pair<std::string, int64_t> rightVar_;
   std::vector<Expression*> hashKeys_;
   std::vector<Expression*> probeKeys_;
-};
-
-// Left join
-class LeftJoin final : public Join {
- public:
-  static LeftJoin* make(QueryContext* qctx,
-                        PlanNode* input,
-                        std::pair<std::string, int64_t> leftVar,
-                        std::pair<std::string, int64_t> rightVar,
-                        std::vector<Expression*> hashKeys = {},
-                        std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<LeftJoin>(qctx,
-                                                 input,
-                                                 std::move(leftVar),
-                                                 std::move(rightVar),
-                                                 std::move(hashKeys),
-                                                 std::move(probeKeys));
-  }
-
-  PlanNode* clone() const override;
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
- private:
-  friend ObjectPool;
-  LeftJoin(QueryContext* qctx,
-           PlanNode* input,
-           std::pair<std::string, int64_t> leftVar,
-           std::pair<std::string, int64_t> rightVar,
-           std::vector<Expression*> hashKeys,
-           std::vector<Expression*> probeKeys)
-      : Join(qctx,
-             Kind::kLeftJoin,
-             input,
-             std::move(leftVar),
-             std::move(rightVar),
-             std::move(hashKeys),
-             std::move(probeKeys)) {}
-
-  void cloneMembers(const LeftJoin&);
 };
 
 // Inner join
@@ -1534,13 +1542,17 @@ class Traverse final : public GetNeighbors {
 
   Traverse* clone() const override;
 
-  MatchStepRange* stepRange() const {
+  MatchStepRange stepRange() const {
     return range_;
+  }
+
+  bool isOneStep() const {
+    return range_.min() == 1 && range_.max() == 1;
   }
 
   // Contains zero step
   bool zeroStep() const {
-    return range_ != nullptr && range_->min() == 0;
+    return range_.min() == 0;
   }
 
   Expression* vFilter() const {
@@ -1555,7 +1567,18 @@ class Traverse final : public GetNeighbors {
     return trackPrevPath_;
   }
 
-  void setStepRange(MatchStepRange* range) {
+  const std::string& nodeAlias() const {
+    auto& cols = this->colNames();
+    DCHECK_GE(cols.size(), 2);
+    return cols[cols.size() - 2];
+  }
+
+  const std::string& edgeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
+  }
+
+  void setStepRange(const MatchStepRange& range) {
     range_ = range;
   }
 
@@ -1579,6 +1602,14 @@ class Traverse final : public GetNeighbors {
     firstStepFilter_ = filter;
   }
 
+  Expression* tagFilter() const {
+    return tagFilter_;
+  }
+
+  void setTagFilter(Expression* tagFilter) {
+    tagFilter_ = tagFilter;
+  }
+
  private:
   friend ObjectPool;
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
@@ -1589,12 +1620,13 @@ class Traverse final : public GetNeighbors {
  private:
   void cloneMembers(const Traverse& g);
 
-  MatchStepRange* range_{nullptr};
+  MatchStepRange range_;
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
   bool trackPrevPath_{true};
   // Push down filter in first step
   Expression* firstStepFilter_{nullptr};
+  Expression* tagFilter_{nullptr};
 };
 
 // Append vertices to a path.
@@ -1616,6 +1648,11 @@ class AppendVertices final : public GetVertices {
 
   bool trackPrevPath() const {
     return trackPrevPath_;
+  }
+
+  const std::string nodeAlias() const {
+    DCHECK(!this->colNames().empty());
+    return this->colNames().back();
   }
 
   void setVertexFilter(Expression* vFilter) {
@@ -1649,7 +1686,7 @@ class AppendVertices final : public GetVertices {
 };
 
 // Binary Join that joins two results from two inputs.
-class BiJoin : public BinaryInputNode {
+class HashJoin : public BinaryInputNode {
  public:
   const std::vector<Expression*>& hashKeys() const {
     return hashKeys_;
@@ -1672,14 +1709,14 @@ class BiJoin : public BinaryInputNode {
   void accept(PlanNodeVisitor* visitor) override;
 
  protected:
-  BiJoin(QueryContext* qctx,
-         Kind kind,
-         PlanNode* left,
-         PlanNode* right,
-         std::vector<Expression*> hashKeys,
-         std::vector<Expression*> probeKeys);
+  HashJoin(QueryContext* qctx,
+           Kind kind,
+           PlanNode* left,
+           PlanNode* right,
+           std::vector<Expression*> hashKeys,
+           std::vector<Expression*> probeKeys);
 
-  void cloneMembers(const BiJoin&);
+  void cloneMembers(const HashJoin&);
 
  protected:
   std::vector<Expression*> hashKeys_;
@@ -1687,14 +1724,14 @@ class BiJoin : public BinaryInputNode {
 };
 
 // Left join
-class BiLeftJoin final : public BiJoin {
+class HashLeftJoin final : public HashJoin {
  public:
-  static BiLeftJoin* make(QueryContext* qctx,
-                          PlanNode* left,
-                          PlanNode* right,
-                          std::vector<Expression*> hashKeys = {},
-                          std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<BiLeftJoin>(
+  static HashLeftJoin* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            std::vector<Expression*> hashKeys = {},
+                            std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->makeAndAdd<HashLeftJoin>(
         qctx, left, right, std::move(hashKeys), std::move(probeKeys));
   }
 
@@ -1703,25 +1740,26 @@ class BiLeftJoin final : public BiJoin {
 
  private:
   friend ObjectPool;
-  BiLeftJoin(QueryContext* qctx,
-             PlanNode* left,
-             PlanNode* right,
-             std::vector<Expression*> hashKeys,
-             std::vector<Expression*> probeKeys)
-      : BiJoin(qctx, Kind::kBiLeftJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+  HashLeftJoin(QueryContext* qctx,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> hashKeys,
+               std::vector<Expression*> probeKeys)
+      : HashJoin(
+            qctx, Kind::kHashLeftJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
-  void cloneMembers(const BiLeftJoin&);
+  void cloneMembers(const HashLeftJoin&);
 };
 
 // Inner join
-class BiInnerJoin final : public BiJoin {
+class HashInnerJoin final : public HashJoin {
  public:
-  static BiInnerJoin* make(QueryContext* qctx,
-                           PlanNode* left,
-                           PlanNode* right,
-                           std::vector<Expression*> hashKeys = {},
-                           std::vector<Expression*> probeKeys = {}) {
-    return qctx->objPool()->makeAndAdd<BiInnerJoin>(
+  static HashInnerJoin* make(QueryContext* qctx,
+                             PlanNode* left,
+                             PlanNode* right,
+                             std::vector<Expression*> hashKeys = {},
+                             std::vector<Expression*> probeKeys = {}) {
+    return qctx->objPool()->makeAndAdd<HashInnerJoin>(
         qctx, left, right, std::move(hashKeys), std::move(probeKeys));
   }
 
@@ -1730,14 +1768,15 @@ class BiInnerJoin final : public BiJoin {
 
  private:
   friend ObjectPool;
-  BiInnerJoin(QueryContext* qctx,
-              PlanNode* left,
-              PlanNode* right,
-              std::vector<Expression*> hashKeys,
-              std::vector<Expression*> probeKeys)
-      : BiJoin(qctx, Kind::kBiInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
+  HashInnerJoin(QueryContext* qctx,
+                PlanNode* left,
+                PlanNode* right,
+                std::vector<Expression*> hashKeys,
+                std::vector<Expression*> probeKeys)
+      : HashJoin(
+            qctx, Kind::kHashInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
-  void cloneMembers(const BiInnerJoin&);
+  void cloneMembers(const HashInnerJoin&);
 };
 
 // Roll Up Apply two results from two inputs.
@@ -1785,6 +1824,48 @@ class RollUpApply : public BinaryInputNode {
   std::vector<Expression*> compareCols_;
   // Collect column to List
   InputPropertyExpression* collectCol_;
+};
+
+// PatternApply only used by pattern predicate for now
+class PatternApply : public BinaryInputNode {
+ public:
+  static PatternApply* make(QueryContext* qctx,
+                            PlanNode* left,
+                            PlanNode* right,
+                            std::vector<Expression*> keyCols,
+                            bool isAntiPred = false) {
+    return qctx->objPool()->makeAndAdd<PatternApply>(
+        qctx, Kind::kPatternApply, left, right, std::move(keyCols), isAntiPred);
+  }
+
+  const std::vector<Expression*>& keyCols() const {
+    return keyCols_;
+  }
+
+  bool isAntiPredicate() const {
+    return isAntiPred_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ protected:
+  friend ObjectPool;
+  PatternApply(QueryContext* qctx,
+               Kind kind,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> keyCols,
+               bool isAntiPred);
+
+  void cloneMembers(const PatternApply&);
+
+ protected:
+  // Common columns of subplans on both sides
+  std::vector<Expression*> keyCols_;
+  bool isAntiPred_{false};
 };
 
 }  // namespace graph

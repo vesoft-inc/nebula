@@ -4,7 +4,7 @@
 Feature: Test sessions
 
   Background:
-    Given a nebulacluster with 3 graphd and 1 metad and 1 storaged
+    Given a nebulacluster with 3 graphd and 1 metad and 1 storaged and 0 listener
 
   @distonly
   Scenario: Show sessions

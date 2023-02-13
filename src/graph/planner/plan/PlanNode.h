@@ -27,6 +27,7 @@ class PlanNode {
     kGetNeighbors,
     kGetVertices,
     kGetEdges,
+    kGetDstBySrc,
     kTraverse,
     kAppendVertices,
     kShortestPath,
@@ -42,6 +43,8 @@ class PlanNode {
     kEdgeIndexRangeScan,
     kScanVertices,
     kScanEdges,
+    kFulltextIndexScan,
+
     // ------------------
     kFilter,
     kUnion,
@@ -63,19 +66,19 @@ class PlanNode {
     kCartesianProduct,
     kSubgraph,
     kDataCollect,
-    kLeftJoin,
     kInnerJoin,
-    kBiLeftJoin,
-    kBiInnerJoin,
-    kBiCartesianProduct,
+    kHashLeftJoin,
+    kHashInnerJoin,
+    kCrossJoin,
     kRollUpApply,
+    kPatternApply,
     kArgument,
 
     // Logic
-    kStart,
     kSelect,
     kLoop,
     kPassThrough,
+    kStart,
 
     // schema related
     kCreateSpace,
@@ -177,15 +180,14 @@ class PlanNode {
     kSignOutService,
     kShowSessions,
     kUpdateSession,
+    kKillSession,
 
     kShowQueries,
     kKillQuery,
-
-    kGetDstBySrc,
   };
 
   bool isQueryNode() const {
-    return kind_ < Kind::kStart;
+    return kind_ <= Kind::kStart;
   }
 
   // Describe plan node
@@ -304,6 +306,8 @@ class PlanNode {
     return static_cast<const T*>(this);
   }
 
+  bool isColumnsIncludedIn(const PlanNode* other) const;
+
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
 
@@ -345,7 +349,7 @@ class SingleDependencyNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    DLOG(FATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 
@@ -367,7 +371,7 @@ class SingleInputNode : public SingleDependencyNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    DLOG(FATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 
@@ -417,7 +421,7 @@ class BinaryInputNode : public PlanNode {
   }
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method for " << kind_;
+    DLOG(FATAL) << "Shouldn't call the unimplemented method for " << kind_;
     return nullptr;
   }
 
@@ -439,7 +443,7 @@ class VariableDependencyNode : public PlanNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
   PlanNode* clone() const override {
-    LOG(FATAL) << "Shouldn't call the unimplemented method";
+    DLOG(FATAL) << "Shouldn't call the unimplemented method";
     return nullptr;
   }
 

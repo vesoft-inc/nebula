@@ -24,6 +24,19 @@ PushFilterDownProjectRule::PushFilterDownProjectRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
+bool PushFilterDownProjectRule::checkColumnExprKind(const Expression* expr) {
+  if (graph::ExpressionUtils::isPropertyExpr(expr)) {
+    return true;
+  }
+  if (expr->kind() == Expression::Kind::kSubscript) {
+    auto subscriptExpr = static_cast<const SubscriptExpression*>(expr);
+    if (graph::ExpressionUtils::isPropertyExpr(subscriptExpr->left())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const Pattern& PushFilterDownProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
                                            {Pattern::create(graph::PlanNode::Kind::kProject)});
@@ -48,28 +61,26 @@ StatusOr<OptRule::TransformResult> PushFilterDownProjectRule::transform(
   // Pick the passthrough expression items to avoid the expression overhead after filter pushdown
   auto picker = [&projColumns, &projColNames, &rewriteMap](const Expression* e) -> bool {
     auto varProps = graph::ExpressionUtils::collectAll(e,
-                                                       {Expression::Kind::kTagProperty,
-                                                        Expression::Kind::kEdgeProperty,
-                                                        Expression::Kind::kInputProperty,
-                                                        Expression::Kind::kVarProperty,
-                                                        Expression::Kind::kDstProperty,
-                                                        Expression::Kind::kSrcProperty});
+                                                       {
+                                                           Expression::Kind::kTagProperty,
+                                                           Expression::Kind::kEdgeProperty,
+                                                           Expression::Kind::kInputProperty,
+                                                           Expression::Kind::kVarProperty,
+                                                           Expression::Kind::kDstProperty,
+                                                           Expression::Kind::kSrcProperty,
+                                                       });
     if (varProps.empty()) {
       return false;
-    }
-    std::vector<std::string> propNames;
-    for (auto* expr : varProps) {
-      DCHECK(graph::ExpressionUtils::isPropertyExpr(expr));
-      propNames.emplace_back(static_cast<const PropertyExpression*>(expr)->prop());
     }
     for (size_t i = 0; i < projColNames.size(); ++i) {
       auto column = projColumns[i];
       auto colName = projColNames[i];
-      auto iter = std::find_if(propNames.begin(), propNames.end(), [&colName](const auto& name) {
-        return !colName.compare(name);
+      auto iter = std::find_if(varProps.begin(), varProps.end(), [&colName](const auto* expr) {
+        DCHECK(graph::ExpressionUtils::isPropertyExpr(expr));
+        return !colName.compare(static_cast<const PropertyExpression*>(expr)->prop());
       });
-      if (iter == propNames.end()) continue;
-      if (graph::ExpressionUtils::isPropertyExpr(column->expr())) {
+      if (iter == varProps.end()) continue;
+      if (checkColumnExprKind(column->expr())) {
         rewriteMap[colName] = column->expr();
         continue;
       } else {

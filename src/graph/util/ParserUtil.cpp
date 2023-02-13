@@ -62,7 +62,7 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
         return static_cast<Expression *>(mpp);
       } break;
       default:
-        LOG(FATAL) << "Unexpected expression kind: " << expr->kind();
+        DLOG(FATAL) << "Unexpected expression kind: " << expr->kind();
     }
     return ret;
   };

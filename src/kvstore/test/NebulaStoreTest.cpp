@@ -1149,7 +1149,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   for (auto partId = 1; partId <= 6; partId++) {
     store->removePart(1, partId);
   }
-  store->removeSpace(1, false);
+  store->removeSpace(1);
   EXPECT_EQ(1, store->spaces_.size());
   CHECK(!boost::filesystem::exists(space1));
   CHECK(boost::filesystem::exists(space2));
@@ -1159,7 +1159,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   for (auto partId = 1; partId <= 6; partId++) {
     store->removePart(2, partId);
   }
-  store->removeSpace(2, false);
+  store->removeSpace(2);
   EXPECT_EQ(0, store->spaces_.size());
   CHECK(!boost::filesystem::exists(space1));
   CHECK(boost::filesystem::exists(space2));

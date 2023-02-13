@@ -27,21 +27,10 @@ StatusOr<SubPlan> UnwindClausePlanner::transform(CypherClauseContextBase* clause
   SubPlan subPlan;
   // Build plan for pattern from expression
   for (auto& path : unwindClauseCtx->paths) {
-    auto pathPlan =
-        std::make_unique<MatchPathPlanner>()->transform(unwindClauseCtx->qctx,
-                                                        unwindClauseCtx->space.id,
-                                                        nullptr,
-                                                        unwindClauseCtx->aliasesAvailable,
-                                                        {},
-                                                        path);
-    NG_RETURN_IF_ERROR(pathPlan);
-    auto pathplan = std::move(pathPlan).value();
-    subPlan = SegmentsConnector::rollUpApply(unwindClauseCtx->qctx,
-                                             subPlan,
-                                             unwindClauseCtx->inputColNames,
-                                             pathplan,
-                                             path.compareVariables,
-                                             path.collectVariable);
+    auto status = MatchPathPlanner(unwindClauseCtx, path).transform(nullptr, {});
+    NG_RETURN_IF_ERROR(status);
+    subPlan =
+        SegmentsConnector::rollUpApply(unwindClauseCtx, subPlan, std::move(status).value(), path);
   }
 
   if (subPlan.root != nullptr) {

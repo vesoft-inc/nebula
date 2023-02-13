@@ -5,6 +5,7 @@
 
 #include "storage/GraphStorageServiceHandler.h"
 
+#include "common/memory/MemoryTracker.h"
 #include "storage/index/LookupProcessor.h"
 #include "storage/kv/GetProcessor.h"
 #include "storage/kv/PutProcessor.h"
@@ -25,9 +26,25 @@
 #include "storage/transaction/ChainDeleteEdgesGroupProcessor.h"
 #include "storage/transaction/ChainUpdateEdgeLocalProcessor.h"
 
-#define RETURN_FUTURE(processor)   \
-  auto f = processor->getFuture(); \
-  processor->process(req);         \
+//  Processor::process's root memory check is turn on here.
+//  if the call stack in current thread,
+//    Processors DO NOT NEED handle error in their logic.
+//  else (do some work in another thread)
+//    Processors need handle error in that thread by itself
+#define RETURN_FUTURE(processor)             \
+  auto f = processor->getFuture();           \
+  try {                                      \
+    processor->process(req);                 \
+  } catch (std::bad_alloc & e) {             \
+    LOG(ERROR) << processor << " bad_alloc"; \
+    processor->memoryExceeded();             \
+    processor->onError();                    \
+  } catch (std::exception & e) {             \
+    LOG(ERROR) << e.what();                  \
+    processor->onError();                    \
+  } catch (...) {                            \
+    processor->onError();                    \
+  }                                          \
   return f;
 
 namespace nebula {
@@ -158,9 +175,17 @@ folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
 
 folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
     const cpp2::GetUUIDReq&) {
-  LOG(FATAL) << "Unsupported in version 2.0";
-  cpp2::GetUUIDResp ret;
-  return ret;
+  DLOG(FATAL) << "Unsupported in version 2.0";
+
+  cpp2::GetUUIDResp resp;
+  cpp2::ResponseCommon result;
+  std::vector<cpp2::PartitionResult> partRetCode;
+  cpp2::PartitionResult thriftRet;
+  thriftRet.code_ref() = nebula::cpp2::ErrorCode::E_UNSUPPORTED;
+  partRetCode.emplace_back(std::move(thriftRet));
+  result.failed_parts_ref() = partRetCode;
+  resp.result_ref() = result;
+  return resp;
 }
 
 folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainAddEdges(

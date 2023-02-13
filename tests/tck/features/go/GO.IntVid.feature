@@ -512,7 +512,7 @@ Feature: IntegerVid Go  Sentence
       | "Chris Paul" | "Dwyane Wade"     | "Carmelo Anthony"   |
 
   @skip
-  Scenario: Integer Vid all prop(reson = $-.* over * $var.* not implement)
+  Scenario: Integer Vid all prop(reason = $-.* over * $var.* not implement)
     When executing query:
       """
       GO FROM hash('Tim Duncan'), hash('Chris Paul') OVER like YIELD $^.player.name AS name, like._dst AS id

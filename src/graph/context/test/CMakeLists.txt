@@ -27,7 +27,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:graph_obj>
-    $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:util_obj>

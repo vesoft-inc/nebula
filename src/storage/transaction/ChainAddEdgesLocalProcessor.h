@@ -128,7 +128,7 @@ class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
   /**
    * @brief check is an error code belongs to kv store
    *        we can do retry / recover if we meet a kv store error
-   *        but if we meet a logical error (retry will alwasy failed)
+   *        but if we meet a logical error (retry will always failed)
    *        we should return error directly.
    * @param code
    * @return true

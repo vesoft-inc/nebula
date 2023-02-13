@@ -53,7 +53,7 @@ TEST_F(TestSegmentId, TestConcurrencySmallStep) {
   }
 }
 
-// check the result (in the case of no fetchSegment() by useing big step)
+// check the result (in the case of no fetchSegment() by using big step)
 TEST_F(TestSegmentId, TestConcurrencyBigStep) {
   SegmentId generator = SegmentId(&metaClient_, threadManager_.get());
   Status status = generator.init(120000000);

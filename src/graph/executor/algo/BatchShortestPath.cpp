@@ -9,12 +9,16 @@
 #include "sys/sysinfo.h"
 
 using nebula::storage::StorageClient;
+
 DECLARE_uint32(num_path_thread);
+
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
                                                  const HashSet& endVids,
                                                  DataSet* result) {
+  // MemoryTrackerVerified
   size_t rowSize = init(startVids, endVids);
   std::vector<folly::Future<Status>> futures;
   futures.reserve(rowSize);
@@ -22,18 +26,18 @@ folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
     resultDs_[rowNum].colNames = pathNode_->colNames();
     futures.emplace_back(shortestPath(rowNum, 1));
   }
-  return folly::collect(futures)
-      .via(qctx_->rctx()->runner())
-      .thenValue([this, result](auto&& resps) {
-        for (auto& resp : resps) {
-          NG_RETURN_IF_ERROR(resp);
-        }
-        result->colNames = pathNode_->colNames();
-        for (auto& ds : resultDs_) {
-          result->append(std::move(ds));
-        }
-        return Status::OK();
-      });
+  return folly::collect(futures).via(runner()).thenValue([this, result](auto&& resps) {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+    for (auto& resp : resps) {
+      NG_RETURN_IF_ERROR(resp);
+    }
+    result->colNames = pathNode_->colNames();
+    for (auto& ds : resultDs_) {
+      result->append(std::move(ds));
+    }
+    return Status::OK();
+  });
 }
 
 size_t BatchShortestPath::init(const HashSet& startVids, const HashSet& endVids) {
@@ -98,14 +102,27 @@ folly::Future<Status> BatchShortestPath::shortestPath(size_t rowNum, size_t step
   futures.emplace_back(getNeighbors(rowNum, stepNum, false));
   futures.emplace_back(getNeighbors(rowNum, stepNum, true));
   return folly::collect(futures)
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum, stepNum](auto&& resps) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
         for (auto& resp : resps) {
           if (!resp.ok()) {
             return folly::makeFuture<Status>(std::move(resp));
           }
         }
         return handleResponse(rowNum, stepNum);
+      })
+      // This thenError is necessary to catch bad_alloc, seems the returned future
+      // is related to two routines: getNeighbors, handleResponse, each of them launch some task in
+      // separate thread, if any one of routine throw bad_alloc, fail the query, will cause another
+      // to run on a maybe already released BatchShortestPath object
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [](const std::bad_alloc&) {
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -135,8 +152,10 @@ folly::Future<Status> BatchShortestPath::getNeighbors(size_t rowNum, size_t step
                      -1,
                      nullptr,
                      nullptr)
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum, reverse, stepNum, getNbrTime](auto&& resp) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
         addStats(resp, stepNum, getNbrTime.elapsedInUSec(), reverse);
         return buildPath(rowNum, std::move(resp), reverse);
       });
@@ -257,13 +276,19 @@ Status BatchShortestPath::doBuildPath(size_t rowNum, GetNeighborsIter* iter, boo
 
 folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t stepNum) {
   return folly::makeFuture(Status::OK())
-      .via(qctx_->rctx()->runner())
+      .via(runner())
       .thenValue([this, rowNum](auto&& status) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+
         // odd step
         UNUSED(status);
         return conjunctPath(rowNum, true);
       })
       .thenValue([this, rowNum, stepNum](auto&& terminate) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+
         // even Step
         if (terminate || stepNum * 2 > maxStep_) {
           return folly::makeFuture<bool>(true);
@@ -271,6 +296,9 @@ folly::Future<Status> BatchShortestPath::handleResponse(size_t rowNum, size_t st
         return conjunctPath(rowNum, false);
       })
       .thenValue([this, rowNum, stepNum](auto&& result) {
+        // MemoryTrackerVerified
+        memory::MemoryCheckGuard guard;
+
         if (result || stepNum * 2 >= maxStep_) {
           return folly::makeFuture<Status>(Status::OK());
         }
@@ -347,7 +375,10 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
   }
 
   auto future = getMeetVids(rowNum, oddStep, meetVids);
-  return future.via(qctx_->rctx()->runner()).thenValue([this, rowNum, oddStep](auto&& vertices) {
+  return future.via(runner()).thenValue([this, rowNum, oddStep](auto&& vertices) {
+    // MemoryTrackerVerified
+    memory::MemoryCheckGuard guard;
+
     if (vertices.empty()) {
       return false;
     }
@@ -522,12 +553,13 @@ size_t BatchShortestPath::splitTask(const HashSet& startVids, const HashSet& end
       ++count;
     }
   }
-  std::stringstream ss;
-  ss << "{\n"
-     << "startVids' size : " << startVidsSize << " endVids's size : " << endVidsSize;
-  ss << " thread num : " << threadNum;
-  ss << " start blocks : " << startSlices << " end blocks : " << endSlices << "\n}";
-  stats_->emplace(folly::sformat("split task "), ss.str());
+  folly::dynamic obj = folly::dynamic::object();
+  obj.insert("startVids' size", startVidsSize);
+  obj.insert("endVids's size", endVidsSize);
+  obj.insert("thread num", threadNum);
+  obj.insert("start blocks", startSlices);
+  obj.insert("end blocks", endSlices);
+  stats_->emplace("split task", folly::toPrettyJson(obj));
   return startSlices * endSlices;
 }
 

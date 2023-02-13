@@ -29,6 +29,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
     kAgentHBCounters.init();
   }
 
+  AdminClient* getAdminClient();
+
   /**
    * Parts distribution related operations.
    * */
@@ -219,7 +221,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::GetSessionResp> future_getSession(const cpp2::GetSessionReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_removeSession(const cpp2::RemoveSessionReq& req) override;
+  folly::Future<cpp2::RemoveSessionResp> future_removeSession(
+      const cpp2::RemoveSessionReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_killQuery(const cpp2::KillQueryReq& req) override;
 

@@ -49,7 +49,7 @@ class MatchSolver final {
                                        QueryContext* qctx);
 
   // Build yield columns for match & shortestPath statement
-  static void buildProjectColumns(QueryContext* qctx, Path& path, SubPlan& plan);
+  static void buildProjectColumns(QueryContext* qctx, const Path& path, SubPlan& plan);
 };
 
 }  // namespace graph

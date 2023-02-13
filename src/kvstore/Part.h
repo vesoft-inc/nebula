@@ -92,7 +92,7 @@ class Part : public raftex::RaftPart {
   void asyncRemove(folly::StringPiece key, KVCallback cb);
 
   /**
-   * @brief Remove multible keys from kvstore asynchronously
+   * @brief Remove multiple keys from kvstore asynchronously
    *
    * @param key Keys to remove
    * @param cb Callback when has a result
@@ -307,11 +307,18 @@ class Part : public raftex::RaftPart {
                                        TermID committedLogTerm);
 
   /**
-   * @brief clean up data in listener, called in RaftPart::reset
+   * @brief clean up data in storage part, called in RaftPart::reset
    *
    * @return nebula::cpp2::ErrorCode
    */
   nebula::cpp2::ErrorCode cleanup() override;
+
+  /**
+   * @brief clean up data in meta part, called in RaftPart::reset
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode metaCleanup();
 
  public:
   struct CallbackOptions {

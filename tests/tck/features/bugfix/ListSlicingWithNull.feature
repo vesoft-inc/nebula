@@ -7,7 +7,7 @@ Feature: Test yield constant after pipe
   Scenario: List slicing with null range
     When executing query:
       """
-      return [1, 2, 3][null..1] as a
+      yield [1, 2, 3][null..1] as a
       """
     Then the result should be, in any order:
       | a    |

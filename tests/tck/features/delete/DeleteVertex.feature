@@ -76,7 +76,7 @@ Feature: Delete string vid of vertex
       """
     Then the result should be, in any order:
       | like._dst |
-    # before delete multi vertexes to check value by go
+    # before delete multi vertices to check value by go
     When executing query:
       """
       GO FROM "Chris Paul" OVER like YIELD like._dst
@@ -86,13 +86,13 @@ Feature: Delete string vid of vertex
       | "LeBron James"    |
       | "Dwyane Wade"     |
       | "Carmelo Anthony" |
-    # delete multi vertexes
+    # delete multi vertices
     When executing query:
       """
       DELETE VERTEX "LeBron James", "Dwyane Wade", "Carmelo Anthony" WITH EDGE;
       """
     Then the execution should be successful
-    # after delete multi vertexes to check value by go
+    # after delete multi vertices to check value by go
     When executing query:
       """
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
@@ -108,7 +108,7 @@ Feature: Delete string vid of vertex
       | like._dst     |
       | "Kobe Bryant" |
       | "Grant Hill"  |
-      | -"Rudy Gay"   |
+      | "Rudy Gay"    |
     # before delete hash id vertex to check value by go
     When executing query:
       """
