@@ -110,11 +110,11 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
           folly::Try<StatusOr<Response>>& tryResp = resps[i];
           if (tryResp.hasException()) {
             std::string errMsg = tryResp.exception().what().toStdString();
-            rpcResp.markFailureUnsafe();
+            rpcResp.markFailure();
             LOG(ERROR) << "There some RPC errors: " << errMsg;
             const auto& req = requests.at(host);
             const auto& parts = getReqPartsId(req);
-            rpcResp.appendFailedPartsUnsafe(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+            rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           } else {
             StatusOr<Response> status = std::move(tryResp).value();
             if (status.ok()) {
@@ -122,19 +122,19 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
               const auto& result = resp.get_result();
 
               if (!result.get_failed_parts().empty()) {
-                rpcResp.markFailureUnsafe();
+                rpcResp.markFailure();
                 for (auto& part : result.get_failed_parts()) {
-                  rpcResp.emplaceFailedPartUnsafe(part.get_part_id(), part.get_code());
+                  rpcResp.emplaceFailedPart(part.get_part_id(), part.get_code());
                 }
               }
 
               // Adjust the latency
               auto latency = result.get_latency_in_us();
-              rpcResp.setLatencyUnsafe(host, latency, totalLatencies->at(i));
+              rpcResp.setLatency(host, latency, totalLatencies->at(i));
               // Keep the response
-              rpcResp.addResponseUnsafe(std::move(resp));
+              rpcResp.addResponse(std::move(resp));
             } else {
-              rpcResp.markFailureUnsafe();
+              rpcResp.markFailure();
               Status s = std::move(status).status();
               nebula::cpp2::ErrorCode errorCode =
                   s.code() == Status::Code::kGraphMemoryExceeded
@@ -143,7 +143,7 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
               LOG(ERROR) << "There some RPC errors: " << s.message();
               const auto& req = requests.at(host);
               const auto& parts = getReqPartsId(req);
-              rpcResp.appendFailedPartsUnsafe(parts, errorCode);
+              rpcResp.appendFailedParts(parts, errorCode);
             }
           }
         }
