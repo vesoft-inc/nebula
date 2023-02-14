@@ -150,5 +150,34 @@ std::vector<Value> GetNbrsRespDataSetIter::getAdjEdges(VidHashSet* dstSet) const
   return adjEdges;
 }
 
+std::vector<Value> GetNbrsRespDataSetIter::getSrcAndAdjDsts() const {
+  DCHECK(valid());
+
+  std::vector<Value> result;
+  const Row& curRow = dataset_->rows[curRowIdx_];
+  // add src
+  result.emplace_back(curRow[0]);
+  for (const auto& [edgeName, propIdx] : edgePropsMap_) {
+    DCHECK_LT(propIdx.colIdx, curRow.size());
+    const Value& edgeColumn = curRow[propIdx.colIdx];
+    if (edgeColumn.isList()) {
+      for (const Value& edgeVal : edgeColumn.getList().values) {
+        // skip the edge direction symbol: `-/+`
+        auto name = edgeName.substr(1);
+        if (!edgeVal.isList() || edgeVal.getList().empty()) {
+          continue;
+        }
+        const List& propList = edgeVal.getList();
+        DCHECK_LT(propIdx.edgeDstIdx, propList.size());
+        auto& dst = propList[propIdx.edgeDstIdx];
+        if (!dst.empty()) {
+          result.emplace_back(dst);
+        }
+      }
+    }
+  }
+  return result;
+}
+
 }  // namespace graph
 }  // namespace nebula

@@ -32,11 +32,11 @@ class GoPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
-  SubPlan oneStepPlan(SubPlan& startVidPlan);
+  SubPlan oneStepPlan();
 
-  SubPlan nStepsPlan(SubPlan& startVidPlan);
+  SubPlan nStepsPlan();
 
-  SubPlan mToNStepsPlan(SubPlan& startVidPlan);
+  SubPlan mToNStepsPlan();
 
  private:
   std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
@@ -95,6 +95,9 @@ class GoPlanner final : public Planner {
   GoPlanner() = default;
 
   GoContext* goCtx_{nullptr};
+  // runtime : argument, else : startNode
+  PlanNode* startNode_{nullptr};
+  PlanNode* preRootNode_{nullptr};
 
   const int16_t VID_INDEX = 0;
   const int16_t LAST_COL_INDEX = -1;

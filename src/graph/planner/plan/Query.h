@@ -259,6 +259,63 @@ class GetNeighbors : public Explore {
   bool random_{false};
 };
 
+class Expand : public Explore {
+ public:
+  static Expand* make(QueryContext* qctx,
+                      PlanNode* input,
+                      GraphSpaceID space,
+                      Expression* src,
+                      std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
+                      size_t maxSteps) {
+    return qctx->objPool()->makeAndAdd<Expand>(
+        qctx, Kind::kGetDstBySrc, input, space, src, std::move(edgeTypes));
+    auto expand = make(qctx, input, space);
+    expand->setSrc(src);
+    expand->setEdgeProps(std::move(edgeProps));
+    expand->setMaxStep(maxSteps);
+    return expand;
+  }
+
+  Expression* src() const {
+    return src_;
+  }
+
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  size_t maxSteps() const {
+    return maxSteps_;
+  }
+
+  void setMaxSteps(size_t maxSteps) {
+    maxSteps_ = maxSteps;
+  }
+
+  void setSrc(Expression* src) {
+    src_ = src;
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  friend ObjectPool;
+  Expand(QueryContext* qctx, Kind kind, PlanNode* input, GraphSpaceID space)
+      : Explore(qctx, kind, input, space) {}
+
+  void cloneMembers(const Expand&);
+
+ private:
+  size_t maxSteps_{0};
+  Expression* src_{nullptr};
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+};
+
 // Get Edge dst id by src id
 class GetDstBySrc : public Explore {
  public:
