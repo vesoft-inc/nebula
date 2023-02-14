@@ -69,6 +69,7 @@
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
+#include "graph/executor/query/ExpandExecutor.h"
 #include "graph/executor/query/FilterExecutor.h"
 #include "graph/executor/query/FulltextIndexScanExecutor.h"
 #include "graph/executor/query/GetDstBySrcExecutor.h"
@@ -196,6 +197,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kGetNeighbors: {
       return pool->makeAndAdd<GetNeighborsExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kExpand: {
+      return pool->makeAndAdd<ExpandExecutor>(node, qctx);
     }
     case PlanNode::Kind::kFulltextIndexScan: {
       return pool->makeAndAdd<FulltextIndexScanExecutor>(node, qctx);

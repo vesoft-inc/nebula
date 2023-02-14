@@ -268,7 +268,7 @@ class Expand : public Explore {
                       std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
                       size_t maxSteps) {
     return qctx->objPool()->makeAndAdd<Expand>(
-        qctx, Kind::kGetDstBySrc, input, space, src, std::move(edgeTypes));
+        qctx, Kind::kExpand, input, space, src, std::move(edgeTypes));
     auto expand = make(qctx, input, space);
     expand->setSrc(src);
     expand->setEdgeProps(std::move(edgeProps));
