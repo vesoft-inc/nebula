@@ -283,7 +283,6 @@ class Expand : public Explore {
     return maxSteps_;
   }
 
-  PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  protected:
@@ -299,8 +298,6 @@ class Expand : public Explore {
         src_(src),
         edgeProps_(std::move(edgeProps)),
         maxSteps_(maxSteps) {}
-
-  void cloneMembers(const Expand&);
 
  private:
   size_t maxSteps_{0};
