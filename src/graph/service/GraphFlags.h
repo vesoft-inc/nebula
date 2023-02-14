@@ -22,6 +22,8 @@ DECLARE_int32(listen_backlog);
 DECLARE_string(listen_netdev);
 DECLARE_string(local_ip);
 DECLARE_string(pid_file);
+DECLARE_bool(enable_udf);
+DECLARE_string(udf_path);
 DECLARE_bool(local_config);
 DECLARE_bool(accept_partial_success);
 DECLARE_bool(disable_octal_escape_char);
