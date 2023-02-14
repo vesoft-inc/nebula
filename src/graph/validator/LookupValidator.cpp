@@ -191,6 +191,9 @@ Status LookupValidator::validateWhere() {
   }
 
   auto* filter = whereClause->filter();
+  if (filter != nullptr) {
+    filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
+  }
   if (FTIndexUtils::needTextSearch(filter)) {
     lookupCtx_->isFulltextIndex = true;
     lookupCtx_->fulltextExpr = filter;
