@@ -28,6 +28,7 @@ class PlanNode {
     kGetVertices,
     kGetEdges,
     kGetDstBySrc,
+    kExpand,
     kTraverse,
     kAppendVertices,
     kShortestPath,
