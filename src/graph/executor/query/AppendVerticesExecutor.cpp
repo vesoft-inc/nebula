@@ -9,9 +9,12 @@
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
+
 DECLARE_bool(optimize_appendvertices);
+
 namespace nebula {
 namespace graph {
+
 folly::Future<Status> AppendVerticesExecutor::execute() {
   return appendVertices();
 }
@@ -56,15 +59,12 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
                  av->limit(qctx()),
                  av->filter())
       .via(runner())
-      .ensure([this, getPropsTime]() {
-        SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
-      })
-      .thenValue([this](StorageRpcResponse<GetPropResponse> &&rpcResp) {
+      .thenValue([this, getPropsTime](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addState("total_rpc", getPropsTime.elapsedInUSec());
+        addStats(rpcResp);
         if (FLAGS_max_job_size <= 1) {
           return folly::makeFuture<Status>(handleResp(std::move(rpcResp)));
         } else {
@@ -150,12 +150,11 @@ Status AppendVerticesExecutor::handleResp(
   bool mv = movable(av->inputVars().front());
   for (; inputIter->valid(); inputIter->next()) {
     auto dstFound = map.find(src->eval(ctx(inputIter.get())));
-    if (dstFound == map.end()) {
-      continue;
+    if (dstFound != map.end()) {
+      Row row = mv ? inputIter->moveRow() : *inputIter->row();
+      row.values.emplace_back(dstFound->second);
+      ds.rows.emplace_back(std::move(row));
     }
-    Row row = mv ? inputIter->moveRow() : *inputIter->row();
-    row.values.emplace_back(dstFound->second);
-    ds.rows.emplace_back(std::move(row));
   }
   return finish(ResultBuilder().value(Value(std::move(ds))).state(state).build());
 }
@@ -175,9 +174,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
     if (resp.props_ref().has_value()) {
       auto &&respV = std::move(*resp.props_ref());
       v.colNames = respV.colNames;
-      v.rows.insert(v.rows.end(),
-                    std::make_move_iterator(respV.begin()),
-                    std::make_move_iterator(respV.end()));
+      std::move(respV.begin(), respV.end(), std::back_inserter(v.rows));
     }
   }
   auto propIter = PropIter(std::make_shared<Value>(std::move(v)));
@@ -191,10 +188,9 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
     auto gather = [this](auto &&results) -> Status {
       memory::MemoryCheckGuard guard;
       for (auto &r : results) {
+        NG_RETURN_IF_ERROR(r);
         auto &&rows = std::move(r).value();
-        result_.rows.insert(result_.rows.end(),
-                            std::make_move_iterator(rows.begin()),
-                            std::make_move_iterator(rows.end()));
+        std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
       }
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
     };
@@ -219,10 +215,9 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
       auto gatherFinal = [this](auto &&results) -> Status {
         memory::MemoryCheckGuard guard2;
         for (auto &r : results) {
+          NG_RETURN_IF_ERROR(r);
           auto &&rows = std::move(r).value();
-          result_.rows.insert(result_.rows.end(),
-                              std::make_move_iterator(rows.begin()),
-                              std::make_move_iterator(rows.end()));
+          std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
         }
         return finish(ResultBuilder().value(Value(std::move(result_))).build());
       };
@@ -280,12 +275,11 @@ DataSet AppendVerticesExecutor::handleJob(size_t begin, size_t end, Iterator *it
   QueryExpressionContext ctx(qctx()->ectx());
   for (; iter->valid() && begin++ < end; iter->next()) {
     auto dstFound = dsts_.find(src->eval(ctx(iter)));
-    if (dstFound == dsts_.end()) {
-      continue;
+    if (dstFound != dsts_.end()) {
+      Row row = *iter->row();
+      row.values.emplace_back(dstFound->second);
+      ds.rows.emplace_back(std::move(row));
     }
-    Row row = *iter->row();
-    row.values.emplace_back(dstFound->second);
-    ds.rows.emplace_back(std::move(row));
   }
 
   return ds;

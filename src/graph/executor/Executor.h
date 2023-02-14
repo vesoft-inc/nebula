@@ -123,6 +123,13 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
       class GatherFunc>
   auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter);
 
+  void addState(const std::string &name, size_t durationInUs) {
+    otherStats_.emplace(name, folly::sformat("{}(us)", durationInUs));
+  }
+  void addState(const std::string &name, folly::dynamic json) {
+    otherStats_.emplace(name, folly::toPrettyJson(json));
+  }
+
   int64_t id_;
 
   // Executor name

@@ -44,7 +44,7 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
       .thenValue([this, sv](StorageRpcResponse<ScanResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp), sv->colNames());
       });
 }
