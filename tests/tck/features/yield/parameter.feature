@@ -252,7 +252,7 @@ Feature: Parameter
       """
       LOOKUP ON player WHERE player.age>$p2+43
       """
-    Then a SemanticError should be raised at runtime: Column type error : age
+    Then a SemanticError should be raised at runtime: Type error `(true+43)'
     When executing query:
       """
       MATCH (v:player) RETURN  v LIMIT $p6
@@ -386,5 +386,20 @@ Feature: Parameter
     When executing query:
       """
       update edge on like "1"->"2" set likeness=likeness+$p6.a when likeness>$p1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p6.c and player.age in [43,35,42,45] yield id(vertex) AS VertexID;DELETE VERTEX $var.VertexID;RETURN count($var.VertexID) AS record
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p3 and player.age in [43,35,42,45] yield id(vertex) AS VertexID;DELETE VERTEX $var.VertexID;RETURN count($var.VertexID) AS record
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p7.a.b.d[4] and player.age in [43,35,42,45] yield id(vertex) AS VertexID;DELETE VERTEX $var.VertexID;RETURN count($var.VertexID) AS record
       """
     Then the execution should be successful
