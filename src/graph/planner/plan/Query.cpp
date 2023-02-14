@@ -105,9 +105,68 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
 std::unique_ptr<PlanNodeDescription> Expand::explain() const {
   auto desc = Explore::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
+  addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
   return desc;
+}
+
+PlanNode* Expand::clone() const {
+  auto* expand = Expand::make(qctx_, nullptr, space_);
+  expand->cloneMembers(*this);
+  return expand;
+}
+
+void Expand::cloneMembers(const Expand& expand) {
+  Explore::cloneMembers(expand);
+  src_ = expand.src();
+  sample_ = expand.sample();
+  maxSteps_ = expand.maxSteps();
+  if (expand.edgeProps()) {
+    auto edgeProps = *expand.edgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+  limits_ = expand.limits();
+}
+
+std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
+  auto desc = Explore::explain();
+  addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
+  addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ExpandAll::clone() const {
+  auto* expandAll = ExpandAll::make(qctx_, nullptr, space_);
+  expandAll->cloneMembers(*this);
+  return expandAll;
+}
+
+void ExpandAll::cloneMembers(const ExpandAll& expandAll) {
+  Expand::cloneMembers(expandAll);
+  minSteps_ = expandAll.minSteps();
+  if (expandAll.vertexProps()) {
+    auto vertexProps = *expandAll.vertexProps_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+  if (expandAll.vertexColumns()) {
+    vertexColumns_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    for (const auto& col : expandAll.vertexColumns()->columns()) {
+      vertexColumns_->addColumn(col->clone().release());
+    }
+  }
+  if (expandAll.edgeColumns()) {
+    edgeColumns_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    for (const auto& col : expandAll.edgeColumns()->columns()) {
+      edgeColumns_->addColumn(col->clone().release());
+    }
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> GetDstBySrc::explain() const {

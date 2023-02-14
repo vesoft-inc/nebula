@@ -191,7 +191,8 @@ Status GoValidator::extractTagIds() {
 Status GoValidator::extractPropExprs(const Expression* expr,
                                      std::unordered_set<std::string>& uniqueExpr) {
   ExtractPropExprVisitor visitor(vctx_,
-                                 goCtx_->srcEdgePropsExpr,
+                                 goCtx_->srcPropsExpr,
+                                 goCtx_->edgePropsExpr,
                                  goCtx_->dstPropsExpr,
                                  inputPropCols_,
                                  propExprColMap_,
@@ -264,7 +265,8 @@ Status GoValidator::buildColumns() {
   }
 
   if (!exprProps.isAllPropsEmpty() || from.fromType != FromType::kInstantExpr) {
-    goCtx_->srcEdgePropsExpr = pool->makeAndAdd<YieldColumns>();
+    goCtx_->srcPropsExpr = pool->makeAndAdd<YieldColumns>();
+    goCtx_->edgePropsExpr = pool->makeAndAdd<YieldColumns>();
   }
 
   if (!dstTagProps.empty()) {

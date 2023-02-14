@@ -17,7 +17,8 @@ class ValidateContext;
 class ExtractPropExprVisitor final : public ExprVisitorImpl {
  public:
   ExtractPropExprVisitor(ValidateContext *vctx,
-                         YieldColumns *srcAndEdgePropCols,
+                         YieldColumns *srcPropCols,
+                         YieldColumns *edgePropCols,
                          YieldColumns *dstPropCols,
                          YieldColumns *inputPropCols,
                          std::unordered_map<std::string, YieldColumn *> &propExprColMap,
@@ -68,7 +69,8 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
 
  private:
   ValidateContext *vctx_{nullptr};
-  YieldColumns *srcAndEdgePropCols_{nullptr};
+  YieldColumns *srcPropCols_{nullptr};
+  YieldColumns *edgePropCols_{nullptr};
   YieldColumns *dstPropCols_{nullptr};
   YieldColumns *inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn *> &propExprColMap_;

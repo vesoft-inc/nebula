@@ -102,8 +102,10 @@ struct GoContext final : AstContext {
 
   // save dst prop
   YieldColumns* dstPropsExpr;
-  // save src and edge prop
-  YieldColumns* srcEdgePropsExpr;
+  // save src prop
+  YieldColumns* srcPropsExpr;
+  // save edge prop
+  YieldColumns* edgePropsExpr;
   // for track vid in Nsteps
   std::string srcVidColName;
   std::string dstVidColName;

@@ -264,19 +264,39 @@ class Expand : public Explore {
   static Expand* make(QueryContext* qctx,
                       PlanNode* input,
                       GraphSpaceID space,
-                      Expression* src,
-                      std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
-                      size_t maxSteps) {
+                      bool sample = false,
+                      size_t maxSteps = 0,
+                      std::unique_ptr<std::vector<EdgeProp>>&& edgeProps = nullptr) {
     return qctx->objPool()->makeAndAdd<Expand>(
-        qctx, Kind::kExpand, input, space, src, std::move(edgeProps), maxSteps);
+        qctx, Kind::kExpand, input, space, sample, maxSteps, std::move(edgeProps));
   }
 
   Expression* src() const {
     return src_;
   }
 
+  void setExpression(Expression* src) {
+    src_ = src;
+  }
+
+  bool sample() const {
+    return sample_;
+  }
+
+  std::vector<int64_t> limits() const {
+    return limits_;
+  }
+
+  void setLimits(const std::vector<int64_t>& limits) {
+    limits_ = limits;
+  }
+
   const std::vector<EdgeProp>* edgeProps() const {
     return edgeProps_.get();
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
   }
 
   size_t maxSteps() const {
@@ -285,24 +305,119 @@ class Expand : public Explore {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  PlanNode* clone() const override;
+
  protected:
   friend ObjectPool;
   Expand(QueryContext* qctx,
          Kind kind,
          PlanNode* input,
          GraphSpaceID space,
-         Expression* src,
-         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
-         size_t maxSteps)
+         bool sample,
+         size_t maxSteps,
+         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps)
       : Explore(qctx, kind, input, space),
-        src_(src),
-        edgeProps_(std::move(edgeProps)),
-        maxSteps_(maxSteps) {}
+        sample_(sample),
+        maxSteps_(maxSteps),
+        edgeProps_(std::move(edgeProps)) {}
+
+  void cloneMembers(const Expand&);
+
+ protected:
+  Expression* src_{nullptr};
+  bool sample_{false};
+  size_t maxSteps_{0};
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_{nullptr};
+  std::vector<int64_t> limits_;
+};
+
+class ExpandAll : public Expand {
+ public:
+  static ExpandAll* make(QueryContext* qctx,
+                         PlanNode* input,
+                         GraphSpaceID space,
+                         bool sample = false,
+                         size_t minSteps = 0,
+                         size_t maxSteps = 0,
+                         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps = nullptr,
+                         std::unique_ptr<std::vector<VertexProp>>&& vertexProps = nullptr,
+                         YieldColumns* vertexColumns = nullptr,
+                         YieldColumns* edgeColumns = nullptr) {
+    return qctx->objPool()->makeAndAdd<ExpandAll>(qctx,
+                                                  Kind::kExpandAll,
+                                                  input,
+                                                  space,
+                                                  sample,
+                                                  minSteps,
+                                                  maxSteps,
+                                                  std::move(edgeProps),
+                                                  std::move(vertexProps),
+                                                  vertexColumns,
+                                                  edgeColumns);
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
+  size_t minSteps() const {
+    return minSteps_;
+  }
+
+  YieldColumns* vertexColumns() const {
+    return vertexColumns_;
+  }
+
+  YieldColumns* edgeColumns() const {
+    return edgeColumns_;
+  }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  PlanNode* clone() const override;
+
+ protected:
+  friend ObjectPool;
+  ExpandAll(QueryContext* qctx,
+            Kind kind,
+            PlanNode* input,
+            GraphSpaceID space,
+            bool sample,
+            size_t minSteps,
+            size_t maxSteps,
+            std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
+            std::unique_ptr<std::vector<VertexProp>>&& vertexProps,
+            YieldColumns* vertexColumns,
+            YieldColumns* edgeColumns)
+      : Expand(qctx, kind, input, space, sample, maxSteps, std::move(edgeProps)),
+        minSteps_(minSteps),
+        vertexProps_(std::move(vertexProps)),
+        vertexColumns_(vertexColumns),
+        edgeColumns_(edgeColumns) {
+    std::vector<std::string> colNames;
+    if (vertexColumns_ && edgeColumns_) {
+      colNames = vertexColumns_->names();
+      auto edgeColNames = edgeColumns_->names();
+      colNames.insert(colNames.end(), edgeColNames.begin(), edgeColNames.end());
+    } else if (vertexColumns_) {
+      colNames = vertexColumns_->names();
+    } else if (edgeColumns_) {
+      colNames = edgeColumns_->names();
+    }
+    setColNames(colNames);
+  }
+
+  void cloneMembers(const ExpandAll&);
 
  private:
-  size_t maxSteps_{0};
-  Expression* src_{nullptr};
-  std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
+  size_t minSteps_{0};
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
+  YieldColumns* vertexColumns_{nullptr};
+  YieldColumns* edgeColumns_{nullptr};
 };
 
 // Get Edge dst id by src id

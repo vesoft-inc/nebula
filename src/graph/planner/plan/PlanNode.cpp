@@ -40,6 +40,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "GetNeighbors";
     case Kind::kExpand:
       return "Expand";
+    case Kind::kExpandAll:
+      return "ExpandAll";
     case Kind::kGetVertices:
       return "GetVertices";
     case Kind::kGetEdges:

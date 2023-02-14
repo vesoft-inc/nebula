@@ -15,7 +15,7 @@ class ExpandExecutor final : public StorageAccessExecutor {
  public:
   ExpandExecutor(const PlanNode* node, QueryContext* qctx)
       : StorageAccessExecutor("ExpandExecutor", node, qctx) {
-    gn_ = asNode<GetNeighbors>(node);
+    expand_ = asNode<Expand>(node);
   }
 
   Status buildRequestVids();
@@ -24,18 +24,36 @@ class ExpandExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors();
 
+  void getNeighborsFromCache(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidMap,
+                             std::unordered_set<Value>& visitedVids);
+
+  folly::Future<Status> expandFromCache();
+
+  void updateDst2VidsMap(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidMap,
+                         const Value& src,
+                         const Value& dst);
+
+  void sample(const Value& src, const std::unordered_set<Value>& dsts);
+
   folly::Future<Status> buildResult();
 
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
  private:
-  const GetNeighbors* gn_;
+  const Expand* expand_;
   size_t currentStep_{0};
   size_t maxSteps_{0};
-  std::unordered_set<Value> vids_;
-  std::vector<Value> initVids_;
-  std::unordered_map<Value, std::unordered_map<Value, size_t>> preDst2VidMap_;
+
+  bool sample_{false};
+  int64_t curLimit_{0};
+  int64_t curMaxLimit_{std::numeric_limits<int64_t>::max()};
+  std::vector<int64_t> limits_;
+
+  std::unordered_set<Value> nextStepVids_;
+  std::unordered_set<Value> preVisitedVids_;
+  std::unordered_map<Value, std::unordered_set<Value>> adjDsts_;
+  std::unordered_map<Value, std::unordered_set<Value>> preDst2VidsMap_;
 };
 
 }  // namespace graph

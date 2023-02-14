@@ -93,7 +93,10 @@ Expression* GoPlanner::loopCondition(uint32_t steps, const std::string& var) {
 // Extracts vid and edge's prop from GN for joinDst & joinInput.
 // The root plan node will output colNames of {srcProps, edgeProps, kVid, "JOIN_DST_VID"}.
 PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input) {
-  auto& srcEdgePropsExpr = goCtx_->srcEdgePropsExpr;
+  auto srcEdgePropsExpr = goCtx_->edgePropsExpr->clone();
+  // if (goCtx_->srcPropsExpr) {
+  //   for (auto col : goCtx_->srcPropsExpr)
+  // }
   auto* pool = goCtx_->qctx->objPool();
 
   if (goCtx_->joinInput) {
@@ -108,7 +111,7 @@ PlanNode* GoPlanner::extractSrcEdgePropsFromGN(PlanNode* dep, const std::string&
     srcEdgePropsExpr->addColumn(expr);
   }
 
-  auto* project = Project::make(goCtx_->qctx, dep, srcEdgePropsExpr);
+  auto* project = Project::make(goCtx_->qctx, dep, srcEdgePropsExpr.get());
   project->setInputVar(input);
   return project;
 }
@@ -399,7 +402,6 @@ SubPlan GoPlanner::oneStepPlan() {
   auto qctx = goCtx_->qctx;
   auto isSimple = goCtx_->isSimple;
 
-  PlanNode* scan = nullptr;
   PlanNode* cur = nullptr;
   if (isSimple) {
     auto* gd = GetDstBySrc::make(qctx, startNode_, goCtx_->space.id);
@@ -407,7 +409,6 @@ SubPlan GoPlanner::oneStepPlan() {
     gd->setEdgeTypes(buildEdgeTypes());
     gd->setInputVar(goCtx_->vidsVar);
     gd->setColNames({goCtx_->dstIdColName});
-    scan = gd;
 
     auto* dedup = Dedup::make(qctx, gd);
     dedup->setColNames(gd->colNames());
@@ -433,8 +434,6 @@ SubPlan GoPlanner::oneStepPlan() {
     gn->setEdgeProps(buildEdgeProps(false));
     gn->setSrc(goCtx_->from.src);
     gn->setInputVar(goCtx_->vidsVar);
-    gn->setEdgeDirection(goCtx_->over.direction);
-    scan = gn;
 
     auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
     cur = sampleLimit;
@@ -460,66 +459,110 @@ SubPlan GoPlanner::oneStepPlan() {
 SubPlan GoPlanner::nStepsPlan() {
   auto qctx = goCtx_->qctx;
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
+  auto& from = goCtx_->from;
 
-  PlanNode* getDst = nullptr;
-  PlanNode* loopBody = nullptr;
+  SubPlan subPlan;
   if (!goCtx_->joinInput && goCtx_->limits.empty()) {
     auto* gd = GetDstBySrc::make(qctx, startNode_, goCtx_->space.id);
-    gd->setSrc(goCtx_->from.src);
+    gd->setSrc(from.src);
     gd->setEdgeTypes(buildEdgeTypes());
     gd->setInputVar(goCtx_->vidsVar);
     gd->setColNames({goCtx_->dstIdColName});
     auto* dedup = Dedup::make(qctx, gd);
     dedup->setOutputVar(goCtx_->vidsVar);
     dedup->setColNames(gd->colNames());
-    getDst = dedup;
 
-    loopBody = getDst;
-  } else {
-    auto* gn = GetNeighbors::make(qctx, startNode_, goCtx_->space.id);
-    gn->setSrc(goCtx_->from.src);
-    gn->setEdgeProps(buildEdgeProps(true));
-    gn->setInputVar(goCtx_->vidsVar);
-    gn->setEdgeDirection(goCtx_->over.direction);
-    auto* sampleLimit = buildSampleLimit(gn);
+    auto* condition = loopCondition(goCtx_->steps.steps() - 1, dedup->outputVar());
+    auto* loop = Loop::make(qctx, nullptr, dedup, condition);
 
-    getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
+    auto* root = lastStep(loop, nullptr);
+    subPlan.root = root;
+    subPlan.tail = loop;
+    return subPlan;
+  }
+  // n-1 step
+  size_t steps = goCtx_->steps.steps();
+  auto* expand = Expand::make(
+      qctx, startNode_, goCtx_->space.id, goCtx_->random, steps - 1, buildEdgeProps(true));
+  expand->setExpression(from.src);
+  expand->setColNames({"_expand_vid", "_expand_dst"});
+  expand->setLimits(goCtx_->limits);
 
-    loopBody = getDst;
-    if (goCtx_->joinInput) {
-      auto* joinLeft = extractVidFromRuntimeInput(startVidPlan.root);
-      auto* joinRight = extractSrcDstFromGN(getDst, sampleLimit->outputVar());
-      loopBody = trackStartVid(joinLeft, joinRight);
-      loopDep = joinLeft;
-    }
+  // last step
+  // joindst add dst column(todo) for joinDst
+  // join input add vid column for joinInput
+  auto* arg = Argument::make(qctx, "_expand_dst");
+  arg->setColNames({"_expand_dst"});
+  auto* expandAll = ExpandAll::make(qctx,
+                                    arg,
+                                    goCtx_->space.id,
+                                    goCtx_->random,
+                                    steps - 1,
+                                    steps,
+                                    buildEdgeProps(false),
+                                    buildVertexProps(goCtx_->exprProps.srcTagProps()),
+                                    goCtx_->srcPropsExpr,
+                                    goCtx_->edgePropsExpr);
+  expandAll->setLimits(goCtx_->limits);
+  PlanNode* dep = expandAll;
+  if (goCtx_->joinDst) {
+    dep = buildJoinDstPlan(expandAll);
   }
 
-  auto* condition = loopCondition(goCtx_->steps.steps() - 1, getDst->outputVar());
-  auto* loop = Loop::make(qctx, nullptr, loopBody, condition);
+  auto* pool = qctx->objPool();
+  {
+    // n-1 step's dst(_expand_dst) InnerJoin last step's vid(_expandAll_vid)
+    // joinLeft : expand   joinRight : expandAll(no need join dst) OR hashLeftJoin
+    auto* hashKey = VariablePropertyExpression::make(pool, expand->outputVar(), "_expand_dst");
+    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expandAll_vid");
+    auto* join = HashInnerJoin::make(qctx, expand, dep, {hashKey}, {probeKey});
+    std::vector<std::string> colNames = expand->colNames();
+    colNames.insert(colNames.end(), dep->colNames().begin(), dep->colNames().end());
+    join->setColNames(std::move(colNames));
+    dep = join;
+  }
 
-  auto* root = lastStep(loop, loopBody == getDst ? nullptr : loopBody);
-  SubPlan subPlan;
-  subPlan.root = root;
-  subPlan.tail =.tail == nullptr ? loop : startVidPlan.tail;
+  if (goCtx_->joinInput) {
+    // the result of the previous statement InnerJoin the result of the current statement
+    auto* hashKey = from.originalSrc;
+    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expand_vid");
+    auto* join = HashInnerJoin::make(qctx, preRootNode_, dep, {hashKey}, {probeKey});
 
+    auto& varName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
+    auto* varPtr = qctx->symTable()->getVar(varName);
+    DCHECK(varPtr != nullptr);
+    std::vector<std::string> colNames = varPtr->colNames;
+    colNames.insert(colNames.end(), dep->colNames().begin(), dep->colNames().end());
+    join->setColNames(std::move(colNames));
+    dep = join;
+  }
+
+  if (goCtx_->filter != nullptr) {
+    dep = Filter::make(qctx, dep, goCtx_->filter);
+  }
+
+  dep = Project::make(qctx, dep, goCtx_->yieldExpr);
+  dep->setColNames(std::move(goCtx_->colNames));
+
+  if (goCtx_->distinct) {
+    dep = Dedup::make(qctx, dep);
+  }
+  subPlan.root = dep;
+  subPlan.tail = startNode_;
   return subPlan;
 }
 
 SubPlan GoPlanner::mToNStepsPlan() {
   auto qctx = goCtx_->qctx;
-  auto joinInput = goCtx_->joinInput;
   auto joinDst = goCtx_->joinDst;
   auto isSimple = goCtx_->isSimple;
 
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
-
-  auto* start = StartNode::make(qctx);
-
   PlanNode* getDst = nullptr;
-
   PlanNode* loopBody = nullptr;
-  PlanNode* loopDep = nullptr;
+  SubPlan subPlan;
   if (isSimple) {
+    auto* start = StartNode::make(qctx);
     auto* gd = GetDstBySrc::make(qctx, start, goCtx_->space.id);
     gd->setSrc(goCtx_->from.src);
     gd->setEdgeTypes(buildEdgeTypes());
@@ -549,72 +592,26 @@ SubPlan GoPlanner::mToNStepsPlan() {
       dedup->setColNames(goCtx_->colNames);
     }
     loopBody->setColNames(goCtx_->colNames);
-  } else {
-    auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
-    gn->setSrc(goCtx_->from.src);
-    gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
-    gn->setEdgeProps(buildEdgeProps(false));
-    gn->setInputVar(goCtx_->vidsVar);
-    gn->setEdgeDirection(goCtx_->over.direction);
-    auto* sampleLimit = buildSampleLimit(gn);
+    auto* condition = loopCondition(goCtx_->steps.nSteps(), getDst->outputVar());
+    auto* loop = Loop::make(qctx, nullptr, loopBody, condition);
 
-    getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
-
-    loopBody = getDst;
-    PlanNode* trackVid = nullptr;
-    if (joinInput) {
-      auto* joinLeft = extractVidFromRuntimeInput(startVidPlan.root);
-      auto* joinRight = extractSrcDstFromGN(getDst, sampleLimit->outputVar());
-      trackVid = trackStartVid(joinLeft, joinRight);
-      loopBody = trackVid;
-      loopDep = joinLeft;
+    auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMToN);
+    dc->addDep(loop);
+    if (loopBody == getDst) {
+      StepClause newStep(goCtx_->steps.mSteps() + 1, goCtx_->steps.nSteps() + 1);
+      dc->setMToN(newStep);
+    } else {
+      dc->setMToN(goCtx_->steps);
     }
+    dc->setInputVars({loopBody->outputVar()});
 
-    if (joinInput || joinDst) {
-      loopBody = extractSrcEdgePropsFromGN(loopBody, sampleLimit->outputVar());
-      loopBody = joinDst ? buildJoinDstPlan(loopBody) : loopBody;
-      loopBody = joinInput ? lastStepJoinInput(trackVid, loopBody) : loopBody;
-      loopBody = joinInput ? buildJoinInputPlan(loopBody) : loopBody;
-    }
+    dc->setDistinct(goCtx_->distinct);
+    dc->setColNames(goCtx_->colNames);
 
-    if (goCtx_->filter) {
-      const auto& filterInput =
-          (joinInput || joinDst) ? loopBody->outputVar() : sampleLimit->outputVar();
-      loopBody = Filter::make(qctx, loopBody, goCtx_->filter);
-      loopBody->setInputVar(filterInput);
-    }
-
-    const auto& projectInput =
-        (loopBody != getDst) ? loopBody->outputVar() : sampleLimit->outputVar();
-    loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
-    loopBody->setInputVar(projectInput);
-
-    if (goCtx_->distinct) {
-      loopBody = Dedup::make(qctx, loopBody);
-    }
-    loopBody->setColNames(goCtx_->colNames);
+    subPlan.root = dc;
+    subPlan.tail = loop;
+    return subPlan;
   }
-
-  auto* condition = loopCondition(goCtx_->steps.nSteps(), getDst->outputVar());
-  auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
-
-  auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMToN);
-  dc->addDep(loop);
-  if (loopBody == getDst) {
-    StepClause newStep(goCtx_->steps.mSteps() + 1, goCtx_->steps.nSteps() + 1);
-    dc->setMToN(newStep);
-  } else {
-    dc->setMToN(goCtx_->steps);
-  }
-  dc->setInputVars({loopBody->outputVar()});
-
-  dc->setDistinct(goCtx_->distinct);
-  dc->setColNames(goCtx_->colNames);
-
-  SubPlan subPlan;
-  subPlan.root = dc;
-  subPlan.tail = startVidPlan.tail == nullptr ? loop : startVidPlan.tail;
-
   return subPlan;
 }
 
