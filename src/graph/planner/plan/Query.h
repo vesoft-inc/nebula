@@ -268,12 +268,7 @@ class Expand : public Explore {
                       std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
                       size_t maxSteps) {
     return qctx->objPool()->makeAndAdd<Expand>(
-        qctx, Kind::kExpand, input, space, src, std::move(edgeTypes));
-    auto expand = make(qctx, input, space);
-    expand->setSrc(src);
-    expand->setEdgeProps(std::move(edgeProps));
-    expand->setMaxStep(maxSteps);
-    return expand;
+        qctx, Kind::kExpand, input, space, src, std::move(edgeProps), maxSteps);
   }
 
   Expression* src() const {
@@ -288,25 +283,22 @@ class Expand : public Explore {
     return maxSteps_;
   }
 
-  void setMaxSteps(size_t maxSteps) {
-    maxSteps_ = maxSteps;
-  }
-
-  void setSrc(Expression* src) {
-    src_ = src;
-  }
-
-  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
-    edgeProps_ = std::move(edgeProps);
-  }
-
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  protected:
   friend ObjectPool;
-  Expand(QueryContext* qctx, Kind kind, PlanNode* input, GraphSpaceID space)
-      : Explore(qctx, kind, input, space) {}
+  Expand(QueryContext* qctx,
+         Kind kind,
+         PlanNode* input,
+         GraphSpaceID space,
+         Expression* src,
+         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
+         size_t maxSteps)
+      : Explore(qctx, kind, input, space),
+        src_(src),
+        edgeProps_(std::move(edgeProps)),
+        maxSteps_(maxSteps) {}
 
   void cloneMembers(const Expand&);
 

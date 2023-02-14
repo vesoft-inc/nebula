@@ -102,6 +102,14 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
   }
 }
 
+std::unique_ptr<PlanNodeDescription> Expand::explain() const {
+  auto desc = Explore::explain();
+  addDescription("src", src_ ? src_->toString() : "", desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> GetDstBySrc::explain() const {
   auto desc = Explore::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
