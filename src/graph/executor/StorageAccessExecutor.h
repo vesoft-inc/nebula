@@ -148,12 +148,11 @@ class StorageAccessExecutor : public Executor {
   }
 
   template <typename RESP>
-  void addStats(storage::StorageRpcResponse<RESP> &resp,
-                std::unordered_map<std::string, std::string> &stats) const {
+  void addStats(storage::StorageRpcResponse<RESP> &resp) {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
       auto info = util::collectRespProfileData(resp.responses()[i].get_result(), hostLatency[i]);
-      stats.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
+      addState(folly::sformat("resp[{}]", i), std::move(info));
     }
   }
 

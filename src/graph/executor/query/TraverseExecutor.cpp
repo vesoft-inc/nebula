@@ -107,7 +107,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
         addStats(resp, getNbrTime.elapsedInUSec());
         time::Duration expandTime;
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
-          otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
+          addState("expandTime", expandTime.elapsedInUSec());
         });
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
@@ -149,7 +149,7 @@ void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
   folly::dynamic stepObj = folly::dynamic::object();
   stepObj.insert("storage", stepInfo);
   stepObj.insert("total_rpc_time", folly::sformat("{}(us)", getNbrTimeInUSec));
-  otherStats_.emplace(folly::sformat("step[{}]", currentStep_), folly::toPrettyJson(stepObj));
+  addState(folly::sformat("step[{}]", currentStep_), std::move(stepObj));
 }
 
 size_t TraverseExecutor::numRowsOfRpcResp(const RpcResponse& resps) const {
@@ -240,13 +240,12 @@ folly::Future<Status> TraverseExecutor::asyncExpandOneStep(RpcResponse&& resps) 
           }
         }
 
-        auto t = postTaskTime.elapsedInUSec();
-        otherStats_.emplace("expandPostTaskTime", folly::sformat("{}(us)", t));
+        addState("expandPostTaskTime", postTaskTime.elapsedInUSec());
         folly::dynamic taskRunTimeArray = folly::dynamic::array();
         for (auto time : *taskRunTime) {
           taskRunTimeArray.push_back(time);
         }
-        otherStats_.emplace("expandTaskRunTime", folly::toPrettyJson(taskRunTimeArray));
+        addState("expandTaskRunTime", std::move(taskRunTimeArray));
 
         return Status::OK();
       });

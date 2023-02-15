@@ -93,16 +93,13 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
   if (name == "*") {
     for (auto& index : propsMap) {
       auto propIndex = index.second.find(prop);
-      if (propIndex == index.second.end()) {
-        continue;
-      }
-      colId = propIndex->second;
-      DCHECK_GT(row.size(), colId);
-      auto& val = row[colId];
-      if (val.empty()) {
-        continue;
-      } else {
-        return val;
+      if (propIndex != index.second.end()) {
+        colId = propIndex->second;
+        DCHECK_GT(row.size(), colId);
+        auto& val = row[colId];
+        if (!val.empty()) {
+          return val;
+        }
       }
     }
     return Value::kNullValue;
@@ -153,9 +150,7 @@ Value PropIter::getVertex(const std::string& name) {
     Tag tag;
     tag.name = tagProp.first;
     for (auto& propIndex : tagProp.second) {
-      if (propIndex.first == nebula::kTag) {  // "_tag"
-        continue;
-      } else {
+      if (propIndex.first != nebula::kTag) {  // "_tag"
         tag.props.emplace(propIndex.first, row[propIndex.second]);
       }
     }

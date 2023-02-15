@@ -44,7 +44,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
         // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp));
       });
 }

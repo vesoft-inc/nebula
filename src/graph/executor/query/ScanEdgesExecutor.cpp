@@ -43,7 +43,7 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
       .thenValue([this](StorageRpcResponse<ScanResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp), {});
       });
 }
