@@ -324,10 +324,23 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
   folly::SharedMutex::ReadHolder holder(LockUtils::lock());
   const auto& act = req.get_account();
 
+  auto retCode = userExist(act);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (retCode == nebula::cpp2::ErrorCode::E_USER_NOT_FOUND) {
+      LOG(INFO) << "Get User Roles Failed: " << act << " not found.";
+    } else {
+      LOG(INFO) << "Get User Roles Failed, User " << act
+                << " error: " << apache::thrift::util::enumNameSafe(retCode);
+    }
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
   auto prefix = MetaKeyUtils::rolesPrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
-    auto retCode = nebula::error(ret);
+    retCode = nebula::error(ret);
     LOG(INFO) << "Prefix roles failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
