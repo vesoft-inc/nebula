@@ -8,6 +8,9 @@ on:
       - labeled
       - unlabeled
       - closed
+  pull_request:
+    types:
+      - opened
     
 env:
   GH_PAT: ${{ secrets.GITHUB_TOKEN }}
