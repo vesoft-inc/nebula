@@ -75,7 +75,6 @@ void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
 void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
   auto &operands = expr->operands();
   auto foldable = true;
-  // auto shortCircuit = false;
   for (auto i = 0u; i < operands.size(); i++) {
     auto *operand = operands[i];
     operand->accept(this);
@@ -83,21 +82,10 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
       auto *newExpr = fold(operand);
       if (!ok()) return;
       expr->setOperand(i, newExpr);
-      /*
-      if (newExpr->value().isBool()) {
-          auto value = newExpr->value().getBool();
-          if ((value && expr->kind() == Expression::Kind::kLogicalOr) ||
-                  (!value && expr->kind() == Expression::Kind::kLogicalAnd)) {
-              shortCircuit = true;
-              break;
-          }
-      }
-      */
     } else {
       foldable = false;
     }
   }
-  // canBeFolded_ = foldable || shortCircuit;
   canBeFolded_ = foldable;
 }
 
