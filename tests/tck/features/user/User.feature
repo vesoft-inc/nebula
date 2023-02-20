@@ -143,12 +143,11 @@ Feature: User & privilege Test
       DROP USER IF EXISTS u6;
       """
     Then the execution should be successful
-    # TODO(shylock) fix it
-    # When executing query:
-    # """
-    # DESC USER u6;
-    # """
-    # Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DESC USER u6;
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
     When executing query:
       """
       DROP USER IF EXISTS u6;
@@ -186,12 +185,11 @@ Feature: User & privilege Test
       DROP USER user_mlt_roles;
       """
     Then the execution should be successful
-    # TODO(shylock) fix me
-    # When executing query:
-    # """
-    # DESC USER user_mlt_roles
-    # """
-    # Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DESC USER user_mlt_roles
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
     When executing query:
       """
       CREATE USER user_mlt_roles;
@@ -731,8 +729,7 @@ Feature: User & privilege Test
       """
       DESC USER user_not_exist
       """
-    Then the result should be, in any order, with relax comparison:
-      | role | space |
+    Then a ExecutionError should be raised at runtime: User not existed!
     When executing query with user "user1" and password "pwd1":
       """
       DESC USER user1
@@ -766,10 +763,8 @@ Feature: User & privilege Test
       DESC USER root
       """
     Then a PermissionError should be raised at runtime:
-
-# TODO(shylock) fix it
-# When executing query:
-# """
-# DESCRIBE USER not_exists
-# """
-# Then a ExecutionError should be raised at runtime: User not existed!
+    When executing query:
+      """
+      DESCRIBE USER not_exists
+      """
+    Then a ExecutionError should be raised at runtime: User not existed!
