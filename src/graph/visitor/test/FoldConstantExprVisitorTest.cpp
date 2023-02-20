@@ -238,7 +238,9 @@ TEST_F(FoldConstantExprVisitorTest, TestRelIn) {
   auto inSetExpr = RelationalExpression::makeIn(pool, lhs, setExpr);
   inSetExpr->accept(&foldVisitor);
   auto expectInSetExpr = RelationalExpression::makeIn(
-      pool, lhs, ConstantExpression::make(pool, List(std::vector<Value>{5, "3", false, 4, 3})));
+      pool,
+      lhs,
+      ConstantExpression::make(pool, Set(std::unordered_set<Value>{5, "3", false, 4, 3})));
   EXPECT_EQ(*inSetExpr, *expectInSetExpr);
 
   for (int i = 10u; i < 20; ++i) {
@@ -253,19 +255,20 @@ TEST_F(FoldConstantExprVisitorTest, TestRelIn) {
   auto expectInBigListExpr = RelationalExpression::makeIn(
       pool,
       lhs,
-      ConstantExpression::make(pool,
-                               Set(std::unordered_set<Value>{
-                                   19, 18, 3, 16, 4, 17, false, 13, "3", 5, 10, 11, 12, 14, 15})));
-  EXPECT_EQ(*inBigListExpr, *expectInBigListExpr);
+      ConstantExpression::make(
+          pool,
+          List(
+              std::vector<Value>{3, 4, false, "3", 5, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19})));
+  EXPECT_EQ(*inBigListExpr, *expectInBigListExpr) << inBigListExpr->toString();
   auto bigSetExpr = SetExpression::make(pool, items);
   auto inBigSetExpr = RelationalExpression::makeIn(pool, lhs, bigSetExpr);
   inBigSetExpr->accept(&foldVisitor);
   auto expectInBigSetExpr = RelationalExpression::makeIn(
       pool,
       lhs,
-      ConstantExpression::make(
-          pool,
-          List(std::vector<Value>{19, 18, 16, 15, 14, 12, 11, 10, 5, 13, "3", 17, false, 4, 3})));
+      ConstantExpression::make(pool,
+                               Set(std::unordered_set<Value>{
+                                   19, 18, 16, 15, 14, 12, 11, 10, 5, 13, "3", 17, false, 4, 3})));
   EXPECT_EQ(*inBigSetExpr, *expectInBigSetExpr);
 }
 
