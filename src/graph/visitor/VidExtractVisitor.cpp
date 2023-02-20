@@ -21,15 +21,8 @@ namespace graph {
     if (find == v.nodes.end()) {
       v.nodes.emplace(std::move(*find));
     } else {
-      std::sort(find->second.vids.values.begin(), find->second.vids.values.end());
-      std::sort(node.second.vids.values.begin(), node.second.vids.values.end());
-      std::vector<Value> intersection;
-      std::set_intersection(find->second.vids.values.begin(),
-                            find->second.vids.values.end(),
-                            node.second.vids.values.begin(),
-                            node.second.vids.values.end(),
-                            std::back_inserter(intersection));
-      find->second.vids.values = std::move(intersection);
+      Set intersection = Set::set_intersection(find->second.vids, node.second.vids);
+      find->second.vids = std::move(intersection);
     }
   }
   return v;
@@ -41,15 +34,8 @@ namespace graph {
   if (find == left.nodes.end()) {
     left.nodes.emplace(std::move(right));
   } else {
-    std::sort(find->second.vids.values.begin(), find->second.vids.values.end());
-    std::sort(right.second.vids.values.begin(), right.second.vids.values.end());
-    std::vector<Value> values;
-    std::set_intersection(find->second.vids.values.begin(),
-                          find->second.vids.values.end(),
-                          right.second.vids.values.begin(),
-                          right.second.vids.values.end(),
-                          std::back_inserter(values));
-    find->second.vids.values = std::move(values);
+    Set intersection = Set::set_intersection(find->second.vids, right.second.vids);
+    find->second.vids = std::move(intersection);
   }
   return std::move(left);
 }
@@ -62,18 +48,10 @@ namespace graph {
     v.nodes.emplace(std::move(left));
     v.nodes.emplace(std::move(right));
   } else {
-    std::sort(left.second.vids.values.begin(), left.second.vids.values.end());
-    std::sort(right.second.vids.values.begin(), right.second.vids.values.end());
-    std::vector<Value> values;
-    std::set_intersection(left.second.vids.values.begin(),
-                          left.second.vids.values.end(),
-                          right.second.vids.values.begin(),
-                          right.second.vids.values.end(),
-                          std::back_inserter(values));
+    Set intersection = Set::set_intersection(left.second.vids, right.second.vids);
     v.nodes[left.first].kind = VidPattern::Vids::Kind::kIn;
-    v.nodes[left.first].vids.values.insert(v.nodes[left.first].vids.values.end(),
-                                           std::make_move_iterator(values.begin()),
-                                           std::make_move_iterator(values.end()));
+    v.nodes[left.first].vids.values.insert(std::make_move_iterator(intersection.values.begin()),
+                                           std::make_move_iterator(intersection.values.end()));
   }
   return v;
 }
@@ -166,14 +144,23 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       return;
     }
 
-    auto rightListValue = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
-    if (!rightListValue.isList()) {
+    auto vs = expr->right()->eval(graph::QueryExpressionContext(qctx_->ectx())());
+    if (vs.isList()) {
+      Set s;
+      for (auto &v : vs.getList().values) {
+        s.values.emplace(v);
+      }
+      vidPattern_ = VidPattern{
+          VidPattern::Special::kInUsed,
+          {{fCallExpr->args()->args().front()->toString(), {VidPattern::Vids::Kind::kIn, s}}}};
+    } else if (vs.isSet()) {
+      vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
+                               {{fCallExpr->args()->args().front()->toString(),
+                                 {VidPattern::Vids::Kind::kIn, vs.getSet()}}}};
+    } else {
       vidPattern_ = VidPattern{};
       return;
     }
-    vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
-                             {{fCallExpr->args()->args().front()->toString(),
-                               {VidPattern::Vids::Kind::kIn, rightListValue.getList()}}}};
   } else if (expr->kind() == Expression::Kind::kRelEQ) {
     // id(V) == vid
     if (expr->left()->kind() == Expression::Kind::kLabelAttribute) {
@@ -211,7 +198,7 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       }
       vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                {{fCallExpr->args()->args().front()->toString(),
-                                 {VidPattern::Vids::Kind::kIn, List({constExpr->value()})}}}};
+                                 {VidPattern::Vids::Kind::kIn, Set({constExpr->value()})}}}};
     } else if ((expr->right()->kind() == Expression::Kind::kVar ||
                 expr->right()->kind() == Expression::Kind::kSubscript) &&
                ExpressionUtils::isEvaluableExpr(expr->right(), qctx_)) {
@@ -219,7 +206,7 @@ void VidExtractVisitor::visit(RelationalExpression *expr) {
       if (SchemaUtil::isValidVid(rValue)) {
         vidPattern_ = VidPattern{VidPattern::Special::kInUsed,
                                  {{fCallExpr->args()->args().front()->toString(),
-                                   {VidPattern::Vids::Kind::kIn, List({rValue})}}}};
+                                   {VidPattern::Vids::Kind::kIn, Set({rValue})}}}};
         return;
       } else {
         vidPattern_ = VidPattern{};
@@ -261,7 +248,6 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
         for (auto &node : operandResult.nodes) {
           if (node.second.kind == VidPattern::Vids::Kind::kNotIn) {
             notInResult.nodes[node.first].vids.values.insert(
-                notInResult.nodes[node.first].vids.values.end(),
                 std::make_move_iterator(node.second.vids.values.begin()),
                 std::make_move_iterator(node.second.vids.values.end()));
           }
@@ -293,11 +279,11 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
     for (auto &node : inResult.nodes) {
       auto find = notInResult.nodes.find(node.first);
       if (find != notInResult.nodes.end()) {
-        List removeNotIn;
+        Set removeNotIn;
         for (auto &v : node.second.vids.values) {
           if (std::find(find->second.vids.values.begin(), find->second.vids.values.end(), v) ==
               find->second.vids.values.end()) {
-            removeNotIn.emplace_back(std::move(v));
+            removeNotIn.values.insert(std::move(v));
           }
         }
         node.second.vids = std::move(removeNotIn);
@@ -327,7 +313,6 @@ void VidExtractVisitor::visit(LogicalExpression *expr) {
           case VidPattern::Vids::Kind::kIn: {
             inResult.nodes[node.first].kind = VidPattern::Vids::Kind::kIn;
             inResult.nodes[node.first].vids.values.insert(
-                inResult.nodes[node.first].vids.values.end(),
                 std::make_move_iterator(node.second.vids.values.begin()),
                 std::make_move_iterator(node.second.vids.values.end()));
           }

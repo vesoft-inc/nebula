@@ -61,27 +61,6 @@ void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
 
 void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
   visitBinaryExpr(expr);
-  if (expr->kind() == Expression::Kind::kRelIn) {
-    auto rhs = static_cast<RelationalExpression *>(expr)->right();
-    if (rhs->kind() == Expression::Kind::kConstant) {
-      auto ce = static_cast<ConstantExpression *>(rhs);
-      auto v = ce->value();
-      // Convert to more efficient C++ data structure based on the size of the container expression
-      if (v.isList()) {
-        auto &list = v.getList().values;
-        if (list.size() >= 16) {
-          ce->setValue(Set(std::unordered_set<Value>{std::make_move_iterator(list.begin()),
-                                                     std::make_move_iterator(list.end())}));
-        }
-      } else if (v.isSet()) {
-        auto &set = v.getSet().values;
-        if (set.size() < 16) {
-          ce->setValue(List(std::vector<Value>{std::make_move_iterator(set.begin()),
-                                               std::make_move_iterator(set.end())}));
-        }
-      }
-    }
-  }
 }
 
 void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
