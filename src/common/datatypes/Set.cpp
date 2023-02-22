@@ -11,6 +11,20 @@
 
 namespace nebula {
 
+Set Set::set_intersection(const Set& lhs, const Set& rhs) {
+  if (lhs.size() <= rhs.size()) {
+    Set iset;
+    for (const Value& key : lhs.values) {
+      if (rhs.values.count(key) > 0) {
+        iset.values.insert(key);
+      }
+    }
+    return iset;
+  } else {
+    return set_intersection(rhs, lhs);
+  }
+}
+
 std::string Set::toString() const {
   std::vector<std::string> value(values.size());
   std::transform(values.begin(), values.end(), value.begin(), [](const auto& v) -> std::string {

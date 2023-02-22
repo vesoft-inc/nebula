@@ -34,6 +34,7 @@ struct Set {
   folly::dynamic toJson() const;
   // Extract the metadata of each element
   folly::dynamic getMetaData() const;
+  static Set set_intersection(const Set& lhs, const Set& rhs);
 
   Set& operator=(const Set& rhs) {
     if (this == &rhs) {

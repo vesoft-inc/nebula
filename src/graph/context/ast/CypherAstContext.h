@@ -242,7 +242,7 @@ struct NodeContext final : PatternContext {
 
   // Output fields
   ScanInfo scanInfo;
-  List ids;
+  Set ids;
   // initialize start expression in project node
   Expression* initialExpr{nullptr};
 };
