@@ -187,8 +187,6 @@ TEST_F(ExtractFilterExprVisitorTest, TestCanBePushSomeAndOr) {
   auto rmexpr = std::move(visitor).remainedExpr();
   ASSERT_EQ(rmexpr->kind(), Expression::Kind::kDstProperty);
   ASSERT_EQ(expr->kind(), Expression::Kind::kLogicalAnd);
-  // auto newExpr = ExpressionUtils::foldConstantExpr(expr, &pool_);
-  // ASSERT_EQ(newExpr->kind(), Expression::Kind::kLogicalOr);
 }
 
 // let A indicates (can be pushed expr), and B denotes (can not push expr) in the following.

@@ -1582,23 +1582,6 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["near"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      // auto result = geo::GeoFilter::near(args);
-      // if (!result.ok()) {
-      //     return std::string("");
-      // } else {
-      //     return std::move(result).value();
-      // }
-      // TODO
-      UNUSED(args);
-      return std::string("");
-    };
-  }
-  {
     auto &attr = functions_["cos_similarity"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;

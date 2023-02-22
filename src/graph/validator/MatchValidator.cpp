@@ -1097,9 +1097,6 @@ Status MatchValidator::validateMatchPathExpr(
   expr->accept(&visitor);
   auto matchPathExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kMatchPathPattern});
   for (auto &matchPathExpr : matchPathExprs) {
-    // auto matchClauseCtx = getContext<MatchClauseContext>();
-    // matchClauseCtx->aliasesAvailable = availableAliases;
-    // matchClauseCtx->isOptional = true;
     DCHECK_EQ(matchPathExpr->kind(), Expression::Kind::kMatchPathPattern);
     auto *matchPathExprImpl = const_cast<MatchPathPatternExpression *>(
         static_cast<const MatchPathPatternExpression *>(matchPathExpr));

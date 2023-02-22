@@ -71,11 +71,23 @@ std::string VertexIdSeek::listToAnnoVarVid(QueryContext *qctx, const List &list)
   return input;
 }
 
+std::string VertexIdSeek::setToAnnoVarVid(QueryContext *qctx, const Set &set) {
+  auto input = qctx->vctx()->anonVarGen()->getVar();
+  DataSet vids({kVid});
+  for (auto &v : set.values) {
+    vids.emplace_back(Row({std::move(v)}));
+  }
+
+  qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).build());
+
+  return input;
+}
+
 StatusOr<SubPlan> VertexIdSeek::transformNode(NodeContext *nodeCtx) {
   SubPlan plan;
   auto *qctx = nodeCtx->qctx;
 
-  std::string inputVar = listToAnnoVarVid(qctx, nodeCtx->ids);
+  std::string inputVar = setToAnnoVarVid(qctx, nodeCtx->ids);
 
   auto *passThrough = PassThroughNode::make(qctx, nullptr);
   passThrough->setOutputVar(inputVar);

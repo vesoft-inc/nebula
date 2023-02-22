@@ -39,6 +39,40 @@ Feature: Match By Id
       """
     Then the result should be, in any order, with relax comparison:
       | labels(n) |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN ["Tim Duncan","Tony Parker","1","2","3","4","5","6","7","8","9","10","11","12","13"]
+      RETURN v.player.name AS vname
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vname         |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN {"Tim Duncan","Tony Parker","1","2","3","4","5","6","7","8","9","10","11","12","13"}
+      RETURN v.player.name AS vname
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vname         |
+      | "Tim Duncan"  |
+      | "Tony Parker" |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN ["Tim Duncan"]
+      RETURN v.player.name AS vname
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vname        |
+      | "Tim Duncan" |
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) IN {"Tim Duncan"}
+      RETURN v.player.name AS vname
+      """
+    Then the result should be, in any order, with relax comparison:
+      | vname        |
+      | "Tim Duncan" |
 
   Scenario: multi node
     When executing query:
