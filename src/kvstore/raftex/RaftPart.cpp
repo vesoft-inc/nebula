@@ -35,6 +35,8 @@ DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
+DEFINE_int32(raft_num_worker_threads, 32, "Raft part number of workers");
+
 DECLARE_int32(wal_ttl);
 DECLARE_int64(wal_file_size);
 DECLARE_int32(wal_buffer_size);
@@ -335,7 +337,7 @@ RaftPart::RaftPart(
     const folly::StringPiece walRoot,
     std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
     std::shared_ptr<thread::GenericThreadPool> workers,
-    std::shared_ptr<folly::Executor> executor,
+    std::shared_ptr<folly::Executor> executor [[gnu::unused]],
     std::shared_ptr<SnapshotManager> snapshotMan,
     std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
     std::shared_ptr<kvstore::DiskManager> diskMan)
@@ -350,7 +352,6 @@ RaftPart::RaftPart(
       leader_{"", 0},
       ioThreadPool_{ioPool},
       bgWorkers_{workers},
-      executor_(executor),
       snapshot_(snapshotMan),
       clientMan_(clientMan),
       diskMan_(diskMan) {
@@ -370,6 +371,11 @@ RaftPart::RaftPart(
         return this->preProcessLog(logId, logTermId, logClusterId, log);
       },
       diskMan);
+  auto pool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+      FLAGS_raft_num_worker_threads);
+  pool->setNamePrefix("part-executor");
+  pool->start();
+  executor_ = std::move(pool);
   CHECK(!!executor_) << idStr_ << "Should not be nullptr";
 }
 
