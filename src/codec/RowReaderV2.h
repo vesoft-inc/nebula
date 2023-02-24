@@ -44,6 +44,8 @@ class RowReaderV2 : public RowReader {
   bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) override;
 
  private:
+  meta::SchemaProviderIf const* schema_;
+  folly::StringPiece data_;
   size_t headerLen_;
   size_t numNullBytes_;
 

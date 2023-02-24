@@ -128,7 +128,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
           },
           [&row, vIdLen, isIntId, tagNode, this](
               folly::StringPiece key,
-              RowReader* reader,
+              RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             auto status = QueryUtils::collectVertexProps(
                 key, vIdLen, isIntId, reader, props, row, expCtx_.get(), tagNode->getTagName());
@@ -212,7 +212,7 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
           },
           [&row, vIdLen, isIntId, edgeNode, this](
               folly::StringPiece key,
-              RowReader* reader,
+              RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             auto status = QueryUtils::collectEdgeProps(
                 key, vIdLen, isIntId, reader, props, row, expCtx_.get(), edgeNode->getEdgeName());

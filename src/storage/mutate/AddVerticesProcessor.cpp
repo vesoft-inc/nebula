@@ -335,7 +335,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddVerticesProcessor::findOldValue
 std::vector<std::string> AddVerticesProcessor::indexKeys(
     PartitionID partId,
     const VertexID& vId,
-    RowReader* reader,
+    RowReaderWrapper* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
     const meta::SchemaProviderIf* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);

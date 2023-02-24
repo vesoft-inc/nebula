@@ -56,7 +56,7 @@ class StorageIterator {
    *
    * @see RowReader
    */
-  virtual RowReader* reader() const = 0;
+  virtual RowReaderWrapper* reader() const = 0;
 };
 
 /**
@@ -116,7 +116,7 @@ class SingleEdgeIterator : public StorageIterator {
     return iter_->val();
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return reader_.get();
   }
 
@@ -172,7 +172,7 @@ class SingleEdgeKeyIterator : public SingleEdgeIterator {
     iter_->next();
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     DLOG(FATAL) << "This iterator should not read value";
     return nullptr;
   }
@@ -209,7 +209,7 @@ class MultiEdgeIterator : public StorageIterator {
     return iters_[curIter_]->val();
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return iters_[curIter_]->reader();
   }
 

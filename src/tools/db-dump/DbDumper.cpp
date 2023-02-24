@@ -534,7 +534,7 @@ inline void DbDumper::printEdgeKey(const folly::StringPiece& key) {
             << rank << ", " << dst;
 }
 
-void DbDumper::printValue(const RowReader* reader) {
+void DbDumper::printValue(const RowReaderWrapper* reader) {
   if (reader == nullptr) {
     return;
   }

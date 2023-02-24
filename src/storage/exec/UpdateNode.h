@@ -172,7 +172,7 @@ class UpdateNode : public RelNode<T> {
   bool insertable_{false};
 
   std::string key_;
-  RowReader* reader_{nullptr};
+  RowReaderWrapper* reader_{nullptr};
 
   const meta::NebulaSchemaProvider* schema_{nullptr};
 
@@ -500,7 +500,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
    */
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
@@ -853,7 +853,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
   }
 
   std::vector<std::string> indexKeys(PartitionID partId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      const cpp2::EdgeKey& edgeKey,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);

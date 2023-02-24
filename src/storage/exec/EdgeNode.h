@@ -111,7 +111,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     return val_;
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return reader_.get();
   }
 
@@ -212,7 +212,7 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
     return iter_->val();
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return iter_->reader();
   }
 

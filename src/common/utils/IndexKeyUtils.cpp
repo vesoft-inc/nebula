@@ -172,7 +172,7 @@ Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
 
 // static
 StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
-    RowReader* reader,
+    RowReaderWrapper* reader,
     const meta::cpp2::IndexItem* indexItem,
     const meta::SchemaProviderIf* latestSchema) {
   if (reader == nullptr) {
@@ -200,7 +200,7 @@ StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
 }
 
 // static
-StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(RowReader* reader,
+StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(RowReaderWrapper* reader,
                                                        const std::string propName,
                                                        const meta::SchemaProviderIf* latestSchema) {
   auto value = reader->getValueByName(propName);

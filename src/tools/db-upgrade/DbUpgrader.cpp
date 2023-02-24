@@ -633,7 +633,7 @@ void UpgraderSpace::doProcessV2() {
 }
 
 void UpgraderSpace::encodeVertexValue(PartitionID partId,
-                                      RowReader* reader,
+                                      RowReaderWrapper* reader,
                                       const meta::NebulaSchemaProvider* schema,
                                       std::string& newkey,
                                       VertexID& strVid,
@@ -827,7 +827,7 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
 }
 
 // Used for vertex and edge
-std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
+std::string UpgraderSpace::encodeRowVal(const RowReaderWrapper* reader,
                                         const meta::NebulaSchemaProvider* schema,
                                         std::vector<std::string>& fieldName) {
   auto oldSchema = reader->getSchema();
@@ -1003,7 +1003,7 @@ void UpgraderSpace::doProcessV3() {
 std::vector<std::string> UpgraderSpace::indexVertexKeys(
     PartitionID partId,
     VertexID& vId,
-    RowReader* reader,
+    RowReaderWrapper* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
     const meta::SchemaProviderIf* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
@@ -1015,7 +1015,7 @@ std::vector<std::string> UpgraderSpace::indexVertexKeys(
 }
 
 void UpgraderSpace::encodeEdgeValue(PartitionID partId,
-                                    RowReader* reader,
+                                    RowReaderWrapper* reader,
                                     const meta::NebulaSchemaProvider* schema,
                                     std::string& newkey,
                                     VertexID& svId,
@@ -1057,7 +1057,7 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
 
 std::vector<std::string> UpgraderSpace::indexEdgeKeys(
     PartitionID partId,
-    RowReader* reader,
+    RowReaderWrapper* reader,
     VertexID& svId,
     EdgeRanking rank,
     VertexID& dstId,

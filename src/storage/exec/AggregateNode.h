@@ -121,7 +121,7 @@ class AggregateNode : public IterateNode<T> {
   }
 
   nebula::cpp2::ErrorCode collectEdgeStats(folly::StringPiece key,
-                                           RowReader* reader,
+                                           RowReaderWrapper* reader,
                                            const std::vector<PropContext>* props) {
     for (const auto& prop : *props) {
       if (prop.hasStat_) {
