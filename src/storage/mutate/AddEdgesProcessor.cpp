@@ -36,6 +36,17 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     return;
   }
 
+  auto schema = env_->schemaMan_->getAllLatestVerEdgeSchema(spaceId_);
+  if (!schema.ok()) {
+    LOG(ERROR) << "Load schema failed";
+    for (auto& part : partEdges) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND, part.first);
+    }
+    onFinished();
+    return;
+  }
+  edgeSchema_ = schema.value();
+
   spaceVidLen_ = ret.value();
   callingNum_ = partEdges.size();
 
@@ -111,16 +122,17 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
           break;
         }
       }
-      auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
-      if (!schema) {
+      auto schemaIter = edgeSchema_.find(std::abs(*edgeKey.edge_type_ref()));
+      if (schemaIter == edgeSchema_.end()) {
         LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
         code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         break;
       }
+      auto schema = schemaIter->second.get();
 
       auto props = newEdge.get_props();
       WriteResult wRet;
-      auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
+      auto retEnc = encodeRowVal(schema, propNames, props, wRet);
       if (!retEnc.ok()) {
         LOG(ERROR) << retEnc.status();
         code = writeResultTo(wRet, true);
@@ -170,12 +182,13 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               << ", EdgeRanking: " << *edgeKey.ranking_ref()
               << ", VertexID: " << *edgeKey.dst_ref();
 
-      auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
-      if (!schema) {
+      auto schemaIter = edgeSchema_.find(std::abs(*edgeKey.edge_type_ref()));
+      if (schemaIter == edgeSchema_.end()) {
         LOG(ERROR) << "Space " << spaceId_ << ", Edge " << *edgeKey.edge_type_ref() << " invalid";
         code = nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
         break;
       }
+      auto schema = schemaIter->second.get();
 
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
@@ -186,7 +199,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       // collect values
       WriteResult writeResult;
       const auto& props = edge.get_props();
-      auto encode = encodeRowVal(schema.get(), propNames, props, writeResult);
+      auto encode = encodeRowVal(schema, propNames, props, writeResult);
       if (!encode.ok()) {
         LOG(ERROR) << encode.status();
         code = writeResultTo(writeResult, true);
@@ -221,10 +234,11 @@ kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
     RowReaderWrapper oldReader;
     RowReaderWrapper newReader =
         RowReaderWrapper::getEdgePropReader(env_->schemaMan_, spaceId_, std::abs(edgeType), value);
-    auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(edgeType));
-    if (!schema) {
+    auto schemaIter = edgeSchema_.find(std::abs(edgeType));
+    if (schemaIter == edgeSchema_.end()) {
       return ret;
     }
+    auto schema = schemaIter->second.get();
 
     // only out-edge need to handle index
     if (edgeType > 0) {
@@ -278,7 +292,7 @@ kvstore::MergeableAtomicOpResult AddEdgesProcessor::addEdgesWithIndex(
             auto newIndexKeys = indexKeys(partId, newReader.get(), key, index, nullptr);
             if (!newIndexKeys.empty()) {
               // check if index has ttl field, write it to index value if exists
-              auto field = CommonUtils::ttlValue(schema.get(), newReader.get());
+              auto field = CommonUtils::ttlValue(schema, newReader.get());
               auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
               auto indexState = env_->getIndexState(spaceId_, partId);
               if (env_->checkRebuilding(indexState)) {

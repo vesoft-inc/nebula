@@ -55,6 +55,7 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
   bool ignoreExistedIndex_{false};
+  meta::TagSchema tagSchema_;
 };
 
 }  // namespace storage
