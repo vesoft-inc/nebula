@@ -22,6 +22,7 @@ folly::Future<Status> ArgumentExecutor::execute() {
   const auto &successor = successors();
   auto sucessorExecutor = *successor.begin();
   bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
+  flag = false;
 
   DataSet ds;
   ds.colNames = argNode->colNames();
