@@ -216,7 +216,7 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 
   auto& dstPropsExpr = goCtx_->dstPropsExpr;
   // extract dst's prop
-  auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "DST_VID");
+  auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "_getVertex_vid");
   dstPropsExpr->addColumn(vidExpr);
 
   // extract dst's prop, vid is the last column
@@ -233,7 +233,6 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   std::vector<std::string> colNames = dep->colNames();
   colNames.insert(colNames.end(), project->colNames().begin(), project->colNames().end());
   join->setColNames(std::move(colNames));
-
   return join;
 }
 
@@ -458,6 +457,7 @@ SubPlan GoPlanner::oneStepPlan() {
 
 SubPlan GoPlanner::nStepsPlan() {
   auto qctx = goCtx_->qctx;
+  auto* pool = qctx->objPool();
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
   auto& from = goCtx_->from;
 
@@ -491,8 +491,17 @@ SubPlan GoPlanner::nStepsPlan() {
   // last step
   // joindst add dst column(todo) for joinDst
   // join input add vid column for joinInput
+
   auto* arg = Argument::make(qctx, "_expand_dst");
   arg->setColNames({"_expand_dst"});
+
+  auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "_expandall_vid");
+  goCtx_->srcPropsExpr->addColumn(vidExpr);
+  if (goCtx_->joinDst) {
+    auto* dstExpr =
+        new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), "_expandall_dst");
+    goCtx_->edgePropsExpr->addColumn(dstExpr);
+  }
   auto* expandAll = ExpandAll::make(qctx,
                                     arg,
                                     goCtx_->space.id,
@@ -509,12 +518,11 @@ SubPlan GoPlanner::nStepsPlan() {
     dep = buildJoinDstPlan(expandAll);
   }
 
-  auto* pool = qctx->objPool();
   {
     // n-1 step's dst(_expand_dst) InnerJoin last step's vid(_expandAll_vid)
     // joinLeft : expand   joinRight : expandAll(no need join dst) OR hashLeftJoin
     auto* hashKey = VariablePropertyExpression::make(pool, expand->outputVar(), "_expand_dst");
-    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expandAll_vid");
+    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expandall_vid");
     auto* join = HashInnerJoin::make(qctx, expand, dep, {hashKey}, {probeKey});
     std::vector<std::string> colNames = expand->colNames();
     colNames.insert(colNames.end(), dep->colNames().begin(), dep->colNames().end());
