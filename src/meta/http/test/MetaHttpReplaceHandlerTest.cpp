@@ -21,8 +21,8 @@ namespace meta {
 
 meta::MetaHttpReplaceHostHandler* gHandler = nullptr;
 kvstore::KVStore* gKVStore = nullptr;
-std::set<std::string> gHosts;
-std::set<std::string> dumpHosts(kvstore::KVStore* kvstore);
+std::set<HostAddr> gHosts;
+std::set<HostAddr> dumpHosts(kvstore::KVStore* kvstore);
 
 class MetaHttpReplaceHandlerTestEnv : public ::testing::Environment {
  public:
@@ -35,10 +35,10 @@ class MetaHttpReplaceHandlerTestEnv : public ::testing::Environment {
 
     LOG(INFO) << "Prepare data...";
     HostAddr host0("0", 0), host1("1", 1), host2("2", 2), host3("3", 3);
-    gHosts.insert(host0.host);
-    gHosts.insert(host1.host);
-    gHosts.insert(host2.host);
-    gHosts.insert(host3.host);
+    gHosts.insert(host0);
+    gHosts.insert(host1);
+    gHosts.insert(host2);
+    gHosts.insert(host3);
 
     TestUtils::createSomeHosts(gKVStore, {host0, host1, host2, host3});
     // Notice: it will add part1~4 to hosts host0~3, host0~3 are generated in the function which is
@@ -87,18 +87,18 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
     LOG(INFO) << "host=" << row;
   }
 
-  std::string sFrom{"0"};
-  std::string sTo{"66.66.66.66"};
+  HostAddr sFrom{"0", 0};
+  HostAddr sTo{"66.66.66.66", 6666};
 
-  std::set<std::string> beforeUpdate(gHosts);
-  std::set<std::string> afterUpdate(gHosts);
+  std::set<HostAddr> beforeUpdate(gHosts);
+  std::set<HostAddr> afterUpdate(gHosts);
   afterUpdate.erase(sFrom);
   afterUpdate.insert(sTo);
 
   {
     // no [from]
     static const char* tmp = "http://127.0.0.1:%d/replace?to=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sTo.c_str());
+    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sTo.toString().c_str());
     silentCurl(url);
     auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, beforeUpdate);
@@ -107,7 +107,7 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
   {
     // no [to]
     static const char* tmp = "http://127.0.0.1:%d/replace?&from=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.c_str());
+    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.toString().c_str());
     silentCurl(url);
     auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, beforeUpdate);
@@ -115,9 +115,10 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
 
   {
     // valid [from] but not exist
-    std::string notExistFrom = "10.10.10.10";
+    HostAddr notExistFrom("10.10.10.10", 10);
     const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, notExistFrom.c_str(), sTo.c_str());
+    auto url = folly::stringPrintf(
+        tmp, FLAGS_ws_http_port, notExistFrom.toString().c_str(), sTo.toString().c_str());
     silentCurl(url);
     auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, beforeUpdate);
@@ -130,14 +131,87 @@ TEST(MetaHttpReplaceHandlerTest, FooTest) {
   {
     // happy path
     static const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s";
-    auto url = folly::stringPrintf(tmp, FLAGS_ws_http_port, sFrom.c_str(), sTo.c_str());
+    auto url = folly::stringPrintf(
+        tmp, FLAGS_ws_http_port, sFrom.toString().c_str(), sTo.toString().c_str());
     silentCurl(url);
     auto result = dumpHosts(gKVStore);
     EXPECT_EQ(result, afterUpdate);
   }
 }
 
-std::set<std::string> dumpHosts(kvstore::KVStore* kvstore) {
+TEST(MetaHttpReplaceHandlerTest, ReplaceSpace) {
+  auto dump = dumpHosts(gKVStore);
+  for (auto& row : dump) {
+    LOG(INFO) << "host=" << row;
+  }
+
+  HostAddr sFrom{"0", 0};
+  HostAddr sTo{"66.66.66.66", 6666};
+
+  std::set<HostAddr> beforeUpdate(gHosts);
+  std::set<HostAddr> afterUpdate(gHosts);
+  afterUpdate.erase(sFrom);
+  afterUpdate.insert(sTo);
+
+  {
+    static const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s&space=test_space";
+    auto url = folly::stringPrintf(
+        tmp, FLAGS_ws_http_port, sFrom.toString().c_str(), sTo.toString().c_str());
+    silentCurl(url);
+
+    // Only read part allocation of test_space
+    std::set<HostAddr> hosts;
+    std::unique_ptr<kvstore::KVIterator> iter;
+    const auto& partPrefix = MetaKeyUtils::partPrefix(1);
+    auto kvRet = gKVStore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
+    EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
+    while (iter->valid()) {
+      auto addrs = MetaKeyUtils::parsePartVal(iter->val());
+      for (auto& addr : addrs) {
+        hosts.insert(addr);
+      }
+      iter->next();
+    }
+    EXPECT_EQ(hosts, afterUpdate);
+  }
+}
+
+TEST(MetaHttpReplaceHandlerTest, ReplacePart) {
+  auto dump = dumpHosts(gKVStore);
+  for (auto& row : dump) {
+    LOG(INFO) << "host=" << row;
+  }
+
+  HostAddr sFrom{"1", 1};
+  HostAddr sTo{"66.66.66.66", 6666};
+
+  {
+    std::string value;
+    auto partKey = MetaKeyUtils::partKey(1, 1);
+    auto kvRet = gKVStore->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
+    EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
+    auto host = MetaKeyUtils::parsePartVal(value);
+    EXPECT_EQ(host.size(), 1);
+    EXPECT_EQ(host.front(), sFrom);
+  }
+  {
+    static const char* tmp = "http://127.0.0.1:%d/replace?from=%s&to=%s&space=test_space&part=1";
+    auto url = folly::stringPrintf(
+        tmp, FLAGS_ws_http_port, sFrom.toString().c_str(), sTo.toString().c_str());
+    silentCurl(url);
+  }
+  {
+    std::string value;
+    auto partKey = MetaKeyUtils::partKey(1, 1);
+    auto kvRet = gKVStore->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
+    EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
+    auto host = MetaKeyUtils::parsePartVal(value);
+    EXPECT_EQ(host.size(), 1);
+    EXPECT_EQ(host.front(), sTo);
+  }
+}
+
+std::set<HostAddr> dumpHosts(kvstore::KVStore* kvstore) {
   // Get all hosts from all partition
   std::vector<GraphSpaceID> allSpaceId;
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
@@ -150,7 +224,7 @@ std::set<std::string> dumpHosts(kvstore::KVStore* kvstore) {
     iter->next();
   }
 
-  std::set<std::string> hosts;
+  std::set<HostAddr> hosts;
   for (const auto& spaceId : allSpaceId) {
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
@@ -158,7 +232,7 @@ std::set<std::string> dumpHosts(kvstore::KVStore* kvstore) {
     while (iter->valid()) {
       auto addrs = MetaKeyUtils::parsePartVal(iter->val());
       for (auto& addr : addrs) {
-        hosts.insert(addr.host);
+        hosts.insert(addr);
       }
       iter->next();
     }
@@ -171,7 +245,7 @@ std::set<std::string> dumpHosts(kvstore::KVStore* kvstore) {
   while (iter->valid()) {
     auto addrs = MetaKeyUtils::parseZoneHosts(iter->val());
     for (auto& addr : addrs) {
-      hosts.insert(addr.host);
+      hosts.insert(addr);
     }
     iter->next();
   }
