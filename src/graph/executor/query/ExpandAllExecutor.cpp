@@ -103,9 +103,13 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
           } else if (!preVisitedVids_.empty()) {
             return expandFromCache();
           } else {
+            DLOG(ERROR) << "currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
+            DLOG(ERROR) << "expandall result : " << result_.toString();
             return finish(ResultBuilder().value(Value(std::move(result_))).build());
           }
         } else {
+          DLOG(ERROR) << "currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
+          DLOG(ERROR) << "expandall result : " << result_.toString();
           return finish(ResultBuilder().value(Value(std::move(result_))).build());
         }
       });
@@ -123,6 +127,8 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
       return getNeighbors();
     }
   }
+  DLOG(ERROR) << "end cache currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
+  DLOG(ERROR) << "expandall result : " << result_.toString();
   return finish(ResultBuilder().value(Value(std::move(result_))).build());
 }
 
@@ -186,17 +192,17 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
         edgeProps.values.emplace_back(std::move(val));
       }
     }
-    auto dst = edgeProps.values.back();
+    auto dst = iter->getEdgeProp("*", nebula::kDst);
     const auto& vid = iter->getColumn(0);
     curVid = curVid.empty() ? vid : curVid;
     if (curVid != vid) {
-      adjEdgeProps.emplace_back(std::move(vertexProps));
+      adjEdgeProps.emplace_back(vertexProps);
       adjList_.emplace(curVid, std::move(adjEdgeProps));
       curVid = vid;
       curVertexProps = vertexProps;
     }
-    adjEdgeProps.emplace_back(std::move(edgeProps));
 
+    adjEdgeProps.emplace_back(edgeProps);
     if (curLimit_++ >= curMaxLimit_) {
       continue;
     }
@@ -228,7 +234,7 @@ void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
     return;
   }
   Row row = vList;
-  row.values.insert(vList.values.end(), eList.values.begin(), eList.values.end());
+  row.values.insert(row.values.end(), eList.values.begin(), eList.values.end());
   result_.rows.emplace_back(std::move(row));
 }
 }  // namespace graph

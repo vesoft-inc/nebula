@@ -32,6 +32,12 @@ class GoPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
+  SubPlan simplePlan();
+
+  SubPlan complexPlan();
+
+  SubPlan oneToNStepsPlan();
+
   SubPlan oneStepPlan();
 
   SubPlan nStepsPlan();

@@ -22,14 +22,13 @@ Status ExpandExecutor::buildRequestVids() {
   auto iter = static_cast<SequentialIter*>(inputIter);
   size_t iterSize = iter->size();
   nextStepVids_.reserve(iterSize);
-  auto* src = expand_->src();
   QueryExpressionContext ctx(ectx_);
 
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
   auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
   for (; iter->valid(); iter->next()) {
-    const auto& vid = src->eval(ctx(iter));
+    const auto& vid = iter->getColumn(0);
     DCHECK_EQ(vid.type(), vidType)
         << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
     if (vid.type() == vidType) {
@@ -247,6 +246,7 @@ folly::Future<Status> ExpandExecutor::buildResult() {
       ds.rows.emplace_back(std::move(row));
     }
   }
+  DLOG(ERROR) << "expand result : " << ds.toString();
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

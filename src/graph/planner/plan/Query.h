@@ -271,14 +271,6 @@ class Expand : public Explore {
         qctx, Kind::kExpand, input, space, sample, maxSteps, std::move(edgeProps));
   }
 
-  Expression* src() const {
-    return src_;
-  }
-
-  void setExpression(Expression* src) {
-    src_ = src;
-  }
-
   bool sample() const {
     return sample_;
   }
@@ -324,7 +316,6 @@ class Expand : public Explore {
   void cloneMembers(const Expand&);
 
  protected:
-  Expression* src_{nullptr};
   bool sample_{false};
   size_t maxSteps_{0};
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_{nullptr};
