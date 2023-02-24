@@ -18,8 +18,13 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
   GetDstBySrcNode(RuntimeContext* context,
                   const std::vector<SingleEdgeNode*>& edgeNodes,
                   EdgeContext* edgeContext,
-                  std::deque<Value>* result)
-      : context_(context), edgeNodes_(edgeNodes), edgeContext_(edgeContext), result_(result) {
+                  std::deque<Value>* result,
+                  int64_t limit)
+      : context_(context),
+        edgeNodes_(edgeNodes),
+        edgeContext_(edgeContext),
+        result_(result),
+        limit_(limit) {
     name_ = "GetDstBySrcNode";
   }
 
@@ -45,7 +50,11 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
 
  private:
   nebula::cpp2::ErrorCode iterateEdges() {
-    for (; iter_->valid(); iter_->next()) {
+    int64_t count = 0;
+    for (; iter_->valid(); iter_->next(), ++count) {
+      if (count >= limit_) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+      }
       EdgeType type = iter_->edgeType();
       if (type != context_->edgeType_) {
         // update info when edgeType changes while iterating over different edge types
@@ -84,6 +93,7 @@ class GetDstBySrcNode : public QueryNode<VertexID> {
   EdgeContext* edgeContext_;
   std::deque<Value>* result_;
   std::unique_ptr<MultiEdgeIterator> iter_;
+  int64_t limit_;
 };
 
 }  // namespace storage
