@@ -31,6 +31,7 @@ DEFINE_bool(auto_remove_invalid_space, true, "whether remove data of invalid spa
 DECLARE_bool(rocksdb_disable_wal);
 DECLARE_int32(rocksdb_backup_interval_secs);
 DECLARE_int32(wal_ttl);
+DEFINE_int32(raft_num_worker_threads, 32, "Raft part number of workers");
 
 namespace nebula {
 namespace kvstore {
@@ -54,6 +55,13 @@ bool NebulaStore::init() {
   bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
   storeWorker_ = std::make_shared<thread::GenericWorker>();
   CHECK(storeWorker_->start());
+  {
+    auto pool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+        FLAGS_raft_num_worker_threads);
+    pool->setNamePrefix("part-executor");
+    pool->start();
+    workers_ = std::move(pool);
+  }
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
   if (raftService_ == nullptr) {
