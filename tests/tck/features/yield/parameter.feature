@@ -4,7 +4,8 @@
 Feature: Parameter
 
   Background:
-    Given a graph with space named "nba"
+    Given an empty graph
+    And load "nba" csv data to a new space
     Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili", "p9":["Tim Duncan","Tony Parker"]}
 
   Scenario: [param-test-001] without define param
