@@ -457,7 +457,6 @@ SubPlan GoPlanner::oneStepPlan() {
 
 SubPlan GoPlanner::nStepsPlan() {
   auto qctx = goCtx_->qctx;
-  auto* pool = qctx->objPool();
   loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
   auto& from = goCtx_->from;
   SubPlan subPlan;
@@ -568,6 +567,7 @@ SubPlan GoPlanner::oneToNStepsPlan() {
                                     goCtx_->srcPropsExpr,
                                     goCtx_->edgePropsExpr);
   expandAll->setLimits(goCtx_->limits);
+  expandAll->setInputVar(goCtx_->vidsVar);
   PlanNode* dep = expandAll;
   if (goCtx_->joinDst) {
     dep = buildJoinDstPlan(expandAll);
@@ -616,6 +616,7 @@ SubPlan GoPlanner::complexPlan() {
   auto* expand = Expand::make(
       qctx, startNode_, goCtx_->space.id, goCtx_->random, minStep - 1, buildEdgeProps(true));
   expand->setColNames({"_expand_vid", "_expand_dst"});
+  expand->setInputVar(goCtx_->vidsVar);
   expand->setLimits(goCtx_->limits);
 
   // last step
@@ -727,12 +728,13 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     if (steps.steps() == 1) {
       return oneStepPlan();
     }
-  } else if (steps.mSteps() <= 1) {
-    return oneToNStepsPlan();
   }
 
   if (goCtx_->isSimple) {
     return simplePlan();
+  }
+  if (steps.mSteps() <= 1) {
+    return oneToNStepsPlan();
   }
   return complexPlan();
 }

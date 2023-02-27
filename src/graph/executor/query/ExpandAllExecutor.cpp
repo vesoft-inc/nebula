@@ -97,7 +97,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(s);
-        if (currentStep_ < maxSteps_) {
+        if (currentStep_ <= maxSteps_) {
           if (!nextStepVids_.empty()) {
             return getNeighbors();
           } else if (!preVisitedVids_.empty()) {
@@ -116,7 +116,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
 }
 
 folly::Future<Status> ExpandAllExecutor::expandFromCache() {
-  for (; currentStep_ < maxSteps_; ++currentStep_) {
+  for (; currentStep_ <= maxSteps_; ++currentStep_) {
     curLimit_ = 0;
     curMaxLimit_ = limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_];
     std::unordered_set<Value> visitedVids;
@@ -176,15 +176,15 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
   List curVertexProps;
   Value curVid;
   bool visitVertex = false;
-  for (; iter->valid(); iter->next()) {
-    List vertexProps;
-    if (vertexColumns_ && !visitVertex) {
+  if (iter->valid()) {
+    if (vertexColumns_) {
       for (auto& col : vertexColumns_->columns()) {
         Value val = col->expr()->eval(ctx(iter.get()));
-        vertexProps.values.emplace_back(std::move(val));
+        curVertexProps.values.emplace_back(std::move(val));
       }
     }
-
+  }
+  for (; iter->valid(); iter->next()) {
     List edgeProps;
     if (edgeColumns_) {
       for (auto& col : edgeColumns_->columns()) {
@@ -193,20 +193,26 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
       }
     }
     auto dst = iter->getEdgeProp("*", nebula::kDst);
+    edgeProps.values.emplace_back(dst);
     const auto& vid = iter->getColumn(0);
     curVid = curVid.empty() ? vid : curVid;
     if (curVid != vid) {
-      adjEdgeProps.emplace_back(vertexProps);
+      adjEdgeProps.emplace_back(std::move(curVertexProps));
       adjList_.emplace(curVid, std::move(adjEdgeProps));
       curVid = vid;
-      curVertexProps = vertexProps;
+      if (vertexColumns_) {
+        for (auto& col : vertexColumns_->columns()) {
+          Value val = col->expr()->eval(ctx(iter.get()));
+          curVertexProps.values.emplace_back(std::move(val));
+        }
+      }
     }
 
     adjEdgeProps.emplace_back(edgeProps);
     if (curLimit_++ >= curMaxLimit_) {
       continue;
     }
-    buildResult(vertexProps, edgeProps);
+    buildResult(curVertexProps, edgeProps);
 
     if (dst.isNull()) {
       continue;
@@ -234,7 +240,7 @@ void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
     return;
   }
   Row row = vList;
-  row.values.insert(row.values.end(), eList.values.begin(), eList.values.end());
+  row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
   result_.rows.emplace_back(std::move(row));
 }
 }  // namespace graph
