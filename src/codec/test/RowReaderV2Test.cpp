@@ -320,34 +320,6 @@ TEST(RowReaderV2, encodedData) {
   EXPECT_EQ(Value::Type::NULLVALUE, val.type());
 }
 
-TEST(RowReaderV2, iterator) {
-  std::string encoded;
-  // Header
-  encoded.append(1, 0x08);
-  // There is no nullable field, so no need to reserve space for
-  // the Null flags
-
-  SchemaWriter schema;
-  for (int i = 0; i < 64; i++) {
-    schema.appendCol(folly::stringPrintf("Col%02d", i), PropertyType::INT64);
-    encoded.append(1, i + 1);
-    encoded.append(7, 0);
-  }
-
-  auto reader = RowReaderWrapper::getRowReader(&schema, encoded);
-  auto it = reader->begin();
-  int32_t index = 0;
-  while (it != reader->end()) {
-    Value v = reader->getValueByIndex(index);
-    EXPECT_EQ(Value::Type::INT, v.type()) << index;
-    EXPECT_EQ(v, it->value()) << index;
-    ++it;
-    ++index;
-  }
-
-  EXPECT_EQ(64, index);
-}
-
 }  // namespace nebula
 
 int main(int argc, char** argv) {

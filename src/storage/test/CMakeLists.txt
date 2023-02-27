@@ -576,22 +576,6 @@ nebula_add_test(
         curl
 )
 
-#nebula_add_executable(
-#    NAME
-#        storage_lookup_bm
-#    SOURCES
-#        StorageLookupBenchmark.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        follybenchmark
-#        boost_regex
-#        wangle
-#        gtest
-#)
-
 nebula_add_test(
     NAME
         kv_test

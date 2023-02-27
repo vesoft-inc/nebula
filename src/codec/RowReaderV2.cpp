@@ -10,7 +10,6 @@ namespace nebula {
 using nebula::cpp2::PropertyType;
 
 bool RowReaderV2::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
-  // doodle: this is RowReader::resetImpl(schema, row);
   schema_ = schema;
   data_ = row;
 

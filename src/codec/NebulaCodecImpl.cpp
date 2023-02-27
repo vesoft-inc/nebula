@@ -5,7 +5,7 @@
 
 #include "codec/NebulaCodecImpl.h"
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
 

@@ -8,9 +8,11 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "codec/RowReaderV1.h"
 #include "codec/RowReaderV2.h"
 #include "common/base/Base.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/SchemaManager.h"
+#include "common/meta/SchemaProviderIf.h"
 
 namespace nebula {
 
@@ -18,8 +20,6 @@ namespace nebula {
  * @brief A wrapper class to hide details of RowReaderV1 and RowReaderV2
  */
 class RowReaderWrapper {
-  FRIEND_TEST(RowReaderV1, headerInfo);
-  FRIEND_TEST(RowReaderV1, encodedData);
   FRIEND_TEST(RowReaderV2, encodedData);
 
  public:
@@ -158,29 +158,11 @@ class RowReaderWrapper {
     return currReader_->getTimestamp();
   }
 
-  int32_t readerVer() const noexcept {
-    DCHECK(!!currReader_);
-    return currReader_->readerVer();
-  }
-
   // Return the number of bytes used for the header info
   size_t headerLen() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->headerLen();
   }
-
-  // doodle
-  /*
-  Iterator begin() const {
-    DCHECK(!!currReader_);
-    return currReader_->begin();
-  }
-
-  const Iterator& end() const {
-    DCHECK(!!currReader_);
-    return currReader_->end();
-  }
-  */
 
   SchemaVer schemaVer() const noexcept {
     DCHECK(!!currReader_);
