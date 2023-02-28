@@ -83,10 +83,3 @@ nebula_add_executable(
         wangle
         boost_regex
 )
-
-#nebula_add_test(
-#    NAME nebula_codec_test
-#    SOURCES NebulaCodecTest.cpp
-#    OBJECTS ${CODEC_TEST_LIBS}
-#    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
-#)

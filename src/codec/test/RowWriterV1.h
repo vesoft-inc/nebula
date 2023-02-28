@@ -36,7 +36,7 @@ class RowWriterV1 {
   };
 
  public:
-  explicit RowWriterV1(const meta::SchemaProviderIf* schema);
+  explicit RowWriterV1(const meta::NebulaSchemaProvider* schema);
 
   // Encode into a binary array
   std::string encode() noexcept;
@@ -48,7 +48,7 @@ class RowWriterV1 {
   // Calculate the exact length of the encoded binary array
   int64_t size() const noexcept;
 
-  const meta::SchemaProviderIf* schema() const {
+  const meta::NebulaSchemaProvider* schema() const {
     return schema_;
   }
 
@@ -68,7 +68,7 @@ class RowWriterV1 {
   RowWriterV1& operator<<(Skip&& skip) noexcept;
 
  private:
-  const meta::SchemaProviderIf* schema_;
+  const meta::NebulaSchemaProvider* schema_;
   ICord<> cord_;
 
   int64_t colNum_ = 0;

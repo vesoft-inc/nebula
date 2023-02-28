@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+bool CommonUtils::checkDataExpiredForTTL(const meta::NebulaSchemaProvider* schema,
                                          RowReaderWrapper* reader,
                                          const std::string& ttlCol,
                                          int64_t ttlDuration) {
@@ -22,7 +22,7 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
   return checkDataExpiredForTTL(schema, v.value(), ttlCol, ttlDuration);
 }
 
-bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+bool CommonUtils::checkDataExpiredForTTL(const meta::NebulaSchemaProvider* schema,
                                          const Value& v,
                                          const std::string& ttlCol,
                                          int64_t ttlDuration) {
@@ -43,7 +43,7 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
 }
 
 std::pair<bool, std::pair<int64_t, std::string>> CommonUtils::ttlProps(
-    const meta::SchemaProviderIf* schema) {
+    const meta::NebulaSchemaProvider* schema) {
   DCHECK(schema != nullptr);
   const auto* ns = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
   const auto sp = ns->getProp();
@@ -58,7 +58,7 @@ std::pair<bool, std::pair<int64_t, std::string>> CommonUtils::ttlProps(
   return std::make_pair(!(duration <= 0 || col.empty()), std::make_pair(duration, col));
 }
 
-StatusOr<Value> CommonUtils::ttlValue(const meta::SchemaProviderIf* schema,
+StatusOr<Value> CommonUtils::ttlValue(const meta::NebulaSchemaProvider* schema,
                                       RowReaderWrapper* reader) {
   DCHECK(schema != nullptr);
   const auto* ns = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);

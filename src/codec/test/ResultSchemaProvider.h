@@ -7,13 +7,13 @@
 #define CODEC_TEST_RESULTSCHEMAPROVIDER_H_
 
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
 class ResultSchemaProvider : public meta::SchemaProviderIf {
  public:
-  class ResultSchemaField : public meta::SchemaProviderIf::Field {
+  class ResultSchemaField : public meta::NebulaSchemaProvider::SchemaField {
    public:
     ResultSchemaField(std::string name,
                       nebula::cpp2::PropertyType type,

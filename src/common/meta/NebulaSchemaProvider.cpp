@@ -71,7 +71,7 @@ PropertyType NebulaSchemaProvider::getFieldType(const std::string& name) const {
   return fields_[it->second].type();
 }
 
-const SchemaProviderIf::Field* NebulaSchemaProvider::field(int64_t index) const {
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::field(int64_t index) const {
   if (index < 0) {
     VLOG(2) << "Invalid index " << index;
     return nullptr;
@@ -84,7 +84,8 @@ const SchemaProviderIf::Field* NebulaSchemaProvider::field(int64_t index) const 
   return &fields_[index];
 }
 
-const SchemaProviderIf::Field* NebulaSchemaProvider::field(const std::string& name) const {
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::field(
+    const std::string& name) const {
   auto it = fieldNameIndex_.find(name);
   if (it == fieldNameIndex_.end()) {
     VLOG(2) << "Unknown field \"" << name << "\"";

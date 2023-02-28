@@ -352,7 +352,7 @@ class Path {
  public:
   using ColumnTypeDef = ::nebula::meta::cpp2::ColumnTypeDef;
   Path(nebula::meta::cpp2::IndexItem* index,
-       const meta::SchemaProviderIf* schema,
+       const meta::NebulaSchemaProvider* schema,
        const std::vector<cpp2::IndexColumnHint>& hints,
        int64_t vidLen);
   virtual ~Path() = default;
@@ -367,7 +367,7 @@ class Path {
    * @return std::unique_ptr<Path>
    */
   static std::unique_ptr<Path> make(::nebula::meta::cpp2::IndexItem* index,
-                                    const meta::SchemaProviderIf* schema,
+                                    const meta::NebulaSchemaProvider* schema,
                                     const std::vector<cpp2::IndexColumnHint>& hints,
                                     int64_t vidLen);
 
@@ -437,7 +437,7 @@ class Path {
   /**
    * @brief tag/edge schema of current path
    */
-  const meta::SchemaProviderIf* schema_;
+  const meta::NebulaSchemaProvider* schema_;
   /**
    * @brief IndexColumnHints of current path
    */
@@ -485,7 +485,7 @@ class PrefixPath : public Path {
    * @see Path
    */
   PrefixPath(nebula::meta::cpp2::IndexItem* index,
-             const meta::SchemaProviderIf* schema,
+             const meta::NebulaSchemaProvider* schema,
              const std::vector<cpp2::IndexColumnHint>& hints,
              int64_t vidLen);
 
@@ -528,7 +528,7 @@ class RangePath : public Path {
    * @see Path
    */
   RangePath(nebula::meta::cpp2::IndexItem* index,
-            const meta::SchemaProviderIf* schema,
+            const meta::NebulaSchemaProvider* schema,
             const std::vector<cpp2::IndexColumnHint>& hints,
             int64_t vidLen);
   QualifiedStrategy::Result qualified(const Map<std::string, Value>& rowData) override;
