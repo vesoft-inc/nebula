@@ -6,7 +6,6 @@
 #include <gtest/gtest.h>
 
 #include "codec/RowReaderWrapper.h"
-#include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 #include "common/datatypes/Value.h"
 
@@ -17,7 +16,7 @@ using nebula::cpp2::PropertyType;
 TEST(RowReaderV2, headerInfo) {
   // Simplest row, nothing in it
   char data1[] = {0x08};
-  SchemaWriter schema1;
+  meta::NebulaSchemaProvider schema1;
   auto reader = RowReaderWrapper::getRowReader(&schema1, folly::StringPiece(data1, sizeof(data1)));
   ASSERT_TRUE(!!reader);
   EXPECT_EQ(0, reader->schemaVer());
@@ -25,15 +24,15 @@ TEST(RowReaderV2, headerInfo) {
 
   // With schema version
   char data2[] = {0x0A, 0x01, static_cast<char>(0xFF)};
-  SchemaWriter schema2(0x00FF01);
+  meta::NebulaSchemaProvider schema2(0x00FF01);
   ASSERT_TRUE(reader->reset(&schema2, folly::StringPiece(data2, sizeof(data2))));
   EXPECT_EQ(0x0000FF01, reader->schemaVer());
   EXPECT_EQ(sizeof(data2), reader->headerLen());
 
   // Insert 33 fields into schema, so we will get 2 offsets
-  SchemaWriter schema3(0x00FFFF01);
+  meta::NebulaSchemaProvider schema3(0x00FFFF01);
   for (int i = 0; i < 33; i++) {
-    schema3.appendCol(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
+    schema3.addField(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
   }
 
   // With schema version and offsets
@@ -43,9 +42,9 @@ TEST(RowReaderV2, headerInfo) {
   EXPECT_EQ(sizeof(data3), reader->headerLen());
 
   // No schema version, with offsets
-  SchemaWriter schema4;
+  meta::NebulaSchemaProvider schema4;
   for (int i = 0; i < 33; i++) {
-    schema4.appendCol(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
+    schema4.addField(folly::stringPrintf("Column%02d", i), PropertyType::INT64);
   }
 
   char data4[] = {0x08};
@@ -54,40 +53,40 @@ TEST(RowReaderV2, headerInfo) {
   EXPECT_EQ(sizeof(data4), reader->headerLen());
 
   // Empty row, return illegal schema version
-  SchemaWriter schema5;
+  meta::NebulaSchemaProvider schema5;
   auto reader2 = RowReaderWrapper::getRowReader(&schema5, folly::StringPiece(""));
   ASSERT_FALSE(!!reader2);
   ASSERT_FALSE(reader2->reset(&schema5, folly::StringPiece("")));
 }
 
 TEST(RowReaderV2, encodedData) {
-  SchemaWriter schema;
+  meta::NebulaSchemaProvider schema;
   // Col 0: bool_col1 -- BOOL
-  schema.appendCol("bool_col1", PropertyType::BOOL);
+  schema.addField("bool_col1", PropertyType::BOOL);
   // Col 1: str_col1 -- FIXED_STRING
-  schema.appendCol("fixed_str_col", PropertyType::FIXED_STRING, 12);
+  schema.addField("fixed_str_col", PropertyType::FIXED_STRING, 12);
   // Col 2: int_col1 -- INT32
-  schema.appendCol("int32_col", PropertyType::INT32);
+  schema.addField("int32_col", PropertyType::INT32);
   // Col 3: int_col2 -- INT64
-  schema.appendCol("int64_col", PropertyType::INT64);
+  schema.addField("int64_col", PropertyType::INT64);
   // Col 4: vid_col -- VID
-  schema.appendCol("vid_col", PropertyType::VID);
+  schema.addField("vid_col", PropertyType::VID);
   // Col 5: str_col2 -- STRING
-  schema.appendCol("str_col", PropertyType::STRING);
+  schema.addField("str_col", PropertyType::STRING);
   // Col 6: bool_col2 -- BOOL
-  schema.appendCol("bool_col2", PropertyType::BOOL);
+  schema.addField("bool_col2", PropertyType::BOOL);
   // Col 7: float_col -- FLOAT
-  schema.appendCol("float_col", PropertyType::FLOAT);
+  schema.addField("float_col", PropertyType::FLOAT);
   // Col 8: double_col -- DOUBLE
-  schema.appendCol("double_col", PropertyType::DOUBLE);
+  schema.addField("double_col", PropertyType::DOUBLE);
   // Col 9: timestamp_col -- TIMESTAMP
-  schema.appendCol("timestamp_col", PropertyType::TIMESTAMP);
+  schema.addField("timestamp_col", PropertyType::TIMESTAMP);
   // Col 10: date_col -- DATE
-  schema.appendCol("date_col", PropertyType::DATE);
+  schema.addField("date_col", PropertyType::DATE);
   // Col 11: datetime_col -- DATETIME
-  schema.appendCol("datetime_col", PropertyType::DATETIME);
+  schema.addField("datetime_col", PropertyType::DATETIME);
   // Col 12: time_col -- TIME
-  schema.appendCol("time_col", PropertyType::TIME);
+  schema.addField("time_col", PropertyType::TIME);
 
   std::string encoded;
   // Single byte header (Schema version is 0, no offset)

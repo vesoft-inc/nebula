@@ -2,15 +2,8 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-nebula_add_library(
-    codec_test_obj OBJECT
-    ResultSchemaProvider.cpp
-    SchemaWriter.cpp
-)
-
 set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:codec_obj>
-    $<TARGET_OBJECTS:codec_test_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>

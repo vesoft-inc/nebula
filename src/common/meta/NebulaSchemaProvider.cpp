@@ -95,7 +95,7 @@ const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::field(
   return &fields_[it->second];
 }
 
-void NebulaSchemaProvider::addField(folly::StringPiece name,
+void NebulaSchemaProvider::addField(const std::string& name,
                                     PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
@@ -114,16 +114,9 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
     nullFlagPos = numNullableFields_++;
   }
 
-  fields_.emplace_back(name.toString(),
-                       type,
-                       nullable,
-                       defaultValue != "",
-                       defaultValue,
-                       size,
-                       offset,
-                       nullFlagPos,
-                       geoShape);
-  fieldNameIndex_.emplace(name.toString(), static_cast<int64_t>(fields_.size() - 1));
+  fields_.emplace_back(
+      name, type, nullable, defaultValue != "", defaultValue, size, offset, nullFlagPos, geoShape);
+  fieldNameIndex_.emplace(name, static_cast<int64_t>(fields_.size() - 1));
 }
 
 /*static*/

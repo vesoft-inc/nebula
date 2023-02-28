@@ -7,7 +7,7 @@
 
 namespace nebula {
 
-using meta::SchemaProviderIf;
+using meta::NebulaSchemaProvider;
 using meta::cpp2::Schema;
 using nebula::cpp2::PropertyType;
 

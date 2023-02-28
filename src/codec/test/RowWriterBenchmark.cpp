@@ -7,34 +7,33 @@
 
 #include "codec/RowWriterV2.h"
 #include "codec/test/RowWriterV1.h"
-#include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
-using nebula::SchemaWriter;
 using nebula::cpp2::PropertyType;
+using nebula::meta::NebulaSchemaProvider;
 
-SchemaWriter schemaShort;
-SchemaWriter schemaLong;
+NebulaSchemaProvider schemaShort;
+NebulaSchemaProvider schemaLong;
 
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;
 const std::string str = "Hello world!";  // NOLINT
 
-void prepareSchema(SchemaWriter* schema, size_t numRepeats) {
+void prepareSchema(NebulaSchemaProvider* schema, size_t numRepeats) {
   int32_t index = 1;
   for (size_t i = 0; i < numRepeats; i++) {
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::BOOL);
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::INT64);
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::TIMESTAMP);
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::FLOAT);
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::DOUBLE);
-    schema->appendCol(folly::stringPrintf("col%02d", index++), PropertyType::STRING);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::BOOL);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::INT64);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::TIMESTAMP);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::FLOAT);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::DOUBLE);
+    schema->addField(folly::stringPrintf("col%02d", index++), PropertyType::STRING);
   }
 }
 
-void writeDataV1(SchemaWriter* schema, int32_t iters) {
+void writeDataV1(NebulaSchemaProvider* schema, int32_t iters) {
   for (int32_t i = 0; i < iters; i++) {
     RowWriterV1 writer(schema);
     for (size_t j = 0; j < schema->getNumFields() / 6; j++) {
@@ -45,7 +44,7 @@ void writeDataV1(SchemaWriter* schema, int32_t iters) {
   }
 }
 
-void writeDataV2(SchemaWriter* schema, int32_t iters) {
+void writeDataV2(NebulaSchemaProvider* schema, int32_t iters) {
   for (int32_t i = 0; i < iters; i++) {
     RowWriterV2 writer(schema);
     size_t idx = 0;

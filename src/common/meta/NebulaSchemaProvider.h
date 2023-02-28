@@ -7,6 +7,7 @@
 #define COMMON_META_NEBULASCHEMAPROVIDER_H_
 
 #include <folly/RWSpinLock.h>
+#include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
@@ -17,10 +18,12 @@ namespace nebula {
 namespace meta {
 
 class NebulaSchemaProvider {
+  friend class RowReaderV2Test;
+
  public:
   class SchemaField final {
    public:
-    SchemaField(std::string name,
+    SchemaField(const std::string& name,
                 nebula::cpp2::PropertyType type,
                 bool nullable,
                 bool hasDefault,
@@ -29,8 +32,8 @@ class NebulaSchemaProvider {
                 size_t offset,
                 size_t nullFlagPos,
                 cpp2::GeoShape geoShape)
-        : name_(std::move(name)),
-          type_(std::move(type)),
+        : name_(name),
+          type_(type),
           nullable_(nullable),
           hasDefault_(hasDefault),
           defaultValue_(defaultValue),
@@ -140,6 +143,8 @@ class NebulaSchemaProvider {
  public:
   explicit NebulaSchemaProvider(SchemaVer ver) : ver_(ver), numNullableFields_(0) {}
 
+  NebulaSchemaProvider() : ver_(0), numNullableFields_(0) {}
+
   SchemaVer getVersion() const noexcept;
   // Returns the size of fields_
   size_t getNumFields() const noexcept;
@@ -157,7 +162,7 @@ class NebulaSchemaProvider {
   const SchemaField* field(int64_t index) const;
   const SchemaField* field(const std::string& name) const;
 
-  void addField(folly::StringPiece name,
+  void addField(const std::string& name,
                 nebula::cpp2::PropertyType type,
                 size_t fixedStrLen = 0,
                 bool nullable = false,
@@ -183,8 +188,6 @@ class NebulaSchemaProvider {
   }
 
  private:
-  NebulaSchemaProvider() = default;
-
   std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
 
  private:

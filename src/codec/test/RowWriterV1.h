@@ -6,9 +6,9 @@
 #ifndef CODEC_TEST_ROWWRITERV1_H_
 #define CODEC_TEST_ROWWRITERV1_H_
 
-#include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 #include "common/base/ICord.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
