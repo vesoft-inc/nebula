@@ -543,68 +543,6 @@ SubPlan GoPlanner::simplePlan() {
   return nStepsPlan();
 }
 
-SubPlan GoPlanner::oneToNStepsPlan() {
-  auto qctx = goCtx_->qctx;
-  auto& from = goCtx_->from;
-  auto* pool = qctx->objPool();
-  if (goCtx_->joinInput) {
-    auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "_expandall_vid");
-    goCtx_->srcPropsExpr->addColumn(vidExpr);
-  }
-  if (goCtx_->joinDst) {
-    auto* dstExpr =
-        new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), "_expandall_dst");
-    goCtx_->edgePropsExpr->addColumn(dstExpr);
-  }
-  auto* expandAll = ExpandAll::make(qctx,
-                                    startNode_,
-                                    goCtx_->space.id,
-                                    goCtx_->random,
-                                    1,
-                                    goCtx_->steps.nSteps(),
-                                    buildEdgeProps(false),
-                                    buildVertexProps(goCtx_->exprProps.srcTagProps()),
-                                    goCtx_->srcPropsExpr,
-                                    goCtx_->edgePropsExpr);
-  expandAll->setLimits(goCtx_->limits);
-  expandAll->setInputVar(goCtx_->vidsVar);
-  PlanNode* dep = expandAll;
-  if (goCtx_->joinDst) {
-    dep = buildJoinDstPlan(expandAll);
-  }
-
-  if (goCtx_->joinInput) {
-    // the result of the previous statement InnerJoin the result of the current statement
-    auto* hashKey = from.originalSrc;
-    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expandall_vid");
-    auto* join = HashInnerJoin::make(qctx, preRootNode_, dep, {hashKey}, {probeKey});
-
-    auto& varName = from.fromType == kPipe ? goCtx_->inputVarName : from.userDefinedVarName;
-    auto* varPtr = qctx->symTable()->getVar(varName);
-    DCHECK(varPtr != nullptr);
-    std::vector<std::string> colNames = varPtr->colNames;
-    colNames.insert(colNames.end(), dep->colNames().begin(), dep->colNames().end());
-    join->setColNames(std::move(colNames));
-    dep = join;
-  }
-
-  if (goCtx_->filter != nullptr) {
-    dep = Filter::make(qctx, dep, goCtx_->filter);
-  }
-
-  dep = Project::make(qctx, dep, goCtx_->yieldExpr);
-  dep->setColNames(std::move(goCtx_->colNames));
-
-  if (goCtx_->distinct) {
-    dep = Dedup::make(qctx, dep);
-  }
-
-  SubPlan subPlan;
-  subPlan.root = dep;
-  subPlan.tail = startNode_;
-  return subPlan;
-}
-
 SubPlan GoPlanner::complexPlan() {
   auto qctx = goCtx_->qctx;
   auto& from = goCtx_->from;
@@ -613,25 +551,23 @@ SubPlan GoPlanner::complexPlan() {
   size_t minStep = goCtx_->steps.mSteps();
   size_t maxStep = goCtx_->steps.nSteps();
 
-  auto* expand = Expand::make(
-      qctx, startNode_, goCtx_->space.id, goCtx_->random, minStep - 1, buildEdgeProps(true));
+  auto* expand = Expand::make(qctx,
+                              startNode_,
+                              goCtx_->space.id,
+                              goCtx_->random,
+                              minStep == 0 ? minStep : minStep - 1,
+                              buildEdgeProps(true));
   expand->setColNames({"_expand_vid", "_expand_dst"});
   expand->setInputVar(goCtx_->vidsVar);
   expand->setLimits(goCtx_->limits);
 
-  // last step
-  auto* arg = Argument::make(qctx, "_expand_dst");
-  arg->setColNames({"_expand_dst"});
-
-  auto* vidExpr = new YieldColumn(ColumnExpression::make(pool, VID_INDEX), "_expandall_vid");
-  goCtx_->srcPropsExpr->addColumn(vidExpr);
   if (goCtx_->joinDst) {
     auto* dstExpr =
         new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), "_expandall_dst");
     goCtx_->edgePropsExpr->addColumn(dstExpr);
   }
   auto* expandAll = ExpandAll::make(qctx,
-                                    arg,
+                                    expand,
                                     goCtx_->space.id,
                                     goCtx_->random,
                                     minStep,
@@ -640,22 +576,17 @@ SubPlan GoPlanner::complexPlan() {
                                     buildVertexProps(goCtx_->exprProps.srcTagProps()),
                                     goCtx_->srcPropsExpr,
                                     goCtx_->edgePropsExpr);
+  if (goCtx_->joinInput) {
+    expandAll->setJoinInput(true);
+    // Insert _expand_vid in the first column in colNames
+    auto colNames = expandAll->colNames();
+    colNames.insert(colNames.begin(), "_expand_vid");
+    expandAll->setColNames(colNames);
+  }
   expandAll->setLimits(goCtx_->limits);
   PlanNode* dep = expandAll;
   if (goCtx_->joinDst) {
     dep = buildJoinDstPlan(expandAll);
-  }
-
-  {
-    // n-1 step's dst(_expand_dst) InnerJoin last step's vid(_expandAll_vid)
-    // joinLeft : expand   joinRight : expandAll(no need join dst) OR hashLeftJoin
-    auto* hashKey = VariablePropertyExpression::make(pool, expand->outputVar(), "_expand_dst");
-    auto* probeKey = VariablePropertyExpression::make(pool, dep->outputVar(), "_expandall_vid");
-    auto* join = HashInnerJoin::make(qctx, expand, dep, {hashKey}, {probeKey});
-    std::vector<std::string> colNames = expand->colNames();
-    colNames.insert(colNames.end(), dep->colNames().begin(), dep->colNames().end());
-    join->setColNames(std::move(colNames));
-    dep = join;
   }
 
   if (goCtx_->joinInput) {
@@ -732,9 +663,6 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
   if (goCtx_->isSimple) {
     return simplePlan();
-  }
-  if (steps.mSteps() <= 1) {
-    return oneToNStepsPlan();
   }
   return complexPlan();
 }

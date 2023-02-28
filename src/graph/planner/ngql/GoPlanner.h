@@ -36,8 +36,6 @@ class GoPlanner final : public Planner {
 
   SubPlan complexPlan();
 
-  SubPlan oneToNStepsPlan();
-
   SubPlan oneStepPlan();
 
   SubPlan nStepsPlan();

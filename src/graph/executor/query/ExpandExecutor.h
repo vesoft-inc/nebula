@@ -53,6 +53,7 @@ class ExpandExecutor final : public StorageAccessExecutor {
   std::unordered_set<Value> nextStepVids_;
   std::unordered_set<Value> preVisitedVids_;
   std::unordered_map<Value, std::unordered_set<Value>> adjDsts_;
+  // key : edge's dst, value : init vids
   std::unordered_map<Value, std::unordered_set<Value>> preDst2VidsMap_;
 };
 

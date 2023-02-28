@@ -363,8 +363,16 @@ class ExpandAll : public Expand {
     return edgeColumns_;
   }
 
+  bool joinInput() const {
+    return joinInput_;
+  }
+
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
     vertexProps_ = std::move(vertexProps);
+  }
+
+  void setJoinInput(bool joinInput) {
+    joinInput_ = joinInput;
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -409,6 +417,7 @@ class ExpandAll : public Expand {
   std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
   YieldColumns* vertexColumns_{nullptr};
   YieldColumns* edgeColumns_{nullptr};
+  bool joinInput_{false};
 };
 
 // Get Edge dst id by src id

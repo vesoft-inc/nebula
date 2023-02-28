@@ -45,6 +45,17 @@ folly::Future<Status> ExpandExecutor::execute() {
     DataSet emptyDs;
     return finish(ResultBuilder().value(Value(std::move(emptyDs))).build());
   }
+  if (maxSteps_ == 0) {
+    DataSet ds;
+    ds.colNames = expand_->colNames();
+    for (const auto& vid : nextStepVids_) {
+      Row row;
+      row.values.emplace_back(vid);
+      row.values.emplace_back(vid);
+      ds.rows.emplace_back(std::move(row));
+    }
+    return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  }
   return getNeighbors();
 }
 

@@ -23,17 +23,25 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors();
 
-  void getNeighborsFromCache(std::unordered_set<Value>& visitedVids);
+  void getNeighborsFromCache(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
+                             std::unordered_set<Value>& visitedVids);
 
   folly::Future<Status> expandFromCache();
 
+  void updateDst2VidsMap(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidMap,
+                         const Value& src,
+                         const Value& dst);
+
   void buildResult(const List& vList, const List& eList);
+
+  void buildResult(const std::unordered_set<Value>& vids, const List& vList, const List& eList);
 
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
  private:
   const ExpandAll* expand_;
+  bool joinInput_{false};
   size_t currentStep_{0};
   size_t maxSteps_{0};
   DataSet result_;
@@ -46,8 +54,11 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
   std::vector<int64_t> limits_;
 
   std::unordered_set<Value> nextStepVids_;
+  std::unordered_set<Value> historyVisitedVids_;
   std::unordered_set<Value> preVisitedVids_;
   std::unordered_map<Value, std::vector<List>> adjList_;
+  // key : edge's dst, value : init vids
+  std::unordered_map<Value, std::unordered_set<Value>> preDst2VidsMap_;
 };
 
 }  // namespace graph

@@ -24,15 +24,20 @@ Status ExpandAllExecutor::buildRequestVids() {
   nextStepVids_.reserve(iterSize);
   QueryExpressionContext ctx(ectx_);
 
-  const auto& spaceInfo = qctx()->rctx()->session()->space();
-  const auto& metaVidType = *(spaceInfo.spaceDesc.vid_type_ref());
-  auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
   for (; iter->valid(); iter->next()) {
-    const auto& vid = iter->getColumn(0);
-    DCHECK_EQ(vid.type(), vidType)
-        << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
-    if (vid.type() == vidType) {
-      nextStepVids_.emplace(vid);
+    const auto& dst = iter->getColumn(1);
+    nextStepVids_.emplace(dst);
+    historyVisitedVids_.emplace(dst);
+    if (joinInput_) {
+      // update preDst2vidMap_
+      const auto& src = iter->getColumn(0);
+      auto findDst = preDst2VidsMap_.find(dst);
+      if (findDst == preDst2VidsMap_.end()) {
+        std::unordered_set<Value> tmp({src});
+        preDst2VidsMap_.emplace(dst, std::move(tmp));
+      } else {
+        findDst->second.emplace(src);
+      }
     }
   }
   return Status::OK();
@@ -45,6 +50,7 @@ folly::Future<Status> ExpandAllExecutor::execute() {
   edgeColumns_ = expand_->edgeColumns();
   sample_ = expand_->sample();
   limits_ = expand_->limits();
+  joinInput_ = expand_->joinInput();
   result_.colNames = expand_->colNames();
 
   NG_RETURN_IF_ERROR(buildRequestVids());
@@ -119,9 +125,11 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
   for (; currentStep_ <= maxSteps_; ++currentStep_) {
     curLimit_ = 0;
     curMaxLimit_ = limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_];
+    std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
-    getNeighborsFromCache(visitedVids);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
     preVisitedVids_.swap(visitedVids);
+    preDst2VidsMap_.swap(dst2VidsMap);
 
     if (!nextStepVids_.empty()) {
       return getNeighbors();
@@ -132,7 +140,9 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
   return finish(ResultBuilder().value(Value(std::move(result_))).build());
 }
 
-void ExpandAllExecutor::getNeighborsFromCache(std::unordered_set<Value>& visitedVids) {
+void ExpandAllExecutor::getNeighborsFromCache(
+    std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
+    std::unordered_set<Value>& visitedVids) {
   for (const auto& vid : preVisitedVids_) {
     auto findVid = adjList_.find(vid);
     if (findVid == adjList_.end()) {
@@ -150,7 +160,22 @@ void ExpandAllExecutor::getNeighborsFromCache(std::unordered_set<Value>& visited
       } else {
         visitedVids.emplace(dst);
       }
-      buildResult(vertexProps, *edgeIter);
+      if (joinInput_) {
+        auto findInitVid = preDst2VidsMap_.find(vid);
+        buildResult(findInitVid->second, vertexProps, *edgeIter);
+        updateDst2VidsMap(dst2VidsMap, vid, dst);
+      } else {
+        buildResult(vertexProps, *edgeIter);
+      }
+    }
+    auto vidIter = nextStepVids_.begin();
+    while (vidIter != nextStepVids_.end()) {
+      if (adjList_.find(*vidIter) != adjList_.end()) {
+        visitedVids.emplace(*vidIter);
+        vidIter = nextStepVids_.erase(vidIter);
+      } else {
+        vidIter++;
+      }
     }
   }
 }
@@ -171,17 +196,15 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
   }
 
   QueryExpressionContext ctx(ectx_);
+  std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
   std::unordered_set<Value> visitedVids;
   std::vector<List> adjEdgeProps;
   List curVertexProps;
   Value curVid;
-  bool visitVertex = false;
-  if (iter->valid()) {
-    if (vertexColumns_) {
-      for (auto& col : vertexColumns_->columns()) {
-        Value val = col->expr()->eval(ctx(iter.get()));
-        curVertexProps.values.emplace_back(std::move(val));
-      }
+  if (iter->valid() && vertexColumns_) {
+    for (auto& col : vertexColumns_->columns()) {
+      Value val = col->expr()->eval(ctx(iter.get()));
+      curVertexProps.values.emplace_back(std::move(val));
     }
   }
   for (; iter->valid(); iter->next()) {
@@ -192,7 +215,12 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
         edgeProps.values.emplace_back(std::move(val));
       }
     }
+    // get the start vid of the next step through dst when expanding in the cache
     auto dst = iter->getEdgeProp("*", nebula::kDst);
+    if (dst.isNull()) {
+      // (TEST)
+      continue;
+    }
     edgeProps.values.emplace_back(dst);
     const auto& vid = iter->getColumn(0);
     curVid = curVid.empty() ? vid : curVid;
@@ -212,11 +240,14 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     if (curLimit_++ >= curMaxLimit_) {
       continue;
     }
-    buildResult(curVertexProps, edgeProps);
-
-    if (dst.isNull()) {
-      continue;
+    if (joinInput_) {
+      auto findVid = preDst2VidsMap_.find(vid);
+      buildResult(findVid->second, curVertexProps, edgeProps);
+      updateDst2VidsMap(dst2VidsMap, vid, dst);
+    } else {
+      buildResult(curVertexProps, edgeProps);
     }
+
     if (adjList_.find(dst) == adjList_.end()) {
       nextStepVids_.emplace(dst);
     } else {
@@ -227,12 +258,37 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     adjEdgeProps.emplace_back(std::move(curVertexProps));
     adjList_.emplace(curVid, std::move(adjEdgeProps));
   }
+  auto vidIter = nextStepVids_.begin();
+  while (vidIter != nextStepVids_.end()) {
+    if (adjList_.find(*vidIter) != adjList_.end()) {
+      visitedVids.emplace(*vidIter);
+      vidIter = nextStepVids_.erase(vidIter);
+    } else {
+      vidIter++;
+    }
+  }
 
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(visitedVids);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
   }
   visitedVids.swap(preVisitedVids_);
+  dst2VidsMap.swap(preDst2VidsMap_);
   return Status::OK();
+}
+
+void ExpandAllExecutor::buildResult(const std::unordered_set<Value>& vids,
+                                    const List& vList,
+                                    const List& eList) {
+  if (vList.values.empty() && eList.values.empty()) {
+    return;
+  }
+  for (auto& vid : vids) {
+    Row row;
+    row.values.emplace_back(vid);
+    row.values.insert(row.values.end(), vList.values.begin(), vList.values.end());
+    row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
+    result_.rows.emplace_back(std::move(row));
+  }
 }
 
 void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
@@ -243,5 +299,29 @@ void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
   row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
   result_.rows.emplace_back(std::move(row));
 }
+
+void ExpandAllExecutor::updateDst2VidsMap(
+    std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
+    const Value& src,
+    const Value& dst) {
+  auto findSrc = preDst2VidsMap_.find(src);
+  if (findSrc == preDst2VidsMap_.end()) {
+    auto findDst = dst2VidsMap.find(dst);
+    if (findDst == dst2VidsMap.end()) {
+      std::unordered_set<Value> tmp({src});
+      dst2VidsMap.emplace(dst, std::move(tmp));
+    } else {
+      findDst->second.emplace(src);
+    }
+  } else {
+    auto findDst = dst2VidsMap.find(dst);
+    if (findDst == dst2VidsMap.end()) {
+      dst2VidsMap.emplace(dst, findSrc->second);
+    } else {
+      findDst->second.insert(findSrc->second.begin(), findSrc->second.end());
+    }
+  }
+}
+
 }  // namespace graph
 }  // namespace nebula
