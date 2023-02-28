@@ -557,7 +557,13 @@ SubPlan GoPlanner::complexPlan() {
                               goCtx_->random,
                               minStep == 0 ? minStep : minStep - 1,
                               buildEdgeProps(true));
-  expand->setColNames({"_expand_vid", "_expand_dst"});
+  if (goCtx_->joinInput) {
+    expand->setJoinInput(true);
+    expand->setColNames({"_expand_vid", "_expand_dst"});
+  } else {
+    expand->setEdgeTypes(buildEdgeTypes());
+    expand->setColNames({"_expand_vid"});
+  }
   expand->setInputVar(goCtx_->vidsVar);
   expand->setLimits(goCtx_->limits);
 
@@ -659,10 +665,6 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     if (steps.steps() == 1) {
       return oneStepPlan();
     }
-  }
-
-  if (goCtx_->isSimple) {
-    return simplePlan();
   }
   return complexPlan();
 }

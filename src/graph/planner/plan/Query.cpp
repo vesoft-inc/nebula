@@ -129,9 +129,8 @@ void Expand::cloneMembers(const Expand& expand) {
 }
 
 std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
-  auto desc = Explore::explain();
+  auto desc = Expand::explain();
   addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
-  addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
   addDescription(

@@ -291,6 +291,22 @@ class Expand : public Explore {
     edgeProps_ = std::move(edgeProps);
   }
 
+  const std::vector<EdgeType>& edgeTypes() const {
+    return edgeTypes_;
+  }
+
+  void setEdgeTypes(std::vector<EdgeType> edgeTypes) {
+    edgeTypes_ = std::move(edgeTypes);
+  }
+
+  bool joinInput() const {
+    return joinInput_;
+  }
+
+  void setJoinInput(bool joinInput) {
+    joinInput_ = joinInput;
+  }
+
   size_t maxSteps() const {
     return maxSteps_;
   }
@@ -320,6 +336,8 @@ class Expand : public Explore {
   size_t maxSteps_{0};
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_{nullptr};
   std::vector<int64_t> limits_;
+  bool joinInput_{false};
+  std::vector<EdgeType> edgeTypes_;
 };
 
 class ExpandAll : public Expand {
@@ -363,16 +381,8 @@ class ExpandAll : public Expand {
     return edgeColumns_;
   }
 
-  bool joinInput() const {
-    return joinInput_;
-  }
-
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
     vertexProps_ = std::move(vertexProps);
-  }
-
-  void setJoinInput(bool joinInput) {
-    joinInput_ = joinInput;
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -417,7 +427,6 @@ class ExpandAll : public Expand {
   std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
   YieldColumns* vertexColumns_{nullptr};
   YieldColumns* edgeColumns_{nullptr};
-  bool joinInput_{false};
 };
 
 // Get Edge dst id by src id

@@ -23,14 +23,12 @@ Status ExpandAllExecutor::buildRequestVids() {
   size_t iterSize = iter->size();
   nextStepVids_.reserve(iterSize);
   QueryExpressionContext ctx(ectx_);
-
-  for (; iter->valid(); iter->next()) {
-    const auto& dst = iter->getColumn(1);
-    nextStepVids_.emplace(dst);
-    historyVisitedVids_.emplace(dst);
-    if (joinInput_) {
-      // update preDst2vidMap_
+  if (joinInput_) {
+    for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(0);
+      const auto& dst = iter->getColumn(1);
+      nextStepVids_.emplace(dst);
+      // update preDst2vidMap_
       auto findDst = preDst2VidsMap_.find(dst);
       if (findDst == preDst2VidsMap_.end()) {
         std::unordered_set<Value> tmp({src});
@@ -38,6 +36,11 @@ Status ExpandAllExecutor::buildRequestVids() {
       } else {
         findDst->second.emplace(src);
       }
+    }
+  } else {
+    for (; iter->valid(); iter->next()) {
+      const auto& dst = iter->getColumn(0);
+      nextStepVids_.emplace(dst);
     }
   }
   return Status::OK();
