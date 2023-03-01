@@ -1264,11 +1264,13 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
 }
 
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
-                                                                const std::string& newSpaceName) {
+                                                                const std::string& newSpaceName,
+                                                                bool ifNotExists) {
   memory::MemoryCheckOffGuard g;
   cpp2::CreateSpaceAsReq req;
   req.old_space_name_ref() = oldSpaceName;
   req.new_space_name_ref() = newSpaceName;
+  req.if_not_exists_ref() = ifNotExists;
   folly::Promise<StatusOr<GraphSpaceID>> promise;
   auto future = promise.getFuture();
   getResponse(
