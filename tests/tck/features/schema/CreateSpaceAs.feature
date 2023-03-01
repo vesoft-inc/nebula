@@ -182,10 +182,10 @@ Feature: Create space as another space
       """
       CREATE SPACE space1 IF NOT EXISTS AS space2;
       """
-    Then the execution should be successful 
+    Then the execution should be successful
     When executing query:
       """
       CREATE SPACE space1 AS space2;
       """
-    Then the execution should be failed 
+    Then the execution should be failed
     Then drop the used spaces
