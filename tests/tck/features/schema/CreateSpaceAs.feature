@@ -166,14 +166,13 @@ Feature: Create space as another space
       | "1" | "2" | 0    |
     Then drop the used space
 
-Scenario: clone space if not exist
+  Scenario: clone space if not exist
     # Space
     When executing query:
       """
       CREATE SPACE IF NOT EXISTS space1(vid_type=int);
       """
     Then the execution should be successful
-    And wait 3 seconds
     When executing query:
       """
       CREATE SPACE space1 AS space2;
@@ -181,12 +180,12 @@ Scenario: clone space if not exist
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE space1 AS space2;
-      """
-    Then the execution should be failed 
-    When executing query:
-      """
       CREATE SPACE space1 IF NOT EXISTS AS space2;
       """
     Then the execution should be successful 
+    When executing query:
+      """
+      CREATE SPACE space1 AS space2;
+      """
+    Then the execution should be failed 
     Then drop the used spaces
