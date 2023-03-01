@@ -126,6 +126,8 @@ void Expand::cloneMembers(const Expand& expand) {
     setEdgeProps(std::move(edgePropsPtr));
   }
   limits_ = expand.limits();
+  joinInput_ = expand.joinInput();
+  edgeTypes_ = expand.edgeTypes();
 }
 
 std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
@@ -670,10 +672,6 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
       addDescription("kind", "ROW", desc.get());
       break;
     }
-    case DCKind::kMToN: {
-      addDescription("kind", "M TO N", desc.get());
-      break;
-    }
     case DCKind::kBFSShortest: {
       addDescription("kind", "BFS SHORTEST", desc.get());
       break;
@@ -702,7 +700,6 @@ PlanNode* DataCollect::clone() const {
 
 void DataCollect::cloneMembers(const DataCollect& l) {
   VariableDependencyNode::cloneMembers(l);
-  step_ = l.step();
   distinct_ = l.distinct();
 }
 

@@ -221,14 +221,14 @@ SubPlan GoPlanner::doPlan() {
 
   SubPlan subPlan;
   subPlan.root = dep;
-  subPlan.tail = startNode_ == nullptr ? expand : startNode_;
+  subPlan.tail = startNode_;
   return subPlan;
 }
 
 StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_ = static_cast<GoContext*>(astCtx);
   auto qctx = goCtx_->qctx;
-  goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr && !goCtx_->isSimple;
+  goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
 
   startNode_ = StartNode::make(qctx);

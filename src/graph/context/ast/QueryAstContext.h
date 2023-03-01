@@ -93,10 +93,6 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
-  // Optimize for some simple go sentence which only need dst id.
-  bool isSimple{false};
-  // The column name used by plan node`GetDstBySrc`
-  std::string dstIdColName{kDst};
 
   ExpressionProps exprProps;
 

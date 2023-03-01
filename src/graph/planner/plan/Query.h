@@ -1444,7 +1444,6 @@ class DataCollect final : public VariableDependencyNode {
   enum class DCKind : uint8_t {
     kSubgraph,
     kRowBasedMove,
-    kMToN,
     kBFSShortest,
     kAllPaths,
     kMultiplePairShortest,
@@ -1453,10 +1452,6 @@ class DataCollect final : public VariableDependencyNode {
 
   static DataCollect* make(QueryContext* qctx, DCKind kind) {
     return qctx->objPool()->makeAndAdd<DataCollect>(qctx, kind);
-  }
-
-  void setMToN(StepClause step) {
-    step_ = std::move(step);
   }
 
   void setDistinct(bool distinct) {
@@ -1479,10 +1474,6 @@ class DataCollect final : public VariableDependencyNode {
     std::transform(
         inputVars_.begin(), inputVars_.end(), vars.begin(), [](auto& var) { return var->name; });
     return vars;
-  }
-
-  StepClause step() const {
-    return step_;
   }
 
   bool distinct() const {
@@ -1510,8 +1501,6 @@ class DataCollect final : public VariableDependencyNode {
 
  private:
   DCKind kind_;
-  // using for m to n steps
-  StepClause step_;
   std::vector<Value::Type> colType_;
   bool distinct_{false};
 };

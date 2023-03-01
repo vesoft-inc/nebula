@@ -77,8 +77,7 @@ bool RemoveProjectDedupBeforeGetDstBySrcRule::match(OptContext*,
   if (project->columns()->size() != 1) {
     return false;
   }
-  if (dataCollect->kind() != graph::DataCollect::DCKind::kMToN || !dataCollect->distinct() ||
-      dataCollect->colNames().size() != 1) {
+  if (!dataCollect->distinct() || dataCollect->colNames().size() != 1) {
     return false;
   }
 

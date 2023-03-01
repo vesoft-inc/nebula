@@ -211,7 +211,6 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | $^.player.name |
 
-  @jmq
   Scenario: assignment simple
     When executing query:
       """
