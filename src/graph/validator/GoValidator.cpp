@@ -257,6 +257,7 @@ Status GoValidator::buildColumns() {
   const auto& inputProps = exprProps.inputProps();
   const auto& varProps = exprProps.varProps();
   const auto& from = goCtx_->from;
+  UNUSED(from);
   auto pool = qctx_->objPool();
 
   if (!exprProps.srcTagProps().empty()) {
@@ -266,10 +267,10 @@ Status GoValidator::buildColumns() {
     goCtx_->edgePropsExpr = pool->makeAndAdd<YieldColumns>();
   }
 
-  if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
-      from.fromType == FromType::kInstantExpr) {
-    return Status::OK();
-  }
+  // if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
+  //     from.fromType == FromType::kInstantExpr) {
+  //   return Status::OK();
+  // }
 
   if (!dstTagProps.empty()) {
     goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();

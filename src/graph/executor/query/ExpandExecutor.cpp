@@ -52,7 +52,9 @@ folly::Future<Status> ExpandExecutor::execute() {
     for (const auto& vid : nextStepVids_) {
       Row row;
       row.values.emplace_back(vid);
-      row.values.emplace_back(vid);
+      if (expand_->joinInput()) {
+        row.values.emplace_back(vid);
+      }
       ds.rows.emplace_back(std::move(row));
     }
     return finish(ResultBuilder().value(Value(std::move(ds))).build());

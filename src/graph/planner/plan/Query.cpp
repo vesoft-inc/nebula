@@ -132,8 +132,6 @@ std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
   auto desc = Expand::explain();
   addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
   addDescription(
-      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
-  addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
   return desc;
 }
