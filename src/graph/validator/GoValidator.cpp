@@ -252,33 +252,30 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
 // collect the input properties used in the query,
 // rewrites output expression to Input/Variable expression to get properties from previous plan node
 Status GoValidator::buildColumns() {
-  const auto& exprProps = goCtx_->exprProps;
-  const auto& dstTagProps = exprProps.dstTagProps();
-  const auto& inputProps = exprProps.inputProps();
-  const auto& varProps = exprProps.varProps();
+  // const auto& exprProps = goCtx_->exprProps;
+  // const auto& dstTagProps = exprProps.dstTagProps();
+  // const auto& inputProps = exprProps.inputProps();
+  // const auto& varProps = exprProps.varProps();
   const auto& from = goCtx_->from;
   UNUSED(from);
   auto pool = qctx_->objPool();
-
-  if (!exprProps.srcTagProps().empty()) {
-    goCtx_->srcPropsExpr = pool->makeAndAdd<YieldColumns>();
-  }
-  if (!exprProps.edgeProps().empty()) {
-    goCtx_->edgePropsExpr = pool->makeAndAdd<YieldColumns>();
-  }
+  goCtx_->srcPropsExpr = pool->makeAndAdd<YieldColumns>();
+  goCtx_->edgePropsExpr = pool->makeAndAdd<YieldColumns>();
+  goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
+  inputPropCols_ = pool->makeAndAdd<YieldColumns>();
 
   // if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
   //     from.fromType == FromType::kInstantExpr) {
   //   return Status::OK();
   // }
 
-  if (!dstTagProps.empty()) {
-    goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
-  }
+  // if (!dstTagProps.empty()) {
+  //   goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
+  // }
 
-  if (!inputProps.empty() || !varProps.empty()) {
-    inputPropCols_ = pool->makeAndAdd<YieldColumns>();
-  }
+  // if (!inputProps.empty() || !varProps.empty()) {
+  //   inputPropCols_ = pool->makeAndAdd<YieldColumns>();
+  // }
 
   std::unordered_set<std::string> uniqueEdgeVertexExpr;
   auto filter = goCtx_->filter;

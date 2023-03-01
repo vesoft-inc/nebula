@@ -308,6 +308,9 @@ std::vector<std::string> Validator::getOutColNames() const {
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
+  if (node->kind() == PlanNode::Kind::kArgument) {
+    return Status::OK();
+  }
 
   if (!node->isSingleInput()) {
     return Status::SemanticError("PlanNode(%s) not support to append an input.",

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: Go Sentence
 
   Background:
@@ -76,7 +75,6 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
-      | "Spurs"    |
       | "Spurs"    |
     When executing query:
       """
@@ -213,6 +211,7 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | $^.player.name |
 
+  @jmq
   Scenario: assignment simple
     When executing query:
       """

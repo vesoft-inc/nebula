@@ -221,7 +221,7 @@ SubPlan GoPlanner::doPlan() {
 
   SubPlan subPlan;
   subPlan.root = dep;
-  subPlan.tail = startNode_;
+  subPlan.tail = startNode_ == nullptr ? expand : startNode_;
   return subPlan;
 }
 
@@ -245,9 +245,8 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
       preRootNode_ = node;
     }
 
-    auto& colName = from.fromType == kVariable ? from.userDefinedVarName : from.runtimeVidName;
-    auto argNode = Argument::make(qctx, colName);
-    argNode->setColNames({colName});
+    auto argNode = Argument::make(qctx, from.runtimeVidName);
+    argNode->setColNames({from.runtimeVidName});
     goCtx_->vidsVar = argNode->outputVar();
     startNode_ = argNode;
   }
@@ -261,8 +260,6 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   }
   return doPlan();
 }
-
-
 
 }  // namespace graph
 }  // namespace nebula

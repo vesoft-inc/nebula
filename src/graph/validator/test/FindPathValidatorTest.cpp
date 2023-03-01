@@ -181,7 +181,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -205,7 +206,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -228,7 +230,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kProject,
         PK::kStart,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -251,7 +254,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kProject,
         PK::kStart,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
