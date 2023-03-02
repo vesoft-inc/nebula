@@ -175,17 +175,18 @@ Feature: Create space as another space
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE space1 AS space2;
+      DROP SPACE IF EXISTS space2;
+      CREATE SPACE space2 AS space1;
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE space1 IF NOT EXISTS AS space2;
+      CREATE SPACE IF NOT EXISTS space2 AS space1;
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE space1 AS space2;
+      CREATE SPACE space2 AS space1;
       """
-    Then the execution should be failed
-    Then drop the used spaces
+    Then a ExecutionError should be raised at runtime: Existed!
+    Then drop the used space
