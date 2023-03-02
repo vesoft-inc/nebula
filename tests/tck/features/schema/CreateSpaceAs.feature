@@ -170,23 +170,22 @@ Feature: Create space as another space
     # Space
     When executing query:
       """
-      CREATE SPACE IF NOT EXISTS space1(vid_type=int);
+      CREATE SPACE IF NOT EXISTS space_origin(vid_type=int);
       """
     Then the execution should be successful
     When executing query:
       """
-      DROP SPACE IF EXISTS space2;
-      CREATE SPACE space2 AS space1;
+      CREATE SPACE space_clone AS space_origin;
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE IF NOT EXISTS space2 AS space1;
+      CREATE SPACE IF NOT EXISTS space_clone AS space_origin;
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE SPACE space2 AS space1;
+      CREATE SPACE space_clone AS space_origin;
       """
     Then a ExecutionError should be raised at runtime: Existed!
     Then drop the used space
