@@ -165,7 +165,7 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
         time::Duration expandTime;
         curLimit_ = 0;
         curMaxLimit_ =
-            limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_];
+            limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 1];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });

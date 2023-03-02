@@ -8,6 +8,39 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 
+// The go statement is divided into two operators, expand operator and expandAll operator.
+// expandAll is responsible for expansion and take attributes that user need.
+
+// The semantics of GO M TO N STEPS is
+// GO M STEPS
+// UNION ALL
+// GO M+1 STEPS
+// UNION ALL
+// ...
+// GO N STEPS
+
+// therefore. each step in expandAll operator. we need adds the result to the global dataset result_
+// and returns the result_ after the expansion is completed.
+
+// if need to join with the previous statement, we need save the mapping relationship
+// between the init vid and the destination vid during the expansion
+// finally add a column (column name `expand_vid`, store the init vids) to the result_
+// for join previous statement
+
+// if expression contains $$.tag.propName、 $$
+// we need add a column(colume name `_expandall_dst`, store the destination vid)
+// for join getVertices's dataset
+
+// If maxSteps == 0, no expansion, and the output after checking the type of vids
+
+// adjList is an adjacency list structure
+// which saves the vids and the attributes of edge and src vertex that user need when expasion
+// when expanding, if the vid has already been visited, do not need to go through RPC
+// just get the result directly through adjList_
+
+// when minSteps == maxSteps, only need to expand one step
+// then filter and limit information can be pushed down to storage (TODO jmq)
+
 namespace nebula {
 namespace graph {
 class ExpandAllExecutor final : public StorageAccessExecutor {
@@ -54,10 +87,11 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
   std::vector<int64_t> limits_;
 
   std::unordered_set<Value> nextStepVids_;
-  std::unordered_set<Value> historyVisitedVids_;
   std::unordered_set<Value> preVisitedVids_;
   std::unordered_map<Value, std::vector<List>> adjList_;
-  // key : edge's dst, value : init vids
+  // keep the mapping relationship between the init vid and the destination vid
+  // during the expansion.  KEY : edge's dst, VALUE : init vids
+  // then we can know which init vids can reach the current destination point
   std::unordered_map<Value, std::unordered_set<Value>> preDst2VidsMap_;
 };
 

@@ -8,7 +8,24 @@
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"
 
-// Get the dst id of the src id. The dst is is partially deduplicated on the storage side.
+// The go statement is divided into two operators, expand operator and expandAll operator.
+// expand is responsible for expansion and does not take attributes.
+
+// if no need join, invoke the getDstBySrc interface to output only one column,
+// which is the set of destination vids(deduplication) after maxSteps expansion
+
+// if need to join with the previous statement, invoke the getNeighbors interface,
+// and we need save the mapping relationship between the init vid and the destination vid
+// during the expansion. finally output two columns, the first column is the init vid
+// the second column is the destination vid after maxSteps expansion from this vid
+
+// If maxSteps == 0, no expansion, and output after checking the type of vids
+
+// adjList is an adjacency list structure
+// which saves the vids and all destination vids that expand one step
+// when expanding, if the vid has already been visited, do not need to go through RPC
+// just get the result directly through adjList_
+
 namespace nebula {
 namespace graph {
 class ExpandExecutor final : public StorageAccessExecutor {
@@ -55,7 +72,10 @@ class ExpandExecutor final : public StorageAccessExecutor {
   std::unordered_set<Value> nextStepVids_;
   std::unordered_set<Value> preVisitedVids_;
   std::unordered_map<Value, std::unordered_set<Value>> adjDsts_;
-  // key : edge's dst, value : init vids
+
+  // keep the mapping relationship between the init vid and the destination vid
+  // during the expansion.  KEY : edge's dst, VALUE : init vids
+  // then we can know which init vids can reach the current destination point
   std::unordered_map<Value, std::unordered_set<Value>> preDst2VidsMap_;
 };
 
