@@ -165,3 +165,27 @@ Feature: Create space as another space
       | src | dst | rank |
       | "1" | "2" | 0    |
     Then drop the used space
+
+  Scenario: clone space if not exist
+    # Space
+    When executing query:
+      """
+      CREATE SPACE IF NOT EXISTS space_origin(vid_type=int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE SPACE space_clone AS space_origin;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE SPACE IF NOT EXISTS space_clone AS space_origin;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE SPACE space_clone AS space_origin;
+      """
+    Then a ExecutionError should be raised at runtime: Existed!
+    Then drop the used space

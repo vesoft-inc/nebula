@@ -46,6 +46,7 @@ class CreateSpaceAsValidator final : public Validator {
  private:
   std::string oldSpaceName_;
   std::string newSpaceName_;
+  bool ifNotExist_;
 };
 
 class AlterSpaceValidator final : public Validator {

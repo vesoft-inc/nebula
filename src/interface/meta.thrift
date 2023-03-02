@@ -339,6 +339,7 @@ struct CreateSpaceReq {
 struct CreateSpaceAsReq {
     1: binary        old_space_name,
     2: binary        new_space_name,
+    3: bool          if_not_exists,
 }
 
 struct DropSpaceReq {
