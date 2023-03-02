@@ -73,7 +73,6 @@
 #include "graph/executor/query/ExpandExecutor.h"
 #include "graph/executor/query/FilterExecutor.h"
 #include "graph/executor/query/FulltextIndexScanExecutor.h"
-#include "graph/executor/query/GetDstBySrcExecutor.h"
 #include "graph/executor/query/GetEdgesExecutor.h"
 #include "graph/executor/query/GetNeighborsExecutor.h"
 #include "graph/executor/query/GetVerticesExecutor.h"
@@ -566,9 +565,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kShortestPath: {
       return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
-    }
-    case PlanNode::Kind::kGetDstBySrc: {
-      return pool->makeAndAdd<GetDstBySrcExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
       DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

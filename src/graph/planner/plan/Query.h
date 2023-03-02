@@ -429,55 +429,6 @@ class ExpandAll : public Expand {
   YieldColumns* edgeColumns_{nullptr};
 };
 
-// Get Edge dst id by src id
-class GetDstBySrc : public Explore {
- public:
-  static GetDstBySrc* make(QueryContext* qctx,
-                           PlanNode* input,
-                           GraphSpaceID space,
-                           Expression* src = nullptr,
-                           std::vector<EdgeType> edgeTypes = {}) {
-    return qctx->objPool()->makeAndAdd<GetDstBySrc>(
-        qctx, Kind::kGetDstBySrc, input, space, src, std::move(edgeTypes));
-  }
-
-  Expression* src() const {
-    return src_;
-  }
-
-  void setSrc(Expression* src) {
-    src_ = src;
-  }
-
-  const std::vector<EdgeType>& edgeTypes() const {
-    return edgeTypes_;
-  }
-
-  void setEdgeTypes(std::vector<EdgeType> edgeTypes) {
-    edgeTypes_ = std::move(edgeTypes);
-  }
-
-  PlanNode* clone() const override;
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
- protected:
-  friend ObjectPool;
-  GetDstBySrc(QueryContext* qctx,
-              Kind kind,
-              PlanNode* input,
-              GraphSpaceID space,
-              Expression* src,
-              std::vector<EdgeType> edgeTypes)
-      : Explore(qctx, kind, input, space), src_(src), edgeTypes_(std::move(edgeTypes)) {}
-
-  void cloneMembers(const GetDstBySrc&);
-
- private:
-  // vertices may be parsing from runtime.
-  Expression* src_{nullptr};
-  std::vector<EdgeType> edgeTypes_;
-};
-
 // Get property with given vertex keys.
 class GetVertices : public Explore {
  public:

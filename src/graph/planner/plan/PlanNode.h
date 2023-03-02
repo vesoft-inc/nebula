@@ -27,7 +27,6 @@ class PlanNode {
     kGetNeighbors,
     kGetVertices,
     kGetEdges,
-    kGetDstBySrc,
     kExpand,
     kExpandAll,
     kTraverse,
