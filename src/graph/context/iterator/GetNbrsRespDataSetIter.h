@@ -31,6 +31,8 @@ class GetNbrsRespDataSetIter final {
 
   Value getVid() const;
 
+  size_t size();
+
  private:
   struct PropIndex {
     size_t colIdx;

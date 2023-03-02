@@ -228,7 +228,7 @@ SubPlan GoPlanner::doPlan() {
 StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_ = static_cast<GoContext*>(astCtx);
   auto qctx = goCtx_->qctx;
-  goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr && goCtx_->limits.empty();
+  goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
 
   startNode_ = StartNode::make(qctx);

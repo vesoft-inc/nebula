@@ -4,6 +4,7 @@
 
 #include "graph/executor/query/ExpandExecutor.h"
 
+#include "common/algorithm/ReservoirSampling.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
@@ -57,7 +58,7 @@ folly::Future<Status> ExpandExecutor::execute() {
     }
     return finish(ResultBuilder().value(Value(std::move(ds))).build());
   }
-  if (expand_->joinInput()) {
+  if (expand_->joinInput() || !limits_.empty()) {
     return getNeighbors();
   }
   return GetDstBySrc();
@@ -172,6 +173,9 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(s);
+        if (qctx()->isKilled()) {
+          return Status::OK();
+        }
         if (currentStep_ < maxSteps_) {
           if (!nextStepVids_.empty()) {
             return getNeighbors();
@@ -188,11 +192,27 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
 
 folly::Future<Status> ExpandExecutor::expandFromCache() {
   for (; currentStep_ < maxSteps_; ++currentStep_) {
+    if (qctx()->isKilled()) {
+      return Status::OK();
+    }
     curLimit_ = 0;
-    curMaxLimit_ = limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_];
+    curMaxLimit_ =
+        limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 1];
     std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
-    getNeighborsFromCache(dst2VidsMap, visitedVids);
+
+    std::vector<int64_t> samples;
+    if (sample_) {
+      int64_t size = 0;
+      for (auto& vid : preVisitedVids_) {
+        size += adjDsts_[vid].size();
+      }
+      algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
+      samples = sampler.samples();
+      std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
+    }
+
+    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
     dst2VidsMap.swap(preDst2VidsMap_);
     visitedVids.swap(preVisitedVids_);
 
@@ -205,24 +225,29 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
 
 void ExpandExecutor::getNeighborsFromCache(
     std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
-    std::unordered_set<Value>& visitedVids) {
+    std::unordered_set<Value>& visitedVids,
+    std::vector<int64_t>& samples) {
   for (const auto& vid : preVisitedVids_) {
     auto findVid = adjDsts_.find(vid);
     if (findVid == adjDsts_.end()) {
       continue;
     }
     auto& dsts = findVid->second;
-    if (sample_) {
-      sample(vid, dsts);
-      continue;
-    }
-    // limit
-    if (curLimit_ >= curMaxLimit_) {
-      continue;
-    }
+
     for (const auto& dst : dsts) {
-      if (curLimit_++ >= curMaxLimit_) {
-        break;
+      if (sample_) {
+        if (samples.empty()) {
+          break;
+        }
+        if (curLimit_++ != samples.back()) {
+          continue;
+        } else {
+          samples.pop_back();
+        }
+      } else {
+        if (curLimit_++ >= curMaxLimit_) {
+          break;
+        }
       }
       if (adjDsts_.find(dst) == adjDsts_.end()) {
         nextStepVids_.emplace(dst);
@@ -243,6 +268,19 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
   NG_RETURN_IF_ERROR(handleCompleteness(resps, FLAGS_accept_partial_success));
   std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
   std::unordered_set<Value> visitedVids;
+  std::vector<int64_t> samples;
+  if (sample_) {
+    size_t size = 0;
+    for (auto& resp : resps.responses()) {
+      auto dataset = resp.get_vertices();
+      if (!dataset) continue;
+      GetNbrsRespDataSetIter iter(dataset);
+      size += iter.size();
+    }
+    algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
+    samples = sampler.samples();
+    std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
+  }
 
   for (auto& resp : resps.responses()) {
     auto dataset = resp.get_vertices();
@@ -257,19 +295,22 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
       const auto& src = iter.getVid();
       adjDsts_.emplace(src, dsts);
 
-      // sample
-      if (sample_) {
-        sample(src, dsts);
-        continue;
-      }
-      // limit
-      if (curLimit_ >= curMaxLimit_) {
-        continue;
-      }
       for (const auto& dst : dsts) {
-        if (curLimit_++ >= curMaxLimit_) {
-          break;
+        if (sample_) {
+          if (samples.empty()) {
+            break;
+          }
+          if (curLimit_++ != samples.back()) {
+            continue;
+          } else {
+            samples.pop_back();
+          }
+        } else {
+          if (curLimit_++ >= curMaxLimit_) {
+            break;
+          }
         }
+
         if (adjDsts_.find(dst) == adjDsts_.end()) {
           nextStepVids_.emplace(dst);
         } else {
@@ -280,7 +321,7 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
     }
   }
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(dst2VidsMap, visitedVids);
+    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
   }
   dst2VidsMap.swap(preDst2VidsMap_);
   visitedVids.swap(preVisitedVids_);

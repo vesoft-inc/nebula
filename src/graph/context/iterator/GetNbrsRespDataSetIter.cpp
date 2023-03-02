@@ -181,5 +181,20 @@ std::unordered_set<Value> GetNbrsRespDataSetIter::getAdjDsts() const {
   return adjDsts;
 }
 
+size_t GetNbrsRespDataSetIter::size() {
+  size_t size = 0;
+  for (; valid(); next()) {
+    const Row& curRow = dataset_->rows[curRowIdx_];
+    for (const auto& [edgeName, propIdx] : edgePropsMap_) {
+      DCHECK_LT(propIdx.colIdx, curRow.size());
+      const Value& edgeColumn = curRow[propIdx.colIdx];
+      if (edgeColumn.isList()) {
+        size += edgeColumn.getList().values.size();
+      }
+    }
+  }
+  return size;
+}
+
 }  // namespace graph
 }  // namespace nebula

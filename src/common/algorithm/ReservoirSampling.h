@@ -19,6 +19,14 @@ class ReservoirSampling final {
     samples_.reserve(num);
   }
 
+  explicit ReservoirSampling(uint64_t num, uint64_t count) {
+    num_ = num;
+    samples_.reserve(num);
+    for (uint64_t i = 1; i <= count; ++i) {
+      sampling(i);
+    }
+  }
+
   bool sampling(T&& sample) {
     if (cnt_ < num_) {
       samples_.emplace_back(std::move(sample));

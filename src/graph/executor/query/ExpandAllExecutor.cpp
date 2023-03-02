@@ -4,6 +4,7 @@
 
 #include "graph/executor/query/ExpandAllExecutor.h"
 
+#include "common/algorithm/ReservoirSampling.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
@@ -106,6 +107,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(s);
+        if (qctx()->isKilled()) {
+          return Status::OK();
+        }
         if (currentStep_ <= maxSteps_) {
           if (!nextStepVids_.empty()) {
             return getNeighbors();
@@ -126,11 +130,27 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
 
 folly::Future<Status> ExpandAllExecutor::expandFromCache() {
   for (; currentStep_ <= maxSteps_; ++currentStep_) {
+    if (qctx()->isKilled()) {
+      return Status::OK();
+    }
     curLimit_ = 0;
-    curMaxLimit_ = limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_];
+    curMaxLimit_ =
+        limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 2];
+
+    std::vector<int64_t> samples;
+    if (sample_) {
+      int64_t size = 0;
+      for (auto& vid : preVisitedVids_) {
+        size += adjList_[vid].size();
+      }
+      algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
+      samples = sampler.samples();
+      std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
+    }
+
     std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
-    getNeighborsFromCache(dst2VidsMap, visitedVids);
+    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
     preVisitedVids_.swap(visitedVids);
     preDst2VidsMap_.swap(dst2VidsMap);
 
@@ -145,7 +165,8 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
 
 void ExpandAllExecutor::getNeighborsFromCache(
     std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
-    std::unordered_set<Value>& visitedVids) {
+    std::unordered_set<Value>& visitedVids,
+    std::vector<int64_t>& samples) {
   for (const auto& vid : preVisitedVids_) {
     auto findVid = adjList_.find(vid);
     if (findVid == adjList_.end()) {
@@ -154,9 +175,21 @@ void ExpandAllExecutor::getNeighborsFromCache(
     auto& adjEdgeProps = findVid->second;
     auto& vertexProps = adjEdgeProps.back();
     for (auto edgeIter = adjEdgeProps.begin(); edgeIter != adjEdgeProps.end() - 1; ++edgeIter) {
-      if (curLimit_++ >= curMaxLimit_) {
-        break;
+      if (sample_) {
+        if (samples.empty()) {
+          break;
+        }
+        if (curLimit_++ != samples.back()) {
+          continue;
+        } else {
+          samples.pop_back();
+        }
+      } else {
+        if (curLimit_++ >= curMaxLimit_) {
+          break;
+        }
       }
+
       auto& dst = (*edgeIter).values.back();
       if (adjList_.find(dst) == adjList_.end()) {
         nextStepVids_.emplace(dst);
@@ -196,6 +229,13 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
   if (iter->numRows() == 0) {
     return Status::OK();
+  }
+  auto size = iter->size();
+  std::vector<int64_t> samples;
+  if (sample_) {
+    algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
+    samples = sampler.samples();
+    std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
   }
 
   QueryExpressionContext ctx(ectx_);
@@ -238,11 +278,23 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
         }
       }
     }
-
     adjEdgeProps.emplace_back(edgeProps);
-    if (curLimit_++ >= curMaxLimit_) {
-      continue;
+
+    if (sample_) {
+      if (samples.empty()) {
+        continue;
+      }
+      if (curLimit_++ != samples.back()) {
+        continue;
+      } else {
+        samples.pop_back();
+      }
+    } else {
+      if (curLimit_++ >= curMaxLimit_) {
+        continue;
+      }
     }
+
     if (joinInput_) {
       auto findVid = preDst2VidsMap_.find(vid);
       buildResult(findVid->second, curVertexProps, edgeProps);
@@ -272,7 +324,7 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
   }
 
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(dst2VidsMap, visitedVids);
+    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
   }
   visitedVids.swap(preVisitedVids_);
   dst2VidsMap.swap(preDst2VidsMap_);
