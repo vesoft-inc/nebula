@@ -11,12 +11,17 @@
 // The go statement is divided into two operators, expand operator and expandAll operator.
 // expandAll is responsible for expansion and take attributes that user need.
 
+// The semantics of GO N STEPS FROM 'xxx' OVER edge WHERE condition YIELD yyy is
+// First : expand n-1 steps from 'xxx' to get the result set vids(deduplication)
+// Second: expand the last step from vids. get the attributes required by the users during expansion
+//         then execute filter condition. finally return the results to the next operator
+
 // The semantics of GO M TO N STEPS is
 // GO M STEPS
 // UNION ALL
 // GO M+1 STEPS
-// UNION ALL
 // ...
+// UNION ALL
 // GO N STEPS
 
 // therefore. each step in expandAll operator. we need adds the result to the global dataset result_
@@ -30,8 +35,6 @@
 // if expression contains $$.tag.propName、 $$
 // we need add a column(colume name `_expandall_dst`, store the destination vid)
 // for join getVertices's dataset
-
-// If maxSteps == 0, no expansion, and the output after checking the type of vids
 
 // adjList is an adjacency list structure
 // which saves the vids and the attributes of edge and src vertex that user need when expasion

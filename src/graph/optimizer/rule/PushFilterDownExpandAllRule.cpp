@@ -25,7 +25,7 @@ std::unique_ptr<OptRule> PushFilterDownExpandAllRule::kInstance =
     std::unique_ptr<PushFilterDownExpandAllRule>(new PushFilterDownExpandAllRule());
 
 PushFilterDownExpandAllRule::PushFilterDownExpandAllRule() {
-  RuleSet::QueryRules().addRule(this);
+  // RuleSet::QueryRules().addRule(this);
 }
 
 const Pattern &PushFilterDownExpandAllRule::pattern() const {

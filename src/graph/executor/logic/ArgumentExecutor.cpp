@@ -20,9 +20,8 @@ folly::Future<Status> ArgumentExecutor::execute() {
   DCHECK(iter != nullptr);
 
   const auto &successor = successors();
-  auto sucessorExecutor = *successor.begin();
-  bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
-  flag = false;
+  auto kind = (*successor.begin())->node()->kind();
+  bool flag = (kind != PlanNode::Kind::kGetVertices && kind != PlanNode::Kind::kExpand);
 
   DataSet ds;
   ds.colNames = argNode->colNames();
