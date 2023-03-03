@@ -157,11 +157,12 @@ Status CreateSpaceAsValidator::validateImpl() {
   auto sentence = static_cast<CreateSpaceAsSentence *>(sentence_);
   oldSpaceName_ = sentence->getOldSpaceName();
   newSpaceName_ = sentence->getNewSpaceName();
+  ifNotExist_ = sentence->isIfNotExist();
   return Status::OK();
 }
 
 Status CreateSpaceAsValidator::toPlan() {
-  auto *doNode = CreateSpaceAsNode::make(qctx_, nullptr, oldSpaceName_, newSpaceName_);
+  auto *doNode = CreateSpaceAsNode::make(qctx_, nullptr, oldSpaceName_, newSpaceName_, ifNotExist_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
