@@ -16,8 +16,6 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       | 2   |
     When executing query:
       """
-<<<<<<< HEAD
-=======
       RETURN last(LIST[]) AS a, head(LIST[]) AS b
       """
     Then the result should be, in any order:
@@ -25,46 +23,11 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       | NULL | NULL |
     When executing query:
       """
-      RETURN 1- -1 AS sub
-      """
-    Then the result should be, in any order:
-      | sub |
-      | 2   |
-    When executing query:
-      """
-      RETURN 1--1 AS sub
-      """
-    Then a SyntaxError should be raised at runtime: syntax error near `--'
-    When executing query:
-      """
       MATCH (v:player) RETURN none_direct_dst(LIST[]) AS a
       """
     Then a SemanticError should be raised at runtime: Type error `none_direct_dst([])'
     When executing query:
       """
-      RETURN  [2,3 ] - [3] AS sub
-      """
-    Then a SemanticError should be raised at runtime: `([2,3]-[3])' is not a valid expression, can not apply `-' to `LIST' and `LIST'.
-    When executing query:
-      """
-      RETURN  [2,3 ]-[3] AS sub
-      """
-    Then a SyntaxError should be raised at runtime: syntax error near `]-'
-    # When executing query:
-    # """
-    # WITH [2,3] AS a, 3 AS b, [2] AS c return (a)-[b]-(c)
-    # """
-    # FIXME(czp): Fix this after https://github.com/vesoft-inc/nebula/issues/5288 closed
-    # Then a semanticError should be raised at runtime: `a' is defined with type Runtime, but referenced with type Node
-    # When executing query:
-    # """
-    # WITH [2,3] AS a, 3 AS b, [2] AS c return (a)- [b] -(c)
-    # """
-    # FIXME(czp): Fix this after https://github.com/vesoft-inc/nebula/issues/5288 closed
-    # Then a semanticError should be raised at runtime: `(a)- [b]' is not a valid expression, can not apply `-' to `LIST' and `LIST'.
-    When executing query:
-      """
->>>>>>> 72bd6c238 (Fix crash of list related functions (#5383))
       RETURN DISTINCT 1+1, '1+1', (int)3.14, (string)(1+1), (string)true
       """
     Then the result should be, in any order:
