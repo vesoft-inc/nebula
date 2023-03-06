@@ -25,7 +25,7 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       """
       MATCH (v:player) RETURN none_direct_dst(LIST[]) AS a
       """
-    Then a SemanticError should be raised at runtime: Type error `none_direct_dst([])'
+    Then a SemanticError should be raised at runtime:`none_direct_dst([])' is not a valid expression : Function `none_direct_dst' not defined
     When executing query:
       """
       RETURN DISTINCT 1+1, '1+1', (int)3.14, (string)(1+1), (string)true
