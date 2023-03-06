@@ -16,6 +16,18 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       | 2   |
     When executing query:
       """
+      RETURN last(LIST[]) AS a, head(LIST[]) AS b
+      """
+    Then the result should be, in any order:
+      | a    | b    |
+      | NULL | NULL |
+    When executing query:
+      """
+      MATCH (v:player) RETURN none_direct_dst(LIST[]) AS a
+      """
+    Then a SemanticError should be raised at runtime:`none_direct_dst([])' is not a valid expression : Function `none_direct_dst' not defined
+    When executing query:
+      """
       RETURN DISTINCT 1+1, '1+1', (int)3.14, (string)(1+1), (string)true
       """
     Then the result should be, in any order:
