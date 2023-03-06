@@ -98,6 +98,8 @@ PlanNode* PathPlanner::getNeighbors(PlanNode* dep, bool reverse) {
   gn->setEdgeProps(buildEdgeProps(reverse));
   gn->setInputVar(gnInputVar);
   gn->setDedup();
+  gn->setEdgeDirection(pathCtx_->over.direction);
+
   PlanNode* result = gn;
   if (pathCtx_->filter != nullptr) {
     auto* filterExpr = pathCtx_->filter->clone();
