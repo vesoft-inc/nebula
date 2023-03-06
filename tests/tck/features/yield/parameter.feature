@@ -345,4 +345,3 @@ Feature: Parameter
       $var=lookup on player where player.name==$p7.a.b.d[4] and player.age in [43,35,42,45] yield id(vertex) AS VertexID;DELETE VERTEX $var.VertexID;RETURN count($var.VertexID) AS record
       """
     Then the execution should be successful
-    
