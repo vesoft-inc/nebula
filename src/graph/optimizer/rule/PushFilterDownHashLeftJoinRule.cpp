@@ -98,7 +98,7 @@ OptGroup* PushFilterDownHashLeftJoinRule::pushFilterDownChild(OptContext* octx,
 
   // split the `condition` based on whether the varPropExpr comes from the left child
   auto picker = [&colNames](const Expression* e) -> bool {
-    return graph::ExpressionUtils::checkVarPropIfExist(colNames, e);
+    return graph::ExpressionUtils::checkColName(colNames, e);
   };
 
   Expression* filterPicked = nullptr;

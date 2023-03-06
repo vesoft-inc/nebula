@@ -402,9 +402,6 @@ TEST_F(QueryValidatorTest, GoWithPipe) {
     std::vector<PlanNode::Kind> expected = {PK::kProject,
                                             PK::kExpandAll,
                                             PK::kExpand,
-                                            PK::kProject,
-                                            PK::kExpandAll,
-                                            PK::kExpand,
                                             PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }

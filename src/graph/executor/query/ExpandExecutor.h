@@ -53,8 +53,6 @@ class ExpandExecutor final : public StorageAccessExecutor {
                          const Value& src,
                          const Value& dst);
 
-  void sample(const Value& src, const std::unordered_set<Value>& dsts);
-
   folly::Future<Status> buildResult();
 
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;

@@ -25,7 +25,7 @@ std::unique_ptr<OptRule> PushFilterDownExpandAllRule::kInstance =
     std::unique_ptr<PushFilterDownExpandAllRule>(new PushFilterDownExpandAllRule());
 
 PushFilterDownExpandAllRule::PushFilterDownExpandAllRule() {
-  // RuleSet::QueryRules().addRule(this);
+  RuleSet::QueryRules().addRule(this);
 }
 
 const Pattern &PushFilterDownExpandAllRule::pattern() const {
@@ -39,10 +39,41 @@ bool PushFilterDownExpandAllRule::match(OptContext *ctx, const MatchedResult &ma
     return false;
   }
   auto expandAll = static_cast<const ExpandAll *>(matched.planNode({0, 0}));
+  if (expandAll->minSteps() != expandAll->maxSteps()) {
+    return false;
+  }
   auto edgeProps = expandAll->edgeProps();
   // if fetching props of edge in ExpandAll, let it go and do more checks in
   // transform. otherwise skip this rule.
   return edgeProps != nullptr && !edgeProps->empty();
+}
+
+Expression *rewriteVarProp(Expression *expr, const ExpandAll *expandAll) {
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVarProperty;
+  };
+  auto rewriter = [expandAll](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
+    auto colName = static_cast<VariablePropertyExpression *>(e)->prop();
+    auto vertexColumns = expandAll->vertexColumns();
+    if (vertexColumns) {
+      for (const auto &column : vertexColumns->columns()) {
+        if (column->name() == colName) {
+          return column->expr();
+        }
+      }
+    }
+    auto edgeColumns = expandAll->edgeColumns();
+    if (edgeColumns) {
+      for (const auto &column : edgeColumns->columns()) {
+        if (column->name() == colName) {
+          return column->expr();
+        }
+      }
+    }
+    return e;
+  };
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownExpandAllRule::transform(
@@ -51,11 +82,12 @@ StatusOr<OptRule::TransformResult> PushFilterDownExpandAllRule::transform(
   auto expandAllGroupNode = matched.dependencies.front().node;
   auto filter = static_cast<const Filter *>(filterGroupNode->node());
   auto expandAll = static_cast<const ExpandAll *>(expandAllGroupNode->node());
+  auto colNames = expandAll->colNames();
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
   auto condition = filter->condition()->clone();
 
-  graph::ExtractFilterExprVisitor visitor(pool);
+  graph::ExtractFilterExprVisitor visitor(pool, colNames);
   condition->accept(&visitor);
   if (!visitor.ok()) {
     return TransformResult::noTransform();
@@ -70,14 +102,15 @@ StatusOr<OptRule::TransformResult> PushFilterDownExpandAllRule::transform(
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
 
-  auto newGNFilter = condition;
-  if (expandAll->filter() != nullptr) {
-    auto logicExpr = LogicalExpression::makeAnd(pool, condition, expandAll->filter()->clone());
-    newGNFilter = logicExpr;
-  }
-
+  // rewrite filter to original expression (edgePropExpression、srcPropExpression)
+  auto newFilterExpr = rewriteVarProp(condition, expandAll);
   auto newExpandAll = static_cast<ExpandAll *>(expandAll->clone());
-  newExpandAll->setFilter(newGNFilter);
+  // push filter down storage
+  if (expandAll->filter() != nullptr) {
+    auto logicExpr = LogicalExpression::makeAnd(pool, newFilterExpr, expandAll->filter()->clone());
+    newFilterExpr = logicExpr;
+  }
+  newExpandAll->setFilter(newFilterExpr);
 
   OptGroupNode *newExpandGroupNode = nullptr;
   if (newFilterGroupNode != nullptr) {

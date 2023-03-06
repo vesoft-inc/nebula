@@ -244,9 +244,6 @@ Status GoValidator::buildColumns() {
   goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
   inputPropCols_ = pool->makeAndAdd<YieldColumns>();
 
-  // TODO(jmq)
-  // after adding optimization rules, if the filter can be pushed down to expandall
-  // no need rewrite expression
   std::unordered_set<std::string> uniqueEdgeVertexExpr;
   auto filter = goCtx_->filter;
   if (filter != nullptr) {

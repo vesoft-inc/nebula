@@ -328,11 +328,6 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
   return Status::OK();
 }
 
-void ExpandExecutor::sample(const Value& src, const std::unordered_set<Value>& dsts) {
-  UNUSED(src);
-  UNUSED(dsts);
-}
-
 void ExpandExecutor::updateDst2VidsMap(
     std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
     const Value& src,

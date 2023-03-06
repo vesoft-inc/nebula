@@ -88,7 +88,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                      false,
                      std::vector<storage::cpp2::OrderBy>(),
                      -1,
-                     nullptr,  // (TODO) jmq add new optimize rule
+                     expand_->filter(),  // (TODO) jmq add new optimize rule
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {

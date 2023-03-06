@@ -381,6 +381,14 @@ class ExpandAll : public Expand {
     return edgeColumns_;
   }
 
+  Expression* stepFilter() const {
+    return stepFilter_;
+  }
+
+  void setStepFilter(Expression* stepFilter) {
+    stepFilter_ = stepFilter;
+  }
+
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
     vertexProps_ = std::move(vertexProps);
   }
@@ -427,6 +435,7 @@ class ExpandAll : public Expand {
   std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
   YieldColumns* vertexColumns_{nullptr};
   YieldColumns* edgeColumns_{nullptr};
+  Expression* stepFilter_{nullptr};
 };
 
 // Get property with given vertex keys.

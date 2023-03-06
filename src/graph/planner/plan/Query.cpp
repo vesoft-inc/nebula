@@ -104,6 +104,8 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
 
 std::unique_ptr<PlanNodeDescription> Expand::explain() const {
   auto desc = Explore::explain();
+  addDescription("sample", folly::toJson(util::toJson(sample_)), desc.get());
+  addDescription("joinInput", folly::toJson(util::toJson(joinInput_)), desc.get());
   addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
@@ -135,6 +137,23 @@ std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
   addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  addDescription("stepFilter", stepFilter_ ? stepFilter_->toString() : "", desc.get());
+  auto vertexColumns = folly::dynamic::array();
+  if (vertexColumns_) {
+    for (const auto* col : vertexColumns_->columns()) {
+      DCHECK(col != nullptr);
+      vertexColumns.push_back(col->toString());
+    }
+    addDescription("vertexColumns", folly::toJson(vertexColumns), desc.get());
+  }
+  auto edgeColumns = folly::dynamic::array();
+  if (edgeColumns_) {
+    for (const auto* col : edgeColumns_->columns()) {
+      DCHECK(col != nullptr);
+      edgeColumns.push_back(col->toString());
+    }
+    addDescription("edgeColumns", folly::toJson(edgeColumns), desc.get());
+  }
   return desc;
 }
 
@@ -164,6 +183,7 @@ void ExpandAll::cloneMembers(const ExpandAll& expandAll) {
       edgeColumns_->addColumn(col->clone().release());
     }
   }
+  stepFilter_ = expandAll.stepFilter();
 }
 
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
