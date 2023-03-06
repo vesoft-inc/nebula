@@ -69,9 +69,10 @@ class NebulaStore : public KVStore, public Handler {
   NebulaStore(KVOptions options,
               std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
               HostAddr serviceAddr,
-              std::shared_ptr<folly::Executor>)
+              std::shared_ptr<folly::Executor> workers)
       : ioPool_(ioPool),
         storeSvcAddr_(serviceAddr),
+        workers_(workers),
         raftAddr_(getRaftAddr(serviceAddr)),
         options_(std::move(options)) {
     CHECK_NOTNULL(options_.partMan_);
@@ -863,6 +864,7 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
   HostAddr storeSvcAddr_;
   std::shared_ptr<folly::Executor> workers_;
+  std::shared_ptr<folly::Executor> partExecutor_;
   HostAddr raftAddr_;
   KVOptions options_;
 

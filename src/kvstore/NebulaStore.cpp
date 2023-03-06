@@ -60,7 +60,7 @@ bool NebulaStore::init() {
         FLAGS_raft_num_worker_threads);
     pool->setNamePrefix("part-executor");
     pool->start();
-    workers_ = std::move(pool);
+    partExecutor_ = std::move(pool);
   }
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
@@ -473,7 +473,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                      engine,
                                      ioPool_,
                                      bgWorkers_,
-                                     workers_,
+                                     partExecutor_,
                                      snapshot_,
                                      clientMan_,
                                      diskMan_,
@@ -632,8 +632,14 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
   std::shared_ptr<Listener> listener;
   if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
-    listener = std::make_shared<ESListener>(
-        spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
+    listener = std::make_shared<ESListener>(spaceId,
+                                            partId,
+                                            raftAddr_,
+                                            walPath,
+                                            ioPool_,
+                                            bgWorkers_,
+                                            partExecutor_,
+                                            options_.schemaMan_);
   } else {
     LOG(FATAL) << "Should not reach here";
     return nullptr;
