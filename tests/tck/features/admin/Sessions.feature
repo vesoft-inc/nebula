@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@aiee
 Feature: Test sessions
 
   Background:
@@ -14,7 +13,7 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp           |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp                            |
       | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
     When executing query:
       """
@@ -30,7 +29,7 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp           |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
       | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
       | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
 
@@ -41,7 +40,7 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp           |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp                            |
       | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
     When executing query:
       """
@@ -62,7 +61,7 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp           |
+      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
       | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
       | /\d+/     | "user1"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
       | /\d+/     | "user2"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[2].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
@@ -71,5 +70,5 @@ Feature: Test sessions
       SHOW LOCAL SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp           |
+      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
       | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
