@@ -346,4 +346,3 @@ Feature: Parameter
       $var=lookup on player where player.name==$p7.a.b.d[4] and player.age in [43,35,42,45] yield id(vertex) AS VertexID;RETURN count($var.VertexID) AS record
       """
     Then the execution should be successful
->>>>>>> c20467f19 (Fix the crash when lookup parameter expression eval in storage (#5336))
