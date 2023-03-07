@@ -3,7 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 
 #ifndef GRAPH_EXECUTOR_QUERY_EXPAND_H_
-#define GRAPH_EXECUTOR_QUERY_EXPAND_H
+#define GRAPH_EXECUTOR_QUERY_EXPAND_H_
 
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"

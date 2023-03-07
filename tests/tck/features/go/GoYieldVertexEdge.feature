@@ -54,13 +54,6 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | "teammate" |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "teammate" |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "teammate" |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "like"     |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "like"     |
-      | ("Spurs" :team{name: "Spurs"})                                    | "serve"    |
-      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | "teammate" |
-      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | "teammate" |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "teammate" |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "teammate" |
     When executing query:
       """
       YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve YIELD $^ as src, $$ as dst, dst(edge) as id
