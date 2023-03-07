@@ -74,6 +74,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                                           qctx_->plan()->isProfileEnabled());
   std::vector<Value> vids(nextStepVids_.size());
   std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
+  QueryExpressionContext qec(qctx()->ectx());
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -87,8 +88,8 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                      false,
                      false,
                      std::vector<storage::cpp2::OrderBy>(),
-                     -1,
-                     expand_->filter(),  // (TODO) jmq add new optimize rule
+                     expand_->limit(qec),
+                     expand_->filter(),
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {

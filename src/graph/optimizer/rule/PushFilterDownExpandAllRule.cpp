@@ -11,6 +11,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/visitor/ExtractFilterExprVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 using nebula::Expression;
 using nebula::graph::ExpandAll;
@@ -54,7 +55,7 @@ Expression *rewriteVarProp(Expression *expr, const ExpandAll *expandAll) {
   };
   auto rewriter = [expandAll](const Expression *e) -> Expression * {
     DCHECK_EQ(e->kind(), Expression::Kind::kVarProperty);
-    auto colName = static_cast<VariablePropertyExpression *>(e)->prop();
+    auto colName = static_cast<const VariablePropertyExpression *>(e)->prop();
     auto vertexColumns = expandAll->vertexColumns();
     if (vertexColumns) {
       for (const auto &column : vertexColumns->columns()) {
@@ -71,9 +72,9 @@ Expression *rewriteVarProp(Expression *expr, const ExpandAll *expandAll) {
         }
       }
     }
-    return e;
+    return const_cast<Expression *>(e);
   };
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+  return graph::RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownExpandAllRule::transform(

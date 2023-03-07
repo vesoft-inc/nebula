@@ -425,6 +425,7 @@ class ExpandAll : public Expand {
     } else if (edgeColumns_) {
       colNames = edgeColumns_->names();
     }
+    setLimit(-1);
     setColNames(colNames);
   }
 

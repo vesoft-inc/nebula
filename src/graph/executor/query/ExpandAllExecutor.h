@@ -42,7 +42,7 @@
 // just get the result directly through adjList_
 
 // when minSteps == maxSteps, only need to expand one step
-// then filter and limit information can be pushed down to storage (TODO jmq)
+// then filter and limit information can be pushed down to storage
 
 namespace nebula {
 namespace graph {
