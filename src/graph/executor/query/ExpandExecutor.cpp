@@ -363,7 +363,6 @@ folly::Future<Status> ExpandExecutor::buildResult() {
       ds.rows.emplace_back(std::move(row));
     }
   }
-  DLOG(ERROR) << "expand result : " << ds.toString();
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 

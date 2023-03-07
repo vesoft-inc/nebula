@@ -72,7 +72,6 @@ Feature: Not In Expression
       """
     Then a SemanticError should be raised at runtime: Type error `("" NOT IN "")'
 
-  @jmq
   Scenario: Using NOT IN list in GO
     Given a graph with space named "nba"
     When executing query:

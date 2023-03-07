@@ -109,6 +109,11 @@ std::unique_ptr<PlanNodeDescription> Expand::explain() const {
   addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  auto limits = folly::dynamic::array();
+  for (auto i : limits_) {
+    limits.push_back(folly::to<std::string>(i));
+  }
+  addDescription("stepLimits", folly::toJson(limits), desc.get());
   return desc;
 }
 

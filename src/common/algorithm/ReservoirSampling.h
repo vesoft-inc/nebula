@@ -22,7 +22,7 @@ class ReservoirSampling final {
   explicit ReservoirSampling(uint64_t num, uint64_t count) {
     num_ = num;
     samples_.reserve(num);
-    for (uint64_t i = 1; i <= count; ++i) {
+    for (uint64_t i = 0; i < count; ++i) {
       sampling(i);
     }
   }

@@ -117,13 +117,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
           } else if (!preVisitedVids_.empty()) {
             return expandFromCache();
           } else {
-            DLOG(ERROR) << "currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
-            DLOG(ERROR) << "expandall result : " << result_.toString();
             return finish(ResultBuilder().value(Value(std::move(result_))).build());
           }
         } else {
-          DLOG(ERROR) << "currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
-          DLOG(ERROR) << "expandall result : " << result_.toString();
           return finish(ResultBuilder().value(Value(std::move(result_))).build());
         }
       });
@@ -159,8 +155,6 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
       return getNeighbors();
     }
   }
-  DLOG(ERROR) << "end cache currentStep : " << currentStep_ << " maxSteps : " << maxSteps_;
-  DLOG(ERROR) << "expandall result : " << result_.toString();
   return finish(ResultBuilder().value(Value(std::move(result_))).build());
 }
 

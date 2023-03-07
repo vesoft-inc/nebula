@@ -62,3 +62,4 @@ Feature: Sample and limit
       | like._dst             |
       | hash('Manu Ginobili') |
       | hash('Tony Parker')   |
+      | hash('Tim Duncan')    |
