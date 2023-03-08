@@ -76,6 +76,8 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
+  void resetNextStepVids(std::unordered_set<Value>& visitedVids);
+
  private:
   const ExpandAll* expand_;
   bool joinInput_{false};

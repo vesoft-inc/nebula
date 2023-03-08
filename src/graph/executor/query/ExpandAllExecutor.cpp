@@ -23,7 +23,6 @@ Status ExpandAllExecutor::buildRequestVids() {
   auto iter = static_cast<SequentialIter*>(inputIter);
   size_t iterSize = iter->size();
   nextStepVids_.reserve(iterSize);
-  QueryExpressionContext ctx(ectx_);
   if (joinInput_) {
     for (; iter->valid(); iter->next()) {
       const auto& src = iter->getColumn(0);
@@ -40,7 +39,7 @@ Status ExpandAllExecutor::buildRequestVids() {
     }
   } else {
     for (; iter->valid(); iter->next()) {
-      const auto& dst = iter->getColumn(0);
+      const auto& dst = iter->getColumn(-1);
       nextStepVids_.emplace(dst);
     }
   }
@@ -102,7 +101,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
         curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
                                            : stepLimits_[currentStep_ - 2];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
-          std::string timeName = "graphExpandExpandTime+" + folly::to<std::string>(currentStep_);
+          std::string timeName = "graphExpandAllTime+" + folly::to<std::string>(currentStep_);
           otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });
       })
@@ -114,14 +113,12 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
         if (currentStep_ <= maxSteps_) {
           if (!nextStepVids_.empty()) {
             return getNeighbors();
-          } else if (!preVisitedVids_.empty()) {
-            return expandFromCache();
-          } else {
-            return finish(ResultBuilder().value(Value(std::move(result_))).build());
           }
-        } else {
-          return finish(ResultBuilder().value(Value(std::move(result_))).build());
+          if (!preVisitedVids_.empty()) {
+            return expandFromCache();
+          }
         }
+        return finish(ResultBuilder().value(Value(std::move(result_))).build());
       });
 }
 
@@ -151,7 +148,7 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
     getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
     preVisitedVids_.swap(visitedVids);
     preDst2VidsMap_.swap(dst2VidsMap);
-    std::string timeName = "graphCacheExpandTime+" + folly::to<std::string>(currentStep_);
+    std::string timeName = "graphCacheExpandAllTime+" + folly::to<std::string>(currentStep_);
     otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
     if (!nextStepVids_.empty()) {
       return getNeighbors();
@@ -201,16 +198,8 @@ void ExpandAllExecutor::getNeighborsFromCache(
         buildResult(vertexProps, *edgeIter);
       }
     }
-    auto vidIter = nextStepVids_.begin();
-    while (vidIter != nextStepVids_.end()) {
-      if (adjList_.find(*vidIter) != adjList_.end()) {
-        visitedVids.emplace(*vidIter);
-        vidIter = nextStepVids_.erase(vidIter);
-      } else {
-        vidIter++;
-      }
-    }
   }
+  resetNextStepVids(visitedVids);
 }
 
 folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
@@ -310,15 +299,8 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     adjEdgeProps.emplace_back(std::move(curVertexProps));
     adjList_.emplace(curVid, std::move(adjEdgeProps));
   }
-  auto vidIter = nextStepVids_.begin();
-  while (vidIter != nextStepVids_.end()) {
-    if (adjList_.find(*vidIter) != adjList_.end()) {
-      visitedVids.emplace(*vidIter);
-      vidIter = nextStepVids_.erase(vidIter);
-    } else {
-      vidIter++;
-    }
-  }
+
+  resetNextStepVids(visitedVids);
 
   if (!preVisitedVids_.empty()) {
     getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
@@ -350,6 +332,18 @@ void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
   Row row = vList;
   row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
   result_.rows.emplace_back(std::move(row));
+}
+
+void ExpandAllExecutor::resetNextStepVids(std::unordered_set<Value>& visitedVids) {
+  auto vidIter = nextStepVids_.begin();
+  while (vidIter != nextStepVids_.end()) {
+    if (adjList_.find(*vidIter) != adjList_.end()) {
+      visitedVids.emplace(*vidIter);
+      vidIter = nextStepVids_.erase(vidIter);
+    } else {
+      vidIter++;
+    }
+  }
 }
 
 void ExpandAllExecutor::updateDst2VidsMap(

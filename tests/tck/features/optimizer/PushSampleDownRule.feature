@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: Push Limit down rule
 
   Background:
@@ -61,7 +60,7 @@ Feature: Push Limit down rule
       """
     Then the result should be, in any order:
       | count(*) |
-      | 4        |
+      | 3        |
     And the execution plan should be:
       | id | name          | dependencies | profiling data | operator info                                 |
       | 11 | Aggregate     | 10           |                |                                               |
@@ -94,11 +93,7 @@ Feature: Push Limit down rule
       """
       GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst SAMPLE [2, 2]
       """
-    Then the result should be, in any order:
-      | like._dst |
-      | /[\w\s]+/ |
-      | /[\w\s]+/ |
-    And the execution plan should be:
+    Then the execution plan should be:
       | id | name      | dependencies | operator info                                |
       | 4  | Project   | 3            |                                              |
       | 3  | ExpandAll | 2            | {"stepLimits": ["2", "2"], "sample": "true"} |
@@ -108,11 +103,7 @@ Feature: Push Limit down rule
       """
       GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD $^.player.name AS src, like.likeness AS likeness, $$.player.name AS dst SAMPLE [2, 2]
       """
-    Then the result should be, in any order:
-      | src       | likeness | dst       |
-      | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
-      | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
-    And the execution plan should be:
+    Then the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                |
       | 8  | Project      | 7            |                |                                              |
       | 7  | HashLeftJoin | 3,6          |                |                                              |

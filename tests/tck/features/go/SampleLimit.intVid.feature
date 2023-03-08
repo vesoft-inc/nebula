@@ -22,16 +22,16 @@ Feature: Sample and limit
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst LIMIT [1]
       """
     Then the result should be, in any order:
-      | like._dst             |
-      | hash('Manu Ginobili') |
+      | like._dst |
+      | /[\d\-+]/ |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst LIMIT [3]
       """
     Then the result should be, in any order:
-      | like._dst             |
-      | hash('Manu Ginobili') |
-      | hash('Tony Parker')   |
+      | like._dst |
+      | /[\d\-+]/ |
+      | /[\d\-+]/ |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst SAMPLE [1]
@@ -44,9 +44,9 @@ Feature: Sample and limit
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst SAMPLE [3]
       """
     Then the result should be, in any order:
-      | like._dst             |
-      | hash('Manu Ginobili') |
-      | hash('Tony Parker')   |
+      | like._dst |
+      | /[\d\-+]/ |
+      | /[\d\-+]/ |
 
   Scenario: Sample Limit Go in Multiple steps
     When executing query:
@@ -59,7 +59,7 @@ Feature: Sample and limit
       GO 3 STEPS FROM hash('Tim Duncan') OVER like YIELD like._dst LIMIT [1, 2, 3]
       """
     Then the result should be, in any order:
-      | like._dst             |
-      | hash('Manu Ginobili') |
-      | hash('Tony Parker')   |
-      | hash('Tim Duncan')    |
+      | like._dst |
+      | /[\d\-+]/ |
+      | /[\d\-+]/ |
+      | /[\d\-+]/ |

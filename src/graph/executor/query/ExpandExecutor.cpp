@@ -169,7 +169,7 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
         curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
                                            : stepLimits_[currentStep_ - 1];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
-          std::string timeName = "graphExpandExpandTime+" + folly::to<std::string>(currentStep_);
+          std::string timeName = "graphExpandTime+" + folly::to<std::string>(currentStep_);
           otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });
       })
@@ -181,14 +181,12 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
         if (currentStep_ < maxSteps_) {
           if (!nextStepVids_.empty()) {
             return getNeighbors();
-          } else if (!preVisitedVids_.empty()) {
-            return expandFromCache();
-          } else {
-            return buildResult();
           }
-        } else {
-          return buildResult();
+          if (!preVisitedVids_.empty()) {
+            return expandFromCache();
+          }
         }
+        return buildResult();
       });
 }
 
