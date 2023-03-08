@@ -76,6 +76,13 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
   auto clientIp = peer->getAddressStr();
   LOG(INFO) << "Authenticating user " << username << " from " << peer->describe();
 
+  // We don't support ipv6 yet, if the client is using IPv4-mapped IPv6 address, we should convert
+  // it to IPv4 address.
+  if (peer->isIPv4Mapped()) {
+    folly::IPAddress v6map(clientIp);
+    clientIp = folly::IPAddress::createIPv4(v6map).str();
+  }
+
   auto ctx = std::make_unique<RequestContext<AuthResponse>>();
   auto future = ctx->future();
 
