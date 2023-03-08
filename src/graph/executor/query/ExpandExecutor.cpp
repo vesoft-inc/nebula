@@ -134,7 +134,6 @@ folly::Future<Status> ExpandExecutor::GetDstBySrc() {
 
 folly::Future<Status> ExpandExecutor::getNeighbors() {
   currentStep_++;
-  time::Duration getNbrTime;
   StorageClient* storageClient = qctx_->getStorageClient();
   StorageClient::CommonRequestParam param(expand_->space(),
                                           qctx_->rctx()->session()->id(),
@@ -159,18 +158,19 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
                      nullptr,
                      nullptr)
       .via(runner())
-      .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
+      .thenValue([this](RpcResponse&& resp) mutable {
         // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         nextStepVids_.clear();
         SCOPED_TIMER(&execTime_);
-        // addStats(resp, getNbrTime.elapsedInUSec());
+        addStats(resp);
         time::Duration expandTime;
         curLimit_ = 0;
         curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
                                            : stepLimits_[currentStep_ - 1];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
-          otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
+          std::string timeName = "graphExpandExpandTime+" + folly::to<std::string>(currentStep_);
+          otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
@@ -194,6 +194,7 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
 
 folly::Future<Status> ExpandExecutor::expandFromCache() {
   for (; currentStep_ < maxSteps_; ++currentStep_) {
+    time::Duration expandTime;
     if (qctx()->isKilled()) {
       return Status::OK();
     }
@@ -217,7 +218,8 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
     getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
     dst2VidsMap.swap(preDst2VidsMap_);
     visitedVids.swap(preVisitedVids_);
-
+    std::string timeName = "graphCacheExpandTime+" + folly::to<std::string>(currentStep_);
+    otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
     if (!nextStepVids_.empty()) {
       return getNeighbors();
     }
