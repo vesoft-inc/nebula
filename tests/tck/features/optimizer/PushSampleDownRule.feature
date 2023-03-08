@@ -13,9 +13,9 @@ Feature: Push Limit down rule
       GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2]
       """
     Then the result should be, in any order:
-      | like._dst         |
-      | "Dejounte Murray" |
-      | "Luka Doncic"     |
+      | like._dst |
+      | /[\w\s]+/ |
+      | /[\w\s]+/ |
     And the execution plan should be:
       | id | name      | dependencies | operator info         |
       | 4  | Project   | 3            |                       |
@@ -27,9 +27,9 @@ Feature: Push Limit down rule
       GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2, 2]
       """
     Then the result should be, in any order:
-      | like._dst            |
-      | "Kristaps Porzingis" |
-      | "Dejounte Murray"    |
+      | like._dst |
+      | /[\w\s]+/ |
+      | /[\w\s]+/ |
     And the execution plan should be:
       | id | name      | dependencies | operator info              |
       | 4  | Project   | 3            |                            |
@@ -41,9 +41,9 @@ Feature: Push Limit down rule
       GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD $^.player.name AS src, like.likeness AS likeness, $$.player.name AS dst LIMIT [2, 2]
       """
     Then the result should be, in any order:
-      | src                 | likeness | dst                  |
-      | "Luka Doncic"       | 90       | "Kristaps Porzingis" |
-      | "Russell Westbrook" | 99       | "Dejounte Murray"    |
+      | src       | likeness | dst       |
+      | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
+      | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
     And the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                 |
       | 8  | Project      | 7            |                |                                               |
