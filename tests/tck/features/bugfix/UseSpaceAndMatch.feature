@@ -4,24 +4,21 @@
 # Fix https://github.com/vesoft-inc/nebula/issues/5263
 Feature: Use space combine with Match
 
-  Background:
-    Given a graph with space named "nba"
-
   Scenario: Use space combine with Match
+    Given an empty graph
+    And load "nba" csv data to a new space
     When executing query:
       """
-      CREATE USER IF NOT EXISTS new_user WITH PASSWORD 'nebula';
+      CREATE USER IF NOT EXISTS new_user_5263 WITH PASSWORD 'nebula';
       """
-    And wait 6 seconds
     Then the execution should be successful
     When executing query:
       """
-      GRANT ROLE ADMIN ON nba TO new_user;
+      GRANT ROLE ADMIN ON nba TO new_user_5263;
       """
     Then the execution should be successful
     And wait 3 seconds
-    When switch to new session with user "new_user" and password "nebula"
-    And executing query:
+    When executing query with user "new_user_5263" and password "nebula":
       """
       USE nba; MATCH (p)-[e]->(v) WHERE id(p)=="Tony Parker" RETURN v.player.age
       """
@@ -36,3 +33,9 @@ Feature: Use space combine with Match
       | 33           |
       | 41           |
       | 42           |
+    When executing query:
+      """
+      DROP USER IF EXISTS new_user_5263;
+      """
+    Then the execution should be successful
+    Then drop the used space
