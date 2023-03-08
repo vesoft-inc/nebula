@@ -17,9 +17,9 @@ CXX := g++
 CXX_FLAGS := -c -I ../src/ -I $(3PP_PATH)/include/ -fPIC
 
 all: standard_deviation.cpp
-  $(CXX) $(CXX_FLAGS) standard_deviation.cpp -o standard_deviation.o
-  $(CXX) -shared -o standard_deviation.so standard_deviation.o
+	$(CXX) $(CXX_FLAGS) standard_deviation.cpp -o standard_deviation.o
+	$(CXX) -shared -o standard_deviation.so standard_deviation.o
 
 clean:
-  rm ./*.o
-  rm ./*.so
+	rm ./*.o
+	rm ./*.so
