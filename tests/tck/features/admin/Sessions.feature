@@ -13,8 +13,8 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp            |
-      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /.*(127\.0\.0\.1)$/ |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp                            |
+      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
     When executing query:
       """
       CREATE USER user1 WITH PASSWORD 'nebula1';
@@ -29,9 +29,9 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
-      | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
-      | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
+      | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
+      | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
 
   @distonly
   Scenario: Show local sessions
@@ -40,8 +40,8 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp            |
-      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /.*(127\.0\.0\.1)$/ |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp                            |
+      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
     When executing query:
       """
       CREATE USER IF NOT EXISTS user1 WITH PASSWORD 'nebula1';
@@ -61,14 +61,14 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
-      | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
-      | /\d+/     | "user1"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
-      | /\d+/     | "user2"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[2].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
+      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
+      | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
+      | /\d+/     | "user1"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
+      | /\d+/     | "user2"  | ""           | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[2].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
     When executing query:
       """
       SHOW LOCAL SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
-      | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
+      | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp                            |
+      | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/ |
