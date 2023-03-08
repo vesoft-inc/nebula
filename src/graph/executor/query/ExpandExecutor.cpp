@@ -40,6 +40,8 @@ Status ExpandExecutor::buildRequestVids() {
 
 folly::Future<Status> ExpandExecutor::execute() {
   maxSteps_ = expand_->maxSteps();
+  sample_ = expand_->sample();
+  stepLimits_ = expand_->stepLimits();
   NG_RETURN_IF_ERROR(buildRequestVids());
   if (nextStepVids_.empty()) {
     DataSet emptyDs;
@@ -58,7 +60,7 @@ folly::Future<Status> ExpandExecutor::execute() {
     }
     return finish(ResultBuilder().value(Value(std::move(ds))).build());
   }
-  if (expand_->joinInput() || !limits_.empty()) {
+  if (expand_->joinInput() || !stepLimits_.empty()) {
     return getNeighbors();
   }
   return GetDstBySrc();
@@ -165,8 +167,8 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
         // addStats(resp, getNbrTime.elapsedInUSec());
         time::Duration expandTime;
         curLimit_ = 0;
-        curMaxLimit_ =
-            limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 1];
+        curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
+                                           : stepLimits_[currentStep_ - 1];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });
@@ -197,7 +199,7 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
     }
     curLimit_ = 0;
     curMaxLimit_ =
-        limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 1];
+        stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 1];
     std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
 

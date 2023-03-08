@@ -110,7 +110,7 @@ std::unique_ptr<PlanNodeDescription> Expand::explain() const {
   addDescription(
       "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
   auto limits = folly::dynamic::array();
-  for (auto i : limits_) {
+  for (auto i : stepLimits_) {
     limits.push_back(folly::to<std::string>(i));
   }
   addDescription("stepLimits", folly::toJson(limits), desc.get());
@@ -132,7 +132,7 @@ void Expand::cloneMembers(const Expand& expand) {
     auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
     setEdgeProps(std::move(edgePropsPtr));
   }
-  limits_ = expand.limits();
+  stepLimits_ = expand.stepLimits();
   joinInput_ = expand.joinInput();
   edgeTypes_ = expand.edgeTypes();
 }
@@ -142,7 +142,6 @@ std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
   addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
-  addDescription("stepFilter", stepFilter_ ? stepFilter_->toString() : "", desc.get());
   auto vertexColumns = folly::dynamic::array();
   if (vertexColumns_) {
     for (const auto* col : vertexColumns_->columns()) {
@@ -188,7 +187,6 @@ void ExpandAll::cloneMembers(const ExpandAll& expandAll) {
       edgeColumns_->addColumn(col->clone().release());
     }
   }
-  stepFilter_ = expandAll.stepFilter();
 }
 
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {

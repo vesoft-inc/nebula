@@ -275,12 +275,12 @@ class Expand : public Explore {
     return sample_;
   }
 
-  std::vector<int64_t> limits() const {
-    return limits_;
+  std::vector<int64_t> stepLimits() const {
+    return stepLimits_;
   }
 
-  void setLimits(const std::vector<int64_t>& limits) {
-    limits_ = limits;
+  void setStepLimits(std::vector<int64_t>& limits) {
+    stepLimits_ = limits;
   }
 
   const std::vector<EdgeProp>* edgeProps() const {
@@ -335,7 +335,7 @@ class Expand : public Explore {
   bool sample_{false};
   size_t maxSteps_{0};
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_{nullptr};
-  std::vector<int64_t> limits_;
+  std::vector<int64_t> stepLimits_;
   bool joinInput_{false};
   std::vector<EdgeType> edgeTypes_;
 };
@@ -379,14 +379,6 @@ class ExpandAll : public Expand {
 
   YieldColumns* edgeColumns() const {
     return edgeColumns_;
-  }
-
-  Expression* stepFilter() const {
-    return stepFilter_;
-  }
-
-  void setStepFilter(Expression* stepFilter) {
-    stepFilter_ = stepFilter;
   }
 
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
@@ -436,7 +428,6 @@ class ExpandAll : public Expand {
   std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
   YieldColumns* vertexColumns_{nullptr};
   YieldColumns* edgeColumns_{nullptr};
-  Expression* stepFilter_{nullptr};
 };
 
 // Get property with given vertex keys.

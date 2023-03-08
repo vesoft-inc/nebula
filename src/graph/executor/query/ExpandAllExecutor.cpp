@@ -53,7 +53,7 @@ folly::Future<Status> ExpandAllExecutor::execute() {
   vertexColumns_ = expand_->vertexColumns();
   edgeColumns_ = expand_->edgeColumns();
   sample_ = expand_->sample();
-  limits_ = expand_->limits();
+  stepLimits_ = expand_->stepLimits();
   joinInput_ = expand_->joinInput();
   result_.colNames = expand_->colNames();
 
@@ -100,8 +100,8 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
         // addStats(resp, getNbrTime.elapsedInUSec());
         time::Duration expandTime;
         curLimit_ = 0;
-        curMaxLimit_ =
-            limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 2];
+        curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
+                                           : stepLimits_[currentStep_ - 2];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           otherStats_.emplace("expandTime", folly::sformat("{}(us)", expandTime.elapsedInUSec()));
         });
@@ -132,7 +132,7 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
     }
     curLimit_ = 0;
     curMaxLimit_ =
-        limits_.empty() ? std::numeric_limits<int64_t>::max() : limits_[currentStep_ - 2];
+        stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 2];
 
     std::vector<int64_t> samples;
     if (sample_) {

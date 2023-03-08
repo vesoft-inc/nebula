@@ -163,7 +163,7 @@ SubPlan GoPlanner::doPlan() {
     expand->setColNames({"_expand_vid"});
   }
   expand->setInputVar(goCtx_->vidsVar);
-  expand->setLimits(goCtx_->limits);
+  expand->setStepLimits(goCtx_->limits);
 
   if (goCtx_->joinDst) {
     auto* dstExpr =
@@ -187,7 +187,7 @@ SubPlan GoPlanner::doPlan() {
     colNames.insert(colNames.begin(), "_expand_vid");
     expandAll->setColNames(colNames);
   }
-  expandAll->setLimits(goCtx_->limits);
+  expandAll->setStepLimits(goCtx_->limits);
   PlanNode* dep = expandAll;
   if (goCtx_->joinDst) {
     dep = buildJoinDstPlan(expandAll);

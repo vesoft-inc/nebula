@@ -66,7 +66,7 @@ class ExpandExecutor final : public StorageAccessExecutor {
   bool sample_{false};
   int64_t curLimit_{0};
   int64_t curMaxLimit_{std::numeric_limits<int64_t>::max()};
-  std::vector<int64_t> limits_;
+  std::vector<int64_t> stepLimits_;
 
   std::unordered_set<Value> nextStepVids_;
   std::unordered_set<Value> preVisitedVids_;
