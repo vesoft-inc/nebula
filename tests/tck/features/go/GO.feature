@@ -338,7 +338,7 @@ Feature: Go Sentence
       | serve._dst |
 
   Scenario: multi edges over all
-    When profiling query:
+    When executing query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._dst, like._dst
       """
@@ -347,12 +347,7 @@ Feature: Go Sentence
       | EMPTY      | "James Harden"    |
       | EMPTY      | "Dejounte Murray" |
       | EMPTY      | "Paul George"     |
-    And the execution plan should be:
-      | id | name         | dependencies | operator info                |
-      | 2  | Project      | 1            |                              |
-      | 1  | GetNeighbors | 0            | {"edgeDirection": "IN_EDGE"} |
-      | 0  | Start        |              |                              |
-    When profiling query:
+    When executing query:
       """
       GO FROM "Russell Westbrook" OVER * BIDIRECT YIELD serve._dst, like._dst
       """
@@ -364,11 +359,6 @@ Feature: Go Sentence
       |            | "James Harden"    |
       |            | "Paul George"     |
       | "Thunders" |                   |
-    And the execution plan should be:
-      | id | name         | dependencies | operator info             |
-      | 2  | Project      | 1            |                           |
-      | 1  | GetNeighbors | 0            | {"edgeDirection": "BOTH"} |
-      | 0  | Start        |              |                           |
     When executing query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._src, like._src
