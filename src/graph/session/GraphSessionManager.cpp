@@ -367,7 +367,7 @@ void GraphSessionManager::addSessionCount(std::string& key) {
   if (countFindPtr != userIpSessionCount_.end()) {
     countFindPtr->second.get()->fetch_add(1);
   } else {
-    userIpSessionCount_.insert_or_assign(key, std::make_shared<SessionCount>(1));
+    userIpSessionCount_.insert_or_assign(key, std::make_shared<SessionCount>());
   }
 }
 
