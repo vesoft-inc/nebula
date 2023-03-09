@@ -339,7 +339,7 @@ Feature: Go Sentence
       | serve._dst |
 
   Scenario: multi edges over all
-    When executing query:
+    When profiling query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._dst, like._dst
       """
@@ -348,15 +348,37 @@ Feature: Go Sentence
       | EMPTY      | "James Harden"    |
       | EMPTY      | "Dejounte Murray" |
       | EMPTY      | "Paul George"     |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info                |
+      | 2  | Project      | 1            |                              |
+      | 1  | GetNeighbors | 0            | {"edgeDirection": "IN_EDGE"} |
+      | 0  | Start        |              |                              |
+    When profiling query:
+      """
+      GO FROM "Russell Westbrook" OVER * BIDIRECT YIELD serve._dst, like._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | serve._dst | like._dst         |
+      |            | "Dejounte Murray" |
+      |            | "James Harden"    |
+      |            | "Paul George"     |
+      |            | "James Harden"    |
+      |            | "Paul George"     |
+      | "Thunders" |                   |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info             |
+      | 2  | Project      | 1            |                           |
+      | 1  | GetNeighbors | 0            | {"edgeDirection": "BOTH"} |
+      | 0  | Start        |              |                           |
     When executing query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._src, like._src
       """
     Then the result should be, in any order, with relax comparison:
       | serve._src | like._src           |
-      | EMPTY      | "Russell Westbrook" |
-      | EMPTY      | "Russell Westbrook" |
-      | EMPTY      | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
     When executing query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD like._dst, serve._dst, teammate._dst
