@@ -149,7 +149,6 @@ void JoinTest::testInnerJoin(std::string left, std::string right, DataSet& expec
   EXPECT_EQ(result.state(), Result::State::kSuccess) << "LINE: " << line;
 }
 
-
 TEST_F(JoinTest, InnerJoin) {
   DataSet expected;
   expected.colNames = {"src", "dst", kVid, "tag_prop", "edge_prop", kDst};
