@@ -401,17 +401,18 @@ Feature: Prune Properties rule
       | scount |
       | 270    |
     And the execution plan should be:
-      | id | name          | dependencies | operator info          |
-      | 12 | Aggregate     | 13           |                        |
-      | 13 | HashInnerJoin | 15, 11       |                        |
-      | 15 | Project       | 4            |                        |
-      | 4  | Traverse      | 3            | { "vertexProps": "" }  |
-      | 3  | Traverse      | 14           | {  "vertexProps": "" } |
-      | 14 | IndexScan     | 2            |                        |
-      | 2  | Start         |              |                        |
-      | 11 | Project       | 9            |                        |
-      | 9  | Traverse      | 8            | {  "vertexProps": "" } |
-      | 8  | Argument      |              |                        |
+      | id | name           | dependencies | operator info          |
+      | 12 | Aggregate      | 13           |                        |
+      | 13 | HashInnerJoin  | 15, 11       |                        |
+      | 15 | Project        | 5            |                        |
+      | 5  | AppendVertices | 4            |                        |
+      | 4  | Traverse       | 3            | { "vertexProps": "" }  |
+      | 3  | Traverse       | 14           | {  "vertexProps": "" } |
+      | 14 | IndexScan      | 2            |                        |
+      | 2  | Start          |              |                        |
+      | 11 | Project        | 9            |                        |
+      | 9  | Traverse       | 8            | {  "vertexProps": "" } |
+      | 8  | Argument       |              |                        |
 
   @distonly
   Scenario: return function
