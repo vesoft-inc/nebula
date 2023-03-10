@@ -49,11 +49,12 @@ Feature: Push Filter down node rule
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name      | dependencies | operator info                                                               |
-      | 5  | Project   | 8            |                                                                             |
-      | 8  | Traverse  | 7            | {"vertex filter": "", "first step filter": "(player.name==\"Tim Duncan\")"} |
-      | 7  | IndexScan | 0            |                                                                             |
-      | 0  | Start     |              |                                                                             |
+      | id | name           | dependencies | operator info                                                               |
+      | 5  | Project        | 9            |                                                                             |
+      | 9  | AppendVertices | 8            |                                                                             |
+      | 8  | Traverse       | 7            | {"vertex filter": "", "first step filter": "(player.name==\"Tim Duncan\")"} |
+      | 7  | IndexScan      | 0            |                                                                             |
+      | 0  | Start          |              |                                                                             |
     When profiling query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[:like]->() WHERE v.player.age == 42 return v.player.name AS name
