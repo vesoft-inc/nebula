@@ -108,7 +108,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
       .thenValue([this](Status s) -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(s);
         if (qctx()->isKilled()) {
-          return Status::OK();
+          return Status::Error("Execution had been killed");
         }
         if (currentStep_ <= maxSteps_) {
           if (!nextStepVids_.empty()) {
@@ -126,7 +126,7 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
   for (; currentStep_ <= maxSteps_; ++currentStep_) {
     time::Duration expandTime;
     if (qctx()->isKilled()) {
-      return Status::OK();
+      return Status::Error("Execution had been killed");
     }
     curLimit_ = 0;
     curMaxLimit_ =
@@ -183,7 +183,6 @@ void ExpandAllExecutor::getNeighborsFromCache(
           break;
         }
       }
-
       auto& dst = (*edgeIter).values.back();
       if (adjList_.find(dst) == adjList_.end()) {
         nextStepVids_.emplace(dst);
@@ -199,7 +198,59 @@ void ExpandAllExecutor::getNeighborsFromCache(
       }
     }
   }
-  resetNextStepVids(visitedVids);
+  if (currentStep_ <= maxSteps_) {
+    resetNextStepVids(visitedVids);
+  }
+}
+
+Status ExpandAllExecutor::handleLastStep(GetNeighborsIter* iter, std::vector<int64_t>& samples) {
+  QueryExpressionContext ctx(ectx_);
+  List curVertexProps;
+  Value curVid;
+  std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
+  std::unordered_set<Value> visitedVids;
+  if (iter->valid() && vertexColumns_) {
+    for (auto& col : vertexColumns_->columns()) {
+      Value val = col->expr()->eval(ctx(iter));
+      curVertexProps.values.emplace_back(std::move(val));
+    }
+  }
+  for (; iter->valid(); iter->next()) {
+    List edgeProps;
+    if (edgeColumns_) {
+      for (auto& col : edgeColumns_->columns()) {
+        Value val = col->expr()->eval(ctx(iter));
+        edgeProps.values.emplace_back(std::move(val));
+      }
+    }
+    const auto& vid = iter->getColumn(0);
+    curVid = curVid.empty() ? vid : curVid;
+    if (curVid != vid) {
+      curVid = vid;
+      curVertexProps.values.clear();
+      if (vertexColumns_) {
+        for (auto& col : vertexColumns_->columns()) {
+          Value val = col->expr()->eval(ctx(iter));
+          curVertexProps.values.emplace_back(std::move(val));
+        }
+      }
+    }
+
+    if (limitORsample(samples)) {
+      continue;
+    }
+
+    if (joinInput_) {
+      auto findVid = preDst2VidsMap_.find(vid);
+      buildResult(findVid->second, curVertexProps, edgeProps, true);
+    } else {
+      buildResult(curVertexProps, edgeProps, true);
+    }
+  }
+  if (!preVisitedVids_.empty()) {
+    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+  }
+  return Status::OK();
 }
 
 folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
@@ -216,12 +267,16 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
   if (iter->numRows() == 0) {
     return Status::OK();
   }
-  auto size = iter->size();
+
   std::vector<int64_t> samples;
   if (sample_) {
+    auto size = iter->size();
     algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
     samples = sampler.samples();
     std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
+  }
+  if (currentStep_ > maxSteps_) {
+    return handleLastStep(iter.get(), samples);
   }
 
   QueryExpressionContext ctx(ectx_);
@@ -266,19 +321,8 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     }
     adjEdgeProps.emplace_back(edgeProps);
 
-    if (sample_) {
-      if (samples.empty()) {
-        continue;
-      }
-      if (curLimit_++ != samples.back()) {
-        continue;
-      } else {
-        samples.pop_back();
-      }
-    } else {
-      if (curLimit_++ >= curMaxLimit_) {
-        continue;
-      }
+    if (limitORsample(samples)) {
+      continue;
     }
 
     if (joinInput_) {
@@ -312,25 +356,37 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
 
 void ExpandAllExecutor::buildResult(const std::unordered_set<Value>& vids,
                                     const List& vList,
-                                    const List& eList) {
-  if (vList.values.empty() && eList.values.empty()) {
-    return;
+                                    const List& eList,
+                                    bool isLastStep) {
+  std::vector<Value> list = vList.values;
+  if (!eList.values.empty()) {
+    list.reserve(list.size() + eList.values.size());
+    if (isLastStep) {
+      list.insert(list.end(), eList.values.begin(), eList.values.end());
+    } else {
+      list.insert(list.end(), eList.values.begin(), eList.values.end() - 1);
+    }
   }
   for (auto& vid : vids) {
     Row row;
     row.values.emplace_back(vid);
-    row.values.insert(row.values.end(), vList.values.begin(), vList.values.end());
-    row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
+    if (!list.empty()) {
+      row.values.insert(row.values.end(), list.begin(), list.end());
+    }
     result_.rows.emplace_back(std::move(row));
   }
 }
 
-void ExpandAllExecutor::buildResult(const List& vList, const List& eList) {
+void ExpandAllExecutor::buildResult(const List& vList, const List& eList, bool isLastStep) {
   if (vList.values.empty() && eList.values.empty()) {
     return;
   }
   Row row = vList;
-  row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
+  if (isLastStep) {
+    row.values.insert(row.values.end(), eList.values.begin(), eList.values.end());
+  } else {
+    row.values.insert(row.values.end(), eList.values.begin(), eList.values.end() - 1);
+  }
   result_.rows.emplace_back(std::move(row));
 }
 
@@ -367,6 +423,20 @@ void ExpandAllExecutor::updateDst2VidsMap(
       findDst->second.insert(findSrc->second.begin(), findSrc->second.end());
     }
   }
+}
+
+bool ExpandAllExecutor::limitORsample(std::vector<int64_t>& samples) {
+  if (sample_) {
+    if (samples.empty() || curLimit_++ != samples.back()) {
+      return true;
+    }
+    samples.pop_back();
+    return false;
+  }
+  if (curLimit_++ >= curMaxLimit_) {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace graph

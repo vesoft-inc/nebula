@@ -69,14 +69,21 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
                          const Value& src,
                          const Value& dst);
 
-  void buildResult(const List& vList, const List& eList);
+  void buildResult(const List& vList, const List& eList, bool isLastStep = false);
 
-  void buildResult(const std::unordered_set<Value>& vids, const List& vList, const List& eList);
+  void buildResult(const std::unordered_set<Value>& vids,
+                   const List& vList,
+                   const List& eList,
+                   bool isLastStep = false);
+
+  Status handleLastStep(GetNeighborsIter* iter, std::vector<int64_t>& samples);
 
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
   void resetNextStepVids(std::unordered_set<Value>& visitedVids);
+
+  bool limitORsample(std::vector<int64_t>& samples);
 
  private:
   const ExpandAll* expand_;

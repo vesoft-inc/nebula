@@ -176,7 +176,7 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
       .thenValue([this](Status s) -> folly::Future<Status> {
         NG_RETURN_IF_ERROR(s);
         if (qctx()->isKilled()) {
-          return Status::OK();
+          return Status::Error("Execution had been killed");
         }
         if (currentStep_ < maxSteps_) {
           if (!nextStepVids_.empty()) {
@@ -194,7 +194,7 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
   for (; currentStep_ < maxSteps_; ++currentStep_) {
     time::Duration expandTime;
     if (qctx()->isKilled()) {
-      return Status::OK();
+      return Status::Error("Execution had been killed");
     }
     curLimit_ = 0;
     curMaxLimit_ =
@@ -251,12 +251,15 @@ void ExpandExecutor::getNeighborsFromCache(
           break;
         }
       }
+      updateDst2VidsMap(dst2VidsMap, vid, dst);
+      if (currentStep_ >= maxSteps_) {
+        continue;
+      }
       if (adjDsts_.find(dst) == adjDsts_.end()) {
         nextStepVids_.emplace(dst);
       } else {
         visitedVids.emplace(dst);
       }
-      updateDst2VidsMap(dst2VidsMap, vid, dst);
     }
   }
 }
@@ -295,7 +298,10 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
         continue;
       }
       const auto& src = iter.getVid();
-      adjDsts_.emplace(src, dsts);
+      // do not cache in the last step
+      if (currentStep_ < maxSteps_) {
+        adjDsts_.emplace(src, dsts);
+      }
 
       for (const auto& dst : dsts) {
         if (sample_) {
@@ -312,13 +318,16 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
             break;
           }
         }
+        updateDst2VidsMap(dst2VidsMap, src, dst);
 
+        if (currentStep_ >= maxSteps_) {
+          continue;
+        }
         if (adjDsts_.find(dst) == adjDsts_.end()) {
           nextStepVids_.emplace(dst);
         } else {
           visitedVids.emplace(dst);
         }
-        updateDst2VidsMap(dst2VidsMap, src, dst);
       }
     }
   }
