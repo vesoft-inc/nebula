@@ -15,6 +15,8 @@ namespace graph {
 class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  public:
   explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
+  explicit ExtractFilterExprVisitor(ObjectPool *ObjPool, std::vector<std::string> colNames)
+      : pool_(ObjPool), colNames_(std::move(colNames)) {}
 
   bool ok() const override {
     return canBePushed_;
@@ -94,6 +96,7 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   Expression *remainedExpr_{nullptr};
   Expression *extractedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
+  std::vector<std::string> colNames_;
 };
 
 }  // namespace graph

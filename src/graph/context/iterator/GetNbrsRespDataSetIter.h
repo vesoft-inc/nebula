@@ -27,6 +27,12 @@ class GetNbrsRespDataSetIter final {
   Value getVertex() const;
   std::vector<Value> getAdjEdges(VidHashSet* dstSet) const;
 
+  std::unordered_set<Value> getAdjDsts() const;
+
+  Value getVid() const;
+
+  size_t size();
+
  private:
   struct PropIndex {
     size_t colIdx;

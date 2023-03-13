@@ -32,10 +32,6 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
       NG_RETURN_IF_ERROR(rowBasedMove(vars));
       break;
     }
-    case DataCollect::DCKind::kMToN: {
-      NG_RETURN_IF_ERROR(collectMToN(vars, dc->step(), dc->distinct()));
-      break;
-    }
     case DataCollect::DCKind::kBFSShortest: {
       NG_RETURN_IF_ERROR(collectBFSShortest(vars));
       break;
@@ -118,53 +114,6 @@ Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
       }
     } else {
       return Status::Error("Iterator should be kind of SequentialIter.");
-    }
-  }
-  result_.setDataSet(std::move(ds));
-  return Status::OK();
-}
-
-Status DataCollectExecutor::collectMToN(const std::vector<std::string>& vars,
-                                        const StepClause& mToN,
-                                        bool distinct) {
-  DataSet ds;
-  ds.colNames = std::move(colNames_);
-  DCHECK(!ds.colNames.empty());
-  robin_hood::unordered_flat_set<const Row*, std::hash<const Row*>> unique;
-  // itersHolder keep life cycle of iters util this method return.
-  std::vector<std::unique_ptr<Iterator>> itersHolder;
-  for (auto& var : vars) {
-    auto& hist = ectx_->getHistory(var);
-    std::size_t histSize = hist.size();
-    DCHECK_GE(mToN.mSteps(), 1);
-    std::size_t n = mToN.nSteps() > histSize ? histSize : mToN.nSteps();
-    for (auto i = mToN.mSteps() - 1; i < n; ++i) {
-      auto iter = hist[i].iter();
-      if (iter->isSequentialIter()) {
-        auto* seqIter = static_cast<SequentialIter*>(iter.get());
-        unique.reserve(seqIter->size());
-        while (seqIter->valid()) {
-          if (distinct && !unique.emplace(seqIter->row()).second) {
-            seqIter->unstableErase();
-          } else {
-            seqIter->next();
-          }
-        }
-      } else {
-        std::stringstream msg;
-        msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
-        return Status::Error(msg.str());
-      }
-      itersHolder.emplace_back(std::move(iter));
-    }
-  }
-
-  for (auto& iter : itersHolder) {
-    if (iter->isSequentialIter()) {
-      auto* seqIter = static_cast<SequentialIter*>(iter.get());
-      for (seqIter->reset(); seqIter->valid(); seqIter->next()) {
-        ds.rows.emplace_back(seqIter->moveRow());
-      }
     }
   }
   result_.setDataSet(std::move(ds));

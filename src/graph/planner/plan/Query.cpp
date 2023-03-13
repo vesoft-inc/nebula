@@ -102,24 +102,91 @@ void GetNeighbors::cloneMembers(const GetNeighbors& g) {
   }
 }
 
-std::unique_ptr<PlanNodeDescription> GetDstBySrc::explain() const {
+std::unique_ptr<PlanNodeDescription> Expand::explain() const {
   auto desc = Explore::explain();
-  addDescription("src", src_ ? src_->toString() : "", desc.get());
-  addDescription("edgeTypes", folly::toJson(util::toJson(edgeTypes_)), desc.get());
+  addDescription("sample", folly::toJson(util::toJson(sample_)), desc.get());
+  addDescription("joinInput", folly::toJson(util::toJson(joinInput_)), desc.get());
+  addDescription("maxSteps", folly::to<std::string>(maxSteps_), desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
+  auto limits = folly::dynamic::array();
+  for (auto i : stepLimits_) {
+    limits.push_back(folly::to<std::string>(i));
+  }
+  addDescription("stepLimits", folly::toJson(limits), desc.get());
   return desc;
 }
 
-PlanNode* GetDstBySrc::clone() const {
-  auto* newGV = GetDstBySrc::make(qctx_, nullptr, space_);
-  newGV->cloneMembers(*this);
-  return newGV;
+PlanNode* Expand::clone() const {
+  auto* expand = Expand::make(qctx_, nullptr, space_);
+  expand->cloneMembers(*this);
+  return expand;
 }
 
-void GetDstBySrc::cloneMembers(const GetDstBySrc& gd) {
-  Explore::cloneMembers(gd);
+void Expand::cloneMembers(const Expand& expand) {
+  Explore::cloneMembers(expand);
+  sample_ = expand.sample();
+  maxSteps_ = expand.maxSteps();
+  if (expand.edgeProps()) {
+    auto edgeProps = *expand.edgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+  stepLimits_ = expand.stepLimits();
+  joinInput_ = expand.joinInput();
+  edgeTypes_ = expand.edgeTypes();
+}
 
-  src_ = gd.src()->clone();
-  edgeTypes_ = gd.edgeTypes_;
+std::unique_ptr<PlanNodeDescription> ExpandAll::explain() const {
+  auto desc = Expand::explain();
+  addDescription("minSteps", folly::to<std::string>(minSteps_), desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  auto vertexColumns = folly::dynamic::array();
+  if (vertexColumns_) {
+    for (const auto* col : vertexColumns_->columns()) {
+      DCHECK(col != nullptr);
+      vertexColumns.push_back(col->toString());
+    }
+    addDescription("vertexColumns", folly::toJson(vertexColumns), desc.get());
+  }
+  auto edgeColumns = folly::dynamic::array();
+  if (edgeColumns_) {
+    for (const auto* col : edgeColumns_->columns()) {
+      DCHECK(col != nullptr);
+      edgeColumns.push_back(col->toString());
+    }
+    addDescription("edgeColumns", folly::toJson(edgeColumns), desc.get());
+  }
+  return desc;
+}
+
+PlanNode* ExpandAll::clone() const {
+  auto* expandAll = ExpandAll::make(qctx_, nullptr, space_);
+  expandAll->cloneMembers(*this);
+  return expandAll;
+}
+
+void ExpandAll::cloneMembers(const ExpandAll& expandAll) {
+  Expand::cloneMembers(expandAll);
+  minSteps_ = expandAll.minSteps();
+  if (expandAll.vertexProps()) {
+    auto vertexProps = *expandAll.vertexProps_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+  if (expandAll.vertexColumns()) {
+    vertexColumns_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    for (const auto& col : expandAll.vertexColumns()->columns()) {
+      vertexColumns_->addColumn(col->clone().release());
+    }
+  }
+  if (expandAll.edgeColumns()) {
+    edgeColumns_ = qctx_->objPool()->makeAndAdd<YieldColumns>();
+    for (const auto& col : expandAll.edgeColumns()->columns()) {
+      edgeColumns_->addColumn(col->clone().release());
+    }
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> GetVertices::explain() const {
@@ -608,10 +675,6 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
       addDescription("kind", "ROW", desc.get());
       break;
     }
-    case DCKind::kMToN: {
-      addDescription("kind", "M TO N", desc.get());
-      break;
-    }
     case DCKind::kBFSShortest: {
       addDescription("kind", "BFS SHORTEST", desc.get());
       break;
@@ -640,7 +703,6 @@ PlanNode* DataCollect::clone() const {
 
 void DataCollect::cloneMembers(const DataCollect& l) {
   VariableDependencyNode::cloneMembers(l);
-  step_ = l.step();
   distinct_ = l.distinct();
 }
 

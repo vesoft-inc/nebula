@@ -70,8 +70,10 @@ void ExtractFilterExprVisitor::visit(LabelTagPropertyExpression *) {
   canBePushed_ = false;
 }
 
-void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
-  canBePushed_ = false;
+void ExtractFilterExprVisitor::visit(VariablePropertyExpression *expr) {
+  auto colName = expr->prop();
+  auto iter = std::find(colNames_.begin(), colNames_.end(), colName);
+  canBePushed_ = iter != colNames_.end();
 }
 
 void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {

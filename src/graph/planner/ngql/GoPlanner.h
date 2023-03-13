@@ -32,11 +32,7 @@ class GoPlanner final : public Planner {
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
  private:
-  SubPlan oneStepPlan(SubPlan& startVidPlan);
-
-  SubPlan nStepsPlan(SubPlan& startVidPlan);
-
-  SubPlan mToNStepsPlan(SubPlan& startVidPlan);
+  SubPlan doPlan();
 
  private:
   std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
@@ -45,61 +41,20 @@ class GoPlanner final : public Planner {
 
   void doBuildEdgeProps(std::unique_ptr<EdgeProps>& edgeProps, bool onlyDst, bool isInEdge);
 
-  Expression* loopCondition(uint32_t steps, const std::string& gnVar);
-
-  PlanNode* extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input);
-
-  PlanNode* extractSrcDstFromGN(PlanNode* dep, const std::string& input);
-
-  PlanNode* extractVidFromRuntimeInput(PlanNode* dep);
-
-  PlanNode* trackStartVid(PlanNode* left, PlanNode* right);
-
   PlanNode* buildJoinDstPlan(PlanNode* dep);
 
-  PlanNode* buildJoinInputPlan(PlanNode* dep);
-
-  PlanNode* lastStepJoinInput(PlanNode* left, PlanNode* right);
-
-  PlanNode* buildLastStepJoinPlan(PlanNode* gn, PlanNode* join);
-
-  PlanNode* lastStep(PlanNode* dep, PlanNode* join);
-
-  PlanNode* buildOneStepJoinPlan(PlanNode* gn);
-
-  template <typename T>
-  PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
-  // build step sample limit plan
-  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep) {
-    if (goCtx_->limits.empty()) {
-      // No sample/limit
-      return input;
-    }
-    return buildSampleLimitImpl(input, goCtx_->limits[currentStep - 1]);
-  }
-  // build step sample in loop
-  PlanNode* buildSampleLimit(PlanNode* input) {
-    if (goCtx_->limits.empty()) {
-      // No sample/limit
-      return input;
-    }
-    return buildSampleLimitImpl(input, stepSampleLimit());
-  }
-
-  // Get step sample/limit number
-  Expression* stepSampleLimit();
   std::vector<EdgeType> buildEdgeTypes();
-  PlanNode* extractDstId(PlanNode* node);
 
  private:
   GoPlanner() = default;
 
   GoContext* goCtx_{nullptr};
+  // runtime : argument, else : startNode
+  PlanNode* startNode_{nullptr};
+  PlanNode* preRootNode_{nullptr};
 
   const int16_t VID_INDEX = 0;
   const int16_t LAST_COL_INDEX = -1;
-
-  std::string loopStepVar_;
 };
 }  // namespace graph
 }  // namespace nebula

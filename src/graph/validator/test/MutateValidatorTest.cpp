@@ -85,28 +85,22 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
   // pipe
   {
     auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst WITH EDGE";
-    std::vector<PlanNode::Kind> expected = {
-        PK::kDeleteVertices,
-        PK::kDeleteEdges,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
+    std::vector<PlanNode::Kind> expected = {PK::kDeleteVertices,
+                                            PK::kDeleteEdges,
+                                            PK::kDedup,
+                                            PK::kProject,
+                                            PK::kGetNeighbors,
+                                            PK::kDedup,
+                                            PK::kProject,
+                                            PK::kExpandAll,
+                                            PK::kExpand,
+                                            PK::kStart};
     ASSERT_TRUE(checkResult(cmd, expected));
   }
   {
     auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDeleteVertices,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
+        PK::kDeleteVertices, PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     ASSERT_TRUE(checkResult(cmd, expected));
   }
   // pipe wrong input
@@ -139,12 +133,7 @@ TEST_F(MutateValidatorTest, DeleteEdgeTest) {
         "YIELD like._src as src, like._dst as dst, like._rank as rank "
         "| DELETE EDGE like $-.src -> $-.dst @ $-.rank";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDeleteEdges,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
+        PK::kDeleteEdges, PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     ASSERT_TRUE(checkResult(cmd, expected));
   }
   // var
@@ -154,12 +143,7 @@ TEST_F(MutateValidatorTest, DeleteEdgeTest) {
         "YIELD like._src as src, like._dst as dst, like._rank as rank "
         "; DELETE EDGE like $var.src -> $var.dst @ $var.rank";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDeleteEdges,
-        PK::kDedup,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
+        PK::kDeleteEdges, PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     ASSERT_TRUE(checkResult(cmd, expected));
   }
   // pipe wrong input
