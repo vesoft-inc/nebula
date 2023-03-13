@@ -340,6 +340,7 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
     gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
     gn->setEdgeProps(buildEdgeProps(false));
     gn->setInputVar(goCtx_->vidsVar);
+    gn->setEdgeDirection(goCtx_->over.direction);
 
     const auto& steps = goCtx_->steps;
     auto* sampleLimit = buildSampleLimit(gn, steps.isMToN() ? steps.nSteps() : steps.steps());
@@ -446,6 +447,7 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
     gn->setEdgeProps(buildEdgeProps(false));
     gn->setSrc(goCtx_->from.src);
     gn->setInputVar(goCtx_->vidsVar);
+    gn->setEdgeDirection(goCtx_->over.direction);
     scan = gn;
 
     auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
@@ -495,6 +497,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
     gn->setSrc(goCtx_->from.src);
     gn->setEdgeProps(buildEdgeProps(true));
     gn->setInputVar(goCtx_->vidsVar);
+    gn->setEdgeDirection(goCtx_->over.direction);
     auto* sampleLimit = buildSampleLimit(gn);
 
     getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
@@ -569,6 +572,7 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
     gn->setEdgeProps(buildEdgeProps(false));
     gn->setInputVar(goCtx_->vidsVar);
+    gn->setEdgeDirection(goCtx_->over.direction);
     auto* sampleLimit = buildSampleLimit(gn);
 
     getDst = PlannerUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);

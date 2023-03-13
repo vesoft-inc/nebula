@@ -2033,8 +2033,11 @@ FunctionManager::FunctionManager() {
           return v.vid;
         }
         case Value::Type::LIST: {
-          const auto &listVal = args[0].get().getList();
-          auto &lastVal = listVal.values.back();
+          const auto &listVal = args[0].get().getList().values;
+          if (listVal.empty()) {
+            return Value::kNullBadType;
+          }
+          auto &lastVal = listVal.back();
           if (lastVal.isEdge()) {
             return lastVal.getEdge().dst;
           } else if (lastVal.isVertex()) {
@@ -2167,7 +2170,8 @@ FunctionManager::FunctionManager() {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          return args[0].get().getList().values.front();
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.front();
         }
         default: {
           return Value::kNullBadType;
@@ -2186,7 +2190,8 @@ FunctionManager::FunctionManager() {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          return args[0].get().getList().values.back();
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.back();
         }
         default: {
           return Value::kNullBadType;

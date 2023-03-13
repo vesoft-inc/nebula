@@ -162,19 +162,24 @@ void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
-  if (!status.ok()) {
-    status_ = std::move(status).status();
-    return;
-  }
   auto &nodeAlias = static_cast<VariablePropertyExpression *>(expr->label())->prop();
   auto &tagName = expr->sym();
   auto &propName = expr->prop();
+
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
   if (!ret.ok()) {
-    status_ = std::move(ret).status();
-    return;
+    // if the we switch space in the query, we need to get the space id from the validation context
+    // use xxx; match xxx
+    if (qctx_->vctx()->spaceChosen()) {
+      space_ = qctx_->vctx()->whichSpace().id;
+      ret = qctx_->schemaMng()->toTagID(qctx_->vctx()->whichSpace().id, tagName);
+      if (!ret.ok()) {
+        status_ = std::move(ret).status();
+        return;
+      }
+    }
   }
+
   auto tagId = ret.value();
   propsUsed_.insertVertexProp(nodeAlias, tagId, propName);
 }
