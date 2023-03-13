@@ -40,7 +40,6 @@ Feature: IntegerVid Go  Sentence
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
       | "Spurs"    |
-      | "Spurs"    |
     When executing query:
       """
       YIELD hash("Tim Duncan") as vid | GO FROM $-.vid OVER serve YIELD serve._dst

@@ -49,7 +49,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownInnerJoinRule::transform(
 
   // split the `condition` based on whether the varPropExpr comes from the left child
   auto picker = [&leftVarColNames](const Expression* e) -> bool {
-    return graph::ExpressionUtils::checkVarPropIfExist(leftVarColNames, e);
+    return graph::ExpressionUtils::checkColName(leftVarColNames, e);
   };
   Expression* filterPicked = nullptr;
   Expression* filterUnpicked = nullptr;

@@ -21,7 +21,7 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "GO FROM \"1\" OVER like YIELD like._dst AS id, $^.person.age AS age "
         "| GROUP BY $-.age YIELD $-.age, COUNT($-.id)";
     std::vector<PlanNode::Kind> expected = {
-        PK::kAggregate, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kAggregate, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -30,7 +30,7 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "age "
         "| GROUP BY $-.id YIELD $-.id AS id";
     std::vector<PlanNode::Kind> expected = {
-        PK::kAggregate, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kAggregate, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -39,7 +39,7 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
         "age "
         "| GROUP BY $-.id YIELD $-.id AS id, abs(avg($-.age)) AS age";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject, PK::kAggregate, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kProject, PK::kAggregate, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -61,9 +61,9 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -89,9 +89,9 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
                                             PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -112,9 +112,9 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -136,9 +136,9 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -160,9 +160,9 @@ TEST_F(GroupByValidatorTest, TestGroupBy) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -177,7 +177,7 @@ TEST_F(GroupByValidatorTest, VariableTest) {
         "age; "
         "GROUP BY $a.age YIELD $a.age, COUNT($a.id)";
     std::vector<PlanNode::Kind> expected = {
-        PK::kAggregate, PK::kProject, PK::kGetNeighbors, PK::kStart};
+        PK::kAggregate, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -196,9 +196,9 @@ TEST_F(GroupByValidatorTest, VariableTest) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};
@@ -220,9 +220,9 @@ TEST_F(GroupByValidatorTest, VariableTest) {
     std::vector<PlanNode::Kind> expected = {PK::kAggregate,
                                             PK::kProject,
                                             PK::kHashLeftJoin,
+                                            PK::kExpandAll,
                                             PK::kProject,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
+                                            PK::kExpand,
                                             PK::kGetVertices,
                                             PK::kStart,
                                             PK::kArgument};

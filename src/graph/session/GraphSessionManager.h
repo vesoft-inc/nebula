@@ -114,10 +114,10 @@ class GraphSessionManager final : public SessionManager<ClientSession> {
   void updateSessionInfo(ClientSession* session);
 
   // add sessionCount
-  bool addSessionCount(std::string& key);
+  void addSessionCount(std::string& key);
 
   // sub sessionCount
-  bool subSessionCount(std::string& key);
+  void subSessionCount(std::string& key);
 };
 
 }  // namespace graph

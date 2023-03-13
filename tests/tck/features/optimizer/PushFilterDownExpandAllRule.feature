@@ -1,7 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-Feature: Push Filter down GetNeighbors rule
+Feature: Push Filter down ExpandAll rule
 
   Background:
     Given a graph with space named "nba"
@@ -21,10 +21,11 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                    |
-      | 0  | Project      | 1            |                                  |
-      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
-      | 2  | Start        |              |                                  |
+      | id | name      | dependencies | operator info                    |
+      | 5  | Project   | 6            |                                  |
+      | 6  | ExpandAll | 2            | {"filter": "($^.player.age>18)"} |
+      | 2  | Expand    | 1            |                                  |
+      | 1  | Start     |              |                                  |
 
   Scenario: push start vertex filter down when reversely
     When profiling query:
@@ -39,10 +40,11 @@ Feature: Push Filter down GetNeighbors rule
       | 90       |
       | 99       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                    |
-      | 0  | Project      | 1            |                                  |
-      | 1  | GetNeighbors | 2            | {"filter": "($^.player.age>18)"} |
-      | 2  | Start        |              |                                  |
+      | id | name      | dependencies | operator info                    |
+      | 5  | Project   | 6            |                                  |
+      | 6  | ExpandAll | 2            | {"filter": "($^.player.age>18)"} |
+      | 2  | Expand    | 1            |                                  |
+      | 1  | Start     |              |                                  |
 
   Scenario: push edge props filter down
     When profiling query:
@@ -57,10 +59,11 @@ Feature: Push Filter down GetNeighbors rule
       | 2012       |
       | 2016       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                         |
-      | 0  | Project      | 1            |                                       |
-      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year>2005)"} |
-      | 2  | Start        |              |                                       |
+      | id | name      | dependencies | operator info                         |
+      | 5  | Project   | 6            |                                       |
+      | 6  | ExpandAll | 2            | {"filter": "(serve.start_year>2005)"} |
+      | 2  | Expand    | 1            |                                       |
+      | 1  | Start     |              |                                       |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -72,10 +75,11 @@ Feature: Push Filter down GetNeighbors rule
       | "Manu Ginobili" | 95            |
       | "Tim Duncan"    | 95            |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                                            |
-      | 0  | Project      | 1            |                                                                          |
-      | 1  | GetNeighbors | 2            | {"filter": "(like.likeness IN [__VAR_0 IN [95,99] WHERE ($__VAR_0>0)])"} |
-      | 2  | Start        |              |                                                                          |
+      | id | name      | dependencies | operator info                                                            |
+      | 5  | Project   | 6            |                                                                          |
+      | 6  | ExpandAll | 2            | {"filter": "(like.likeness IN [__VAR_0 IN [95,99] WHERE ($__VAR_0>0)])"} |
+      | 2  | Expand    | 1            |                                                                          |
+      | 1  | Start     |              |                                                                          |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -86,10 +90,11 @@ Feature: Push Filter down GetNeighbors rule
       | like._dst           | like.likeness |
       | "LaMarcus Aldridge" | 90            |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                                            |
-      | 0  | Project      | 1            |                                                                          |
-      | 1  | GetNeighbors | 2            | {"filter": "any(__VAR_0 IN [5,6] WHERE ((like.likeness+$__VAR_0)<100))"} |
-      | 2  | Start        |              |                                                                          |
+      | id | name      | dependencies | operator info                                                            |
+      | 5  | Project   | 6            |                                                                          |
+      | 6  | ExpandAll | 2            | {"filter": "any(__VAR_0 IN [5,6] WHERE ((like.likeness+$__VAR_0)<100))"} |
+      | 2  | Expand    | 1            |                                                                          |
+      | 1  | Start     |              |                                                                          |
 
   Scenario: push edge props filter down when reversely
     When profiling query:
@@ -106,10 +111,11 @@ Feature: Push Filter down GetNeighbors rule
       | 2008       |
       | 2012       |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                         |
-      | 0  | Project      | 1            |                                       |
-      | 1  | GetNeighbors | 2            | {"filter": "(serve.start_year<2017)"} |
-      | 2  | Start        |              |                                       |
+      | id | name      | dependencies | operator info                         |
+      | 5  | Project   | 6            |                                       |
+      | 6  | ExpandAll | 2            | {"filter": "(serve.start_year<2017)"} |
+      | 2  | Expand    | 1            |                                       |
+      | 1  | Start     |              |                                       |
 
   @skip
   Scenario: Only push source vertex filter down

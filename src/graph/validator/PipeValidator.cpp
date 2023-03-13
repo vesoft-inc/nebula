@@ -31,6 +31,10 @@ Status PipeValidator::validateImpl() {
 Status PipeValidator::toPlan() {
   root_ = rValidator_->root();
   tail_ = lValidator_->tail();
+  PlanNode* rTail = rValidator_->tail();
+  if (rTail->kind() == PlanNode::Kind::kArgument || rTail->kind() == PlanNode::Kind::kStart) {
+    return Status::OK();
+  }
   NG_RETURN_IF_ERROR(rValidator_->appendPlan(lValidator_->root()));
   auto node = static_cast<SingleInputNode*>(rValidator_->tail());
   if (node->inputVar().empty()) {

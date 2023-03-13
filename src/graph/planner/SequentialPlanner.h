@@ -26,7 +26,7 @@ class SequentialPlanner final : public Planner {
    */
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-  void rmLeftTailStartNode(Validator* validator, Sentence::Kind appendPlanKind);
+  void rmLeftTailStartNode(Validator* validator);
 
  private:
   SequentialPlanner() = default;

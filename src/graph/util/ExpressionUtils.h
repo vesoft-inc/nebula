@@ -195,8 +195,8 @@ class ExpressionUtils {
   // calls flattenInnerLogicalAndExpr() first then executes flattenInnerLogicalOrExpr()
   static Expression* flattenInnerLogicalExpr(const Expression* expr);
 
-  // Check whether there exists the property of variable expression in `columns'
-  static bool checkVarPropIfExist(const std::vector<std::string>& columns, const Expression* e);
+  // Check whether there exists the colName in `columns'
+  static bool checkColName(const std::vector<std::string>& columns, const Expression* e);
 
   // Uses the picker to split the given expression expr into two parts: filterPicked and
   // filterUnpicked If expr is a non-LogicalAnd expression, applies the picker to expr directly If

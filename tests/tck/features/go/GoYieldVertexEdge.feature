@@ -54,13 +54,6 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | "teammate" |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "teammate" |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "teammate" |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "like"     |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "like"     |
-      | ("Spurs" :team{name: "Spurs"})                                    | "serve"    |
-      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | "teammate" |
-      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | "teammate" |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | "teammate" |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | "teammate" |
     When executing query:
       """
       YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve YIELD $^ as src, $$ as dst, dst(edge) as id
@@ -153,6 +146,17 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | dst |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like, serve
+        WHERE serve.start_year > 1970 OR properties($$).age < 50
+        YIELD $$ AS dst, edge AS e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                                                       | e                                                                    |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]              |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                |
+      | ("Spurs" :team{name: "Spurs"})                            | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}] |
 
   Scenario: In expression
     When executing query:
