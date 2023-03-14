@@ -126,16 +126,16 @@ Status MatchValidator::validateImpl() {
 // \param matchClauseCtx the context of current match clause
 Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   matchClauseCtx.paths.emplace_back();
-  if (path->alias() == nullptr) {
-    // No need to generate path structure
-    const_cast<MatchPath *>(path)->setPredicate();
-  }
   NG_RETURN_IF_ERROR(
       buildNodeInfo(path, matchClauseCtx.paths.back().nodeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
       buildEdgeInfo(path, matchClauseCtx.paths.back().edgeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
       buildPathExpr(path, matchClauseCtx.paths.back(), matchClauseCtx.aliasesGenerated));
+  if (path->alias() == nullptr) {
+    auto &genPath = matchClauseCtx.paths.back().genPath;
+    genPath = false;
+  }
   return Status::OK();
 }
 
@@ -146,6 +146,7 @@ Status MatchValidator::validatePath(const MatchPath *path, Path &pathInfo) {
   NG_RETURN_IF_ERROR(buildNodeInfo(path, pathInfo.nodeInfos, dummy));
   NG_RETURN_IF_ERROR(buildEdgeInfo(path, pathInfo.edgeInfos, dummy));
   NG_RETURN_IF_ERROR(buildPathExpr(path, pathInfo, dummy));
+  pathInfo.isPred = path->isPredicate();
   pathInfo.isAntiPred = path->isAntiPredicate();
 
   return Status::OK();
@@ -175,10 +176,6 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto *pathAlias = path->alias();
   if (pathAlias != nullptr && !aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
-  }
-  if (path->isPredicate()) {
-    pathInfo.isPred = true;
-    return Status::OK();
   }
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);

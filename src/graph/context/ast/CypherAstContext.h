@@ -104,9 +104,10 @@ struct Path final {
   std::string collectVariable;
 
   // Flag for pattern predicate
-  // if true no need to generate path structure
   bool isPred{false};
   bool isAntiPred{false};
+  // if false do not generate path struct
+  bool genPath{true};
 
   enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};
