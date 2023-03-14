@@ -6,7 +6,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "clients/storage/StorageClient.h"
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/time/Duration.h"
 

@@ -64,7 +64,7 @@ class HashJoinNode : public IterateNode<VertexID> {
           },
           [this, &result, tagNode](
               folly::StringPiece key,
-              RowReader* reader,
+              RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             nebula::List list;
             list.reserve(props->size());
@@ -119,7 +119,7 @@ class HashJoinNode : public IterateNode<VertexID> {
   }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return iter_->reader();
   }
 

@@ -103,7 +103,7 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, const std::string
   processV2EncodedStr();
 }
 
-RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
+RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchema()) {
   for (size_t i = 0; i < reader.numFields(); i++) {
     Value v = reader.getValueByIndex(i);
     switch (v.type()) {

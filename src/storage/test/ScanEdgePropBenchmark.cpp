@@ -41,7 +41,7 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
     return iter_->val();
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return reader_.get();
   }
 
@@ -52,7 +52,7 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
   }
 
   std::unique_ptr<kvstore::KVIterator> iter_;
-  std::unique_ptr<RowReader> reader_;
+  std::unique_ptr<RowReaderWrapper> reader_;
 };
 
 TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
@@ -74,6 +74,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
   GraphSpaceID spaceId = 1;
   PartitionID partId = (hash(vId) % totalParts) + 1;
   EdgeType edgeType = 101;
+  auto latest = env->schemaMan_->getEdgeSchema(spaceId, edgeType);
   auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
   bool isIntId = false;
 
@@ -81,8 +82,9 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
   {
     std::vector<std::string> names = {"playerName", "teamName", "startYear", "endYear"};
     for (const auto& name : names) {
-      storage::PropContext ctx(name.c_str());
-      ctx.returned_ = true;
+      auto field = latest->field(name);
+      ASSERT_NE(field, nullptr);
+      storage::PropContext ctx(name.c_str(), field, true, false);
       props.emplace_back(std::move(ctx));
     }
   }
@@ -220,7 +222,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       iter.reset(new TestSingleEdgeIterator(std::move(kvIter)));
     }
     size_t edgeRowCount = 0;
-    RowReaderV2 reader;
+    RowReaderWrapper reader;
 
     // find all version of edge schema
     auto edges = env->schemaMan_->getAllVerEdgeSchema(spaceId);
@@ -230,7 +232,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
     ASSERT_TRUE(edgeIter != edgeSchemas.end());
     const auto& schemas = edgeIter->second;
 
-    auto resetReaderV2 = [&schemas, &reader](folly::StringPiece row) -> bool {
+    auto resetReader = [&schemas, &reader](folly::StringPiece row) -> bool {
       SchemaVer schemaVer;
       int32_t readerVer;
       RowReaderWrapper::getVersions(row, schemaVer, readerVer);
@@ -241,14 +243,14 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
         return false;
       }
       EXPECT_EQ(readerVer, 2);
-      return reader.resetImpl(schemas[schemaVer].get(), row);
+      return reader.reset(schemas[schemaVer].get(), row, readerVer);
     };
 
     folly::stop_watch<std::chrono::microseconds> watch;
     for (; iter->valid(); iter->next(), edgeRowCount++) {
       auto key = iter->key();
       auto val = iter->val();
-      ASSERT_TRUE(resetReaderV2(val));
+      ASSERT_TRUE(resetReader(val));
       auto code =
           storage::QueryUtils::collectEdgeProps(key, vIdLen, isIntId, &reader, &props, list);
       ASSERT_TRUE(code.ok());
