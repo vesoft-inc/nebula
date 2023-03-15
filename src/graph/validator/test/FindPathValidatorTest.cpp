@@ -181,7 +181,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -205,7 +206,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -228,7 +230,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kProject,
         PK::kStart,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -251,7 +254,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kProject,
         PK::kStart,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -262,25 +266,11 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "GO FROM \"2\" OVER like yield like._src AS src, like._dst AS dst "
         " | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
-        PK::kProject,
-        PK::kMultiShortestPath,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kPassThrough,
-        PK::kProject,
-        PK::kStart,
-        PK::kDedup,
-        PK::kProject,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kStart,
-    };
+        PK::kDataCollect, PK::kLoop,         PK::kProject,      PK::kMultiShortestPath,
+        PK::kProject,     PK::kGetNeighbors, PK::kGetNeighbors, PK::kDedup,
+        PK::kPassThrough, PK::kProject,      PK::kStart,        PK::kDedup,
+        PK::kProject,     PK::kProject,      PK::kExpandAll,    PK::kExpand,
+        PK::kProject,     PK::kExpandAll,    PK::kExpand,       PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {

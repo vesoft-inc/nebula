@@ -55,7 +55,7 @@ class MultiTagNode : public IterateNode<VertexID> {
           },
           [this, &result, tagNode](
               folly::StringPiece key,
-              RowReader* reader,
+              RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             nebula::List list;
             list.reserve(props->size());
@@ -104,7 +104,7 @@ class MultiTagNode : public IterateNode<VertexID> {
     return "";
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     DLOG(FATAL) << "not allowed to do this";
     return nullptr;
   }

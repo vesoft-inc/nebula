@@ -235,7 +235,8 @@ TEST_F(YieldValidatorTest, YieldPipe) {
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -246,7 +247,8 @@ TEST_F(YieldValidatorTest, YieldPipe) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -257,7 +259,8 @@ TEST_F(YieldValidatorTest, YieldPipe) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -267,7 +270,8 @@ TEST_F(YieldValidatorTest, YieldPipe) {
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -278,7 +282,8 @@ TEST_F(YieldValidatorTest, YieldPipe) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_, {"$-.name", "$-.start"}));
@@ -290,7 +295,7 @@ TEST_F(YieldValidatorTest, YieldPipe) {
             PlanNode::Kind::kProject,
             PlanNode::Kind::kFilter,
             PlanNode::Kind::kProject,
-            PlanNode::Kind::kGetNeighbors,
+            PlanNode::Kind::kExpandAll,
             PlanNode::Kind::kStart,
         };
         EXPECT_TRUE(checkResult(query, expected_, {"name", "start", "hash"}));
@@ -303,7 +308,7 @@ TEST_F(YieldValidatorTest, YieldPipe) {
             PlanNode::Kind::kProject,
             PlanNode::Kind::kFilter,
             PlanNode::Kind::kProject,
-            PlanNode::Kind::kGetNeighbors,
+            PlanNode::Kind::kExpandAll,
             PlanNode::Kind::kStart,
         };
         EXPECT_TRUE(checkResult(query, expected_, {"name", "start", "hash"}));
@@ -328,7 +333,8 @@ TEST_F(YieldValidatorTest, YieldVar) {
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_, {"$var.name"}));
@@ -339,7 +345,8 @@ TEST_F(YieldValidatorTest, YieldVar) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_, {"$var.name"}));
@@ -350,7 +357,8 @@ TEST_F(YieldValidatorTest, YieldVar) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -360,7 +368,8 @@ TEST_F(YieldValidatorTest, YieldVar) {
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start"}));
@@ -371,7 +380,8 @@ TEST_F(YieldValidatorTest, YieldVar) {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kFilter,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start"}));
@@ -383,7 +393,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kProject,
             PlanNode::Kind::kFilter,
             PlanNode::Kind::kProject,
-            PlanNode::Kind::kGetNeighbors,
+            PlanNode::Kind::kExpandAll,
             PlanNode::Kind::kStart,
         };
         EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start", "hash"}));
@@ -402,7 +412,7 @@ TEST_F(YieldValidatorTest, YieldVar) {
             PlanNode::Kind::kProject,
             PlanNode::Kind::kFilter,
             PlanNode::Kind::kProject,
-            PlanNode::Kind::kGetNeighbors,
+            PlanNode::Kind::kExpandAll,
             PlanNode::Kind::kStart,
         };
         EXPECT_TRUE(checkResult(query, expected_, {"$var.name", "$var.start", "hash"}));
@@ -491,7 +501,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -505,7 +516,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -520,7 +532,8 @@ TEST_F(YieldValidatorTest, AggCall) {
         PlanNode::Kind::kDedup,
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -550,7 +563,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -561,7 +575,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kProject,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -576,7 +591,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected_));
@@ -598,7 +614,8 @@ TEST_F(YieldValidatorTest, AggCall) {
     expected_ = {
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query));
@@ -614,7 +631,8 @@ TEST_F(YieldValidatorTest, AggCall) {
         PlanNode::Kind::kDedup,
         PlanNode::Kind::kAggregate,
         PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetNeighbors,
+        PlanNode::Kind::kExpandAll,
+        PlanNode::Kind::kExpand,
         PlanNode::Kind::kStart,
     };
     EXPECT_TRUE(checkResult(query));

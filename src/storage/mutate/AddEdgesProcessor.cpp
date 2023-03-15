@@ -364,7 +364,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::findOldValue(
 
 std::vector<std::string> AddEdgesProcessor::indexKeys(
     PartitionID partId,
-    RowReader* reader,
+    RowReaderWrapper* reader,
     const folly::StringPiece& rawKey,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
     const meta::SchemaProviderIf* latestSchema) {

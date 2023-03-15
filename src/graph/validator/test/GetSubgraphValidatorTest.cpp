@@ -59,7 +59,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -74,7 +75,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -108,7 +110,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -123,7 +126,8 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
-        PK::kGetNeighbors,
+        PK::kExpandAll,
+        PK::kExpand,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));

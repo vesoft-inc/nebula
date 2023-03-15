@@ -38,6 +38,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Start";
     case Kind::kGetNeighbors:
       return "GetNeighbors";
+    case Kind::kExpand:
+      return "Expand";
+    case Kind::kExpandAll:
+      return "ExpandAll";
     case Kind::kGetVertices:
       return "GetVertices";
     case Kind::kGetEdges:
@@ -303,8 +307,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "RollUpApply";
     case Kind::kPatternApply:
       return "PatternApply";
-    case Kind::kGetDstBySrc:
-      return "GetDstBySrc";
       // no default so the compiler will warning when lack
   }
   DLOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

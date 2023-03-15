@@ -8,7 +8,7 @@
 
 #include <cstddef>
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/context/ExpressionContext.h"
@@ -221,7 +221,7 @@ class StorageExpressionContext final : public ExpressionContext {
    * @param reader Row reader to reset.
    * @param key Key string to reset.
    */
-  void reset(RowReader* reader, const std::string& key) {
+  void reset(RowReaderWrapper* reader, const std::string& key) {
     reader_ = reader;
     key_ = key;
   }
@@ -302,7 +302,7 @@ class StorageExpressionContext final : public ExpressionContext {
   size_t vIdLen_;
   bool isIntId_;
 
-  RowReader* reader_{nullptr};
+  RowReaderWrapper* reader_{nullptr};
   std::string key_;
   // tag or edge name
   std::string name_;

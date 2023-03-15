@@ -22,7 +22,7 @@ namespace storage {
 using NullHandler = std::function<nebula::cpp2::ErrorCode(const std::vector<PropContext>*)>;
 
 using PropHandler = std::function<nebula::cpp2::ErrorCode(
-    folly::StringPiece, RowReader*, const std::vector<PropContext>* props)>;
+    folly::StringPiece, RowReaderWrapper*, const std::vector<PropContext>* props)>;
 
 template <typename T>
 class StoragePlan;
@@ -151,7 +151,7 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
   }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return upstream_->reader();
   }
 

@@ -119,7 +119,7 @@ class TagNode final : public IterateNode<VertexID> {
     return value_;
   }
 
-  RowReader* reader() const override {
+  RowReaderWrapper* reader() const override {
     return reader_.get();
   }
 

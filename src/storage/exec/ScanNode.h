@@ -148,7 +148,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
             },
             [&row, vIdLen, isIntId, tagNode = tagNode.get(), this](
                 folly::StringPiece key,
-                RowReader* reader,
+                RowReaderWrapper* reader,
                 const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
               for (const auto& prop : *props) {
                 if (prop.returned_ || (prop.filtered_ && expCtx_ != nullptr)) {
@@ -306,7 +306,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
           },
           [&row, vIdLen, isIntId, edgeNode = edgeNode.get(), this](
               folly::StringPiece key,
-              RowReader* reader,
+              RowReaderWrapper* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             for (const auto& prop : *props) {
               if (prop.returned_ || (prop.filtered_ && expCtx_ != nullptr)) {

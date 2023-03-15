@@ -47,18 +47,6 @@ set(CODEC_TEST_LIBS
 
 
 nebula_add_test(
-    NAME row_reader_v1_test
-    SOURCES RowReaderV1Test.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-
-nebula_add_test(
     NAME row_reader_v2_test
     SOURCES RowReaderV2Test.cpp
     OBJECTS ${CODEC_TEST_LIBS}
@@ -78,22 +66,6 @@ nebula_add_test(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
-        gtest
-)
-
-
-nebula_add_test(
-    NAME row_reader_bm
-    SOURCES
-        RowReaderBenchmark.cpp
-        RowWriterV1.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        follybenchmark
-        wangle
-        boost_regex
         gtest
 )
 

@@ -40,7 +40,7 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
                                      const meta::SchemaProviderIf* latestSchema);
 

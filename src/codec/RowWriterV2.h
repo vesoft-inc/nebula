@@ -6,7 +6,7 @@
 #ifndef CODEC_ROWWRITERV2_H_
 #define CODEC_ROWWRITERV2_H_
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/meta/SchemaProviderIf.h"
 
@@ -90,8 +90,8 @@ class RowWriterV2 {
   RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded);
   // This constructor only takes a V2 encoded string
   RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded);
-  // This constructor can handle both V1 and V2 readers
-  explicit RowWriterV2(RowReader& reader);
+  // This constructor can handle constructed from RowReaderWrapper, which is V2 reader
+  explicit RowWriterV2(RowReaderWrapper& reader);
 
   ~RowWriterV2() = default;
 

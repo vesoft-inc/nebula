@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/fs/TempDir.h"

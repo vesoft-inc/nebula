@@ -69,6 +69,12 @@ void GetNbrsRespDataSetIter::buildPropIndex(const std::string& colName, size_t c
   }
 }
 
+Value GetNbrsRespDataSetIter::getVid() const {
+  DCHECK(valid());
+  const Row& curRow = dataset_->rows[curRowIdx_];
+  return curRow[0];
+}
+
 Value GetNbrsRespDataSetIter::getVertex() const {
   // Always check the valid() before getVertex
   DCHECK(valid());
@@ -148,6 +154,46 @@ std::vector<Value> GetNbrsRespDataSetIter::getAdjEdges(VidHashSet* dstSet) const
     }
   }
   return adjEdges;
+}
+
+std::unordered_set<Value> GetNbrsRespDataSetIter::getAdjDsts() const {
+  DCHECK(valid());
+
+  std::unordered_set<Value> adjDsts;
+  const Row& curRow = dataset_->rows[curRowIdx_];
+  for (const auto& [edgeName, propIdx] : edgePropsMap_) {
+    DCHECK_LT(propIdx.colIdx, curRow.size());
+    const Value& edgeColumn = curRow[propIdx.colIdx];
+    if (edgeColumn.isList()) {
+      for (const Value& edgeVal : edgeColumn.getList().values) {
+        // skip the edge direction symbol: `-/+`
+        auto name = edgeName.substr(1);
+        if (!edgeVal.isList() || edgeVal.getList().empty()) {
+          continue;
+        }
+        const List& propList = edgeVal.getList();
+        DCHECK_LT(propIdx.edgeDstIdx, propList.size());
+        auto& dst = propList[propIdx.edgeDstIdx];
+        adjDsts.emplace(dst);
+      }
+    }
+  }
+  return adjDsts;
+}
+
+size_t GetNbrsRespDataSetIter::size() {
+  size_t size = 0;
+  for (; valid(); next()) {
+    const Row& curRow = dataset_->rows[curRowIdx_];
+    for (const auto& [edgeName, propIdx] : edgePropsMap_) {
+      DCHECK_LT(propIdx.colIdx, curRow.size());
+      const Value& edgeColumn = curRow[propIdx.colIdx];
+      if (edgeColumn.isList()) {
+        size += edgeColumn.getList().values.size();
+      }
+    }
+  }
+  return size;
 }
 
 }  // namespace graph

@@ -951,16 +951,23 @@ Expression *ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
   return allFlattenExpr;
 }
 
-bool ExpressionUtils::checkVarPropIfExist(const std::vector<std::string> &columns,
-                                          const Expression *e) {
-  auto varProps = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kVarProperty});
-  if (varProps.empty()) {
+bool ExpressionUtils::checkColName(const std::vector<std::string> &columns, const Expression *e) {
+  auto exprs = graph::ExpressionUtils::collectAll(
+      e, {Expression::Kind::kVarProperty, Expression::Kind::kVertex, Expression::Kind::kEdge});
+  if (exprs.empty()) {
     return false;
   }
-  for (const auto *expr : varProps) {
-    DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
-    auto iter = std::find_if(columns.begin(), columns.end(), [expr](const std::string &item) {
-      return !item.compare(static_cast<const VariablePropertyExpression *>(expr)->prop());
+  for (const auto *expr : exprs) {
+    std::string colName;
+    if (expr->kind() == Expression::Kind::kVarProperty) {
+      colName = static_cast<const VariablePropertyExpression *>(expr)->prop();
+    } else if (expr->kind() == Expression::Kind::kVertex) {
+      colName = static_cast<const VertexExpression *>(expr)->name();
+    } else {
+      colName = static_cast<const EdgeExpression *>(expr)->toString();
+    }
+    auto iter = std::find_if(columns.begin(), columns.end(), [&colName](const std::string &item) {
+      return !item.compare(colName);
     });
     if (iter == columns.end()) {
       return false;

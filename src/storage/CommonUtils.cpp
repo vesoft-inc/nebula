@@ -11,7 +11,7 @@ namespace nebula {
 namespace storage {
 
 bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
-                                         RowReader* reader,
+                                         RowReaderWrapper* reader,
                                          const std::string& ttlCol,
                                          int64_t ttlDuration) {
   auto v = QueryUtils::readValue(reader, ttlCol, schema);
@@ -58,7 +58,8 @@ std::pair<bool, std::pair<int64_t, std::string>> CommonUtils::ttlProps(
   return std::make_pair(!(duration <= 0 || col.empty()), std::make_pair(duration, col));
 }
 
-StatusOr<Value> CommonUtils::ttlValue(const meta::SchemaProviderIf* schema, RowReader* reader) {
+StatusOr<Value> CommonUtils::ttlValue(const meta::SchemaProviderIf* schema,
+                                      RowReaderWrapper* reader) {
   DCHECK(schema != nullptr);
   const auto* ns = dynamic_cast<const meta::NebulaSchemaProvider*>(schema);
   auto ttlProp = ttlProps(ns);

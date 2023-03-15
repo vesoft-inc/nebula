@@ -20,12 +20,14 @@ nebula_add_library(
     rule/MergeGetNbrsAndProjectRule.cpp
     rule/IndexScanRule.cpp
     rule/PushLimitDownGetNeighborsRule.cpp
+    rule/PushLimitDownExpandAllRule.cpp
     rule/PushStepSampleDownGetNeighborsRule.cpp
     rule/PushStepLimitDownGetNeighborsRule.cpp
     rule/TopNRule.cpp
     rule/PushEFilterDownRule.cpp
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
+    rule/PushFilterDownExpandAllRule.cpp
     rule/PushFilterDownHashInnerJoinRule.cpp
     rule/PushFilterDownHashLeftJoinRule.cpp
     rule/PushFilterDownInnerJoinRule.cpp
@@ -52,7 +54,6 @@ nebula_add_library(
     rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
     rule/PushTopNDownIndexScanRule.cpp
     rule/PushLimitDownScanEdgesRule.cpp
-    rule/RemoveProjectDedupBeforeGetDstBySrcRule.cpp
     rule/PushFilterDownTraverseRule.cpp
     rule/RemoveAppendVerticesBelowJoinRule.cpp
 )
