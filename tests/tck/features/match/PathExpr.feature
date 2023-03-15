@@ -474,3 +474,51 @@ Feature: Basic match
       MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
       """
     Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n) WHERE (n)-[e*1..4]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) WHERE (n)-[e*1]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n), (n)-[e*1..4]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime:  `e': Redefined alias
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) MATCH (n)-[e*1]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) MATCH (n)-[e]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n) WITH (n)-[e*1..4]->(:player) AS v RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) UNWIND (n)-[e*1]->(:player) as v RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Variable `v` already declared
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n)
+      WITH collect(n) as ns, e as e
+      WITH ns[0] AS n,e AS e
+      MATCH (n)-[e]->(v:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
