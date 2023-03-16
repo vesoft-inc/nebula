@@ -4,8 +4,6 @@
 
 #include "graph/util/ExpressionUtils.h"
 
-#include <vector>
-
 #include "ExpressionUtils.h"
 #include "common/base/ObjectPool.h"
 #include "common/expression/ArithmeticExpression.h"
