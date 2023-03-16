@@ -192,6 +192,12 @@ Status LookupValidator::validateWhere() {
 
   auto* filter = whereClause->filter();
   if (filter != nullptr) {
+    auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+    for (const auto& var : vars) {
+      if (!vctx_->existVar(var)) {
+        return Status::SemanticError("Undefined parameter: " + var);
+      }
+    }
     filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
   }
   if (FTIndexUtils::needTextSearch(filter)) {

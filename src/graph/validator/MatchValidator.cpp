@@ -334,6 +334,10 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
+  auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+  if (!vars.empty()) {
+    return Status::SemanticError("Undefined parameter: " + vars[0]);
+  }
   auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);

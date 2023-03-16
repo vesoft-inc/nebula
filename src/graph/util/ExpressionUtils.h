@@ -87,6 +87,13 @@ class ExpressionUtils {
   // Rewrites ParameterExpression to ConstantExpression
   static Expression* rewriteParameter(const Expression* expr, QueryContext* qctx);
 
+  // Extract all inner Variable expressions
+  static std::vector<const Expression*> ExtractInnerVarExprs(const Expression* expr,
+                                                             QueryContext* qctx);
+
+  // Extract all inner Variable names
+  static std::vector<std::string> ExtractInnerVars(const Expression* expr, QueryContext* qctx);
+
   // Rewrite RelInExpr with only one operand in expression tree
   static Expression* rewriteInnerInExpr(const Expression* expr);
 
