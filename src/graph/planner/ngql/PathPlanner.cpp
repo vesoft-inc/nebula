@@ -181,8 +181,8 @@ StatusOr<SubPlan> PathPlanner::allPathPlan() {
 
   auto steps = pathCtx_->steps.steps();
   auto withProp = pathCtx_->withProp;
-  auto* path =
-      AllPaths::make(qctx, leftPlan.root, rightPlan.root, steps, pathCtx_->noLoop, withProp);
+  auto* path = AllPaths::make(
+      qctx, leftPlan.root, rightPlan.root, pathCtx_->space.id, steps, pathCtx_->noLoop, withProp);
   auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, withProp);
   NG_RETURN_IF_ERROR(vertexProp);
   path->setVertexProps(std::move(vertexProp).value());

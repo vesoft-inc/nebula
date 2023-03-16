@@ -13,7 +13,7 @@ namespace nebula {
 namespace graph {
 
 PlanNode* AllPaths::clone() const {
-  auto* path = AllPaths::make(qctx_, nullptr, nullptr, steps_, noLoop_, withProp_);
+  auto* path = AllPaths::make(qctx_, nullptr, nullptr, space_, steps_, noLoop_, withProp_);
   path->cloneMembers(*this);
   return path;
 }
@@ -22,7 +22,7 @@ void AllPaths::cloneMembers(const AllPaths& path) {
   BinaryInputNode::cloneMembers(path);
   limit_ = path.limit_;
   filter_ = path.filter_;
-  setEdgeDirection(path.edgeDirection_);
+  stepFilter_ = path.stepFilter_;
   if (path.vertexProps_) {
     auto vertexProps = *path.vertexProps_;
     auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
@@ -62,8 +62,8 @@ std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
+  addDescription("stepFilter", stepFilter_ == nullptr ? "" : stepFilter_->toString(), desc.get());
   addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
-  addDescription("edgeDirection", apache::thrift::util::enumNameSafe(edgeDirection_), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
   addDescription(

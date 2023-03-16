@@ -118,10 +118,11 @@ class AllPaths final : public BinaryInputNode {
   static AllPaths* make(QueryContext* qctx,
                         PlanNode* left,
                         PlanNode* right,
+                        GraphSpaceID space,
                         size_t steps,
                         bool noLoop,
                         bool withProp) {
-    return qctx->objPool()->makeAndAdd<AllPaths>(qctx, left, right, steps, noLoop, withProp);
+    return qctx->objPool()->makeAndAdd<AllPaths>(qctx, left, right, space, steps, noLoop, withProp);
   }
 
   PlanNode* clone() const override;
@@ -146,12 +147,16 @@ class AllPaths final : public BinaryInputNode {
     return filter_;
   }
 
-  int64_t limit() const {
-    return limit_;
+  Expression* stepFilter() const {
+    return stepFilter_;
   }
 
-  storage::cpp2::EdgeDirection edgeDirection() const {
-    return edgeDirection_;
+  Expression* stepFilter() {
+    return stepFilter_;
+  }
+
+  int64_t limit() const {
+    return limit_;
   }
 
   const std::vector<EdgeProp>* edgeProps() const {
@@ -166,6 +171,10 @@ class AllPaths final : public BinaryInputNode {
     return vertexProps_.get();
   }
 
+  GraphSpaceID space() const {
+    return space_;
+  }
+
   void setLimit(int64_t limit) {
     limit_ = limit;
   }
@@ -174,8 +183,8 @@ class AllPaths final : public BinaryInputNode {
     filter_ = filter;
   }
 
-  void setEdgeDirection(Direction direction) {
-    edgeDirection_ = direction;
+  void setStepFilter(Expression* stepFilter) {
+    stepFilter_ = stepFilter;
   }
 
   void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
@@ -194,9 +203,15 @@ class AllPaths final : public BinaryInputNode {
 
  private:
   friend ObjectPool;
-  AllPaths(
-      QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps, bool noLoop, bool withProp)
+  AllPaths(QueryContext* qctx,
+           PlanNode* left,
+           PlanNode* right,
+           GraphSpaceID space,
+           size_t steps,
+           bool noLoop,
+           bool withProp)
       : BinaryInputNode(qctx, Kind::kAllPaths, left, right),
+        space_(space),
         steps_(steps),
         noLoop_(noLoop),
         withProp_(withProp) {}
@@ -204,15 +219,16 @@ class AllPaths final : public BinaryInputNode {
   void cloneMembers(const AllPaths&);
 
  private:
+  GraphSpaceID space_;
   size_t steps_{0};
   bool noLoop_{false};
   bool withProp_{false};
   int64_t limit_{-1};
   Expression* filter_{nullptr};
+  Expression* stepFilter_{nullptr};
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
   std::unique_ptr<std::vector<EdgeProp>> reverseEdgeProps_;
   std::unique_ptr<std::vector<VertexProp>> vertexProps_;
-  storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
 };
 
 class ShortestPath final : public SingleInputNode {

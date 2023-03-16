@@ -56,24 +56,29 @@ StatusOr<OptRule::TransformResult> PushFilterDownAllPathsRule::transform(
   auto pool = qctx->objPool();
   auto condition = filter->condition()->clone();
 
-  graph::ExtractFilterExprVisitor visitor(pool, qctx->spaceId(), qctx->schemaMng());
+  graph::ExtractFilterExprVisitor visitor(pool);
   condition->accept(&visitor);
   if (!visitor.ok()) {
     return TransformResult::noTransform();
   }
 
+  auto newPath = static_cast<AllPaths *>(path->clone());
+
   auto remainedExpr = std::move(visitor).remainedExpr();
+  auto newPathStepFilter = remainedExpr;
   if (remainedExpr != nullptr) {
-    return TransformResult::noTransform();
+    if (path->stepFilter() != nullptr) {
+      auto logicExpr = LogicalExpression::makeAnd(pool, remainedExpr, path->stepFilter()->clone());
+      newPathStepFilter = logicExpr;
+    }
   }
+  newPath->setStepFilter(newPathStepFilter);
 
   auto newPathFilter = condition;
   if (path->filter() != nullptr) {
     auto logicExpr = LogicalExpression::makeAnd(pool, condition, path->filter()->clone());
     newPathFilter = logicExpr;
   }
-
-  auto newPath = static_cast<AllPaths *>(path->clone());
   newPath->setFilter(newPathFilter);
 
   OptGroupNode *newPathGroupNode = nullptr;

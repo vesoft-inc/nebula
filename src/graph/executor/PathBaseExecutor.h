@@ -58,48 +58,6 @@ class PathBaseExecutor : public Executor {
     return Result::State::kSuccess;
   }
 
-  struct VertexHash {
-    std::size_t operator()(const Value& v) const {
-      switch (v.type()) {
-        case Value::Type::VERTEX: {
-          auto& vid = v.getVertex().vid;
-          if (vid.type() == Value::Type::STRING) {
-            return std::hash<std::string>()(vid.getStr());
-          } else {
-            return vid.getInt();
-          }
-        }
-        case Value::Type::STRING: {
-          return std::hash<std::string>()(v.getStr());
-        }
-        case Value::Type::INT: {
-          return v.getInt();
-        }
-        default: {
-          return v.hash();
-        }
-      }
-    }
-  };
-
-  struct VertexEqual {
-    bool operator()(const Value& lhs, const Value& rhs) const {
-      if (lhs.type() == rhs.type()) {
-        if (lhs.isVertex()) {
-          return lhs.getVertex().vid == rhs.getVertex().vid;
-        }
-        return lhs == rhs;
-      }
-      if (lhs.type() == Value::Type::VERTEX) {
-        return lhs.getVertex().vid == rhs;
-      }
-      if (rhs.type() == Value::Type::VERTEX) {
-        return lhs == rhs.getVertex().vid;
-      }
-      return lhs == rhs;
-    }
-  };
-
  protected:
   folly::SpinLock statsLock_;
 };

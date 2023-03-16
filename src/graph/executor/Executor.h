@@ -77,6 +77,7 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   folly::Future<Status> error(Status status) const;
 
   static Status memoryExceededStatus() {
+    DLOG(ERROR) << "test ";
     return Status::GraphMemoryExceeded(
         "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED));
   }

@@ -36,7 +36,7 @@ folly::Future<std::vector<Value>> PathBaseExecutor::getProps(
 
   time::Duration getPropsTime;
   StorageClient* storageClient = qctx_->getStorageClient();
-  StorageClient::CommonRequestParam param(qctx_->spaceId(),
+  StorageClient::CommonRequestParam param(qctx_->rctx()->session()->space().id,
                                           qctx_->rctx()->session()->id(),
                                           qctx_->plan()->id(),
                                           qctx_->plan()->isProfileEnabled());

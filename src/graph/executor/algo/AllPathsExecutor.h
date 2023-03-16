@@ -23,8 +23,11 @@ class AllPathsExecutor final : public PathBaseExecutor {
     kBoth,
   };
 
+  template <typename T = Value>
+  using VertexMap = std::unordered_map<Value, std::vector<T>, VertexHash, VertexEqual>;
+
  private:
-  void init();
+  void buildRequestVids(bool reverse);
 
   Direction direction();
 
@@ -36,16 +39,15 @@ class AllPathsExecutor final : public PathBaseExecutor {
 
   void expandFromRight(GetNeighborsIter* iter);
 
-  std::vector<Row> doBuildPath(const Value& vid);
+  folly::Future<std::vector<Row>> doBuildPath(
+      size_t step,
+      size_t start,
+      size_t end,
+      std::shared_ptr<std::vector<std::vector<Value>>> edgeLists);
 
-  std::vector<Row> doBuildPath(size_t step,
-                               size_t start,
-                               size_t end,
-                               std::shared_ptr<std::vector<std::vector<Value>>> edgeLists);
+  folly::Future<Status> getPathProps();
 
-  // void buildPath();
-
-  void buildPathMultiJobs();
+  folly::Future<Status> buildPathMultiJobs();
 
   folly::Future<Status> buildResult();
 
@@ -60,13 +62,13 @@ class AllPathsExecutor final : public PathBaseExecutor {
   size_t leftSteps_{0};
   size_t rightSteps_{0};
 
-  std::vector<Value> leftVids_;
-  std::vector<Value> rightVids_;
-  std::unordered_set<Value> leftInitVids_;
-  std::unordered_set<Value, VertexHash, VertexEqual> rightInitVids_;
+  std::vector<Value> leftNextStepVids_;
+  std::vector<Value> rightNextStepVids_;
+  VidHashSet leftInitVids_;
+  VidHashSet rightInitVids_;
 
-  std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> leftAdjList_;
-  std::unordered_map<Value, std::vector<Value>, VertexHash, VertexEqual> rightAdjList_;
+  VertexMap<Value> leftAdjList_;
+  VertexMap<Value> rightAdjList_;
 
   DataSet result_;
   std::vector<Value> emptyPropVids_;

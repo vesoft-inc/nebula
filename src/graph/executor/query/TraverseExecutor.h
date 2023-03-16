@@ -5,7 +5,7 @@
 #ifndef EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 #define EXECUTOR_QUERY_TRAVERSEEXECUTOR_H_
 
-#include <robin_hood.h>
+// #include <robin_hood.h>
 
 #include "graph/executor/StorageAccessExecutor.h"
 #include "graph/planner/plan/Query.h"

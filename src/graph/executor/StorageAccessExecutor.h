@@ -133,6 +133,7 @@ class StorageAccessExecutor : public Executor {
         return Status::Error("Storage Error: Atomic operation failed.");
         // E_GRAPH_MEMORY_EXCEEDED may happen during rpc response deserialize.
       case nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED:
+        DLOG(ERROR) << "test ";
         return Status::GraphMemoryExceeded("(%d)", static_cast<int32_t>(code));
       case nebula::cpp2::ErrorCode::E_STORAGE_MEMORY_EXCEEDED:
         return Status::StorageMemoryExceeded("(%d)", static_cast<int32_t>(code));
