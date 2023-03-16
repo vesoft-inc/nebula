@@ -238,6 +238,4 @@ Feature: Path expression reference local defined variables
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*1..3]->(n), (t:team {name: "Spurs"}) WITH v, e, collect(distinct n) AS ns UNWIND [n in ns | ()-[e*2..4]->(n:player)] AS p RETURN count(p) AS count
       """
-    Then the result should be, in any order:
-      | count |
-      | 11    |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.

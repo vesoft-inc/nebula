@@ -326,7 +326,7 @@ Feature: Basic match
       MATCH (v:player{name:"Tim Duncan"})-[e]->(t) WHERE (v)-[e]->(t:team) RETURN (v)-->()
       """
     Then the result should be, in any order:
-      | (v)-->() = (v)-->()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+      | (v)-->()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
       | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2015}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2001}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2010}]->("Danny Green" :player{age: 31, name: "Danny Green"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
     # Fix issue https://github.com/vesoft-inc/nebula/issues/4792
     When executing query:
@@ -334,8 +334,8 @@ Feature: Basic match
       MATCH (v:player{name:"Tim Duncan"})-[e]->(t) WHERE (v)-[e]->(t:team) RETURN v, size((v)-->()), (v)-->()
       """
     Then the result should be, in any order:
-      | v                                                                                                           | size((v)-->() = (v)-->()) | (v)-->() = (v)-->()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | 7                         | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2015}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2001}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2010}]->("Danny Green" :player{age: 31, name: "Danny Green"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
+      | v                                                                                                           | size((v)-->()) | (v)-->()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+      | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | 7              | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2015}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2001}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2010}]->("Danny Green" :player{age: 31, name: "Danny Green"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>, <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
 
   Scenario: In Unwind
     When executing query:
@@ -363,7 +363,7 @@ Feature: Basic match
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:serve@0 {end_year: 2016, start_year: 1997}]->("Spurs" :team{name: "Spurs"})> |
 
-  Scenario: pattern in where
+  Scenario: pattern in where or return
     When executing query:
       """
       MATCH (v:player)-[e]->(b)
@@ -415,35 +415,110 @@ Feature: Basic match
       | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}], [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]               |
     When executing query:
       """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like]-(n)
+        RETURN ()-[e:like]-(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like]-(n)                                                                                                                                                                                             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Aron Baynes" :player{age: 32, name: "Aron Baynes"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})>]               |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 70}]-("Danny Green" :player{age: 31, name: "Danny Green"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})>]     |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 90}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>]         |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 55}]-("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})>]     |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})>]   |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 80}]-("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})>]       |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>]             |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>]         |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]             |
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like]->(n)
+        RETURN ()-[e:like]->(n)
+      """
+    Then the result should be, in any order:
+      | ()-[e:like]->(n)                                                                                                                                                                                    |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>] |
+      | [<("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>]     |
+
+  Scenario: list join not support
+    When executing query:
+      """
+      MATCH (v:player{name: 'Tim Duncan'})-[e:like*2]->(n)
+       RETURN ()-[e:like*2]->(n)
+      """
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*3]->(n), (t:team {name: "Spurs"})
       WITH v, e, collect(distinct n) AS ns
         UNWIND [n in ns | ()-[e*3]->(n:player)] AS p
         RETURN p
       """
-    Then the result should be, in any order:
-      | p  |
-      | [] |
-      | [] |
-      | [] |
-      | [] |
-      | [] |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n)
         WHERE (n)-[e*3]->(:player)
         RETURN v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
       """
-    Then the result should be, in any order:
-      | v |
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n) WHERE (n)-[e*1..4]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) WHERE (n)-[e*1]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type EdgeList, but referenced with type Edge
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n), (n)-[e*1..4]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime:  `e': Redefined alias
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) MATCH (n)-[e*1]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n) MATCH (n)-[e]->(:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(n) WITH (n)-[e*1..4]->(:player) AS v RETURN v
+      """
+    Then a SemanticError should be raised at runtime: `e' is defined with type Edge, but referenced with type EdgeList
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*3]->(n) UNWIND (n)-[e*1]->(:player) as v RETURN v
+      """
+    Then a SemanticError should be raised at runtime: Variable `v` already declared
+    When executing query:
+      """
+      MATCH (v:player)-[e:like*1..3]->(n)
+      WITH collect(n) as ns, e as e
+      WITH ns[0] AS n,e AS e
+      MATCH (n)-[e]->(v:player) RETURN v
+      """
+    Then a SemanticError should be raised at runtime: e binding to different type: Edge vs EdgeList
