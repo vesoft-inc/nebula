@@ -275,10 +275,11 @@ std::vector<std::string> ExpressionUtils::ExtractInnerVars(const Expression *exp
   if (finder(expr)) {
     return {static_cast<const VariableExpression *>(expr)->var()};
   }
-  FindVisitor visitor(finder);
+  FindVisitor visitor(finder, true);
   const_cast<Expression *>(expr)->accept(&visitor);
   auto varExprs = visitor.results();
   std::vector<std::string> vars;
+  vars.reserve(varExprs.size());
   for (const auto *varExpr : varExprs) {
     vars.emplace_back(static_cast<const VariableExpression *>(varExpr)->var());
   }

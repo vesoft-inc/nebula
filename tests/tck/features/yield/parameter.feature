@@ -258,12 +258,17 @@ Feature: Parameter
       """
       LOOKUP ON player WHERE ST_Distance(player.age, ST_Point($p1,$p7.a.b.c.d[0])) < $unknown_distance YIELD id(vertex)
       """
-    Then a SemanticError should be raised at runtime: Undefined parameter: unknown_distance
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
+    When executing query:
+      """
+      LOOKUP ON player WHERE ST_Distance(player.age, ST_Point($p1,$p7.a.b.c.d[0])) < $unknown_distance+$unknown_factor YIELD id(vertex)
+      """
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance, unknown_factor
     When executing query:
       """
       MATCH (v:player) where v.player.age < $unknown_distance RETURN v
       """
-    Then a SemanticError should be raised at runtime: Undefined parameter: unknown_distance
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
     When executing query:
       """
       MATCH (v:player) RETURN  v LIMIT $p6

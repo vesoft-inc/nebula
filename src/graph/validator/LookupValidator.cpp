@@ -193,10 +193,19 @@ Status LookupValidator::validateWhere() {
   auto* filter = whereClause->filter();
   if (filter != nullptr) {
     auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+    std::vector<std::string> undefinedParams;
     for (const auto& var : vars) {
       if (!vctx_->existVar(var)) {
-        return Status::SemanticError("Undefined parameter: " + var);
+        undefinedParams.emplace_back(var);
       }
+    }
+    if (!undefinedParams.empty()) {
+      return Status::SemanticError(
+          "Undefined parameters: " +
+          std::accumulate(++undefinedParams.begin(),
+                          undefinedParams.end(),
+                          *undefinedParams.begin(),
+                          [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
     }
     filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
   }
