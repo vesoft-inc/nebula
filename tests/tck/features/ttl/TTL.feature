@@ -506,7 +506,7 @@ Feature: TTLTest
       """
       CREATE TAG t1(name string, age int)
       """
-    And wait 3 seconds
+    And wait 5 seconds
     When executing query:
       """
       INSERT VERTEX t1(name, age) VALUES "1":("tom", 18)
@@ -522,7 +522,7 @@ Feature: TTLTest
       ALTER TAG t1 TTL_DURATION = 30, TTL_COL = "n";
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 5 seconds
     When executing query:
       """
       INSERT VERTEX t1(name, age) VALUES "2":("jerry", 18)
