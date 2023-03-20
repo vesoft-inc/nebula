@@ -132,6 +132,10 @@ Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &m
       buildEdgeInfo(path, matchClauseCtx.paths.back().edgeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
       buildPathExpr(path, matchClauseCtx.paths.back(), matchClauseCtx.aliasesGenerated));
+  if (path->alias() == nullptr) {
+    auto &genPath = matchClauseCtx.paths.back().genPath;
+    genPath = false;
+  }
   return Status::OK();
 }
 
@@ -170,10 +174,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   }
 
   auto *pathAlias = path->alias();
-  if (pathAlias == nullptr) {
-    return Status::OK();
-  }
-  if (!aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
+  if (pathAlias != nullptr && !aliasesGenerated.emplace(*pathAlias, AliasType::kPath).second) {
     return Status::SemanticError("`%s': Redefined alias", pathAlias->c_str());
   }
   auto *pool = qctx_->objPool();
@@ -184,8 +185,8 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   }
   pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   pathInfo.pathBuild = std::move(pathBuild);
-  pathInfo.anonymous = false;
-  pathInfo.alias = *pathAlias;
+  pathInfo.anonymous = pathAlias == nullptr;
+  pathInfo.alias = pathAlias == nullptr ? path->toString() : *pathAlias;
   return Status::OK();
 }
 
@@ -333,6 +334,16 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
+  auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+  if (!undefinedParams.empty()) {
+    return Status::SemanticError(
+        "Undefined parameters: " +
+        std::accumulate(++undefinedParams.begin(),
+                        undefinedParams.end(),
+                        *undefinedParams.begin(),
+                        [](auto &lhs, auto &rhs) { return lhs + ", " + rhs; }));
+  }
+
   auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
@@ -1105,7 +1116,6 @@ Status MatchValidator::validateMatchPathExpr(
     // Build path alias
     auto matchPathPtr = matchPathExprImpl->matchPathPtr();
     auto pathAlias = matchPathPtr->toString();
-    matchPathPtr->setAlias(new std::string(pathAlias));
     if (matchPathExprImpl->genList() == nullptr) {
       // Don't done in expression visitor
       Expression *genList = InputPropertyExpression::make(pool, pathAlias);
@@ -1192,7 +1202,6 @@ Status MatchValidator::validatePathInWhere(
     NG_RETURN_IF_ERROR(checkMatchPathExpr(pred, availableAliases));
     // Build path alias
     auto pathAlias = pred->toString();
-    pred->setAlias(new std::string(pathAlias));
     paths.emplace_back();
     NG_RETURN_IF_ERROR(validatePath(pred, paths.back()));
     NG_RETURN_IF_ERROR(buildRollUpPathInfo(pred, paths.back()));
@@ -1216,7 +1225,6 @@ Status MatchValidator::validatePathInWhere(
     // Build path alias
     auto &matchPath = matchPathExprImpl->matchPath();
     auto pathAlias = matchPath.toString();
-    matchPath.setAlias(new std::string(pathAlias));
     if (matchPathExprImpl->genList() == nullptr) {
       // Don't done in expression visitor
       Expression *genList = InputPropertyExpression::make(pool, pathAlias);
@@ -1289,19 +1297,26 @@ Status MatchValidator::validatePathInWhere(
 }
 
 /*static*/ Status MatchValidator::buildRollUpPathInfo(const MatchPath *path, Path &pathInfo) {
-  DCHECK(!DCHECK_NOTNULL(path->alias())->empty());
   for (const auto &node : path->nodes()) {
     // The inner variable of expression will be replaced by anno variable
-    if (!node->alias().empty() && node->alias()[0] != '_') {
-      pathInfo.compareVariables.emplace_back(node->alias());
+    const auto &nodeAlias = node->alias();
+    if (!nodeAlias.empty() && !AnonVarGenerator::isAnnoVar(nodeAlias)) {
+      pathInfo.compareVariables.emplace_back(nodeAlias);
     }
   }
   for (const auto &edge : path->edges()) {
-    if (edge->alias()[0] != '_') {
-      pathInfo.compareVariables.emplace_back(edge->alias());
+    const auto &edgeAlias = edge->alias();
+    if (!edgeAlias.empty() && !AnonVarGenerator::isAnnoVar(edgeAlias)) {
+      if (edge->range()) {
+        return Status::SemanticError(
+            "Variable '%s` 's type is edge list. not support used in multiple patterns "
+            "simultaneously.",
+            edgeAlias.c_str());
+      }
+      pathInfo.compareVariables.emplace_back(edgeAlias);
     }
   }
-  pathInfo.collectVariable = *path->alias();
+  pathInfo.collectVariable = path->toString();
   pathInfo.rollUpApply = true;
   return Status::OK();
 }

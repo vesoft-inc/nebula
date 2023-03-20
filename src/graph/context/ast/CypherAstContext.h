@@ -106,6 +106,8 @@ struct Path final {
   // Flag for pattern predicate
   bool isPred{false};
   bool isAntiPred{false};
+  // if false do not generate path struct
+  bool genPath{true};
 
   enum PathType : int8_t { kDefault, kAllShortest, kSingleShortest };
   PathType pathType{PathType::kDefault};

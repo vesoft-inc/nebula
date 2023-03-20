@@ -48,14 +48,22 @@ class MetaHttpReplaceHostHandler : public proxygen::RequestHandler {
 
   void onError(proxygen::ProxygenError error) noexcept override;
 
-  bool replaceHostInPart(std::string ipv4From, std::string ipv4To);
-  bool replaceHostInZone(std::string ipv4From, std::string ipv4To);
+ private:
+  bool replaceHostInPart(const HostAddr& ipv4From, const HostAddr& ipv4To);
+  bool replaceHostInZone(const HostAddr& ipv4From, const HostAddr& ipv4To);
+
+  StatusOr<HostAddr> parse(const std::string& str);
+  ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
 
  private:
   HttpCode err_{HttpCode::SUCCEEDED};
   std::string errMsg_;
-  std::string ipv4From_;
-  std::string ipv4To_;
+  std::string from_;
+  std::string to_;
+  HostAddr hostFrom_;
+  HostAddr hostTo_;
+  std::optional<GraphSpaceID> spaceId_;
+  std::optional<PartitionID> partId_;
   nebula::kvstore::KVStore* kvstore_;
 };
 

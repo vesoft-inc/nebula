@@ -248,6 +248,44 @@ Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryConte
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+std::vector<const Expression *> ExpressionUtils::ExtractInnerVarExprs(const Expression *expr,
+                                                                      QueryContext *qctx) {
+  auto finder = [qctx](const Expression *e) -> bool {
+    auto ve = static_cast<const VariableExpression *>(e);
+    return e->kind() == Expression::Kind::kVar && !qctx->existParameter(ve->var()) &&
+           !ve->isInner();
+  };
+
+  if (finder(expr)) {
+    return {expr};
+  }
+  FindVisitor visitor(finder);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  return visitor.results();
+}
+
+std::vector<std::string> ExpressionUtils::ExtractInnerVars(const Expression *expr,
+                                                           QueryContext *qctx) {
+  auto finder = [qctx](const Expression *e) -> bool {
+    auto ve = static_cast<const VariableExpression *>(e);
+    return e->kind() == Expression::Kind::kVar && !qctx->existParameter(ve->var()) &&
+           !ve->isInner();
+  };
+
+  if (finder(expr)) {
+    return {static_cast<const VariableExpression *>(expr)->var()};
+  }
+  FindVisitor visitor(finder, true);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  auto varExprs = visitor.results();
+  std::vector<std::string> vars;
+  vars.reserve(varExprs.size());
+  for (const auto *varExpr : varExprs) {
+    vars.emplace_back(static_cast<const VariableExpression *>(varExpr)->var());
+  }
+  return vars;
+}
+
 Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
   auto matcher = [](const Expression *e) -> bool {
     if (e->kind() != Expression::Kind::kRelIn) {
