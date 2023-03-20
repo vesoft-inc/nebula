@@ -136,7 +136,7 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                      nullptr)
       .via(runner())
       .thenValue([this, getNbrTime, reverse](auto&& resps) {
-        memory::MemoryCheckOffGuard guard;
+        memory::MemoryCheckGuard guard;
         auto step = reverse ? rightSteps_ : leftSteps_;
         addGetNeighborStats(resps, step, getNbrTime.elapsedInUSec(), reverse);
         auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
@@ -318,6 +318,7 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
   size_t step = 2;
   auto future = doBuildPath(step, 0, pathsPtr->size(), pathsPtr);
   return future.via(runner()).thenValue([this](std::vector<Row>&& paths) {
+    memory::MemoryCheckGuard guard;
     if (!paths.empty()) {
       result_.rows.swap(paths);
     }
@@ -364,8 +365,14 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
 
       auto& adjedges = adjIter->second;
       for (auto& edge : adjedges) {
-        if (hasSameEdge(path, edge.getEdge())) {
-          continue;
+        if (noLoop_) {
+          if (hasSameVertices(path, edge.getEdge())) {
+            continue;
+          }
+        } else {
+          if (hasSameEdge(path, edge.getEdge())) {
+            continue;
+          }
         }
         // copy
         auto newPath = path;
@@ -396,6 +403,7 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
   }
   return folly::collect(futures).via(runner()).thenValue(
       [this, pathPtr = std::move(currentPathPtr), step](std::vector<std::vector<Row>>&& paths) {
+        memory::MemoryCheckGuard guard;
         std::vector<Row> result = std::move(*pathPtr);
         for (auto& path : paths) {
           if (path.empty()) {
@@ -412,6 +420,7 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
 folly::Future<Status> AllPathsExecutor::getPathProps() {
   auto future = getProps(emptyPropVids_, pathNode_->vertexProps());
   return future.via(runner()).thenValue([this](std::vector<Value>&& vertices) {
+    memory::MemoryCheckGuard guard;
     for (auto& vertex : vertices) {
       if (vertex.empty()) {
         continue;
@@ -425,6 +434,23 @@ folly::Future<Status> AllPathsExecutor::getPathProps() {
     }
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   });
+}
+
+bool AllPathsExecutor::hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge) {
+  if (edge.src == edge.dst) {
+    return true;
+  }
+  auto& vid = edge.dst;
+  auto iter = edgeList.begin() + 1;
+  for (; iter != edgeList.end(); iter++) {
+    if (iter->isEdge()) {
+      auto& edgeVal = iter->getEdge();
+      if (edgeVal.src == vid) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 }  // namespace graph

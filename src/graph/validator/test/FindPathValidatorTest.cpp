@@ -190,6 +190,8 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         PK::kDedup,
         PK::kProject,
         PK::kProject,
+        PK::kPassThrough,
+        PK::kProject,
         PK::kExpandAll,
         PK::kExpand,
         PK::kStart,

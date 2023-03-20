@@ -51,6 +51,8 @@ class AllPathsExecutor final : public PathBaseExecutor {
 
   folly::Future<Status> buildResult();
 
+  bool hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge);
+
  private:
   const AllPaths* pathNode_{nullptr};
   bool withProp_{false};
