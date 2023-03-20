@@ -113,20 +113,6 @@ Status QueryInstance::validateAndOptimize() {
   return Status::OK();
 }
 
-// Check format type string, if it is "tck", return true, otherwise return false
-static bool isTckFmtType(const std::string& formatType) {
-  if (formatType.empty()) {
-    return false;
-  }
-
-  std::string fmtType = formatType;
-  std::transform(formatType.cbegin(), formatType.cend(), fmtType.begin(), [](char c) {
-    return std::tolower(c);
-  });
-
-  return fmtType == "tck";
-}
-
 bool QueryInstance::explainOrContinue() {
   if (sentence_->kind() != Sentence::Kind::kExplain) {
     return true;
@@ -134,10 +120,7 @@ bool QueryInstance::explainOrContinue() {
   auto &resp = qctx_->rctx()->resp();
   resp.planDesc = std::make_unique<PlanDescription>();
   DCHECK_NOTNULL(qctx_->plan())->describe(resp.planDesc.get());
-  const auto *explainSentence = static_cast<const ExplainSentence *>(sentence_.get());
-  auto is_profile = explainSentence->isProfile();
-  auto is_tck_fmt_type = isTckFmtType(explainSentence->formatType());
-  return  is_profile || is_tck_fmt_type;
+  return static_cast<const ExplainSentence *>(sentence_.get())->isProfile();
 }
 
 void QueryInstance::onFinish() {
