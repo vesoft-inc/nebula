@@ -65,7 +65,6 @@ void QueryInstance::execute() {
         .thenError(folly::tag_t<std::exception>{},
                    [this](const std::exception &e) { onError(Status::Error("%s", e.what())); });
   } catch (std::bad_alloc &e) {
-    DLOG(ERROR) << "test ";
     onError(Status::GraphMemoryExceeded(
         "(%d)", static_cast<int32_t>(nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED)));
   } catch (std::exception &e) {

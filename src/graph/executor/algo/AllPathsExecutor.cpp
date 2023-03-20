@@ -7,8 +7,11 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/service/GraphFlags.h"
 
-DEFINE_uint32(path_threshold_size, 100, "");
-DEFINE_uint32(path_threshold_ratio, 2, "");
+DEFINE_uint32(
+    path_threshold_size,
+    100,
+    "the number of vids to expand, when this threshold is exceeded, use heuristic expansion");
+DEFINE_uint32(path_threshold_ratio, 2, "threshold for heuristics expansion");
 DEFINE_uint32(path_batch_size, 5000, "number of paths constructed by each thread");
 
 namespace nebula {
@@ -402,7 +405,7 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
     }
   }
   return folly::collect(futures).via(runner()).thenValue(
-      [this, pathPtr = std::move(currentPathPtr), step](std::vector<std::vector<Row>>&& paths) {
+      [pathPtr = std::move(currentPathPtr)](std::vector<std::vector<Row>>&& paths) {
         memory::MemoryCheckGuard guard;
         std::vector<Row> result = std::move(*pathPtr);
         for (auto& path : paths) {

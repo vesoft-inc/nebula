@@ -7,6 +7,26 @@
 
 #include "graph/executor/PathBaseExecutor.h"
 
+// Using the two-way BFS algorithm, a heuristic algorithm is used in the expansion process
+// when the number of vid to be expanded on the left and right
+// exceeds the threshold(FLAGS_path_threshold_size)
+
+// if size(leftVids) / size(rightVids) >= FLAGS_path_threshold_ratio(default 2)
+//    expandFromRight
+// else if size(rightVids) / size(leftVids) >= FLAGS_path_threshold_ratio(default 2)
+//    expandFromLeft
+// else
+//    expandFromLeft
+//    expandFromRight
+// this way can avoid uneven calculation distribution due to data skew
+// finally the path is constructed using an asynchronous process in the adjacency list
+
+// adjList is an adjacency list structure
+// which saves the vids and all adjacent edges that expand one step
+// when expanding, if the vid has already been visited, do not visit again
+// leftAdjList_ save result of forward expansion
+// rightAdjList_ save result of backward expansion
+
 namespace nebula {
 namespace graph {
 class AllPaths;
