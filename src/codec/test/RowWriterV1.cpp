@@ -7,11 +7,11 @@
 
 namespace nebula {
 
-using meta::SchemaProviderIf;
+using meta::NebulaSchemaProvider;
 using meta::cpp2::Schema;
 using nebula::cpp2::PropertyType;
 
-RowWriterV1::RowWriterV1(const SchemaProviderIf* schema) : schema_(schema) {
+RowWriterV1::RowWriterV1(const NebulaSchemaProvider* schema) : schema_(schema) {
   CHECK(!!schema_);
 }
 

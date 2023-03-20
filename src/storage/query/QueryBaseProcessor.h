@@ -53,7 +53,7 @@ struct PropContext {
   }
 
   PropContext(const char* name,
-              const meta::SchemaProviderIf::Field* field,
+              const meta::NebulaSchemaProvider::SchemaField* field,
               bool returned,
               bool filtered,
               const std::pair<size_t, cpp2::StatType>* statInfo = nullptr)
@@ -98,7 +98,7 @@ struct PropContext {
   // prop name
   std::string name_;
   // field info, e.g. nullable, default value
-  const meta::SchemaProviderIf::Field* field_;
+  const meta::NebulaSchemaProvider::SchemaField* field_;
   bool returned_ = false;
   bool filtered_ = false;
   // prop type in edge key, for srcId/dstId/type/rank
@@ -190,7 +190,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
 
   void addReturnPropContext(std::vector<PropContext>& ctxs,
                             const char* propName,
-                            const meta::SchemaProviderIf::Field* field);
+                            const meta::NebulaSchemaProvider::SchemaField* field);
 
   void addPropContextIfNotExists(std::vector<std::pair<SchemaID, std::vector<PropContext>>>& props,
                                  std::unordered_map<SchemaID, size_t>& indexMap,
@@ -198,7 +198,7 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
                                  int32_t entryId,
                                  const std::string& entryName,
                                  const std::string& propName,
-                                 const meta::SchemaProviderIf::Field* field,
+                                 const meta::NebulaSchemaProvider::SchemaField* field,
                                  bool returned,
                                  bool filtered,
                                  const std::pair<size_t, cpp2::StatType>* statInfo = nullptr);

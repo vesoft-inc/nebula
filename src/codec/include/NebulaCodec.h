@@ -7,7 +7,7 @@
 #define CODEC_INCLUDE_NEBULACODEC_H
 
 #include "common/base/StatusOr.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
@@ -17,11 +17,12 @@ class NebulaCodec {
 
   virtual ~NebulaCodec() = default;
 
-  virtual std::string encode(std::vector<Value> values,
-                             std::shared_ptr<const meta::SchemaProviderIf> schema = nullptr) = 0;
+  virtual std::string encode(
+      std::vector<Value> values,
+      std::shared_ptr<const meta::NebulaSchemaProvider> schema = nullptr) = 0;
 
   virtual StatusOr<std::unordered_map<std::string, Value>> decode(
-      std::string encoded, std::shared_ptr<const meta::SchemaProviderIf> schema) = 0;
+      std::string encoded, std::shared_ptr<const meta::NebulaSchemaProvider> schema) = 0;
 };
 
 }  // namespace nebula

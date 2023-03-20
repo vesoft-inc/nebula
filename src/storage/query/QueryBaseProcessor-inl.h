@@ -118,7 +118,7 @@ template <typename REQ, typename RESP>
 void QueryBaseProcessor<REQ, RESP>::addReturnPropContext(
     std::vector<PropContext>& ctxs,
     const char* propName,
-    const meta::SchemaProviderIf::Field* field) {
+    const meta::NebulaSchemaProvider::SchemaField* field) {
   PropContext ctx(propName);
   ctx.returned_ = true;
   ctx.field_ = field;
@@ -553,7 +553,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
 
-      const meta::SchemaProviderIf::Field* field = nullptr;
+      const meta::NebulaSchemaProvider::SchemaField* field = nullptr;
       if (exp->kind() == Expression::Kind::kEdgeProperty) {
         field = edgeSchema->field(propName);
         // Noexistent property will return Empty or Null if enabled
@@ -638,7 +638,7 @@ void QueryBaseProcessor<REQ, RESP>::addPropContextIfNotExists(
     int32_t entryId,
     const std::string& entryName,
     const std::string& propName,
-    const meta::SchemaProviderIf::Field* field,
+    const meta::NebulaSchemaProvider::SchemaField* field,
     bool returned,
     bool filtered,
     const std::pair<size_t, cpp2::StatType>* statInfo) {

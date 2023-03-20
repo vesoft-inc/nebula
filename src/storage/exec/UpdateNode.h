@@ -65,7 +65,7 @@ class UpdateNode : public RelNode<T> {
   /**
    * @brief Check if Field exists
    */
-  nebula::cpp2::ErrorCode checkField(const meta::SchemaProviderIf::Field* field) {
+  nebula::cpp2::ErrorCode checkField(const meta::NebulaSchemaProvider::SchemaField* field) {
     if (!field) {
       VLOG(1) << "Fail to read prop";
       if (isEdge_) {
@@ -84,8 +84,8 @@ class UpdateNode : public RelNode<T> {
    * @return E_INVALID_FIELD_VALUE if the field can't be null and doesn't have default value, else
    * SUCCEEDED.
    */
-  nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
-                                                const std::string& name) {
+  nebula::cpp2::ErrorCode getDefaultOrNullValue(
+      const meta::NebulaSchemaProvider::SchemaField* field, const std::string& name) {
     if (field->hasDefault()) {
       ObjectPool pool;
       auto& exprStr = field->defaultValue();

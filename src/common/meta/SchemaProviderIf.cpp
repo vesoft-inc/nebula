@@ -3,9 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "common/meta/SchemaProviderIf.h"
-
 #include "common/base/Base.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 namespace meta {}  // namespace meta

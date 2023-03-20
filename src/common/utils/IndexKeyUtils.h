@@ -547,14 +547,14 @@ class IndexKeyUtils final {
   static StatusOr<std::vector<std::string>> collectIndexValues(
       RowReaderWrapper* reader,
       const meta::cpp2::IndexItem* indexItem,
-      const meta::SchemaProviderIf* latestSchema = nullptr);
+      const meta::NebulaSchemaProvider* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
 
   static StatusOr<Value> readValueWithLatestSche(RowReaderWrapper* reader,
                                                  const std::string propName,
-                                                 const meta::SchemaProviderIf* latestSchema);
+                                                 const meta::NebulaSchemaProvider* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };

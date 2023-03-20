@@ -352,7 +352,7 @@ std::vector<std::string> AddVerticesProcessor::indexKeys(
     const VertexID& vId,
     RowReaderWrapper* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-    const meta::SchemaProviderIf* latestSchema) {
+    const meta::NebulaSchemaProvider* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};

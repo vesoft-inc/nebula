@@ -27,6 +27,16 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -57,6 +67,16 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -90,6 +110,16 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
@@ -114,7 +144,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:process_obj>
-        # $<TARGET_OBJECTS:es_adapter_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
