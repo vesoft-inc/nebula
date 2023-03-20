@@ -1046,23 +1046,6 @@ Feature: Match By Id
       | "Tim Duncan" | "Tony Parker" |
     When executing query:
       """
-      MATCH (a)--(b)
-      WHERE id(a) == 'Tim Duncan' OR id(b) == 'Tony Parker'
-      RETURN id(a) as src, id(b) as dst
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
-      MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
-      OPTIONAL MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
       OPTIONAL MATCH (n) OPTIONAL MATCH (n) WHERE id(n) == 'James Harden' RETURN n
       """
     Then a SyntaxError should be raised at runtime: Where clause in optional match is not supported. near `WHERE id(n) == 'James Harden''
@@ -1137,3 +1120,58 @@ Feature: Match By Id
       | "Manu Ginobili"     |
       | "Kyle Anderson"     |
       | "LaMarcus Aldridge" |
+
+  Scenario: Can't seek by id
+    When executing query:
+      """
+      MATCH (a)--(b)
+      WHERE id(a) == 'Tim Duncan' OR id(b) == 'Tony Parker'
+      RETURN id(a) as src, id(b) as dst
+      """
+    Then the result should be, in any order:
+      | src                 | dst                 |
+      | "Boris Diaw"        | "Tony Parker"       |
+      | "Marco Belinelli"   | "Tony Parker"       |
+      | "Dejounte Murray"   | "Tony Parker"       |
+      | "Kyle Anderson"     | "Tony Parker"       |
+      | "Hornets"           | "Tony Parker"       |
+      | "LaMarcus Aldridge" | "Tony Parker"       |
+      | "LaMarcus Aldridge" | "Tony Parker"       |
+      | "LaMarcus Aldridge" | "Tony Parker"       |
+      | "Manu Ginobili"     | "Tony Parker"       |
+      | "Manu Ginobili"     | "Tony Parker"       |
+      | "Manu Ginobili"     | "Tony Parker"       |
+      | "Tim Duncan"        | "Danny Green"       |
+      | "Tim Duncan"        | "LaMarcus Aldridge" |
+      | "Tim Duncan"        | "Manu Ginobili"     |
+      | "Tim Duncan"        | "Tony Parker"       |
+      | "Tim Duncan"        | "Manu Ginobili"     |
+      | "Tim Duncan"        | "Tony Parker"       |
+      | "Tim Duncan"        | "Manu Ginobili"     |
+      | "Tim Duncan"        | "Tony Parker"       |
+      | "Tim Duncan"        | "Spurs"             |
+      | "Tim Duncan"        | "Aron Baynes"       |
+      | "Tim Duncan"        | "Boris Diaw"        |
+      | "Tim Duncan"        | "Danny Green"       |
+      | "Tim Duncan"        | "Dejounte Murray"   |
+      | "Tim Duncan"        | "LaMarcus Aldridge" |
+      | "Tim Duncan"        | "Manu Ginobili"     |
+      | "Tim Duncan"        | "Marco Belinelli"   |
+      | "Tim Duncan"        | "Shaquille O'Neal"  |
+      | "Tim Duncan"        | "Tiago Splitter"    |
+      | "Tim Duncan"        | "Tony Parker"       |
+      | "Spurs"             | "Tony Parker"       |
+    When executing query:
+      """
+      OPTIONAL MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then the result should be, in any order:
+      | n                                                   |
+      | ("James Harden":player{age:29,name:"James Harden"}) |
+    When executing query:
+      """
+      MATCH (n) MATCH (n) WHERE id(n) == 'James Harden' RETURN n
+      """
+    Then the result should be, in any order:
+      | n                                                   |
+      | ("James Harden":player{age:29,name:"James Harden"}) |

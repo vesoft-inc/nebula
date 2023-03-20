@@ -233,14 +233,183 @@ Feature: Match seek by id
       WHERE NOT id(v) == hash('Paul Gasol')
       RETURN v.player.name AS Name, v.player.age AS Age
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    | Age  |
+      | NULL                    | NULL |
+      | NULL                    | -1   |
+      | "Kyrie Irving"          | 26   |
+      | "James Harden"          | 29   |
+      | "Grant Hill"            | 46   |
+      | "Tracy McGrady"         | 39   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Joel Embiid"           | 25   |
+      | "Marc Gasol"            | 34   |
+      | "Cory Joseph"           | 27   |
+      | "Giannis Antetokounmpo" | 24   |
+      | "Aron Baynes"           | 32   |
+      | "DeAndre Jordan"        | 30   |
+      | NULL                    | NULL |
+      | "JaVale McGee"          | 31   |
+      | NULL                    | NULL |
+      | "Nobody"                | 0    |
+      | "Kevin Durant"          | 30   |
+      | "Jason Kidd"            | 45   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Kristaps Porzingis"    | 23   |
+      | "Dirk Nowitzki"         | 40   |
+      | "LaMarcus Aldridge"     | 33   |
+      | "Kobe Bryant"           | 40   |
+      | NULL                    | NULL |
+      | NULL                    | -3   |
+      | "Boris Diaw"            | 36   |
+      | "Ray Allen"             | 43   |
+      | "Dwight Howard"         | 33   |
+      | NULL                    | NULL |
+      | "Yao Ming"              | 38   |
+      | "Chris Paul"            | 33   |
+      | "LeBron James"          | 34   |
+      | "Shaquille O'Neal"      | 47   |
+      | NULL                    | NULL |
+      | "Klay Thompson"         | 29   |
+      | "Dejounte Murray"       | 29   |
+      | "Vince Carter"          | 42   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Kyle Anderson"         | 25   |
+      | "Blake Griffin"         | 30   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Tiago Splitter"        | 34   |
+      | NULL                    | NULL |
+      | "Rudy Gay"              | 32   |
+      | "David West"            | 38   |
+      | "Steve Nash"            | 45   |
+      | "Dwyane Wade"           | 37   |
+      | "Manu Ginobili"         | 41   |
+      | "Jonathon Simmons"      | 29   |
+      | NULL                    | NULL |
+      | "Danny Green"           | 31   |
+      | NULL                    | NULL |
+      | "Rajon Rondo"           | 33   |
+      | NULL                    | NULL |
+      | "Russell Westbrook"     | 30   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Tony Parker"           | 36   |
+      | NULL                    | -2   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Carmelo Anthony"       | 34   |
+      | "Damian Lillard"        | 28   |
+      | NULL                    | -4   |
+      | "Marco Belinelli"       | 32   |
+      | NULL                    | NULL |
+      | "Amar'e Stoudemire"     | 36   |
+      | "Paul George"           | 28   |
+      | "Luka Doncic"           | 20   |
+      | "Tim Duncan"            | 42   |
+      | "Ricky Rubio"           | 28   |
+      | NULL                    | NULL |
+      | "Ben Simmons"           | 22   |
+      | "Stephen Curry"         | 31   |
+      | NULL                    | NULL |
     When executing query:
       """
       MATCH (v)
       WHERE NOT id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kyrie Irving"          |
+      | NULL                    |
+      | "Grant Hill"            |
+      | "Tracy McGrady"         |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Joel Embiid"           |
+      | "Marc Gasol"            |
+      | "Cory Joseph"           |
+      | "Giannis Antetokounmpo" |
+      | "Aron Baynes"           |
+      | "DeAndre Jordan"        |
+      | NULL                    |
+      | "JaVale McGee"          |
+      | NULL                    |
+      | "Nobody"                |
+      | "Kevin Durant"          |
+      | "Jason Kidd"            |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kristaps Porzingis"    |
+      | "Dirk Nowitzki"         |
+      | "LaMarcus Aldridge"     |
+      | "Kobe Bryant"           |
+      | NULL                    |
+      | NULL                    |
+      | "Boris Diaw"            |
+      | "Ray Allen"             |
+      | "Dwight Howard"         |
+      | NULL                    |
+      | "Yao Ming"              |
+      | "Chris Paul"            |
+      | "LeBron James"          |
+      | "Shaquille O'Neal"      |
+      | NULL                    |
+      | NULL                    |
+      | "Stephen Curry"         |
+      | "Vince Carter"          |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kyle Anderson"         |
+      | "Blake Griffin"         |
+      | NULL                    |
+      | NULL                    |
+      | "Tiago Splitter"        |
+      | NULL                    |
+      | "Rudy Gay"              |
+      | "David West"            |
+      | "Steve Nash"            |
+      | "Dwyane Wade"           |
+      | "Manu Ginobili"         |
+      | "Ben Simmons"           |
+      | NULL                    |
+      | "Danny Green"           |
+      | NULL                    |
+      | "Rajon Rondo"           |
+      | NULL                    |
+      | "Russell Westbrook"     |
+      | NULL                    |
+      | NULL                    |
+      | "Tony Parker"           |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Carmelo Anthony"       |
+      | "Damian Lillard"        |
+      | NULL                    |
+      | "Marco Belinelli"       |
+      | "Paul Gasol"            |
+      | "Amar'e Stoudemire"     |
+      | "Paul George"           |
+      | "Luka Doncic"           |
+      | "Tim Duncan"            |
+      | "Ricky Rubio"           |
+      | NULL                    |
     When executing query:
       """
       MATCH (v)
@@ -254,9 +423,9 @@ Feature: Match seek by id
       WHERE id(v) IN [hash('James Harden'), v.player.name]
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-
-  Scenario: test OR logic
+    Then the result should be, in any order:
+      | Name           |
+      | "James Harden" |
     When executing query:
       """
       MATCH (v)
@@ -264,7 +433,13 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                 |
+      | "Jonathon Simmons"   |
+      | "Dejounte Murray"    |
+      | "Klay Thompson"      |
+      | "James Harden"       |
+      | "Kristaps Porzingis" |
     When executing query:
       """
       MATCH (v)
@@ -272,7 +447,10 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                 |
+      | "Kristaps Porzingis" |
+      | "James Harden"       |
     When executing query:
       """
       MATCH (v)
@@ -280,7 +458,65 @@ Feature: Match seek by id
             OR v.player.age != 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | "Stephen Curry"         |
+      | NULL                    |
+      | "Kyrie Irving"          |
+      | "James Harden"          |
+      | "Grant Hill"            |
+      | "Tracy McGrady"         |
+      | "Ben Simmons"           |
+      | "Ricky Rubio"           |
+      | "Tim Duncan"            |
+      | "Joel Embiid"           |
+      | "Marc Gasol"            |
+      | "Cory Joseph"           |
+      | "Giannis Antetokounmpo" |
+      | "Aron Baynes"           |
+      | "DeAndre Jordan"        |
+      | "Luka Doncic"           |
+      | "JaVale McGee"          |
+      | "Paul George"           |
+      | "Nobody"                |
+      | "Kevin Durant"          |
+      | "Jason Kidd"            |
+      | "Amar'e Stoudemire"     |
+      | "Paul Gasol"            |
+      | "Marco Belinelli"       |
+      | NULL                    |
+      | "Dirk Nowitzki"         |
+      | "LaMarcus Aldridge"     |
+      | "Kobe Bryant"           |
+      | "Damian Lillard"        |
+      | NULL                    |
+      | "Boris Diaw"            |
+      | "Ray Allen"             |
+      | "Dwight Howard"         |
+      | "Carmelo Anthony"       |
+      | "Yao Ming"              |
+      | "Chris Paul"            |
+      | "LeBron James"          |
+      | "Shaquille O'Neal"      |
+      | NULL                    |
+      | "Klay Thompson"         |
+      | "Dejounte Murray"       |
+      | "Vince Carter"          |
+      | "Tony Parker"           |
+      | "Russell Westbrook"     |
+      | "Rajon Rondo"           |
+      | "Kyle Anderson"         |
+      | "Blake Griffin"         |
+      | "Danny Green"           |
+      | "Jonathon Simmons"      |
+      | "Tiago Splitter"        |
+      | "Manu Ginobili"         |
+      | "Rudy Gay"              |
+      | "David West"            |
+      | "Steve Nash"            |
+      | "Dwyane Wade"           |
+
+  Scenario: test OR logic
     When executing query:
       """
       MATCH (v:player)

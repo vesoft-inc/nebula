@@ -1467,9 +1467,20 @@ Feature: Match seek by edge
     When executing query:
       """
       MATCH (p1)-[:teammate]->(p2)
-      RETURN p1.player.name, id(p2)
+      RETURN p1.player.name, p2.player.name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | p1.player.name  | p2.player.name      |
+      | "Tim Duncan"    | "Danny Green"       |
+      | "Tim Duncan"    | "LaMarcus Aldridge" |
+      | "Tim Duncan"    | "Manu Ginobili"     |
+      | "Tim Duncan"    | "Tony Parker"       |
+      | "Manu Ginobili" | "Tim Duncan"        |
+      | "Manu Ginobili" | "Tony Parker"       |
+      | "Tony Parker"   | "Kyle Anderson"     |
+      | "Tony Parker"   | "LaMarcus Aldridge" |
+      | "Tony Parker"   | "Manu Ginobili"     |
+      | "Tony Parker"   | "Tim Duncan"        |
 
   Scenario Outline: seek by edge in a single edge type space
     Given an empty graph
@@ -1490,16 +1501,19 @@ Feature: Match seek by edge
       MATCH (p1)-[]->(p2)
       RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | p1.tag_1.name | id(p2) |
     When executing query:
       """
       MATCH (p1)-[b]->(p2)
       RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | p1.tag_1.name | id(p2) |
     When executing query:
       """
       MATCH (p1)-[:edge_1]->(p2)
       RETURN p1.tag_1.name, id(p2)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | p1.tag_1.name | id(p2) |

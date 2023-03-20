@@ -203,7 +203,9 @@ Feature: Matching paths
       match p = (v:Label_0)
       return count(p)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | count(p) |
+      | 60       |
 
   @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5185
   Scenario: conflicting type
