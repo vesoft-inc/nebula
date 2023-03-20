@@ -286,6 +286,7 @@ Feature: LDBC Interactive Workload - Complex Reads
     Then the result should be, in any order:
       | personId | personFirstName | personLastName | commonInterestScore | personGender | personCityName |
 
+  @skip # Undefined parameters
   Scenario: 11. Job referral
     When executing query:
       """

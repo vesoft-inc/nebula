@@ -46,11 +46,12 @@ bool GeoPredicateIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& 
 
 StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     OptContext* ctx, const MatchedResult& matched) const {
+  auto qctx = ctx->qctx();
   auto filter = static_cast<const Filter*>(matched.planNode());
   auto node = matched.planNode({0, 0});
   auto scan = static_cast<const IndexScan*>(node);
 
-  auto metaClient = ctx->qctx()->getMetaClient();
+  auto metaClient = qctx->getMetaClient();
   auto status = node->kind() == graph::PlanNode::Kind::kTagIndexFullScan
                     ? metaClient->getTagIndexesFromCache(scan->space())
                     : metaClient->getEdgeIndexesFromCache(scan->space());
@@ -109,10 +110,14 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   } else if (geoPredicateName == "st_dwithin") {
     DCHECK_GE(geoPredicate->args()->numArgs(), 3);
     auto* third = geoPredicate->args()->args()[2];
-    DCHECK_EQ(third->kind(), Expression::Kind::kConstant);
-    const auto& thirdVal = static_cast<const ConstantExpression*>(third)->value();
-    DCHECK(thirdVal.isNumeric());
-    double distanceInMeters = thirdVal.isFloat() ? thirdVal.getFloat() : thirdVal.getInt();
+    if (!graph::ExpressionUtils::isEvaluableExpr(third, qctx)) {
+      return TransformResult::noTransform();
+    }
+    auto thirdVal = third->eval(graph::QueryExpressionContext(qctx->ectx())());
+    if (!thirdVal.isNumeric()) {
+      return TransformResult::noTransform();
+    }
+    auto distanceInMeters = thirdVal.isFloat() ? thirdVal.getFloat() : thirdVal.getInt();
     scanRanges = geoIndex.dWithin(geog, distanceInMeters);
   }
   std::vector<IndexQueryContext> idxCtxs;
@@ -128,8 +133,8 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     idxCtxs.emplace_back(std::move(ictx));
   }
 
-  auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
+  auto scanNode = IndexScan::make(qctx, nullptr);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage
