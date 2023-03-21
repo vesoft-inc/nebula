@@ -732,17 +732,12 @@ nebula::cpp2::ErrorCode NebulaStore::get(GraphSpaceID spaceId,
   return part->engine()->get(key, value, snapshot);
 }
 
-const void* NebulaStore::GetSnapshot(GraphSpaceID spaceId,
-                                     PartitionID partId,
-                                     bool canReadFromFollower) {
+const void* NebulaStore::GetSnapshot(GraphSpaceID spaceId, PartitionID partId) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {
     return nullptr;
   }
   auto part = nebula::value(ret);
-  if (!checkLeader(part, canReadFromFollower)) {
-    return nullptr;
-  }
   return part->engine()->GetSnapshot();
 }
 

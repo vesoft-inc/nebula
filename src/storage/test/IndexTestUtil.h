@@ -70,7 +70,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  const void* GetSnapshot(GraphSpaceID, PartitionID, bool) override {
+  const void* GetSnapshot(GraphSpaceID, PartitionID) override {
     return nullptr;
   }
   void ReleaseSnapshot(GraphSpaceID, PartitionID, const void*) override {}
