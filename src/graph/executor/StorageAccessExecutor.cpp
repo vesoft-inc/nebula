@@ -8,6 +8,7 @@
 
 #include "graph/context/Iterator.h"
 #include "graph/context/QueryExpressionContext.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/Utils.h"
 #include "interface/gen-cpp2/meta_types.h"
@@ -146,6 +147,86 @@ StatusOr<std::vector<Value>> StorageAccessExecutor::buildRequestListByVidType(It
     return internal::buildRequestList<int64_t>(space, exprCtx, iter, expr, dedup, isCypher);
   }
   return internal::buildRequestList<std::string>(space, exprCtx, iter, expr, dedup, isCypher);
+}
+
+bool StorageAccessExecutor::hasSameEdge(const std::vector<Value> &edgeList, const Edge &edge) {
+  for (auto &leftEdge : edgeList) {
+    if (!leftEdge.isEdge()) {
+      continue;
+    }
+    if (edge.keyEqual(leftEdge.getEdge())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+folly::Future<std::vector<Value>> StorageAccessExecutor::getProps(
+    const std::vector<Value> &vids, const std::vector<VertexProp> *vertexPropPtr) {
+  nebula::DataSet vertices({kVid});
+  vertices.rows.reserve(vids.size());
+  for (auto &vid : vids) {
+    vertices.emplace_back(Row({vid}));
+  }
+  StorageClient *storageClient = qctx_->getStorageClient();
+  StorageClient::CommonRequestParam param(qctx_->rctx()->session()->space().id,
+                                          qctx_->rctx()->session()->id(),
+                                          qctx_->plan()->id(),
+                                          qctx_->plan()->isProfileEnabled());
+  return DCHECK_NOTNULL(storageClient)
+      ->getProps(
+          param, std::move(vertices), vertexPropPtr, nullptr, nullptr, false, {}, -1, nullptr)
+      .via(runner())
+      .thenValue([this](PropRpcResponse &&resp) {
+        addStats(resp);
+        return handlePropResp(std::move(resp));
+      });
+}
+
+std::vector<Value> StorageAccessExecutor::handlePropResp(PropRpcResponse &&resps) {
+  std::vector<Value> vertices;
+  auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
+  if (!result.ok()) {
+    LOG(WARNING) << "GetProp partial fail";
+    return vertices;
+  }
+  nebula::DataSet v;
+  for (auto &resp : resps.responses()) {
+    if (resp.props_ref().has_value()) {
+      if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
+        // it's impossible according to the interface
+        LOG(WARNING) << "Heterogeneous props dataset";
+      }
+    } else {
+      LOG(WARNING) << "GetProp partial success";
+    }
+  }
+  auto val = std::make_shared<Value>(std::move(v));
+  auto iter = std::make_unique<PropIter>(val);
+  vertices.reserve(iter->size());
+  for (; iter->valid(); iter->next()) {
+    vertices.emplace_back(iter->getVertex());
+  }
+  return vertices;
+}
+
+void StorageAccessExecutor::addGetNeighborStats(RpcResponse &resp, size_t stepNum, bool reverse) {
+  folly::dynamic stats = folly::dynamic::array();
+  auto &hostLatency = resp.hostLatency();
+  for (size_t i = 0; i < hostLatency.size(); ++i) {
+    size_t size = 0u;
+    auto &result = resp.responses()[i];
+    if (result.vertices_ref().has_value()) {
+      size = (*result.vertices_ref()).size();
+    }
+    auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
+    stats.push_back(std::move(info));
+  }
+
+  auto key = folly::sformat("{}step[{}]", reverse ? "reverse " : "", stepNum);
+  statsLock_.lock();
+  otherStats_.emplace(key, folly::toPrettyJson(stats));
+  statsLock_.unlock();
 }
 
 }  // namespace graph

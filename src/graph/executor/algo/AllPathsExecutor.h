@@ -5,7 +5,7 @@
 #ifndef GRAPH_EXECUTOR_ALGO_ALLPATHSEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_ALLPATHSEXECUTOR_H_
 
-#include "graph/executor/PathBaseExecutor.h"
+#include "graph/executor/StorageAccessExecutor.h"
 
 // Using the two-way BFS algorithm, a heuristic algorithm is used in the expansion process
 // when the number of vid to be expanded on the left and right
@@ -30,10 +30,10 @@
 namespace nebula {
 namespace graph {
 class AllPaths;
-class AllPathsExecutor final : public PathBaseExecutor {
+class AllPathsExecutor final : public StorageAccessExecutor {
  public:
   AllPathsExecutor(const PlanNode* node, QueryContext* qctx)
-      : PathBaseExecutor("AllPaths", node, qctx) {}
+      : StorageAccessExecutor("AllPaths", node, qctx) {}
 
   folly::Future<Status> execute() override;
 

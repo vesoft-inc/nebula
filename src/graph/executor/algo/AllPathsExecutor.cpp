@@ -114,7 +114,6 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
 
 folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
   StorageClient* storageClient = qctx_->getStorageClient();
-  time::Duration getNbrTime;
   storage::StorageClient::CommonRequestParam param(pathNode_->space(),
                                                    qctx_->rctx()->session()->id(),
                                                    qctx_->plan()->id(),
@@ -138,10 +137,10 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
                      filter,
                      nullptr)
       .via(runner())
-      .thenValue([this, getNbrTime, reverse](auto&& resps) {
+      .thenValue([this, reverse](auto&& resps) {
         memory::MemoryCheckGuard guard;
         auto step = reverse ? rightSteps_ : leftSteps_;
-        addGetNeighborStats(resps, step, getNbrTime.elapsedInUSec(), reverse);
+        addGetNeighborStats(resps, step, reverse);
         auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
         NG_RETURN_IF_ERROR(result);
         auto& responses = std::move(resps).responses();
@@ -204,7 +203,9 @@ void AllPathsExecutor::expandFromRight(GetNeighborsIter* iter) {
     if (curVertex != vertex) {
       curVertex = vertex;
       if (rightSteps_ == 1) {
+        // delete item equal to vertex.vid
         rightInitVids_.erase(vertex);
+        // add vertex to table
         rightInitVids_.emplace(vertex);
       }
       auto dstIter = rightAdjList_.find(vertex);
