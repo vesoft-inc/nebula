@@ -94,6 +94,7 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   bool hasSplit{false};
   bool splitForbidden{false};
   Expression *remainedExpr_{nullptr};
+  bool remainedExprFromAnd_{false};
   Expression *extractedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
   std::vector<std::string> colNames_;

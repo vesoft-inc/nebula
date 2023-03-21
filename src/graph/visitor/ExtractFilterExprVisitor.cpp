@@ -240,12 +240,26 @@ void ExtractFilterExprVisitor::ExtractRemainExpr(LogicalExpression *expr,
     extractedExpr_ = operands[0];
   }
 
+  LogicalExpression *remainedExpr = nullptr;
   if (remainedOperands.size() > 1) {
-    auto remainedExpr = LogicalExpression::makeAnd(pool_);
+    remainedExpr = LogicalExpression::makeAnd(pool_);
     remainedExpr->setOperands(std::move(remainedOperands));
-    remainedExpr_ = std::move(remainedExpr);
   } else {
-    remainedExpr_ = std::move(remainedOperands[0]);
+    remainedExpr = static_cast<LogicalExpression *>(std::move(remainedOperands[0]));
+  }
+  if (remainedExpr_ != nullptr) {
+    if (remainedExprFromAnd_) {
+      auto mergeExpr = LogicalExpression::makeAnd(pool_, remainedExpr_, std::move(remainedExpr));
+      remainedExpr_ = std::move(mergeExpr);
+      remainedExprFromAnd_ = true;
+    } else {
+      auto mergeExpr = LogicalExpression::makeOr(pool_, remainedExpr_, std::move(remainedExpr));
+      remainedExpr_ = std::move(mergeExpr);
+      remainedExprFromAnd_ = true;
+    }
+  } else {
+    remainedExpr_ = std::move(remainedExpr);
+    remainedExprFromAnd_ = true;
   }
 }
 
@@ -375,6 +389,7 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
       DCHECK_EQ(expr->kind(), Expression::Kind::kLogicalAnd);
       DCHECK_EQ(expr->operands().size(), 2);
       remainedExpr_ = expr->operands()[1]->clone();
+      remainedExprFromAnd_ = false;
       expr->operands().pop_back();
     }
   } else {
