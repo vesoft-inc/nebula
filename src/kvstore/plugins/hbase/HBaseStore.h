@@ -75,9 +75,7 @@ class HBaseStore : public KVStore {
     return {-1, -1};
   }
 
-  const void* GetSnapshot(GraphSpaceID spaceId,
-                          PartitionID partID,
-                          bool canReadFromFollower = false) override {
+  const void* GetSnapshot(GraphSpaceID spaceId, PartitionID partID) override {
     UNUSED(spaceId);
     UNUSED(partID);
     UNUSED(canReadFromFollower);

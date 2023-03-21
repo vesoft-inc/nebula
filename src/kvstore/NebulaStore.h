@@ -191,12 +191,9 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partID
-   * @param canReadFromFollower
    * @return const void* Snapshot pointer.
    */
-  const void* GetSnapshot(GraphSpaceID spaceId,
-                          PartitionID partID,
-                          bool canReadFromFollower = false) override;
+  const void* GetSnapshot(GraphSpaceID spaceId, PartitionID partID) override;
 
   /**
    * @brief Release snapshot from engine.

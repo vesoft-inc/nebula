@@ -106,9 +106,7 @@ class KVStore {
    * @param canReadFromFollower
    * @return const void* Snapshot.
    */
-  virtual const void* GetSnapshot(GraphSpaceID spaceId,
-                                  PartitionID partID,
-                                  bool canReadFromFollower = false) = 0;
+  virtual const void* GetSnapshot(GraphSpaceID spaceId, PartitionID partID) = 0;
 
   /**
    * @brief Release snapshot.
