@@ -1254,7 +1254,7 @@ Status MatchValidator::validatePathInWhere(
     }
   }
   for (const auto &node : matchPath->nodes()) {
-    if (node->variableDefinedSource() == MatchNode::VariableDefinedSource::kExpression) {
+    if (node->variableDefinedSource() == VariableDefinedSource::kExpression) {
       // Checked in visitor
       continue;
     }
@@ -1273,6 +1273,10 @@ Status MatchValidator::validatePathInWhere(
     }
   }
   for (const auto &edge : matchPath->edges()) {
+    if (edge->variableDefinedSource() == VariableDefinedSource::kExpression) {
+      // Checked in visitor
+      continue;
+    }
     if (!edge->alias().empty()) {
       const auto find = availableAliases.find(edge->alias());
       if (find == availableAliases.end()) {
