@@ -432,6 +432,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
+    {"_edge", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::EDGE)}},
     {"json_extract",
      {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
@@ -2847,6 +2848,39 @@ FunctionManager::FunctionManager() {
         return p.src.vid;
       } else {
         return p.steps[nodeIndex - 1].dst.vid;
+      }
+    };
+  }
+  {
+    auto &attr = functions_["_edge"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isPath() || !args[1].get().isInt()) {
+        return Value::kNullBadType;
+      }
+
+      const auto &p = args[0].get().getPath();
+      const std::size_t edgeIndex = args[1].get().getInt();
+      if (edgeIndex < 0 || edgeIndex >= p.steps.size()) {
+        DLOG(FATAL) << "Out of range edge index.";
+        return Value::kNullOutOfRange;
+      }
+      if (edgeIndex == 0) {
+        Edge edge;
+        edge.src = p.src.vid;
+        edge.dst = p.steps[0].dst.vid;
+        edge.type = p.steps[0].type;
+        edge.ranking = p.steps[0].ranking;
+        return edge;
+      } else {
+        Edge edge;
+        edge.src = p.steps[edgeIndex - 1].dst.vid;
+        edge.dst = p.steps[edgeIndex].dst.vid;
+        edge.type = p.steps[edgeIndex].type;
+        edge.ranking = p.steps[edgeIndex].ranking;
+        return edge;
       }
     };
   }

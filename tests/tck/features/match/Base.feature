@@ -1291,8 +1291,17 @@ Feature: Basic match
       WHERE size([ii in e WHERE (v)-[ii]-(v2) | ii])>1
       RETURN count(*) AS cnt
       """
-    # FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
-    Then a SemanticError should be raised at runtime: PatternExpression are not allowed to introduce new variables: `ii'.
+    Then the result should be, in any order, with relax comparison:
+      | cnt |
+      | 0   |
+    When executing query:
+      """
+      MATCH p=(v:player)-[]->() where [ii in relationships(p) where (v)-[ii]->()]
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order, with relax comparison:
+      | cnt |
+      | 243 |
 
 # Then the result should be, in any order:
 # | cnt |
