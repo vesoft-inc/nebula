@@ -71,7 +71,7 @@ PropertyType NebulaSchemaProvider::getFieldType(const std::string& name) const {
   return fields_[it->second].type();
 }
 
-const SchemaProviderIf::Field* NebulaSchemaProvider::field(int64_t index) const {
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::field(int64_t index) const {
   if (index < 0) {
     VLOG(2) << "Invalid index " << index;
     return nullptr;
@@ -84,7 +84,8 @@ const SchemaProviderIf::Field* NebulaSchemaProvider::field(int64_t index) const 
   return &fields_[index];
 }
 
-const SchemaProviderIf::Field* NebulaSchemaProvider::field(const std::string& name) const {
+const NebulaSchemaProvider::SchemaField* NebulaSchemaProvider::field(
+    const std::string& name) const {
   auto it = fieldNameIndex_.find(name);
   if (it == fieldNameIndex_.end()) {
     VLOG(2) << "Unknown field \"" << name << "\"";
@@ -94,7 +95,7 @@ const SchemaProviderIf::Field* NebulaSchemaProvider::field(const std::string& na
   return &fields_[it->second];
 }
 
-void NebulaSchemaProvider::addField(folly::StringPiece name,
+void NebulaSchemaProvider::addField(const std::string& name,
                                     PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
@@ -113,16 +114,9 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
     nullFlagPos = numNullableFields_++;
   }
 
-  fields_.emplace_back(name.toString(),
-                       type,
-                       nullable,
-                       defaultValue != "",
-                       defaultValue,
-                       size,
-                       offset,
-                       nullFlagPos,
-                       geoShape);
-  fieldNameIndex_.emplace(name.toString(), static_cast<int64_t>(fields_.size() - 1));
+  fields_.emplace_back(
+      name, type, nullable, defaultValue != "", defaultValue, size, offset, nullFlagPos, geoShape);
+  fieldNameIndex_.emplace(name, static_cast<int64_t>(fields_.size() - 1));
 }
 
 /*static*/

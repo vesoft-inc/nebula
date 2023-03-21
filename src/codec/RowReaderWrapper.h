@@ -11,8 +11,8 @@
 #include "codec/RowReaderV2.h"
 #include "common/base/Base.h"
 #include "common/datatypes/Value.h"
+#include "common/meta/NebulaSchemaProvider.h"
 #include "common/meta/SchemaManager.h"
-#include "common/meta/SchemaProviderIf.h"
 
 namespace nebula {
 
@@ -86,7 +86,7 @@ class RowReaderWrapper {
    * @param row
    * @return RowReaderWrapper
    */
-  static RowReaderWrapper getRowReader(meta::SchemaProviderIf const* schema,
+  static RowReaderWrapper getRowReader(meta::NebulaSchemaProvider const* schema,
                                        folly::StringPiece row);
 
   /**
@@ -109,7 +109,7 @@ class RowReaderWrapper {
    * @param row
    * @param readerVer Row reader version
    */
-  RowReaderWrapper(const meta::SchemaProviderIf* schema,
+  RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
                    const folly::StringPiece& row,
                    int32_t& readerVer);
 
@@ -121,7 +121,7 @@ class RowReaderWrapper {
    * @param readVer
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row, int32_t readVer);
+  bool reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row, int32_t readVer);
 
   /**
    * @brief Reset current row reader wrapper to of given schema and data
@@ -130,7 +130,7 @@ class RowReaderWrapper {
    * @param row
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row);
+  bool reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
 
   /**
    * @brief Reset current row reader wrapper of given schemas and data, the schemas are stored in
@@ -174,7 +174,7 @@ class RowReaderWrapper {
     return currReader_->numFields();
   }
 
-  const meta::SchemaProviderIf* getSchema() const {
+  const meta::NebulaSchemaProvider* getSchema() const {
     DCHECK(!!currReader_);
     return currReader_->getSchema();
   }

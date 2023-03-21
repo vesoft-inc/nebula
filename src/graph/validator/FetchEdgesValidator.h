@@ -37,7 +37,7 @@ class FetchEdgesValidator final : public Validator {
 
   EdgeType edgeType_{0};
 
-  std::shared_ptr<const meta::SchemaProviderIf> edgeSchema_;
+  std::shared_ptr<const meta::NebulaSchemaProvider> edgeSchema_;
 
   std::unique_ptr<FetchEdgesContext> fetchCtx_;
 };

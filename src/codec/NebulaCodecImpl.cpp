@@ -23,7 +23,7 @@
 namespace nebula {
 
 std::string NebulaCodecImpl::encode(std::vector<Value> values,
-                                    std::shared_ptr<const meta::SchemaProviderIf> schema) {
+                                    std::shared_ptr<const meta::NebulaSchemaProvider> schema) {
   RowWriter writer(schema);
   for (auto& value : values) {
     if (value.type() == typeid(int32_t)) {
@@ -47,7 +47,7 @@ std::string NebulaCodecImpl::encode(std::vector<Value> values,
 }
 
 StatusOr<std::unordered_map<std::string, Value>> NebulaCodecImpl::decode(
-    std::string encoded, std::shared_ptr<const meta::SchemaProviderIf> schema) {
+    std::string encoded, std::shared_ptr<const meta::NebulaSchemaProvider> schema) {
   if (encoded.empty()) {
     return Status::Error("encoded string is empty");
   }

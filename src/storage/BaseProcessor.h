@@ -130,7 +130,7 @@ class BaseProcessor {
 
   void handleAsync(GraphSpaceID spaceId, PartitionID partId, nebula::cpp2::ErrorCode code);
 
-  nebula::cpp2::ErrorCode checkStatType(const meta::SchemaProviderIf::Field& field,
+  nebula::cpp2::ErrorCode checkStatType(const meta::NebulaSchemaProvider::SchemaField& field,
                                         cpp2::StatType statType);
 
   StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,

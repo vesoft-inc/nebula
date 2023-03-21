@@ -28,7 +28,7 @@ class InsertVerticesValidator final : public Validator {
   Status prepareVertices();
 
  private:
-  using TagSchema = std::shared_ptr<const meta::SchemaProviderIf>;
+  using TagSchema = std::shared_ptr<const meta::NebulaSchemaProvider>;
   GraphSpaceID spaceId_{-1};
   std::vector<VertexRowItem*> rows_;
   std::unordered_map<TagID, std::vector<std::string>> tagPropNames_;
@@ -57,7 +57,7 @@ class InsertEdgesValidator final : public Validator {
   bool ifNotExists_{false};
   bool ignoreExistedIndex_{false};
   EdgeType edgeType_{-1};
-  std::shared_ptr<const meta::SchemaProviderIf> schema_;
+  std::shared_ptr<const meta::NebulaSchemaProvider> schema_;
   std::vector<std::string> propNames_;
   std::vector<std::string> entirePropNames_;
   std::vector<EdgeRowItem*> rows_;
