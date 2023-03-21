@@ -670,7 +670,7 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
 
 // If the field types are inconsistent, can be converted
 WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchema,
-                                        const meta::SchemaProviderIf* oSchema,
+                                        const meta::NebulaSchemaProvider* oSchema,
                                         std::string& name,
                                         Value& val) {
   auto newpropType = nSchema->getFieldType(name);
@@ -1005,7 +1005,7 @@ std::vector<std::string> UpgraderSpace::indexVertexKeys(
     VertexID& vId,
     RowReaderWrapper* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-    const meta::SchemaProviderIf* latestSchema) {
+    const meta::NebulaSchemaProvider* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};
@@ -1062,7 +1062,7 @@ std::vector<std::string> UpgraderSpace::indexEdgeKeys(
     EdgeRanking rank,
     VertexID& dstId,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-    const meta::SchemaProviderIf* latestSchema) {
+    const meta::NebulaSchemaProvider* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};

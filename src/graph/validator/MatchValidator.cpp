@@ -334,6 +334,16 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
 // Rewrite expression to fit semantic, check type and check used aliases.
 Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) {
+  auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+  if (!undefinedParams.empty()) {
+    return Status::SemanticError(
+        "Undefined parameters: " +
+        std::accumulate(++undefinedParams.begin(),
+                        undefinedParams.end(),
+                        *undefinedParams.begin(),
+                        [](auto &lhs, auto &rhs) { return lhs + ", " + rhs; }));
+  }
+
   auto *newFilter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
   auto transformRes = ExpressionUtils::filterTransform(newFilter);
   NG_RETURN_IF_ERROR(transformRes);
@@ -1244,7 +1254,7 @@ Status MatchValidator::validatePathInWhere(
     }
   }
   for (const auto &node : matchPath->nodes()) {
-    if (node->variableDefinedSource() == MatchNode::VariableDefinedSource::kExpression) {
+    if (node->variableDefinedSource() == VariableDefinedSource::kExpression) {
       // Checked in visitor
       continue;
     }
@@ -1263,6 +1273,10 @@ Status MatchValidator::validatePathInWhere(
     }
   }
   for (const auto &edge : matchPath->edges()) {
+    if (edge->variableDefinedSource() == VariableDefinedSource::kExpression) {
+      // Checked in visitor
+      continue;
+    }
     if (!edge->alias().empty()) {
       const auto find = availableAliases.find(edge->alias());
       if (find == availableAliases.end()) {

@@ -79,6 +79,12 @@ class MatchEdgeProp final {
   std::unique_ptr<MatchStepRange> range_;
 };
 
+enum class VariableDefinedSource {
+  kUnknown,
+  kExpression,   // from upper expression
+  kMatchClause,  // from previous match clause
+};
+
 class MatchEdge final {
  public:
   using Direction = nebula::storage::cpp2::EdgeDirection;
@@ -99,6 +105,10 @@ class MatchEdge final {
     return direction_;
   }
 
+  void setAlias(const std::string& alias) {
+    alias_ = alias;
+  }
+
   const std::string& alias() const {
     return alias_;
   }
@@ -113,6 +123,14 @@ class MatchEdge final {
 
   MatchStepRange* range() const {
     return range_.get();
+  }
+
+  VariableDefinedSource variableDefinedSource() const {
+    return variableDefinedSource_;
+  }
+
+  void setVariableDefinedSource(VariableDefinedSource source) {
+    variableDefinedSource_ = source;
   }
 
   std::string toString() const;
@@ -139,6 +157,8 @@ class MatchEdge final {
   std::vector<std::unique_ptr<std::string>> types_;
   std::unique_ptr<MatchStepRange> range_;
   MapExpression* props_{nullptr};
+  // Only used for pattern expression
+  VariableDefinedSource variableDefinedSource_{VariableDefinedSource::kUnknown};
 };
 
 class MatchNodeLabel final {
@@ -218,9 +238,9 @@ class MatchNodeLabelList final {
 
 class MatchNode final {
  public:
-  MatchNode(const std::string& alias = "",
-            MatchNodeLabelList* labels = nullptr,
-            Expression* props = nullptr) {
+  explicit MatchNode(const std::string& alias = "",
+                     MatchNodeLabelList* labels = nullptr,
+                     Expression* props = nullptr) {
     alias_ = alias;
     labels_.reset(labels);
     props_ = static_cast<MapExpression*>(props);
@@ -259,12 +279,6 @@ class MatchNode final {
     }
     return me;
   }
-
-  enum class VariableDefinedSource {
-    kUnknown,
-    kExpression,   // from upper expression
-    kMatchClause,  // from previous match clause
-  };
 
   VariableDefinedSource variableDefinedSource() const {
     return variableDefinedSource_;

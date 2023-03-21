@@ -42,7 +42,7 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
                                      const VertexID& vId,
                                      RowReaderWrapper* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                     const meta::SchemaProviderIf* latestSchema);
+                                     const meta::NebulaSchemaProvider* latestSchema);
 
   void deleteDupVid(std::vector<cpp2::NewVertex>& vertices);
 

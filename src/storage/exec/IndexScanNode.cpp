@@ -8,7 +8,7 @@ namespace nebula {
 namespace storage {
 // Define of Path
 Path::Path(nebula::meta::cpp2::IndexItem* index,
-           const meta::SchemaProviderIf* schema,
+           const meta::NebulaSchemaProvider* schema,
            const std::vector<cpp2::IndexColumnHint>& hints,
            int64_t vidLen)
     : index_(index), schema_(schema), hints_(hints) {
@@ -38,7 +38,7 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
 }
 
 std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
-                                 const meta::SchemaProviderIf* schema,
+                                 const meta::NebulaSchemaProvider* schema,
                                  const std::vector<cpp2::IndexColumnHint>& hints,
                                  int64_t vidLen) {
   std::unique_ptr<Path> ret;
@@ -110,7 +110,7 @@ const std::string& Path::toString() {
 
 // Define of RangePath
 RangePath::RangePath(nebula::meta::cpp2::IndexItem* index,
-                     const meta::SchemaProviderIf* schema,
+                     const meta::NebulaSchemaProvider* schema,
                      const std::vector<cpp2::IndexColumnHint>& hints,
                      int64_t vidLen)
     : Path(index, schema, hints, vidLen) {
@@ -307,7 +307,7 @@ std::string RangePath::encodeFloat(const Value& value, bool& isNaN) {
 
 // Define of PrefixPath
 PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
-                       const meta::SchemaProviderIf* schema,
+                       const meta::NebulaSchemaProvider* schema,
                        const std::vector<cpp2::IndexColumnHint>& hints,
                        int64_t vidLen)
     : Path(index, schema, hints, vidLen) {

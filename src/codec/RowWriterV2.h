@@ -8,7 +8,7 @@
 
 #include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
@@ -85,11 +85,11 @@ enum class WriteResult {
 ********************************************************************************/
 class RowWriterV2 {
  public:
-  explicit RowWriterV2(const meta::SchemaProviderIf* schema);
+  explicit RowWriterV2(const meta::NebulaSchemaProvider* schema);
   // This constructor only takes a V2 encoded string
-  RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded);
+  RowWriterV2(const meta::NebulaSchemaProvider* schema, std::string&& encoded);
   // This constructor only takes a V2 encoded string
-  RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded);
+  RowWriterV2(const meta::NebulaSchemaProvider* schema, const std::string& encoded);
   // This constructor can handle constructed from RowReaderWrapper, which is V2 reader
   explicit RowWriterV2(RowReaderWrapper& reader);
 
@@ -107,9 +107,9 @@ class RowWriterV2 {
   /**
    * @brief Return the related schema
    *
-   * @return const meta::SchemaProviderIf*
+   * @return const meta::NebulaSchemaProvider*
    */
-  const meta::SchemaProviderIf* schema() const {
+  const meta::NebulaSchemaProvider* schema() const {
     return schema_;
   }
 
@@ -213,7 +213,7 @@ class RowWriterV2 {
   WriteResult setNull(const std::string& name);
 
  private:
-  const meta::SchemaProviderIf* schema_;
+  const meta::NebulaSchemaProvider* schema_;
   std::string buf_;
   std::vector<bool> isSet_;
   // The number of bytes occupied by header and the schema version

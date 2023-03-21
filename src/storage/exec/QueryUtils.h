@@ -74,7 +74,7 @@ class QueryUtils final {
    */
   static StatusOr<nebula::Value> readValue(RowReaderWrapper* reader,
                                            const std::string& propName,
-                                           const meta::SchemaProviderIf::Field* field) {
+                                           const meta::NebulaSchemaProvider::SchemaField* field) {
     auto value = reader->getValueByName(propName);
     if (value.type() == Value::Type::NULLVALUE) {
       // read null value
@@ -120,7 +120,7 @@ class QueryUtils final {
    */
   static StatusOr<nebula::Value> readValue(RowReaderWrapper* reader,
                                            const std::string& propName,
-                                           const meta::SchemaProviderIf* schema) {
+                                           const meta::NebulaSchemaProvider* schema) {
     auto field = schema->field(propName);
     if (!field) {
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));

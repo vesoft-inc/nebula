@@ -7,7 +7,6 @@
 
 #include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
-#include "codec/test/SchemaWriter.h"
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
 #include "common/time/WallClock.h"
@@ -46,30 +45,27 @@ const Geography geogPolygon = Polygon(
 const Duration du = Duration(1, 2, 3);
 
 TEST(RowWriterV2, NoDefaultValue) {
-  SchemaWriter schema(12 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::BOOL);
-  schema.appendCol("Col02", PropertyType::INT8);
-  schema.appendCol("Col03", PropertyType::INT16);
-  schema.appendCol("Col04", PropertyType::INT32);
-  schema.appendCol("Col05", PropertyType::INT64);
-  schema.appendCol("Col06", PropertyType::FLOAT);
-  schema.appendCol("Col07", PropertyType::DOUBLE);
-  schema.appendCol("Col08", PropertyType::STRING);
-  schema.appendCol("Col09", PropertyType::FIXED_STRING, 12);
-  schema.appendCol("Col10", PropertyType::TIMESTAMP);
-  schema.appendCol("Col11", PropertyType::DATE);
-  schema.appendCol("Col12", PropertyType::TIME);
-  schema.appendCol("Col13", PropertyType::DATETIME);
-  schema.appendCol("Col14", PropertyType::INT64, 0, true);
-  schema.appendCol("Col15", PropertyType::INT32, 0, true);
-  schema.appendCol(
-      "Col16", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::POINT);
-  schema.appendCol(
-      "Col17", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::LINESTRING);
-  schema.appendCol(
-      "Col18", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::POLYGON);
-  schema.appendCol("Col19", PropertyType::GEOGRAPHY, 0, true, nullptr, meta::cpp2::GeoShape::ANY);
-  schema.appendCol("Col20", PropertyType::DURATION);
+  meta::NebulaSchemaProvider schema(12 /*Schema version*/);
+  schema.addField("Col01", PropertyType::BOOL);
+  schema.addField("Col02", PropertyType::INT8);
+  schema.addField("Col03", PropertyType::INT16);
+  schema.addField("Col04", PropertyType::INT32);
+  schema.addField("Col05", PropertyType::INT64);
+  schema.addField("Col06", PropertyType::FLOAT);
+  schema.addField("Col07", PropertyType::DOUBLE);
+  schema.addField("Col08", PropertyType::STRING);
+  schema.addField("Col09", PropertyType::FIXED_STRING, 12);
+  schema.addField("Col10", PropertyType::TIMESTAMP);
+  schema.addField("Col11", PropertyType::DATE);
+  schema.addField("Col12", PropertyType::TIME);
+  schema.addField("Col13", PropertyType::DATETIME);
+  schema.addField("Col14", PropertyType::INT64, 0, true);
+  schema.addField("Col15", PropertyType::INT32, 0, true);
+  schema.addField("Col16", PropertyType::GEOGRAPHY, 0, false, "", meta::cpp2::GeoShape::POINT);
+  schema.addField("Col17", PropertyType::GEOGRAPHY, 0, false, "", meta::cpp2::GeoShape::LINESTRING);
+  schema.addField("Col18", PropertyType::GEOGRAPHY, 0, false, "", meta::cpp2::GeoShape::POLYGON);
+  schema.addField("Col19", PropertyType::GEOGRAPHY, 0, true, "", meta::cpp2::GeoShape::ANY);
+  schema.addField("Col20", PropertyType::DURATION);
 
   ASSERT_EQ(Value::Type::STRING, sVal.type());
   ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -270,12 +266,17 @@ TEST(RowWriterV2, WithDefaultValue) {
   ObjectPool objPool;
   auto pool = &objPool;
 
-  SchemaWriter schema(7 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::BOOL, 0, true);
-  schema.appendCol("Col02", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 12345));
-  schema.appendCol("Col03", PropertyType::STRING, 0, true, ConstantExpression::make(pool, str));
-  schema.appendCol(
-      "Col04", PropertyType::FIXED_STRING, 12, false, ConstantExpression::make(pool, fixed));
+  meta::NebulaSchemaProvider schema(7 /*Schema version*/);
+  schema.addField("Col01", PropertyType::BOOL, 0, true);
+  schema.addField(
+      "Col02", PropertyType::INT64, 0, false, ConstantExpression::make(pool, 12345)->encode());
+  schema.addField(
+      "Col03", PropertyType::STRING, 0, true, ConstantExpression::make(pool, str)->encode());
+  schema.addField("Col04",
+                  PropertyType::FIXED_STRING,
+                  12,
+                  false,
+                  ConstantExpression::make(pool, fixed)->encode());
 
   RowWriterV2 writer(&schema);
   ASSERT_EQ(WriteResult::SUCCEEDED, writer.finish());
@@ -312,12 +313,12 @@ TEST(RowWriterV2, WithDefaultValue) {
 }
 
 TEST(RowWriterV2, DoubleSet) {
-  SchemaWriter schema(3 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::BOOL, 0, true);
-  schema.appendCol("Col02", PropertyType::INT64);
-  schema.appendCol("Col03", PropertyType::STRING);
-  schema.appendCol("Col04", PropertyType::STRING, 0, true);
-  schema.appendCol("Col05", PropertyType::FIXED_STRING, 12);
+  meta::NebulaSchemaProvider schema(3 /*Schema version*/);
+  schema.addField("Col01", PropertyType::BOOL, 0, true);
+  schema.addField("Col02", PropertyType::INT64);
+  schema.addField("Col03", PropertyType::STRING);
+  schema.addField("Col04", PropertyType::STRING, 0, true);
+  schema.addField("Col05", PropertyType::FIXED_STRING, 12);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", false));
@@ -372,12 +373,12 @@ TEST(RowWriterV2, DoubleSet) {
 }
 
 TEST(RowWriterV2, Update) {
-  SchemaWriter schema(2 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::BOOL, 0, true);
-  schema.appendCol("Col02", PropertyType::INT64);
-  schema.appendCol("Col03", PropertyType::STRING);
-  schema.appendCol("Col04", PropertyType::STRING, 0, true);
-  schema.appendCol("Col05", PropertyType::FIXED_STRING, 12);
+  meta::NebulaSchemaProvider schema(2 /*Schema version*/);
+  schema.addField("Col01", PropertyType::BOOL, 0, true);
+  schema.addField("Col02", PropertyType::INT64);
+  schema.addField("Col03", PropertyType::STRING);
+  schema.addField("Col04", PropertyType::STRING, 0, true);
+  schema.addField("Col05", PropertyType::FIXED_STRING, 12);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", true));
@@ -449,8 +450,8 @@ TEST(RowWriterV2, Update) {
 }
 
 TEST(RowWriterV2, Timestamp) {
-  SchemaWriter schema(20 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::TIMESTAMP);
+  meta::NebulaSchemaProvider schema(20 /*Schema version*/);
+  schema.addField("Col01", PropertyType::TIMESTAMP);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1582183355));
@@ -477,8 +478,8 @@ TEST(RowWriterV2, Timestamp) {
 }
 
 TEST(RowWriterV2, EmptyString) {
-  SchemaWriter schema(0 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::STRING);
+  meta::NebulaSchemaProvider schema(0 /*Schema version*/);
+  schema.addField("Col01", PropertyType::STRING);
 
   RowWriterV2 writer(&schema);
   EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
@@ -495,13 +496,13 @@ TEST(RowWriterV2, EmptyString) {
 }
 
 TEST(RowWriterV2, NumericLimit) {
-  SchemaWriter schema(1 /*Schema version*/);
-  schema.appendCol("Col01", PropertyType::INT8);
-  schema.appendCol("Col03", PropertyType::INT16);
-  schema.appendCol("Col06", PropertyType::INT32);
-  schema.appendCol("Col07", PropertyType::INT64);
-  schema.appendCol("Col09", PropertyType::FLOAT);
-  schema.appendCol("Col11", PropertyType::DOUBLE);
+  meta::NebulaSchemaProvider schema(1 /*Schema version*/);
+  schema.addField("Col01", PropertyType::INT8);
+  schema.addField("Col03", PropertyType::INT16);
+  schema.addField("Col06", PropertyType::INT32);
+  schema.addField("Col07", PropertyType::INT64);
+  schema.addField("Col09", PropertyType::FLOAT);
+  schema.addField("Col11", PropertyType::DOUBLE);
 
   {
     RowWriterV2 writer(&schema);
@@ -697,8 +698,8 @@ TEST(RowWriterV2, NumericLimit) {
 
 TEST(RowWriterV2, TimestampTest) {
   {
-    SchemaWriter schema(1);
-    schema.appendCol("Col01", PropertyType::STRING);
+    meta::NebulaSchemaProvider schema(1);
+    schema.addField("Col01", PropertyType::STRING);
 
     RowWriterV2 writer(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
@@ -716,8 +717,8 @@ TEST(RowWriterV2, TimestampTest) {
     EXPECT_TRUE(ret);
   }
   {
-    SchemaWriter schema(1);
-    schema.appendCol("Col01", PropertyType::STRING);
+    meta::NebulaSchemaProvider schema(1);
+    schema.addField("Col01", PropertyType::STRING);
 
     RowWriterV2 writer(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
@@ -737,8 +738,8 @@ TEST(RowWriterV2, TimestampTest) {
     EXPECT_TRUE(ret);
   }
   {
-    SchemaWriter schema(1);
-    schema.appendCol("Col01", PropertyType::STRING);
+    meta::NebulaSchemaProvider schema(1);
+    schema.addField("Col01", PropertyType::STRING);
 
     RowWriterV2 writer(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", ""));
@@ -755,8 +756,8 @@ TEST(RowWriterV2, TimestampTest) {
               encoded2.substr(0, encoded2.size() - sizeof(int64_t)));
   }
   {
-    SchemaWriter schema(1);
-    schema.appendCol("Col01", PropertyType::INT64);
+    meta::NebulaSchemaProvider schema(1);
+    schema.addField("Col01", PropertyType::INT64);
 
     RowWriterV2 writer(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1));
@@ -774,9 +775,9 @@ TEST(RowWriterV2, TimestampTest) {
   }
   {
     // test checkUnsetFields
-    SchemaWriter schema(1);
-    schema.appendCol("Col01", PropertyType::INT64);
-    schema.appendCol("Col02", PropertyType::INT64);
+    meta::NebulaSchemaProvider schema(1);
+    schema.addField("Col01", PropertyType::INT64);
+    schema.addField("Col02", PropertyType::INT64);
 
     RowWriterV2 writer(&schema);
     EXPECT_EQ(WriteResult::SUCCEEDED, writer.set("Col01", 1));

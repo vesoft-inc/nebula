@@ -16,7 +16,7 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema)
     : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
   CHECK(!!schema_);
 
@@ -88,14 +88,14 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
   isSet_.resize(schema_->getNumFields(), false);
 }
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, std::string&& encoded)
     : schema_(schema), finished_(false), outOfSpaceStr_(false) {
   auto len = encoded.size();
   buf_ = std::move(encoded).substr(0, len - sizeof(int64_t));
   processV2EncodedStr();
 }
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, const std::string& encoded)
     : schema_(schema),
       buf_(encoded.substr(0, encoded.size() - sizeof(int64_t))),
       finished_(false),
