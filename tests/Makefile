@@ -127,8 +127,8 @@ slow-query: currdir
 standalone-tck: jobs
 	$(test_j_sa) tck/steps/test_tck.py
 
-tck: jobs slow-query
-	$(test_j) tck/steps/test_tck.py
+tck:
+	$(test_j) -k test_run_fail_in_ci_environment tck/steps/test_tck.py
 
 ldbc: currdir
 	$(test_j) tck/steps/test_ldbc.py

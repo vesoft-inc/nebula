@@ -368,7 +368,6 @@ Feature: single shortestPath
       """
     Then the execution should be successful
 
-  @skip
   Scenario: run fail in CI environment
     When executing query:
       """
