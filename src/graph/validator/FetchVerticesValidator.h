@@ -30,7 +30,7 @@ class FetchVerticesValidator final : public Validator {
   }
 
  private:
-  std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
+  std::map<TagID, std::shared_ptr<const meta::NebulaSchemaProvider>> tagsSchema_;
   std::vector<TagID> tagIds_;
 
   std::unique_ptr<FetchVerticesContext> fetchCtx_;

@@ -405,7 +405,6 @@ nebula_add_executable(
         ../../codec/test/RowWriterV1.cpp
     OBJECTS
         ${storage_test_deps}
-        $<TARGET_OBJECTS:codec_test_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

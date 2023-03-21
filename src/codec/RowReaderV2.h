@@ -9,7 +9,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
@@ -34,7 +34,7 @@ class RowReaderV2 {
     return headerLen_;
   }
 
-  const meta::SchemaProviderIf* getSchema() const {
+  const meta::NebulaSchemaProvider* getSchema() const {
     return schema_;
   }
 
@@ -51,10 +51,10 @@ class RowReaderV2 {
   }
 
  private:
-  bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row);
+  bool resetImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
 
  private:
-  meta::SchemaProviderIf const* schema_;
+  meta::NebulaSchemaProvider const* schema_;
   folly::StringPiece data_;
   size_t headerLen_;
   size_t numNullBytes_;

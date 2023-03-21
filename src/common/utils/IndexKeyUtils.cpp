@@ -174,7 +174,7 @@ Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
 StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
     RowReaderWrapper* reader,
     const meta::cpp2::IndexItem* indexItem,
-    const meta::SchemaProviderIf* latestSchema) {
+    const meta::NebulaSchemaProvider* latestSchema) {
   if (reader == nullptr) {
     return Status::Error("Invalid row reader");
   }
@@ -200,9 +200,10 @@ StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
 }
 
 // static
-StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(RowReaderWrapper* reader,
-                                                       const std::string propName,
-                                                       const meta::SchemaProviderIf* latestSchema) {
+StatusOr<Value> IndexKeyUtils::readValueWithLatestSche(
+    RowReaderWrapper* reader,
+    const std::string propName,
+    const meta::NebulaSchemaProvider* latestSchema) {
   auto value = reader->getValueByName(propName);
   if (latestSchema == nullptr || !value.isNull() || value.getNull() != NullType::UNKNOWN_PROP) {
     return value;

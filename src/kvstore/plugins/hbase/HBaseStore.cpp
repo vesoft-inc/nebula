@@ -40,10 +40,10 @@ std::string HBaseStore::spaceIdToTableName(GraphSpaceID spaceId) {
   return kHBaseTableNamePrefix + folly::to<std::string>(spaceId);
 }
 
-std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID spaceId,
-                                                                    const std::string& key,
-                                                                    SchemaVer version) {
-  std::shared_ptr<const meta::SchemaProviderIf> schema;
+std::shared_ptr<const meta::NebulaSchemaProvider> HBaseStore::getSchema(GraphSpaceID spaceId,
+                                                                        const std::string& key,
+                                                                        SchemaVer version) {
+  std::shared_ptr<const meta::NebulaSchemaProvider> schema;
   folly::StringPiece rawKey = key;
   if (NebulaKeyUtils::isTag(key)) {
     TagID tagId = NebulaKeyUtils::getTagId(rawKey);

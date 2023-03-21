@@ -172,7 +172,7 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::checkStatType(
-    const meta::SchemaProviderIf::Field& field, cpp2::StatType statType) {
+    const meta::NebulaSchemaProvider::SchemaField& field, cpp2::StatType statType) {
   // todo(doodle): how to deal with nullable fields? For now, null add anything
   // is null, if there is even one null, the result will be invalid
   auto fType = field.type();

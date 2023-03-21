@@ -452,7 +452,7 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::handleEdgeStatProps(
         CHECK(!iter->second.empty());
         const auto& edgeSchema = iter->second.back();
 
-        const meta::SchemaProviderIf::Field* field = nullptr;
+        const meta::NebulaSchemaProvider::SchemaField* field = nullptr;
         if (exp->kind() == Expression::Kind::kEdgeProperty) {
           field = edgeSchema->field(propName);
           if (field == nullptr) {

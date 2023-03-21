@@ -106,7 +106,8 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
   }
 
   // TODO(panda) Optimize the method in the future
-  bool ttlExpired(const meta::SchemaProviderIf* schema, nebula::RowReaderWrapper* reader) const {
+  bool ttlExpired(const meta::NebulaSchemaProvider* schema,
+                  nebula::RowReaderWrapper* reader) const {
     if (schema == nullptr) {
       return true;
     }
@@ -120,7 +121,7 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
     return CommonUtils::checkDataExpiredForTTL(schema, reader, ttl.second.second, ttl.second.first);
   }
 
-  bool ttlExpired(const meta::SchemaProviderIf* schema, const Value& v) const {
+  bool ttlExpired(const meta::NebulaSchemaProvider* schema, const Value& v) const {
     if (schema == nullptr) {
       return true;
     }
