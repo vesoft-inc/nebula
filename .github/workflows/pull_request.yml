@@ -194,9 +194,19 @@ jobs:
           esac
         working-directory: tests/
         timeout-minutes: 4
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=8 test
+        working-directory: tests/
+        timeout-minutes: 15
       - name: TCK
         run: |
           make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=8 tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=8 ldbc
         working-directory: tests/
         timeout-minutes: 60
       - name: Down cluster
@@ -222,5 +232,5 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs*/
+          path:  ./build/server_*/logs/
 

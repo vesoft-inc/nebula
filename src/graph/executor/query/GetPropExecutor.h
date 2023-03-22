@@ -8,7 +8,6 @@
 
 #include "clients/storage/StorageClientBase.h"
 #include "graph/executor/StorageAccessExecutor.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/service/GraphFlags.h"
 
 namespace nebula {
@@ -42,7 +41,6 @@ class GetPropExecutor : public StorageAccessExecutor {
       DCHECK_EQ(colNames.size(), v.colSize());
       v.colNames = colNames;
     }
-    LOG(ERROR) << "DEBUG POINT: " << node()->outputVar() << ": " << v;
     return finish(
         ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
   }
