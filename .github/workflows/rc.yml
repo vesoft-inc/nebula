@@ -90,10 +90,10 @@ jobs:
           toolsTag=""
           majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d".")
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
-            graphdTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:latest"
-            storagedTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:latest"
-            metadTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:latest"
-            toolsTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:latest"
+            graphdTag="${{ secrets.HARBOR_REGISTRY }}/rc/nebula-graphd:latest"
+            storagedTag="${{ secrets.HARBOR_REGISTRY }}/rc/nebula-storaged:latest"
+            metadTag="${{ secrets.HARBOR_REGISTRY }}/rc/nebula-metad:latest"
+            toolsTag="${{ secrets.HARBOR_REGISTRY }}/rc/nebula-tools:latest"
           fi
           echo "graphdTag=$graphdTag" >> $GITHUB_OUTPUT
           echo "storagedTag=$storagedTag" >> $GITHUB_OUTPUT
@@ -113,8 +113,8 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-graphd:${{ steps.tagname.outputs.majorver }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-graphd:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-graphd:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.graphdTag }}
           target: graphd
           cache-to: type=local,dest=/tmp/buildx-cache,mode=max
@@ -129,8 +129,8 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-storaged:${{ steps.tagname.outputs.majorver }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-storaged:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-storaged:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.storagedTag }}
           target: storaged
           push: true
@@ -145,8 +145,8 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:${{ steps.tagname.outputs.majorver }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-metad:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-metad:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.metadTag }}
           target: metad
           push: true
@@ -161,8 +161,8 @@ jobs:
           file: ./docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.tag }}
-            ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:${{ steps.tagname.outputs.majorver }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-tools:${{ steps.tagname.outputs.tag }}
+            ${{ secrets.HARBOR_REGISTRY }}/rc/nebula-tools:${{ steps.tagname.outputs.majorver }}
             ${{ steps.docker.outputs.toolsTag }}
           target: tools
           push: true
