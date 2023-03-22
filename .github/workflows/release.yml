@@ -20,7 +20,7 @@ jobs:
     container:
       image: vesoft/nebula-dev:centos7
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/tagname-action
         id: tag
       - run: |
@@ -43,10 +43,10 @@ jobs:
           - storaged
           - tools
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/tagname-action
         id: tagname
       - id: docker
@@ -56,12 +56,12 @@ jobs:
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
             tag="latest"
           fi
-          echo "::set-output name=tag::$tag"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
       - name: Sync docker images
         env:
-          FROM_IMAGE: docker://${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}
+          FROM_IMAGE: docker://${{ secrets.HARBOR_REGISTRY }}/rc/nebula-${{ matrix.service }}
           TO_IMAGE: docker://docker.io/vesoft/nebula-${{ matrix.service }}
-          CMD: docker run --rm -i quay.io/containers/skopeo:v1.4.1 copy -a --src-creds ${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }} --dest-creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}
+          CMD: docker run --rm -i quay.io/containers/skopeo:latest copy -a --src-creds ${{ secrets.HARBOR_USERNAME }}:${{ secrets.HARBOR_PASSWORD }} --dest-creds ${{ secrets.DOCKER_USERNAME }}:${{ secrets.DOCKER_PASSWORD }}
         run: |
           ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.tag }}
           ${{ env.CMD }} ${{ env.FROM_IMAGE }}:${{ steps.tagname.outputs.tag }} ${{ env.TO_IMAGE }}:${{ steps.tagname.outputs.majorver }}
