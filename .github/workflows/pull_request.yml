@@ -21,10 +21,10 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           clean: false
       - name: Check License Header
@@ -40,7 +40,7 @@ jobs:
         run: |
           git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
@@ -86,10 +86,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Prepare environment
         id: prepare
         run: |
@@ -221,7 +221,7 @@ jobs:
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
             ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
           files: fastcov.info
@@ -231,7 +231,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
