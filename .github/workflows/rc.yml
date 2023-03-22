@@ -35,15 +35,15 @@ jobs:
       CPACK_DIR: ./pkg-build/cpack_output
       SYMS_DIR: ./pkg-build/symbols
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: '^1.16.7'
       - id: tag
-        run: echo ::set-output name=tagnum::${{ github.event.inputs.version }}
+        run: echo tagnum=${{ github.event.inputs.version }}
       - name: package
         run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }}
       - name: output some vars
@@ -73,15 +73,15 @@ jobs:
     runs-on: [self-hosted, nebula]
 
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: tagname
         run: |
-          echo ::set-output name=tag::"v${{ github.event.inputs.version }}"
-          echo ::set-output name=tagnum::"${{ github.event.inputs.version }}"
-          echo ::set-output name=majorver::"v$(echo ${{ github.event.inputs.version }} | cut -f1 -d'.')"
+          echo tag="v${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo tagnum="${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          echo majorver="v$(echo ${{ github.event.inputs.version }} | cut -f1 -d'.')" >> $GITHUB_OUTPUT
       - id: docker
         run: |
           graphdTag=""
@@ -95,19 +95,19 @@ jobs:
             metadTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-metad:latest"
             toolsTag="${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-tools:latest"
           fi
-          echo "::set-output name=graphdTag::$graphdTag"
-          echo "::set-output name=storagedTag::$storagedTag"
-          echo "::set-output name=metadTag::$metadTag"
-          echo "::set-output name=toolsTag::$toolsTag"
-      - uses: docker/setup-qemu-action@v1
-      - uses: docker/setup-buildx-action@v1
-      - uses: docker/login-action@v1
+          echo "graphdTag=$graphdTag" >> $GITHUB_OUTPUT
+          echo "storagedTag=$storagedTag" >> $GITHUB_OUTPUT
+          echo "metadTag=$metadTag" >> $GITHUB_OUTPUT
+          echo "toolsTag=$toolsTag" >> $GITHUB_OUTPUT
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
         with:
           registry: ${{ secrets.HARBOR_REGISTRY }}
           username: ${{ secrets.HARBOR_USERNAME }}
           password: ${{ secrets.HARBOR_PASSWORD }}
       - name: docker-graph
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -123,7 +123,7 @@ jobs:
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
       - name: docker-storage
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -139,7 +139,7 @@ jobs:
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
       - name: docker-meta
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -155,7 +155,7 @@ jobs:
             BRANCH=${{ steps.tagname.outputs.tag }}
             VERSION=${{ steps.tagname.outputs.tagnum }}
       - name: docker-tool
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -193,27 +193,27 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: tag
-        run: echo ::set-output name=tagnum::${{ github.event.inputs.version }}
+        run: echo tagnum=${{ github.event.inputs.version }}
 
       - id: oss_package
         run: |
           case ${{ matrix.os }} in
           ubuntu1804)
-            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu1804.amd64.tar.gz"
+            echo "p=nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu1804.amd64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           ubuntu2004)
-            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu2004.amd64.tar.gz"
+            echo "p=nebula-graph-${{ steps.tag.outputs.tagnum  }}.ubuntu2004.amd64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           centos7)
-            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.el7.x86_64.tar.gz"
+            echo "p=nebula-graph-${{ steps.tag.outputs.tagnum  }}.el7.x86_64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           centos8)
-            echo "::set-output name=p::nebula-graph-${{ steps.tag.outputs.tagnum  }}.el8.x86_64.tar.gz"
+            echo "p=nebula-graph-${{ steps.tag.outputs.tagnum  }}.el8.x86_64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           esac
       - name: Prepare environment
@@ -224,7 +224,7 @@ jobs:
       - name: CMake
         id: cmake
         run: |
-          echo "::set-output name=j::8"
+          echo "j=8" >> $GITHUB_OUTPUT
       - name: download from oss
         run: |
           ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
@@ -257,7 +257,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs

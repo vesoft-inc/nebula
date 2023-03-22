@@ -20,7 +20,7 @@ jobs:
     container:
       image: vesoft/nebula-dev:centos7
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/tagname-action
         id: tag
       - run: |
@@ -43,10 +43,10 @@ jobs:
           - storaged
           - tools
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/tagname-action
         id: tagname
       - id: docker
@@ -56,7 +56,7 @@ jobs:
           if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
             tag="latest"
           fi
-          echo "::set-output name=tag::$tag"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
       - name: Sync docker images
         env:
           FROM_IMAGE: docker://${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}
