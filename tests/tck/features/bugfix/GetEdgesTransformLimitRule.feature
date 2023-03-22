@@ -12,7 +12,7 @@ Feature: Push Limit down scan edges rule
       MATCH p=()-[e]->()
       RETURN p LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the execution should be successful
     And the execution plan should be:
       | id | name           | dependencies | operator info   |
       | 15 | Project        | 13           |                 |

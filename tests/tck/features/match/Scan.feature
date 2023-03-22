@@ -145,13 +145,75 @@ Feature: Match seek by scan
       MATCH (v)
       RETURN v.person.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name       |
+      | "Anne"     |
+      | "Cynthia"  |
+      | "Jane"     |
+      | "Lisa"     |
+      | "Peggy"    |
+      | "Kevin"    |
+      | "WangLe"   |
+      | "WuXiao"   |
+      | "Sandy"    |
+      | "Harry"    |
+      | "Ada"      |
+      | "Lynn"     |
+      | "Bonnie"   |
+      | "Peter"    |
+      | "Carl"     |
+      | "Sonya"    |
+      | "HeNa"     |
+      | "Tom"      |
+      | "XiaMei"   |
+      | "Lily"     |
+      | "Mary"     |
+      | "Ann"      |
+      | "Julie"    |
+      | "Kim"      |
+      | "Ellen"    |
+      | "ZhangKai" |
+      | "Emma"     |
+      | "Ben"      |
+      | "Helen"    |
+      | "Lilan"    |
     When executing query:
       """
       MATCH (v:person)
       RETURN v.student.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
+      | NULL |
 
   Scenario: query edge by scan
     When executing query:
@@ -207,28 +269,92 @@ Feature: Match seek by scan
       MATCH ()-[e]->()
       RETURN type(e) AS Type
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Type            |
+      | "is_teacher"    |
+      | "is_colleagues" |
+      | "is_colleagues" |
+      | "is_colleagues" |
+      | "is_colleagues" |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_teacher"    |
+      | "is_colleagues" |
+      | "is_friend"     |
+      | "is_friend"     |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_colleagues" |
+      | "is_friend"     |
+      | "is_schoolmate" |
+      | "is_friend"     |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_teacher"    |
+      | "is_colleagues" |
+      | "is_friend"     |
+      | "is_friend"     |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_friend"     |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
+      | "is_schoolmate" |
     When executing query:
       """
       MATCH (v)-[e]->()
       RETURN v.person.name, type(e) AS Type
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v.person.name | Type     |
+      | /[\w_]+/      | /[\w_]+/ |
+      | /[\w_]+/      | /[\w_]+/ |
+      | /[\w_]+/      | /[\w_]+/ |
     When executing query:
       """
       MATCH ()-[e:is_teacher]-()
       RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Type     | StartYear | EndYear |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
     When executing query:
       """
       MATCH ()-[e]-()
       RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Type     | StartYear | EndYear |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
+      | /[\w_]+/ | /\d+/     | /\d+/   |
 
   # #5223
   Scenario: query edge by scan with skip limit

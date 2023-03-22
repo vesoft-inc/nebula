@@ -14,7 +14,11 @@ Feature: Test lack filter of get edges transform
       where e.likeness > 78  or uuid() > 100
       return rank(e) limit 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                         |
       | 24 | Project        | 20           |                                                       |

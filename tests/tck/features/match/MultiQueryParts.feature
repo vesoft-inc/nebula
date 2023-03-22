@@ -67,7 +67,8 @@ Feature: Multi Query Parts
       MATCH (m)-[]-(n), (a)-[]-(c) WHERE id(m)=="Tim Duncan"
       RETURN m,n,a,c
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    # thouands rows, so don't put here
+    Then the execution should be successful
 
   Scenario: Multi Match
     When executing query:
@@ -236,7 +237,18 @@ Feature: Multi Query Parts
       OPTIONAL MATCH (a)<-[]-(b)
       RETURN m.player.name AS n1, n.player.name AS n2, a.player.name AS n3 ORDER BY n1, n2, n3 LIMIT 10
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in order:
+      | n1           | n2            | n3                  |
+      | "Tim Duncan" | "Aron Baynes" | "Amar'e Stoudemire" |
+      | "Tim Duncan" | "Aron Baynes" | "Ben Simmons"       |
+      | "Tim Duncan" | "Aron Baynes" | "Carmelo Anthony"   |
+      | "Tim Duncan" | "Aron Baynes" | "Carmelo Anthony"   |
+      | "Tim Duncan" | "Aron Baynes" | "Chris Paul"        |
+      | "Tim Duncan" | "Aron Baynes" | "Chris Paul"        |
+      | "Tim Duncan" | "Aron Baynes" | "Chris Paul"        |
+      | "Tim Duncan" | "Aron Baynes" | "Chris Paul"        |
+      | "Tim Duncan" | "Aron Baynes" | "Danny Green"       |
+      | "Tim Duncan" | "Aron Baynes" | "Danny Green"       |
 
   Scenario: Multi Query Parts
     When executing query:
@@ -288,7 +300,18 @@ Feature: Multi Query Parts
       MATCH (a)-[]-(b)
       RETURN a.player.name AS n1, b.player.name AS n2 ORDER BY n1, n2 LIMIT 10
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in order:
+      | n1                  | n2           |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
+      | "Amar'e Stoudemire" | "Steve Nash" |
 
   Scenario: Some Errors
     When executing query:

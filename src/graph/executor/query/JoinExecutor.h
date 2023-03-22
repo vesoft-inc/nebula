@@ -39,7 +39,7 @@ class JoinExecutor : public Executor {
   size_t colSize_{0};
   // If the join is natural join, rhsOutputColIdxs_ will be used to record the output column index
   // of the right. If not, rhsOutputColIdxs_ will be empty.
-  std::vector<size_t> rhsOutputColIdxs_;
+  std::optional<std::vector<size_t>> rhsOutputColIdxs_;
   std::unordered_map<Value, std::vector<const Row*>> hashTable_;
   std::unordered_map<List, std::vector<const Row*>> listHashTable_;
 };
