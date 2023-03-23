@@ -46,7 +46,7 @@ nebula_add_library(
     query/PatternApplyExecutor.cpp
     algo/BFSShortestPathExecutor.cpp
     algo/MultiShortestPathExecutor.cpp
-    algo/ProduceAllPathsExecutor.cpp
+    algo/AllPathsExecutor.cpp
     algo/ShortestPathExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp

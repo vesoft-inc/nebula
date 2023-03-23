@@ -45,10 +45,10 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
 #include "graph/executor/admin/ZoneExecutor.h"
+#include "graph/executor/algo/AllPathsExecutor.h"
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 #include "graph/executor/algo/CartesianProductExecutor.h"
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
-#include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
@@ -461,8 +461,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kMultiShortestPath: {
       return pool->makeAndAdd<MultiShortestPathExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kProduceAllPaths: {
-      return pool->makeAndAdd<ProduceAllPathsExecutor>(node, qctx);
+    case PlanNode::Kind::kAllPaths: {
+      return pool->makeAndAdd<AllPathsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCartesianProduct: {
       return pool->makeAndAdd<CartesianProductExecutor>(node, qctx);

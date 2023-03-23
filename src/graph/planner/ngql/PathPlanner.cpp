@@ -43,32 +43,31 @@ namespace graph {
 
 StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   pathCtx_ = static_cast<PathContext*>(astCtx);
-  auto qctx = pathCtx_->qctx;
-  auto& from = pathCtx_->from;
-  auto& to = pathCtx_->to;
-  buildStart(from, pathCtx_->fromVidsVar, false);
-  buildStart(to, pathCtx_->toVidsVar, true);
+  if (pathCtx_->isShortest) {
+    auto qctx = pathCtx_->qctx;
+    buildStart(pathCtx_->from, pathCtx_->fromVidsVar, false);
+    buildStart(pathCtx_->to, pathCtx_->toVidsVar, true);
 
-  auto* startNode = StartNode::make(qctx);
-  auto* pt = PassThroughNode::make(qctx, startNode);
+    auto* startNode = StartNode::make(qctx);
+    auto* pt = PassThroughNode::make(qctx, startNode);
 
-  PlanNode* left = getNeighbors(pt, false);
-  PlanNode* right = getNeighbors(pt, true);
+    PlanNode* left = getNeighbors(pt, false);
+    PlanNode* right = getNeighbors(pt, true);
 
-  SubPlan subPlan;
-  if (!pathCtx_->isShortest || pathCtx_->noLoop) {
-    subPlan = allPairPlan(left, right);
-  } else if (from.vids.size() == 1 && to.vids.size() == 1) {
-    subPlan = singlePairPlan(left, right);
-  } else {
-    subPlan = multiPairPlan(left, right);
+    SubPlan subPlan;
+    if (pathCtx_->from.vids.size() == 1 && pathCtx_->to.vids.size() == 1) {
+      subPlan = singlePairPlan(left, right);
+    } else {
+      subPlan = multiPairPlan(left, right);
+    }
+    // get path's property
+    if (pathCtx_->withProp) {
+      subPlan.root = buildPathProp(subPlan.root);
+    }
+    return subPlan;
   }
-
-  // get path's property
-  if (pathCtx_->withProp) {
-    subPlan.root = buildPathProp(subPlan.root);
-  }
-  return subPlan;
+  // allpath plan
+  return allPathPlan();
 }
 
 void PathPlanner::buildStart(Starts& starts, std::string& vidsVar, bool reverse) {
@@ -133,26 +132,80 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* left, PlanNode* right) {
   return subPlan;
 }
 
-SubPlan PathPlanner::allPairPlan(PlanNode* left, PlanNode* right) {
+SubPlan PathPlanner::pathInputPlan(PlanNode* dep, Starts& starts) {
   auto qctx = pathCtx_->qctx;
-  auto steps = pathCtx_->steps.steps();
-  auto* path = ProduceAllPaths::make(qctx, left, right, steps, pathCtx_->noLoop);
-  path->setLeftVidVar(pathCtx_->fromVidsVar);
-  path->setRightVidVar(pathCtx_->toVidsVar);
-  path->setColNames({kPathStr});
-
-  SubPlan loopDep = loopDepPlan();
-  auto* loopCondition = allPairLoopCondition(steps);
-  auto* loop = Loop::make(qctx, loopDep.root, path, loopCondition);
-
-  auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kAllPaths);
-  dc->addDep(loop);
-  dc->setInputVars({path->outputVar()});
-  dc->setColNames(pathCtx_->colNames);
-
   SubPlan subPlan;
-  subPlan.root = dc;
-  subPlan.tail = loopDep.tail;
+  if (!starts.vids.empty() && starts.originalSrc == nullptr) {
+    std::string vidsVar;
+    PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
+    auto* dedup = Dedup::make(qctx, dep);
+    dedup->setInputVar(vidsVar);
+    dedup->setColNames({kVid});
+    subPlan.root = subPlan.tail = dedup;
+    return subPlan;
+  }
+  auto pool = qctx->objPool();
+  auto* columns = pool->makeAndAdd<YieldColumns>();
+  auto* column = new YieldColumn(starts.originalSrc->clone(), kVid);
+  columns->addColumn(column);
+
+  auto* project = Project::make(qctx, dep, columns);
+  if (starts.fromType == kVariable) {
+    project->setInputVar(starts.userDefinedVarName);
+  }
+  auto* dedup = Dedup::make(qctx, project);
+  dedup->setColNames({kVid});
+  subPlan.root = dedup;
+  subPlan.tail = project;
+  return subPlan;
+}
+
+StatusOr<SubPlan> PathPlanner::allPathPlan() {
+  SubPlan subPlan;
+  auto qctx = pathCtx_->qctx;
+  auto pool = qctx->objPool();
+  auto* pt = PassThroughNode::make(qctx, nullptr);
+  auto& from = pathCtx_->from;
+  auto& to = pathCtx_->to;
+  auto leftPlan = pathInputPlan(pt, from);
+  auto rightPlan = pathInputPlan(pt, to);
+
+  if (from.vids.empty()) {
+    auto& leftInputName = from.fromType == kPipe ? pathCtx_->inputVarName : from.userDefinedVarName;
+    leftPlan.tail->setInputVar(leftInputName);
+  }
+  if (to.vids.empty()) {
+    auto& rightInputName = to.fromType == kPipe ? pathCtx_->inputVarName : to.userDefinedVarName;
+    rightPlan.tail->setInputVar(rightInputName);
+  }
+
+  auto steps = pathCtx_->steps.steps();
+  auto withProp = pathCtx_->withProp;
+  auto* path = AllPaths::make(
+      qctx, leftPlan.root, rightPlan.root, pathCtx_->space.id, steps, pathCtx_->noLoop, withProp);
+  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, withProp);
+  NG_RETURN_IF_ERROR(vertexProp);
+  path->setVertexProps(std::move(vertexProp).value());
+  path->setEdgeProps(buildEdgeProps(false, withProp));
+  path->setReverseEdgeProps(buildEdgeProps(true, withProp));
+  path->setColNames({"_src", "_edge", "_dst"});
+
+  subPlan.root = path;
+  subPlan.tail = pt;
+
+  if (pathCtx_->filter != nullptr) {
+    subPlan.root = Filter::make(qctx, subPlan.root, pathCtx_->filter);
+  }
+  auto pathBuild = PathBuildExpression::make(pool);
+  pathBuild->add(InputPropertyExpression::make(pool, "_src"));
+  pathBuild->add(InputPropertyExpression::make(pool, "_edge"));
+  pathBuild->add(InputPropertyExpression::make(pool, "_dst"));
+
+  auto columns = pool->makeAndAdd<YieldColumns>();
+  columns->addColumn(new YieldColumn(DCHECK_NOTNULL(pathBuild)));
+
+  subPlan.root = Project::make(qctx, subPlan.root, columns);
+  subPlan.root->setColNames(std::move(pathCtx_->colNames));
   return subPlan;
 }
 
@@ -264,14 +317,6 @@ Expression* PathPlanner::singlePairLoopCondition(uint32_t steps,
   auto* noFound = LogicalExpression::makeOr(pool, empty, zero);
   auto* earlyStop = LogicalExpression::makeAnd(pool, step, loopTerminateEarly);
   return LogicalExpression::makeAnd(pool, earlyStop, noFound);
-}
-
-// loopSteps{0} <= (steps + 1) / 2
-Expression* PathPlanner::allPairLoopCondition(uint32_t steps) {
-  auto loopSteps = pathCtx_->qctx->vctx()->anonVarGen()->getVar();
-  pathCtx_->qctx->ectx()->setValue(loopSteps, 0);
-  auto* pool = pathCtx_->qctx->objPool();
-  return ExpressionUtils::stepCondition(pool, loopSteps, ((steps + 1) / 2));
 }
 
 // loopSteps{0} <= ((steps + 1) / 2) && (terminationVar) == false)
@@ -400,20 +445,20 @@ PlanNode* PathPlanner::buildEdgePlan(PlanNode* dep, const std::string& input) {
   return getEdge;
 }
 
-std::unique_ptr<std::vector<EdgeProp>> PathPlanner::buildEdgeProps(bool reverse) {
+std::unique_ptr<std::vector<EdgeProp>> PathPlanner::buildEdgeProps(bool reverse, bool withProp) {
   auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
   switch (pathCtx_->over.direction) {
     case storage::cpp2::EdgeDirection::IN_EDGE: {
-      doBuildEdgeProps(edgeProps, reverse, true);
+      doBuildEdgeProps(edgeProps, reverse, true, withProp);
       break;
     }
     case storage::cpp2::EdgeDirection::OUT_EDGE: {
-      doBuildEdgeProps(edgeProps, reverse, false);
+      doBuildEdgeProps(edgeProps, reverse, false, withProp);
       break;
     }
     case storage::cpp2::EdgeDirection::BOTH: {
-      doBuildEdgeProps(edgeProps, reverse, true);
-      doBuildEdgeProps(edgeProps, reverse, false);
+      doBuildEdgeProps(edgeProps, reverse, true, withProp);
+      doBuildEdgeProps(edgeProps, reverse, false, withProp);
       break;
     }
   }
@@ -422,7 +467,8 @@ std::unique_ptr<std::vector<EdgeProp>> PathPlanner::buildEdgeProps(bool reverse)
 
 void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeProps,
                                    bool reverse,
-                                   bool isInEdge) {
+                                   bool isInEdge,
+                                   bool withProp) {
   const auto& exprProps = pathCtx_->exprProps;
   for (const auto& e : pathCtx_->over.edgeTypes) {
     storage::cpp2::EdgeProp ep;
@@ -431,16 +477,23 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
     } else {
       ep.type_ref() = -e;
     }
+    std::set<folly::StringPiece> props;
+    props.emplace(kDst);
+    props.emplace(kType);
+    props.emplace(kRank);
     const auto& found = exprProps.edgeProps().find(e);
-    if (found == exprProps.edgeProps().end()) {
-      ep.props_ref() = {kDst, kType, kRank};
-    } else {
-      std::set<folly::StringPiece> props(found->second.begin(), found->second.end());
-      props.emplace(kDst);
-      props.emplace(kType);
-      props.emplace(kRank);
-      ep.props_ref() = std::vector<std::string>(props.begin(), props.end());
+    if (found != exprProps.edgeProps().end()) {
+      props.insert(found->second.begin(), found->second.end());
     }
+
+    if (withProp) {
+      auto qctx = pathCtx_->qctx;
+      auto edgeSchema = qctx->schemaMng()->getEdgeSchema(pathCtx_->space.id, std::abs(e));
+      for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+        props.emplace(edgeSchema->getFieldName(i));
+      }
+    }
+    ep.props_ref() = std::vector<std::string>(props.begin(), props.end());
     edgeProps->emplace_back(std::move(ep));
   }
 }

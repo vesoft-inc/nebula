@@ -10,8 +10,6 @@
 
 using nebula::storage::StorageClient;
 
-DECLARE_uint32(num_path_thread);
-
 namespace nebula {
 namespace graph {
 

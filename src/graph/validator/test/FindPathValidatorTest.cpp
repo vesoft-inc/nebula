@@ -128,14 +128,10 @@ TEST_F(FindPathValidatorTest, ALLPath) {
   {
     std::string query = "FIND ALL PATH FROM \"1\" TO \"2\" OVER like UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
         PK::kProject,
-        PK::kProduceAllPaths,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
-        PK::kStart,
+        PK::kAllPaths,
+        PK::kDedup,
+        PK::kDedup,
         PK::kPassThrough,
         PK::kStart,
     };
@@ -145,14 +141,10 @@ TEST_F(FindPathValidatorTest, ALLPath) {
     std::string query =
         "FIND ALL PATH FROM \"1\" TO \"2\",\"3\" OVER like UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
         PK::kProject,
-        PK::kProduceAllPaths,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
-        PK::kStart,
+        PK::kAllPaths,
+        PK::kDedup,
+        PK::kDedup,
         PK::kPassThrough,
         PK::kStart,
     };
@@ -192,19 +184,13 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "GO FROM \"1\" OVER like YIELD like._src AS src, like._dst AS dst "
         " | FIND ALL PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
         PK::kProject,
-        PK::kProduceAllPaths,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
+        PK::kAllPaths,
         PK::kDedup,
+        PK::kDedup,
+        PK::kProject,
+        PK::kProject,
         PK::kPassThrough,
-        PK::kProject,
-        PK::kStart,
-        PK::kDedup,
-        PK::kProject,
         PK::kProject,
         PK::kExpandAll,
         PK::kExpand,
@@ -302,19 +288,13 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "YIELD \"1\" AS src, \"2\" AS dst"
         " | FIND ALL PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
         PK::kProject,
-        PK::kProduceAllPaths,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
+        PK::kAllPaths,
         PK::kDedup,
+        PK::kDedup,
+        PK::kProject,
+        PK::kProject,
         PK::kPassThrough,
-        PK::kProject,
-        PK::kStart,
-        PK::kDedup,
-        PK::kProject,
         PK::kProject,
         PK::kStart,
     };
@@ -328,16 +308,11 @@ TEST_F(FindPathValidatorTest, PathWithFilter) {
         "FIND ALL PATH FROM \"1\" TO \"2\" OVER like WHERE like.likeness > 30 "
         "UPTO 5 STEPS YIELD path as p";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect,
-        PK::kLoop,
-        PK::kProject,
-        PK::kProduceAllPaths,
         PK::kProject,
         PK::kFilter,
-        PK::kFilter,
-        PK::kStart,
-        PK::kGetNeighbors,
-        PK::kGetNeighbors,
+        PK::kAllPaths,
+        PK::kDedup,
+        PK::kDedup,
         PK::kPassThrough,
         PK::kStart,
     };
