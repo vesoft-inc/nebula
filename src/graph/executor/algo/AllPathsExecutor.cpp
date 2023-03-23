@@ -99,6 +99,7 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
     }
   }
   return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
+    memory::MemoryCheckGuard guard;
     for (auto& resp : resps) {
       if (!resp.ok()) {
         return folly::makeFuture<Status>(std::move(resp));

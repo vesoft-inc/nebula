@@ -178,6 +178,7 @@ folly::Future<std::vector<Value>> StorageAccessExecutor::getProps(
           param, std::move(vertices), vertexPropPtr, nullptr, nullptr, false, {}, -1, nullptr)
       .via(runner())
       .thenValue([this](PropRpcResponse &&resp) {
+        memory::MemoryCheckGuard guard;
         addStats(resp);
         return handlePropResp(std::move(resp));
       });
