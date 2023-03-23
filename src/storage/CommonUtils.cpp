@@ -7,6 +7,10 @@
 
 #include "storage/exec/QueryUtils.h"
 
+DEFINE_bool(ttl_use_ms,
+            false,
+            "whether the ttl is configured as milliseconds instead of default seconds");
+
 namespace nebula {
 namespace storage {
 
@@ -31,7 +35,15 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::NebulaSchemaProvider* schem
       ftype != nebula::cpp2::PropertyType::INT64) {
     return false;
   }
-  auto now = std::time(NULL);
+
+  int64_t now;
+  // The unit of ttl expiration unit is controlled by user, we just use a gflag here.
+  if (!FLAGS_ttl_use_ms) {
+    now = std::time(nullptr);
+  } else {
+    auto t = std::chrono::system_clock::now();
+    now = std::chrono::duration_cast<std::chrono::milliseconds>(t.time_since_epoch()).count();
+  }
 
   // if the value is not INT type (sush as NULL), it will never expire.
   // TODO (sky) : DateTime
