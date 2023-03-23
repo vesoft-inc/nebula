@@ -1778,7 +1778,7 @@ Value Value::toSet() const {
 }
 Value Value::lessThan(const Value& v) const {
   if (empty() || v.empty()) {
-    return (v.isNull() || isNull()) ? Value::kNullValue : Value::kEmpty;
+    return Value::kNullValue;
   }
   auto vType = v.type();
   auto hasNull = (type_ | vType) & Value::Type::NULLVALUE;
@@ -1871,8 +1871,12 @@ Value Value::lessThan(const Value& v) const {
 }
 
 Value Value::equal(const Value& v) const {
-  if (empty()) {
-    return v.isNull() ? Value::kNullValue : v.empty();
+  if (empty() || v.empty()) {
+    if (!empty() || !v.empty()) {
+      return false;
+    } else {
+      return Value::kNullValue;
+    }
   }
   auto vType = v.type();
   auto hasNull = (type_ | vType) & Value::Type::NULLVALUE;
