@@ -6,9 +6,9 @@
 #define STORAGE_EXEC_INDEXSELECTIONNODE_H
 
 #include "common/context/ExpressionContext.h"
+#include "common/expression/ExprVisitorImpl.h"
 #include "common/expression/Expression.h"
 #include "folly/container/F14Map.h"
-#include "storage/ExprVisitorBase.h"
 #include "storage/exec/IndexExprContext.h"
 #include "storage/exec/IndexNode.h"
 namespace nebula {
@@ -65,7 +65,7 @@ class IndexSelectionNode : public IndexNode {
   std::unique_ptr<IndexExprContext> ctx_;
 };
 
-class SelectionExprVisitor : public ExprVisitorBase {
+class SelectionExprVisitor : public ExprVisitorImpl {
  public:
   void visit(EdgeSrcIdExpression *expr) override {
     requiredColumns_.insert(expr->prop());
@@ -96,7 +96,7 @@ class SelectionExprVisitor : public ExprVisitorBase {
   }
 
  private:
-  using ExprVisitorBase::visit;
+  using ExprVisitorImpl::visit;
   Set<std::string> requiredColumns_;
   ::nebula::cpp2::ErrorCode code_;
 };
