@@ -6,8 +6,8 @@
 #ifndef GRAPH_VISITOR_EXTRACTGROUPSUITEVISITOR_H_
 #define GRAPH_VISITOR_EXTRACTGROUPSUITEVISITOR_H_
 
+#include "common/expression/ExprVisitorImpl.h"
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {

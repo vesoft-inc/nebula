@@ -6,8 +6,8 @@
 #ifndef GRAPH_VISITOR_FINDVISITOR_H_
 #define GRAPH_VISITOR_FINDVISITOR_H_
 
+#include "common/expression/ExprVisitorImpl.h"
 #include "common/expression/Expression.h"
-#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {

@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "common/expression/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {
