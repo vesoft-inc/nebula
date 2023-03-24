@@ -20,6 +20,9 @@ folly::Future<Status> LoopExecutor::execute() {
   QueryExpressionContext ctx(ectx_);
 
   auto value = expr->eval(ctx);
+  if (value.isNull()) {
+    value = Value(true);
+  }
   DCHECK(value.isBool());
   finally_ = !(value.isBool() && value.getBool());
   return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
