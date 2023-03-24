@@ -10,7 +10,6 @@
 namespace nebula {
 
 const Value &LogicalExpression::eval(ExpressionContext &ctx) {
-  DCHECK_GE(operands_.size(), 2UL);
   switch (kind()) {
     case Kind::kLogicalAnd:
       return evalAnd(ctx);
