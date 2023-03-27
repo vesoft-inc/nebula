@@ -208,10 +208,20 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
   auto &propName = constVal.getStr();
   switch (lhs->kind()) {
     case Expression::Kind::kInputProperty:
-    case Expression::Kind::kVarProperty: {  // $e.name
+    case Expression::Kind::kVarProperty: {
+      // maybe: $e.prop or $v.tag
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
-      auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.insertEdgeProp(edgeAlias, unknownType_, propName);
+      auto &entityAlias = varPropExpr->prop();
+      propsUsed_.insertEdgeProp(entityAlias, unknownType_, propName);
+      // $v.tag
+      auto &tagName = propName;
+      auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
+      if (!ret.ok()) {
+        status_ = std::move(ret).status();
+        return;
+      }
+      auto tagId = ret.value();
+      propsUsed_.insertVertexProp(entityAlias, tagId, "*");
       break;
     }
     case Expression::Kind::kCase: {  // (case xxx).name

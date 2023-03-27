@@ -424,7 +424,11 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       usedProps.insert(unknownIter->second.begin(), unknownIter->second.end());
     }
     if (tagIter != usedVertexProps.end()) {
-      usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+      if (tagIter->second.find("*") != tagIter->second.end()) {
+        continue;
+      } else {
+        usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+      }
     }
     if (usedProps.empty()) {
       continue;
@@ -443,7 +447,9 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     newVProp.props_ref() = std::move(newProps);
     prunedVertexProps->emplace_back(std::move(newVProp));
   }
-  node->setVertexProps(std::move(prunedVertexProps));
+  if (!prunedVertexProps->empty()) {
+    node->setVertexProps(std::move(prunedVertexProps));
+  }
 }
 
 void PrunePropertiesVisitor::visit(HashJoin *node) {
