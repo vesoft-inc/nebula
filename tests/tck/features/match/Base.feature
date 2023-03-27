@@ -1449,8 +1449,8 @@ Feature: Basic match
       MATCH (v:player{name:"Tim Duncan"}) RETURN v.player AS vtag
       """
     Then the result should be, in any order:
-      | vtag                |
-      | {name:"Tim Duncan"} |
+      | vtag                          |
+      | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
       MATCH (v:player)-[]->(b) WHERE v.age > 30 RETURN v.player.name AS vname
