@@ -425,7 +425,7 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     }
     if (tagIter != usedVertexProps.end()) {
       if (tagIter->second.find("*") != tagIter->second.end()) {
-        continue;
+        usedProps.insert(props.begin(), props.end());
       } else {
         usedProps.insert(tagIter->second.begin(), tagIter->second.end());
       }
