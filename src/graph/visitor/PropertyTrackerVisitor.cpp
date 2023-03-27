@@ -209,13 +209,12 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
   switch (lhs->kind()) {
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kVarProperty: {
-      // maybe: $e.prop or $v.tag
+      // maybe: $e.prop
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
       auto &entityAlias = varPropExpr->prop();
       propsUsed_.insertEdgeProp(entityAlias, unknownType_, propName);
-      // $v.tag
-      auto &tagName = propName;
-      auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
+      // maybe: $v.tag
+      auto ret = qctx_->schemaMng()->toTagID(space_, propName);
       if (!ret.ok()) {
         status_ = std::move(ret).status();
         break;
