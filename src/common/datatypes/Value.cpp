@@ -1777,7 +1777,7 @@ Value Value::toSet() const {
   }
 }
 Value Value::lessThan(const Value& v) const {
-  if (empty() || v.empty()) {
+  if UNLIKELY(empty() || v.empty()) {
     return Value::kNullValue;
   }
   auto vType = v.type();
