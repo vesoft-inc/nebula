@@ -1453,6 +1453,15 @@ Feature: Basic match
       | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
+      match (v)
+      where id(v) == "Tim Duncan"
+      return v.player, v.bachelor.name
+      """
+    Then the result should be, in any order:
+      | v.player                      | v.bachelor.name |
+      | {age: 42, name: "Tim Duncan"} | "Tim Duncan"    |
+    When executing query:
+      """
       MATCH (v:player)-[]->(b) WHERE v.age > 30 RETURN v.player.name AS vname
       """
     Then the result should be, in any order:
