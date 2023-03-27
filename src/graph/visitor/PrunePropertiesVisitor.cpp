@@ -447,9 +447,7 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
     newVProp.props_ref() = std::move(newProps);
     prunedVertexProps->emplace_back(std::move(newVProp));
   }
-  if (!prunedVertexProps->empty()) {
-    node->setVertexProps(std::move(prunedVertexProps));
-  }
+  node->setVertexProps(std::move(prunedVertexProps));
 }
 
 void PrunePropertiesVisitor::visit(HashJoin *node) {
