@@ -91,7 +91,6 @@ void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
     }
   }
@@ -109,7 +108,6 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }
@@ -163,7 +161,6 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }
