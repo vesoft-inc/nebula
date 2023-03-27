@@ -218,7 +218,7 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
       auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
       if (!ret.ok()) {
         status_ = std::move(ret).status();
-        return;
+        break;
       }
       auto tagId = ret.value();
       propsUsed_.insertVertexProp(entityAlias, tagId, "*");
