@@ -215,6 +215,8 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
 
 void PrunePropertiesVisitor::visitCurrent(Traverse *node) {
   auto &colNames = node->colNames();
+  // The number of output columns of the Traverse operator is at least two(starting point and edge),
+  // which is by design.
   DCHECK_GE(colNames.size(), 2);
   auto &nodeAlias = colNames[colNames.size() - 2];
   auto &edgeAlias = colNames.back();
@@ -237,6 +239,8 @@ void PrunePropertiesVisitor::visitCurrent(Traverse *node) {
 
 void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
   auto &colNames = node->colNames();
+  // The number of output columns of the Traverse operator is at least two(starting point and edge),
+  // which is by design.
   DCHECK_GE(colNames.size(), 2);
   auto &nodeAlias = colNames[colNames.size() - 2];
   auto &edgeAlias = colNames.back();
@@ -447,11 +451,11 @@ void PrunePropertiesVisitor::visit(HashJoin *node) {
 }
 
 void PrunePropertiesVisitor::visit(CrossJoin *node) {
-  status_ = pruneMultiBranch(node->dependencies());
+  status_ = pruneBinaryBranch(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Union *node) {
-  status_ = pruneMultiBranch(node->dependencies());
+  status_ = pruneBinaryBranch(node->dependencies());
 }
 
 void PrunePropertiesVisitor::visit(Unwind *node) {
@@ -473,7 +477,7 @@ void PrunePropertiesVisitor::visitCurrent(Unwind *node) {
   }
 }
 
-Status PrunePropertiesVisitor::pruneMultiBranch(std::vector<const PlanNode *> &dependencies) {
+Status PrunePropertiesVisitor::pruneBinaryBranch(std::vector<const PlanNode *> &dependencies) {
   DCHECK_EQ(dependencies.size(), 2);
   auto rightPropsUsed = propsUsed_;
   auto *leftDep = dependencies.front();
