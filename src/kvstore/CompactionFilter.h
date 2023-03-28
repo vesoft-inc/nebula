@@ -80,18 +80,12 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
     auto now = time::WallClock::fastNowInSec();
     if (context.is_full_compaction || context.is_manual_compaction) {
       LOG(INFO) << "Do full/manual compaction!";
-      lastRunCustomFilterTimeSec_ = now;
-      return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
     } else {
-      if (FLAGS_custom_filter_interval_secs >= 0 &&
-          now - lastRunCustomFilterTimeSec_ > FLAGS_custom_filter_interval_secs) {
-        LOG(INFO) << "Do custom minor compaction!";
-        lastRunCustomFilterTimeSec_ = now;
-        return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
-      }
-      LOG(INFO) << "Do default minor compaction!";
-      return std::unique_ptr<rocksdb::CompactionFilter>(nullptr);
+      // No worry, by default flush will not go through the custom compaction filter.
+      // See CompactionFilterFactory::ShouldFilterTableFileCreation.
+      LOG(INFO) << "Do automatic or periodic compaction!";
     }
+    return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
   }
 
   const char* Name() const override {
