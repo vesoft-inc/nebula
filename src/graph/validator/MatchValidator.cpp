@@ -234,7 +234,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       auto iter = aliases.find(alias.c_str());
       if (iter != aliases.end()) {
         if (iter->second != AliasType::kNode) {
-          return Status::SemanticError("`%s`: alias redefined with a different type",
+          return Status::SemanticError("`%s': alias redefined with a different type",
                                        alias.c_str());
         }
       }
