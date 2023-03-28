@@ -230,7 +230,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       alias = vctx_->anonVarGen()->getVar();
     } else {
       if (!aliases.emplace(alias.c_str(), AliasType::kNode).second) {
-        return Status::SemanticError("`%s`: Alias redefined", alias.c_str());
+        return Status::SemanticError("`%s`: alias redefined", alias.c_str());
       }
     }
     Expression *filter = nullptr;
