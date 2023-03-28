@@ -87,8 +87,8 @@ struct Step {
     if (dst != rhs.dst) {
       return dst < rhs.dst;
     }
-    if (type != rhs.type) {
-      return type < rhs.type;
+    if (type != rhs.type && type != -rhs.type) {
+      return abs(type) < abs(rhs.type);
     }
     if (ranking != rhs.ranking) {
       return ranking < rhs.ranking;
