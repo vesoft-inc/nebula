@@ -37,6 +37,20 @@ Feature: Matching paths
     Then the result should be, in any order:
       | count(p) | count(p2) |
       | 966      | 966       |
+    When executing query:
+      """
+      match p = (v:Label_5)-[e:Rel_0]->(v1:Label_1),
+      p2 = (v)<-[e1:Rel_0]-(v1)
+      where id(v) == 47
+      and p != p2
+      and e == e1
+      and v == v
+      and v1 == v1
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 0        |
 
   # The correctness of the following test cases needs to be verified, mark it @skip for now
   @skip

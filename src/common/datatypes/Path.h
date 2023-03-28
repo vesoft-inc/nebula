@@ -79,8 +79,8 @@ struct Step {
   }
 
   bool operator==(const Step& rhs) const {
-    return dst == rhs.dst && type == rhs.type && name == rhs.name && ranking == rhs.ranking &&
-           props == rhs.props;
+    return dst == rhs.dst && (type == rhs.type || type == -rhs.type) && name == rhs.name &&
+           ranking == rhs.ranking && props == rhs.props;
   }
 
   bool operator<(const Step& rhs) const {
