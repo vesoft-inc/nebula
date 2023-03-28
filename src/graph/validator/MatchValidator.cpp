@@ -198,7 +198,6 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
   auto steps = path->steps();
   auto *pool = qctx_->objPool();
   nodeInfos.resize(steps + 1);
-  // std::unordered_map<std::string, AliasType> nodeAliases;
 
   for (auto i = 0u; i <= steps; i++) {
     auto *node = path->node(i);
@@ -258,7 +257,6 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     nodeInfos[i].props = props;
     nodeInfos[i].filter = filter;
   }
-  // aliases.merge(nodeAliases);
 
   return Status::OK();
 }
