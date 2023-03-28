@@ -198,7 +198,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
   auto steps = path->steps();
   auto *pool = qctx_->objPool();
   nodeInfos.resize(steps + 1);
-  std::unordered_map<std::string, AliasType> nodeAliases;
+  // std::unordered_map<std::string, AliasType> nodeAliases;
 
   for (auto i = 0u; i <= steps; i++) {
     auto *node = path->node(i);
@@ -229,7 +229,9 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
-      nodeAliases.emplace(alias, AliasType::kNode);
+      if (!aliases.emplace(alias.c_str(), AliasType::kNode).second) {
+        return Status::SemanticError("`%s`: Alias redefined", alias.c_str());
+      }
     }
     Expression *filter = nullptr;
     /* Note(Xuntao): Commented out the following part. With the current parser,
@@ -256,7 +258,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     nodeInfos[i].props = props;
     nodeInfos[i].filter = filter;
   }
-  aliases.merge(nodeAliases);
+  // aliases.merge(nodeAliases);
 
   return Status::OK();
 }
