@@ -231,8 +231,12 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     } else {
       // an node alias generated here can be repeated.
       // but it cannot be the same with any previously defined ones.
-      if (aliases.find(alias.c_str()) != aliases.end()) {
-        return Status::SemanticError("`%s`: alias redefined", alias.c_str());
+      auto iter = aliases.find(alias.c_str());
+      if (iter != aliases.end()) {
+        if (iter->second != AliasType::kNode) {
+          return Status::SemanticError("`%s`: alias redefined with a different type",
+                                       alias.c_str());
+        }
       }
       nodeAliases.emplace(alias, AliasType::kNode);
     }

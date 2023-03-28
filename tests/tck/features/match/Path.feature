@@ -229,7 +229,7 @@ Feature: Matching paths
       where id(v) in [100] and id(v3) in [80]
       return count(p), count(p2)
       """
-    Then a SemanticError should be raised at runtime: `p': alias redefined
+    Then a SemanticError should be raised at runtime: `p': alias redefined with a different type
 
   Scenario: use of defined vertices
     # edges cannot be redefined, tested in Scenario: distinct edges and paths
