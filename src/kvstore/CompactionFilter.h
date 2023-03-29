@@ -34,7 +34,7 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
   /**
    * @brief whether remove the key during compaction
    *
-   * @param level Levels of key in rocksdb, not used for now
+   * @param level Levels of key in rocksdb
    * @param key Rocksdb key
    * @param val Rocksdb val
    * @return true Key will not be removed
@@ -45,8 +45,8 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
               const rocksdb::Slice& val,
               std::string*,
               bool*) const override {
-    UNUSED(level);
-    return kvFilter_->filter(spaceId_,
+    return kvFilter_->filter(level,
+                             spaceId_,
                              folly::StringPiece(key.data(), key.size()),
                              folly::StringPiece(val.data(), val.size()));
   }
