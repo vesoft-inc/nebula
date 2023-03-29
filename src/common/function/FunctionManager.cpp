@@ -1708,7 +1708,6 @@ FunctionManager::FunctionManager() {
           if (args[0].get().isStr()) {
             auto result = time::TimeUtils::parseTime(args[0].get().getStr());
             if (!result.ok()) {
-              DLOG(ERROR) << "DEBUG POINT: " << result.status();
               return Value::kNullBadData;
             }
             if (result.value().withTimeZone) {

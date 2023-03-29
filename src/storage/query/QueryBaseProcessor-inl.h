@@ -3,6 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include "common/expression/SubscriptExpression.h"
+
 namespace nebula {
 namespace storage {
 
@@ -603,8 +605,19 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
       }
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
+    case Expression::Kind::kSubscript: {
+      auto sbExpr = static_cast<const SubscriptExpression*>(exp);
+      auto ret = checkExp(sbExpr->left(), returned, filtered, updated, allowNoexistentProp);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+      }
+      ret = checkExp(sbExpr->right(), returned, filtered, updated, allowNoexistentProp);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+      }
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
     case Expression::Kind::kInputProperty:
-    case Expression::Kind::kSubscript:
     case Expression::Kind::kLabelTagProperty:
     case Expression::Kind::kLabelAttribute:
     case Expression::Kind::kVertex:
