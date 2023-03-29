@@ -38,21 +38,23 @@
 DEFINE_int32(port, 44500, "Storage daemon listening port");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_bool(local_config, true, "meta client will not retrieve latest configuration from meta");
+DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds");
+DEFINE_uint32(num_max_connections,
+              0,
+              "Max active connections for all networking threads. 0 means no limit. Max active "
+              "connections for each networking thread = num_max_connections / num_netio_threads");
 #else
 DEFINE_int32(storage_port, 44501, "Storage daemon listening port");
 DEFINE_int32(storage_num_worker_threads, 32, "Number of workers");
 DECLARE_bool(local_config);
 DEFINE_bool(add_local_host, true, "Whether add localhost automatically");
 DECLARE_string(local_ip);
+DECLARE_int32(check_memory_interval_in_secs);
+DECLARE_int32(num_max_connections);
 #endif
 DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_uint32(num_max_connections,
-              0,
-              "Max active connections for all networking threads. 0 means no limit. Max active "
-              "connections for each networking thread = num_max_connections / num_netio_threads");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
-DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds");
 
 namespace nebula {
 namespace storage {
