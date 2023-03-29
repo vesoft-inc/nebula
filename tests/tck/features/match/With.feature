@@ -474,3 +474,50 @@ Feature: With clause
       with [1,2] as a unwind a as b  match (b)-[e:like]->(a:player{age:30}) return b
       """
     Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
+
+  Scenario: duplicate columns
+    When executing query:
+      """
+      match (v:player{name:"Tim Duncan"})-[e:like]-(v2)
+      with v2, sum(e.likeness) as likeness
+      match (v2)-[:serve]-(v3)
+      return *
+      """
+    Then the result should be, in any order:
+      | v2                                                                | likeness | v3                        |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | 190      | ("Hornets" :team{})       |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | 190      | ("Spurs" :team{})         |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | 80       | ("Celtics" :team{})       |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | 80       | ("Pistons" :team{})       |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | 80       | ("Spurs" :team{})         |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | 185      | ("Spurs" :team{})         |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | 80       | ("Hawks" :team{})         |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | 80       | ("Hornets" :team{})       |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | 80       | ("Jazz" :team{})          |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | 80       | ("Spurs" :team{})         |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | 80       | ("Suns" :team{})          |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | 75       | ("Spurs" :team{})         |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | 75       | ("Trail Blazers" :team{}) |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | 70       | ("Cavaliers" :team{})     |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | 70       | ("Raptors" :team{})       |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | 70       | ("Spurs" :team{})         |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})     | 99       | ("Spurs" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("76ers" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Bulls" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Hawks" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Hornets" :team{})       |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Kings" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Raptors" :team{})       |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Spurs" :team{})         |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Warriors" :team{})      |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Hornets" :team{})       |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | 55       | ("Spurs" :team{})         |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Cavaliers" :team{})     |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Celtics" :team{})       |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Heat" :team{})          |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Lakers" :team{})        |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Magic" :team{})         |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | 80       | ("Suns" :team{})          |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | 80       | ("76ers" :team{})         |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | 80       | ("Hawks" :team{})         |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | 80       | ("Spurs" :team{})         |

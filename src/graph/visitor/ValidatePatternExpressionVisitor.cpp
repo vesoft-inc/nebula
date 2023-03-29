@@ -3,7 +3,7 @@
 // This source code is licensed under Apache 2.0 License.
 #include "graph/visitor/ValidatePatternExpressionVisitor.h"
 
-#include "ExprVisitorImpl.h"
+#include "common/expression/ExprVisitorImpl.h"
 #include "graph/context/ValidateContext.h"
 
 namespace nebula {

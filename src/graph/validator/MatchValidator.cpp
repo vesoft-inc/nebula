@@ -229,6 +229,15 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
+      // an node alias generated here can be repeated.
+      // but it cannot be the same with any previously defined ones.
+      auto iter = aliases.find(alias.c_str());
+      if (iter != aliases.end()) {
+        if (iter->second != AliasType::kNode) {
+          return Status::SemanticError("`%s': alias redefined with a different type",
+                                       alias.c_str());
+        }
+      }
       nodeAliases.emplace(alias, AliasType::kNode);
     }
     Expression *filter = nullptr;
@@ -386,6 +395,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
     auto *expr = LabelExpression::make(pool, name);
     return new YieldColumn(expr, name);
   };
+  std::set<std::string> visitedAliases;
   auto &currQueryPart = queryParts.back();
   if (queryParts.size() > 1) {
     auto &prevQueryPart = *(queryParts.end() - 2);
@@ -396,9 +406,11 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
         columns->addColumn(makeColumn(unwindCtx->alias), true);
         for (auto &passAlias : prevQueryPart.aliasesAvailable) {
           columns->addColumn(makeColumn(passAlias.first), true);
+          visitedAliases.emplace(passAlias.first);
         }
         for (auto &passAlias : prevQueryPart.aliasesGenerated) {
           columns->addColumn(makeColumn(passAlias.first), true);
+          visitedAliases.emplace(passAlias.first);
         }
         break;
       }
@@ -411,6 +423,7 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
         for (auto &col : yieldColumns->columns()) {
           if (!col->alias().empty()) {
             columns->addColumn(makeColumn(col->alias()), true);
+            visitedAliases.emplace(col->alias());
           }
         }
         break;
@@ -421,7 +434,6 @@ Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPar
     }
   }
 
-  std::set<std::string> visitedAliases;
   for (auto &match : currQueryPart.matchs) {
     for (auto &path : match->paths) {
       for (size_t i = 0; i < path.edgeInfos.size(); ++i) {

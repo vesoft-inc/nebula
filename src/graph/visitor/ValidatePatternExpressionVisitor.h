@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "common/expression/ExprVisitorImpl.h"
 #include "common/expression/Expression.h"
-#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {

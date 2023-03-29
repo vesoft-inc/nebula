@@ -5,8 +5,8 @@
 #ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
 #define GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
 
+#include "common/expression/ExprVisitorImpl.h"
 #include "graph/context/ValidateContext.h"
-#include "graph/visitor/ExprVisitorImpl.h"
 #include "parser/Clauses.h"
 
 namespace nebula {

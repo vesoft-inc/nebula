@@ -7,8 +7,8 @@
 #define GRAPH_VISITOR_DEDUCEPROPSVISITOR_H_
 
 #include "common/base/Status.h"
+#include "common/expression/ExprVisitorImpl.h"
 #include "common/thrift/ThriftTypes.h"
-#include "graph/visitor/ExprVisitorImpl.h"
 
 namespace nebula {
 

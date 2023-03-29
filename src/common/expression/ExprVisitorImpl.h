@@ -1,18 +1,34 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2023 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_VISITOR_EXPRVISITORIMPL_H_
-#define GRAPH_VISITOR_EXPRVISITORIMPL_H_
+#ifndef COMMON_VISITOR_EXPRVISITORIMPL_H_
+#define COMMON_VISITOR_EXPRVISITORIMPL_H_
 
+#include "common/expression/ColumnExpression.h"
 #include "common/expression/ExprVisitor.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/VertexExpression.h"
 
 namespace nebula {
-namespace graph {
 
 class ExprVisitorImpl : public ExprVisitor {
  public:
+  // leaf expression nodes
+  void visit(ConstantExpression *) override {}
+  void visit(LabelExpression *) override{};
+  void visit(UUIDExpression *) override{};
+  void visit(VariableExpression *) override{};
+  void visit(VersionedVariableExpression *) override{};
+  void visit(InputPropertyExpression *) override{};
+  void visit(VariablePropertyExpression *) override{};
+  void visit(DestPropertyExpression *) override{};
+  void visit(SourcePropertyExpression *) override{};
+  void visit(VertexExpression *) override{};
+  void visit(EdgeExpression *) override{};
+  void visit(ColumnExpression *) override{};
+  // unary expression
   void visit(UnaryExpression *expr) override;
   void visit(TypeCastingExpression *expr) override;
   void visit(LabelAttributeExpression *expr) override;
@@ -48,10 +64,11 @@ class ExprVisitorImpl : public ExprVisitor {
   using ExprVisitor::visit;
 
   virtual void visitBinaryExpr(BinaryExpression *expr);
-  virtual bool ok() const = 0;
+  virtual bool ok() const {
+    return true;
+  }
 };
 
-}  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_VISITOR_EXPRVISITORIMPL_H_
+#endif  // COMMON_VISITOR_EXPRVISITORIMPL_H_
