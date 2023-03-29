@@ -215,9 +215,11 @@ int main(int argc, char *argv[]) {
       return;
     }
 
+    auto handler =
+        std::make_shared<nebula::meta::MetaServiceHandler>(gMetaKVStore.get(), metaClusterId());
     {
       nebula::meta::JobManager *jobMgr = nebula::meta::JobManager::getInstance();
-      if (!jobMgr->init(gMetaKVStore.get())) {
+      if (!jobMgr->init(gMetaKVStore.get(), handler->getAdminClient())) {
         LOG(ERROR) << "Init job manager failed";
         return;
       }
@@ -229,8 +231,6 @@ int main(int argc, char *argv[]) {
       return;
     }
 
-    auto handler =
-        std::make_shared<nebula::meta::MetaServiceHandler>(gMetaKVStore.get(), metaClusterId());
     LOG(INFO) << "The meta daemon start on " << metaLocalhost;
     try {
       gMetaServer = std::make_unique<apache::thrift::ThriftServer>();
