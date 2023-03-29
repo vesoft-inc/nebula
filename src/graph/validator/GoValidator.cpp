@@ -69,6 +69,10 @@ Status GoValidator::validateWhere(WhereClause* where) {
   }
 
   auto expr = where->filter();
+  if (!checkDstPropOrVertexExist(expr)) {
+    return Status::SemanticError("`%s' is not support in go sentence.", expr->toString().c_str());
+  }
+
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto foldRes = ExpressionUtils::foldConstantExpr(where->filter());
   NG_RETURN_IF_ERROR(foldRes);
@@ -134,13 +138,11 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
   for (auto col : yield->columns()) {
     const auto& colName = col->name();
-    auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
-    if (vertexExpr != nullptr &&
-        static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
+    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
+    if (!checkDstPropOrVertexExist(col->expr())) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
-    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
@@ -259,6 +261,25 @@ Status GoValidator::buildColumns() {
 
   goCtx_->yieldExpr = newYieldExpr;
   return Status::OK();
+}
+
+bool GoValidator::checkDstPropOrVertexExist(const Expression* expr) {
+  auto filterExprs = ExpressionUtils::collectAll(
+      expr, {Expression::Kind::kVertex, Expression::Kind::kDstProperty});
+  for (auto filterExpr : filterExprs) {
+    if (filterExpr->kind() == Expression::Kind::kDstProperty) {
+      goCtx_->joinDst = true;
+    } else {
+      auto& name = static_cast<const VertexExpression*>(filterExpr)->name();
+      if (name == "VERTEX") {
+        return false;
+      }
+      if (name == "$$") {
+        goCtx_->joinDst = true;
+      }
+    }
+  }
+  return true;
 }
 
 }  // namespace graph

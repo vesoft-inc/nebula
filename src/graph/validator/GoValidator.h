@@ -42,6 +42,8 @@ class GoValidator final : public Validator {
 
   Expression* rewriteVertexEdge2EdgeProp(const Expression* expr);
 
+  bool checkDstPropOrVertexExist(const Expression* expr);
+
  private:
   std::unique_ptr<GoContext> goCtx_;
 

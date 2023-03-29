@@ -424,7 +424,11 @@ void PrunePropertiesVisitor::pruneCurrent(AppendVertices *node) {
       usedProps.insert(unknownIter->second.begin(), unknownIter->second.end());
     }
     if (tagIter != usedVertexProps.end()) {
-      usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+      if (tagIter->second.find("*") != tagIter->second.end()) {
+        usedProps.insert(props.begin(), props.end());
+      } else {
+        usedProps.insert(tagIter->second.begin(), tagIter->second.end());
+      }
     }
     if (usedProps.empty()) {
       continue;
