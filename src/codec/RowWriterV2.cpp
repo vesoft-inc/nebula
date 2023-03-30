@@ -656,11 +656,16 @@ WriteResult RowWriterV2::write(ssize_t index, const char* v) {
   return write(index, folly::StringPiece(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) {
+WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v, bool isWKB) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
-    case PropertyType::GEOGRAPHY:  // write wkb
+    case PropertyType::GEOGRAPHY: {
+      // If v is a not a WKB string, we need report error.
+      if (!isWKB) {
+        return WriteResult::TYPE_MISMATCH;
+      }
+    }
     case PropertyType::STRING: {
       if (isSet_[index]) {
         // The string value has already been set, we need to turn it
@@ -809,8 +814,10 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
       folly::to<uint32_t>(geoShape) != folly::to<uint32_t>(v.shape())) {
     return WriteResult::TYPE_MISMATCH;
   }
+  // Geography is stored as WKB format.
+  // WKB is a binary string.
   std::string wkb = v.asWKB();
-  return write(index, folly::StringPiece(wkb));
+  return write(index, folly::StringPiece(wkb), true);
 }
 
 WriteResult RowWriterV2::checkUnsetFields() {

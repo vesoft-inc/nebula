@@ -127,6 +127,14 @@ Feature: Geo base
       INSERT VERTEX any_shape(geo) VALUES "103":(ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))"));
       """
     Then the execution should be successful
+    # "POINT(3 8)" is a string not a geography literal.
+    # We must use some geography costructor function to construct a geography literal.
+    # e.g.`ST_GeogFromText("POINT(3 8)")`
+    When executing query:
+      """
+      INSERT VERTEX any_shape(geo) VALUES "104":("POINT(3 8)");
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
     # Only point is allowed to insert to the column geograph(point)
     When executing query:
       """

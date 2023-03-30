@@ -254,7 +254,7 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, uint64_t v);
 
   WriteResult write(ssize_t index, const std::string& v);
-  WriteResult write(ssize_t index, folly::StringPiece v);
+  WriteResult write(ssize_t index, folly::StringPiece v, bool isWKB = false);
   WriteResult write(ssize_t index, const char* v);
 
   WriteResult write(ssize_t index, const Date& v);
