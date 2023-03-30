@@ -665,6 +665,7 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v, bool isWKB) 
       if (!isWKB) {
         return WriteResult::TYPE_MISMATCH;
       }
+      [[fallthrough]];
     }
     case PropertyType::STRING: {
       if (isSet_[index]) {
