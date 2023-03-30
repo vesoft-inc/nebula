@@ -81,7 +81,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether RaftPart is running
    */
   bool isRunning() const {
-    std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::RUNNING;
   }
 
@@ -89,7 +88,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether RaftPart is stopped
    */
   bool isStopped() const {
-    std::lock_guard<std::mutex> g(raftLock_);
     return status_ == Status::STOPPED;
   }
 
@@ -97,7 +95,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether RaftPart is leader
    */
   bool isLeader() const {
-    std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::LEADER;
   }
 
@@ -105,7 +102,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether RaftPart is follower
    */
   bool isFollower() const {
-    std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::FOLLOWER;
   }
 
@@ -113,7 +109,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * @brief Return whether RaftPart is learner
    */
   bool isLearner() const {
-    std::lock_guard<std::mutex> g(raftLock_);
     return role_ == Role::LEARNER;
   }
 
