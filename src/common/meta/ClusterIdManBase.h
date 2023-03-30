@@ -28,10 +28,10 @@ class ClusterIdManBase {
     std::generate_n(randomBytes.begin(), 16, std::ref(gen));
 
     // Concatenate salt with input string
-    std::string salted_input = metaAddrs + randomBytes;
+    std::string saltedInput = metaAddrs + randomBytes;
 
     std::hash<std::string> hash_fn;
-    auto clusterId = hash_fn(salted_input);
+    auto clusterId = hash_fn(saltedInput);
     uint64_t mask = 0x7FFFFFFFFFFFFFFF;
     clusterId &= mask;
     LOG(INFO) << "Create ClusterId " << clusterId;
