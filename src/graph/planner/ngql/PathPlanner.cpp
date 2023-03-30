@@ -183,9 +183,11 @@ StatusOr<SubPlan> PathPlanner::allPathPlan() {
   auto withProp = pathCtx_->withProp;
   auto* path = AllPaths::make(
       qctx, leftPlan.root, rightPlan.root, pathCtx_->space.id, steps, pathCtx_->noLoop, withProp);
-  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, withProp);
-  NG_RETURN_IF_ERROR(vertexProp);
-  path->setVertexProps(std::move(vertexProp).value());
+  if (withProp) {
+    auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, withProp);
+    NG_RETURN_IF_ERROR(vertexProp);
+    path->setVertexProps(std::move(vertexProp).value());
+  }
   path->setEdgeProps(buildEdgeProps(false, withProp));
   path->setReverseEdgeProps(buildEdgeProps(true, withProp));
   path->setColNames({"_src", "_edge", "_dst"});
