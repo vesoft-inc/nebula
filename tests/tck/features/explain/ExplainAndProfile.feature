@@ -30,9 +30,11 @@ Feature: Explain and Profile
       | EXPLAIN | row        |
       | EXPLAIN | dot        |
       | EXPLAIN | dot:struct |
+      | EXPLAIN | tck        |
       | PROFILE | row        |
       | PROFILE | dot        |
       | PROFILE | dot:struct |
+      | PROFILE | tck        |
 
   Scenario Outline: Error format
     When executing query:

@@ -18,7 +18,7 @@
 namespace nebula {
 namespace graph {
 
-static const std::vector<std::string> kAllowedFmtType = {"row", "dot", "dot:struct"};
+static const std::vector<std::string> kAllowedFmtType = {"row", "dot", "dot:struct", "tck"};
 
 ExplainValidator::ExplainValidator(Sentence* sentence, QueryContext* context)
     : Validator(sentence, context) {
