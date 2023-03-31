@@ -231,21 +231,17 @@ static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias
   return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
 }
 
-static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
+static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge, bool genPath) {
   Expression* expr = nullptr;
+  const std::string& edgeName = genPath ? edge.innerAlias : edge.alias;
   auto pool = qctx->objPool();
   if (edge.range == nullptr) {
     expr = SubscriptExpression::make(
-        pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
+        pool, InputPropertyExpression::make(pool, edgeName), ConstantExpression::make(pool, 0));
   } else {
-    auto innerVar = qctx->vctx()->anonVarGen()->getVar();
-    auto* args = ArgumentList::make(pool);
-    args->addArgument(VariableExpression::makeInner(pool, innerVar));
-    auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
-    expr = ListComprehensionExpression::make(
-        pool, innerVar, InputPropertyExpression::make(pool, edge.alias), filter);
+    expr = InputPropertyExpression::make(pool, edgeName);
   }
-  return new YieldColumn(expr, edge.alias);
+  return new YieldColumn(expr, edgeName);
 }
 
 // static
@@ -262,16 +258,23 @@ void MatchSolver::buildProjectColumns(QueryContext* qctx, const Path& path, SubP
     }
   };
 
-  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo) {
+  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo, bool genPath = false) {
     if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      columns->addColumn(buildEdgeColumn(qctx, edgeInfo));
-      colNames.emplace_back(edgeInfo.alias);
+      columns->addColumn(buildEdgeColumn(qctx, edgeInfo, genPath));
+      if (genPath) {
+        colNames.emplace_back(edgeInfo.innerAlias);
+      } else {
+        colNames.emplace_back(edgeInfo.alias);
+      }
     }
   };
 
   for (size_t i = 0; i < edgeInfos.size(); i++) {
     addNode(nodeInfos[i]);
     addEdge(edgeInfos[i]);
+    if (path.genPath) {
+      addEdge(edgeInfos[i], true);
+    }
   }
 
   // last vertex

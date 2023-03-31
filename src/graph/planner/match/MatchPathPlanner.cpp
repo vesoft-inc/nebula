@@ -26,13 +26,17 @@ MatchPathPlanner::MatchPathPlanner(CypherClauseContextBase* ctx, const Path& pat
 static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
                                                     const NodeInfo& node,
                                                     const EdgeInfo& edge,
-                                                    bool trackPrev) {
+                                                    bool trackPrev,
+                                                    bool genPath = false) {
   std::vector<std::string> cols;
   if (trackPrev) {
     cols = inputCols;
   }
   cols.emplace_back(node.alias);
   cols.emplace_back(edge.alias);
+  if (genPath) {
+    cols.emplace_back(edge.innerAlias);
+  }
   return cols;
 }
 
@@ -218,11 +222,13 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     traverse->setEdgeDirection(edge.direction);
     traverse->setStepRange(stepRange);
     traverse->setDedup();
+    traverse->setGenPath(path_.genPath);
     // If start from end of the path pattern, the first traverse would not
     // track the previous path, otherwise, it should.
     bool trackPrevPath = (startIndex + 1 == nodeInfos.size() ? i != startIndex : true);
     traverse->setTrackPrevPath(trackPrevPath);
-    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge, trackPrevPath));
+    traverse->setColNames(
+        genTraverseColNames(subplan.root->colNames(), node, edge, trackPrevPath, path_.genPath));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     if (expandInto) {
@@ -290,8 +296,9 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     traverse->setStepRange(stepRange);
     traverse->setDedup();
     traverse->setTrackPrevPath(i != startIndex);
+    traverse->setGenPath(path_.genPath);
     traverse->setColNames(
-        genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex));
+        genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex, path_.genPath));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     if (expandInto) {
