@@ -77,7 +77,6 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
    */
   std::unique_ptr<rocksdb::CompactionFilter> CreateCompactionFilter(
       const rocksdb::CompactionFilter::Context& context) override {
-    auto now = time::WallClock::fastNowInSec();
     if (context.is_full_compaction || context.is_manual_compaction) {
       LOG(INFO) << "Do full/manual compaction!";
     } else {
