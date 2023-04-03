@@ -95,7 +95,6 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
 
  private:
   GraphSpaceID spaceId_;
-  int32_t lastRunCustomFilterTimeSec_ = 0;
 };
 
 /**
