@@ -43,7 +43,7 @@ jobs:
         with:
           go-version: '^1.16.7'
       - id: tag
-        run: echo tagnum=${{ github.event.inputs.version }}
+        run: echo tagnum=${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
       - name: package
         run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }}
       - name: output some vars
