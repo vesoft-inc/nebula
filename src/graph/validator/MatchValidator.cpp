@@ -181,7 +181,11 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
     pathBuild->add(InputPropertyExpression::make(pool, nodeInfos[i].alias));
-    pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].innerAlias));
+    if (pathType == MatchPath::PathType::kDefault) {
+      pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].innerAlias));
+    } else {
+      pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].alias));
+    }
   }
   pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   pathInfo.pathBuild = std::move(pathBuild);
