@@ -58,7 +58,7 @@ Feature: Remove AppendVertices Below Join
       | 2  | Dedup          | 1            |                                                                                                                         |
       | 1  | PassThrough    | 3            |                                                                                                                         |
       | 3  | Start          |              |                                                                                                                         |
-      | 15 | Project        | 14           | {"columns": ["$-.friend AS friend", "$-.friend2 AS friend2", "none_direct_dst($-.__VAR_3) AS friendTeam"]}              |
+      | 15 | Project        | 14           | {"columns": ["$-.friend AS friend", "$-.friend2 AS friend2", "none_direct_dst($-.__VAR_3,$-.friend2) AS friendTeam"]}   |
       | 14 | Traverse       | 12           |                                                                                                                         |
       | 12 | Traverse       | 11           |                                                                                                                         |
       | 11 | Argument       |              |                                                                                                                         |
@@ -76,16 +76,16 @@ Feature: Remove AppendVertices Below Join
       | me              | both              | he             |
       | ("Tony Parker") | ("Manu Ginobili") | ("Tim Duncan") |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                       |
-      | 13 | HashInnerJoin  | 6,12         | {"hashKeys": ["_joinkey($-.both)"], "probeKeys": ["$-.both"]}       |
-      | 6  | Project        | 5            |                                                                     |
-      | 5  | AppendVertices | 15           |                                                                     |
-      | 15 | Traverse       | 2            |                                                                     |
-      | 2  | Dedup          | 1            |                                                                     |
-      | 1  | PassThrough    | 3            |                                                                     |
-      | 3  | Start          |              |                                                                     |
-      | 12 | Project        | 16           | {"columns": ["$-.he AS he", "none_direct_dst($-.__VAR_1) AS both"]} |
-      | 16 | Traverse       | 8            |                                                                     |
-      | 8  | Dedup          | 7            |                                                                     |
-      | 7  | PassThrough    | 9            |                                                                     |
-      | 9  | Start          |              |                                                                     |
+      | id | name           | dependencies | operator info                                                             |
+      | 13 | HashInnerJoin  | 6,12         | {"hashKeys": ["_joinkey($-.both)"], "probeKeys": ["$-.both"]}             |
+      | 6  | Project        | 5            |                                                                           |
+      | 5  | AppendVertices | 15           |                                                                           |
+      | 15 | Traverse       | 2            |                                                                           |
+      | 2  | Dedup          | 1            |                                                                           |
+      | 1  | PassThrough    | 3            |                                                                           |
+      | 3  | Start          |              |                                                                           |
+      | 12 | Project        | 16           | {"columns": ["$-.he AS he", "none_direct_dst($-.__VAR_1,$-.he) AS both"]} |
+      | 16 | Traverse       | 8            |                                                                           |
+      | 8  | Dedup          | 7            |                                                                           |
+      | 7  | PassThrough    | 9            |                                                                           |
+      | 9  | Start          |              |                                                                           |
