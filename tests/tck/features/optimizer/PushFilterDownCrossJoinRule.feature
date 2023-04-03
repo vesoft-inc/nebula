@@ -18,15 +18,16 @@ Feature: Push Filter down HashInnerJoin rule
       | count(e) |
       | 8        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                          |
-      | 11 | Aggregate      | 14           |                                                                                                                        |
-      | 14 | CrossJoin      | 1,16         |                                                                                                                        |
-      | 1  | Project        | 2            |                                                                                                                        |
-      | 2  | Start          |              |                                                                                                                        |
-      | 16 | Project        | 15           |                                                                                                                        |
-      | 15 | Filter         | 18           | {"condition": "((id($-.v1) IN [\"Tim Duncan\",\"Tony Parker\"]) AND (id($-.v2) IN [\"Tim Duncan\",\"Tony Parker\"]))"} |
-      | 18 | AppendVertices | 17           |                                                                                                                        |
-      | 17 | Traverse       | 4            |                                                                                                                        |
-      | 4  | Dedup          | 3            |                                                                                                                        |
-      | 3  | PassThrough    | 5            |                                                                                                                        |
-      | 5  | Start          |              |                                                                                                                        |
+      | id | name           | dependencies | operator info                                                    |
+      | 11 | Aggregate      | 14           |                                                                  |
+      | 14 | CrossJoin      | 1,16         |                                                                  |
+      | 1  | Project        | 2            |                                                                  |
+      | 2  | Start          |              |                                                                  |
+      | 16 | Project        | 15           |                                                                  |
+      | 15 | Filter         | 18           | {"condition": "(id($-.v2) IN [\"Tim Duncan\",\"Tony Parker\"])"} |
+      | 18 | AppendVertices | 17           |                                                                  |
+      | 17 | Filter         | 17           | {"condition": "(id($-.v1) IN [\"Tim Duncan\",\"Tony Parker\"])"} |
+      | 17 | Traverse       | 4            |                                                                  |
+      | 4  | Dedup          | 3            |                                                                  |
+      | 3  | PassThrough    | 5            |                                                                  |
+      | 5  | Start          |              |                                                                  |

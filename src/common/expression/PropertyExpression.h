@@ -32,6 +32,10 @@ class PropertyExpression : public Expression {
  public:
   bool operator==(const Expression& rhs) const override;
 
+  bool isPropertyExpr() const override {
+    return true;
+  }
+
   const Value& eval(ExpressionContext& ctx) override;
 
   const std::string& ref() const {
