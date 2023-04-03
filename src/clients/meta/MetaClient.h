@@ -751,7 +751,7 @@ class MetaClient : public BaseMetaClient {
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
 
   // Checks if the client version is compatible with the server version by checking the
-  // whilelist in meta.
+  // whitelist in meta.
   Status verifyVersion();
 
   // Save the version of the graph service into meta so that it could be looked up.

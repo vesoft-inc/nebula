@@ -21,8 +21,17 @@ class ClusterIdManBase {
   ClusterIdManBase() = delete;
 
   static ClusterID create(const std::string& metaAddrs) {
+    // Generate random salt
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::string randomBytes(16, ' ');
+    std::generate_n(randomBytes.begin(), 16, std::ref(gen));
+
+    // Concatenate salt with input string
+    std::string saltedInput = metaAddrs + randomBytes;
+
     std::hash<std::string> hash_fn;
-    auto clusterId = hash_fn(metaAddrs);
+    auto clusterId = hash_fn(saltedInput);
     uint64_t mask = 0x7FFFFFFFFFFFFFFF;
     clusterId &= mask;
     LOG(INFO) << "Create ClusterId " << clusterId;
