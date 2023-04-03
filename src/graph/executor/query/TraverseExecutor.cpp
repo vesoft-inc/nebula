@@ -376,7 +376,11 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath() {
         Row row = p;
         List edgeList;
         row.values.emplace_back(vertex);
-        row.values.emplace_back(std::move(edgeList));
+        row.values.emplace_back(edgeList);
+        if (genPath_) {
+          edgeList.values.emplace_back(vertex);
+          row.values.emplace_back(std::move(edgeList));
+        }
         result.emplace_back(std::move(row));
       }
     }
@@ -385,7 +389,11 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath() {
       Row row;
       List edgeList;
       row.values.emplace_back(vertex);
-      row.values.emplace_back(std::move(edgeList));
+      row.values.emplace_back(edgeList);
+      if (genPath_) {
+        edgeList.values.emplace_back(vertex);
+        row.values.emplace_back(std::move(edgeList));
+      }
       result.emplace_back(std::move(row));
     }
   }

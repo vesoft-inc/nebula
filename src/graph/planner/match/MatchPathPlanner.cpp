@@ -51,9 +51,12 @@ static std::vector<std::string> genAppendVColNames(const std::vector<std::string
   return cols;
 }
 
-static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) {
+static Expression* genNextTraverseStart(ObjectPool* pool,
+                                        const EdgeInfo& edge,
+                                        const NodeInfo& node) {
   auto args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, edge.alias));
+  args->addArgument(InputPropertyExpression::make(pool, node.alias));
   return FunctionCallExpression::make(pool, "none_direct_dst", args);
 }
 
@@ -230,7 +233,7 @@ Status MatchPathPlanner::leftExpandFromNode(size_t startIndex, SubPlan& subplan)
     traverse->setColNames(
         genTraverseColNames(subplan.root->colNames(), node, edge, trackPrevPath, path_.genPath));
     subplan.root = traverse;
-    nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
+    nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge, node);
     if (expandInto) {
       // TODO(shylock) optimize to embed filter to Traverse
       auto* startVid = nodeId(qctx->objPool(), dst);
@@ -300,7 +303,7 @@ Status MatchPathPlanner::rightExpandFromNode(size_t startIndex, SubPlan& subplan
     traverse->setColNames(
         genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex, path_.genPath));
     subplan.root = traverse;
-    nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
+    nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge, node);
     if (expandInto) {
       auto* startVid = nodeId(qctx->objPool(), dst);
       auto* endVid = nextTraverseStart;
