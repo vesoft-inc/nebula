@@ -167,7 +167,7 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
       break;
     }
     default:
-      DLOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
+      DLOG(ERROR) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
       return TransformResult::noTransform();
   }
 

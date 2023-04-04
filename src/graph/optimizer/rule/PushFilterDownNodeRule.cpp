@@ -55,7 +55,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownNodeRule::transform(
     auto *append = static_cast<const AppendVertices *>(node);
     vFilter = append->vFilter()->clone();
   } else {
-    DLOG(FATAL) << "Unsupported node kind: " << node->kind();
+    DLOG(ERROR) << "Unsupported node kind: " << node->kind();
     return TransformResult::noTransform();
   }
   auto visitor = graph::ExtractFilterExprVisitor::makePushGetVertices(pool);
@@ -83,7 +83,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownNodeRule::transform(
     append->setVertexFilter(remainedExpr);
     append->setFilter(vFilter);
   } else {
-    DLOG(FATAL) << "Unsupported node kind: " << newExplore->kind();
+    DLOG(ERROR) << "Unsupported node kind: " << newExplore->kind();
     return TransformResult::noTransform();
   }
 
@@ -111,7 +111,7 @@ bool PushFilterDownNodeRule::match(OptContext *octx, const MatchedResult &matche
       return false;
     }
   } else {
-    DLOG(FATAL) << "Unexpected node kind: " << node->kind();
+    DLOG(ERROR) << "Unexpected node kind: " << node->kind();
     return false;
   }
   return true;
