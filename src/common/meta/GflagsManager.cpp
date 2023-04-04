@@ -58,7 +58,6 @@ std::unordered_map<std::string, std::pair<cpp2::ConfigMode, bool>> GflagsManager
       {"meta_client_retry_times", {cpp2::ConfigMode::MUTABLE, false}},
       {"wal_ttl", {cpp2::ConfigMode::MUTABLE, false}},
       {"clean_wal_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
-      {"custom_filter_interval_secs", {cpp2::ConfigMode::MUTABLE, false}},
       {"accept_partial_success", {cpp2::ConfigMode::MUTABLE, false}},
 
       {"rocksdb_db_options", {cpp2::ConfigMode::MUTABLE, true}},
