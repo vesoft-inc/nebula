@@ -28,7 +28,7 @@ using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFind
 // 3. PropIndexSeek finds if a plan could traverse from some vids that could be
 // read from the property indices.
 // MATCH(n:Tag{prop:value}) RETURN n
-// MATCH(n:Tag) WHERE n.prop = value RETURN n
+// MATCH(n:Tag) WHERE n.Tag.prop = value RETURN n
 //
 // 4. LabelIndexSeek finds if a plan could traverse from some vids that could be
 // read from the label indices.

@@ -139,34 +139,6 @@ std::vector<std::string> CartesianProduct::inputVars() const {
   return varNames;
 }
 
-std::unique_ptr<PlanNodeDescription> CrossJoin::explain() const {
-  return BinaryInputNode::explain();
-}
-
-PlanNode* CrossJoin::clone() const {
-  auto* node = make(qctx_);
-  node->cloneMembers(*this);
-  return node;
-}
-
-void CrossJoin::cloneMembers(const CrossJoin& r) {
-  BinaryInputNode::cloneMembers(r);
-}
-
-CrossJoin::CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right)
-    : BinaryInputNode(qctx, Kind::kCrossJoin, left, right) {
-  auto lColNames = left->colNames();
-  auto rColNames = right->colNames();
-  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
-  setColNames(lColNames);
-}
-
-void CrossJoin::accept(PlanNodeVisitor* visitor) {
-  visitor->visit(this);
-}
-
-CrossJoin::CrossJoin(QueryContext* qctx) : BinaryInputNode(qctx, Kind::kCrossJoin) {}
-
 std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("src", src_ ? src_->toString() : "", desc.get());
