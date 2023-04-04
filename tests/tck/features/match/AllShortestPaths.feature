@@ -6,6 +6,24 @@ Feature: allShortestPaths
   Background:
     Given a graph with space named "nba"
 
+  Scenario: zero step shortest path
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e*0]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e*0]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+
   Scenario: one step shortest path
     When executing query:
       """
@@ -41,22 +59,22 @@ Feature: allShortestPaths
       RETURN e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                                                             |
-      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}] |
-      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] |
-      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                         |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         |
+      | e                                                                               |
+      | [[:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                         |
+      | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                         |
     When executing query:
       """
       MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e*1..1]-(v2:player{name:"Tony Parker"}))
       RETURN e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                                                             |
-      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}] |
-      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] |
-      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                         |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         |
+      | e                                                                               |
+      | [[:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                         |
+      | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                         |
 
   Scenario: allShortestPaths1
     When executing query:

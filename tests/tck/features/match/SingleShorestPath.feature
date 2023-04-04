@@ -6,6 +6,24 @@ Feature: single shortestPath
   Background:
     Given a graph with space named "nba"
 
+  Scenario: zero step shortestpath
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e*0]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      MATCH shortestPath((v1:player{name:"Tim Duncan"})-[e*0]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+
   Scenario: single shortestPath1
     When executing query:
       """
