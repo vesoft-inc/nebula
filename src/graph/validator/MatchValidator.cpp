@@ -165,10 +165,13 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
       return Status::SemanticError(
           "`shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)");
     }
-    auto min = edgeInfos.front().range->min();
-    if (min != 0 && min != 1) {
-      return Status::SemanticError(
-          "`shortestPath(...)' does not support a minimal length different from 0 or 1");
+    auto *range = edgeInfos.front().range.get();
+    if (range != nullptr) {
+      auto min = range->min();
+      if (min != 0 && min != 1) {
+        return Status::SemanticError(
+            "The minimal number of steps for shortestPath() must be either 0 or 1.");
+      }
     }
     pathInfo.pathType = static_cast<Path::PathType>(pathType);
   }
