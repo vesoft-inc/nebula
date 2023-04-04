@@ -170,7 +170,7 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
       auto min = range->min();
       if (min != 0 && min != 1) {
         return Status::SemanticError(
-            "`shortestPath(...)' does not support a minimal length different from 0 or 1");
+            "The minimal number of steps for shortestPath() must be either 0 or 1.");
       }
     }
     pathInfo.pathType = static_cast<Path::PathType>(pathType);
