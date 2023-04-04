@@ -207,8 +207,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
 
   auto* root = relationals[0];
   for (auto i = 1u; i < relationals.size(); i++) {
-    auto* left = root;
-    root = LogicalExpression::makeAnd(qctx->objPool(), left, relationals[i]);
+    root = LogicalExpression::makeAnd(qctx->objPool(), root, relationals[i]);
   }
 
   return root;
