@@ -832,6 +832,7 @@ void Traverse::cloneMembers(const Traverse& g) {
   if (g.tagFilter_ != nullptr) {
     setTagFilter(g.tagFilter_->clone());
   }
+  genPath_ = g.genPath();
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
