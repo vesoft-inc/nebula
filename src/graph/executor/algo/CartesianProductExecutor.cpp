@@ -5,6 +5,7 @@
 #include "graph/executor/algo/CartesianProductExecutor.h"
 
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {

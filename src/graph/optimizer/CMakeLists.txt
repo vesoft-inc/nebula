@@ -10,6 +10,7 @@ nebula_add_library(
     OptGroup.cpp
     OptRule.cpp
     OptContext.cpp
+    rule/PushFilterDownCrossJoinRule.cpp
     rule/PushFilterDownGetNbrsRule.cpp
     rule/RemoveNoopProjectRule.cpp
     rule/CombineFilterRule.cpp
