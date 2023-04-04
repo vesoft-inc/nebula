@@ -51,6 +51,8 @@ struct EdgeInfo {
   MatchEdge::Direction direction{MatchEdge::Direction::OUT_EDGE};
   std::vector<std::string> types;
   std::string alias;
+  // use for construct path struct
+  std::string innerAlias;
   const MapExpression* props{nullptr};
   Expression* filter{nullptr};
 };

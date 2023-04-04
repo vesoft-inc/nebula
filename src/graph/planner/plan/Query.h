@@ -1713,8 +1713,16 @@ class Traverse final : public GetNeighbors {
     firstStepFilter_ = filter;
   }
 
+  void setGenPath(bool genPath) {
+    genPath_ = genPath;
+  }
+
   Expression* tagFilter() const {
     return tagFilter_;
+  }
+
+  bool genPath() const {
+    return genPath_;
   }
 
   void setTagFilter(Expression* tagFilter) {
@@ -1738,6 +1746,7 @@ class Traverse final : public GetNeighbors {
   // Push down filter in first step
   Expression* firstStepFilter_{nullptr};
   Expression* tagFilter_{nullptr};
+  bool genPath_{false};
 };
 
 // Append vertices to a path.
