@@ -62,8 +62,12 @@ Status TraverseExecutor::buildRequestVids() {
     auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
     for (; iter->valid(); iter->next()) {
       const auto& vid = src->eval(ctx(iter));
-      DCHECK_EQ(vid.type(), vidType)
-          << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
+      // FIXME(czp): Remove this DCHECK for now, we should check vid type at compile-time
+      if (vid.type() != vidType) {
+        return Status::Error("Vid type mismatched.");
+      }
+      // DCHECK_EQ(vid.type(), vidType)
+      //     << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
       if (vid.type() == vidType) {
         vids_.emplace(vid);
       }

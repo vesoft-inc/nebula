@@ -164,7 +164,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
   TransformResult result;
   result.newGroupNodes.emplace_back(optScanNode);
-  result.eraseCurr = true;
+  result.eraseAll = true;
   return result;
 }
 
