@@ -27,6 +27,7 @@ Feature: Push Limit down project rule
       | 16 | Limit          | 11           |               |
       | 11 | Filter         | 4            |               |
       | 4  | AppendVertices | 3            |               |
+      | 3  | Filter         | 3            |               |
       | 3  | Traverse       | 2            |               |
       | 2  | Dedup          | 1            |               |
       | 1  | PassThrough    | 0            |               |
