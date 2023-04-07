@@ -6,7 +6,6 @@ Feature: Collapse Project Rule
   Background:
     Given a graph with space named "nba"
 
-  @czp
   Scenario: Collapse Project
     When profiling query:
       """
