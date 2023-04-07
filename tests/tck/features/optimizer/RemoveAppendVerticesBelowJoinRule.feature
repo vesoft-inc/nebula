@@ -50,9 +50,9 @@ Feature: Remove AppendVertices Below Join
       | 17 | Aggregate      | 16           |                                                                                                                         |
       | 16 | HashLeftJoin   | 10,15        | {"hashKeys": ["_joinkey($-.friendTeam)", "_joinkey($-.friend)"], "probeKeys": ["$-.friendTeam", "_joinkey($-.friend)"]} |
       | 10 | Dedup          | 28           |                                                                                                                         |
-      | 28 | Project        | 22           |                                                                                                                         |
-      | 22 | Filter         | 26           |                                                                                                                         |
+      | 28 | Project        | 26           |                                                                                                                         |
       | 26 | AppendVertices | 25           |                                                                                                                         |
+      | 25 | Filter         | 25           |                                                                                                                         |
       | 25 | Traverse       | 24           |                                                                                                                         |
       | 24 | Traverse       | 2            |                                                                                                                         |
       | 2  | Dedup          | 1            |                                                                                                                         |

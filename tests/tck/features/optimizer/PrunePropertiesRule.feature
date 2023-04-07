@@ -579,6 +579,7 @@ Feature: Prune Properties rule
       | 21 | Project        | 20           |                                                                                                                                          |
       | 20 | Filter         | 25           |                                                                                                                                          |
       | 25 | AppendVertices | 24           | {  "props": "[{ \"props\":[\"name\",\"_tag\"]}]" }                                                                                       |
+      | 24 | Filter         | 24           |                                                                                                                                          |
       | 24 | Traverse       | 23           | {"vertexProps": "[{ \"props\":[\"age\"]}]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                          |
       | 23 | Traverse       | 22           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
       | 22 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
