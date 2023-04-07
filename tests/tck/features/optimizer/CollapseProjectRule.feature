@@ -6,6 +6,7 @@ Feature: Collapse Project Rule
   Background:
     Given a graph with space named "nba"
 
+  @czp
   Scenario: Collapse Project
     When profiling query:
       """
@@ -99,6 +100,7 @@ Feature: Collapse Project Rule
       | 14 | Project        | 12           |               |
       | 12 | Filter         | 6            |               |
       | 6  | AppendVertices | 5            |               |
+      | 5  | Filter         | 5            |               |
       | 5  | Traverse       | 4            |               |
       | 4  | Traverse       | 2            |               |
       | 2  | Dedup          | 1            |               |
