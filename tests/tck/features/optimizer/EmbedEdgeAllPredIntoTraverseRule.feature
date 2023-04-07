@@ -1,6 +1,7 @@
 # Copyright (c) 2023 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@czp
 Feature: Embed edge all predicate into Traverse
 
   Background:
@@ -42,6 +43,79 @@ Feature: Embed edge all predicate into Traverse
       | 13 | Traverse       | 1            |                | {"filter": "(like.likeness>90)"} |
       | 1  | IndexScan      | 2            |                |                                  |
       | 2  | Start          |              |                |                                  |
+    When profiling query:
+      """
+      MATCH (v:player)-[e:like*1]->(n)
+      WHERE all(i in e where i.likeness>90 or i.likeness<0)
+      RETURN [i in e | i.likeness] AS likeness, n.player.age AS nage
+      """
+    Then the result should be, in any order:
+      | likeness | nage |
+      | [99]     | 33   |
+      | [99]     | 31   |
+      | [99]     | 29   |
+      | [99]     | 30   |
+      | [99]     | 25   |
+      | [99]     | 34   |
+      | [99]     | 41   |
+      | [99]     | 32   |
+      | [99]     | 30   |
+      | [99]     | 42   |
+      | [99]     | 36   |
+      | [95]     | 41   |
+      | [95]     | 42   |
+      | [100]    | 31   |
+      | [95]     | 30   |
+      | [95]     | 41   |
+      | [95]     | 36   |
+      | [100]    | 43   |
+      | [99]     | 34   |
+      | [99]     | 38   |
+      | [-1]     | 43   |
+      | [-1]     | 33   |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info                                           |
+      | 7  | Project        | 11           |                |                                                         |
+      | 11 | AppendVertices | 13           |                |                                                         |
+      | 13 | Traverse       | 1            |                | {"filter": "((like.likeness>90) OR (like.likeness<0))"} |
+      | 1  | IndexScan      | 2            |                |                                                         |
+      | 2  | Start          |              |                |                                                         |
+    When profiling query:
+      """
+      MATCH (v:player)-[e:like*1]->(n)
+      WHERE all(i in e where i.likeness>90 and v.player.name <> "x")
+      RETURN [i in e | i.likeness] AS likeness, n.player.age AS nage
+      """
+    Then the result should be, in any order:
+      | likeness | nage |
+      | [99]     | 33   |
+      | [99]     | 31   |
+      | [99]     | 29   |
+      | [99]     | 30   |
+      | [99]     | 25   |
+      | [99]     | 34   |
+      | [99]     | 41   |
+      | [99]     | 32   |
+      | [99]     | 30   |
+      | [99]     | 42   |
+      | [99]     | 36   |
+      | [95]     | 41   |
+      | [95]     | 42   |
+      | [100]    | 31   |
+      | [95]     | 30   |
+      | [95]     | 41   |
+      | [95]     | 36   |
+      | [100]    | 43   |
+      | [99]     | 34   |
+      | [99]     | 38   |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info                                                                                 |
+      | 7  | Project        | 11           |                |                                                                                               |
+      | 11 | Filter         | 11           |                | {"condition": "all(__VAR_0 IN $e WHERE (($__VAR_0.likeness>90) AND (v.player.name!=\"x\")))"} |
+      | 11 | AppendVertices | 13           |                |                                                                                               |
+      | 13 | Traverse       | 1            |                |                                                                                               |
+      | 1  | IndexScan      | 2            |                |                                                                                               |
+      | 2  | Start          |              |                |                                                                                               |
     When profiling query:
       """
       MATCH (v:player)-[e:like*2]->(n)
