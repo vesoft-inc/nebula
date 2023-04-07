@@ -255,6 +255,10 @@ class ExpressionUtils {
   static Expression* rewriteEdgePropertyFilter(ObjectPool* pool,
                                                const std::string& edgeAlias,
                                                Expression* expr);
+
+  static Expression* rewriteVertexPropertyFilter(ObjectPool* pool,
+                                                 const std::string& node,
+                                                 Expression* expr);
 };
 
 }  // namespace graph

@@ -1038,6 +1038,11 @@ void ExpressionUtils::splitFilter(const Expression *expr,
 
   std::vector<Expression *> &operands = logicExpr->operands();
   for (auto &operand : operands) {
+    // TODO(czp): Sink all NOTs to second layer [[Refactor]]
+    // TODO(czp): If find any not, dont pick this operand for now
+    if (ExpressionUtils::findAny(operand, {Expression::Kind::kUnaryNot})) {
+      filterUnpickedPtr->addOperand(operand->clone());
+    }
     if (picker(operand)) {
       filterPickedPtr->addOperand(operand->clone());
     } else {
@@ -1665,6 +1670,41 @@ bool ExpressionUtils::isOneStepEdgeProp(const std::string &edgeAlias, const Expr
     return edgePropExpr;
   };
 
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
+// Transform Label Tag property expression like $-.v.player.name to Tag property like player.name
+// for more friendly to push down
+// \param pool object pool to hold ownership of objects alloacted
+// \param node the name of node, i.e. v in pattern (v)
+// \param expr the filter expression
+/*static*/ Expression *ExpressionUtils::rewriteVertexPropertyFilter(ObjectPool *pool,
+                                                                    const std::string &node,
+                                                                    Expression *expr) {
+  graph::RewriteVisitor::Matcher matcher = [&node](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kLabelTagProperty) {
+      return false;
+    }
+    auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
+    auto *labelExpr = ltpExpr->label();
+    DCHECK(labelExpr->kind() == Expression::Kind::kInputProperty ||
+           labelExpr->kind() == Expression::Kind::kVarProperty);
+    if (labelExpr->kind() != Expression::Kind::kInputProperty &&
+        labelExpr->kind() != Expression::Kind::kVarProperty) {
+      return false;
+    }
+    auto *inputExpr = static_cast<const PropertyExpression *>(labelExpr);
+    if (inputExpr->prop() != node) {
+      return false;
+    }
+    return true;
+  };
+  graph::RewriteVisitor::Rewriter rewriter = [pool](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kLabelTagProperty);
+    auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
+    auto *tagPropExpr = TagPropertyExpression::make(pool, ltpExpr->sym(), ltpExpr->prop());
+    return tagPropExpr;
+  };
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
