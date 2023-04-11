@@ -16,7 +16,6 @@ Feature: contains filter
       | n                                                                                                           | e                                                                             | m                                                     |
       | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
       | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) |
-
     When executing query:
       """
       MATCH (n:player{name:"Tim Duncan"})-[e]->(m) where m.player.name starts with "Manu" RETURN n,e,m  ORDER BY m;
