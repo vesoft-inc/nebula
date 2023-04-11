@@ -1,7 +1,6 @@
 # Copyright (c) 2023 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@czp
 Feature: Embed edge all predicate into Traverse
 
   Background:
@@ -297,13 +296,13 @@ Feature: Embed edge all predicate into Traverse
     Then the result should be, in any order:
       | likeness | nage |
     And the execution plan should be:
-      | id | name           | dependencies | profiling data | operator info                                                                                                                                                                       |
-      | 7  | Project        | 11           |                |                                                                                                                                                                                     |
-      | 11 | AppendVertices | 14           |                |                                                                                                                                                                                     |
-      | 14 | Filter         | 13           |                | {"condition": "(!(all(__VAR_1 IN $e WHERE ($__VAR_1.likeness>89))) AND !(all(__VAR_1 IN $e WHERE ($__VAR_1.likeness>89))) AND !(all(__VAR_1 IN $e WHERE ($__VAR_1.likeness>89))))"} |
-      | 13 | Traverse       | 1            |                | {"edge filter": "(*.likeness>90)"}                                                                                                                                                  |
-      | 1  | IndexScan      | 2            |                |                                                                                                                                                                                     |
-      | 2  | Start          |              |                |                                                                                                                                                                                     |
+      | id | name           | dependencies | profiling data | operator info                                                       |
+      | 7  | Project        | 11           |                |                                                                     |
+      | 11 | AppendVertices | 14           |                |                                                                     |
+      | 14 | Filter         | 13           |                | {"condition": "!(all(__VAR_1 IN $e WHERE ($__VAR_1.likeness>89)))"} |
+      | 13 | Traverse       | 1            |                | {"edge filter": "(*.likeness>90)"}                                  |
+      | 1  | IndexScan      | 2            |                |                                                                     |
+      | 2  | Start          |              |                |                                                                     |
     When profiling query:
       """
       MATCH (person:player)-[e1:like*1..2]-(friend:player)

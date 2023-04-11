@@ -1042,6 +1042,7 @@ void ExpressionUtils::splitFilter(const Expression *expr,
     // TODO(czp): If find any not, dont pick this operand for now
     if (ExpressionUtils::findAny(operand, {Expression::Kind::kUnaryNot})) {
       filterUnpickedPtr->addOperand(operand->clone());
+      continue;
     }
     if (picker(operand)) {
       filterPickedPtr->addOperand(operand->clone());
