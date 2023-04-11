@@ -32,4 +32,3 @@ Feature: contains filter
     Then the result should be, in order:
       | n                                                                                                           | e                                                                    | m                              |
       | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}] | ("Spurs" :team{name: "Spurs"}) |
-
