@@ -115,7 +115,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kContains: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ = lhs.getStr().size() >= rhs.getStr().size() &&
@@ -128,7 +129,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kNotContains: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
@@ -141,7 +143,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kStartsWith: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ =
@@ -154,7 +157,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kNotStartsWith: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ =
@@ -167,7 +171,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kEndsWith: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ =
@@ -182,7 +187,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kNotEndsWith: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !rhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         result_ = !(lhs.getStr().size() >= rhs.getStr().size() &&
