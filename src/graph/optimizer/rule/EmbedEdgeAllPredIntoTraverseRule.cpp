@@ -65,6 +65,9 @@ bool isEdgeAllPredicate(const Expression* e,
     return false;
   }
   auto ves = graph::ExpressionUtils::collectAll(pe->filter(), {Expression::Kind::kAttribute});
+  if (ves.empty()) {
+    return false;
+  }
   for (const auto& ve : ves) {
     auto iv = static_cast<const AttributeExpression*>(ve)->left();
 

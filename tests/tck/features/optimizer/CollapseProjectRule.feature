@@ -29,8 +29,7 @@ Feature: Collapse Project Rule
       | 3    |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 12 | Project        | 10           |               |
-      | 10 | Filter         | 2            |               |
+      | 12 | Project        | 2            |               |
       | 2  | AppendVertices | 7            |               |
       | 7  | IndexScan      | 0            |               |
       | 0  | Start          |              |               |
@@ -96,8 +95,7 @@ Feature: Collapse Project Rule
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 10 | Dedup          | 14           |               |
-      | 14 | Project        | 12           |               |
-      | 12 | Filter         | 6            |               |
+      | 14 | Project        | 6            |               |
       | 6  | AppendVertices | 5            |               |
       | 5  | Filter         | 5            |               |
       | 5  | Traverse       | 4            |               |

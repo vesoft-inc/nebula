@@ -21,8 +21,6 @@ Feature: Match index selection
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"})   |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                                                                                                         |
-      | 9  | Project        | 8            |                                                                                                                                                                       |
-      | 8  | Filter         | 2            |                                                                                                                                                                       |
       | 2  | AppendVertices | 6            |                                                                                                                                                                       |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan\"","endValue":"\"Yao Ming\"","includeBegin":"false","includeEnd":"true"}}} |
       | 0  | Start          |              |                                                                                                                                                                       |
@@ -60,8 +58,6 @@ Feature: Match index selection
       | ("Dwight Howard" :player{age: 33, name: "Dwight Howard"})         |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                                                                                  |
-      | 9  | Project        | 8            |                                                                                                                                                |
-      | 8  | Filter         | 2            |                                                                                                                                                |
       | 2  | AppendVertices | 6            |                                                                                                                                                |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
       | 0  | Start          |              |                                                                                                                                                |
@@ -92,8 +88,6 @@ Feature: Match index selection
       | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
-      | 6  | Project        | 2            |               |
-      | 9  | Filter         | 3            |               |
       | 3  | AppendVertices | 7            |               |
       | 7  | IndexScan      | 2            |               |
       | 2  | Start          |              |               |

@@ -223,14 +223,13 @@ Feature: Embed edge all predicate into Traverse
       | [99]             | 31   |
       | [99]             | 33   |
     And the execution plan should be:
-      | id | name           | dependencies | profiling data | operator info                             |
-      | 7  | Project        | 15           |                |                                           |
-      | 15 | Filter         | 11           |                | {"condition": "((n.player.age>0)==true)"} |
-      | 11 | AppendVertices | 14           |                |                                           |
-      | 14 | Filter         | 13           |                | {"condition": "(size($e)>0)"}             |
-      | 13 | Traverse       | 1            |                | {"edge filter": "(*.likeness>90)"}        |
-      | 1  | IndexScan      | 2            |                |                                           |
-      | 2  | Start          |              |                |                                           |
+      | id | name           | dependencies | profiling data | operator info                        |
+      | 7  | Project        | 11           |                |                                      |
+      | 11 | AppendVertices | 14           |                | {"filter": "((player.age>0)==true)"} |
+      | 14 | Filter         | 13           |                | {"condition": "(size($e)>0)"}        |
+      | 13 | Traverse       | 1            |                | {"edge filter": "(*.likeness>90)"}   |
+      | 1  | IndexScan      | 2            |                |                                      |
+      | 2  | Start          |              |                |                                      |
     When profiling query:
       """
       MATCH (v:player)-[e:like*1..5]->(n)
@@ -279,14 +278,13 @@ Feature: Embed edge all predicate into Traverse
       | [99]             | 31   |
       | [99]             | 33   |
     And the execution plan should be:
-      | id | name           | dependencies | profiling data | operator info                             |
-      | 7  | Project        | 15           |                |                                           |
-      | 15 | Filter         | 11           |                | {"condition": "((n.player.age>0)==true)"} |
-      | 11 | AppendVertices | 14           |                |                                           |
-      | 14 | Filter         | 13           |                | {"condition": "(size($e)>0)"}             |
-      | 13 | Traverse       | 1            |                | {"filter": "(like.likeness>90)"}          |
-      | 1  | IndexScan      | 2            |                |                                           |
-      | 2  | Start          |              |                |                                           |
+      | id | name           | dependencies | profiling data | operator info                        |
+      | 7  | Project        | 11           |                |                                      |
+      | 11 | AppendVertices | 14           |                | {"filter": "((player.age>0)==true)"} |
+      | 14 | Filter         | 13           |                | {"condition": "(size($e)>0)"}        |
+      | 13 | Traverse       | 1            |                | {"filter": "(like.likeness>90)"}     |
+      | 1  | IndexScan      | 2            |                |                                      |
+      | 2  | Start          |              |                |                                      |
     When profiling query:
       """
       MATCH (v:player)-[e:like*0..5]->(n)

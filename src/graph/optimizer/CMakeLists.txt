@@ -62,6 +62,7 @@ nebula_add_library(
     rule/RemoveAppendVerticesBelowJoinRule.cpp
     rule/EmbedEdgeAllPredIntoTraverseRule.cpp
     rule/PushFilterThroughAppendVerticesRule.cpp
+    rule/PushFilterDownAppendVerticesRule.cpp
 )
 
 nebula_add_subdirectory(test)
