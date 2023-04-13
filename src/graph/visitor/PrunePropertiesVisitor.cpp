@@ -286,6 +286,11 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
           }
           auto tagIter = usedVertexProps.find(tagId);
           if (tagIter != usedVertexProps.end()) {
+            auto &tagProps = tagIter->second;
+            if (tagProps.find("*") != tagProps.end()) {
+              prunedVertexProps->emplace_back(vertexProp);
+              continue;
+            }
             usedProps.insert(tagIter->second.begin(), tagIter->second.end());
           }
           if (usedProps.empty()) {
