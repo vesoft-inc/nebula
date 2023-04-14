@@ -231,6 +231,21 @@ void ExtractFilterExprVisitor::visit(ColumnExpression *) {
   canBePushed_ = false;
 }
 
+void ExtractFilterExprVisitor::visit(UnaryExpression *expr) {
+  if (expr->kind() == Expression::Kind::kUnaryNot &&
+      (expr->operand()->kind() == Expression::Kind::kLogicalAnd ||
+       expr->operand()->kind() == Expression::Kind::kLogicalOr)) {
+    // The NOT operation in this kind of expressions should had been reduced.
+    // In case it had not been reduced, pushing it down would cause wrong results.
+    canBePushed_ = false;
+    return;
+  }
+  if (expr->operand() != nullptr) {
+    expr->operand()->accept(this);
+    return;
+  }
+}
+
 // @return: whether this logical expr satisfies split condition
 bool ExtractFilterExprVisitor::visitLogicalAnd(LogicalExpression *expr, std::vector<bool> &flags) {
   DCHECK_EQ(expr->kind(), Expression::Kind::kLogicalAnd);
