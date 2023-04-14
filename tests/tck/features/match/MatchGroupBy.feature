@@ -200,3 +200,39 @@ Feature: Match GroupBy
       | "Danny Green"     | 36  | 1   |
       | "Dejounte Murray" | 33  | 1   |
       | "Dirk Nowitzki"   | 42  | 1   |
+
+  Scenario: [9] Match GroupBy
+    When executing query:
+      """
+      MATCH p = (a)-[b:like]->(c)-[:serve]->(d:team)
+        WHERE id(a) == 'Tim Duncan'
+        WITH
+          a,
+          collect(
+            CASE c.player.name
+              WHEN null THEN null
+              ELSE [c.player.name, b.likeness, d.team.name]
+            END
+          ) AS res
+        RETURN res
+      """
+    Then the result should be, in order, with relax comparison:
+      | res                                                                                            |
+      | [["Tony Parker", 95, "Hornets"], ["Tony Parker", 95, "Spurs"], ["Manu Ginobili", 95, "Spurs"]] |
+    When executing query:
+      """
+      MATCH p = (a)-[b:like]->(c)-[:serve]->(d:team)
+        WHERE id(a) == 'Tim Duncan'
+        WITH
+          a,
+          collect(
+            CASE c.player.name
+              WHEN null THEN null
+              ELSE [c.player, b.likeness, d.team.name]
+            END
+          ) AS res
+        RETURN res
+      """
+    Then the result should be, in order, with relax comparison:
+      | res                                                                                                                                               |
+      | [[{age: 36, name: "Tony Parker"}, 95, "Hornets"], [{age: 36, name: "Tony Parker"}, 95, "Spurs"], [{age: 41, name: "Manu Ginobili"}, 95, "Spurs"]] |

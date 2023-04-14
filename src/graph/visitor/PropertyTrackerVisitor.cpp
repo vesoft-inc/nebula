@@ -51,7 +51,8 @@ void PropertyTracker::insertVertexProp(const std::string &name,
     vertexPropsMap[name][tagId].emplace(propName);
   } else {
     auto propIter = iter->second.find(tagId);
-    if (propIter == iter->second.end()) {
+    if (propIter == iter->second.end() || propName == "*") {
+      iter->second.erase(tagId);
       std::unordered_set<std::string> temp({propName});
       iter->second.emplace(tagId, std::move(temp));
     } else {
@@ -209,18 +210,17 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
   switch (lhs->kind()) {
     case Expression::Kind::kInputProperty:
     case Expression::Kind::kVarProperty: {
-      // maybe: $e.prop
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
       auto &entityAlias = varPropExpr->prop();
-      propsUsed_.insertEdgeProp(entityAlias, unknownType_, propName);
-      // maybe: $v.tag
+      // maybe : $v.tag
       auto ret = qctx_->schemaMng()->toTagID(space_, propName);
-      if (!ret.ok()) {
-        status_ = std::move(ret).status();
+      if (ret.ok()) {
+        auto tagId = ret.value();
+        propsUsed_.insertVertexProp(entityAlias, tagId, "*");
         break;
       }
-      auto tagId = ret.value();
-      propsUsed_.insertVertexProp(entityAlias, tagId, "*");
+      // maybe: $e.prop
+      propsUsed_.insertEdgeProp(entityAlias, unknownType_, propName);
       break;
     }
     case Expression::Kind::kCase: {  // (case xxx).name
