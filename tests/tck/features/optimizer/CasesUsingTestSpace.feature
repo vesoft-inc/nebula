@@ -21,20 +21,19 @@ Feature: Push Filter Down Cases Using the test Space
       | pa2  |
       | true |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                 |
-      | 17 | project        | 19           |                                               |
-      | 19 | aggregate      | 24           |                                               |
-      | 24 | HashInnerJoin  | 21,29        |                                               |
-      | 21 | project        | 6            |                                               |
-      | 6  | AppendVertices | 26           |                                               |
-      | 26 | Traverse       | 25           |                                               |
-      | 25 | Traverse       | 2            |                                               |
-      | 2  | Dedup          | 1            |                                               |
-      | 1  | PassThrough    | 3            |                                               |
-      | 3  | Start          |              |                                               |
-      | 29 | project        | 28           |                                               |
-      | 28 | Filter         | 27           | {"condition": "$-.v3.Label_6.Label_6_1_Bool"} |
-      | 27 | AppendVertices | 11           |                                               |
-      | 11 | Traverse       | 10           |                                               |
-      | 10 | Traverse       | 9            |                                               |
-      | 9  | Argument       |              |                                               |
+      | id | name           | dependencies | operator info                                                        |
+      | 17 | project        | 19           |                                                                      |
+      | 19 | aggregate      | 24           |                                                                      |
+      | 24 | HashInnerJoin  | 21,29        |                                                                      |
+      | 21 | project        | 6            |                                                                      |
+      | 6  | AppendVertices | 26           |                                                                      |
+      | 26 | Traverse       | 25           |                                                                      |
+      | 25 | Traverse       | 2            |                                                                      |
+      | 2  | Dedup          | 1            |                                                                      |
+      | 1  | PassThrough    | 3            |                                                                      |
+      | 3  | Start          |              |                                                                      |
+      | 29 | project        | 27           |                                                                      |
+      | 27 | AppendVertices | 11           | {"filter": "(Label_6.Label_6_1_Bool AND Label_6._tag IS NOT EMPTY)"} |
+      | 11 | Traverse       | 10           |                                                                      |
+      | 10 | Traverse       | 9            |                                                                      |
+      | 9  | Argument       |              |                                                                      |

@@ -24,8 +24,7 @@ Feature: Push Limit down project rule
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 19 | Project        | 16           |               |
-      | 16 | Limit          | 11           |               |
-      | 11 | Filter         | 4            |               |
+      | 16 | Limit          | 4            |               |
       | 4  | AppendVertices | 3            |               |
       | 3  | Filter         | 3            |               |
       | 3  | Traverse       | 2            |               |

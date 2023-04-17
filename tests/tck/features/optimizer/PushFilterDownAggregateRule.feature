@@ -35,8 +35,7 @@ Feature: Push Filter down Aggregate rule
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 8  | Sort           | 13           |               |
-      | 13 | Aggregate      | 10           |               |
-      | 10 | Filter         | 12           |               |
+      | 13 | Aggregate      | 12           |               |
       | 12 | AppendVertices | 1            |               |
       | 1  | IndexScan      | 2            |               |
       | 2  | Start          |              |               |

@@ -37,7 +37,8 @@ const Value& RelationalExpression::eval(ExpressionContext& ctx) {
     case Kind::kRelREG: {
       if (lhs.isBadNull() || rhs.isBadNull()) {
         result_ = Value::kNullBadType;
-      } else if ((!lhs.isNull() && !lhs.isStr()) || (!rhs.isNull() && !rhs.isStr())) {
+      } else if ((!lhs.isNull() && !lhs.empty() && !lhs.isStr()) ||
+                 (!rhs.isNull() && !lhs.empty() && !rhs.isStr())) {
         result_ = Value::kNullBadType;
       } else if (lhs.isStr() && rhs.isStr()) {
         try {

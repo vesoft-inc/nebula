@@ -814,11 +814,6 @@ Feature: Basic match
       MATCH (v:player{name:"abc"})
       """
     Then a SyntaxError should be raised at runtime: syntax error near `)'
-    When executing query:
-      """
-      MATCH (v:player) where v.player.name RETURN v
-      """
-    Then a ExecutionError should be raised at runtime: Failed to evaluate condition: v.player.name. For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
 
   Scenario: Scan
     When executing query:

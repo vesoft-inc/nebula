@@ -67,7 +67,6 @@ Feature: Index selecting for match statement
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
       | 6  | Project        | 2            |                                                     |
-      | 2  | Filter         | 5            |                                                     |
       | 2  | AppendVertices | 5            |                                                     |
       | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
@@ -82,7 +81,6 @@ Feature: Index selecting for match statement
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
       | 6  | Project        | 2            |                                                     |
-      | 2  | Filter         | 5            |                                                     |
       | 2  | AppendVertices | 5            |                                                     |
       | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
@@ -95,8 +93,7 @@ Feature: Index selecting for match statement
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
-      | 9  | Project        | 7            |                                                     |
-      | 7  | Filter         | 2            |                                                     |
+      | 9  | Project        | 2            |                                                     |
       | 2  | AppendVertices | 6            |                                                     |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
@@ -109,8 +106,7 @@ Feature: Index selecting for match statement
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
-      | 9  | Project        | 7            |                                                     |
-      | 7  | Filter         | 2            |                                                     |
+      | 9  | Project        | 2            |                                                     |
       | 2  | AppendVertices | 6            |                                                     |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
@@ -123,8 +119,7 @@ Feature: Index selecting for match statement
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
-      | 9  | Project        | 7            |                                                     |
-      | 7  | Filter         | 2            |                                                     |
+      | 9  | Project        | 2            |                                                     |
       | 2  | AppendVertices | 6            |                                                     |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |
@@ -139,8 +134,7 @@ Feature: Index selecting for match statement
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                      |
-      | 9  | Project        | 7            |                                                    |
-      | 7  | Filter         | 2            |                                                    |
+      | 9  | Project        | 2            |                                                    |
       | 2  | AppendVertices | 6            |                                                    |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
       | 0  | Start          |              |                                                    |
@@ -162,8 +156,7 @@ Feature: Index selecting for match statement
       | "Tim Duncan" |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                       |
-      | 9  | Project        | 7            |                                                     |
-      | 7  | Filter         | 2            |                                                     |
+      | 9  | Project        | 2            |                                                     |
       | 2  | AppendVertices | 6            |                                                     |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
       | 0  | Start          |              |                                                     |

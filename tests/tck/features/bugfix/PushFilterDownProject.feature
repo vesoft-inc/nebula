@@ -19,12 +19,11 @@ Feature: Test push filter down project
       | count(*) |
       | 2        |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                                                                                                        |
-      | 9  | Aggregate      | 12           |                                                                                                                                                      |
-      | 12 | Project        | 11           |                                                                                                                                                      |
-      | 11 | Filter         | 5            | {"condition": "(($-.n1.player.age-($-.n1.player.age+(($-.n1.player.age%$-.n1.player.age)+($-.n1.player.age+$-.n1.player.age))))<=$-.n1.player.age)"} |
-      | 5  | AppendVertices | 4            |                                                                                                                                                      |
-      | 4  | Traverse       | 2            |                                                                                                                                                      |
-      | 2  | Dedup          | 1            |                                                                                                                                                      |
-      | 1  | PassThrough    | 3            |                                                                                                                                                      |
-      | 3  | Start          |              |                                                                                                                                                      |
+      | id | name           | dependencies | operator info                                                                                           |
+      | 9  | Aggregate      | 12           |                                                                                                         |
+      | 12 | Project        | 5            |                                                                                                         |
+      | 5  | AppendVertices | 4            | {"filter": "((player.age-(player.age+((player.age%player.age)+(player.age+player.age))))<=player.age)"} |
+      | 4  | Traverse       | 2            |                                                                                                         |
+      | 2  | Dedup          | 1            |                                                                                                         |
+      | 1  | PassThrough    | 3            |                                                                                                         |
+      | 3  | Start          |              |                                                                                                         |
