@@ -114,9 +114,8 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::cre
   // check the number of sessions per user per ip
   std::string key = userName + clientIp;
   auto maxSessions = FLAGS_max_sessions_per_ip_per_user;
-  auto uiscFindPtr = userIpSessionCount_.find(key);
-  if (uiscFindPtr != userIpSessionCount_.end() && maxSessions > 0 &&
-      uiscFindPtr->second.get()->get() > maxSessions - 1) {
+  auto uiscFindPtr = sessionCnt(key);
+  if (maxSessions > 0 && uiscFindPtr && uiscFindPtr->get() > maxSessions - 1) {
     return Status::Error(
         "Create Session failed: Too many sessions created from %s by user %s. "
         "the threshold is %d. You can change it by modifying '%s' in nebula-graphd.conf",
@@ -362,25 +361,5 @@ void GraphSessionManager::removeSessionFromLocalCache(const std::vector<SessionI
   }
 }
 
-void GraphSessionManager::addSessionCount(std::string& key) {
-  auto countFindPtr = userIpSessionCount_.find(key);
-  if (countFindPtr != userIpSessionCount_.end()) {
-    countFindPtr->second.get()->fetch_add(1);
-  } else {
-    userIpSessionCount_.insert_or_assign(key, std::make_shared<SessionCount>());
-  }
-}
-
-void GraphSessionManager::subSessionCount(std::string& key) {
-  auto countFindPtr = userIpSessionCount_.find(key);
-  if (countFindPtr == userIpSessionCount_.end()) {
-    VLOG(1) << "Session count not found for key: " << key;
-    return;
-  }
-  auto count = countFindPtr->second.get()->fetch_sub(1);
-  if (count <= 0) {
-    userIpSessionCount_.erase(countFindPtr);
-  }
-}
 }  // namespace graph
 }  // namespace nebula

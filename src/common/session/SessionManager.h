@@ -6,6 +6,7 @@
 #ifndef COMMON_SESSION_SESSIONMANAGER_H_
 #define COMMON_SESSION_SESSIONMANAGER_H_
 
+#include <folly/RWSpinLock.h>
 #include <folly/concurrency/ConcurrentHashMap.h>
 
 #include "clients/meta/MetaClient.h"
@@ -23,7 +24,7 @@ namespace nebula {
 
 class SessionCount {
  private:
-  std::atomic<int32_t> count_ = 1;
+  std::atomic<int32_t> count_{0};
 
  public:
   int fetch_add(int step) {
@@ -75,11 +76,48 @@ class SessionManager {
  protected:
   using SessionPtr = std::shared_ptr<SessionType>;
   using SessionCountPtr = std::shared_ptr<SessionCount>;
+
+  // Get session count pointer according to key
+  SessionCountPtr sessionCnt(const std::string& key) {
+    folly::RWSpinLock::ReadHolder rh(&sessCntLock_);
+    auto iter = userIpSessionCount_.find(key);
+    if (iter != userIpSessionCount_.end()) {
+      return iter->second;
+    }
+    return nullptr;
+  }
+
+  // add sessionCount
+  void addSessionCount(std::string& key) {
+    auto sessCntPtr = sessionCnt(key);
+    if (!sessCntPtr) {
+      folly::RWSpinLock::WriteHolder wh(&sessCntLock_);
+      auto iter = userIpSessionCount_.emplace(key, std::make_shared<SessionCount>());
+      sessCntPtr = iter.first->second;
+    }
+    sessCntPtr->fetch_add(1);
+  }
+
+  // sub sessionCount
+  void subSessionCount(std::string& key) {
+    auto countFindPtr = sessionCnt(key);
+    if (countFindPtr) {
+      auto count = countFindPtr->fetch_sub(1);
+      if (count == 1) {
+        folly::RWSpinLock::WriteHolder wh(&sessCntLock_);
+        userIpSessionCount_.erase(key);
+      }
+    }
+  }
+
   folly::ConcurrentHashMap<SessionID, SessionPtr> activeSessions_;
-  folly::ConcurrentHashMap<std::string, SessionCountPtr> userIpSessionCount_;
   std::unique_ptr<thread::GenericWorker> scavenger_;
   meta::MetaClient* metaClient_{nullptr};
   HostAddr myAddr_;
+
+ private:
+  folly::RWSpinLock sessCntLock_;
+  std::unordered_map<std::string, SessionCountPtr> userIpSessionCount_;
 };
 
 }  // namespace nebula
