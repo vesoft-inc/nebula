@@ -300,6 +300,17 @@ Feature: Multi Line Multi Query Parts
       | 19     | 110    |
     When executing query:
       """
+      MATCH (m:player{name:"Tim Duncan"})-[e:like*2..3]-(n)--()
+      WHERE all(i in e where rank(i)==0)
+      WITH  m,count(*) AS lcount
+      MATCH (m)--(n)
+      RETURN count(*) AS scount, lcount
+      """
+    Then the result should be, in order:
+      | scount | lcount |
+      | 19     | 2888   |
+    When executing query:
+      """
       MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
       WITH  m,n
       MATCH (m)--(n)
