@@ -66,6 +66,7 @@ bool isEdgeAllPredicate(const Expression* e,
   }
   auto ves = graph::ExpressionUtils::collectAll(pe->filter(), {Expression::Kind::kAttribute});
   if (ves.empty()) {
+    // innerVar.prop not exists
     return false;
   }
   for (const auto& ve : ves) {
