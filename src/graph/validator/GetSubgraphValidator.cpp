@@ -126,17 +126,29 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
   if (where == nullptr) {
     return Status::OK();
   }
-  auto* expr = where->filter();
-  if (ExpressionUtils::findAny(expr,
+  auto* filterExpr = where->filter();
+  if (ExpressionUtils::findAny(filterExpr,
                                {Expression::Kind::kAggregate,
                                 Expression::Kind::kSrcProperty,
                                 Expression::Kind::kVarProperty,
                                 Expression::Kind::kInputProperty,
                                 Expression::Kind::kLogicalOr})) {
-    return Status::SemanticError("Not support `%s' in where sentence.", expr->toString().c_str());
+    return Status::SemanticError("Not support `%s' in where sentence.",
+                                 filterExpr->toString().c_str());
   }
 
-  where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
+  auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filterExpr, qctx_);
+  if (!undefinedParams.empty()) {
+    return Status::SemanticError(
+        "Undefined parameters: " +
+        std::accumulate(++undefinedParams.begin(),
+                        undefinedParams.end(),
+                        *undefinedParams.begin(),
+                        [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
+  }
+  auto* newFilter = graph::ExpressionUtils::rewriteParameter(filterExpr, qctx_);
+
+  where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(newFilter));
   auto filter = where->filter();
   auto typeStatus = deduceExprType(filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -169,11 +181,11 @@ Status GetSubgraphValidator::validateWhere(WhereClause* where) {
   }
 
   auto condition = filter->clone();
-  if (ExpressionUtils::findAny(expr, {Expression::Kind::kDstProperty})) {
+  if (ExpressionUtils::findAny(filter, {Expression::Kind::kDstProperty})) {
     auto visitor = ExtractFilterExprVisitor::makePushGetVertices(qctx_->objPool());
     filter->accept(&visitor);
     if (!visitor.ok()) {
-      return Status::SemanticError("Push target vertices filter error: " + expr->toString());
+      return Status::SemanticError("Push target vertices filter error: " + filter->toString());
     }
     subgraphCtx_->edgeFilter = visitor.remainedExpr();
     auto tagFilter = visitor.extractedExpr() ? visitor.extractedExpr() : filter;
