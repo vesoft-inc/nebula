@@ -448,7 +448,7 @@ Feature: Basic match
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*2]->(n)
        RETURN ()-[e:like*2]->(n)
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player{name: 'Tim Duncan'})-[e:like*3]->(n), (t:team {name: "Spurs"})
@@ -456,24 +456,24 @@ Feature: Basic match
         UNWIND [n in ns | ()-[e*3]->(n:player)] AS p
         RETURN p
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n)
         WHERE (n)-[e*3]->(:player)
         RETURN v
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e*1..4]->(:player) return v
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player)-[e:like*3]->(n) WHERE id(v)=="Tim Duncan" and (n)-[e*3]->(:player) return v
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player)-[e:like]->(n) WHERE (n)-[e*1..4]->(:player) RETURN v
@@ -483,7 +483,7 @@ Feature: Basic match
       """
       MATCH (v:player)-[e:like*3]->(n) WHERE (n)-[e*1]->(:player) RETURN v
       """
-    Then a SemanticError should be raised at runtime: Variable 'e` 's type is edge list. not support used in multiple patterns simultaneously.
+    Then a SemanticError should be raised at runtime: Unsupported type of variable 'e` used in multiple patterns: list of edges.
     When executing query:
       """
       MATCH (v:player)-[e:like*1..3]->(n) WHERE (n)-[e]->(:player) RETURN v

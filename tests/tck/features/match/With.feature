@@ -453,27 +453,27 @@ Feature: With clause
       """
       with "1" as a match (a)-[e:like]->(b) return b
       """
-    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got "1", which is type string
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got "1", whose type is 'string'
     When executing query:
       """
       with 1 as a match (a)-[e:like]->(b) return b
       """
-    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, whose type is 'int'
     When executing query:
       """
       with 1 as b match (b) return b
       """
-    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, whose type is 'int'
     When executing query:
       """
       with [1,2] as a unwind a as b  match (b) return b
       """
-    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, whose type is 'int'
     When executing query:
       """
       with [1,2] as a unwind a as b  match (b)-[e:like]->(a:player{age:30}) return b
       """
-    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, which is type int
+    Then a ExecutionError should be raised at runtime:  Argument only support vertex, but got 1, whose type is 'int'
 
   Scenario: duplicate columns
     When executing query:

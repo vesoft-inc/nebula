@@ -1333,8 +1333,7 @@ Status MatchValidator::validatePathInWhere(
     if (!edgeAlias.empty() && !AnonVarGenerator::isAnnoVar(edgeAlias)) {
       if (edge->range()) {
         return Status::SemanticError(
-            "Variable '%s` 's type is edge list. not support used in multiple patterns "
-            "simultaneously.",
+            "Unsupported type of variable '%s` used in multiple patterns: list of edges",
             edgeAlias.c_str());
       }
       pathInfo.compareVariables.emplace_back(edgeAlias);
