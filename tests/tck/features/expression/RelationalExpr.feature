@@ -233,3 +233,21 @@ Feature: RelationalExpression
       | 2  | AppendVertices | 6            |                                                    |
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
       | 0  | Start          |              |                                                    |
+
+  Scenario: Transform Relational expr in MATCH clause
+    When profiling query:
+      """
+      MATCH (v:player{name: "Tim Duncan"})-[e]->(m) WHERE m.player.name =~ 'Tony.*' RETURN id(m) AS id
+      """
+    Then the result should be, in any order:
+      | id            |
+      | "Tony Parker" |
+      | "Tony Parker" |
+    And the execution plan should be:
+      | id | name           | dependencies | operator info |
+      | 13 | Project        | 12           |               |
+      | 12 | Filter         | 12           |               |
+      | 12 | AppendVertices | 11           |               |
+      | 11 | Traverse       | 8            |               |
+      | 8  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
