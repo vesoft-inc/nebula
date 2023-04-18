@@ -247,6 +247,7 @@ struct NodeContext final : PatternContext {
   // Output fields
   ScanInfo scanInfo;
   Set ids;
+  std::string refVarName;
   // initialize start expression in project node
   Expression* initialExpr{nullptr};
 };
