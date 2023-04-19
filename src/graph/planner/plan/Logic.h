@@ -42,7 +42,7 @@ class BinarySelect : public SingleInputNode {
   void cloneMembers(const BinarySelect& s) {
     SingleInputNode::cloneMembers(s);
 
-    condition_ = s.condition();
+    condition_ = s.condition()->clone();
   }
 
  protected:
@@ -153,6 +153,14 @@ class Argument final : public PlanNode {
     return qctx->objPool()->makeAndAdd<Argument>(qctx, alias);
   }
 
+  bool isInputVertexRequired() const {
+    return isInputVertexRequired_;
+  }
+
+  void setInputVertexRequired(bool required) {
+    isInputVertexRequired_ = required;
+  }
+
   PlanNode* clone() const override;
 
   const std::string& getAlias() const {
@@ -169,7 +177,9 @@ class Argument final : public PlanNode {
 
  private:
   std::string alias_;
+  bool isInputVertexRequired_{true};
 };
+
 }  // namespace graph
 }  // namespace nebula
 

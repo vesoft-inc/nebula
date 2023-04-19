@@ -18,9 +18,6 @@ folly::Future<Status> ArgumentExecutor::execute() {
   auto &alias = argNode->getAlias();
   auto iter = DCHECK_NOTNULL(ectx_->getResult(argNode->inputVar()).iter());
 
-  const auto &successor = successors();
-  auto kind = (*successor.begin())->node()->kind();
-
   auto sz = iter->size();
 
   DataSet ds;
@@ -44,31 +41,20 @@ folly::Future<Status> ArgumentExecutor::execute() {
       continue;
     }
 
-    if (val.isVertex()) {
-      addRow(val);
-      continue;
-    }
-
-    switch (kind) {
-      case PlanNode::Kind::kTraverse: {
-        if (val.isList()) {
-          for (auto &v : val.getList().values) {
-            addRow(v);
-          }
-          break;
-        }
-        [[fallthrough]];
-      }
-      case PlanNode::Kind::kGetVertices:
-      case PlanNode::Kind::kExpand: {
-        // TODO(jmq) analyze the type of val in the validation phase
-        addRow(val);
-        break;
-      }
-      default: {
+    if (argNode->isInputVertexRequired()) {
+      if (!val.isVertex()) {
         return Status::Error("Argument only support vertex, but got %s, whose type is '%s'",
                              val.toString().c_str(),
                              val.typeName().c_str());
+      }
+      addRow(val);
+    } else {
+      if (val.isList()) {
+        for (auto &v : val.getList().values) {
+          addRow(v);
+        }
+      } else {
+        addRow(val);
       }
     }
   }

@@ -47,6 +47,7 @@ StatusOr<SubPlan> VariableVertexIdSeek::transformNode(NodeContext *nodeCtx) {
   SubPlan plan;
   auto argument = Argument::make(qctx, refVarName);
   argument->setColNames({refVarName});
+  argument->setInputVertexRequired(false);
   plan.root = plan.tail = argument;
 
   nodeCtx->initialExpr = InputPropertyExpression::make(qctx->objPool(), refVarName);
