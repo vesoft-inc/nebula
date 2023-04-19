@@ -17,4 +17,3 @@ fastcov==1.13
 deepdiff==5.7.0
 yapf==0.32.0
 tomli==1.2.3
-yapf=0.32.0
