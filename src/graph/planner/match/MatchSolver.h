@@ -43,6 +43,13 @@ class MatchSolver final {
                                      Expression* filter,
                                      QueryContext* qctx,
                                      bool isEdgeProperties = false);
+  // Rewrite the tag index filter in the following way:
+  //   v.player.name==name => v.player.name IN $name
+  // static Expression* rewriteTagIndexFilter(const std::string& label,
+  //                                          const std::string& alias,
+  //                                          Expression* filter,
+  //                                          QueryContext* qctx,
+  //                                          std::string* varName);
 
   static PlanNode* filtPathHasSameEdge(PlanNode* input,
                                        const std::string& column,

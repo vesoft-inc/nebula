@@ -803,3 +803,335 @@ Feature: Match By Variable
       return count(*) as n
       """
     Then a ExecutionError should be raised at runtime: Failed to evaluate condition: (id($-.v1) IN $-.v2). For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
+
+  Scenario: [1] match by prop index from with
+    When profiling query:
+      """
+      with ['Tim Duncan', 'Yao Ming'] as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      with ['Tim Duncan', 'Yao Ming'] as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      with ['Tim Duncan', 'Yao Ming'] as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      with ['Tim Duncan', 'Yao Ming'] as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      with ['Tim Duncan', 'Yao Ming'] as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: [2] match by prop index from with
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: [3] match by prop index from with
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and v2.player.name in names
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as names
+      match (v1:player)--(v2:player)
+      where v1.player.name in names and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: [1] match by prop index from unwind
+    When profiling query:
+      """
+      unwind ['Tim Duncan', 'Yao Ming'] as name
+      match (v1:player)--(v2:player)
+      where v1.player.name == name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      unwind ['Tim Duncan', 'Yao Ming'] as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      unwind ['Tim Duncan', 'Yao Ming'] as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      unwind ['Tim Duncan', 'Yao Ming'] as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      unwind ['Tim Duncan', 'Yao Ming'] as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: [2] match by prop index from unwind
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: [3] match by prop index from unwind
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and v2.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v1) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) starts with 'T'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name and id(v2) in ['Tim Duncan', 'Yao Ming']
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
+
+  Scenario: reference invalid variable
+    When profiling query:
+      """
+      match (v1:player)--(v2)
+      where v1.player.name==v2
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                |
