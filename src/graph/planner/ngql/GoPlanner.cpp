@@ -111,6 +111,7 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto& colName = dep->colNames().back();
   auto argNode = Argument::make(qctx, colName);
   argNode->setColNames({colName});
+  argNode->setInputVertexRequired(false);
 
   // dst is the first column, columnName is "JOIN_DST_VID"
   auto* dstExpr = ColumnExpression::make(pool, LAST_COL_INDEX);
@@ -246,6 +247,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
     auto argNode = Argument::make(qctx, from.runtimeVidName);
     argNode->setColNames({from.runtimeVidName});
+    argNode->setInputVertexRequired(false);
     goCtx_->vidsVar = argNode->outputVar();
     startNode_ = argNode;
   }
