@@ -83,11 +83,15 @@ PlanNode* Argument::clone() const {
 
 void Argument::cloneMembers(const Argument& arg) {
   PlanNode::cloneMembers(arg);
+  alias_ = arg.getAlias();
+  isInputVertexRequired_ = arg.isInputVertexRequired();
 }
 
 std::unique_ptr<PlanNodeDescription> Argument::explain() const {
   auto desc = PlanNode::explain();
   addDescription("inputVar", inputVar(), desc.get());
+  addDescription("alias", alias_, desc.get());
+  addDescription("isInputVertexRequired", std::to_string(isInputVertexRequired_), desc.get());
   return desc;
 }
 }  // namespace graph
