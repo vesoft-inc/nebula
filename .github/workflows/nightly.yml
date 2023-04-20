@@ -46,7 +46,7 @@ jobs:
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "subdir=$subdir" >> $GITHUB_OUTPUT
-      # - uses: actions/upload-artifact@v1
+      # - uses: actions/upload-artifact@v3
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output

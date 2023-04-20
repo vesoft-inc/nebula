@@ -6,6 +6,58 @@ Feature: single shortestPath
   Background:
     Given a graph with space named "nba"
 
+  Scenario: shortest path invalid step
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e*2]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: The minimal number of steps for shortestPath() must be either 0 or 1.
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e*2..4]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: The minimal number of steps for shortestPath() must be either 0 or 1.
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e]->(b)--(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: `shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e]->(b)-[e2:like]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: `shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)
+
+  Scenario: zero step shortestpath
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH shortestPath((v1:player)-[e*0]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      MATCH shortestPath((v1:player{name:"Tim Duncan"})-[e*0]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+
   Scenario: single shortestPath1
     When executing query:
       """

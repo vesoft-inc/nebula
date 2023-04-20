@@ -20,6 +20,7 @@ Feature: Geo base
       CREATE EDGE any_shape_edge(geo geography);
       """
     And wait 3 seconds
+    Given parameters: {"p4": {"s1":"test","s2":"2020-01-01 10:00:00","s3":[1,2,3,4,5],"longitude":[1.0,2.0,3.0],"latitude":[10.1,11.1,12.1]}}
 
   Scenario: test geo schema
     # Desc geo schema
@@ -543,6 +544,12 @@ Feature: Geo base
       | "LINESTRING(3 8, 4.7 73.23)"    |
       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
       | "POINT(72.3 84.6)"              |
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point($p4.longitude[0], $p4.latitude[1])) < $p4.latitude[2] YIELD id(vertex)
+      """
+    Then the result should be, in any order:
+      | id(VERTEX) |
     When executing query:
       """
       LOOKUP ON any_shape WHERE 8909524.383934560 > ST_Distance(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);

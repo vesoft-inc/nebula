@@ -24,6 +24,7 @@ Feature: Bug fixes on filter push-down
       | 11 | Project        | 10           |               |
       | 10 | Filter         | 6            |               |
       | 6  | AppendVertices | 5            |               |
+      | 5  | Filter         | 5            |               |
       | 5  | Traverse       | 4            |               |
       | 4  | Traverse       | 2            |               |
       | 2  | Dedup          | 1            |               |
@@ -45,6 +46,7 @@ Feature: Bug fixes on filter push-down
       | 11 | Project        | 10           |               |
       | 10 | Filter         | 6            |               |
       | 6  | AppendVertices | 5            |               |
+      | 5  | Filter         | 5            |               |
       | 5  | Traverse       | 4            |               |
       | 4  | Traverse       | 2            |               |
       | 2  | Dedup          | 1            |               |

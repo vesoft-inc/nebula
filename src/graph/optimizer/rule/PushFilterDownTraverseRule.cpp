@@ -32,9 +32,7 @@ PushFilterDownTraverseRule::PushFilterDownTraverseRule() {
 
 const Pattern& PushFilterDownTraverseRule::pattern() const {
   static Pattern pattern =
-      Pattern::create(PlanNode::Kind::kFilter,
-                      {Pattern::create(PlanNode::Kind::kAppendVertices,
-                                       {Pattern::create(PlanNode::Kind::kTraverse)})});
+      Pattern::create(PlanNode::Kind::kFilter, {Pattern::create(PlanNode::Kind::kTraverse)});
   return pattern;
 }
 
@@ -42,28 +40,23 @@ bool PushFilterDownTraverseRule::match(OptContext* ctx, const MatchedResult& mat
   if (!OptRule::match(ctx, matched)) {
     return false;
   }
-  DCHECK_EQ(matched.dependencies[0].dependencies[0].node->node()->kind(),
-            PlanNode::Kind::kTraverse);
-  auto traverse =
-      static_cast<const Traverse*>(matched.dependencies[0].dependencies[0].node->node());
+  DCHECK_EQ(matched.dependencies[0].node->node()->kind(), PlanNode::Kind::kTraverse);
+  auto traverse = static_cast<const Traverse*>(matched.dependencies[0].node->node());
   return traverse->isOneStep();
 }
 
 StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
-    OptContext* ctx, const MatchedResult& matched) const {
-  auto* filterGroupNode = matched.node;
-  auto* filterGroup = filterGroupNode->group();
-  auto* filter = static_cast<graph::Filter*>(filterGroupNode->node());
+    OptContext* octx, const MatchedResult& matched) const {
+  auto* filterGNode = matched.node;
+  auto* filterGroup = filterGNode->group();
+  auto* filter = static_cast<graph::Filter*>(filterGNode->node());
   auto* condition = filter->condition();
 
-  auto* avGroupNode = matched.dependencies[0].node;
-  auto* av = static_cast<graph::AppendVertices*>(avGroupNode->node());
+  auto* tvGNode = matched.dependencies[0].node;
+  auto* tvNode = static_cast<graph::Traverse*>(tvGNode->node());
+  auto& edgeAlias = tvNode->edgeAlias();
 
-  auto* tvGroupNode = matched.dependencies[0].dependencies[0].node;
-  auto* tv = static_cast<graph::Traverse*>(tvGroupNode->node());
-  auto& edgeAlias = tv->edgeAlias();
-
-  auto qctx = ctx->qctx();
+  auto qctx = octx->qctx();
   auto pool = qctx->objPool();
 
   // Pick the expr looks like `$-.e[0].likeness
@@ -105,49 +98,39 @@ StatusOr<OptRule::TransformResult> PushFilterDownTraverseRule::transform(
   }
   auto* newFilterPicked =
       graph::ExpressionUtils::rewriteEdgePropertyFilter(pool, edgeAlias, filterPicked->clone());
-
-  Filter* newFilter = nullptr;
-  OptGroupNode* newFilterGroupNode = nullptr;
-  if (filterUnpicked) {
-    newFilter = Filter::make(qctx, nullptr, filterUnpicked);
-    newFilter->setOutputVar(filter->outputVar());
-    newFilter->setColNames(filter->colNames());
-    newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroup);
-  }
-
-  auto* newAv = static_cast<graph::AppendVertices*>(av->clone());
-
-  OptGroupNode* newAvGroupNode = nullptr;
-  if (newFilterGroupNode) {
-    auto* newAvGroup = OptGroup::create(ctx);
-    newAvGroupNode = newAvGroup->makeGroupNode(newAv);
-    newFilterGroupNode->dependsOn(newAvGroup);
-    newFilter->setInputVar(newAv->outputVar());
-  } else {
-    newAvGroupNode = OptGroupNode::create(ctx, newAv, filterGroup);
-    newAv->setOutputVar(filter->outputVar());
-  }
-
-  auto* eFilter = tv->eFilter();
+  auto* eFilter = tvNode->eFilter();
   Expression* newEFilter = eFilter
                                ? LogicalExpression::makeAnd(pool, newFilterPicked, eFilter->clone())
                                : newFilterPicked;
 
-  auto* newTv = static_cast<graph::Traverse*>(tv->clone());
-  newAv->setInputVar(newTv->outputVar());
-  newTv->setEdgeFilter(newEFilter);
+  // produce new Traverse node
+  auto* newTvNode = static_cast<graph::Traverse*>(tvNode->clone());
+  newTvNode->setEdgeFilter(newEFilter);
+  newTvNode->setInputVar(tvNode->inputVar());
+  newTvNode->setColNames(tvNode->outputVarPtr()->colNames);
 
-  auto* newTvGroup = OptGroup::create(ctx);
-  newAvGroupNode->dependsOn(newTvGroup);
-  auto* newTvGroupNode = newTvGroup->makeGroupNode(newTv);
-
-  for (auto dep : tvGroupNode->dependencies()) {
-    newTvGroupNode->dependsOn(dep);
-  }
-
+  // connect the optimized plan
   TransformResult result;
-  result.eraseCurr = true;
-  result.newGroupNodes.emplace_back(newFilterGroupNode ? newFilterGroupNode : newAvGroupNode);
+  result.eraseAll = true;
+  if (filterUnpicked) {
+    auto* newFilterNode = graph::Filter::make(qctx, newTvNode, filterUnpicked);
+    newFilterNode->setOutputVar(filter->outputVar());
+    newFilterNode->setColNames(filter->colNames());
+    auto newFilterGNode = OptGroupNode::create(octx, newFilterNode, filterGroup);
+    // assemble the new Traverse group below Filter
+    auto newTvGroup = OptGroup::create(octx);
+    auto newTvGNode = newTvGroup->makeGroupNode(newTvNode);
+    newTvGNode->setDeps(tvGNode->dependencies());
+    newFilterGNode->setDeps({newTvGroup});
+    newFilterNode->setInputVar(newTvNode->outputVar());
+    result.newGroupNodes.emplace_back(newFilterGNode);
+  } else {
+    // replace the new Traverse node with the old Filter group
+    auto newTvGNode = OptGroupNode::create(octx, newTvNode, filterGroup);
+    newTvNode->setOutputVar(filter->outputVar());
+    newTvGNode->setDeps(tvGNode->dependencies());
+    result.newGroupNodes.emplace_back(newTvGNode);
+  }
 
   return result;
 }

@@ -35,6 +35,19 @@ void ExtractFilterExprVisitor::visit(TagPropertyExpression *expr) {
     canBePushed_ = false;
     return;
   }
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists tag or property
+    auto schema = schemaMng_->getTagSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+    auto field = schema->field(expr->prop());
+    if (field == nullptr && (expr->prop() != kTag && expr->prop() != kVid)) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
       canBePushed_ = false;
@@ -48,7 +61,20 @@ void ExtractFilterExprVisitor::visit(TagPropertyExpression *expr) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) {
+void ExtractFilterExprVisitor::visit(EdgePropertyExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists edge or property
+    auto schema = schemaMng_->getEdgeSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+    auto field = schema->field(expr->prop());
+    if (field == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
     case PushType::kGetEdges:
@@ -88,7 +114,20 @@ void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
+void ExtractFilterExprVisitor::visit(SourcePropertyExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists tag or property
+    auto schema = schemaMng_->getTagSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+    auto field = schema->field(expr->prop());
+    if (field == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
       canBePushed_ = true;
@@ -100,7 +139,15 @@ void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) {
+void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists edge
+    auto schema = schemaMng_->getEdgeSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
     case PushType::kGetEdges:
@@ -112,7 +159,15 @@ void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) {
+void ExtractFilterExprVisitor::visit(EdgeTypeExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists edge
+    auto schema = schemaMng_->getEdgeSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
     case PushType::kGetEdges:
@@ -124,7 +179,15 @@ void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(EdgeRankExpression *) {
+void ExtractFilterExprVisitor::visit(EdgeRankExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists edge
+    auto schema = schemaMng_->getEdgeSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
     case PushType::kGetEdges:
@@ -136,7 +199,15 @@ void ExtractFilterExprVisitor::visit(EdgeRankExpression *) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) {
+void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *expr) {
+  if (spaceId_ > 0) {
+    // Storage don't support nonexists edge
+    auto schema = schemaMng_->getEdgeSchema(spaceId_, expr->sym());
+    if (schema == nullptr) {
+      canBePushed_ = false;
+      return;
+    }
+  }
   switch (pushType_) {
     case PushType::kGetNeighbors:
     case PushType::kGetEdges:
@@ -158,6 +229,21 @@ void ExtractFilterExprVisitor::visit(EdgeExpression *) {
 
 void ExtractFilterExprVisitor::visit(ColumnExpression *) {
   canBePushed_ = false;
+}
+
+void ExtractFilterExprVisitor::visit(UnaryExpression *expr) {
+  if (expr->kind() == Expression::Kind::kUnaryNot &&
+      (expr->operand()->kind() == Expression::Kind::kLogicalAnd ||
+       expr->operand()->kind() == Expression::Kind::kLogicalOr)) {
+    // The NOT operation in this kind of expressions should had been reduced.
+    // In case it had not been reduced, pushing it down would cause wrong results.
+    canBePushed_ = false;
+    return;
+  }
+  if (expr->operand() != nullptr) {
+    expr->operand()->accept(this);
+    return;
+  }
 }
 
 // @return: whether this logical expr satisfies split condition

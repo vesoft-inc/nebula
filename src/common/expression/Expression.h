@@ -167,6 +167,10 @@ class Expression {
     return false;
   }
 
+  virtual bool isPropertyExpr() const {
+    return false;
+  }
+
   virtual bool isContainerExpr() const {
     return false;
   }

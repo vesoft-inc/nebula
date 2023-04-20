@@ -16,6 +16,9 @@ namespace graph {
 folly::Future<Status> BatchShortestPath::execute(const HashSet& startVids,
                                                  const HashSet& endVids,
                                                  DataSet* result) {
+  if (maxStep_ == 0) {
+    return Status::OK();
+  }
   // MemoryTrackerVerified
   size_t rowSize = init(startVids, endVids);
   std::vector<folly::Future<Status>> futures;

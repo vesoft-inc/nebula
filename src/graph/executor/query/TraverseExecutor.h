@@ -93,6 +93,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
  private:
   ObjectPool objPool_;
 
+  bool genPath_{false};
   VidHashSet vids_;
   std::vector<Value> initVertices_;
   DataSet result_;

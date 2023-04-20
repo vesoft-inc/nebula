@@ -137,9 +137,9 @@ Feature: Push Filter down Traverse rule
       | 17 | Aggregate      | 16           |                |                                       |
       | 16 | HashLeftJoin   | 10,15        |                |                                       |
       | 10 | Dedup          | 28           |                |                                       |
-      | 28 | Project        | 22           |                |                                       |
-      | 22 | Filter         | 26           |                |                                       |
+      | 28 | Project        | 26           |                |                                       |
       | 26 | AppendVertices | 25           |                |                                       |
+      | 25 | Filter         | 25           |                |                                       |
       | 25 | Traverse       | 24           |                | {"filter": "(serve.start_year>2010)"} |
       | 24 | Traverse       | 2            |                |                                       |
       | 2  | Dedup          | 1            |                |                                       |

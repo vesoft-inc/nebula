@@ -832,6 +832,7 @@ void Traverse::cloneMembers(const Traverse& g) {
   if (g.tagFilter_ != nullptr) {
     setTagFilter(g.tagFilter_->clone());
   }
+  genPath_ = g.genPath();
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -957,6 +958,34 @@ PlanNode* HashInnerJoin::clone() const {
 void HashInnerJoin::cloneMembers(const HashInnerJoin& l) {
   HashJoin::cloneMembers(l);
 }
+
+std::unique_ptr<PlanNodeDescription> CrossJoin::explain() const {
+  return BinaryInputNode::explain();
+}
+
+PlanNode* CrossJoin::clone() const {
+  auto* node = make(qctx_);
+  node->cloneMembers(*this);
+  return node;
+}
+
+void CrossJoin::cloneMembers(const CrossJoin& r) {
+  BinaryInputNode::cloneMembers(r);
+}
+
+CrossJoin::CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right)
+    : BinaryInputNode(qctx, Kind::kCrossJoin, left, right) {
+  auto lColNames = left->colNames();
+  auto rColNames = right->colNames();
+  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
+  setColNames(lColNames);
+}
+
+void CrossJoin::accept(PlanNodeVisitor* visitor) {
+  visitor->visit(this);
+}
+
+CrossJoin::CrossJoin(QueryContext* qctx) : BinaryInputNode(qctx, Kind::kCrossJoin) {}
 
 std::unique_ptr<PlanNodeDescription> RollUpApply::explain() const {
   auto desc = BinaryInputNode::explain();
