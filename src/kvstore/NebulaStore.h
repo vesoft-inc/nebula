@@ -775,6 +775,18 @@ class NebulaStore : public KVStore, public Handler {
                          bool isDbOption) override;
 
   /**
+   * @brief Asynchronously start a new KV engine on specified path
+   *
+   * @param spaceId Space ID
+   * @param dataPath
+   * @param walPath
+   * @return folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>>
+   */
+  folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> asyncNewEngine(
+              GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath);
+
+
+  /**
    * @brief Start a new kv engine on specified path
    *
    * @param spaceId

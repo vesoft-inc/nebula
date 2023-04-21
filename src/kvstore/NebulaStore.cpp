@@ -80,186 +80,210 @@ bool NebulaStore::init() {
 void NebulaStore::loadPartFromDataPath() {
   CHECK(!!options_.partMan_);
   LOG(INFO) << "Scan the local path, and init the spaces_";
-  // avoid duplicate engine created
-  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> partSet;
+
+  std::vector<folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>>> futures;
+  std::vector<std::string> enginesPath;
   for (auto& path : options_.dataPaths_) {
     auto rootPath = folly::stringPrintf("%s/nebula", path.c_str());
     auto dirs = fs::FileUtils::listAllDirsInDir(rootPath.c_str());
     for (auto& dir : dirs) {
       LOG(INFO) << "Scan path \"" << rootPath << "/" << dir << "\"";
+      GraphSpaceID spaceId;
       try {
-        GraphSpaceID spaceId;
-        try {
-          spaceId = folly::to<GraphSpaceID>(dir);
-        } catch (const std::exception& ex) {
-          LOG(ERROR) << folly::sformat("Data path {} invalid {}", dir, ex.what());
+        spaceId = folly::to<GraphSpaceID>(dir);
+      } catch (const std::exception& ex) {
+        LOG(ERROR) << folly::sformat("Data path {} invalid {}", dir, ex.what());
+        continue;
+      }
+
+      if (spaceId == 0) {
+        // skip the system space, only handle data space here.
+        continue;
+      }
+
+      enginesPath.emplace_back(rootPath + dir);
+      futures.emplace_back(asyncNewEngine(spaceId, path, options_.walPath_));
+    }
+  }
+
+  std::unordered_map<GraphSpaceID, std::vector<std::unique_ptr<KVEngine>>> spaceEngines;
+  auto tries = folly::collectAll(futures).get();
+  size_t index = 0;
+  for (auto& t : tries) {
+    if (!t.hasException()) {
+      auto&& p = t.value();
+      auto spaceIt = spaceEngines.find(p.first);
+      if (spaceIt == spaceEngines.end()) {
+        LOG(INFO) << "Load space " << p.first << " from disk";
+        spaceIt = spaceEngines.emplace(p.first, std::vector<std::unique_ptr<KVEngine>>()).first;
+      }
+      spaceIt->second.emplace_back(std::move(p.second));
+    } else {
+      LOG(FATAL) << "Invalid data directory \"" << enginesPath[index] << "\"";
+    }
+    ++index;
+  }
+
+  // avoid duplicate engine created
+  std::unordered_set<std::pair<GraphSpaceID, PartitionID>> partSet;
+  for (auto& spaceEngine : spaceEngines) {
+    GraphSpaceID spaceId = spaceEngine.first;
+    for (auto& engine : spaceEngine.second) {
+      std::map<PartitionID, Peers> partRaftPeers;
+
+      // load balancing part info which persisted to local engine.
+      for (auto& [partId, raftPeers] : engine->balancePartPeers()) {
+        CHECK_NE(raftPeers.size(), 0);
+
+        if (raftPeers.isExpired()) {
+          LOG(INFO) << "Space: " << spaceId << ", part:" << partId
+                    << " balancing info expired, ignore it.";
           continue;
         }
 
-        if (spaceId == 0) {
-          // skip the system space, only handle data space here.
-          continue;
-        }
+        auto spacePart = std::make_pair(spaceId, partId);
+        if (partSet.find(spacePart) == partSet.end()) {
+          partSet.emplace(std::make_pair(spaceId, partId));
 
-        auto engine = newEngine(spaceId, path, options_.walPath_);
-        std::map<PartitionID, Peers> partRaftPeers;
-
-        // load balancing part info which persisted to local engine.
-        for (auto& [partId, raftPeers] : engine->balancePartPeers()) {
-          CHECK_NE(raftPeers.size(), 0);
-
-          if (raftPeers.isExpired()) {
-            LOG(INFO) << "Space: " << spaceId << ", part:" << partId
-                      << " balancing info expired, ignore it.";
-            continue;
-          }
-
-          auto spacePart = std::make_pair(spaceId, partId);
-          if (partSet.find(spacePart) == partSet.end()) {
-            partSet.emplace(std::make_pair(spaceId, partId));
-
-            // join the balancing peers with meta peers
-            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
-            if (!metaStatus.ok()) {
-              LOG(INFO) << "Space: " << spaceId << "; partId: " << partId
-                        << " does not exist in part manager when join balancing.";
-            } else {
-              auto partMeta = metaStatus.value();
-              for (auto& h : partMeta.hosts_) {
-                auto raftAddr = getRaftAddr(h);
-                if (!raftPeers.exist(raftAddr)) {
-                  VLOG(1) << "Add raft peer " << raftAddr;
-                  raftPeers.addOrUpdate(Peer(raftAddr));
-                }
+          // join the balancing peers with meta peers
+          auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+          if (!metaStatus.ok()) {
+            LOG(INFO) << "Space: " << spaceId << "; partId: " << partId
+                      << " does not exist in part manager when join balancing.";
+          } else {
+            auto partMeta = metaStatus.value();
+            for (auto& h : partMeta.hosts_) {
+              auto raftAddr = getRaftAddr(h);
+              if (!raftPeers.exist(raftAddr)) {
+                VLOG(1) << "Add raft peer " << raftAddr;
+                raftPeers.addOrUpdate(Peer(raftAddr));
               }
             }
-
-            partRaftPeers.emplace(partId, raftPeers);
           }
+
+          partRaftPeers.emplace(partId, raftPeers);
         }
+      }
 
-        // load normal part ids which persisted to local engine.
-        for (auto& partId : engine->allParts()) {
-          // first priority: balancing
-          bool inBalancing = partRaftPeers.find(partId) != partRaftPeers.end();
-          if (inBalancing) {
-            continue;
-          }
-
-          // second priority: meta
-          if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
-            LOG(INFO)
-                << "Part " << partId
-                << " is not in balancing and does not exist in meta any more, will remove it!";
-            engine->removePart(partId);
-            continue;
-          }
-
-          auto spacePart = std::make_pair(spaceId, partId);
-          if (partSet.find(spacePart) == partSet.end()) {
-            partSet.emplace(spacePart);
-
-            // fill the peers
-            auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
-            CHECK(metaStatus.ok());
-            auto partMeta = metaStatus.value();
-            Peers peers;
-            for (auto& h : partMeta.hosts_) {
-              VLOG(1) << "Add raft peer " << getRaftAddr(h);
-              peers.addOrUpdate(Peer(getRaftAddr(h)));
-            }
-            partRaftPeers.emplace(partId, peers);
-          }
-        }
-
-        // there is no valid part in this engine, remove it
-        if (partRaftPeers.empty()) {
-          engine.reset();  // close engine
-          if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
-            if (FLAGS_auto_remove_invalid_space) {
-              auto spaceDir = folly::stringPrintf("%s/%s", rootPath.c_str(), dir.c_str());
-              removeSpaceDir(spaceDir);
-            }
-          }
+      // load normal part ids which persisted to local engine.
+      for (auto& partId : engine->allParts()) {
+        // first priority: balancing
+        bool inBalancing = partRaftPeers.find(partId) != partRaftPeers.end();
+        if (inBalancing) {
           continue;
         }
 
-        // add to spaces
-        KVEngine* enginePtr = nullptr;
-        {
-          folly::RWSpinLock::WriteHolder wh(&lock_);
-          auto spaceIt = this->spaces_.find(spaceId);
-          if (spaceIt == this->spaces_.end()) {
-            LOG(INFO) << "Load space " << spaceId << " from disk";
-            spaceIt = this->spaces_.emplace(spaceId, std::make_unique<SpacePartInfo>()).first;
+        // second priority: meta
+        if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
+          LOG(INFO)
+              << "Part " << partId
+              << " is not in balancing and does not exist in meta any more, will remove it!";
+          engine->removePart(partId);
+          continue;
+        }
+
+        auto spacePart = std::make_pair(spaceId, partId);
+        if (partSet.find(spacePart) == partSet.end()) {
+          partSet.emplace(spacePart);
+
+          // fill the peers
+          auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
+          CHECK(metaStatus.ok());
+          auto partMeta = metaStatus.value();
+          Peers peers;
+          for (auto& h : partMeta.hosts_) {
+            VLOG(1) << "Add raft peer " << getRaftAddr(h);
+            peers.addOrUpdate(Peer(getRaftAddr(h)));
           }
-          spaceIt->second->engines_.emplace_back(std::move(engine));
-          enginePtr = spaceIt->second->engines_.back().get();
+          partRaftPeers.emplace(partId, peers);
         }
-
-        std::atomic<size_t> counter(partRaftPeers.size());
-        folly::Baton<true, std::atomic> baton;
-        LOG(INFO) << "Need to open " << partRaftPeers.size() << " parts of space " << spaceId;
-        for (auto& it : partRaftPeers) {
-          auto& partId = it.first;
-          Peers& raftPeers = it.second;
-
-          bgWorkers_->addTask(
-              [spaceId, partId, &raftPeers, enginePtr, &counter, &baton, this]() mutable {
-                // create part
-                bool isLearner = false;
-                std::vector<HostAddr> addrs;  // raft peers
-                for (auto& [addr, raftPeer] : raftPeers.getPeers()) {
-                  if (addr == raftAddr_) {  // self
-                    if (raftPeer.status == Peer::Status::kLearner) {
-                      isLearner = true;
-                    }
-                  } else {  // others
-                    if (raftPeer.status == Peer::Status::kNormalPeer ||
-                        raftPeer.status == Peer::Status::kPromotedPeer) {
-                      addrs.emplace_back(addr);
-                    }
-                  }
-                }
-                auto part = newPart(spaceId, partId, enginePtr, isLearner, addrs);
-                LOG(INFO) << "Load part " << spaceId << ", " << partId << " from disk";
-
-                // add learner peers
-                if (!isLearner) {
-                  for (auto& [addr, raftPeer] : raftPeers.getPeers()) {
-                    if (addr == raftAddr_) {
-                      continue;
-                    }
-
-                    if (raftPeer.status == Peer::Status::kLearner) {
-                      part->addLearner(addr, true);
-                    }
-                  }
-                }
-
-                // add part to space
-                {
-                  folly::RWSpinLock::WriteHolder holder(&lock_);
-                  auto iter = spaces_.find(spaceId);
-                  CHECK(iter != spaces_.end());
-                  // Check if part already exists.
-                  // Prevent the same part from existing on different dataPaths.
-                  auto ret = iter->second->parts_.emplace(partId, part);
-                  if (!ret.second) {
-                    LOG(FATAL) << "Part already exists, partId " << partId;
-                  }
-                }
-                counter.fetch_sub(1);
-                if (counter.load() == 0) {
-                  baton.post();
-                }
-              });
-        }
-        baton.wait();
-        LOG(INFO) << "Load space " << spaceId << " complete";
-      } catch (std::exception& e) {
-        LOG(FATAL) << "Invalid data directory \"" << dir << "\"";
       }
+
+      // there is no valid part in this engine, remove it
+      if (partRaftPeers.empty()) {
+        auto spaceDir = engine->getDataRoot();
+        engine.reset();  // close engine
+        if (!options_.partMan_->spaceExist(storeSvcAddr_, spaceId).ok()) {
+          if (FLAGS_auto_remove_invalid_space) {
+            removeSpaceDir(spaceDir);
+          }
+        }
+        continue;
+      }
+
+      // add to spaces
+      KVEngine* enginePtr = nullptr;
+      {
+        folly::RWSpinLock::WriteHolder wh(&lock_);
+        auto spaceIt = this->spaces_.find(spaceId);
+        if (spaceIt == this->spaces_.end()) {
+          LOG(INFO) << "Load space " << spaceId << " from disk";
+          spaceIt = this->spaces_.emplace(spaceId, std::make_unique<SpacePartInfo>()).first;
+        }
+        spaceIt->second->engines_.emplace_back(std::move(engine));
+        enginePtr = spaceIt->second->engines_.back().get();
+      }
+
+      std::atomic<size_t> counter(partRaftPeers.size());
+      folly::Baton<true, std::atomic> baton;
+      LOG(INFO) << "Need to open " << partRaftPeers.size() << " parts of space " << spaceId;
+      for (auto& it : partRaftPeers) {
+        auto& partId = it.first;
+        Peers& raftPeers = it.second;
+
+        bgWorkers_->addTask(
+            [spaceId, partId, &raftPeers, enginePtr, &counter, &baton, this]() mutable {
+              // create part
+              bool isLearner = false;
+              std::vector<HostAddr> addrs;  // raft peers
+              for (auto& [addr, raftPeer] : raftPeers.getPeers()) {
+                if (addr == raftAddr_) {  // self
+                  if (raftPeer.status == Peer::Status::kLearner) {
+                    isLearner = true;
+                  }
+                } else {  // others
+                  if (raftPeer.status == Peer::Status::kNormalPeer ||
+                      raftPeer.status == Peer::Status::kPromotedPeer) {
+                    addrs.emplace_back(addr);
+                  }
+                }
+              }
+              auto part = newPart(spaceId, partId, enginePtr, isLearner, addrs);
+              LOG(INFO) << "Load part " << spaceId << ", " << partId << " from disk";
+
+              // add learner peers
+              if (!isLearner) {
+                for (auto& [addr, raftPeer] : raftPeers.getPeers()) {
+                  if (addr == raftAddr_) {
+                    continue;
+                  }
+
+                  if (raftPeer.status == Peer::Status::kLearner) {
+                    part->addLearner(addr, true);
+                  }
+                }
+              }
+
+              // add part to space
+              {
+                folly::RWSpinLock::WriteHolder holder(&lock_);
+                auto iter = spaces_.find(spaceId);
+                CHECK(iter != spaces_.end());
+                // Check if part already exists.
+                // Prevent the same part from existing on different dataPaths.
+                auto ret = iter->second->parts_.emplace(partId, part);
+                if (!ret.second) {
+                  LOG(FATAL) << "Part already exists, partId " << partId;
+                }
+              }
+              counter.fetch_sub(1);
+              if (counter.load() == 0) {
+                baton.post();
+              }
+            });
+      }
+      baton.wait();
+      LOG(INFO) << "Load space " << spaceId << " complete";
     }
   }
 }
@@ -327,21 +351,30 @@ void NebulaStore::stop() {
   }
 }
 
+folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::asyncNewEngine(
+    GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath) {
+  return folly::via(folly::getGlobalIOExecutor().get(), [this, spaceId, dataPath, walPath]() {
+    std::unique_ptr<KVEngine> engine;
+    if (FLAGS_engine_type == "rocksdb") {
+      std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
+      if (options_.cffBuilder_ != nullptr) {
+        cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
+      }
+      auto vIdLen = getSpaceVidLen(spaceId);
+      engine = std::make_unique<RocksEngine>(
+          spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
+    } else {
+      LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
+    }
+    return std::make_pair(spaceId, std::move(engine));
+  });
+}
+
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& dataPath,
                                                  const std::string& walPath) {
-  if (FLAGS_engine_type == "rocksdb") {
-    std::shared_ptr<KVCompactionFilterFactory> cfFactory = nullptr;
-    if (options_.cffBuilder_ != nullptr) {
-      cfFactory = options_.cffBuilder_->buildCfFactory(spaceId);
-    }
-    auto vIdLen = getSpaceVidLen(spaceId);
-    return std::make_unique<RocksEngine>(
-        spaceId, vIdLen, dataPath, walPath, options_.mergeOp_, cfFactory);
-  } else {
-    LOG(FATAL) << "Unknown engine type " << FLAGS_engine_type;
-    return nullptr;
-  }
+  auto pair = this->asyncNewEngine(spaceId, dataPath, walPath).get();
+  return std::move(pair.second);
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, HostAddr> NebulaStore::partLeader(GraphSpaceID spaceId,
