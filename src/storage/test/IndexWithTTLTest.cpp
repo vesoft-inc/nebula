@@ -24,8 +24,6 @@
 #include "storage/mutate/UpdateEdgeProcessor.h"
 #include "storage/mutate/UpdateVertexProcessor.h"
 
-DECLARE_int32(min_level_for_custom_filter);
-
 namespace nebula {
 namespace storage {
 
@@ -184,7 +182,6 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
   sleep(2);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(1);
 
@@ -232,7 +229,6 @@ TEST(IndexWithTTLTest, AddEdgesIndexWithTTL) {
   sleep(2);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(1);
 

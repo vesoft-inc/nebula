@@ -34,7 +34,7 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
   /**
    * @brief whether remove the key during compaction
    *
-   * @param level Levels of key in rocksdb
+   * @param level Levels of key in rocksdb, not used for now
    * @param key Rocksdb key
    * @param val Rocksdb val
    * @return true Key will not be removed
@@ -45,8 +45,8 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
               const rocksdb::Slice& val,
               std::string*,
               bool*) const override {
-    return kvFilter_->filter(level,
-                             spaceId_,
+    UNUSED(level);
+    return kvFilter_->filter(spaceId_,
                              folly::StringPiece(key.data(), key.size()),
                              folly::StringPiece(val.data(), val.size()));
   }
@@ -77,14 +77,21 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
    */
   std::unique_ptr<rocksdb::CompactionFilter> CreateCompactionFilter(
       const rocksdb::CompactionFilter::Context& context) override {
+    auto now = time::WallClock::fastNowInSec();
     if (context.is_full_compaction || context.is_manual_compaction) {
       LOG(INFO) << "Do full/manual compaction!";
+      lastRunCustomFilterTimeSec_ = now;
+      return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
     } else {
-      // No worry, by default flush will not go through the custom compaction filter.
-      // See CompactionFilterFactory::ShouldFilterTableFileCreation.
-      LOG(INFO) << "Do automatic or periodic compaction!";
+      if (FLAGS_custom_filter_interval_secs >= 0 &&
+          now - lastRunCustomFilterTimeSec_ > FLAGS_custom_filter_interval_secs) {
+        LOG(INFO) << "Do custom minor compaction!";
+        lastRunCustomFilterTimeSec_ = now;
+        return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
+      }
+      LOG(INFO) << "Do default minor compaction!";
+      return std::unique_ptr<rocksdb::CompactionFilter>(nullptr);
     }
-    return std::make_unique<KVCompactionFilter>(spaceId_, createKVFilter());
   }
 
   const char* Name() const override {
@@ -95,6 +102,7 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
 
  private:
   GraphSpaceID spaceId_;
+  int32_t lastRunCustomFilterTimeSec_ = 0;
 };
 
 /**
