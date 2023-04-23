@@ -18,8 +18,6 @@
 #include "storage/test/QueryTestUtils.h"
 #include "storage/test/TestUtils.h"
 
-DECLARE_int32(min_level_for_custom_filter);
-
 namespace nebula {
 namespace storage {
 
@@ -169,7 +167,6 @@ TEST(CompactionFilterTest, InvalidSchemaFilterTest) {
   adhoc->removeTagSchema(spaceId, tagId);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
@@ -218,7 +215,6 @@ TEST(CompactionFilterTest, TTLFilterDataExpiredTest) {
   sleep(FLAGS_mock_ttl_duration + 1);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
@@ -266,7 +262,6 @@ TEST(CompactionFilterTest, TTLFilterDataNotExpiredTest) {
   checkEdgeData(spaceVidLen, spaceId, 102, parts, env, 18);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
@@ -328,7 +323,6 @@ TEST(CompactionFilterTest, DropIndexTest) {
   adIndex->removeTagIndex(spaceId, indexId);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
@@ -398,7 +392,6 @@ TEST(CompactionFilterTest, TTLFilterDataIndexExpiredTest) {
   sleep(FLAGS_mock_ttl_duration + 1);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
@@ -467,7 +460,6 @@ TEST(CompactionFilterTest, TTLFilterDataIndexNotExpiredTest) {
   checkIndexData(spaceId, 102, 6, env, 18);
 
   LOG(INFO) << "Do compaction";
-  FLAGS_min_level_for_custom_filter = -1;
   auto* ns = dynamic_cast<kvstore::NebulaStore*>(env->kvstore_);
   ns->compact(spaceId);
 
