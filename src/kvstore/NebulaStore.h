@@ -785,7 +785,6 @@ class NebulaStore : public KVStore, public Handler {
   folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> asyncNewEngine(
       GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath);
 
-
   /**
    * @brief Start a new kv engine on specified path
    *
