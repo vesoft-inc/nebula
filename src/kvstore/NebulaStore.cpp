@@ -175,9 +175,8 @@ void NebulaStore::loadPartFromDataPath() {
 
         // second priority: meta
         if (!options_.partMan_->partExist(storeSvcAddr_, spaceId, partId).ok()) {
-          LOG(INFO)
-              << "Part " << partId
-              << " is not in balancing and does not exist in meta any more, will remove it!";
+          LOG(INFO) << "Part " << partId
+                    << " is not in balancing and does not exist in meta any more, will remove it!";
           engine->removePart(partId);
           continue;
         }
