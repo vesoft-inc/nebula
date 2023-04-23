@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "common/base/Base.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/RocksEngineConfig.h"
@@ -31,6 +32,11 @@ class RocksRangeIter : public KVIterator {
 
   RocksRangeIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice start, rocksdb::Slice end)
       : iter_(std::move(iter)), start_(start), end_(end) {}
+
+  RocksRangeIter(rocksdb::Slice start, rocksdb::Slice end)
+      : start_(start), end_(end) {
+    iterateUpperBound_.reset(new rocksdb::Slice(end.data(), end.size()));
+  }
 
   ~RocksRangeIter() = default;
 
@@ -54,10 +60,19 @@ class RocksRangeIter : public KVIterator {
     return folly::StringPiece(iter_->value().data(), iter_->value().size());
   }
 
+  rocksdb::Slice* iterateUpperBound() const { return iterateUpperBound_.get(); }
+
+  void setIterator(rocksdb::Iterator* iter) { iter_.reset(iter); }
+
+  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) { iter_ = std::move(iter); }
+
  private:
-  std::unique_ptr<rocksdb::Iterator> iter_;
+  std::unique_ptr<rocksdb::Iterator> iter_{nullptr};
   rocksdb::Slice start_;
   rocksdb::Slice end_;
+  // Make sure that the lifetime of iterate_upper_bound in rocksdb::ReadOptions
+  // is the same as RocksRangeIter object
+  std::unique_ptr<rocksdb::Slice> iterateUpperBound_;
 };
 
 /**
@@ -69,6 +84,11 @@ class RocksPrefixIter : public KVIterator {
 
   RocksPrefixIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice prefix)
       : iter_(std::move(iter)), prefix_(prefix) {}
+
+  RocksPrefixIter(rocksdb::Slice prefix) : prefix_(prefix) {
+    iterateUpperBoundKey_ = NebulaKeyUtils::lastKey(prefix_.ToString(), 128);
+    iterateUpperBound_.reset(new rocksdb::Slice(iterateUpperBoundKey_));
+  }
 
   ~RocksPrefixIter() = default;
 
@@ -92,9 +112,20 @@ class RocksPrefixIter : public KVIterator {
     return folly::StringPiece(iter_->value().data(), iter_->value().size());
   }
 
+  rocksdb::Slice* iterateUpperBound() const { return iterateUpperBound_.get(); }
+
+  void setIterator(rocksdb::Iterator* iter) { iter_.reset(iter); }
+
+  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) { iter_ = std::move(iter); }
+
  protected:
-  std::unique_ptr<rocksdb::Iterator> iter_;
+  std::unique_ptr<rocksdb::Iterator> iter_{nullptr};
   rocksdb::Slice prefix_;
+  // temporary key to make sure data_ of iterateUpperBound_ valid during its lifetime
+  std::string iterateUpperBoundKey_;
+  // Make sure that the lifetime of iterate_upper_bound in rocksdb::ReadOptions
+  // is the same as RocksPrefixIter object
+  std::unique_ptr<rocksdb::Slice> iterateUpperBound_;
 };
 
 /**
