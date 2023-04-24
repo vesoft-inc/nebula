@@ -33,8 +33,7 @@ class RocksRangeIter : public KVIterator {
   RocksRangeIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice start, rocksdb::Slice end)
       : iter_(std::move(iter)), start_(start), end_(end) {}
 
-  RocksRangeIter(rocksdb::Slice start, rocksdb::Slice end)
-      : start_(start), end_(end) {
+  RocksRangeIter(rocksdb::Slice start, rocksdb::Slice end) : start_(start), end_(end) {
     iterateUpperBound_.reset(new rocksdb::Slice(end.data(), end.size()));
   }
 
@@ -60,11 +59,17 @@ class RocksRangeIter : public KVIterator {
     return folly::StringPiece(iter_->value().data(), iter_->value().size());
   }
 
-  rocksdb::Slice* iterateUpperBound() const { return iterateUpperBound_.get(); }
+  rocksdb::Slice* iterateUpperBound() const {
+    return iterateUpperBound_.get();
+  }
 
-  void setIterator(rocksdb::Iterator* iter) { iter_.reset(iter); }
+  void setIterator(rocksdb::Iterator* iter) {
+    iter_.reset(iter);
+  }
 
-  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) { iter_ = std::move(iter); }
+  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) {
+    iter_ = std::move(iter);
+  }
 
  private:
   std::unique_ptr<rocksdb::Iterator> iter_{nullptr};
@@ -112,11 +117,17 @@ class RocksPrefixIter : public KVIterator {
     return folly::StringPiece(iter_->value().data(), iter_->value().size());
   }
 
-  rocksdb::Slice* iterateUpperBound() const { return iterateUpperBound_.get(); }
+  rocksdb::Slice* iterateUpperBound() const {
+    return iterateUpperBound_.get();
+  }
 
-  void setIterator(rocksdb::Iterator* iter) { iter_.reset(iter); }
+  void setIterator(rocksdb::Iterator* iter) {
+    iter_.reset(iter);
+  }
 
-  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) { iter_ = std::move(iter); }
+  void setIterator(std::unique_ptr<rocksdb::Iterator> iter) {
+    iter_ = std::move(iter);
+  }
 
  protected:
   std::unique_ptr<rocksdb::Iterator> iter_{nullptr};
