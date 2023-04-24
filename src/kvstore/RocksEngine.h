@@ -85,7 +85,7 @@ class RocksPrefixIter : public KVIterator {
   RocksPrefixIter(std::unique_ptr<rocksdb::Iterator> iter, rocksdb::Slice prefix)
       : iter_(std::move(iter)), prefix_(prefix) {}
 
-  RocksPrefixIter(rocksdb::Slice prefix) : prefix_(prefix) {
+  explicit RocksPrefixIter(rocksdb::Slice prefix) : prefix_(prefix) {
     iterateUpperBoundKey_ = NebulaKeyUtils::lastKey(prefix_.ToString(), 128);
     iterateUpperBound_.reset(new rocksdb::Slice(iterateUpperBoundKey_));
   }
