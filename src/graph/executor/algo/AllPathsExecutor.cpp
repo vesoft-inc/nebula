@@ -310,7 +310,9 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
 }
 
 folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
-  auto pathsPtr = std::make_shared<std::vector<std::vector<Value>>>();
+  auto pathsPtr = std::make_shared<std::vector<NPath*>>();
+  threadLocalPtr_.reset(new std::vector<NPath*>());
+  threadLocalPtr_->reserve(64);
   for (auto& vid : leftInitVids_) {
     auto vidIter = leftAdjList_.find(vid);
     if (vidIter == leftAdjList_.end()) {
@@ -323,7 +325,9 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
     }
     pathsPtr->reserve(adjEdges.size() + pathsPtr->size());
     for (auto& edge : adjEdges) {
-      pathsPtr->emplace_back(std::vector<Value>({src, edge}));
+      NPath* newPath = new NPath(src, edge);
+      threadLocalPtr_->push_back(newPath);
+      pathsPtr->emplace_back(newPath);
     }
   }
   size_t step = 2;
@@ -337,55 +341,49 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
   });
 }
 
-size_t AllPathsExecutor::getPathsSize(size_t start,
-                                      size_t end,
-                                      std::shared_ptr<std::vector<std::vector<Value>>> pathsPtr,
-                                      const VertexMap<Value>& adjList) {
-  size_t size = 0;
-  for (auto i = start; i < end; ++i) {
-    auto& path = (*pathsPtr)[i];
-    auto& edgeValue = path.back();
-    DCHECK(edgeValue.isEdge());
-    auto& dst = edgeValue.getEdge().dst;
-
-    auto adjIter = adjList.find(dst);
-    if (adjIter == adjList.end()) {
-      continue;
-    }
-    auto& adjEdges = adjIter->second;
-    size += adjEdges.size();
+// construct ROW[src1, [e1, v2, e2]]
+Row AllPathsExecutor::convertNPath2Row(NPath* path) {
+  std::vector<Value> list;
+  NPath* head = path;
+  while (head != nullptr) {
+    list.emplace_back(head->edge);
+    list.emplace_back(head->vertex);
+    head = head->p;
   }
-  return size;
+  Row row;
+  // add src;
+  row.values.emplace_back(list.back());
+  list.pop_back();
+  std::reverse(list.begin(), list.end());
+  List edgeList(std::move(list));
+  row.values.emplace_back(std::move(edgeList));
+  return row;
 }
 
 folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
     size_t step,
     size_t start,
     size_t end,
-    std::shared_ptr<std::vector<std::vector<Value>>> pathsPtr) {
+    std::shared_ptr<std::vector<NPath*>> pathsPtr) {
   if (cnt_.load(std::memory_order_relaxed) >= limit_) {
     return folly::makeFuture<std::vector<Row>>(std::vector<Row>());
   }
-
+  threadLocalPtr_.reset(new std::vector<NPath*>());
+  threadLocalPtr_->reserve(64);
   auto& adjList = leftAdjList_;
   auto currentPathPtr = std::make_unique<std::vector<Row>>();
-  auto newPathsPtr = std::make_shared<std::vector<std::vector<Value>>>();
+  auto newPathsPtr = std::make_shared<std::vector<NPath*>>();
 
-  if (step <= maxStep_) {
-    newPathsPtr->reserve(getPathsSize(start, end, pathsPtr, adjList));
-  }
 
   for (auto i = start; i < end; ++i) {
-    auto& path = (*pathsPtr)[i];
-    auto& edgeValue = path.back();
+    auto path = (*pathsPtr)[i];
+    auto& edgeValue = path->edge;
     DCHECK(edgeValue.isEdge());
     auto& dst = edgeValue.getEdge().dst;
     auto dstIter = rightInitVids_.find(dst);
     if (dstIter != rightInitVids_.end()) {
-      Row row;
-      row.values.emplace_back(path.front());
-      List edgeList(std::vector<Value>(path.begin() + 1, path.end()));
-      row.values.emplace_back(std::move(edgeList));
+      auto row = convertNPath2Row(path);
+      // add dst
       row.values.emplace_back(*dstIter);
       currentPathPtr->emplace_back(std::move(row));
       ++cnt_;
@@ -402,19 +400,17 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
       auto& adjedges = adjIter->second;
       for (auto& edge : adjedges) {
         if (noLoop_) {
-          if (hasSameVertices(path, edge.getEdge())) {
+          if (hasSameV(path, edge.getEdge())) {
             continue;
           }
         } else {
-          if (hasSameEdge(path, edge.getEdge())) {
+          if (hasSameE(path, edge.getEdge())) {
             continue;
           }
         }
-        // copy
-        auto newPath = path;
-        newPath.emplace_back(adjIter->first);
-        newPath.emplace_back(edge);
-        newPathsPtr->emplace_back(std::move(newPath));
+        NPath* newPath = new NPath(path, adjIter->first, edge);
+        threadLocalPtr_->push_back(newPath);
+        newPathsPtr->emplace_back(newPath);
       }
     }
   }
@@ -472,6 +468,25 @@ folly::Future<Status> AllPathsExecutor::getPathProps() {
   });
 }
 
+bool AllPathsExecutor::hasSameE(NPath* path, const Edge& edge) {
+  NPath* head = path;
+  while (head != nullptr) {
+    if (edge == head->edge) {
+      return true;
+    }
+    head = head->p;
+  }
+  return false;
+}
+
+bool AllPathsExecutor::hasSameV(NPath* path, const Edge& edge) {
+  if (edge.src == edge.dst) {
+    return true;
+  }
+  UNUSED(path);
+  return false;
+}
+
 bool AllPathsExecutor::hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge) {
   if (edge.src == edge.dst) {
     return true;
@@ -487,6 +502,16 @@ bool AllPathsExecutor::hasSameVertices(const std::vector<Value>& edgeList, const
     }
   }
   return false;
+}
+
+Status AllPathsExecutor::close() {
+  auto accessor = threadLocalPtr_.accessAllThreads();
+  for (auto iter = accessor.begin(); iter != accessor.end(); ++iter) {
+    for (auto& ptr : *iter) {
+      ptr->~NPath();
+    }
+  }
+  return Executor::close();
 }
 
 }  // namespace graph

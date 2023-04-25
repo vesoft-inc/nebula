@@ -6,6 +6,7 @@
 #define GRAPH_EXECUTOR_ALGO_ALLPATHSEXECUTOR_H_
 
 #include "graph/executor/StorageAccessExecutor.h"
+#include "folly/ThreadLocal.h"
 
 // Using the two-way BFS algorithm, a heuristic algorithm is used in the expansion process
 // when the number of vid to be expanded on the left and right
@@ -48,8 +49,18 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   struct NPath {
     NPath* p{nullptr};
-    Value v;
-    Value e;
+    Value vertex;
+    Value edge;
+    NPath(const Value& v, const Value& e) : vertex(v), edge(e) {}
+    NPath(NPath* path, const Value& v, const Value& e) : p(path), vertex(v), edge(e) {}
+    NPath(NPath&& v) noexcept : p(v.p), vertex(std::move(v.vertex)), edge(std::move(v.edge)) {}
+    NPath(const NPath& v) : p(v.p), vertex(v.vertex), edge(v.edge) {}
+    ~NPath() {
+      if (p != nullptr) {
+        delete p;
+        p = nullptr;
+      }
+    }
   };
 
  private:
@@ -65,11 +76,18 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   void expandFromRight(GetNeighborsIter* iter);
 
-  folly::Future<std::vector<Row>> doBuildPath(
-      size_t step,
-      size_t start,
-      size_t end,
-      std::shared_ptr<std::vector<std::vector<Value>>> edgeLists);
+  Row convertNPath2Row(NPath* path);
+
+  // folly::Future<std::vector<Row>> doBuildPath(
+  //     size_t step,
+  //     size_t start,
+  //     size_t end,
+  //     std::shared_ptr<std::vector<std::vector<Value>>> edgeLists);
+
+  folly::Future<std::vector<Row>> doBuildPath(size_t step,
+                                              size_t start,
+                                              size_t end,
+                                              std::shared_ptr<std::vector<NPath*>> paths);
 
   folly::Future<Status> getPathProps();
 
@@ -78,11 +96,10 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   folly::Future<Status> buildResult();
 
   bool hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge);
+  bool hasSameV(NPath* path, const Edge& edge);
+  bool hasSameE(NPath* Path, const Edge& edge);
 
-  size_t getPathsSize(size_t start,
-                      size_t end,
-                      std::shared_ptr<std::vector<std::vector<Value>>> pathsPtr,
-                      const VertexMap<Value>& adjList);
+  Status close() override;
 
  private:
   const AllPaths* pathNode_{nullptr};
@@ -105,6 +122,8 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   DataSet result_;
   std::vector<Value> emptyPropVids_;
+  class NewTag {};
+  folly::ThreadLocalPtr<std::vector<NPath*>, NewTag> threadLocalPtr_;
 };
 }  // namespace graph
 }  // namespace nebula
