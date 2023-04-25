@@ -292,15 +292,21 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
       }
     }
   }
+  time::Duration buildPathTime;
   auto future = buildPathMultiJobs();
-  return future.via(runner()).thenValue([this](auto&& resp) {
-    UNUSED(resp);
-    if (!withProp_ || emptyPropVids_.empty()) {
-      finish(ResultBuilder().value(Value(std::move(result_))).build());
-      return folly::makeFuture<Status>(Status::OK());
-    }
-    return getPathProps();
-  });
+  return future.via(runner())
+      .ensure([this, buildPathTime]() {
+        otherStats_.emplace("build_path_time",
+                            folly::sformat("{}(us)", buildPathTime.elapsedInUSec()));
+      })
+      .thenValue([this](auto&& resp) {
+        UNUSED(resp);
+        if (!withProp_ || emptyPropVids_.empty()) {
+          finish(ResultBuilder().value(Value(std::move(result_))).build());
+          return folly::makeFuture<Status>(Status::OK());
+        }
+        return getPathProps();
+      });
 }
 
 folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
@@ -331,6 +337,27 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
   });
 }
 
+size_t AllPathsExecutor::getPathsSize(size_t start,
+                                      size_t end,
+                                      std::shared_ptr<std::vector<std::vector<Value>>> pathsPtr,
+                                      const VertexMap<Value>& adjList) {
+  size_t size = 0;
+  for (auto i = start; i < end; ++i) {
+    auto& path = (*pathsPtr)[i];
+    auto& edgeValue = path.back();
+    DCHECK(edgeValue.isEdge());
+    auto& dst = edgeValue.getEdge().dst;
+
+    auto adjIter = adjList.find(dst);
+    if (adjIter == adjList.end()) {
+      continue;
+    }
+    auto& adjEdges = adjIter->second;
+    size += adjEdges.size();
+  }
+  return size;
+}
+
 folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
     size_t step,
     size_t start,
@@ -343,6 +370,10 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
   auto& adjList = leftAdjList_;
   auto currentPathPtr = std::make_unique<std::vector<Row>>();
   auto newPathsPtr = std::make_shared<std::vector<std::vector<Value>>>();
+
+  if (step <= maxStep_) {
+    newPathsPtr->reserve(getPathsSize(start, end, pathsPtr, adjList));
+  }
 
   for (auto i = start; i < end; ++i) {
     auto& path = (*pathsPtr)[i];

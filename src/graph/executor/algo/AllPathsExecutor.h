@@ -46,6 +46,12 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   template <typename T = Value>
   using VertexMap = std::unordered_map<Value, std::vector<T>, VertexHash, VertexEqual>;
 
+  struct NPath {
+    NPath* p{nullptr};
+    Value v;
+    Value e;
+  };
+
  private:
   void buildRequestVids(bool reverse);
 
@@ -72,6 +78,11 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   folly::Future<Status> buildResult();
 
   bool hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge);
+
+  size_t getPathsSize(size_t start,
+                      size_t end,
+                      std::shared_ptr<std::vector<std::vector<Value>>> pathsPtr,
+                      const VertexMap<Value>& adjList);
 
  private:
   const AllPaths* pathNode_{nullptr};
