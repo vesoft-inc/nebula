@@ -55,12 +55,7 @@ class AllPathsExecutor final : public StorageAccessExecutor {
     NPath(NPath* path, const Value& v, const Value& e) : p(path), vertex(v), edge(e) {}
     NPath(NPath&& v) noexcept : p(v.p), vertex(std::move(v.vertex)), edge(std::move(v.edge)) {}
     NPath(const NPath& v) : p(v.p), vertex(v.vertex), edge(v.edge) {}
-    ~NPath() {
-      if (p != nullptr) {
-        delete p;
-        p = nullptr;
-      }
-    }
+    ~NPath() {}
   };
 
  private:
@@ -77,12 +72,6 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   void expandFromRight(GetNeighborsIter* iter);
 
   Row convertNPath2Row(NPath* path);
-
-  // folly::Future<std::vector<Row>> doBuildPath(
-  //     size_t step,
-  //     size_t start,
-  //     size_t end,
-  //     std::shared_ptr<std::vector<std::vector<Value>>> edgeLists);
 
   folly::Future<std::vector<Row>> doBuildPath(size_t step,
                                               size_t start,

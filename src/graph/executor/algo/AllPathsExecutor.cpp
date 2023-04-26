@@ -311,8 +311,10 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
 
 folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
   auto pathsPtr = std::make_shared<std::vector<NPath*>>();
-  threadLocalPtr_.reset(new std::vector<NPath*>());
-  threadLocalPtr_->reserve(64);
+  if (threadLocalPtr_.get() == nullptr) {
+    threadLocalPtr_.reset(new std::vector<NPath*>());
+    threadLocalPtr_->reserve(64);
+  }
   for (auto& vid : leftInitVids_) {
     auto vidIter = leftAdjList_.find(vid);
     if (vidIter == leftAdjList_.end()) {
@@ -368,8 +370,10 @@ folly::Future<std::vector<Row>> AllPathsExecutor::doBuildPath(
   if (cnt_.load(std::memory_order_relaxed) >= limit_) {
     return folly::makeFuture<std::vector<Row>>(std::vector<Row>());
   }
-  threadLocalPtr_.reset(new std::vector<NPath*>());
-  threadLocalPtr_->reserve(64);
+  if (threadLocalPtr_.get() == nullptr) {
+    threadLocalPtr_.reset(new std::vector<NPath*>());
+    threadLocalPtr_->reserve(64);
+  }
   auto& adjList = leftAdjList_;
   auto currentPathPtr = std::make_unique<std::vector<Row>>();
   auto newPathsPtr = std::make_shared<std::vector<NPath*>>();
@@ -508,7 +512,7 @@ Status AllPathsExecutor::close() {
   auto accessor = threadLocalPtr_.accessAllThreads();
   for (auto iter = accessor.begin(); iter != accessor.end(); ++iter) {
     for (auto& ptr : *iter) {
-      ptr->~NPath();
+      delete ptr;
     }
   }
   return Executor::close();
