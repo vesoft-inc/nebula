@@ -27,10 +27,10 @@
 // when expanding, if the vid has already been visited, do not visit again
 // leftAdjList_ save result of forward expansion
 // rightAdjList_ save result of backward expansion
-
 namespace nebula {
 namespace graph {
 class AllPaths;
+struct NPath;
 class AllPathsExecutor final : public StorageAccessExecutor {
  public:
   AllPathsExecutor(const PlanNode* node, QueryContext* qctx)
@@ -49,8 +49,8 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   struct NPath {
     NPath* p{nullptr};
-    Value vertex;
-    Value edge;
+    const Value& vertex;
+    const Value& edge;
     NPath(const Value& v, const Value& e) : vertex(v), edge(e) {}
     NPath(NPath* path, const Value& v, const Value& e) : p(path), vertex(v), edge(e) {}
     NPath(NPath&& v) noexcept : p(v.p), vertex(std::move(v.vertex)), edge(std::move(v.edge)) {}
@@ -71,12 +71,10 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   void expandFromRight(GetNeighborsIter* iter);
 
-  Row convertNPath2Row(NPath* path);
+  Row convertNPath2Row(NPath* path, Value dst);
 
-  folly::Future<std::vector<Row>> doBuildPath(size_t step,
-                                              size_t start,
-                                              size_t end,
-                                              std::shared_ptr<std::vector<NPath*>> paths);
+  folly::Future<std::vector<std::pair<NPath*, Value>>> doBuildPath(
+      size_t step, size_t start, size_t end, std::shared_ptr<std::vector<NPath*>> paths);
 
   folly::Future<Status> getPathProps();
 
@@ -84,11 +82,9 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> buildResult();
 
-  bool hasSameVertices(const std::vector<Value>& edgeList, const Edge& edge);
-  bool hasSameV(NPath* path, const Edge& edge);
-  bool hasSameE(NPath* Path, const Edge& edge);
+  bool hasSameEdge(NPath* path, const Edge& edge);
 
-  Status close() override;
+  bool hasSameVertices(NPath* path, const Edge& edge);
 
  private:
   const AllPaths* pathNode_{nullptr};
@@ -112,7 +108,7 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   DataSet result_;
   std::vector<Value> emptyPropVids_;
   class NewTag {};
-  folly::ThreadLocalPtr<std::vector<NPath*>, NewTag> threadLocalPtr_;
+  folly::ThreadLocalPtr<std::deque<NPath>, NewTag> threadLocalPtr_;
 };
 }  // namespace graph
 }  // namespace nebula
