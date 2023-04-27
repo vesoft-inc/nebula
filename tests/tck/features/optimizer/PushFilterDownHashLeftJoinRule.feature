@@ -63,22 +63,21 @@ Feature: Push Filter down HashLeftJoin rule
       | "Boris Diaw" | "Suns"    | ["team"] |
     And the execution plan should be:
       | id | name          | dependencies | operator info                                                |
-      | 20 | TopN          | 17           |                                                              |
-      | 17 | Dedup         | 16           |                                                              |
-      | 16 | Project       | 23           |                                                              |
-      | 23 | HashInnerJoin | 5,26         |                                                              |
-      | 5  | Dedup         | 4            |                                                              |
+      | 19 | TopN          | 16           |                                                              |
+      | 16 | Dedup         | 15           |                                                              |
+      | 15 | Project       | 22           |                                                              |
+      | 22 | HashInnerJoin | 4,25         |                                                              |
       | 4  | Project       | 3            |                                                              |
-      | 3  | ExpandAll     | 2            |                                                              |
-      | 2  | Expand        | 1            |                                                              |
-      | 1  | Start         |              |                                                              |
-      | 26 | HashLeftJoin  | 27,12        |                                                              |
-      | 27 | ExpandAll     | 8            | {"filter": "((like.likeness>80) OR like.likeness IS EMPTY)"} |
-      | 8  | Expand        | 7            |                                                              |
-      | 7  | Argument      |              |                                                              |
-      | 12 | Project       | 11           |                                                              |
-      | 11 | GetVertices   | 10           |                                                              |
-      | 10 | Argument      |              |                                                              |
+      | 3  | Dedup         | 2            |                                                              |
+      | 2  | Expand        | 0            |                                                              |
+      | 0  | Start         |              |                                                              |
+      | 25 | HashLeftJoin  | 26,11        |                                                              |
+      | 26 | ExpandAll     | 7            | {"filter": "((like.likeness>80) OR like.likeness IS EMPTY)"} |
+      | 7  | Expand        | 6            |                                                              |
+      | 6  | Argument      |              |                                                              |
+      | 11 | Project       | 10           |                                                              |
+      | 10 | GetVertices   | 9            |                                                              |
+      | 9  | Argument      |              |                                                              |
 
   Scenario: NOT push filter down HashLeftJoin
     When profiling query:
