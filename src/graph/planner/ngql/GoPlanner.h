@@ -34,6 +34,8 @@ class GoPlanner final : public Planner {
  private:
   SubPlan doPlan();
 
+  SubPlan doSimplePlan();
+
  private:
   std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
 

@@ -5,8 +5,8 @@
 #ifndef GRAPH_EXECUTOR_ALGO_ALLPATHSEXECUTOR_H_
 #define GRAPH_EXECUTOR_ALGO_ALLPATHSEXECUTOR_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
 #include "folly/ThreadLocal.h"
+#include "graph/executor/StorageAccessExecutor.h"
 
 // Using the two-way BFS algorithm, a heuristic algorithm is used in the expansion process
 // when the number of vid to be expanded on the left and right

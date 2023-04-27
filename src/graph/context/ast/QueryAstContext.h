@@ -93,6 +93,7 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
+  bool isSimple{false};
 
   ExpressionProps exprProps;
 
