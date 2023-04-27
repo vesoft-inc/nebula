@@ -56,6 +56,7 @@ Status GoValidator::validateImpl() {
       exprProps.varProps().size() > 1) {
     return Status::SemanticError("Only support single input in a go sentence.");
   }
+  goCtx_->isSimple = isSimpleCase();
 
   NG_RETURN_IF_ERROR(buildColumns());
   return Status::OK();
@@ -280,6 +281,43 @@ bool GoValidator::checkDstPropOrVertexExist(const Expression* expr) {
     }
   }
   return true;
+}
+
+bool GoValidator::isSimpleCase() {
+  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter || goCtx_->steps.isMToN() ||
+      goCtx_->from.fromType != FromType::kInstantExpr) {
+    return false;
+  }
+  // Check if the yield cluase uses:
+  // 1. src tag props,
+  // 2. or edge props, except the dst id of edge.
+  // 3. input or var props.
+  auto& exprProps = goCtx_->exprProps;
+  if (!exprProps.srcTagProps().empty() || !exprProps.dstTagProps().empty()) {
+    return false;
+  }
+  if (!exprProps.edgeProps().empty()) {
+    for (auto& edgeProp : exprProps.edgeProps()) {
+      auto props = edgeProp.second;
+      if (props.size() != 1 && props.find(kDst) == props.end()) {
+        return false;
+      }
+    }
+  }
+
+  bool atLeastOneDstId = false;
+  for (auto& col : goCtx_->yieldExpr->columns()) {
+    auto expr = col->expr();
+    if (expr->kind() != Expression::Kind::kEdgeDst) {
+      return false;
+    }
+    atLeastOneDstId = true;
+    auto dstIdExpr = static_cast<const EdgeDstIdExpression*>(expr);
+    if (dstIdExpr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
+      return false;
+    }
+  }
+  return atLeastOneDstId;
 }
 
 }  // namespace graph
