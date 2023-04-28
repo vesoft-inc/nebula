@@ -244,6 +244,14 @@ Feature: All Path
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")>                          |
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
+    When executing query:
+      """
+      FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 10 STEPS YIELD path as p
+      | LIMIT 3 | YIELD count(*) AS cnt
+      """
+    Then the result should be, in any order, with relax comparison:
+      | cnt |
+      | 3   |
 
   Scenario: [1] ALL PATH REVERSELY
     When executing query:
