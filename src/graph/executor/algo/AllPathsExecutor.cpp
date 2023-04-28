@@ -342,6 +342,9 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
 
     if (!paths.empty()) {
       time::Duration convertPathTime;
+      if (paths.size() > limit_) {
+        paths.resize(limit_);
+      }
       for (auto& path : paths) {
         result_.rows.emplace_back(convertNPath2Row(path.first, path.second));
       }
