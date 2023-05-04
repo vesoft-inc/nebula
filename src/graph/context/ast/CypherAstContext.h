@@ -51,6 +51,8 @@ struct EdgeInfo {
   MatchEdge::Direction direction{MatchEdge::Direction::OUT_EDGE};
   std::vector<std::string> types;
   std::string alias;
+  // use for construct path struct
+  std::string innerAlias;
   const MapExpression* props{nullptr};
   Expression* filter{nullptr};
 };
@@ -228,40 +230,38 @@ struct CypherContext final : AstContext {
 };
 
 struct PatternContext {
-  explicit PatternContext(PatternKind k) : kind(k) {}
+  PatternContext(PatternKind k, QueryContext* q, WhereClauseContext* b, GraphSpaceID g)
+      : kind(k), qctx(q), bindWhereClause(b), spaceId(g) {}
+
   const PatternKind kind;
+
+  QueryContext* qctx{nullptr};
+  WhereClauseContext* bindWhereClause{nullptr};
+  GraphSpaceID spaceId;
+
+  // Output fields
+  ScanInfo scanInfo;
+  // initialize start expression in project node
+  Expression* initialExpr{nullptr};
 };
 
 struct NodeContext final : PatternContext {
   NodeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const NodeInfo* i)
-      : PatternContext(PatternKind::kNode), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
+      : PatternContext(PatternKind::kNode, q, b, g), info(i) {}
 
-  QueryContext* qctx;
-  WhereClauseContext* bindWhereClause;
-  GraphSpaceID spaceId;
   const NodeInfo* info;
   std::unordered_set<std::string>* nodeAliasesAvailable{nullptr};
 
   // Output fields
-  ScanInfo scanInfo;
   Set ids;
-  // initialize start expression in project node
-  Expression* initialExpr{nullptr};
+  std::string refVarName;
 };
 
 struct EdgeContext final : PatternContext {
   EdgeContext(QueryContext* q, WhereClauseContext* b, GraphSpaceID g, const EdgeInfo* i)
-      : PatternContext(PatternKind::kEdge), qctx(q), bindWhereClause(b), spaceId(g), info(i) {}
+      : PatternContext(PatternKind::kEdge, q, b, g), info(i) {}
 
-  QueryContext* qctx;
-  WhereClauseContext* bindWhereClause;
-  GraphSpaceID spaceId;
   const EdgeInfo* info;
-
-  // Output fields
-  ScanInfo scanInfo;
-  // initialize start expression in project node
-  Expression* initialExpr{nullptr};
 };
 
 }  // namespace graph

@@ -94,7 +94,8 @@ folly::Future<Status> ExpandExecutor::GetDstBySrc() {
             size = (*result.dsts_ref()).size();
           }
           auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
-          otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
+          otherStats_.emplace(folly::sformat("step{} resp [{}]", currentStep_, i),
+                              folly::toPrettyJson(info));
         }
         auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
         if (!result.ok()) {

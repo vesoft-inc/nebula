@@ -46,7 +46,7 @@ jobs:
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "subdir=$subdir" >> $GITHUB_OUTPUT
-      # - uses: actions/upload-artifact@v1
+      # - uses: actions/upload-artifact@v3
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output
@@ -308,3 +308,93 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path: ./build/server_*/logs*/
+
+  standalone:
+    name: standalone-build-tck
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+        compiler:
+          - gcc-9.3
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              cmake \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DENABLE_TESTING=on \
+                  -DENABLE_STANDALONE_VERSION=on \
+                  -GNinja \
+                  -B build
+              echo "::set-output name=j::8"
+              ;;
+            esac
+            ;;
+          esac
+      - name: Make
+        run: |
+          ccache -z
+          ninja -j $(nproc)
+          ccache -s
+        working-directory: build/
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup Cluster
+        run: |
+          make standalone-up
+        working-directory: tests/
+        timeout-minutes: 4
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  ./build/server_*/logs/

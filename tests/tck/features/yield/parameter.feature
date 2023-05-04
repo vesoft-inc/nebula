@@ -6,7 +6,7 @@ Feature: Parameter
   Background:
     Given an empty graph
     And load "nba" csv data to a new space
-    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili", "p9":["Tim Duncan","Tony Parker"]}
+    Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili", "p9":["Tim Duncan","Tony Parker"], "p10":90}
 
   Scenario: [param-test-001] without define param
     When executing query:
@@ -271,6 +271,21 @@ Feature: Parameter
     Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
     When executing query:
       """
+      GET SUBGRAPH FROM 'Tim Duncan' WHERE like.likeness < $unknown_distance YIELD edges as e
+      """
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
+    When executing query:
+      """
+      FIND ALL PATH FROM 'Tim Duncan' TO 'Tony Parker' OVER like WHERE like.likeness > $unknown_distance YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM 'Tim Duncan' TO 'Tony Parker' OVER like WHERE like.likeness > $unknown_distance YIELD path as p
+      """
+    Then a SemanticError should be raised at runtime: Undefined parameters: unknown_distance
+    When executing query:
+      """
       MATCH (v:player) RETURN  v LIMIT $p6
       """
     Then a SemanticError should be raised at runtime: LIMIT should be of type integer
@@ -345,6 +360,28 @@ Feature: Parameter
       | v        |
       | BAD_TYPE |
       | BAD_TYPE |
+    When executing query:
+      """
+      GET SUBGRAPH FROM 'Tim Duncan' WHERE like.likeness > $p10 YIELD edges AS e
+      """
+    Then the result should be, in any order:
+      | e                                                                                                                                                                                                                                  |
+      | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}], [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}], [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}], [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]] |
+      | [[:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}], [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}], [:like "Dejounte Murray"->"Tony Parker" @0 {likeness: 99}]]                                               |
+    When executing query:
+      """
+      FIND ALL PATH FROM 'Tim Duncan' TO 'Tony Parker' OVER like WHERE like.likeness > $p10-1 YIELD path AS p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                               |
+      | <("Tim Duncan")-[:like@0 {likeness: 95}]->("Tony Parker")>                                                                                      |
+      | <("Tim Duncan")-[:like@0 {likeness: 95}]->("Manu Ginobili")-[:like@0 {likeness: 90}]->("Tim Duncan")-[:like@0 {likeness: 95}]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND ALL PATH FROM 'Tim Duncan' TO 'Tony Parker' OVER like WHERE like.likeness > $p5[10] YIELD path AS p
+      """
+    Then the result should be, in any order:
+      | p |
 
   Scenario: [param-test-013] DML
     Given an empty graph

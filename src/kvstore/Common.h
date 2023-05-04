@@ -34,13 +34,15 @@ class KVFilter {
   /**
    * @brief Whether remove the key during compaction
    *
+   * @param level
    * @param spaceId
    * @param key
    * @param val
    * @return true Key will not be removed
    * @return false Key will be removed
    */
-  virtual bool filter(GraphSpaceID spaceId,
+  virtual bool filter(int level,
+                      GraphSpaceID spaceId,
                       const folly::StringPiece& key,
                       const folly::StringPiece& val) const = 0;
 };

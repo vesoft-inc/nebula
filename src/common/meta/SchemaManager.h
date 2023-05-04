@@ -40,12 +40,32 @@ class SchemaManager {
 
   virtual StatusOr<int32_t> getPartsNum(GraphSpaceID space) = 0;
 
+  std::shared_ptr<const NebulaSchemaProvider> getTagSchema(GraphSpaceID space,
+                                                           const std::string& tag,
+                                                           SchemaVer ver = -1) {
+    auto tagId = toTagID(space, tag);
+    if (!tagId.ok()) {
+      return nullptr;
+    }
+    return getTagSchema(space, tagId.value(), ver);
+  }
+
   virtual std::shared_ptr<const NebulaSchemaProvider> getTagSchema(GraphSpaceID space,
                                                                    TagID tag,
                                                                    SchemaVer ver = -1) = 0;
 
   // Returns a negative number when the schema does not exist
   virtual StatusOr<SchemaVer> getLatestTagSchemaVersion(GraphSpaceID space, TagID tag) = 0;
+
+  std::shared_ptr<const NebulaSchemaProvider> getEdgeSchema(GraphSpaceID space,
+                                                            const std::string& edge,
+                                                            SchemaVer ver = -1) {
+    auto edgeType = toEdgeType(space, edge);
+    if (!edgeType.ok()) {
+      return nullptr;
+    }
+    return getEdgeSchema(space, edgeType.value(), ver);
+  }
 
   virtual std::shared_ptr<const NebulaSchemaProvider> getEdgeSchema(GraphSpaceID space,
                                                                     EdgeType edge,

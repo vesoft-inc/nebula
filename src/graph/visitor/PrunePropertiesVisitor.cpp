@@ -218,8 +218,15 @@ void PrunePropertiesVisitor::visitCurrent(Traverse *node) {
   // The number of output columns of the Traverse operator is at least two(starting point and edge),
   // which is by design.
   DCHECK_GE(colNames.size(), 2);
-  auto &nodeAlias = colNames[colNames.size() - 2];
-  auto &edgeAlias = colNames.back();
+  size_t nodeIndex = colNames.size() - 2;
+  size_t edgeIndex = colNames.size() - 1;
+  if (node->genPath()) {
+    // if genPath, traverse operator's last column stores list of alternating vertices and edges
+    nodeIndex = nodeIndex - 1;
+    edgeIndex = edgeIndex - 1;
+  }
+  auto &nodeAlias = colNames[nodeIndex];
+  auto &edgeAlias = colNames[edgeIndex];
 
   if (node->vFilter() != nullptr) {
     status_ = extractPropsFromExpr(node->vFilter(), nodeAlias);
@@ -242,13 +249,22 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
   // The number of output columns of the Traverse operator is at least two(starting point and edge),
   // which is by design.
   DCHECK_GE(colNames.size(), 2);
-  auto &nodeAlias = colNames[colNames.size() - 2];
-  auto &edgeAlias = colNames.back();
-  auto *vertexProps = node->vertexProps();
+  size_t nodeIndex = colNames.size() - 2;
+  size_t edgeIndex = colNames.size() - 1;
+  size_t innerEdgeIndex = edgeIndex;
+  if (node->genPath()) {
+    // if genPath, traverse operator's last column stores list of alternating vertices and edges
+    nodeIndex = nodeIndex - 1;
+    edgeIndex = edgeIndex - 1;
+  }
+  auto &nodeAlias = colNames[nodeIndex];
+  auto &edgeAlias = colNames[edgeIndex];
+  auto &innerEdgeAlias = colNames[innerEdgeIndex];
   auto &colsSet = propsUsed_.colsSet;
   auto &vertexPropsMap = propsUsed_.vertexPropsMap;
   auto &edgePropsMap = propsUsed_.edgePropsMap;
 
+  auto *vertexProps = node->vertexProps();
   if (colsSet.find(nodeAlias) == colsSet.end()) {
     auto aliasIter = vertexPropsMap.find(nodeAlias);
     if (aliasIter == vertexPropsMap.end()) {
@@ -270,6 +286,11 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
           }
           auto tagIter = usedVertexProps.find(tagId);
           if (tagIter != usedVertexProps.end()) {
+            auto &tagProps = tagIter->second;
+            if (tagProps.find("*") != tagProps.end()) {
+              prunedVertexProps->emplace_back(vertexProp);
+              continue;
+            }
             usedProps.insert(tagIter->second.begin(), tagIter->second.end());
           }
           if (usedProps.empty()) {
@@ -295,7 +316,7 @@ void PrunePropertiesVisitor::pruneCurrent(Traverse *node) {
   }
 
   auto *edgeProps = node->edgeProps();
-  if (colsSet.find(edgeAlias) != colsSet.end()) {
+  if (colsSet.find(edgeAlias) != colsSet.end() || colsSet.find(innerEdgeAlias) != colsSet.end()) {
     // all edge properties are used
     return;
   }

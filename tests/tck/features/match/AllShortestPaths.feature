@@ -6,6 +6,110 @@ Feature: allShortestPaths
   Background:
     Given a graph with space named "nba"
 
+  Scenario: shortest path invalid step
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e*2]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: The minimal number of steps for shortestPath() must be either 0 or 1.
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e*2..4]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: The minimal number of steps for shortestPath() must be either 0 or 1.
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e]->(b)--(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: `shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e]->(b)-[e2:like]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then a SemanticError should be raised at runtime: `shortestPath(...)' only support pattern like (start)-[edge*..hop]-(end)
+
+  Scenario: zero step shortest path
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e*0]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e*0]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+
+  Scenario: one step shortest path
+    When executing query:
+      """
+      WITH ["Tim Duncan","Tony Parker"] as list1
+      MATCH allShortestPaths((v1:player)-[e]-(v2:player))
+        WHERE id(v1) in list1 AND id(v2) in list1
+        RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                             |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                         |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}] |
+      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                         |
+      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}] |
+    When executing query:
+      """
+      MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                             |
+      | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}] |
+      | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}] |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                         |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                         |
+    When executing query:
+      """
+      MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e*1]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                               |
+      | [[:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                         |
+      | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                         |
+    When executing query:
+      """
+      MATCH allShortestPaths((v1:player{name:"Tim Duncan"})-[e*1..1]-(v2:player{name:"Tony Parker"}))
+      RETURN e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                               |
+      | [[:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]] |
+      | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]                         |
+      | [[:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]]                         |
+
   Scenario: allShortestPaths1
     When executing query:
       """

@@ -562,11 +562,25 @@ nebula::cpp2::ErrorCode Part::cleanup() {
 }
 
 nebula::cpp2::ErrorCode Part::metaCleanup() {
+  LOG(INFO) << idStr_ << "Clean rocksdb part data";
   std::string kMetaPrefix = "__";
   auto firstKey = NebulaKeyUtils::firstKey(kMetaPrefix, 1);
   auto lastKey = NebulaKeyUtils::lastKey(kMetaPrefix, 1);
+  auto batch = engine_->startBatchWrite();
+  auto ret = batch->removeRange(firstKey, lastKey);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Failed to encode removeRange() when cleanup meta data, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
+  ret = batch->remove(NebulaKeyUtils::systemCommitKey(partId_));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    VLOG(3) << idStr_ << "Remove the part system commit data failed, error "
+            << apache::thrift::util::enumNameSafe(ret);
+    return ret;
+  }
   // todo(doodle): since the poor performance of DeleteRange, perhaps we need to compact
-  return engine_->removeRange(firstKey, lastKey);
+  return engine_->commitBatchWrite(std::move(batch), false, FLAGS_rocksdb_wal_sync, true);
 }
 
 }  // namespace kvstore

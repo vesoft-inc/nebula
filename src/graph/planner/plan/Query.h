@@ -1713,8 +1713,16 @@ class Traverse final : public GetNeighbors {
     firstStepFilter_ = filter;
   }
 
+  void setGenPath(bool genPath) {
+    genPath_ = genPath;
+  }
+
   Expression* tagFilter() const {
     return tagFilter_;
+  }
+
+  bool genPath() const {
+    return genPath_;
   }
 
   void setTagFilter(Expression* tagFilter) {
@@ -1738,6 +1746,7 @@ class Traverse final : public GetNeighbors {
   // Push down filter in first step
   Expression* firstStepFilter_{nullptr};
   Expression* tagFilter_{nullptr};
+  bool genPath_{false};
 };
 
 // Append vertices to a path.
@@ -1888,6 +1897,33 @@ class HashInnerJoin final : public HashJoin {
             qctx, Kind::kHashInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
   void cloneMembers(const HashInnerJoin&);
+};
+
+class CrossJoin final : public BinaryInputNode {
+ public:
+  static CrossJoin* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx, left, right);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  PlanNode* clone() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ private:
+  friend ObjectPool;
+
+  // used for clone only
+  static CrossJoin* make(QueryContext* qctx) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx);
+  }
+
+  void cloneMembers(const CrossJoin& r);
+
+  CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right);
+  // use for clone
+  explicit CrossJoin(QueryContext* qctx);
 };
 
 // Roll Up Apply two results from two inputs.

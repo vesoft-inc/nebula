@@ -24,6 +24,7 @@ namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
   range_ = traverse_->stepRange();
+  genPath_ = traverse_->genPath();
   NG_RETURN_IF_ERROR(buildRequestVids());
   if (vids_.empty()) {
     DataSet emptyDs;
@@ -61,8 +62,12 @@ Status TraverseExecutor::buildRequestVids() {
     auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
     for (; iter->valid(); iter->next()) {
       const auto& vid = src->eval(ctx(iter));
-      DCHECK_EQ(vid.type(), vidType)
-          << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
+      // FIXME(czp): Remove this DCHECK for now, we should check vid type at compile-time
+      if (vid.type() != vidType) {
+        return Status::Error("Vid type mismatched.");
+      }
+      // DCHECK_EQ(vid.type(), vidType)
+      //     << "Mismatched vid type: " << vid.type() << ", space vid type: " << vidType;
       if (vid.type() == vidType) {
         vids_.emplace(vid);
       }
@@ -374,9 +379,12 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath() {
       for (auto& p : prevPaths) {
         Row row = p;
         List edgeList;
-        edgeList.values.emplace_back(vertex);
         row.values.emplace_back(vertex);
-        row.values.emplace_back(std::move(edgeList));
+        row.values.emplace_back(edgeList);
+        if (genPath_) {
+          edgeList.values.emplace_back(vertex);
+          row.values.emplace_back(std::move(edgeList));
+        }
         result.emplace_back(std::move(row));
       }
     }
@@ -384,9 +392,12 @@ std::vector<Row> TraverseExecutor::buildZeroStepPath() {
     for (auto& vertex : initVertices_) {
       Row row;
       List edgeList;
-      edgeList.values.emplace_back(vertex);
       row.values.emplace_back(vertex);
-      row.values.emplace_back(std::move(edgeList));
+      row.values.emplace_back(edgeList);
+      if (genPath_) {
+        edgeList.values.emplace_back(vertex);
+        row.values.emplace_back(std::move(edgeList));
+      }
       result.emplace_back(std::move(row));
     }
   }
@@ -477,38 +488,53 @@ std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
     return std::vector<Row>();
   }
 
-  std::vector<Row> result;
-  result.reserve(adjEdges.size());
+  std::vector<Row> oneStepPath;
+  oneStepPath.reserve(adjEdges.size());
   for (auto& edge : adjEdges) {
     List edgeList;
     edgeList.values.emplace_back(edge);
     Row row;
     row.values.emplace_back(src);
-    row.values.emplace_back(std::move(edgeList));
-    result.emplace_back(std::move(row));
+    // only contain edges
+    row.values.emplace_back(edgeList);
+    if (genPath_) {
+      // contain nodes & edges
+      row.values.emplace_back(std::move(edgeList));
+    }
+    oneStepPath.emplace_back(std::move(row));
   }
 
   if (maxStep == 1) {
     if (traverse_->trackPrevPath()) {
-      return joinPrevPath(initVertex, result);
+      return joinPrevPath(initVertex, oneStepPath);
     }
-    return result;
+    return oneStepPath;
   }
 
   size_t step = 2;
   std::vector<Row> newResult;
   std::queue<std::vector<Value>*> queue;
+  std::queue<std::vector<Value>*> edgeListQueue;
   std::list<std::unique_ptr<std::vector<Value>>> holder;
   for (auto& edge : adjEdges) {
     auto ptr = std::make_unique<std::vector<Value>>(std::vector<Value>({edge}));
     queue.emplace(ptr.get());
+    edgeListQueue.emplace(ptr.get());
     holder.emplace_back(std::move(ptr));
   }
-  size_t adjSize = queue.size();
-  while (!queue.empty()) {
-    auto edgeListPtr = queue.front();
+
+  size_t adjSize = edgeListQueue.size();
+  while (!edgeListQueue.empty()) {
+    auto edgeListPtr = edgeListQueue.front();
     auto& dst = edgeListPtr->back().getEdge().dst;
-    queue.pop();
+    edgeListQueue.pop();
+
+    std::vector<Value>* vertexEdgeListPtr = nullptr;
+    if (genPath_) {
+      vertexEdgeListPtr = queue.front();
+      queue.pop();
+    }
+
     --adjSize;
     auto dstIter = adjList_.find(dst);
     if (dstIter == adjList_.end()) {
@@ -516,7 +542,7 @@ std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
         if (++step > maxStep) {
           break;
         }
-        adjSize = queue.size();
+        adjSize = edgeListQueue.size();
       }
       continue;
     }
@@ -527,29 +553,44 @@ std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
         continue;
       }
       auto newEdgeListPtr = std::make_unique<std::vector<Value>>(*edgeListPtr);
-      newEdgeListPtr->emplace_back(dstIter->first);
       newEdgeListPtr->emplace_back(edge);
+
+      std::unique_ptr<std::vector<Value>> newVertexEdgeListPtr = nullptr;
+      if (genPath_) {
+        newVertexEdgeListPtr = std::make_unique<std::vector<Value>>(*vertexEdgeListPtr);
+        newVertexEdgeListPtr->emplace_back(dstIter->first);
+        newVertexEdgeListPtr->emplace_back(edge);
+      }
 
       if (step >= minStep) {
         Row row;
         row.values.emplace_back(src);
+        // only contain edges
         row.values.emplace_back(List(*newEdgeListPtr));
+        if (genPath_) {
+          // contain nodes & edges
+          row.values.emplace_back(List(*newVertexEdgeListPtr));
+        }
         newResult.emplace_back(std::move(row));
       }
-      queue.emplace(newEdgeListPtr.get());
+      edgeListQueue.emplace(newEdgeListPtr.get());
       holder.emplace_back(std::move(newEdgeListPtr));
+      if (genPath_ && newVertexEdgeListPtr != nullptr) {
+        queue.emplace(newVertexEdgeListPtr.get());
+        holder.emplace_back(std::move(newVertexEdgeListPtr));
+      }
     }
     if (adjSize == 0) {
       if (++step > maxStep) {
         break;
       }
-      adjSize = queue.size();
+      adjSize = edgeListQueue.size();
     }
   }
   if (minStep <= 1) {
     newResult.insert(newResult.begin(),
-                     std::make_move_iterator(result.begin()),
-                     std::make_move_iterator(result.end()));
+                     std::make_move_iterator(oneStepPath.begin()),
+                     std::make_move_iterator(oneStepPath.end()));
   }
   if (traverse_->trackPrevPath()) {
     return joinPrevPath(initVertex, newResult);
@@ -570,8 +611,7 @@ std::vector<Row> TraverseExecutor::joinPrevPath(const Value& initVertex,
       if (!hasSameEdgeInPath(prevPath, p)) {
         // copy
         Row row = prevPath;
-        row.values.emplace_back(p.values.front());
-        row.values.emplace_back(p.values.back());
+        row.values.insert(row.values.end(), p.values.begin(), p.values.end());
         newPaths.emplace_back(std::move(row));
       }
     }

@@ -66,24 +66,39 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
 
   auto condition = filter->condition();
-  DCHECK(graph::ExpressionUtils::isGeoIndexAcceleratedPredicate(condition));
+  if (!graph::ExpressionUtils::isGeoIndexAcceleratedPredicate(condition)) {
+    return TransformResult::noTransform();
+  }
 
   auto* geoPredicate = static_cast<FunctionCallExpression*>(condition);
-  DCHECK_GE(geoPredicate->args()->numArgs(), 2);
+  if (geoPredicate->args()->numArgs() < 2) {
+    return TransformResult::noTransform();
+  }
   std::string geoPredicateName = geoPredicate->name();
   folly::toLowerAscii(geoPredicateName);
   auto* first = geoPredicate->args()->args()[0];
   auto* second = geoPredicate->args()->args()[1];
-  DCHECK(first->kind() == Expression::Kind::kTagProperty ||
-         first->kind() == Expression::Kind::kEdgeProperty);
-  DCHECK(second->kind() == Expression::Kind::kConstant);
-  const auto& secondVal = static_cast<const ConstantExpression*>(second)->value();
-  DCHECK(secondVal.isGeography());
+  if (first->kind() != Expression::Kind::kTagProperty &&
+      first->kind() != Expression::Kind::kEdgeProperty) {
+    return TransformResult::noTransform();
+  }
+
+  if (!graph::ExpressionUtils::isEvaluableExpr(second, qctx)) {
+    return TransformResult::noTransform();
+  }
+
+  auto secondVal = second->eval(graph::QueryExpressionContext(qctx->ectx())());
+  if (!secondVal.isGeography()) {
+    return TransformResult::noTransform();
+  }
+
   const auto& geog = secondVal.getGeography();
 
   auto indexItem = indexItems.back();
   const auto& fields = indexItem->get_fields();
-  DCHECK_EQ(fields.size(), 1);  // geo field
+  if (fields.size() != 1) {
+    return TransformResult::noTransform();
+  }
   auto& geoField = fields.back();
   auto& geoColumnTypeDef = geoField.get_type();
   bool isPointColumn = geoColumnTypeDef.geo_shape_ref().has_value() &&
@@ -108,7 +123,9 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   } else if (geoPredicateName == "st_coveredby") {
     scanRanges = geoIndex.covers(geog);
   } else if (geoPredicateName == "st_dwithin") {
-    DCHECK_GE(geoPredicate->args()->numArgs(), 3);
+    if (geoPredicate->args()->numArgs() < 3) {
+      return TransformResult::noTransform();
+    }
     auto* third = geoPredicate->args()->args()[2];
     if (!graph::ExpressionUtils::isEvaluableExpr(third, qctx)) {
       return TransformResult::noTransform();
@@ -147,7 +164,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
   TransformResult result;
   result.newGroupNodes.emplace_back(optScanNode);
-  result.eraseCurr = true;
+  result.eraseAll = true;
   return result;
 }
 

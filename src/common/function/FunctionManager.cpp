@@ -2017,7 +2017,7 @@ FunctionManager::FunctionManager() {
     // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
@@ -2035,6 +2035,13 @@ FunctionManager::FunctionManager() {
         case Value::Type::LIST: {
           const auto &listVal = args[0].get().getList().values;
           if (listVal.empty()) {
+            if (args.size() == 2) {
+              if (args[1].get().type() == Value::Type::VERTEX) {
+                const auto &v = args[1].get().getVertex();
+                return v.vid;
+              }
+              return Value::kNullBadType;
+            }
             return Value::kNullBadType;
           }
           auto &lastVal = listVal.back();

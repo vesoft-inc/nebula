@@ -20,6 +20,7 @@ Feature: Geo base
       CREATE EDGE any_shape_edge(geo geography);
       """
     And wait 3 seconds
+    Given parameters: {"p4": {"s1":"test","s2":"2020-01-01 10:00:00","s3":[1,2,3,4,5],"longitude":[1.0,2.0,3.0],"latitude":[10.1,11.1,12.1]}}
 
   Scenario: test geo schema
     # Desc geo schema
@@ -127,6 +128,14 @@ Feature: Geo base
       INSERT VERTEX any_shape(geo) VALUES "103":(ST_GeogFromText("POLYGON((0 1, 1 2, 2 3, 0 1))"));
       """
     Then the execution should be successful
+    # "POINT(3 8)" is a string not a geography literal.
+    # We must use some geography costructor function to construct a geography literal.
+    # e.g.`ST_GeogFromText("POINT(3 8)")`
+    When executing query:
+      """
+      INSERT VERTEX any_shape(geo) VALUES "104":("POINT(3 8)");
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
     # Only point is allowed to insert to the column geograph(point)
     When executing query:
       """
@@ -535,6 +544,12 @@ Feature: Geo base
       | "LINESTRING(3 8, 4.7 73.23)"    |
       | "POLYGON((0 1, 1 2, 2 3, 0 1))" |
       | "POINT(72.3 84.6)"              |
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point($p4.longitude[0], $p4.latitude[1])) < $p4.latitude[2] YIELD id(vertex)
+      """
+    Then the result should be, in any order:
+      | id(VERTEX) |
     When executing query:
       """
       LOOKUP ON any_shape WHERE 8909524.383934560 > ST_Distance(any_shape.geo, ST_Point(3, 8)) YIELD ST_ASText(any_shape.geo);

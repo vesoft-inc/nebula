@@ -111,6 +111,7 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   auto& colName = dep->colNames().back();
   auto argNode = Argument::make(qctx, colName);
   argNode->setColNames({colName});
+  argNode->setInputVertexRequired(false);
 
   // dst is the first column, columnName is "JOIN_DST_VID"
   auto* dstExpr = ColumnExpression::make(pool, LAST_COL_INDEX);
@@ -139,6 +140,33 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
   colNames.insert(colNames.end(), project->colNames().begin(), project->colNames().end());
   join->setColNames(std::move(colNames));
   return join;
+}
+
+SubPlan GoPlanner::doSimplePlan() {
+  auto qctx = goCtx_->qctx;
+  size_t step = goCtx_->steps.mSteps();
+  auto* expand = Expand::make(qctx,
+                              startNode_,
+                              goCtx_->space.id,
+                              false,  // random
+                              step,
+                              buildEdgeProps(true));
+  expand->setEdgeTypes(buildEdgeTypes());
+  expand->setColNames({"_expand_vid"});
+  expand->setInputVar(goCtx_->vidsVar);
+
+  auto* dedup = Dedup::make(qctx, expand);
+
+  auto pool = qctx->objPool();
+  auto* newYieldExpr = pool->makeAndAdd<YieldColumns>();
+  newYieldExpr->addColumn(new YieldColumn(ColumnExpression::make(pool, 0)));
+  auto* project = Project::make(qctx, dedup, newYieldExpr);
+  project->setColNames(std::move(goCtx_->colNames));
+
+  SubPlan subPlan;
+  subPlan.root = project;
+  subPlan.tail = expand;
+  return subPlan;
 }
 
 SubPlan GoPlanner::doPlan() {
@@ -246,6 +274,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
     auto argNode = Argument::make(qctx, from.runtimeVidName);
     argNode->setColNames({from.runtimeVidName});
+    argNode->setInputVertexRequired(false);
     goCtx_->vidsVar = argNode->outputVar();
     startNode_ = argNode;
   }
@@ -256,6 +285,9 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     SubPlan subPlan;
     subPlan.root = subPlan.tail = pt;
     return subPlan;
+  }
+  if (goCtx_->isSimple) {
+    return doSimplePlan();
   }
   return doPlan();
 }

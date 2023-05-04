@@ -437,32 +437,6 @@ class Subgraph final : public SingleInputNode {
   std::unique_ptr<std::vector<EdgeProp>> edgeProps_;
 };
 
-class CrossJoin final : public BinaryInputNode {
- public:
-  static CrossJoin* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
-    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx, left, right);
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-  PlanNode* clone() const override;
-
-  void accept(PlanNodeVisitor* visitor) override;
-
- private:
-  friend ObjectPool;
-
-  // used for clone only
-  static CrossJoin* make(QueryContext* qctx) {
-    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx);
-  }
-
-  void cloneMembers(const CrossJoin& r);
-
-  CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right);
-  // use for clone
-  explicit CrossJoin(QueryContext* qctx);
-};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_ALGO_H_

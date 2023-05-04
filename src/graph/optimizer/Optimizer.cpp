@@ -46,10 +46,7 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   NG_RETURN_IF_ERROR(doExploration(optCtx.get(), rootGroup));
   auto *newRoot = rootGroup->getPlan();
 
-  auto status2 = postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID);
-  if (!status2.ok()) {
-    DLOG(ERROR) << "Failed to postprocess plan: " << status2;
-  }
+  NG_RETURN_IF_ERROR(postprocess(const_cast<PlanNode *>(newRoot), qctx, spaceID));
   return newRoot;
 }
 
@@ -61,7 +58,8 @@ Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSp
     graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
     root->accept(&visitor);
     if (!visitor.ok()) {
-      return visitor.status();
+      LOG(INFO) << "Failed to prune properties of query plan in post process of optimizer: "
+                << visitor.status();
     }
   }
   return Status::OK();
@@ -175,7 +173,13 @@ Status Optimizer::rewriteArgumentInputVarInternal(PlanNode *root,
     case 0: {
       if (root->kind() == PlanNode::Kind::kArgument) {
         if (!findArgumentRefPlanNodeInPath(path, root) || root->inputVar().empty()) {
-          return Status::Error("Could not find the right input variable for argument plan node");
+          DCHECK(!root->outputVarPtr()->colNames.empty());
+          auto outColumn = root->outputVarPtr()->colNames.back();
+          return Status::Error(
+              "Could not generate valid query plan since the argument plan node could not find its "
+              "input data, please review your query and pay attention to the symbol `%s` usage "
+              "especially.",
+              outColumn.c_str());
         }
       }
       break;

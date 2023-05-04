@@ -28,14 +28,18 @@ using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFind
 // 3. PropIndexSeek finds if a plan could traverse from some vids that could be
 // read from the property indices.
 // MATCH(n:Tag{prop:value}) RETURN n
-// MATCH(n:Tag) WHERE n.prop = value RETURN n
+// MATCH(n:Tag) WHERE n.Tag.prop = value RETURN n
 //
-// 4. LabelIndexSeek finds if a plan could traverse from some vids that could be
+// 4. VariableVertexIdSeek
+// WITH "xx" AS vid MATCH (v:Tag) WHERE id(v)==vid RETURN v
+//
+// 5. LabelIndexSeek finds if a plan could traverse from some vids that could be
 // read from the label indices.
 // MATCH(n: tag) RETURN n
 // MATCH(s)-[:edge]->(e) RETURN e
 //
-// 5. ScanSeek finds if a plan could traverse from some vids by scanning.
+// 6. ScanSeek finds if a plan could traverse from some vids by scanning.
+//
 class StartVidFinder {
  public:
   virtual ~StartVidFinder() = default;
@@ -49,23 +53,32 @@ class StartVidFinder {
 
   // The derived class should implement matchNode if the finder has
   // the ability to find vids from node pattern.
-  virtual bool matchNode(NodeContext* nodeCtx) = 0;
+  virtual bool matchNode(NodeContext* /* nodeCtx */) {
+    return false;
+  }
 
   // The derived class should implement matchEdge if the finder has
   // the ability to find vids from edge pattern.
-  virtual bool matchEdge(EdgeContext* nodeCtx) = 0;
+  virtual bool matchEdge(EdgeContext* /* edgeCtx */) {
+    return false;
+  }
 
   StatusOr<SubPlan> transform(PatternContext* patternCtx);
 
-  virtual StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) = 0;
+  virtual StatusOr<SubPlan> transformNode(NodeContext* /* nodeCtx */) {
+    return Status::Error("Unimplemented");
+  }
 
-  virtual StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) = 0;
+  virtual StatusOr<SubPlan> transformEdge(EdgeContext* /* edgeCtx */) {
+    return Status::Error("Unimplemented");
+  }
 
   virtual const char* name() const = 0;
 
  protected:
   StartVidFinder() = default;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_MATCH_STARTVIDFINDER_H_

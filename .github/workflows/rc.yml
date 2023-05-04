@@ -44,7 +44,7 @@ jobs:
           go-version: 'stable'
           cache-dependency-path: nebula-console/go.sum
       - id: tag
-        run: echo tagnum=${{ github.event.inputs.version }}
+        run: echo tagnum=${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
       - name: package
         run: ./package/package.sh -v ${{ steps.tag.outputs.tagnum }}
       - name: output some vars
@@ -199,7 +199,7 @@ jobs:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v3
       - id: tag
-        run: echo tagnum=${{ github.event.inputs.version }}
+        run: echo tagnum=${{ github.event.inputs.version }} >> $GITHUB_OUTPUT
 
       - id: oss_package
         run: |
