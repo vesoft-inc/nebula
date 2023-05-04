@@ -27,7 +27,6 @@ DEFINE_bool(auto_remove_invalid_space, true, "whether remove data of invalid spa
 DECLARE_bool(rocksdb_disable_wal);
 DECLARE_int32(rocksdb_backup_interval_secs);
 DECLARE_int32(wal_ttl);
-DEFINE_int32(raft_num_worker_threads, 32, "Raft part number of workers");
 
 namespace nebula {
 namespace kvstore {
@@ -51,13 +50,6 @@ bool NebulaStore::init() {
   bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
   storeWorker_ = std::make_shared<thread::GenericWorker>();
   CHECK(storeWorker_->start());
-  {
-    auto pool = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-        FLAGS_raft_num_worker_threads);
-    pool->setNamePrefix("part-executor");
-    pool->start();
-    partExecutor_ = std::move(pool);
-  }
   snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
   if (raftService_ == nullptr) {
@@ -469,7 +461,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                      engine,
                                      ioPool_,
                                      bgWorkers_,
-                                     partExecutor_,
+                                     workers_,
                                      snapshot_,
                                      clientMan_,
                                      diskMan_,
@@ -628,14 +620,8 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
   std::shared_ptr<Listener> listener;
   if (type == meta::cpp2::ListenerType::ELASTICSEARCH) {
-    listener = std::make_shared<ESListener>(spaceId,
-                                            partId,
-                                            raftAddr_,
-                                            walPath,
-                                            ioPool_,
-                                            bgWorkers_,
-                                            partExecutor_,
-                                            options_.schemaMan_);
+    listener = std::make_shared<ESListener>(
+        spaceId, partId, raftAddr_, walPath, ioPool_, bgWorkers_, workers_, options_.schemaMan_);
   } else {
     LOG(FATAL) << "Should not reach here";
     return nullptr;

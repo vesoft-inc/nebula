@@ -864,7 +864,6 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<thread::GenericThreadPool> bgWorkers_;
   HostAddr storeSvcAddr_;
   std::shared_ptr<folly::Executor> workers_;
-  std::shared_ptr<folly::Executor> partExecutor_;
   HostAddr raftAddr_;
   KVOptions options_;
 
