@@ -369,8 +369,6 @@ bool MetaClient::loadData() {
     return *hostItem.hostAddr_ref();
   });
 
-  loadLeader(hostItems, spaceIndexByName_);
-
   decltype(localCache_) oldCache;
   {
     oldCache = std::move(localCache_);
@@ -385,6 +383,8 @@ bool MetaClient::loadData() {
     spaceAllEdgeMap_ = std::move(spaceAllEdgeMap);
     storageHosts_ = std::move(hosts);
   }
+
+  loadLeader(hostItems, spaceIndexByName_);
 
   localDataLastUpdateTime_.store(metadLastUpdateTime_.load());
   auto newMetaData = new MetaData();
