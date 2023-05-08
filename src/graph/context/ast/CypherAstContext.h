@@ -250,7 +250,7 @@ struct NodeContext final : PatternContext {
       : PatternContext(PatternKind::kNode, q, b, g), info(i) {}
 
   const NodeInfo* info;
-  std::unordered_set<std::string>* nodeAliasesAvailable{nullptr};
+  std::unordered_set<std::string>* aliasesAvailable{nullptr};
 
   // Output fields
   Set ids;
