@@ -119,8 +119,8 @@ void NebulaStore::loadPartFromDataPath() {
       }
       spaceIt->second.emplace_back(std::move(p.second));
     } else {
-      LOG(FATAL) << "Invalid data directory \"" << enginesPath[index] << "\", exception: "
-                 << t.exception().what();
+      LOG(FATAL) << "Invalid data directory \"" << enginesPath[index]
+                 << "\", exception: " << t.exception().what();
     }
     ++index;
   }
