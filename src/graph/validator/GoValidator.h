@@ -44,6 +44,8 @@ class GoValidator final : public Validator {
 
   bool checkDstPropOrVertexExist(const Expression* expr);
 
+  bool isSimpleCase();
+
  private:
   std::unique_ptr<GoContext> goCtx_;
 

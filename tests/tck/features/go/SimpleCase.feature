@@ -16,12 +16,11 @@ Feature: Simple case
       | 2        |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
-      | 6  | Aggregate | 5            |               |
-      | 5  | Dedup     | 4            |               |
+      | 5  | Aggregate | 4            |               |
       | 4  | Project   | 3            |               |
-      | 3  | ExpandAll | 2            |               |
-      | 2  | Expand    | 1            |               |
-      | 1  | Start     |              |               |
+      | 3  | Dedup     | 2            |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       GO FROM "Yao Ming" OVER like YIELD DISTINCT id($$) AS dst, $$.player.age AS age | ORDER BY $-.dst
@@ -72,13 +71,12 @@ Feature: Simple case
       | "Manu Ginobili"     |
       | "Tim Duncan"        |
     And the execution plan should be:
-      | id | name      | dependencies | operator info |
-      | 6  | Sort      | 5            |               |
-      | 5  | Dedup     | 4            |               |
-      | 4  | Project   | 3            |               |
-      | 3  | ExpandAll | 2            |               |
-      | 2  | Expand    | 1            |               |
-      | 1  | Start     |              |               |
+      | id | name    | dependencies | operator info |
+      | 5  | Sort    | 4            |               |
+      | 4  | Project | 3            |               |
+      | 3  | Dedup   | 2            |               |
+      | 2  | Expand  | 0            |               |
+      | 0  | Start   |              |               |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like YIELD DISTINCT 2, id($$) AS a | ORDER BY $-.a
@@ -107,12 +105,11 @@ Feature: Simple case
       | 22       |
     And the execution plan should be:
       | id | name      | dependencies | operator info |
-      | 6  | Aggregate | 5            |               |
-      | 5  | Dedup     | 4            |               |
+      | 5  | Aggregate | 4            |               |
       | 4  | Project   | 3            |               |
-      | 3  | ExpandAll | 2            |               |
-      | 2  | Expand    | 1            |               |
-      | 1  | Start     |              |               |
+      | 3  | Dedup     | 2            |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       GO 3 STEPS FROM "Tony Parker" OVER serve BIDIRECT WHERE $$.team.name != "Lakers" YIELD DISTINCT id($$) | YIELD count(*)
@@ -397,18 +394,17 @@ Feature: Simple case
       | 0        |
     And the execution plan should be:
       | id | name          | dependencies | operator info |
-      | 13 | Aggregate     | 12           |               |
-      | 12 | Dedup         | 11           |               |
-      | 11 | Project       | 10           |               |
-      | 10 | HashInnerJoin | 5,9          |               |
-      | 5  | Dedup         | 4            |               |
+      | 12 | Aggregate     | 11           |               |
+      | 11 | Dedup         | 10           |               |
+      | 10 | Project       | 9            |               |
+      | 9  | HashInnerJoin | 4,8          |               |
       | 4  | Project       | 3            |               |
-      | 3  | ExpandAll     | 2            |               |
-      | 2  | Expand        | 1            |               |
-      | 1  | Start         |              |               |
-      | 9  | ExpandAll     | 8            |               |
-      | 8  | Expand        | 7            |               |
-      | 7  | Argument      |              |               |
+      | 3  | Dedup         | 2            |               |
+      | 2  | Expand        | 0            |               |
+      | 0  | Start         |              |               |
+      | 8  | ExpandAll     | 7            |               |
+      | 7  | Expand        | 6            |               |
+      | 6  | Argument      |              |               |
     When profiling query:
       """
       GO 1 STEP FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 3 STEP FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
@@ -418,18 +414,17 @@ Feature: Simple case
       | 22       |
     And the execution plan should be:
       | id | name          | dependencies | operator info |
-      | 13 | Aggregate     | 12           |               |
-      | 12 | Dedup         | 11           |               |
-      | 11 | Project       | 10           |               |
-      | 10 | HashInnerJoin | 5,9          |               |
-      | 5  | Dedup         | 4            |               |
+      | 12 | Aggregate     | 11           |               |
+      | 11 | Dedup         | 10           |               |
+      | 10 | Project       | 9            |               |
+      | 9  | HashInnerJoin | 4,8          |               |
       | 4  | Project       | 3            |               |
-      | 3  | ExpandAll     | 2            |               |
-      | 2  | Expand        | 1            |               |
-      | 1  | Start         |              |               |
-      | 9  | ExpandAll     | 8            |               |
-      | 8  | Expand        | 7            |               |
-      | 7  | Argument      |              |               |
+      | 3  | Dedup         | 2            |               |
+      | 2  | Expand        | 0            |               |
+      | 0  | Start         |              |               |
+      | 8  | ExpandAll     | 7            |               |
+      | 7  | Expand        | 6            |               |
+      | 6  | Argument      |              |               |
 
   Scenario: could not be optimied cases
     When profiling query:
@@ -584,20 +579,19 @@ Feature: Simple case
       | "Grant Hill"        | 46  | "Grant Hill"        |
     And the execution plan should be:
       | id | name          | dependencies | operator info |
-      | 18 | Sort          | 17           |               |
-      | 17 | Dedup         | 16           |               |
-      | 16 | Project       | 21           |               |
-      | 21 | HashInnerJoin | 5,20         |               |
-      | 5  | Dedup         | 4            |               |
+      | 17 | Sort          | 16           |               |
+      | 16 | Dedup         | 15           |               |
+      | 15 | Project       | 20           |               |
+      | 20 | HashInnerJoin | 4,19         |               |
       | 4  | Project       | 3            |               |
-      | 3  | ExpandAll     | 2            |               |
-      | 2  | Expand        | 1            |               |
-      | 1  | Start         |              |               |
-      | 20 | Filter        | 19           |               |
-      | 19 | HashLeftJoin  | 9,12         |               |
-      | 9  | ExpandAll     | 8            |               |
-      | 8  | Expand        | 7            |               |
-      | 7  | Argument      |              |               |
-      | 12 | Project       | 11           |               |
-      | 11 | GetVertices   | 10           |               |
-      | 10 | Argument      |              |               |
+      | 3  | Dedup         | 2            |               |
+      | 2  | Expand        | 0            |               |
+      | 0  | Start         |              |               |
+      | 19 | Filter        | 18           |               |
+      | 18 | HashLeftJoin  | 8,11         |               |
+      | 8  | ExpandAll     | 7            |               |
+      | 7  | Expand        | 6            |               |
+      | 6  | Argument      |              |               |
+      | 11 | Project       | 10           |               |
+      | 10 | GetVertices   | 9            |               |
+      | 9  | Argument      |              |               |
