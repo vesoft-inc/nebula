@@ -101,8 +101,8 @@ void NebulaStore::loadPartFromDataPath() {
         continue;
       }
 
-      enginesPath.emplace_back(rootPath + dir);
-      futures.emplace_back(asyncNewEngine(spaceId, path, options_.walPath_));
+      enginesPath.emplace_back(rootPath + "/" + dir);
+      futures.emplace_back(newEngineAsync(spaceId, path, options_.walPath_));
     }
   }
 
@@ -119,7 +119,8 @@ void NebulaStore::loadPartFromDataPath() {
       }
       spaceIt->second.emplace_back(std::move(p.second));
     } else {
-      LOG(FATAL) << "Invalid data directory \"" << enginesPath[index] << "\"";
+      LOG(FATAL) << "Invalid data directory \"" << enginesPath[index] << "\", exception: "
+                 << t.exception().what();
     }
     ++index;
   }
@@ -350,7 +351,7 @@ void NebulaStore::stop() {
   }
 }
 
-folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::asyncNewEngine(
+folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::newEngineAsync(
     GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath) {
   return folly::via(folly::getGlobalIOExecutor().get(), [this, spaceId, dataPath, walPath]() {
     std::unique_ptr<KVEngine> engine;
@@ -372,7 +373,7 @@ folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> NebulaStore::a
 std::unique_ptr<KVEngine> NebulaStore::newEngine(GraphSpaceID spaceId,
                                                  const std::string& dataPath,
                                                  const std::string& walPath) {
-  auto pair = this->asyncNewEngine(spaceId, dataPath, walPath).get();
+  auto pair = this->newEngineAsync(spaceId, dataPath, walPath).get();
   return std::move(pair.second);
 }
 

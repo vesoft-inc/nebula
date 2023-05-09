@@ -782,7 +782,7 @@ class NebulaStore : public KVStore, public Handler {
    * @param walPath
    * @return folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>>
    */
-  folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> asyncNewEngine(
+  folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> newEngineAsync(
       GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath);
 
   /**
