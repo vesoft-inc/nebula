@@ -206,6 +206,11 @@ void GraphSessionManager::reclaimExpiredSessions() {
     if (idleSecs < FLAGS_session_idle_timeout_secs) {
       continue;
     }
+    // Only reclaim sessions on the same host
+    // TODO: maybe we could reclaim sessions on other inactive hosts
+    if (iter.second->getGraphAddr() != myAddr_) {
+      continue;
+    }
     FLOG_INFO("ClientSession %ld has expired", iter.first);
 
     expiredSessions.emplace_back(iter.first);

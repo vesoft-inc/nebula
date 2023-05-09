@@ -220,6 +220,53 @@ class TestSession(NebulaTestSuite):
         expect_result = [['a'], ['b'], ['aa0'], ['aa1'], ['aa2']]
         self.check_out_of_order_result(ResultSet(resp, 0), expect_result)
 
+    def test_session_expired_properly_across_graphd(self):
+        """
+        Ensure session expired only when it's on current graphd
+        """
+        conn1 = self.get_connection(self.addr_host1, self.addr_port1)
+        conn2 = self.get_connection(self.addr_host2, self.addr_port2)
+
+        resp = conn1.authenticate('root', 'nebula')
+        session_id = resp.get_session_id()
+
+        resp = conn1.execute(
+            session_id,
+            'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;',
+        )
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        # time::WallClock::fastNowInMicroSec() is not synchronous in different process,
+        # so we sleep 3 seconds here and charge session
+        time.sleep(3)
+        resp = conn1.execute(session_id, 'USE aSpace;')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        time.sleep(3)
+        # We actually not allowed share sessions, this only for testing the scenario of transfer sessions.
+        resp = conn1.execute(session_id, 'CREATE TAG IF NOT EXISTS a();')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        resp = conn2.execute(session_id, 'CREATE TAG IF NOT EXISTS b();')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+
+        # When session is only on connection with host2/conn2, it won't be expired(by host1)
+        # if we actively use it.
+        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 3')
+        self.check_resp_succeeded(resp)
+        time.sleep(2)
+        resp = conn2.execute(session_id, 'USE aSpace;')
+        time.sleep(2)
+        resp = conn2.execute(session_id, 'SHOW TAGS')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        # now session is still alive on host2, not expired by host1
+        expect_result = [['a'], ['b']]
+        self.check_out_of_order_result(ResultSet(resp, 0), expect_result)
+        time.sleep(5)
+        resp = conn2.execute(session_id, 'SHOW TAGS')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        # now session is expired by host2
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
+        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
+        self.check_resp_succeeded(resp)
+
     def test_out_of_max_connections(self):
         resp = self.execute('SHOW SESSIONS')
         self.check_resp_succeeded(resp)
