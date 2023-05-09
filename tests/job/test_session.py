@@ -8,7 +8,6 @@ import sys
 import time
 import concurrent
 
-from nebula3.gclient.net import Connection
 from nebula3.common import ttypes
 from nebula3.data.ResultSet import ResultSet
 from tests.common.nebula_test_suite import NebulaTestSuite
@@ -242,30 +241,43 @@ class TestSession(NebulaTestSuite):
         self.check_resp_succeeded(ResultSet(resp, 0))
         time.sleep(3)
         # We actually not allowed share sessions, this only for testing the scenario of transfer sessions.
-        resp = conn1.execute(session_id, 'CREATE TAG IF NOT EXISTS a();')
+        resp = conn1.execute(session_id, 'CREATE TAG IF NOT EXISTS c();')
         self.check_resp_succeeded(ResultSet(resp, 0))
-        resp = conn2.execute(session_id, 'CREATE TAG IF NOT EXISTS b();')
+        resp = conn2.execute(session_id, 'CREATE TAG IF NOT EXISTS d();')
         self.check_resp_succeeded(ResultSet(resp, 0))
 
-        # When session is only on connection with host2/conn2, it won't be expired(by host1)
+        # 1. Test when session is only on connection with host2/conn2, it won't be expired(by host1)
         # if we actively use it.
-        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 3')
-        self.check_resp_succeeded(resp)
-        time.sleep(2)
-        resp = conn2.execute(session_id, 'USE aSpace;')
-        time.sleep(2)
-        resp = conn2.execute(session_id, 'SHOW TAGS')
+        resp = conn1.execute(session_id, 'UPDATE CONFIGS graph:session_idle_timeout_secs = 5')
+        resp = conn2.execute(session_id, 'UPDATE CONFIGS graph:session_idle_timeout_secs = 5')
         self.check_resp_succeeded(ResultSet(resp, 0))
-        # now session is still alive on host2, not expired by host1
-        expect_result = [['a'], ['b']]
+        for _ in range(3):
+            # prevent self.client from expiring, see conftest.py
+            self.execute('SHOW SESSION {}'.format(session_id))
+            resp = conn2.execute(session_id, 'SHOW TAGS;')
+            self.check_resp_succeeded(ResultSet(resp, 0))
+            time.sleep(2)
+        # now session is still alive on host2, not expired from host1
+        expect_result = [['a'], ['b'], ['aa0'], ['aa1'], ['aa2'], ['c'], ['d']]
         self.check_out_of_order_result(ResultSet(resp, 0), expect_result)
-        time.sleep(5)
-        resp = conn2.execute(session_id, 'SHOW TAGS')
-        self.check_resp_succeeded(ResultSet(resp, 0))
-        # now session is expired by host2
+        for _ in range(3):
+            # prevent self.client from expiring, see conftest.py
+            self.execute('SHOW SESSION {}'.format(session_id))
+            time.sleep(2)
+        # 2. Regression test for expiration, when session is on both host1 and host2(last active on host2),
+        # now session is expired from session manager on host2
+        resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
-        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
-        self.check_resp_succeeded(resp)
+
+        # Reset session_idle_timeout_secs to default value for all graphd
+        resp = conn1.authenticate('root', 'nebula')
+        session_id = resp.get_session_id()
+        resp = conn1.execute(session_id, 'UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
+        self.check_resp_succeeded(ResultSet(resp, 0))
+        resp = conn2.authenticate('root', 'nebula')
+        session_id = resp.get_session_id()
+        resp = conn2.execute(session_id, 'UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
+        self.check_resp_succeeded(ResultSet(resp, 0))
 
     def test_out_of_max_connections(self):
         resp = self.execute('SHOW SESSIONS')
