@@ -102,8 +102,6 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   void buildOneWayPath(std::vector<NPath*>& paths, bool reverse);
 
-  void printNPath(std::vector<NPath*> paths, bool reverse);
-
   std::vector<Row> buildOneWayPathFromHashTable(bool reverse);
 
  private:
@@ -127,7 +125,7 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   DataSet result_;
   std::vector<Value> emptyPropVids_;
-  VidHashSet emptyPropVertices_;
+  std::unordered_multiset<Value, VertexHash, VertexEqual> emptyPropVertices_;
   class NewTag {};
   folly::ThreadLocalPtr<std::deque<NPath>, NewTag> threadLocalPtr_;
 

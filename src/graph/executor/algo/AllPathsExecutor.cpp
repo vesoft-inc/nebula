@@ -239,7 +239,6 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
         auto& rightPaths = paths.back();
 
         if (leftSteps_ == 0) {
-          // todo
           buildOneWayPath(rightPaths, false);
           return folly::makeFuture<Status>(Status::OK());
         }
@@ -352,16 +351,6 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
       });
 }
 
-void printHashTable(std::unordered_map<Value, std::vector<std::vector<Value>>> table) {
-  for (auto& pair : table) {
-    LOG(ERROR) << "key - " << pair.first.toString();
-    for (auto& p : pair.second) {
-      Row row(p);
-      LOG(ERROR) << "values - " << row.toString();
-    }
-  }
-}
-
 std::vector<Value> AllPathsExecutor::convertNPath2List(NPath* path, bool reverse) {
   std::vector<Value> list;
   NPath* head = path;
@@ -413,11 +402,12 @@ void AllPathsExecutor::buildOneWayPath(std::vector<NPath*>& paths, bool reverse)
       // add dst
       row.values.emplace_back(emptyPropVertex);
     }
-    if (emptyPropVertices_.emplace(emptyPropVertex).second) {
+    auto iter = emptyPropVertices_.find(emptyPropVertex);
+    if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(dst);
+      emptyPropVertices_.emplace(emptyPropVertex);
     }
     result_.rows.emplace_back(std::move(row));
-    LOG(ERROR) << "one way --- " << result_.toString();
   }
 }
 
@@ -444,7 +434,6 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
         List edgeList(std::move(tmp));
         row.values.emplace_back(std::move(edgeList));
         row.values.emplace_back(dstVertex);
-        LOG(ERROR) << "one way " << row.toString();
         result.emplace_back(std::move(row));
       }
     } else {
@@ -459,12 +448,13 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
         List edgeList(std::move(tmp));
         row.values.emplace_back(std::move(edgeList));
         row.values.emplace_back(emptyPropVertex);
-        LOG(ERROR) << "one way " << row.toString();
         result.emplace_back(std::move(row));
       }
     }
-    if (emptyPropVertices_.emplace(emptyPropVertex).second) {
+    auto iter = emptyPropVertices_.find(emptyPropVertex);
+    if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(vid);
+      emptyPropVertices_.emplace(emptyPropVertex);
     }
   }
   return result;
@@ -473,20 +463,19 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
 folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPaths,
                                                      std::vector<NPath*>& rightPaths) {
   if (leftPaths.empty() || rightPaths.empty()) {
-    return folly::makeFuture<Status>(Status::OK()); 
+    return folly::makeFuture<Status>(Status::OK());
   }
   bool reverse = false;
   if (leftPaths.size() < rightPaths.size()) {
     buildHashTable(leftPaths, reverse);
-    printHashTable(hashTable_);
     probePaths_ = std::move(rightPaths);
   } else {
     reverse = true;
     buildHashTable(rightPaths, reverse);
-    printHashTable(hashTable_);
     probePaths_ = std::move(leftPaths);
   }
   auto oneWayPath = buildOneWayPathFromHashTable(!reverse);
+
   size_t probeSize = probePaths_.size();
   std::vector<folly::Future<std::vector<Row>>> futures;
   if (probeSize < FLAGS_path_batch_size) {
@@ -504,16 +493,17 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
       [this, path = std::move(oneWayPath)](std::vector<std::vector<Row>>&& resps) {
         memory::MemoryCheckGuard guard;
         result_.rows = std::move(path);
-        LOG(ERROR) << "result is " << result_.toString();
         for (auto& rows : resps) {
           if (rows.empty()) {
             continue;
           }
           auto& emptyPropVerticesRow = rows.back();
           for (auto& emptyPropVertex : emptyPropVerticesRow.values) {
-            if (emptyPropVertices_.emplace(emptyPropVertex).second) {
+            auto iter = emptyPropVertices_.find(emptyPropVertex);
+            if (iter == emptyPropVertices_.end()) {
               emptyPropVids_.emplace_back(emptyPropVertex.getVertex().vid);
             }
+            emptyPropVertices_.emplace(emptyPropVertex);
           }
           rows.pop_back();
           result_.rows.insert(result_.rows.end(),
@@ -523,7 +513,6 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
         if (result_.rows.size() > limit_) {
           result_.rows.resize(limit_);
         }
-        LOG(ERROR) << "sdf " << result_.toString();
         return Status::OK();
       });
 }
@@ -542,13 +531,6 @@ void AllPathsExecutor::buildHashTable(std::vector<NPath*>& paths, bool reverse) 
   }
 }
 
-void AllPathsExecutor::printNPath(std::vector<NPath*> paths, bool reverse) {
-  for (auto path : paths) {
-    Row row(convertNPath2List(path, reverse));
-    LOG(ERROR) << reverse << " NPath " << row.toString();
-  }
-}
-
 std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse) {
   auto buildPath = [](std::vector<Value>& leftPath,
                       const Value& intersectVertex,
@@ -560,11 +542,8 @@ std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse)
     edgeList.insert(edgeList.end(), rightPath.begin(), rightPath.end() - 1);
     row.values.emplace_back(List(std::move(edgeList)));
     row.values.emplace_back(rightPath.back());
-    LOG(ERROR) << "build Path " << row.toString();
     return row;
   };
-  printHashTable(hashTable_);
-  printNPath(probePaths_, !reverse);
 
   size_t minLength = reverse ? rightSteps_ * 2 : leftSteps_ * 2;
   std::vector<Row> result;
@@ -572,9 +551,9 @@ std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse)
   for (size_t i = start; i < end; ++i) {
     auto& probePath = probePaths_[i];
     auto& edgeVal = probePath->edge;
-    const auto& dst = edgeVal.getEdge().dst;
-    Value intersectVertex(Vertex(dst, {}));
-    auto findDst = hashTable_.find(dst);
+    const auto& intersectVid = edgeVal.getEdge().dst;
+    Value intersectVertex(Vertex(intersectVid, {}));
+    auto findDst = hashTable_.find(intersectVid);
     if (findDst == hashTable_.end()) {
       continue;
     }
@@ -587,7 +566,7 @@ std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse)
       auto& leftPath = reverse ? valueList : path;
       auto& rightPath = reverse ? path : valueList;
       if (noLoop_) {
-        if (hasSameVertices(leftPath, dst, rightPath)) {
+        if (hasSameVertices(leftPath, intersectVid, rightPath)) {
           continue;
         }
       } else {
@@ -615,11 +594,11 @@ folly::Future<Status> AllPathsExecutor::getPathProps() {
       if (vertex.empty()) {
         continue;
       }
-      auto iter = emptyPropVertices_.find(vertex);
-      if (iter != emptyPropVertices_.end()) {
+      auto range = emptyPropVertices_.equal_range(vertex);
+      for (auto iter = range.first; iter != range.second; ++iter) {
         auto val = *iter;
         auto& mutableVertex = val.mutableVertex();
-        mutableVertex.tags.swap(vertex.mutableVertex().tags);
+        mutableVertex.tags = vertex.mutableVertex().tags;
       }
     }
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
