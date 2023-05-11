@@ -82,7 +82,7 @@
 
 ############## rocksdb Options ##############
 # rocksdb DBOptions in json, each name and value of option is a string, given as "option_name":"option_value" separated by comma
---rocksdb_db_options={"max_subcompactions":"4","max_background_jobs":"4"}
+--rocksdb_db_options={"max_subcompactions":"4","max_background_jobs":"4","skip_checking_sst_file_sizes_on_db_open":"true"}
 # rocksdb ColumnFamilyOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_column_family_options={"disable_auto_compactions":"false","write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
