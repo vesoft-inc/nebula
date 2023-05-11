@@ -14,7 +14,8 @@ namespace nebula {
 namespace graph {
 
 bool VariablePropIndexSeek::matchNode(NodeContext* nodeCtx) {
-  const auto& labels = nodeCtx->info->labels;
+  const auto& nodeInfo = *DCHECK_NOTNULL(nodeCtx->info);
+  const auto& labels = nodeInfo.labels;
   if (labels.size() != 1) {
     // TODO multiple tag index seek need the IndexScan support
     VLOG(2) << "Multiple tag index seek is not supported now.";
@@ -24,15 +25,18 @@ bool VariablePropIndexSeek::matchNode(NodeContext* nodeCtx) {
   auto whereClause = nodeCtx->bindWhereClause;
   if (!whereClause || !whereClause->filter) return false;
 
-  // auto qctx = nodeCtx->qctx;
-  auto newFilter = ExpressionUtils::rewriteInnerInExpr(whereClause->filter);
-  auto filter = newFilter;
-  // auto filter = MatchSolver::rewriteTagIndexFilter(
-  //     labels.back(), nodeInfo.alias, newFilter, qctx, &nodeCtx->refVarName);
+  std::string refVarName;
+  // if (!extractPropIndexVariable(&refVarName)) {
+  //   return false;
+  // }
 
-  if (!filter) return false;
+  if (!nodeCtx->aliasesAvailable->count(refVarName)) {
+    return false;
+  }
 
-  nodeCtx->scanInfo.filter = filter;
+  nodeCtx->refVarName = refVarName;
+
+  // nodeCtx->scanInfo.filter = filter;
   nodeCtx->scanInfo.schemaIds = nodeInfo.tids;
   nodeCtx->scanInfo.schemaNames = nodeInfo.labels;
 

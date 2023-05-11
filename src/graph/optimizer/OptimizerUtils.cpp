@@ -8,12 +8,18 @@
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
+#include "graph/util/IndexUtil.h"
 
+using nebula::graph::ExpressionUtils;
 using nebula::meta::cpp2::ColumnDef;
 using nebula::meta::cpp2::IndexItem;
 using nebula::storage::cpp2::IndexColumnHint;
 using nebula::storage::cpp2::IndexQueryContext;
 
+using FilterItem = nebula::graph::OptimizerUtils::FilterItem;
+using IndexItemPtr = nebula::graph::OptimizerUtils::IndexItemPtr;
+using IindexQueryContextList = nebula::graph::OptimizerUtils::IndexQueryContextList;
 using ExprKind = nebula::Expression::Kind;
 
 namespace nebula {
@@ -438,6 +444,499 @@ Status OptimizerUtils::compareAndSwapBound(std::pair<Value, bool>& a, std::pair<
     std::swap(a, b);
   }
   return Status::OK();
+}
+
+template <typename E, typename>
+Status OptimizerUtils::addFilterItem(RelationalExpression* expr,
+                                     std::vector<FilterItem>* items,
+                                     QueryContext* qctx) {
+  // TODO (sky) : Check illegal filter. for example : where c1 == 1 and c1 == 2
+  Expression::Kind relType;
+  if constexpr (std::is_same<E, EdgePropertyExpression>::value) {
+    relType = Expression::Kind::kEdgeProperty;
+  } else if constexpr (std::is_same<E, LabelTagPropertyExpression>::value) {
+    relType = Expression::Kind::kLabelTagProperty;
+  } else {
+    relType = Expression::Kind::kTagProperty;
+  }
+  if (expr->left()->kind() == relType && ExpressionUtils::isEvaluableExpr(expr->right(), qctx)) {
+    auto* l = static_cast<const E*>(expr->left());
+    auto rValue = expr->right()->eval(graph::QueryExpressionContext(qctx->ectx())());
+    items->emplace_back(l->prop(), expr->kind(), rValue);
+  } else if (ExpressionUtils::isEvaluableExpr(expr->left(), qctx) &&
+             expr->right()->kind() == relType) {
+    auto* r = static_cast<const E*>(expr->right());
+    auto lValue = expr->left()->eval(graph::QueryExpressionContext(qctx->ectx())());
+    items->emplace_back(r->prop(), IndexUtil::reverseRelationalExprKind(expr->kind()), lValue);
+  } else {
+    return Status::Error("Optimizer error, when rewrite relational expression");
+  }
+
+  return Status::OK();
+}
+
+Status OptimizerUtils::analyzeExpression(Expression* expr,
+                                         std::vector<FilterItem>* items,
+                                         ScanKind* kind,
+                                         bool isEdge,
+                                         QueryContext* qctx) {
+  // TODO (sky) : Currently only simple logical expressions are supported,
+  //              such as all AND or all OR expressions, example :
+  //              where c1 > 1 and c1 < 2 and c2 == 1
+  //              where c1 == 1 or c2 == 1 or c3 == 1
+  //
+  //              Hybrid logical expressions are not supported yet, example :
+  //              where c1 > 1 and c2 >1 or c3 > 1
+  //              where c1 > 1 and c1 < 2 or c2 > 1
+  //              where c1 < 1 and (c2 == 1 or c2 == 2)
+  switch (expr->kind()) {
+    case Expression::Kind::kLogicalOr:
+    case Expression::Kind::kLogicalAnd: {
+      auto lExpr = static_cast<LogicalExpression*>(expr);
+      auto k = expr->kind() == Expression::Kind::kLogicalAnd ? ScanKind::Kind::kSingleScan
+                                                             : ScanKind::Kind::kMultipleScan;
+      if (kind->getKind() == ScanKind::Kind::kUnknown) {
+        kind->setKind(k);
+      } else if (kind->getKind() != k) {
+        return Status::NotSupported("Condition not support yet : %s", expr->toString().c_str());
+      }
+      for (size_t i = 0; i < lExpr->operands().size(); ++i) {
+        NG_RETURN_IF_ERROR(analyzeExpression(lExpr->operand(i), items, kind, isEdge, qctx));
+      }
+      break;
+    }
+    case Expression::Kind::kRelLE:
+    case Expression::Kind::kRelGE:
+    case Expression::Kind::kRelEQ:
+    case Expression::Kind::kRelLT:
+    case Expression::Kind::kRelGT:
+    case Expression::Kind::kRelNE: {
+      auto* rExpr = static_cast<RelationalExpression*>(expr);
+      if (isEdge) {
+        NG_RETURN_IF_ERROR(addFilterItem<EdgePropertyExpression>(rExpr, items, qctx));
+      } else if (ExpressionUtils::hasAny(rExpr, {Expression::Kind::kLabelTagProperty})) {
+        NG_RETURN_IF_ERROR(addFilterItem<LabelTagPropertyExpression>(rExpr, items, qctx));
+      } else {
+        NG_RETURN_IF_ERROR(addFilterItem<TagPropertyExpression>(rExpr, items, qctx));
+      }
+      if (kind->getKind() == ScanKind::Kind::kMultipleScan &&
+          expr->kind() == Expression::Kind::kRelNE) {
+        kind->setKind(ScanKind::Kind::kSingleScan);
+        return Status::OK();
+      }
+      break;
+    }
+    default: {
+      return Status::NotSupported("Filter not support yet : %s", expr->toString().c_str());
+    }
+  }
+  return Status::OK();
+}
+
+std::vector<IndexItemPtr> OptimizerUtils::allIndexesBySchema(graph::QueryContext* qctx,
+                                                             const IndexScan* node) {
+  auto spaceId = node->space();
+  auto isEdge = node->isEdge();
+  auto metaClient = qctx->getMetaClient();
+  auto ret = isEdge ? metaClient->getEdgeIndexesFromCache(spaceId)
+                    : metaClient->getTagIndexesFromCache(spaceId);
+  if (!ret.ok()) {
+    LOG(ERROR) << "No index was found";
+    return {};
+  }
+  std::vector<IndexItemPtr> indexes;
+  for (auto& index : ret.value()) {
+    const auto& schemaId = index->get_schema_id();
+    // TODO (sky) : ignore rebuilding indexes
+    auto id = isEdge ? schemaId.get_edge_type() : schemaId.get_tag_id();
+    if (id == node->schemaId()) {
+      indexes.emplace_back(index);
+    }
+  }
+  if (indexes.empty()) {
+    LOG(ERROR) << "No index was found";
+    return {};
+  }
+  return indexes;
+}
+
+std::vector<IndexItemPtr> OptimizerUtils::findValidIndex(graph::QueryContext* qctx,
+                                                         const IndexScan* node,
+                                                         const std::vector<FilterItem>& items) {
+  auto indexes = allIndexesBySchema(qctx, node);
+  if (indexes.empty()) {
+    return indexes;
+  }
+  std::vector<IndexItemPtr> validIndexes;
+  // Find indexes for match all fields by where condition.
+  for (const auto& index : indexes) {
+    const auto& fields = index->get_fields();
+    for (const auto& item : items) {
+      auto it = std::find_if(fields.begin(), fields.end(), [item](const auto& field) {
+        return field.get_name() == item.col_;
+      });
+      if (it != fields.end()) {
+        validIndexes.emplace_back(index);
+      }
+    }
+  }
+  // If the first field of the index does not match any condition, the index is
+  // invalid. remove it from validIndexes.
+  if (!validIndexes.empty()) {
+    auto index = validIndexes.begin();
+    while (index != validIndexes.end()) {
+      const auto& fields = index->get()->get_fields();
+      auto it = std::find_if(items.begin(), items.end(), [fields](const auto& item) {
+        return item.col_ == fields[0].get_name();
+      });
+      if (it == items.end()) {
+        index = validIndexes.erase(index);
+      } else {
+        index++;
+      }
+    }
+  }
+  return validIndexes;
+}
+
+std::vector<IndexItemPtr> OptimizerUtils::findIndexForEqualScan(
+    const std::vector<IndexItemPtr>& indexes, const std::vector<FilterItem>& items) {
+  std::vector<std::pair<int32_t, IndexItemPtr>> eqIndexHint;
+  for (auto& index : indexes) {
+    int32_t hintCount = 0;
+    for (const auto& field : index->get_fields()) {
+      auto it = std::find_if(items.begin(), items.end(), [field](const auto& item) {
+        return item.col_ == field.get_name();
+      });
+      if (it == items.end()) {
+        break;
+      }
+      if (it->relOP_ == RelationalExpression::Kind::kRelEQ) {
+        ++hintCount;
+      } else {
+        break;
+      }
+    }
+    eqIndexHint.emplace_back(hintCount, index);
+  }
+  // Sort the priorityIdxs for equivalent condition.
+  std::vector<IndexItemPtr> priorityIdxs;
+  auto comp = [](std::pair<int32_t, IndexItemPtr>& lhs, std::pair<int32_t, IndexItemPtr>& rhs) {
+    return lhs.first > rhs.first;
+  };
+  std::sort(eqIndexHint.begin(), eqIndexHint.end(), comp);
+  // Get the index with the highest hit rate from eqIndexHint.
+  int32_t maxHint = eqIndexHint[0].first;
+  for (const auto& hint : eqIndexHint) {
+    if (hint.first < maxHint) {
+      break;
+    }
+    priorityIdxs.emplace_back(hint.second);
+  }
+  return priorityIdxs;
+}
+
+std::vector<IndexItemPtr> OptimizerUtils::findIndexForRangeScan(
+    const std::vector<IndexItemPtr>& indexes, const std::vector<FilterItem>& items) {
+  std::map<int32_t, IndexItemPtr> rangeIndexHint;
+  for (const auto& index : indexes) {
+    int32_t hintCount = 0;
+    for (const auto& field : index->get_fields()) {
+      auto fi = std::find_if(items.begin(), items.end(), [field](const auto& item) {
+        return item.col_ == field.get_name();
+      });
+      if (fi == items.end()) {
+        break;
+      }
+      if ((*fi).relOP_ == RelationalExpression::Kind::kRelEQ) {
+        continue;
+      }
+      if ((*fi).relOP_ == RelationalExpression::Kind::kRelGE ||
+          (*fi).relOP_ == RelationalExpression::Kind::kRelGT ||
+          (*fi).relOP_ == RelationalExpression::Kind::kRelLE ||
+          (*fi).relOP_ == RelationalExpression::Kind::kRelLT) {
+        hintCount++;
+      } else {
+        break;
+      }
+    }
+    rangeIndexHint[hintCount] = index;
+  }
+  std::vector<IndexItemPtr> priorityIdxs;
+  int32_t maxHint = rangeIndexHint.rbegin()->first;
+  for (auto iter = rangeIndexHint.rbegin(); iter != rangeIndexHint.rend(); iter++) {
+    if (iter->first < maxHint) {
+      break;
+    }
+    priorityIdxs.emplace_back(iter->second);
+  }
+  return priorityIdxs;
+}
+
+IndexItemPtr OptimizerUtils::findOptimalIndex(graph::QueryContext* qctx,
+                                              const IndexScan* node,
+                                              const std::vector<FilterItem>& items) {
+  // The rule of priority is '==' --> '< > <= >=' --> '!='
+  // Step 1 : find out all valid indexes for where condition.
+  auto validIndexes = findValidIndex(qctx, node, items);
+  if (validIndexes.empty()) {
+    LOG(ERROR) << "No valid index found";
+    return nullptr;
+  }
+  // Step 2 : find optimal indexes for equal condition.
+  auto indexesEq = findIndexForEqualScan(validIndexes, items);
+  if (indexesEq.size() == 1) {
+    return indexesEq[0];
+  }
+  // Step 3 : find optimal indexes for range condition.
+  auto indexesRange = findIndexForRangeScan(indexesEq, items);
+
+  // At this stage, all the optimizations are done.
+  // Because the storage layer only needs one. So return first one of
+  // indexesRange.
+  return indexesRange[0];
+}
+
+size_t OptimizerUtils::hintCount(const std::vector<FilterItem>& items) {
+  std::unordered_set<std::string> hintCols;
+  for (const auto& i : items) {
+    hintCols.emplace(i.col_);
+  }
+  return hintCols.size();
+}
+
+bool OptimizerUtils::verifyType(const Value& val) {
+  switch (val.type()) {
+    case Value::Type::__EMPTY__:
+    case Value::Type::NULLVALUE:
+    case Value::Type::VERTEX:
+    case Value::Type::EDGE:
+    case Value::Type::LIST:
+    case Value::Type::SET:
+    case Value::Type::MAP:
+    case Value::Type::DATASET:
+    case Value::Type::DURATION:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
+    case Value::Type::PATH: {
+      return false;
+    }
+    default: {
+      return true;
+    }
+  }
+}
+
+Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
+                                     const std::vector<FilterItem>& items,
+                                     const meta::cpp2::ColumnDef& col) {
+  IndexColumnHint hint;
+  std::pair<Value, bool> begin, end;
+  bool isRangeScan = true;
+  for (const auto& item : items) {
+    if (!verifyType(item.value_)) {
+      return Status::SemanticError(
+          fmt::format("Not supported value type {} for index.", item.value_.type()));
+    }
+    if (item.relOP_ == Expression::Kind::kRelEQ) {
+      isRangeScan = false;
+      begin = {item.value_, true};
+      break;
+    }
+    // because only type for bool is true/false, which can not satisfy [start,
+    // end)
+    if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
+      return Status::SemanticError("Range scan for bool type is illegal");
+    }
+    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
+      return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
+    }
+    bool include = false;
+    switch (item.relOP_) {
+      case Expression::Kind::kRelLE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelLT: {
+        if (end.first.empty()) {
+          end.first = item.value_;
+          end.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(end, tmp);
+        }
+      } break;
+      case Expression::Kind::kRelGE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelGT: {
+        if (begin.first.empty()) {
+          begin.first = item.value_;
+          begin.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(tmp, begin);
+        }
+      } break;
+      default:
+        return Status::Error("Invalid expression kind.");
+    }
+  }
+
+  if (isRangeScan) {
+    if (!begin.first.empty()) {
+      hint.begin_value_ref() = begin.first;
+      hint.include_begin_ref() = begin.second;
+    }
+    if (!end.first.empty()) {
+      hint.end_value_ref() = end.first;
+      hint.include_end_ref() = end.second;
+    }
+    hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
+  } else {
+    hint.begin_value_ref() = begin.first;
+    hint.scan_type_ref() = storage::cpp2::ScanType::PREFIX;
+  }
+  hint.column_name_ref() = col.get_name();
+  hints.emplace_back(std::move(hint));
+  return Status::OK();
+}
+
+Status OptimizerUtils::appendIQCtx(const std::shared_ptr<IndexItem>& index,
+                                   std::vector<IndexQueryContext>& iqctx) {
+  IndexQueryContext ctx;
+  ctx.index_id_ref() = index->get_index_id();
+  ctx.filter_ref() = "";
+  iqctx.emplace_back(std::move(ctx));
+  return Status::OK();
+}
+
+Status OptimizerUtils::appendIQCtx(const IndexItemPtr& index,
+                                   const std::vector<FilterItem>& items,
+                                   std::vector<IndexQueryContext>& iqctx,
+                                   const Expression* filter) {
+  auto hc = hintCount(items);
+  auto fields = index->get_fields();
+  IndexQueryContext ctx;
+  std::vector<nebula::storage::cpp2::IndexColumnHint> hints;
+  for (const auto& field : fields) {
+    bool found = false;
+    std::vector<FilterItem> filterItems;
+    for (const auto& item : items) {
+      if (item.col_ == field.get_name()) {
+        filterItems.emplace_back(item.col_, item.relOP_, item.value_);
+        found = true;
+      }
+    }
+    if (!found) break;
+    auto it = std::find_if(filterItems.begin(), filterItems.end(), [](const auto& ite) {
+      return ite.relOP_ == RelationalExpression::Kind::kRelNE;
+    });
+    if (it != filterItems.end()) {
+      // TODO (sky) : rewrite filter expr. NE expr should be add filter expr .
+      if (filter != nullptr) {
+        ctx.filter_ref() = Expression::encode(*filter);
+      }
+      break;
+    }
+    NG_RETURN_IF_ERROR(appendColHint(hints, filterItems, field));
+    hc--;
+    if (filterItems.begin()->relOP_ != RelationalExpression::Kind::kRelEQ) {
+      break;
+    }
+  }
+  ctx.index_id_ref() = index->get_index_id();
+  if (hc > 0) {
+    // TODO (sky) : rewrite expr and set filter
+    if (filter != nullptr) {
+      ctx.filter_ref() = Expression::encode(*filter);
+    }
+  }
+  ctx.column_hints_ref() = std::move(hints);
+  iqctx.emplace_back(std::move(ctx));
+  return Status::OK();
+}
+
+// Single ColumnHints item
+Status OptimizerUtils::createSingleIQC(std::vector<IndexQueryContext>& iqctx,
+                                       const std::vector<FilterItem>& items,
+                                       graph::QueryContext* qctx,
+                                       const IndexScan* node) {
+  auto index = findOptimalIndex(qctx, node, items);
+  if (index == nullptr) {
+    return Status::IndexNotFound("No valid index found");
+  }
+  auto in = static_cast<const IndexScan*>(node);
+  auto* filter = Expression::decode(qctx->objPool(), in->queryContext().begin()->get_filter());
+  auto* newFilter = ExpressionUtils::rewriteParameter(filter, qctx);
+  return appendIQCtx(index, items, iqctx, newFilter);
+}
+
+// Multiple ColumnHints items
+Status OptimizerUtils::createMultipleIQC(std::vector<IndexQueryContext>& iqctx,
+                                         const std::vector<FilterItem>& items,
+                                         graph::QueryContext* qctx,
+                                         const IndexScan* node) {
+  for (auto const& item : items) {
+    NG_RETURN_IF_ERROR(createSingleIQC(iqctx, {item}, qctx, node));
+  }
+  return Status::OK();
+}
+
+// Find the index with the fewest fields
+// Only use "lookup on tagname"
+IndexItemPtr OptimizerUtils::findLightestIndex(graph::QueryContext* qctx, const IndexScan* node) {
+  auto indexes = allIndexesBySchema(qctx, node);
+  if (indexes.empty()) {
+    return nullptr;
+  }
+
+  auto result = indexes[0];
+  for (size_t i = 1; i < indexes.size(); i++) {
+    if (result->get_fields().size() > indexes[i]->get_fields().size()) {
+      result = indexes[i];
+    }
+  }
+  return result;
+}
+
+Status OptimizerUtils::createIndexQueryCtx(std::vector<IndexQueryContext>& iqctx,
+                                           ScanKind kind,
+                                           const std::vector<FilterItem>& items,
+                                           graph::QueryContext* qctx,
+                                           const IndexScan* node) {
+  return kind.isSingleScan() ? createSingleIQC(iqctx, items, qctx, node)
+                             : createMultipleIQC(iqctx, items, qctx, node);
+}
+
+Status OptimizerUtils::createIndexQueryCtx(Expression* filter,
+                                           QueryContext* qctx,
+                                           const IndexScan* node,
+                                           std::vector<IndexQueryContext>& iqctx) {
+  if (!filter) {
+    // Only filter is nullptr when lookup on tagname
+    // Degenerate back to tag lookup
+    NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, node));
+  }
+
+  // items used for optimal index fetch and index scan context optimize.
+  // for example : where c1 > 1 and c1 < 2 , the FilterItems should be :
+  //               {c1, kRelGT, 1} , {c1, kRelLT, 2}
+  std::vector<FilterItem> items;
+  ScanKind kind;
+  // rewrite ParameterExpression to ConstantExpression
+  // TODO: refactor index selector logic to avoid this rewriting
+  auto* newFilter = ExpressionUtils::rewriteParameter(filter, qctx);
+  NG_RETURN_IF_ERROR(analyzeExpression(newFilter, &items, &kind, node->isEdge(), qctx));
+  return createIndexQueryCtx(iqctx, kind, items, qctx, node);
+}
+
+Status OptimizerUtils::createIndexQueryCtx(std::vector<IndexQueryContext>& iqctx,
+                                           graph::QueryContext* qctx,
+                                           const IndexScan* node) {
+  auto index = findLightestIndex(qctx, node);
+  if (index == nullptr) {
+    return Status::IndexNotFound("No valid index found");
+  }
+  return appendIQCtx(index, iqctx);
 }
 
 }  // namespace graph
