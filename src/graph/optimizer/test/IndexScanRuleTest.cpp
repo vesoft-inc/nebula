@@ -5,8 +5,8 @@
 
 #include <gtest/gtest.h>
 
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/optimizer/rule/IndexScanRule.h"
+#include "graph/util/OptimizerUtils.h"
 
 using nebula::cpp2::PropertyType;
 using nebula::graph::OptimizerUtils;

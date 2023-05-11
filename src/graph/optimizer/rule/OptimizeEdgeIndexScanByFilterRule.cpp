@@ -8,10 +8,10 @@
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/OptimizerUtils.h"
 
 using nebula::Expression;
 using nebula::graph::EdgeIndexFullScan;

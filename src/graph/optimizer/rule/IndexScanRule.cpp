@@ -8,9 +8,9 @@
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/OptimizerUtils.h"
 #include "graph/visitor/RewriteVisitor.h"
 
 using nebula::graph::IndexScan;

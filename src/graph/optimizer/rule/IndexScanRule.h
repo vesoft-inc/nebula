@@ -6,8 +6,8 @@
 #define GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 
 #include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/OptimizerUtils.h"
 
 namespace nebula {
 namespace opt {

@@ -2,8 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#ifndef NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
-#define NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
+#ifndef NEBULA_GRAPH_UTIL_OPTIMIZERUTILS_H_
+#define NEBULA_GRAPH_UTIL_OPTIMIZERUTILS_H_
 
 #include "graph/util/SchemaUtil.h"
 
@@ -183,4 +183,4 @@ class OptimizerUtils {
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // NEBULA_GRAPH_OPTIMIZER_OPTIMIZERUTILS_H_
+#endif  // NEBULA_GRAPH_UTIL_OPTIMIZERUTILS_H_

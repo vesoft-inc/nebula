@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/optimizer/OptimizerUtils.h"
+#include "graph/util/OptimizerUtils.h"
 
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"
