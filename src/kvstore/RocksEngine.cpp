@@ -189,8 +189,7 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
   memory::MemoryCheckOffGuard guard;
   storageIter->reset(new RocksRangeIter(start, end));
   rocksdb::ReadOptions options;
-  options.iterate_upper_bound =
-      dynamic_cast<RocksRangeIter*>(storageIter->get())->upperBound();
+  options.iterate_upper_bound = dynamic_cast<RocksRangeIter*>(storageIter->get())->upperBound();
   if (!isPlainTable_) {
     options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   } else {
@@ -223,8 +222,7 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& pref
   memory::MemoryCheckOffGuard guard;
   storageIter->reset(new RocksPrefixIter(prefix));
   rocksdb::ReadOptions options;
-  options.iterate_upper_bound =
-      dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
   if (UNLIKELY(snapshot != nullptr)) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
@@ -242,8 +240,7 @@ nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
   memory::MemoryCheckOffGuard guard;
   storageIter->reset(new RocksPrefixIter(prefix));
   rocksdb::ReadOptions options;
-  options.iterate_upper_bound =
-      dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
   if (snapshot != nullptr) {
     options.snapshot = reinterpret_cast<const rocksdb::Snapshot*>(snapshot);
   }
@@ -263,8 +260,7 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
   memory::MemoryCheckOffGuard guard;
   storageIter->reset(new RocksPrefixIter(prefix));
   rocksdb::ReadOptions options;
-  options.iterate_upper_bound =
-      dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
+  options.iterate_upper_bound = dynamic_cast<RocksPrefixIter*>(storageIter->get())->upperBound();
   if (!isPlainTable_) {
     options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   } else {
