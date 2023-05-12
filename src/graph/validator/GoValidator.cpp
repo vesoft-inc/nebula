@@ -284,7 +284,7 @@ bool GoValidator::checkDstPropOrVertexExist(const Expression* expr) {
 }
 
 bool GoValidator::isSimpleCase() {
-  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter || goCtx_->steps.isMToN() ||
+  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter ||
       goCtx_->from.fromType != FromType::kInstantExpr) {
     return false;
   }
