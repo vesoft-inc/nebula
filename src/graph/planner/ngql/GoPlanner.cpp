@@ -143,18 +143,42 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 
 SubPlan GoPlanner::doSimplePlan() {
   auto qctx = goCtx_->qctx;
-  size_t step = goCtx_->steps.mSteps();
+  size_t minStep = goCtx_->steps.mSteps();
+  size_t maxStep = goCtx_->steps.nSteps();
+  size_t steps = minStep;
+  if (minStep != maxStep) {
+    steps = minStep == 0 ? minStep : minStep - 1;
+  }
+
   auto* expand = Expand::make(qctx,
                               startNode_,
                               goCtx_->space.id,
                               false,  // random
-                              step,
+                              steps,
                               buildEdgeProps(true));
   expand->setEdgeTypes(buildEdgeTypes());
   expand->setColNames({"_expand_vid"});
   expand->setInputVar(goCtx_->vidsVar);
 
-  auto* dedup = Dedup::make(qctx, expand);
+  auto dep = expand;
+  if (minStep != maxStep) {
+    //  simple m to n case
+    //  go m to n steps from 'xxx' over edge yield distinct edge._dst
+    dep = ExpandAll::make(qctx,
+                          dep,
+                          goCtx_->space.id,
+                          false,  // random
+                          minStep,
+                          maxStep,
+                          buildEdgeProps(true),
+                          nullptr,
+                          nullptr,
+                          nullptr);
+    dep->setEdgeTypes(buildEdgeTypes());
+    dep->setColNames({"_expandall_vid"});
+  }
+
+  auto* dedup = Dedup::make(qctx, dep);
 
   auto pool = qctx->objPool();
   auto* newYieldExpr = pool->makeAndAdd<YieldColumns>();
