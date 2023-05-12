@@ -1383,6 +1383,7 @@ bool RaftPart::handleElectionResponses(const ElectionResponses& resps,
         bgWorkers_->addTask(
             [self = shared_from_this(), proposedTerm] { self->onElected(proposedTerm); });
         lastMsgAcceptedTime_ = 0;
+        lastMsgAcceptedCostMs_ = 0;
       }
       commitInThisTerm_ = false;
     }
@@ -2115,9 +2116,12 @@ void RaftPart::sendHeartbeat() {
         if (numSucceeded >= replica) {
           VLOG(4) << idStr_ << "Heartbeat is accepted by quorum";
           std::lock_guard<std::mutex> g(raftLock_);
-          auto now = time::WallClock::fastNowInMilliSec();
-          lastMsgAcceptedCostMs_ = now - startMs;
-          lastMsgAcceptedTime_ = now;
+          auto nowTime = static_cast<uint64_t>(time::WallClock::fastNowInMilliSec());
+          auto nowCostMs = nowTime - startMs;
+          if (nowTime - nowCostMs >= lastMsgAcceptedTime_ - lastMsgAcceptedCostMs_) {
+            lastMsgAcceptedCostMs_ = nowCostMs;
+            lastMsgAcceptedTime_ = nowTime;
+          }
         }
       });
 }
