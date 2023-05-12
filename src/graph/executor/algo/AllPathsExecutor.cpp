@@ -159,9 +159,10 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
         time::Duration buildAdjTime;
         auto key = folly::sformat("buildAdjTime {}step[{}]", reverse ? "reverse " : "", step);
         expand(iter.get(), reverse);
-        statsLock_.lock();
-        otherStats_.emplace(key, folly::sformat("{}(us)", buildAdjTime.elapsedInUSec()));
-        statsLock_.unlock();
+        {
+          std::lock_guard<folly::SpinLock> lk(statsLock_);
+          otherStats_.emplace(key, folly::sformat("{}(us)", buildAdjTime.elapsedInUSec()));
+        }
         return Status::OK();
       });
 }
@@ -376,7 +377,7 @@ void AllPathsExecutor::buildOneWayPath(std::vector<NPath*>& paths, bool reverse)
     if (findDst == initVids.end()) {
       continue;
     }
-    ++cnt_;
+    cnt_.fetch_add(1, std::memory_order_relaxed);
     if (cnt_.load(std::memory_order_relaxed) > limit_) {
       break;
     }
@@ -425,7 +426,7 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
     Value emptyPropVertex(Vertex(vid, {}));
     if (!reverse) {
       for (auto& path : paths) {
-        ++cnt_;
+        cnt_.fetch_add(1, std::memory_order_relaxed);
         if (cnt_.load(std::memory_order_relaxed) > limit_) {
           break;
         }
@@ -440,7 +441,7 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
       }
     } else {
       for (auto& path : paths) {
-        ++cnt_;
+        cnt_.fetch_add(1, std::memory_order_relaxed);
         if (cnt_.load(std::memory_order_relaxed) > limit_) {
           break;
         }
@@ -576,7 +577,7 @@ std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse)
           continue;
         }
       }
-      ++cnt_;
+      cnt_.fetch_add(1, std::memory_order_relaxed);
       if (cnt_.load(std::memory_order_relaxed) > limit_) {
         break;
       }
