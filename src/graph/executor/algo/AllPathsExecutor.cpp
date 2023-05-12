@@ -159,7 +159,9 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
         time::Duration buildAdjTime;
         auto key = folly::sformat("buildAdjTime {}step[{}]", reverse ? "reverse " : "", step);
         expand(iter.get(), reverse);
+        statsLock_.lock();
         otherStats_.emplace(key, folly::sformat("{}(us)", buildAdjTime.elapsedInUSec()));
+        statsLock_.unlock();
         return Status::OK();
       });
 }
