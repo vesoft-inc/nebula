@@ -266,11 +266,11 @@ Feature: Simple case
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 6  | Aggregate | 5            |               |
-      | 5  | Dedup     | 4            |               |
-      | 4  | Project   | 3            |               |
+      | 5  | Project   | 4            |               |
+      | 4  | Dedup     | 3            |               |
       | 3  | ExpandAll | 2            |               |
-      | 2  | Expand    | 1            |               |
-      | 1  | Start     |              |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
@@ -374,11 +374,11 @@ Feature: Simple case
       | 12 | Dedup         | 11           |               |
       | 11 | Project       | 10           |               |
       | 10 | HashInnerJoin | 5,9          |               |
-      | 5  | Dedup         | 4            |               |
-      | 4  | Project       | 3            |               |
+      | 5  | Project       | 4            |               |
+      | 4  | Dedup         | 3            |               |
       | 3  | ExpandAll     | 2            |               |
-      | 2  | Expand        | 1            |               |
-      | 1  | Start         |              |               |
+      | 2  | Expand        | 0            |               |
+      | 0  | Start         |              |               |
       | 9  | ExpandAll     | 8            |               |
       | 8  | Expand        | 7            |               |
       | 7  | Argument      |              |               |
