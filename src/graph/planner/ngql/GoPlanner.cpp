@@ -295,12 +295,16 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     for (auto node : varPtr->writtenBy) {
       preRootNode_ = node;
     }
-
-    auto argNode = Argument::make(qctx, from.runtimeVidName);
-    argNode->setColNames({from.runtimeVidName});
-    argNode->setInputVertexRequired(false);
-    goCtx_->vidsVar = argNode->outputVar();
-    startNode_ = argNode;
+    if (goCtx_->isSimple) {
+      startNode_ = preRootNode_;
+      goCtx_->vidsVar = varName;
+    } else {
+      auto argNode = Argument::make(qctx, from.runtimeVidName);
+      argNode->setColNames({from.runtimeVidName});
+      argNode->setInputVertexRequired(false);
+      goCtx_->vidsVar = argNode->outputVar();
+      startNode_ = argNode;
+    }
   }
   auto& steps = goCtx_->steps;
   if (!steps.isMToN() && steps.steps() == 0) {
