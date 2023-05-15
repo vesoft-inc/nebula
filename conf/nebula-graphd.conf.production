@@ -123,3 +123,5 @@
 --min_batch_size=8192
 # if true, return directly without go through RPC
 --optimize_appendvertices=false
+# number of paths constructed by each thread
+--path_batch_size=10000
