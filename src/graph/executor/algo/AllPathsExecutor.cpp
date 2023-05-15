@@ -12,7 +12,7 @@ DEFINE_uint32(
     100,
     "the number of vids to expand, when this threshold is exceeded, use heuristic expansion");
 DEFINE_uint32(path_threshold_ratio, 2, "threshold for heuristics expansion");
-DEFINE_uint32(path_batch_size, 50000, "number of paths constructed by each thread");
+DEFINE_uint32(path_batch_size, 10000, "number of paths constructed by each thread");
 
 namespace nebula {
 namespace graph {
