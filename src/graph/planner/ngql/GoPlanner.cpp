@@ -294,13 +294,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     for (auto node : varPtr->writtenBy) {
       preRootNode_ = node;
     }
-<<<<<<< HEAD
 
-    auto argNode = Argument::make(qctx, from.runtimeVidName);
-    argNode->setColNames({from.runtimeVidName});
-    goCtx_->vidsVar = argNode->outputVar();
-    startNode_ = argNode;
-=======
     if (goCtx_->isSimple) {
       //  go from 'xxx' over edge yield distinct edge._dst as id |
       //    go from $-.id over edge yield distinct edge._dst
@@ -310,11 +304,9 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     } else {
       auto argNode = Argument::make(qctx, from.runtimeVidName);
       argNode->setColNames({from.runtimeVidName});
-      argNode->setInputVertexRequired(false);
       goCtx_->vidsVar = argNode->outputVar();
       startNode_ = argNode;
     }
->>>>>>> c2c844708 (Fix simple case (#5551))
   }
   auto& steps = goCtx_->steps;
   if (!steps.isMToN() && steps.steps() == 0) {
