@@ -27,8 +27,9 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
 
   IndexQueryContextList ictxs;
   if (lookup->lazyIndexHint()) {
-    Expression *filter = Expression::decode(qctx()->objPool(), ictxs.front().get_filter());
-    if (filter->kind() != Expression::Kind::kRelEQ || filter->kind() != Expression::Kind::kRelIn) {
+    auto filterStr = lookup->queryContext().front().get_filter();
+    Expression *filter = Expression::decode(qctx()->objPool(), filterStr);
+    if (filter->kind() != Expression::Kind::kRelEQ && filter->kind() != Expression::Kind::kRelIn) {
       return Status::Error("The kind of filter expression is invalid.");
     }
     auto relFilter = static_cast<const RelationalExpression *>(filter);
@@ -48,7 +49,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
         return Status::Error("IN expression could not support multi-rows index scan.");
       }
       const auto &val = iter->getColumn(colName);
-      if (!val.isList() || !val.isSet()) {
+      if (!val.isList() && !val.isSet()) {
         return Status::Error("The values is not list or set in expression: %s",
                              filter->toString().c_str());
       }

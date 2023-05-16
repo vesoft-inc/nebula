@@ -43,6 +43,9 @@ bool VariablePropIndexSeek::matchNode(NodeContext* nodeCtx) {
     bool found = false;
     for (auto op : logExpr->operands()) {
       if (getIndexItem(nodeCtx, op, label, nodeInfo.alias, &refVarName, &propName, &idxItem)) {
+        if (!nodeCtx->aliasesAvailable->count(refVarName)) {
+          return false;
+        }
         // TODO(yee): Only select the first index as candidate filter expression and not support
         // the combined index
         indexFilter = TagPropertyExpression::make(nodeCtx->qctx->objPool(), label, propName);
@@ -55,15 +58,17 @@ bool VariablePropIndexSeek::matchNode(NodeContext* nodeCtx) {
     if (!getIndexItem(nodeCtx, filter, label, nodeInfo.alias, &refVarName, &propName, &idxItem)) {
       return false;
     }
-  }
 
-  if (!nodeCtx->aliasesAvailable->count(refVarName)) {
-    return false;
+    if (!nodeCtx->aliasesAvailable->count(refVarName)) {
+      return false;
+    }
+
+    indexFilter = TagPropertyExpression::make(nodeCtx->qctx->objPool(), label, propName);
   }
 
   nodeCtx->refVarName = refVarName;
 
-  nodeCtx->scanInfo.filter = indexFilter;
+  nodeCtx->scanInfo.filter = DCHECK_NOTNULL(indexFilter);
   nodeCtx->scanInfo.schemaIds = nodeInfo.tids;
   nodeCtx->scanInfo.schemaNames = nodeInfo.labels;
 
@@ -79,11 +84,13 @@ StatusOr<SubPlan> VariablePropIndexSeek::transformNode(NodeContext* nodeCtx) {
   auto qctx = nodeCtx->qctx;
   auto argument = Argument::make(qctx, nodeCtx->refVarName);
   argument->setColNames({nodeCtx->refVarName});
+  argument->setInputVertexRequired(false);
   IndexQueryContext iqctx;
   iqctx.filter_ref() = Expression::encode(*nodeCtx->scanInfo.filter);
   auto scan = IndexScan::make(
       qctx, argument, nodeCtx->spaceId, {std::move(iqctx)}, {kVid}, false, schemaIds.back());
   scan->setColNames({kVid});
+  scan->setLazyIndexHint(true);
   plan.tail = argument;
   plan.root = scan;
 
@@ -110,7 +117,7 @@ bool VariablePropIndexSeek::getIndexItem(const NodeContext* nodeCtx,
     return false;
   }
 
-  if (!MatchSolver::extractTagPropName(relInExpr->left(), label, alias, propName)) {
+  if (!MatchSolver::extractTagPropName(relInExpr->left(), alias, label, propName)) {
     return false;
   }
   // TODO(yee): workaround for index selection
