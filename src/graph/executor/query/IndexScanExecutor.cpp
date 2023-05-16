@@ -38,42 +38,21 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     }
     const auto &colName = static_cast<const LabelExpression *>(relFilter->right())->name();
     const auto &result = ectx_->getResult(lookup->inputVar());
-    auto iter = result.iterRef();
-    if (iter->empty()) {
-      return finish(ResultBuilder().value(Value(List())).iter(Iterator::Kind::kProp).build());
-    }
-
-    Set vals;
-    if (filter->kind() == Expression::Kind::kRelIn) {
-      if (iter->size() != 1u) {
-        return Status::Error("IN expression could not support multi-rows index scan.");
-      }
-      const auto &val = iter->getColumn(colName);
-      if (!val.isList() && !val.isSet()) {
-        return Status::Error("The values is not list or set in expression: %s",
-                             filter->toString().c_str());
-      }
-      if (val.isList()) {
-        const auto &listVals = val.getList().values;
-        vals.values.insert(listVals.begin(), listVals.end());
-      } else {
-        const auto &setVals = val.getSet().values;
-        vals.values.insert(setVals.begin(), setVals.end());
-      }
-    } else {
-      vals.values.reserve(iter->size());
-      for (; iter->valid(); iter->next()) {
-        vals.values.emplace(iter->getColumn(colName));
-      }
-    }
-
     std::vector<Expression *> ops;
-    for (auto &val : vals.values) {
+    std::unordered_set<Value> unique;
+    for (auto iter = result.iterRef(); iter->valid(); iter->next()) {
+      const auto &val = iter->getColumn(colName);
+      if (!unique.emplace(val).second) continue;
       auto constExpr = ConstantExpression::make(objPool, val);
       auto leftExpr = relFilter->left()->clone();
       auto newRelExpr = RelationalExpression::makeEQ(objPool, leftExpr, constExpr);
       ops.push_back(newRelExpr);
     }
+
+    if (ops.empty()) {
+      return finish(ResultBuilder().value(Value(List())).iter(Iterator::Kind::kProp).build());
+    }
+
     if (ops.size() == 1u) {
       NG_RETURN_IF_ERROR(OptimizerUtils::createIndexQueryCtx(ops[0], qctx(), lookup, ictxs));
     } else {

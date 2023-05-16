@@ -35,37 +35,31 @@ bool VariablePropIndexSeek::matchNode(NodeContext* nodeCtx) {
   if (!whereClause || !whereClause->filter) return false;
 
   auto filter = whereClause->filter;
-  std::string refVarName, propName;
+  std::string refVarName;
   std::shared_ptr<IndexItem> idxItem;
   Expression* indexFilter = nullptr;
   if (filter->kind() == Expression::Kind::kLogicalAnd) {
     auto logExpr = static_cast<const LogicalExpression*>(filter);
     bool found = false;
     for (auto op : logExpr->operands()) {
-      if (getIndexItem(nodeCtx, op, label, nodeInfo.alias, &refVarName, &propName, &idxItem)) {
-        if (!nodeCtx->aliasesAvailable->count(refVarName)) {
-          return false;
-        }
+      if (getIndexItem(nodeCtx, op, label, nodeInfo.alias, &refVarName, &indexFilter, &idxItem)) {
         // TODO(yee): Only select the first index as candidate filter expression and not support
         // the combined index
-        indexFilter = TagPropertyExpression::make(nodeCtx->qctx->objPool(), label, propName);
         found = true;
         break;
       }
     }
     if (!found) return false;
   } else {
-    if (!getIndexItem(nodeCtx, filter, label, nodeInfo.alias, &refVarName, &propName, &idxItem)) {
+    if (!getIndexItem(
+            nodeCtx, filter, label, nodeInfo.alias, &refVarName, &indexFilter, &idxItem)) {
       return false;
     }
-
-    if (!nodeCtx->aliasesAvailable->count(refVarName)) {
-      return false;
-    }
-
-    indexFilter = TagPropertyExpression::make(nodeCtx->qctx->objPool(), label, propName);
   }
 
+  if (!nodeCtx->aliasesAvailable->count(refVarName)) {
+    return false;
+  }
   nodeCtx->refVarName = refVarName;
 
   nodeCtx->scanInfo.filter = DCHECK_NOTNULL(indexFilter);
@@ -105,7 +99,7 @@ bool VariablePropIndexSeek::getIndexItem(const NodeContext* nodeCtx,
                                          const std::string& label,
                                          const std::string& alias,
                                          std::string* refVarName,
-                                         std::string* propName,
+                                         Expression** indexFilter,
                                          std::shared_ptr<IndexItem>* idxItem) {
   if (filter->kind() != Expression::Kind::kRelEQ && filter->kind() != Expression::Kind::kRelIn) {
     return false;
@@ -117,7 +111,8 @@ bool VariablePropIndexSeek::getIndexItem(const NodeContext* nodeCtx,
     return false;
   }
 
-  if (!MatchSolver::extractTagPropName(relInExpr->left(), alias, label, propName)) {
+  std::string propName;
+  if (!MatchSolver::extractTagPropName(relInExpr->left(), alias, label, &propName)) {
     return false;
   }
   // TODO(yee): workaround for index selection
@@ -129,7 +124,7 @@ bool VariablePropIndexSeek::getIndexItem(const NodeContext* nodeCtx,
     auto schemaId = itemPtr->get_schema_id();
     if (schemaId.get_tag_id() == nodeCtx->info->tids.back()) {
       const auto& fields = itemPtr->get_fields();
-      if (!fields.empty() && fields.front().get_name() == *propName) {
+      if (!fields.empty() && fields.front().get_name() == propName) {
         idxItemList.push_back(itemPtr);
       }
     }
@@ -140,6 +135,10 @@ bool VariablePropIndexSeek::getIndexItem(const NodeContext* nodeCtx,
   });
   *refVarName = static_cast<const LabelExpression*>(right)->name();
   *idxItem = idxItemList.front();
+  auto objPool = nodeCtx->qctx->objPool();
+  auto tagPropExpr = TagPropertyExpression::make(objPool, label, propName);
+  *indexFilter =
+      RelationalExpression::makeKind(objPool, filter->kind(), tagPropExpr, right->clone());
   return true;
 }
 

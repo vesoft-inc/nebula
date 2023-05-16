@@ -35,7 +35,7 @@ class VariablePropIndexSeek final : public StartVidFinder {
                            const std::string& label,
                            const std::string& alias,
                            std::string* refVarName,
-                           std::string* propName,
+                           Expression** indexFilter,
                            std::shared_ptr<meta::cpp2::IndexItem>* idxItem);
 };
 
