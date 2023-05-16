@@ -5,10 +5,13 @@
 #include "graph/executor/query/IndexScanExecutor.h"
 
 #include "graph/service/GraphFlags.h"
+#include "graph/util/OptimizerUtils.h"
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::LookupIndexResp;
+
+using IndexQueryContextList = nebula::graph::OptimizerUtils::IndexQueryContextList;
 
 namespace nebula {
 namespace graph {
@@ -20,8 +23,66 @@ folly::Future<Status> IndexScanExecutor::execute() {
 folly::Future<Status> IndexScanExecutor::indexScan() {
   StorageClient *storageClient = qctx_->getStorageClient();
   auto *lookup = asNode<IndexScan>(node());
+  auto objPool = qctx()->objPool();
 
-  const auto &ictxs = lookup->queryContext();
+  IndexQueryContextList ictxs;
+  if (lookup->lazyIndexHint()) {
+    Expression *filter = Expression::decode(qctx()->objPool(), ictxs.front().get_filter());
+    if (filter->kind() != Expression::Kind::kRelEQ || filter->kind() != Expression::Kind::kRelIn) {
+      return Status::Error("The kind of filter expression is invalid.");
+    }
+    auto relFilter = static_cast<const RelationalExpression *>(filter);
+    if (relFilter->right()->kind() != Expression::Kind::kLabel) {
+      return Status::Error("The kind of expression is not label expression.");
+    }
+    const auto &colName = static_cast<const LabelExpression *>(relFilter->right())->name();
+    const auto &result = ectx_->getResult(lookup->inputVar());
+    auto iter = result.iterRef();
+    if (iter->empty()) {
+      return finish(ResultBuilder().value(Value(List())).iter(Iterator::Kind::kProp).build());
+    }
+
+    Set vals;
+    if (filter->kind() == Expression::Kind::kRelIn) {
+      if (iter->size() != 1u) {
+        return Status::Error("IN expression could not support multi-rows index scan.");
+      }
+      const auto &val = iter->getColumn(colName);
+      if (!val.isList() || !val.isSet()) {
+        return Status::Error("The values is not list or set in expression: %s",
+                             filter->toString().c_str());
+      }
+      if (val.isList()) {
+        const auto &listVals = val.getList().values;
+        vals.values.insert(listVals.begin(), listVals.end());
+      } else {
+        const auto &setVals = val.getSet().values;
+        vals.values.insert(setVals.begin(), setVals.end());
+      }
+    } else {
+      vals.values.reserve(iter->size());
+      for (; iter->valid(); iter->next()) {
+        vals.values.emplace(iter->getColumn(colName));
+      }
+    }
+
+    std::vector<Expression *> ops;
+    for (auto &val : vals.values) {
+      auto constExpr = ConstantExpression::make(objPool, val);
+      auto leftExpr = relFilter->left()->clone();
+      auto newRelExpr = RelationalExpression::makeEQ(objPool, leftExpr, constExpr);
+      ops.push_back(newRelExpr);
+    }
+    if (ops.size() == 1u) {
+      NG_RETURN_IF_ERROR(OptimizerUtils::createIndexQueryCtx(ops[0], qctx(), lookup, ictxs));
+    } else {
+      auto logExpr = LogicalExpression::makeOr(objPool);
+      logExpr->setOperands(std::move(ops));
+      NG_RETURN_IF_ERROR(OptimizerUtils::createIndexQueryCtx(logExpr, qctx(), lookup, ictxs));
+    }
+  } else {
+    ictxs = lookup->queryContext();
+  }
   auto iter = std::find_if(
       ictxs.begin(), ictxs.end(), [](auto &ictx) { return !ictx.index_id_ref().is_set(); });
   if (ictxs.empty() || iter != ictxs.end()) {

@@ -29,6 +29,14 @@ class VariablePropIndexSeek final : public StartVidFinder {
 
  private:
   VariablePropIndexSeek() = default;
+
+  static bool getIndexItem(const NodeContext* nodeCtx,
+                           const Expression* filter,
+                           const std::string& label,
+                           const std::string& alias,
+                           std::string* refVarName,
+                           std::string* propName,
+                           std::shared_ptr<meta::cpp2::IndexItem>* idxItem);
 };
 
 }  // namespace graph
