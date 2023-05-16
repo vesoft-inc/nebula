@@ -144,18 +144,42 @@ PlanNode* GoPlanner::buildJoinDstPlan(PlanNode* dep) {
 
 SubPlan GoPlanner::doSimplePlan() {
   auto qctx = goCtx_->qctx;
-  size_t step = goCtx_->steps.mSteps();
+  size_t minStep = goCtx_->steps.mSteps();
+  size_t maxStep = goCtx_->steps.nSteps();
+  size_t steps = minStep;
+  if (minStep != maxStep) {
+    steps = minStep == 0 ? minStep : minStep - 1;
+  }
+
   auto* expand = Expand::make(qctx,
                               startNode_,
                               goCtx_->space.id,
                               false,  // random
-                              step,
+                              steps,
                               buildEdgeProps(true));
   expand->setEdgeTypes(buildEdgeTypes());
   expand->setColNames({"_expand_vid"});
   expand->setInputVar(goCtx_->vidsVar);
 
-  auto* dedup = Dedup::make(qctx, expand);
+  auto dep = expand;
+  if (minStep != maxStep) {
+    //  simple m to n case
+    //  go m to n steps from 'xxx' over edge yield distinct edge._dst
+    dep = ExpandAll::make(qctx,
+                          dep,
+                          goCtx_->space.id,
+                          false,  // random
+                          minStep,
+                          maxStep,
+                          buildEdgeProps(true),
+                          nullptr,
+                          nullptr,
+                          nullptr);
+    dep->setEdgeTypes(buildEdgeTypes());
+    dep->setColNames({"_expandall_vid"});
+  }
+
+  auto* dedup = Dedup::make(qctx, dep);
 
   auto pool = qctx->objPool();
   auto* newYieldExpr = pool->makeAndAdd<YieldColumns>();
@@ -271,12 +295,19 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     for (auto node : varPtr->writtenBy) {
       preRootNode_ = node;
     }
-
-    auto argNode = Argument::make(qctx, from.runtimeVidName);
-    argNode->setColNames({from.runtimeVidName});
-    argNode->setInputVertexRequired(false);
-    goCtx_->vidsVar = argNode->outputVar();
-    startNode_ = argNode;
+    if (goCtx_->isSimple) {
+      //  go from 'xxx' over edge yield distinct edge._dst as id |
+      //    go from $-.id over edge yield distinct edge._dst
+      // above scenario, the second statement does not need the argument operator
+      startNode_ = preRootNode_;
+      goCtx_->vidsVar = varName;
+    } else {
+      auto argNode = Argument::make(qctx, from.runtimeVidName);
+      argNode->setColNames({from.runtimeVidName});
+      argNode->setInputVertexRequired(false);
+      goCtx_->vidsVar = argNode->outputVar();
+      startNode_ = argNode;
+    }
   }
   auto& steps = goCtx_->steps;
   if (!steps.isMToN() && steps.steps() == 0) {
