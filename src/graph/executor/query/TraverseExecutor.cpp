@@ -112,7 +112,7 @@ folly::Future<Status> TraverseExecutor::getNeighbors() {
         addStats(resp, getNbrTime.elapsedInUSec());
         time::Duration expandTime;
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
-          addState("expandTime", expandTime.elapsedInUSec());
+          addState("expandTime", expandTime);
         });
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
@@ -245,7 +245,7 @@ folly::Future<Status> TraverseExecutor::asyncExpandOneStep(RpcResponse&& resps) 
           }
         }
 
-        addState("expandPostTaskTime", postTaskTime.elapsedInUSec());
+        addState("expandPostTaskTime", postTaskTime);
         folly::dynamic taskRunTimeArray = folly::dynamic::array();
         for (auto time : *taskRunTime) {
           taskRunTimeArray.push_back(time);
