@@ -30,13 +30,16 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     auto filterStr = lookup->queryContext().front().get_filter();
     Expression *filter = Expression::decode(qctx()->objPool(), filterStr);
     if (filter->kind() != Expression::Kind::kRelEQ && filter->kind() != Expression::Kind::kRelIn) {
-      return Status::Error("The kind of filter expression is invalid.");
+      return Status::Error("The kind of filter expression is invalid: %s",
+                           filter->toString().c_str());
     }
     auto relFilter = static_cast<const RelationalExpression *>(filter);
-    if (relFilter->right()->kind() != Expression::Kind::kLabel) {
-      return Status::Error("The kind of expression is not label expression.");
+    auto right = DCHECK_NOTNULL(relFilter->right());
+    if (right->kind() != Expression::Kind::kLabel) {
+      return Status::Error("The kind of expression is not label expression: %s",
+                           right->toString().c_str());
     }
-    const auto &colName = static_cast<const LabelExpression *>(relFilter->right())->name();
+    const auto &colName = static_cast<const LabelExpression *>(right)->name();
     const auto &result = ectx_->getResult(lookup->inputVar());
     std::vector<Expression *> ops;
     std::unordered_set<Value> unique;

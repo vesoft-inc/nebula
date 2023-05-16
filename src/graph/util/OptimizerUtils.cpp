@@ -914,7 +914,7 @@ Status OptimizerUtils::createIndexQueryCtx(Expression* filter,
   if (!filter) {
     // Only filter is nullptr when lookup on tagname
     // Degenerate back to tag lookup
-    NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, node));
+    return createIndexQueryCtx(iqctx, qctx, node);
   }
 
   // items used for optimal index fetch and index scan context optimize.
@@ -926,7 +926,11 @@ Status OptimizerUtils::createIndexQueryCtx(Expression* filter,
   // TODO: refactor index selector logic to avoid this rewriting
   auto* newFilter = ExpressionUtils::rewriteParameter(filter, qctx);
   NG_RETURN_IF_ERROR(analyzeExpression(newFilter, &items, &kind, node->isEdge(), qctx));
-  return createIndexQueryCtx(iqctx, kind, items, qctx, node);
+  auto status = createIndexQueryCtx(iqctx, kind, items, qctx, node);
+  if (!status.ok()) {
+    return createIndexQueryCtx(iqctx, qctx, node);
+  }
+  return Status::OK();
 }
 
 Status OptimizerUtils::createIndexQueryCtx(std::vector<IndexQueryContext>& iqctx,
