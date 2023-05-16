@@ -11,6 +11,7 @@
 
 using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
+using nebula::storage::cpp2::GetDstBySrcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 
 namespace nebula {
@@ -60,7 +61,76 @@ folly::Future<Status> ExpandAllExecutor::execute() {
   if (nextStepVids_.empty()) {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
+  if (vertexColumns_ == nullptr && edgeColumns_ == nullptr) {
+    return GetDstBySrc();
+  }
   return getNeighbors();
+}
+
+folly::Future<Status> ExpandAllExecutor::GetDstBySrc() {
+  currentStep_++;
+  time::Duration getDstTime;
+  StorageClient* storageClient = qctx_->getStorageClient();
+  StorageClient::CommonRequestParam param(expand_->space(),
+                                          qctx_->rctx()->session()->id(),
+                                          qctx_->plan()->id(),
+                                          qctx_->plan()->isProfileEnabled());
+  std::vector<Value> vids(nextStepVids_.size());
+  std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
+  return storageClient->getDstBySrc(param, std::move(vids), expand_->edgeTypes())
+      .via(runner())
+      .ensure([this, getDstTime]() {
+        SCOPED_TIMER(&execTime_);
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getDstTime.elapsedInUSec()));
+      })
+      .thenValue([this](StorageRpcResponse<GetDstBySrcResponse>&& resps) {
+        memory::MemoryCheckGuard guard;
+        nextStepVids_.clear();
+        SCOPED_TIMER(&execTime_);
+        auto& hostLatency = resps.hostLatency();
+        for (size_t i = 0; i < hostLatency.size(); ++i) {
+          size_t size = 0u;
+          auto& result = resps.responses()[i];
+          if (result.dsts_ref().has_value()) {
+            size = (*result.dsts_ref()).size();
+          }
+          auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
+          otherStats_.emplace(folly::sformat("step{} resp [{}]", currentStep_, i),
+                              folly::toPrettyJson(info));
+        }
+        auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
+        if (!result.ok()) {
+          return folly::makeFuture<Status>(result.status());
+        }
+        auto& responses = resps.responses();
+        if (currentStep_ <= maxSteps_) {
+          for (auto& resp : responses) {
+            auto* dataset = resp.get_dsts();
+            if (dataset == nullptr) continue;
+            for (auto& row : dataset->rows) {
+              nextStepVids_.insert(row.values.begin(), row.values.end());
+              // add the dataset of each step to result_
+              result_.rows.emplace_back(row);
+            }
+          }
+          if (nextStepVids_.empty()) {
+            finish(ResultBuilder().value(Value(std::move(result_))).build());
+            return folly::makeFuture<Status>(Status::OK());
+          }
+          return GetDstBySrc();
+        } else {
+          for (auto& resp : responses) {
+            auto* dataset = resp.get_dsts();
+            if (dataset == nullptr) continue;
+            for (auto& row : dataset->rows) {
+              // add the dataset of each step to result_
+              result_.rows.emplace_back(row);
+            }
+          }
+          finish(ResultBuilder().value(Value(std::move(result_))).build());
+          return folly::makeFuture<Status>(Status::OK());
+        }
+      });
 }
 
 folly::Future<Status> ExpandAllExecutor::getNeighbors() {
