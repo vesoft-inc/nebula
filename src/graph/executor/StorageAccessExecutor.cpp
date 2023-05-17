@@ -225,9 +225,8 @@ void StorageAccessExecutor::addGetNeighborStats(RpcResponse &resp, size_t stepNu
   }
 
   auto key = folly::sformat("{}step[{}]", reverse ? "reverse " : "", stepNum);
-  statsLock_.lock();
+  std::lock_guard<folly::SpinLock> lk(statsLock_);
   otherStats_.emplace(key, folly::toPrettyJson(stats));
-  statsLock_.unlock();
 }
 
 }  // namespace graph

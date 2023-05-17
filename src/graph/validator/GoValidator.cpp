@@ -284,8 +284,7 @@ bool GoValidator::checkDstPropOrVertexExist(const Expression* expr) {
 }
 
 bool GoValidator::isSimpleCase() {
-  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter || goCtx_->steps.isMToN() ||
-      goCtx_->from.fromType != FromType::kInstantExpr) {
+  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter != nullptr) {
     return false;
   }
   // Check if the yield cluase uses:

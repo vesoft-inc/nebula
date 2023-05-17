@@ -671,13 +671,13 @@ TEST_F(QueryValidatorTest, GoMToN) {
   {
     std::string query = "GO 1 TO 2 STEPS FROM '1' OVER like YIELD DISTINCT like._dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
+        PK::kProject, PK::kDedup, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
     std::string query = "GO 0 TO 2 STEPS FROM '1' OVER like YIELD DISTINCT like._dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
+        PK::kProject, PK::kDedup, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -698,13 +698,13 @@ TEST_F(QueryValidatorTest, GoMToN) {
   {
     std::string query = "GO 1 TO 2 STEPS FROM '1' OVER like REVERSELY YIELD DISTINCT like._dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
+        PK::kProject, PK::kDedup, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
     std::string query = "GO 1 TO 2 STEPS FROM '1' OVER like BIDIRECT YIELD DISTINCT like._dst";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDedup, PK::kProject, PK::kExpandAll, PK::kExpand, PK::kStart};
+        PK::kProject, PK::kDedup, PK::kExpandAll, PK::kExpand, PK::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {

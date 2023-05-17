@@ -67,14 +67,15 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> getNeighbors(bool reverse);
 
-  void expandFromLeft(GetNeighborsIter* iter);
+  void expand(GetNeighborsIter* iter, bool reverse);
 
-  void expandFromRight(GetNeighborsIter* iter);
+  std::vector<Value> convertNPath2List(NPath* path, bool reverse);
 
-  Row convertNPath2Row(NPath* path, Value dst);
-
-  folly::Future<std::vector<std::pair<NPath*, Value>>> doBuildPath(
-      size_t step, size_t start, size_t end, std::shared_ptr<std::vector<NPath*>> paths);
+  folly::Future<std::vector<NPath*>> doBuildPath(size_t step,
+                                                 size_t start,
+                                                 size_t end,
+                                                 std::shared_ptr<std::vector<NPath*>> paths,
+                                                 bool reverse);
 
   folly::Future<Status> getPathProps();
 
@@ -82,9 +83,26 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> buildResult();
 
+  void buildHashTable(std::vector<NPath*>& paths, bool reverse);
+
+  std::vector<Row> probe(size_t start, size_t end, bool reverse);
+
+  folly::Future<Status> conjunctPath(std::vector<NPath*>& leftPaths,
+                                     std::vector<NPath*>& rightPaths);
+
   bool hasSameEdge(NPath* path, const Edge& edge);
 
   bool hasSameVertices(NPath* path, const Edge& edge);
+
+  bool hasSameEdge(std::vector<Value>& leftPaths, std::vector<Value>& rightPaths);
+
+  bool hasSameVertices(const std::vector<Value>& leftPaths,
+                       const Value& intersectVertex,
+                       const std::vector<Value>& rightPaths);
+
+  void buildOneWayPath(std::vector<NPath*>& paths, bool reverse);
+
+  std::vector<Row> buildOneWayPathFromHashTable(bool reverse);
 
  private:
   const AllPaths* pathNode_{nullptr};
@@ -107,8 +125,12 @@ class AllPathsExecutor final : public StorageAccessExecutor {
 
   DataSet result_;
   std::vector<Value> emptyPropVids_;
+  std::unordered_multiset<Value, VertexHash, VertexEqual> emptyPropVertices_;
   class NewTag {};
   folly::ThreadLocalPtr<std::deque<NPath>, NewTag> threadLocalPtr_;
+
+  std::unordered_map<Value, std::vector<std::vector<Value>>> hashTable_;
+  std::vector<NPath*> probePaths_;
 };
 }  // namespace graph
 }  // namespace nebula

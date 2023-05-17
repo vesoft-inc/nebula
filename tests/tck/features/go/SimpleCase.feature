@@ -266,11 +266,11 @@ Feature: Simple case
     And the execution plan should be:
       | id | name      | dependencies | operator info |
       | 6  | Aggregate | 5            |               |
-      | 5  | Dedup     | 4            |               |
-      | 4  | Project   | 3            |               |
+      | 5  | Project   | 4            |               |
+      | 4  | Dedup     | 3            |               |
       | 3  | ExpandAll | 2            |               |
-      | 2  | Expand    | 1            |               |
-      | 1  | Start     |              |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       GO 1 to 3 STEP FROM "Tony Parker" OVER like WHERE $$.player.age > 40 YIELD DISTINCT id($$), $$.player.age as age, $$.player.name | ORDER BY $-.age
@@ -366,23 +366,20 @@ Feature: Simple case
       | count(*) |
       | 28       |
     And the execution plan should be:
-      | id | name          | dependencies | operator info |
-      | 17 | Aggregate     | 15           |               |
-      | 15 | Minus         | 13,14        |               |
-      | 13 | Project       | 16           |               |
-      | 16 | PassThrough   | 12           |               |
-      | 12 | Dedup         | 11           |               |
-      | 11 | Project       | 10           |               |
-      | 10 | HashInnerJoin | 5,9          |               |
-      | 5  | Dedup         | 4            |               |
-      | 4  | Project       | 3            |               |
-      | 3  | ExpandAll     | 2            |               |
-      | 2  | Expand        | 1            |               |
-      | 1  | Start         |              |               |
-      | 9  | ExpandAll     | 8            |               |
-      | 8  | Expand        | 7            |               |
-      | 7  | Argument      |              |               |
-      | 14 | Project       | 16           |               |
+      | id | name        | dependencies | operator info |
+      | 14 | Aggregate   | 12           |               |
+      | 12 | Minus       | 10,11        |               |
+      | 10 | Project     | 13           |               |
+      | 13 | PassThrough | 9            |               |
+      | 9  | Project     | 8            |               |
+      | 8  | Dedup       | 7            |               |
+      | 7  | Expand      | 5            |               |
+      | 5  | Project     | 4            |               |
+      | 4  | Dedup       | 3            |               |
+      | 3  | ExpandAll   | 2            |               |
+      | 2  | Expand      | 0            |               |
+      | 0  | Start       |              |               |
+      | 11 | Project     | 13           |               |
 
   Scenario: other simple case
     When profiling query:
@@ -393,18 +390,15 @@ Feature: Simple case
       | count(*) |
       | 0        |
     And the execution plan should be:
-      | id | name          | dependencies | operator info |
-      | 12 | Aggregate     | 11           |               |
-      | 11 | Dedup         | 10           |               |
-      | 10 | Project       | 9            |               |
-      | 9  | HashInnerJoin | 4,8          |               |
-      | 4  | Project       | 3            |               |
-      | 3  | Dedup         | 2            |               |
-      | 2  | Expand        | 0            |               |
-      | 0  | Start         |              |               |
-      | 8  | ExpandAll     | 7            |               |
-      | 7  | Expand        | 6            |               |
-      | 6  | Argument      |              |               |
+      | id | name      | dependencies | operator info |
+      | 9  | Aggregate | 8            |               |
+      | 8  | Project   | 7            |               |
+      | 7  | Dedup     | 6            |               |
+      | 6  | Expand    | 4            |               |
+      | 4  | Project   | 3            |               |
+      | 3  | Dedup     | 2            |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       GO 1 STEP FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 3 STEP FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
@@ -413,18 +407,33 @@ Feature: Simple case
       | COUNT(*) |
       | 22       |
     And the execution plan should be:
-      | id | name          | dependencies | operator info |
-      | 12 | Aggregate     | 11           |               |
-      | 11 | Dedup         | 10           |               |
-      | 10 | Project       | 9            |               |
-      | 9  | HashInnerJoin | 4,8          |               |
-      | 4  | Project       | 3            |               |
-      | 3  | Dedup         | 2            |               |
-      | 2  | Expand        | 0            |               |
-      | 0  | Start         |              |               |
-      | 8  | ExpandAll     | 7            |               |
-      | 7  | Expand        | 6            |               |
-      | 6  | Argument      |              |               |
+      | id | name      | dependencies | operator info |
+      | 9  | Aggregate | 8            |               |
+      | 8  | Project   | 7            |               |
+      | 7  | Dedup     | 6            |               |
+      | 6  | Expand    | 4            |               |
+      | 4  | Project   | 3            |               |
+      | 3  | Dedup     | 2            |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
+    When profiling query:
+      """
+      GO 1 STEP FROM "Tony Parker" OVER * YIELD distinct id($$) as id| GO 2 to 4 STEP FROM $-.id OVER * YIELD distinct id($$) | YIELD COUNT(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | COUNT(*) |
+      | 26       |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 10 | Aggregate | 9            |               |
+      | 9  | Project   | 8            |               |
+      | 8  | Dedup     | 7            |               |
+      | 7  | ExpandAll | 6            |               |
+      | 6  | Expand    | 4            |               |
+      | 4  | Project   | 3            |               |
+      | 3  | Dedup     | 2            |               |
+      | 2  | Expand    | 0            |               |
+      | 0  | Start     |              |               |
 
   Scenario: could not be optimied cases
     When profiling query:
