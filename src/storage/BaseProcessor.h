@@ -42,7 +42,7 @@ class BaseProcessor {
     memory::MemoryCheckOffGuard guard;
     if (counters_) {
       stats::StatsManager::addValue(counters_->numCalls_);
-      if (!this->result_.get_failed_parts().empty()) {
+      if (!this->codes_.empty()) {
         stats::StatsManager::addValue(counters_->numErrors_);
       }
     }
