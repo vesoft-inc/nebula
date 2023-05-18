@@ -33,7 +33,7 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
       .via(runner())
       .ensure([this, scanEdgesTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", scanEdgesTime.elapsedInUSec()));
+        addState("total_rpc", scanEdgesTime);
       })
       .thenValue([this](StorageRpcResponse<ScanResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;

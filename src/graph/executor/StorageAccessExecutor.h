@@ -183,9 +183,6 @@ class StorageAccessExecutor : public Executor {
                                              const std::vector<VertexProp> *vertexPropPtr);
 
   std::vector<Value> handlePropResp(PropRpcResponse &&resps);
-
- protected:
-  folly::SpinLock statsLock_;
 };
 
 }  // namespace graph

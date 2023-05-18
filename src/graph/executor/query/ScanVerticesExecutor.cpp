@@ -34,7 +34,7 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
       .via(runner())
       .ensure([this, scanVertexTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", scanVertexTime.elapsedInUSec()));
+        addState("total_rpc", scanVertexTime);
       })
       .thenValue([this, sv](StorageRpcResponse<ScanResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;

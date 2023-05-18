@@ -55,7 +55,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
       .thenValue([this, getNbrTime](RpcResponse&& resp) mutable {
         // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
-        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
+        addState("total_rpc_time", getNbrTime);
         auto& hostLatency = resp.hostLatency();
         for (size_t i = 0; i < hostLatency.size(); ++i) {
           size_t size = 0u;
@@ -64,7 +64,7 @@ folly::Future<Status> SubgraphExecutor::getNeighbors() {
             size = (*result.vertices_ref()).size();
           }
           auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
-          otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
+          addState(folly::sformat("resp[{}]", i), info);
         }
         vids_.clear();
         return handleResponse(std::move(resp));

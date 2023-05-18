@@ -6,6 +6,7 @@
 #include <folly/futures/Future.h>
 
 #include <boost/core/noncopyable.hpp>
+#include <mutex>
 
 #include "common/cpp/helpers.h"
 #include "common/memory/MemoryTracker.h"
@@ -123,11 +124,21 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
       class GatherFunc>
   auto runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator *iter);
 
-  void addState(const std::string &name, size_t durationInUs) {
-    otherStats_.emplace(name, folly::sformat("{}(us)", durationInUs));
+  void addState(const std::string &name, const time::Duration &dur) {
+    auto str = folly::sformat("{}(us)", dur.elapsedInUSec());
+    std::lock_guard<std::mutex> l(statsLock_);
+    otherStats_.emplace(name, std::move(str));
   }
-  void addState(const std::string &name, folly::dynamic json) {
-    otherStats_.emplace(name, folly::toPrettyJson(json));
+
+  void addState(const std::string &name, const folly::dynamic &json) {
+    auto str = folly::toPrettyJson(json);
+    std::lock_guard<std::mutex> l(statsLock_);
+    otherStats_.emplace(name, std::move(str));
+  }
+
+  void mergeStats(std::unordered_map<std::string, std::string> stats) {
+    std::lock_guard<std::mutex> l(statsLock_);
+    otherStats_.merge(std::move(stats));
   }
 
   int64_t id_;
@@ -150,6 +161,9 @@ class Executor : private boost::noncopyable, private cpp::NonMovable {
   uint64_t numRows_{0};
   uint64_t execTime_{0};
   time::Duration totalDuration_;
+
+ private:
+  std::mutex statsLock_;
   std::unordered_map<std::string, std::string> otherStats_;
 };
 

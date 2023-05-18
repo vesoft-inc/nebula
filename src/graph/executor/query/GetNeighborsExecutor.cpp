@@ -59,7 +59,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
       .via(runner())
       .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
+        addState("total_rpc_time", getNbrTime);
       })
       .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
         memory::MemoryCheckGuard guard;
@@ -72,7 +72,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
             size = (*result.vertices_ref()).size();
           }
           auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
-          otherStats_.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
+          addState(folly::sformat("resp[{}]", i), info);
         }
         return handleResponse(resp);
       });
