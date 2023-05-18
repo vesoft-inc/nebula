@@ -31,7 +31,7 @@ bool VariableVertexIdSeek::matchNode(NodeContext *nodeCtx) {
   }
 
   // exclude the case where `refVarName` is from the path pattern of current match
-  if (!nodeCtx->nodeAliasesAvailable->count(refVarName)) {
+  if (!nodeCtx->aliasesAvailable->count(refVarName)) {
     return false;
   }
 

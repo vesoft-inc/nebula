@@ -706,6 +706,14 @@ class IndexScan : public Explore {
     yieldColumns_ = yieldColumns;
   }
 
+  void setLazyIndexHint(bool lazy) {
+    lazyIndexHint_ = lazy;
+  }
+
+  bool lazyIndexHint() const {
+    return lazyIndexHint_;
+  }
+
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -739,6 +747,7 @@ class IndexScan : public Explore {
   int32_t schemaId_;
 
   YieldColumns* yieldColumns_;
+  bool lazyIndexHint_{false};
 };
 
 class FulltextIndexScan : public Explore {

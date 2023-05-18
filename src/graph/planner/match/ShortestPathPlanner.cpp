@@ -70,7 +70,7 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(WhereClauseContext* bindWhereCl
     bool foundIndex = false;
     for (auto& finder : startVidFinders) {
       auto nodeCtx = NodeContext(qctx, bindWhereClause, spaceId, &nodeInfo);
-      nodeCtx.nodeAliasesAvailable = &nodeAliasesSeen;
+      nodeCtx.aliasesAvailable = &nodeAliasesSeen;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto status = nodeFinder->transform(&nodeCtx);

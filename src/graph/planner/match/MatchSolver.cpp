@@ -110,6 +110,19 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
   return root;
 }
 
+bool MatchSolver::extractTagPropName(const Expression* expr,
+                                     const std::string& alias,
+                                     const std::string& label,
+                                     std::string* propName) {
+  if (expr->kind() != Expression::Kind::kLabelTagProperty) return false;
+  auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
+  if (tagPropExpr->sym() != label) return false;
+  auto propExpr = static_cast<const PropertyExpression*>(tagPropExpr->label());
+  if (propExpr->prop() != alias) return false;
+  *propName = tagPropExpr->prop();
+  return true;
+}
+
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const std::string& alias,
                                          Expression* filter,
@@ -168,23 +181,21 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       }
       propName = la->right()->value().getStr();
     } else {
-      const LabelTagPropertyExpression* la = nullptr;
       if (left->kind() == Expression::Kind::kLabelTagProperty &&
           right->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelTagPropertyExpression*>(left);
+        if (!extractTagPropName(left, alias, label, &propName)) {
+          continue;
+        }
         constant = static_cast<const ConstantExpression*>(right);
       } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
                  left->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelTagPropertyExpression*>(right);
+        if (!extractTagPropName(right, alias, label, &propName)) {
+          continue;
+        }
         constant = static_cast<const ConstantExpression*>(left);
       } else {
         continue;
       }
-      if (static_cast<const PropertyExpression*>(la->label())->prop() != alias ||
-          la->sym() != label) {
-        continue;
-      }
-      propName = la->prop();
     }
 
     auto* tpExpr =

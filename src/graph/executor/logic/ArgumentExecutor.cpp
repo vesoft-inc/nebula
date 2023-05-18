@@ -53,6 +53,10 @@ folly::Future<Status> ArgumentExecutor::execute() {
         for (auto &v : val.getList().values) {
           addRow(v);
         }
+      } else if (val.isSet()) {
+        for (auto &v : val.getSet().values) {
+          addRow(v);
+        }
       } else {
         addRow(val);
       }

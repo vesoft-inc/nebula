@@ -5,7 +5,6 @@
 nebula_add_library(
     optimizer_obj
     OBJECT
-    OptimizerUtils.cpp
     Optimizer.cpp
     OptGroup.cpp
     OptRule.cpp
