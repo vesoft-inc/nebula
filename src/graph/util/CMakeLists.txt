@@ -15,6 +15,7 @@ nebula_add_library(
     PlannerUtil.cpp
     ValidateUtil.cpp
     Utils.cpp
+    OptimizerUtils.cpp
 )
 
 nebula_add_library(

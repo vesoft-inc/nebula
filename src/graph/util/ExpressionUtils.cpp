@@ -339,7 +339,6 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
           singleExpr = nullptr;
         }
       }
-
     } else {
       DCHECK(kind == Expression::Kind::kList || kind == Expression::Kind::kSet);
       auto ce = static_cast<const ContainerExpression *>(rhs);
