@@ -1801,12 +1801,10 @@ match_node
         $$ = new MatchNode();
     }
     | parenthesized_expression {
-        auto& e = $1;
-        if (e->kind() != Expression::Kind::kLabel) {
-            delete $1;
+        if ($1->kind() != Expression::Kind::kLabel) {
             throw nebula::GraphParser::syntax_error(@1, "Invalid node pattern");
         }
-        $$ = new MatchNode(static_cast<LabelExpression*>(e)->name(), nullptr, nullptr);
+        $$ = new MatchNode(static_cast<LabelExpression*>($1)->name(), nullptr, nullptr);
     }
     | L_PAREN match_alias match_node_label_list R_PAREN {
         $$ = new MatchNode(*$2, $3, nullptr);
