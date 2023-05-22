@@ -76,7 +76,6 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
       | "Spurs"    |
-      | "Spurs"    |
     When executing query:
       """
       YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve YIELD serve._dst
@@ -350,13 +349,25 @@ Feature: Go Sentence
       | EMPTY      | "Paul George"     |
     When executing query:
       """
+      GO FROM "Russell Westbrook" OVER * BIDIRECT YIELD serve._dst, like._dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | serve._dst | like._dst         |
+      |            | "Dejounte Murray" |
+      |            | "James Harden"    |
+      |            | "Paul George"     |
+      |            | "James Harden"    |
+      |            | "Paul George"     |
+      | "Thunders" |                   |
+    When executing query:
+      """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD serve._src, like._src
       """
     Then the result should be, in any order, with relax comparison:
       | serve._src | like._src           |
-      | EMPTY      | "Russell Westbrook" |
-      | EMPTY      | "Russell Westbrook" |
-      | EMPTY      | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
+      |            | "Russell Westbrook" |
     When executing query:
       """
       GO FROM "Russell Westbrook" OVER * REVERSELY YIELD like._dst, serve._dst, teammate._dst

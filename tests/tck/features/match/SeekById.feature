@@ -25,23 +25,6 @@ Feature: Match seek by id
       | 'Jonathon Simmons' |
       | 'Klay Thompson'    |
       | 'Dejounte Murray'  |
-    # start vid finder don't support variable currently
-    When executing query:
-      """
-      WITH [1, 2, 3] AS coll
-      UNWIND coll AS vid
-      MATCH (v) WHERE id(v) == vid
-      RETURN v;
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-    When executing query:
-      """
-      WITH [1, 2, 3] AS coll
-      UNWIND coll AS vid
-      MATCH (v) WHERE id(v) == "Tony Parker" OR id(v) == vid
-      RETURN v;
-      """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: basic logical not
     When executing query:
@@ -152,7 +135,94 @@ Feature: Match seek by id
             OR true
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | NULL                    |
+      | "Amar'e Stoudemire"     |
+      | "Aron Baynes"           |
+      | "Ben Simmons"           |
+      | "Blake Griffin"         |
+      | "Boris Diaw"            |
+      | NULL                    |
+      | NULL                    |
+      | "Carmelo Anthony"       |
+      | NULL                    |
+      | NULL                    |
+      | "Chris Paul"            |
+      | NULL                    |
+      | "Cory Joseph"           |
+      | "Damian Lillard"        |
+      | "Danny Green"           |
+      | "David West"            |
+      | "DeAndre Jordan"        |
+      | "Dejounte Murray"       |
+      | "Dirk Nowitzki"         |
+      | "Dwight Howard"         |
+      | "Dwyane Wade"           |
+      | "Giannis Antetokounmpo" |
+      | "Grant Hill"            |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "JaVale McGee"          |
+      | "James Harden"          |
+      | "Jason Kidd"            |
+      | NULL                    |
+      | "Joel Embiid"           |
+      | "Jonathon Simmons"      |
+      | "Kevin Durant"          |
+      | NULL                    |
+      | "Klay Thompson"         |
+      | NULL                    |
+      | "Kobe Bryant"           |
+      | "Kristaps Porzingis"    |
+      | "Kyle Anderson"         |
+      | "Kyrie Irving"          |
+      | "LaMarcus Aldridge"     |
+      | NULL                    |
+      | "LeBron James"          |
+      | "Luka Doncic"           |
+      | NULL                    |
+      | "Manu Ginobili"         |
+      | "Marc Gasol"            |
+      | "Marco Belinelli"       |
+      | NULL                    |
+      | NULL                    |
+      | "Nobody"                |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Paul Gasol"            |
+      | "Paul George"           |
+      | NULL                    |
+      | NULL                    |
+      | "Rajon Rondo"           |
+      | NULL                    |
+      | "Ray Allen"             |
+      | "Ricky Rubio"           |
+      | NULL                    |
+      | "Rudy Gay"              |
+      | "Russell Westbrook"     |
+      | "Shaquille O'Neal"      |
+      | NULL                    |
+      | "Stephen Curry"         |
+      | "Steve Nash"            |
+      | NULL                    |
+      | NULL                    |
+      | "Tiago Splitter"        |
+      | "Tim Duncan"            |
+      | NULL                    |
+      | "Tony Parker"           |
+      | "Tracy McGrady"         |
+      | NULL                    |
+      | "Vince Carter"          |
+      | NULL                    |
+      | NULL                    |
+      | "Yao Ming"              |
     When executing query:
       """
       MATCH (v)
@@ -268,18 +338,209 @@ Feature: Match seek by id
   Scenario: can't refer
     When executing query:
       """
+      WITH [1, 2, 3] AS coll
+      UNWIND coll AS vid
+      MATCH (v) WHERE id(v) == "Tony Parker" OR id(v) == vid
+      RETURN v;
+      """
+    Then the result should be, in any order:
+      | v                                                 |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"}) |
+    # start vid finder don't support variable currently
+    When executing query:
+      """
+      WITH [1, 2, 3] AS coll
+      UNWIND coll AS vid
+      MATCH (v) WHERE id(v) == vid
+      RETURN v;
+      """
+    Then the result should be, in any order:
+      | v |
+    When executing query:
+      """
       MATCH (v)
       WHERE NOT id(v) == 'Paul Gasol'
       RETURN v.player.name AS Name, v.player.age AS Age
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    | Age  |
+      | NULL                    | NULL |
+      | "Amar'e Stoudemire"     | 36   |
+      | "Aron Baynes"           | 32   |
+      | "Ben Simmons"           | 22   |
+      | "Blake Griffin"         | 30   |
+      | "Boris Diaw"            | 36   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Carmelo Anthony"       | 34   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Chris Paul"            | 33   |
+      | NULL                    | NULL |
+      | "Cory Joseph"           | 27   |
+      | "Damian Lillard"        | 28   |
+      | "Danny Green"           | 31   |
+      | "David West"            | 38   |
+      | "DeAndre Jordan"        | 30   |
+      | "Dejounte Murray"       | 29   |
+      | "Dirk Nowitzki"         | 40   |
+      | "Dwight Howard"         | 33   |
+      | "Dwyane Wade"           | 37   |
+      | "Giannis Antetokounmpo" | 24   |
+      | "Grant Hill"            | 46   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "JaVale McGee"          | 31   |
+      | "James Harden"          | 29   |
+      | "Jason Kidd"            | 45   |
+      | NULL                    | NULL |
+      | "Joel Embiid"           | 25   |
+      | "Jonathon Simmons"      | 29   |
+      | "Kevin Durant"          | 30   |
+      | NULL                    | NULL |
+      | "Klay Thompson"         | 29   |
+      | NULL                    | NULL |
+      | "Kobe Bryant"           | 40   |
+      | "Kristaps Porzingis"    | 23   |
+      | "Kyle Anderson"         | 25   |
+      | "Kyrie Irving"          | 26   |
+      | "LaMarcus Aldridge"     | 33   |
+      | NULL                    | NULL |
+      | "LeBron James"          | 34   |
+      | "Luka Doncic"           | 20   |
+      | NULL                    | NULL |
+      | "Manu Ginobili"         | 41   |
+      | "Marc Gasol"            | 34   |
+      | "Marco Belinelli"       | 32   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Nobody"                | 0    |
+      | NULL                    | NULL |
+      | NULL                    | -1   |
+      | NULL                    | -2   |
+      | NULL                    | -3   |
+      | NULL                    | -4   |
+      | NULL                    | NULL |
+      | "Yao Ming"              | 38   |
+      | "Paul George"           | 28   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Rajon Rondo"           | 33   |
+      | NULL                    | NULL |
+      | "Ray Allen"             | 43   |
+      | "Ricky Rubio"           | 28   |
+      | NULL                    | NULL |
+      | "Rudy Gay"              | 32   |
+      | "Russell Westbrook"     | 30   |
+      | "Shaquille O'Neal"      | 47   |
+      | NULL                    | NULL |
+      | "Stephen Curry"         | 31   |
+      | "Steve Nash"            | 45   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
+      | "Tiago Splitter"        | 34   |
+      | "Tim Duncan"            | 42   |
+      | NULL                    | NULL |
+      | "Tony Parker"           | 36   |
+      | "Tracy McGrady"         | 39   |
+      | NULL                    | NULL |
+      | "Vince Carter"          | 42   |
+      | NULL                    | NULL |
+      | NULL                    | NULL |
     When executing query:
       """
       MATCH (v)
       WHERE NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kyrie Irving"          |
+      | NULL                    |
+      | "Grant Hill"            |
+      | "Tracy McGrady"         |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Joel Embiid"           |
+      | "Marc Gasol"            |
+      | "Cory Joseph"           |
+      | "Giannis Antetokounmpo" |
+      | "Aron Baynes"           |
+      | "DeAndre Jordan"        |
+      | NULL                    |
+      | "JaVale McGee"          |
+      | NULL                    |
+      | "Nobody"                |
+      | "Kevin Durant"          |
+      | "Jason Kidd"            |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kristaps Porzingis"    |
+      | "Dirk Nowitzki"         |
+      | "LaMarcus Aldridge"     |
+      | "Kobe Bryant"           |
+      | NULL                    |
+      | NULL                    |
+      | "Boris Diaw"            |
+      | "Ray Allen"             |
+      | "Dwight Howard"         |
+      | NULL                    |
+      | "Yao Ming"              |
+      | "Chris Paul"            |
+      | "LeBron James"          |
+      | "Shaquille O'Neal"      |
+      | NULL                    |
+      | NULL                    |
+      | "Stephen Curry"         |
+      | "Vince Carter"          |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Kyle Anderson"         |
+      | "Blake Griffin"         |
+      | NULL                    |
+      | NULL                    |
+      | "Tiago Splitter"        |
+      | NULL                    |
+      | "Rudy Gay"              |
+      | "David West"            |
+      | "Steve Nash"            |
+      | "Dwyane Wade"           |
+      | "Manu Ginobili"         |
+      | "Ben Simmons"           |
+      | NULL                    |
+      | "Danny Green"           |
+      | NULL                    |
+      | "Rajon Rondo"           |
+      | NULL                    |
+      | "Russell Westbrook"     |
+      | NULL                    |
+      | NULL                    |
+      | "Tony Parker"           |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | NULL                    |
+      | "Carmelo Anthony"       |
+      | "Damian Lillard"        |
+      | NULL                    |
+      | "Marco Belinelli"       |
+      | "Paul Gasol"            |
+      | "Amar'e Stoudemire"     |
+      | "Paul George"           |
+      | "Luka Doncic"           |
+      | "Tim Duncan"            |
+      | "Ricky Rubio"           |
+      | NULL                    |
     When executing query:
       """
       MATCH (v)
@@ -293,21 +554,76 @@ Feature: Match seek by id
       WHERE (id(v) + '') == 'James Harden'
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name           |
+      | 'James Harden' |
     When executing query:
       """
       MATCH (v)
       WHERE id(v) IN ['James Harden', v.player.name]
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | "Yao Ming"              |
+      | "Amar'e Stoudemire"     |
+      | "Aron Baynes"           |
+      | "Ben Simmons"           |
+      | "Blake Griffin"         |
+      | "Boris Diaw"            |
+      | "Vince Carter"          |
+      | "Tracy McGrady"         |
+      | "Carmelo Anthony"       |
+      | "Tony Parker"           |
+      | "Tim Duncan"            |
+      | "Chris Paul"            |
+      | "Tiago Splitter"        |
+      | "Cory Joseph"           |
+      | "Damian Lillard"        |
+      | "Danny Green"           |
+      | "David West"            |
+      | "DeAndre Jordan"        |
+      | "Dejounte Murray"       |
+      | "Dirk Nowitzki"         |
+      | "Dwight Howard"         |
+      | "Dwyane Wade"           |
+      | "Giannis Antetokounmpo" |
+      | "Grant Hill"            |
+      | "Steve Nash"            |
+      | "Stephen Curry"         |
+      | "Shaquille O'Neal"      |
+      | "Russell Westbrook"     |
+      | "JaVale McGee"          |
+      | "James Harden"          |
+      | "Jason Kidd"            |
+      | "Rudy Gay"              |
+      | "Joel Embiid"           |
+      | "Jonathon Simmons"      |
+      | "Kevin Durant"          |
+      | "Ricky Rubio"           |
+      | "Klay Thompson"         |
+      | "Ray Allen"             |
+      | "Kobe Bryant"           |
+      | "Kristaps Porzingis"    |
+      | "Kyle Anderson"         |
+      | "Kyrie Irving"          |
+      | "LaMarcus Aldridge"     |
+      | "Rajon Rondo"           |
+      | "LeBron James"          |
+      | "Luka Doncic"           |
+      | "Paul George"           |
+      | "Manu Ginobili"         |
+      | "Marc Gasol"            |
+      | "Marco Belinelli"       |
+      | "Paul Gasol"            |
+      | "Nobody"                |
     When executing query:
       """
       MATCH (v) WHERE id(v) == "Tim Duncan" OR id(v) != "Tony Parker" RETURN COUNT(*) AS count
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
-
-  Scenario: test OR logic
+    Then the result should be, in any order:
+      | count |
+      | 85    |
     When executing query:
       """
       MATCH (v)
@@ -315,7 +631,13 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                 |
+      | "Kristaps Porzingis" |
+      | "Klay Thompson"      |
+      | "Jonathon Simmons"   |
+      | "James Harden"       |
+      | "Dejounte Murray"    |
     When executing query:
       """
       MATCH (v)
@@ -323,7 +645,10 @@ Feature: Match seek by id
             OR v.player.age == 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                 |
+      | "Kristaps Porzingis" |
+      | "James Harden"       |
     When executing query:
       """
       MATCH (v)
@@ -331,7 +656,65 @@ Feature: Match seek by id
             OR v.player.age != 23
       RETURN v.player.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | Name                    |
+      | "Yao Ming"              |
+      | "Amar'e Stoudemire"     |
+      | "Aron Baynes"           |
+      | "Ben Simmons"           |
+      | "Blake Griffin"         |
+      | "Boris Diaw"            |
+      | "Vince Carter"          |
+      | "Tracy McGrady"         |
+      | "Carmelo Anthony"       |
+      | "Tony Parker"           |
+      | "Tim Duncan"            |
+      | "Chris Paul"            |
+      | "Tiago Splitter"        |
+      | "Cory Joseph"           |
+      | "Damian Lillard"        |
+      | "Danny Green"           |
+      | "David West"            |
+      | "DeAndre Jordan"        |
+      | "Dejounte Murray"       |
+      | "Dirk Nowitzki"         |
+      | "Dwight Howard"         |
+      | "Dwyane Wade"           |
+      | "Giannis Antetokounmpo" |
+      | "Grant Hill"            |
+      | "Steve Nash"            |
+      | "Stephen Curry"         |
+      | "Shaquille O'Neal"      |
+      | "Russell Westbrook"     |
+      | "JaVale McGee"          |
+      | "James Harden"          |
+      | "Jason Kidd"            |
+      | "Rudy Gay"              |
+      | "Joel Embiid"           |
+      | "Jonathon Simmons"      |
+      | "Kevin Durant"          |
+      | "Ricky Rubio"           |
+      | "Klay Thompson"         |
+      | "Ray Allen"             |
+      | "Kobe Bryant"           |
+      | "Rajon Rondo"           |
+      | "Kyle Anderson"         |
+      | "Kyrie Irving"          |
+      | "LaMarcus Aldridge"     |
+      | "Paul George"           |
+      | "LeBron James"          |
+      | "Luka Doncic"           |
+      | "Paul Gasol"            |
+      | "Manu Ginobili"         |
+      | "Marc Gasol"            |
+      | "Marco Belinelli"       |
+      | NULL                    |
+      | NULL                    |
+      | "Nobody"                |
+      | NULL                    |
+      | NULL                    |
+
+  Scenario: test OR logic
     When executing query:
       """
       MATCH (v:player)
@@ -477,6 +860,7 @@ Feature: Match seek by id
       | 11 | Project        | 8            |               |
       | 8  | Filter         | 4            |               |
       | 4  | AppendVertices | 10           |               |
+      | 10 | Filter         | 10           |               |
       | 10 | Traverse       | 2            |               |
       | 2  | Dedup          | 4            |               |
       | 1  | PassThrough    | 3            |               |

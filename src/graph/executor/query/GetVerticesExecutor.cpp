@@ -48,12 +48,12 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
+        addState("total_rpc", getPropsTime);
       })
       .thenValue([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp), gv->colNames());
       });
 }

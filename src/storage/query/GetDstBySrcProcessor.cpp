@@ -9,6 +9,7 @@
 
 #include "common/memory/MemoryTracker.h"
 #include "common/thread/GenericThreadPool.h"
+#include "storage/StorageFlags.h"
 #include "storage/exec/EdgeNode.h"
 #include "storage/exec/GetDstBySrcNode.h"
 
@@ -217,7 +218,8 @@ StoragePlan<VertexID> GetDstBySrcProcessor::buildPlan(RuntimeContext* context,
     plan.addNode(std::move(edge));
   }
 
-  auto output = std::make_unique<GetDstBySrcNode>(context, edges, &edgeContext_, result);
+  int64_t limit = FLAGS_max_edge_returned_per_vertex;
+  auto output = std::make_unique<GetDstBySrcNode>(context, edges, &edgeContext_, result, limit);
   for (auto* edge : edges) {
     output->addDependency(edge);
   }

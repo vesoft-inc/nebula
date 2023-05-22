@@ -40,7 +40,7 @@ class VidExtractVisitor final : public ExprVisitor {
         kIn,
         kNotIn,
       } kind{Kind::kOtherSource};
-      List vids;
+      Set vids;
     };
     std::unordered_map<std::string, Vids> nodes;
   };

@@ -8,11 +8,11 @@
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/OptimizerUtils.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;
@@ -167,7 +167,7 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
       break;
     }
     default:
-      DLOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
+      DLOG(ERROR) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
       return TransformResult::noTransform();
   }
 

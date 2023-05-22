@@ -16,11 +16,12 @@ Feature: Eliminate AppendVertices rule
       | "Tim Duncan" |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name      | dependencies | operator info |
-      | 5  | Project   | 8            |               |
-      | 8  | Traverse  | 7            |               |
-      | 7  | IndexScan | 0            |               |
-      | 0  | Start     |              |               |
+      | id | name           | dependencies | operator info                                        |
+      | 5  | Project        | 9            |                                                      |
+      | 9  | AppendVertices | 8            |                                                      |
+      | 8  | Traverse       | 7            | {"edge filter": "", "filter": "(like.likeness==95)"} |
+      | 7  | IndexScan      | 0            |                                                      |
+      | 0  | Start          |              |                                                      |
 
   Scenario: eliminate AppendVertices failed with returned path
     When profiling query:

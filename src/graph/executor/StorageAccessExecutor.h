@@ -11,6 +11,13 @@
 #include "graph/executor/Executor.h"
 #include "graph/util/Utils.h"
 
+using nebula::storage::StorageRpcResponse;
+using nebula::storage::cpp2::GetNeighborsResponse;
+using RpcResponse = StorageRpcResponse<GetNeighborsResponse>;
+using PropRpcResponse = StorageRpcResponse<nebula::storage::cpp2::GetPropResponse>;
+using VertexProp = nebula::storage::cpp2::VertexProp;
+using nebula::storage::StorageClient;
+
 namespace nebula {
 
 class Expression;
@@ -148,12 +155,11 @@ class StorageAccessExecutor : public Executor {
   }
 
   template <typename RESP>
-  void addStats(storage::StorageRpcResponse<RESP> &resp,
-                std::unordered_map<std::string, std::string> &stats) const {
+  void addStats(storage::StorageRpcResponse<RESP> &resp) {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
       auto info = util::collectRespProfileData(resp.responses()[i].get_result(), hostLatency[i]);
-      stats.emplace(folly::sformat("resp[{}]", i), folly::toPrettyJson(info));
+      addState(folly::sformat("resp[{}]", i), std::move(info));
     }
   }
 
@@ -168,6 +174,15 @@ class StorageAccessExecutor : public Executor {
                                                          Expression *expr,
                                                          bool dedup,
                                                          bool isCypher = false);
+
+  bool hasSameEdge(const std::vector<Value> &edgeList, const Edge &edge);
+
+  void addGetNeighborStats(RpcResponse &resp, size_t stepNum, bool reverse);
+
+  folly::Future<std::vector<Value>> getProps(const std::vector<Value> &vids,
+                                             const std::vector<VertexProp> *vertexPropPtr);
+
+  std::vector<Value> handlePropResp(PropRpcResponse &&resps);
 };
 
 }  // namespace graph

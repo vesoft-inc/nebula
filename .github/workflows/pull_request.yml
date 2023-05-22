@@ -21,10 +21,10 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           clean: false
       - name: Check License Header
@@ -40,7 +40,7 @@ jobs:
         run: |
           git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
@@ -86,10 +86,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Prepare environment
         id: prepare
         run: |
@@ -106,23 +106,23 @@ jobs:
               cmake \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DNEBULA_USE_LINKER=mold \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::8"
               ;;
             ubuntu2004)
               # build with Debug type
               cmake \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DNEBULA_USE_LINKER=mold \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_COVERAGE=on \
                   -GNinja \
                   -B build
-              echo "::set-output name=j::8"
               ;;
             esac
             ;;
@@ -131,13 +131,13 @@ jobs:
             cmake \
                 -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
                 -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
+                -DNEBULA_USE_LINKER=mold \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_MEMORY_TRACKER=off \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -GNinja \
                 -B build
-            echo "::set-output name=j::4"
             ;;
           esac
       - name: Make
@@ -154,7 +154,7 @@ jobs:
             ubuntu2004)
               # build with Debug type
               ccache -z
-              ninja -j $(($(nproc)/2+1))
+              ninja -j $(nproc)
               ccache -s
               ;;
             esac
@@ -199,17 +199,17 @@ jobs:
         timeout-minutes: 4
       - name: Pytest
         run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
+          make RM_DIR=false DEBUG=false J=8 test
         working-directory: tests/
         timeout-minutes: 15
       - name: TCK
         run: |
-          make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=${{ steps.cmake.outputs.j }} tck
+          make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=8 tck
         working-directory: tests/
         timeout-minutes: 60
       - name: LDBC
         run: |
-          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+          make RM_DIR=false DEBUG=false J=8 ldbc
         working-directory: tests/
         timeout-minutes: 60
       - name: Down cluster
@@ -221,7 +221,7 @@ jobs:
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         run: |
             ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
         with:
           files: fastcov.info
@@ -231,7 +231,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs

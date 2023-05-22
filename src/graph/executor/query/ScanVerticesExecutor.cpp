@@ -22,11 +22,6 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *sv = asNode<ScanVertices>(node());
-  if (sv->limit() < 0) {
-    return Status::Error(
-        "Scan vertices or edges need to specify a limit number,"
-        " or limit number can not push down.");
-  }
   StorageClient *storageClient = qctx()->getStorageClient();
 
   time::Duration scanVertexTime;
@@ -39,12 +34,12 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
       .via(runner())
       .ensure([this, scanVertexTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", scanVertexTime.elapsedInUSec()));
+        addState("total_rpc", scanVertexTime);
       })
       .thenValue([this, sv](StorageRpcResponse<ScanResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addStats(rpcResp, otherStats_);
+        addStats(rpcResp);
         return handleResp(std::move(rpcResp), sv->colNames());
       });
 }

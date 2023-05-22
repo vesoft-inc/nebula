@@ -72,9 +72,9 @@ class QueryUtils final {
    * @param field Field definition
    * @return StatusOr<nebula::Value>
    */
-  static StatusOr<nebula::Value> readValue(RowReader* reader,
+  static StatusOr<nebula::Value> readValue(RowReaderWrapper* reader,
                                            const std::string& propName,
-                                           const meta::SchemaProviderIf::Field* field) {
+                                           const meta::NebulaSchemaProvider::SchemaField* field) {
     auto value = reader->getValueByName(propName);
     if (value.type() == Value::Type::NULLVALUE) {
       // read null value
@@ -118,9 +118,9 @@ class QueryUtils final {
    * @param schema
    * @return StatusOr<nebula::Value>
    */
-  static StatusOr<nebula::Value> readValue(RowReader* reader,
+  static StatusOr<nebula::Value> readValue(RowReaderWrapper* reader,
                                            const std::string& propName,
-                                           const meta::SchemaProviderIf* schema) {
+                                           const meta::NebulaSchemaProvider* schema) {
     auto field = schema->field(propName);
     if (!field) {
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
@@ -131,7 +131,7 @@ class QueryUtils final {
   static StatusOr<nebula::Value> readEdgeProp(folly::StringPiece key,
                                               size_t vIdLen,
                                               bool isIntId,
-                                              RowReader* reader,
+                                              RowReaderWrapper* reader,
                                               const PropContext& prop) {
     switch (prop.propInKeyType_) {
       // prop in value
@@ -171,7 +171,7 @@ class QueryUtils final {
   static StatusOr<nebula::Value> readVertexProp(folly::StringPiece key,
                                                 size_t vIdLen,
                                                 bool isIntId,
-                                                RowReader* reader,
+                                                RowReaderWrapper* reader,
                                                 const PropContext& prop) {
     switch (prop.propInKeyType_) {
       // prop in value
@@ -199,7 +199,7 @@ class QueryUtils final {
   static Status collectVertexProps(folly::StringPiece key,
                                    size_t vIdLen,
                                    bool isIntId,
-                                   RowReader* reader,
+                                   RowReaderWrapper* reader,
                                    const std::vector<PropContext>* props,
                                    nebula::List& list,
                                    StorageExpressionContext* expCtx = nullptr,
@@ -224,7 +224,7 @@ class QueryUtils final {
   static Status collectEdgeProps(folly::StringPiece key,
                                  size_t vIdLen,
                                  bool isIntId,
-                                 RowReader* reader,
+                                 RowReaderWrapper* reader,
                                  const std::vector<PropContext>* props,
                                  nebula::List& list,
                                  StorageExpressionContext* expCtx = nullptr,

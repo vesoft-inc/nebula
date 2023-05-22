@@ -12,8 +12,6 @@
 
 using nebula::storage::StorageClient;
 
-DEFINE_uint32(num_path_thread, 0, "number of concurrent threads when do shortest path");
-
 namespace nebula {
 namespace graph {
 
@@ -30,13 +28,15 @@ folly::Future<Status> ShortestPathExecutor::execute() {
   HashSet endVids;
   size_t rowSize = checkInput(startVids, endVids);
   std::unique_ptr<ShortestPathBase> pathPtr = nullptr;
+  std::unordered_map<std::string, std::string> stats;
   if (rowSize <= FLAGS_num_path_thread) {
-    pathPtr = std::make_unique<SingleShortestPath>(pathNode_, qctx_, &otherStats_);
+    pathPtr = std::make_unique<SingleShortestPath>(pathNode_, qctx_, &stats);
   } else {
-    pathPtr = std::make_unique<BatchShortestPath>(pathNode_, qctx_, &otherStats_);
+    pathPtr = std::make_unique<BatchShortestPath>(pathNode_, qctx_, &stats);
   }
   auto status = pathPtr->execute(startVids, endVids, &result).get();
   NG_RETURN_IF_ERROR(status);
+  mergeStats(std::move(stats));
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 

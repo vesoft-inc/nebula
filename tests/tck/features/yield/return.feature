@@ -16,6 +16,13 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       | 2   |
     When executing query:
       """
+      RETURN last(LIST[]) AS a, head(LIST[]) AS b
+      """
+    Then the result should be, in any order:
+      | a    | b    |
+      | NULL | NULL |
+    When executing query:
+      """
       RETURN 1- -1 AS sub
       """
     Then the result should be, in any order:
@@ -26,6 +33,11 @@ Feature: Return. A standalone return sentence is actually a yield sentence
       RETURN 1--1 AS sub
       """
     Then a SyntaxError should be raised at runtime: syntax error near `--'
+    When executing query:
+      """
+      MATCH (v:player) RETURN none_direct_dst(LIST[]) AS a
+      """
+    Then a SemanticError should be raised at runtime: Type error `none_direct_dst([])'
     When executing query:
       """
       RETURN  [2,3 ] - [3] AS sub

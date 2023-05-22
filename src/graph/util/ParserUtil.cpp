@@ -59,6 +59,11 @@ void ParserUtil::rewriteLC(QueryContext *qctx,
             node->setAlias(newVarName);
           }
         }
+        for (auto &edge : matchPath.edges()) {
+          if (edge->alias() == oldVarName) {
+            edge->setAlias(newVarName);
+          }
+        }
         return static_cast<Expression *>(mpp);
       } break;
       default:

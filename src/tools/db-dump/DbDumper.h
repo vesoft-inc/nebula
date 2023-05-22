@@ -61,7 +61,7 @@ class DbDumper {
 
   std::string getEdgeName(const EdgeType edgeType);
 
-  void printValue(const RowReader* reader);
+  void printValue(const RowReaderWrapper* reader);
 
   bool isValidVidLen(VertexID vid);
 

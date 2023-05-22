@@ -45,10 +45,10 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
 #include "graph/executor/admin/ZoneExecutor.h"
+#include "graph/executor/algo/AllPathsExecutor.h"
 #include "graph/executor/algo/BFSShortestPathExecutor.h"
 #include "graph/executor/algo/CartesianProductExecutor.h"
 #include "graph/executor/algo/MultiShortestPathExecutor.h"
-#include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
 #include "graph/executor/logic/ArgumentExecutor.h"
@@ -69,9 +69,10 @@
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
+#include "graph/executor/query/ExpandAllExecutor.h"
+#include "graph/executor/query/ExpandExecutor.h"
 #include "graph/executor/query/FilterExecutor.h"
 #include "graph/executor/query/FulltextIndexScanExecutor.h"
-#include "graph/executor/query/GetDstBySrcExecutor.h"
 #include "graph/executor/query/GetEdgesExecutor.h"
 #include "graph/executor/query/GetNeighborsExecutor.h"
 #include "graph/executor/query/GetVerticesExecutor.h"
@@ -200,6 +201,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kGetNeighbors: {
       return pool->makeAndAdd<GetNeighborsExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kExpand: {
+      return pool->makeAndAdd<ExpandExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kExpandAll: {
+      return pool->makeAndAdd<ExpandAllExecutor>(node, qctx);
     }
     case PlanNode::Kind::kFulltextIndexScan: {
       return pool->makeAndAdd<FulltextIndexScanExecutor>(node, qctx);
@@ -458,8 +465,8 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kMultiShortestPath: {
       return pool->makeAndAdd<MultiShortestPathExecutor>(node, qctx);
     }
-    case PlanNode::Kind::kProduceAllPaths: {
-      return pool->makeAndAdd<ProduceAllPathsExecutor>(node, qctx);
+    case PlanNode::Kind::kAllPaths: {
+      return pool->makeAndAdd<AllPathsExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCartesianProduct: {
       return pool->makeAndAdd<CartesianProductExecutor>(node, qctx);
@@ -562,9 +569,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kShortestPath: {
       return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
-    }
-    case PlanNode::Kind::kGetDstBySrc: {
-      return pool->makeAndAdd<GetDstBySrcExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
       DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

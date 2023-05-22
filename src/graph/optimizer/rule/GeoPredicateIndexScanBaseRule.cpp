@@ -9,11 +9,11 @@
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
-#include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/OptimizerUtils.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;
@@ -46,11 +46,12 @@ bool GeoPredicateIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& 
 
 StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     OptContext* ctx, const MatchedResult& matched) const {
+  auto qctx = ctx->qctx();
   auto filter = static_cast<const Filter*>(matched.planNode());
   auto node = matched.planNode({0, 0});
   auto scan = static_cast<const IndexScan*>(node);
 
-  auto metaClient = ctx->qctx()->getMetaClient();
+  auto metaClient = qctx->getMetaClient();
   auto status = node->kind() == graph::PlanNode::Kind::kTagIndexFullScan
                     ? metaClient->getTagIndexesFromCache(scan->space())
                     : metaClient->getEdgeIndexesFromCache(scan->space());
@@ -65,24 +66,39 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
 
   auto condition = filter->condition();
-  DCHECK(graph::ExpressionUtils::isGeoIndexAcceleratedPredicate(condition));
+  if (!graph::ExpressionUtils::isGeoIndexAcceleratedPredicate(condition)) {
+    return TransformResult::noTransform();
+  }
 
   auto* geoPredicate = static_cast<FunctionCallExpression*>(condition);
-  DCHECK_GE(geoPredicate->args()->numArgs(), 2);
+  if (geoPredicate->args()->numArgs() < 2) {
+    return TransformResult::noTransform();
+  }
   std::string geoPredicateName = geoPredicate->name();
   folly::toLowerAscii(geoPredicateName);
   auto* first = geoPredicate->args()->args()[0];
   auto* second = geoPredicate->args()->args()[1];
-  DCHECK(first->kind() == Expression::Kind::kTagProperty ||
-         first->kind() == Expression::Kind::kEdgeProperty);
-  DCHECK(second->kind() == Expression::Kind::kConstant);
-  const auto& secondVal = static_cast<const ConstantExpression*>(second)->value();
-  DCHECK(secondVal.isGeography());
+  if (first->kind() != Expression::Kind::kTagProperty &&
+      first->kind() != Expression::Kind::kEdgeProperty) {
+    return TransformResult::noTransform();
+  }
+
+  if (!graph::ExpressionUtils::isEvaluableExpr(second, qctx)) {
+    return TransformResult::noTransform();
+  }
+
+  auto secondVal = second->eval(graph::QueryExpressionContext(qctx->ectx())());
+  if (!secondVal.isGeography()) {
+    return TransformResult::noTransform();
+  }
+
   const auto& geog = secondVal.getGeography();
 
   auto indexItem = indexItems.back();
   const auto& fields = indexItem->get_fields();
-  DCHECK_EQ(fields.size(), 1);  // geo field
+  if (fields.size() != 1) {
+    return TransformResult::noTransform();
+  }
   auto& geoField = fields.back();
   auto& geoColumnTypeDef = geoField.get_type();
   bool isPointColumn = geoColumnTypeDef.geo_shape_ref().has_value() &&
@@ -107,12 +123,18 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   } else if (geoPredicateName == "st_coveredby") {
     scanRanges = geoIndex.covers(geog);
   } else if (geoPredicateName == "st_dwithin") {
-    DCHECK_GE(geoPredicate->args()->numArgs(), 3);
+    if (geoPredicate->args()->numArgs() < 3) {
+      return TransformResult::noTransform();
+    }
     auto* third = geoPredicate->args()->args()[2];
-    DCHECK_EQ(third->kind(), Expression::Kind::kConstant);
-    const auto& thirdVal = static_cast<const ConstantExpression*>(third)->value();
-    DCHECK(thirdVal.isNumeric());
-    double distanceInMeters = thirdVal.isFloat() ? thirdVal.getFloat() : thirdVal.getInt();
+    if (!graph::ExpressionUtils::isEvaluableExpr(third, qctx)) {
+      return TransformResult::noTransform();
+    }
+    auto thirdVal = third->eval(graph::QueryExpressionContext(qctx->ectx())());
+    if (!thirdVal.isNumeric()) {
+      return TransformResult::noTransform();
+    }
+    auto distanceInMeters = thirdVal.isFloat() ? thirdVal.getFloat() : thirdVal.getInt();
     scanRanges = geoIndex.dWithin(geog, distanceInMeters);
   }
   std::vector<IndexQueryContext> idxCtxs;
@@ -128,8 +150,8 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     idxCtxs.emplace_back(std::move(ictx));
   }
 
-  auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
+  auto scanNode = IndexScan::make(qctx, nullptr);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage
@@ -142,7 +164,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
   TransformResult result;
   result.newGroupNodes.emplace_back(optScanNode);
-  result.eraseCurr = true;
+  result.eraseAll = true;
   return result;
 }
 

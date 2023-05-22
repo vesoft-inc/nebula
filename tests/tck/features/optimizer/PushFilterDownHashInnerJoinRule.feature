@@ -221,6 +221,29 @@ Feature: Push Filter down HashInnerJoin rule
       | 9  | AppendVertices | 8            |                                                                                                     |
       | 8  | Traverse       | 7            |                                                                                                     |
       | 7  | Argument       |              |                                                                                                     |
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.name == "Tony Parker"
+      YIELD id(vertex) as id |
+      GO FROM $-.id OVER like
+      WHERE (like.likeness - 1) >= 0
+      YIELD like._src AS src_id, like._dst AS dst_id, like.likeness AS likeness
+      """
+    Then the result should be, in any order:
+      | src_id        | dst_id              | likeness |
+      | "Tony Parker" | "LaMarcus Aldridge" | 90       |
+      | "Tony Parker" | "Manu Ginobili"     | 95       |
+      | "Tony Parker" | "Tim Duncan"        | 95       |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info                        |
+      | 10 | Project            | 14           |                                      |
+      | 14 | HashInnerJoin      | 3,15         |                                      |
+      | 3  | Project            | 11           |                                      |
+      | 11 | TagIndexPrefixScan | 0            |                                      |
+      | 0  | Start              |              |                                      |
+      | 15 | ExpandAll          | 6            | {"filter": "((like.likeness-1)>=0)"} |
+      | 6  | Expand             | 5            |                                      |
+      | 5  | Argument           |              |                                      |
 
   Scenario: NOT push filter down HashInnerJoin
     When profiling query:

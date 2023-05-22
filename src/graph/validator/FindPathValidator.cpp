@@ -37,15 +37,28 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
     return Status::OK();
   }
   // Not Support $-、$var、$$.tag.prop、$^.tag.prop、agg
-  auto expr = where->filter();
-  if (ExpressionUtils::findAny(expr,
+  auto filterExpr = where->filter();
+  if (ExpressionUtils::findAny(filterExpr,
                                {Expression::Kind::kSrcProperty,
                                 Expression::Kind::kDstProperty,
                                 Expression::Kind::kVarProperty,
                                 Expression::Kind::kInputProperty})) {
-    return Status::SemanticError("Not support `%s' in where sentence.", expr->toString().c_str());
+    return Status::SemanticError("Not support `%s' in where sentence.",
+                                 filterExpr->toString().c_str());
   }
-  where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
+
+  auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filterExpr, qctx_);
+  if (!undefinedParams.empty()) {
+    return Status::SemanticError(
+        "Undefined parameters: " +
+        std::accumulate(++undefinedParams.begin(),
+                        undefinedParams.end(),
+                        *undefinedParams.begin(),
+                        [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
+  }
+  auto* newFilter = graph::ExpressionUtils::rewriteParameter(filterExpr, qctx_);
+
+  where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(newFilter));
   auto filter = where->filter();
 
   auto typeStatus = deduceExprType(filter);

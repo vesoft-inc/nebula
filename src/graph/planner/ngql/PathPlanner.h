@@ -35,7 +35,9 @@ class PathPlanner final : public Planner {
 
   SubPlan multiPairPlan(PlanNode* left, PlanNode* right);
 
-  SubPlan allPairPlan(PlanNode* left, PlanNode* right);
+  StatusOr<SubPlan> allPathPlan();
+
+  SubPlan pathInputPlan(PlanNode* dep, Starts& starts);
 
   PlanNode* buildPathProp(PlanNode* dep);
 
@@ -46,11 +48,12 @@ class PathPlanner final : public Planner {
   PlanNode* buildEdgePlan(PlanNode* dep, const std::string& input);
 
  private:
-  std::unique_ptr<std::vector<EdgeProp>> buildEdgeProps(bool reverse);
+  std::unique_ptr<std::vector<EdgeProp>> buildEdgeProps(bool reverse, bool withProp = false);
 
   void doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeProps,
                         bool reverse,
-                        bool isInEdge);
+                        bool isInEdge,
+                        bool withProp);
 
   void buildStart(Starts& starts, std::string& startVidsVar, bool reverse);
 
@@ -59,8 +62,6 @@ class PathPlanner final : public Planner {
                                       const std::string& terminateEarlyVar);
 
   Expression* multiPairLoopCondition(uint32_t steps, const std::string& pathVar);
-
-  Expression* allPairLoopCondition(uint32_t steps);
 
   /*
    *  find path from $-.src to $-.dst

@@ -51,7 +51,8 @@ void PropertyTracker::insertVertexProp(const std::string &name,
     vertexPropsMap[name][tagId].emplace(propName);
   } else {
     auto propIter = iter->second.find(tagId);
-    if (propIter == iter->second.end()) {
+    if (propIter == iter->second.end() || propName == "*") {
+      iter->second.erase(tagId);
       std::unordered_set<std::string> temp({propName});
       iter->second.emplace(tagId, std::move(temp));
     } else {
@@ -162,19 +163,24 @@ void PropertyTrackerVisitor::visit(EdgePropertyExpression *expr) {
 }
 
 void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
-  if (!status.ok()) {
-    status_ = std::move(status).status();
-    return;
-  }
   auto &nodeAlias = static_cast<VariablePropertyExpression *>(expr->label())->prop();
   auto &tagName = expr->sym();
   auto &propName = expr->prop();
+
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
   if (!ret.ok()) {
-    status_ = std::move(ret).status();
-    return;
+    // if the we switch space in the query, we need to get the space id from the validation context
+    // use xxx; match xxx
+    if (qctx_->vctx()->spaceChosen()) {
+      space_ = qctx_->vctx()->whichSpace().id;
+      ret = qctx_->schemaMng()->toTagID(qctx_->vctx()->whichSpace().id, tagName);
+      if (!ret.ok()) {
+        status_ = std::move(ret).status();
+        return;
+      }
+    }
   }
+
   auto tagId = ret.value();
   propsUsed_.insertVertexProp(nodeAlias, tagId, propName);
 }
@@ -203,10 +209,18 @@ void PropertyTrackerVisitor::visit(AttributeExpression *expr) {
   auto &propName = constVal.getStr();
   switch (lhs->kind()) {
     case Expression::Kind::kInputProperty:
-    case Expression::Kind::kVarProperty: {  // $e.name
+    case Expression::Kind::kVarProperty: {
       auto *varPropExpr = static_cast<PropertyExpression *>(lhs);
-      auto &edgeAlias = varPropExpr->prop();
-      propsUsed_.insertEdgeProp(edgeAlias, unknownType_, propName);
+      auto &entityAlias = varPropExpr->prop();
+      // maybe : $v.tag
+      auto ret = qctx_->schemaMng()->toTagID(space_, propName);
+      if (ret.ok()) {
+        auto tagId = ret.value();
+        propsUsed_.insertVertexProp(entityAlias, tagId, "*");
+        break;
+      }
+      // maybe: $e.prop
+      propsUsed_.insertEdgeProp(entityAlias, unknownType_, propName);
       break;
     }
     case Expression::Kind::kCase: {  // (case xxx).name

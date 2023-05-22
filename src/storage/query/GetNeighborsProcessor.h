@@ -23,8 +23,6 @@ extern ProcessorCounters kGetNeighborsCounters;
  */
 class GetNeighborsProcessor
     : public QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::GetNeighborsResponse> {
-  FRIEND_TEST(ScanEdgePropBench, EdgeTypePrefixScanVsVertexPrefixScan);
-
  public:
   /**
    * @brief Construct instance of GetNeighborsProcessor

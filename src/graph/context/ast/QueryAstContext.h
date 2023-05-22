@@ -93,17 +93,16 @@ struct GoContext final : AstContext {
   bool joinInput{false};
   // true when $$.tag.prop exist
   bool joinDst{false};
-  // Optimize for some simple go sentence which only need dst id.
   bool isSimple{false};
-  // The column name used by plan node`GetDstBySrc`
-  std::string dstIdColName{kDst};
 
   ExpressionProps exprProps;
 
   // save dst prop
   YieldColumns* dstPropsExpr;
-  // save src and edge prop
-  YieldColumns* srcEdgePropsExpr;
+  // save src prop
+  YieldColumns* srcPropsExpr;
+  // save edge prop
+  YieldColumns* edgePropsExpr;
   // for track vid in Nsteps
   std::string srcVidColName;
   std::string dstVidColName;

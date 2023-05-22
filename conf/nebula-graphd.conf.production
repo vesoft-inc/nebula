@@ -115,3 +115,13 @@
 --memory_purge_enabled=true
 # memory background purge interval in seconds
 --memory_purge_interval_seconds=10
+
+########## performance optimization ##########
+# The max job size in multi job mode
+--max_job_size=1
+# The min batch size for handling dataset in multi job mode, only enabled when max_job_size is greater than 1
+--min_batch_size=8192
+# if true, return directly without go through RPC
+--optimize_appendvertices=false
+# number of paths constructed by each thread
+--path_batch_size=10000

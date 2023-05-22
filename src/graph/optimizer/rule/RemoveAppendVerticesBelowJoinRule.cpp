@@ -52,6 +52,7 @@ StatusOr<OptRule::TransformResult> RemoveAppendVerticesBelowJoinRule::transform(
   auto& avNodeAlias = appendVertices->nodeAlias();
 
   auto& tvEdgeAlias = traverse->edgeAlias();
+  auto& tvNodeAlias = traverse->nodeAlias();
 
   auto& leftExprs = join->hashKeys();
   auto& rightExprs = join->probeKeys();
@@ -148,6 +149,7 @@ StatusOr<OptRule::TransformResult> RemoveAppendVerticesBelowJoinRule::transform(
   // and let the new left/inner join use it as right expr
   auto* args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, tvEdgeAlias));
+  args->addArgument(InputPropertyExpression::make(pool, tvNodeAlias));
   auto* newPrjExpr = FunctionCallExpression::make(pool, "none_direct_dst", args);
 
   auto oldYieldColumns = project->columns()->columns();

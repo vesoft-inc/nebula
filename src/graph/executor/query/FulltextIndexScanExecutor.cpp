@@ -114,16 +114,6 @@ StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
     }
   }
 
-  // auto retryCnt = FLAGS_ft_request_retry_times > 0 ? FLAGS_ft_request_retry_times : 1;
-  // StatusOr<nebula::plugin::ESQueryResult> result;
-  // while (retryCnt-- > 0) {
-  //   result = execFunc();
-  //   if (!result.ok()) {
-  //     continue;
-  //   }
-  //   break;
-  // }
-
   return execFunc();
 }
 

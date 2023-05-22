@@ -7,9 +7,38 @@
 
 #include "PlanNode.h"
 #include "graph/planner/plan/PlanNodeVisitor.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
+
+PlanNode* AllPaths::clone() const {
+  auto* path = AllPaths::make(qctx_, nullptr, nullptr, space_, steps_, noLoop_, withProp_);
+  path->cloneMembers(*this);
+  return path;
+}
+
+void AllPaths::cloneMembers(const AllPaths& path) {
+  BinaryInputNode::cloneMembers(path);
+  limit_ = path.limit_;
+  filter_ = path.filter_;
+  stepFilter_ = path.stepFilter_;
+  if (path.vertexProps_) {
+    auto vertexProps = *path.vertexProps_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(vertexProps);
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+  if (path.edgeProps_) {
+    auto edgeProps = *path.edgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+  if (path.reverseEdgeProps_) {
+    auto edgeProps = *path.reverseEdgeProps_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setReverseEdgeProps(std::move(edgePropsPtr));
+  }
+}
 
 std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
@@ -27,12 +56,18 @@ std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> ProduceAllPaths::explain() const {
+std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   auto desc = BinaryInputNode::explain();
-  addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
-  addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("noloop ", folly::toJson(util::toJson(noLoop_)), desc.get());
+  addDescription("withProp ", folly::toJson(util::toJson(withProp_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
+  addDescription("stepFilter", stepFilter_ == nullptr ? "" : stepFilter_->toString(), desc.get());
+  addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
+  addDescription(
+      "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());
+  addDescription(
+      "edgeProps", edgeProps_ ? folly::toJson(util::toJson(*edgeProps_)) : "", desc.get());
   return desc;
 }
 
@@ -71,7 +106,7 @@ void ShortestPath::cloneMembers(const ShortestPath& path) {
   if (path.reverseEdgeProps_) {
     auto edgeProps = *path.reverseEdgeProps_;
     auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
-    setEdgeProps(std::move(edgePropsPtr));
+    setReverseEdgeProps(std::move(edgePropsPtr));
   }
 }
 
@@ -103,34 +138,6 @@ std::vector<std::string> CartesianProduct::inputVars() const {
   }
   return varNames;
 }
-
-std::unique_ptr<PlanNodeDescription> CrossJoin::explain() const {
-  return BinaryInputNode::explain();
-}
-
-PlanNode* CrossJoin::clone() const {
-  auto* node = make(qctx_);
-  node->cloneMembers(*this);
-  return node;
-}
-
-void CrossJoin::cloneMembers(const CrossJoin& r) {
-  BinaryInputNode::cloneMembers(r);
-}
-
-CrossJoin::CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right)
-    : BinaryInputNode(qctx, Kind::kCrossJoin, left, right) {
-  auto lColNames = left->colNames();
-  auto rColNames = right->colNames();
-  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
-  setColNames(lColNames);
-}
-
-void CrossJoin::accept(PlanNodeVisitor* visitor) {
-  visitor->visit(this);
-}
-
-CrossJoin::CrossJoin(QueryContext* qctx) : BinaryInputNode(qctx, Kind::kCrossJoin) {}
 
 std::unique_ptr<PlanNodeDescription> Subgraph::explain() const {
   auto desc = SingleInputNode::explain();

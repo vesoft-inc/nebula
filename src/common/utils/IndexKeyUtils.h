@@ -9,7 +9,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/geo/GeoIndex.h"
@@ -545,16 +545,16 @@ class IndexKeyUtils final {
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
   static StatusOr<std::vector<std::string>> collectIndexValues(
-      RowReader* reader,
+      RowReaderWrapper* reader,
       const meta::cpp2::IndexItem* indexItem,
-      const meta::SchemaProviderIf* latestSchema = nullptr);
+      const meta::NebulaSchemaProvider* latestSchema = nullptr);
 
  private:
   IndexKeyUtils() = delete;
 
-  static StatusOr<Value> readValueWithLatestSche(RowReader* reader,
+  static StatusOr<Value> readValueWithLatestSche(RowReaderWrapper* reader,
                                                  const std::string propName,
-                                                 const meta::SchemaProviderIf* latestSchema);
+                                                 const meta::NebulaSchemaProvider* latestSchema);
 
   static Status checkValue(const Value& v, bool isNullable);
 };

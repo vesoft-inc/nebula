@@ -7,7 +7,8 @@
 
 #include <memory>
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "common/expression/ExprVisitorImpl.h"
+#include "common/meta/SchemaManager.h"
 
 namespace nebula {
 namespace graph {
@@ -15,6 +16,13 @@ namespace graph {
 class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  public:
   explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
+  ExtractFilterExprVisitor(ObjectPool *ObjPool,
+                           GraphSpaceID spaceId,
+                           meta::SchemaManager *schemaMng)
+      : pool_(ObjPool), spaceId_(spaceId), schemaMng_(schemaMng) {}
+
+  explicit ExtractFilterExprVisitor(ObjectPool *ObjPool, std::vector<std::string> colNames)
+      : pool_(ObjPool), colNames_(std::move(colNames)) {}
 
   bool ok() const override {
     return canBePushed_;
@@ -28,20 +36,26 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
     return remainedExpr_;
   }
 
-  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
-    ExtractFilterExprVisitor visitor(pool);
+  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool,
+                                                       GraphSpaceID spaceId = -1,
+                                                       meta::SchemaManager *schemaMng = nullptr) {
+    ExtractFilterExprVisitor visitor(pool, spaceId, schemaMng);
     visitor.pushType_ = PushType::kGetNeighbors;
     return visitor;
   }
 
-  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool *pool) {
-    ExtractFilterExprVisitor visitor(pool);
+  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool *pool,
+                                                      GraphSpaceID spaceId = -1,
+                                                      meta::SchemaManager *schemaMng = nullptr) {
+    ExtractFilterExprVisitor visitor(pool, spaceId, schemaMng);
     visitor.pushType_ = PushType::kGetVertices;
     return visitor;
   }
 
-  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool *pool) {
-    ExtractFilterExprVisitor visitor(pool);
+  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool *pool,
+                                                   GraphSpaceID spaceId = -1,
+                                                   meta::SchemaManager *schemaMng = nullptr) {
+    ExtractFilterExprVisitor visitor(pool, spaceId, schemaMng);
     visitor.pushType_ = PushType::kGetEdges;
     return visitor;
   }
@@ -70,6 +84,7 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   void visit(LogicalExpression *) override;
   void visit(ColumnExpression *) override;
   void visit(SubscriptRangeExpression *) override;
+  void visit(UnaryExpression *) override;
 
  private:
   enum class PushType {
@@ -92,8 +107,12 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   bool hasSplit{false};
   bool splitForbidden{false};
   Expression *remainedExpr_{nullptr};
+  bool remainedExprFromAnd_{false};
   Expression *extractedExpr_{nullptr};
   PushType pushType_{PushType::kGetNeighbors};
+  GraphSpaceID spaceId_{-1};
+  meta::SchemaManager *schemaMng_{nullptr};
+  std::vector<std::string> colNames_;
 };
 
 }  // namespace graph

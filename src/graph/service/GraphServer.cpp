@@ -66,13 +66,23 @@ bool GraphServer::start() {
     } catch (const std::exception &e) {
       FLOG_ERROR("Exception thrown while starting the graph RPC server: %s", e.what());
     }
-    serverStatus_.store(STATUS_STOPPED);
+    {
+      std::unique_lock<std::mutex> lkStop(muStop_);
+      serverStatus_.store(STATUS_STOPPED);
+      cvStop_.notify_one();
+    }
     FLOG_INFO("nebula-graphd on %s:%d has been stopped", localHost_.host.c_str(), localHost_.port);
   });
 
   while (serverStatus_ == STATUS_UNINITIALIZED) {
-    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
   }
+  // In case `thriftServer_->serve()` fails, we wait a short while
+  std::this_thread::sleep_for(std::chrono::microseconds(1000));
+  if (serverStatus_ != STATUS_RUNNING) {
+    return false;
+  }
+
   return true;
 }
 
@@ -89,10 +99,8 @@ void GraphServer::waitUntilStop() {
 
 void GraphServer::notifyStop() {
   std::unique_lock<std::mutex> lkStop(muStop_);
-  if (serverStatus_ == STATUS_RUNNING) {
-    serverStatus_ = STATUS_STOPPED;
-    cvStop_.notify_one();
-  }
+  serverStatus_ = STATUS_STOPPED;
+  cvStop_.notify_one();
 }
 
 // Stop the server.

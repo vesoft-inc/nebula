@@ -16,32 +16,50 @@ folly::Future<Status> ArgumentExecutor::execute() {
   // MemoryTrackerVerified
   auto *argNode = asNode<Argument>(node());
   auto &alias = argNode->getAlias();
-  auto iter = ectx_->getResult(argNode->inputVar()).iter();
-  DCHECK(iter != nullptr);
+  auto iter = DCHECK_NOTNULL(ectx_->getResult(argNode->inputVar()).iter());
 
-  const auto &successor = successors();
-  auto sucessorExecutor = *successor.begin();
-  bool flag = sucessorExecutor->node()->kind() != PlanNode::Kind::kGetVertices;
+  auto sz = iter->size();
 
   DataSet ds;
   ds.colNames = argNode->colNames();
-  ds.rows.reserve(iter->size());
+  ds.rows.reserve(sz);
+
   VidHashSet unique;
+  unique.reserve(sz);
+
+  auto addRow = [&unique, &ds](const Value &v) {
+    if (unique.emplace(v).second) {
+      Row row;
+      row.values.emplace_back(v);
+      ds.rows.emplace_back(std::move(row));
+    }
+  };
+
   for (; iter->valid(); iter->next()) {
     auto &val = iter->getColumn(alias);
     if (val.isNull()) {
       continue;
     }
-    // TODO(jmq) analyze the type of val in the validation phase
-    if (flag && !val.isVertex()) {
-      return Status::Error("Argument only support vertex, but got %s, which is type %s",
-                           val.toString().c_str(),
-                           val.typeName().c_str());
-    }
-    if (unique.emplace(val).second) {
-      Row row;
-      row.values.emplace_back(val);
-      ds.rows.emplace_back(std::move(row));
+
+    if (argNode->isInputVertexRequired()) {
+      if (!val.isVertex()) {
+        return Status::Error("Argument only support vertex, but got %s, whose type is '%s'",
+                             val.toString().c_str(),
+                             val.typeName().c_str());
+      }
+      addRow(val);
+    } else {
+      if (val.isList()) {
+        for (auto &v : val.getList().values) {
+          addRow(v);
+        }
+      } else if (val.isSet()) {
+        for (auto &v : val.getSet().values) {
+          addRow(v);
+        }
+      } else {
+        addRow(val);
+      }
     }
   }
   return finish(ResultBuilder().value(Value(std::move(ds))).build());

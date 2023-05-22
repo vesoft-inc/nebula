@@ -38,6 +38,11 @@ class MatchSolver final {
                                      QueryContext* qctx,
                                      bool isEdgeProperties = false);
 
+  static bool extractTagPropName(const Expression* expr,
+                                 const std::string& alias,
+                                 const std::string& label,
+                                 std::string* propName);
+
   static Expression* makeIndexFilter(const std::string& label,
                                      const std::string& alias,
                                      Expression* filter,

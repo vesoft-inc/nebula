@@ -61,27 +61,6 @@ void FoldConstantExprVisitor::visit(ArithmeticExpression *expr) {
 
 void FoldConstantExprVisitor::visit(RelationalExpression *expr) {
   visitBinaryExpr(expr);
-  if (expr->kind() == Expression::Kind::kRelIn) {
-    auto rhs = static_cast<RelationalExpression *>(expr)->right();
-    if (rhs->kind() == Expression::Kind::kConstant) {
-      auto ce = static_cast<ConstantExpression *>(rhs);
-      auto v = ce->value();
-      // Convert to more efficient C++ data structure based on the size of the container expression
-      if (v.isList()) {
-        auto &list = v.getList().values;
-        if (list.size() >= 16) {
-          ce->setValue(Set(std::unordered_set<Value>{std::make_move_iterator(list.begin()),
-                                                     std::make_move_iterator(list.end())}));
-        }
-      } else if (v.isSet()) {
-        auto &set = v.getSet().values;
-        if (set.size() < 16) {
-          ce->setValue(List(std::vector<Value>{std::make_move_iterator(set.begin()),
-                                               std::make_move_iterator(set.end())}));
-        }
-      }
-    }
-  }
 }
 
 void FoldConstantExprVisitor::visit(SubscriptExpression *expr) {
@@ -96,7 +75,6 @@ void FoldConstantExprVisitor::visit(AttributeExpression *expr) {
 void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
   auto &operands = expr->operands();
   auto foldable = true;
-  // auto shortCircuit = false;
   for (auto i = 0u; i < operands.size(); i++) {
     auto *operand = operands[i];
     operand->accept(this);
@@ -104,21 +82,10 @@ void FoldConstantExprVisitor::visit(LogicalExpression *expr) {
       auto *newExpr = fold(operand);
       if (!ok()) return;
       expr->setOperand(i, newExpr);
-      /*
-      if (newExpr->value().isBool()) {
-          auto value = newExpr->value().getBool();
-          if ((value && expr->kind() == Expression::Kind::kLogicalOr) ||
-                  (!value && expr->kind() == Expression::Kind::kLogicalAnd)) {
-              shortCircuit = true;
-              break;
-          }
-      }
-      */
     } else {
       foldable = false;
     }
   }
-  // canBeFolded_ = foldable || shortCircuit;
   canBeFolded_ = foldable;
 }
 

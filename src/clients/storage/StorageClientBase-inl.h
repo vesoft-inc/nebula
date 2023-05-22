@@ -106,20 +106,20 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
         memory::MemoryCheckGuard guard;
         StorageRpcResponse<Response> rpcResp(resps.size());
         for (size_t i = 0; i < resps.size(); i++) {
-          auto& host = hosts->at(i);
+          const auto& host = hosts->at(i);
           folly::Try<StatusOr<Response>>& tryResp = resps[i];
           if (tryResp.hasException()) {
             std::string errMsg = tryResp.exception().what().toStdString();
             rpcResp.markFailure();
             LOG(ERROR) << "There some RPC errors: " << errMsg;
-            auto req = requests.at(host);
-            auto parts = getReqPartsId(req);
+            const auto& req = requests.at(host);
+            const auto& parts = getReqPartsId(req);
             rpcResp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
           } else {
             StatusOr<Response> status = std::move(tryResp).value();
             if (status.ok()) {
               auto resp = std::move(status).value();
-              auto result = resp.get_result();
+              const auto& result = resp.get_result();
 
               if (!result.get_failed_parts().empty()) {
                 rpcResp.markFailure();
@@ -141,8 +141,8 @@ StorageClientBase<ClientType, ClientManagerType>::collectResponse(
                       ? nebula::cpp2::ErrorCode::E_GRAPH_MEMORY_EXCEEDED
                       : nebula::cpp2::ErrorCode::E_RPC_FAILURE;
               LOG(ERROR) << "There some RPC errors: " << s.message();
-              auto req = requests.at(host);
-              auto parts = getReqPartsId(req);
+              const auto& req = requests.at(host);
+              const auto& parts = getReqPartsId(req);
               rpcResp.appendFailedParts(parts, errorCode);
             }
           }

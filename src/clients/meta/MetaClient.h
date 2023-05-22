@@ -275,7 +275,8 @@ class MetaClient : public BaseMetaClient {
                                                     bool ifNotExists = false);
 
   folly::Future<StatusOr<GraphSpaceID>> createSpaceAs(const std::string& oldSpaceName,
-                                                      const std::string& newSpaceName);
+                                                      const std::string& newSpaceName,
+                                                      bool ifNotExists);
 
   folly::Future<StatusOr<std::vector<SpaceIdName>>> listSpaces();
 
@@ -750,7 +751,7 @@ class MetaClient : public BaseMetaClient {
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
 
   // Checks if the client version is compatible with the server version by checking the
-  // whilelist in meta.
+  // whitelist in meta.
   Status verifyVersion();
 
   // Save the version of the graph service into meta so that it could be looked up.

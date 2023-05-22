@@ -2,15 +2,8 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-nebula_add_library(
-    codec_test_obj OBJECT
-    ResultSchemaProvider.cpp
-    SchemaWriter.cpp
-)
-
 set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:codec_obj>
-    $<TARGET_OBJECTS:codec_test_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
@@ -47,18 +40,6 @@ set(CODEC_TEST_LIBS
 
 
 nebula_add_test(
-    NAME row_reader_v1_test
-    SOURCES RowReaderV1Test.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-)
-
-
-nebula_add_test(
     NAME row_reader_v2_test
     SOURCES RowReaderV2Test.cpp
     OBJECTS ${CODEC_TEST_LIBS}
@@ -82,22 +63,6 @@ nebula_add_test(
 )
 
 
-nebula_add_test(
-    NAME row_reader_bm
-    SOURCES
-        RowReaderBenchmark.cpp
-        RowWriterV1.cpp
-    OBJECTS ${CODEC_TEST_LIBS}
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        follybenchmark
-        wangle
-        boost_regex
-        gtest
-)
-
-
 nebula_add_executable(
     NAME row_writer_bm
     SOURCES
@@ -111,10 +76,3 @@ nebula_add_executable(
         wangle
         boost_regex
 )
-
-#nebula_add_test(
-#    NAME nebula_codec_test
-#    SOURCES NebulaCodecTest.cpp
-#    OBJECTS ${CODEC_TEST_LIBS}
-#    LIBRARIES ${THRIFT_LIBRARIES} wangle gtest
-#)

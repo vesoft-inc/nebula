@@ -65,7 +65,7 @@ class UpdateNode : public RelNode<T> {
   /**
    * @brief Check if Field exists
    */
-  nebula::cpp2::ErrorCode checkField(const meta::SchemaProviderIf::Field* field) {
+  nebula::cpp2::ErrorCode checkField(const meta::NebulaSchemaProvider::SchemaField* field) {
     if (!field) {
       VLOG(1) << "Fail to read prop";
       if (isEdge_) {
@@ -84,8 +84,8 @@ class UpdateNode : public RelNode<T> {
    * @return E_INVALID_FIELD_VALUE if the field can't be null and doesn't have default value, else
    * SUCCEEDED.
    */
-  nebula::cpp2::ErrorCode getDefaultOrNullValue(const meta::SchemaProviderIf::Field* field,
-                                                const std::string& name) {
+  nebula::cpp2::ErrorCode getDefaultOrNullValue(
+      const meta::NebulaSchemaProvider::SchemaField* field, const std::string& name) {
     if (field->hasDefault()) {
       ObjectPool pool;
       auto& exprStr = field->defaultValue();
@@ -172,7 +172,7 @@ class UpdateNode : public RelNode<T> {
   bool insertable_{false};
 
   std::string key_;
-  RowReader* reader_{nullptr};
+  RowReaderWrapper* reader_{nullptr};
 
   const meta::NebulaSchemaProvider* schema_{nullptr};
 
@@ -500,7 +500,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
    */
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);
     if (!values.ok()) {
@@ -853,7 +853,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
   }
 
   std::vector<std::string> indexKeys(PartitionID partId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      const cpp2::EdgeKey& edgeKey,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), schema_);

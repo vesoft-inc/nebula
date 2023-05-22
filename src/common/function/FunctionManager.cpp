@@ -432,6 +432,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::MAP}, Value::Type::DURATION)}},
     {"extract", {TypeSignature({Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST)}},
     {"_nodeid", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::INT)}},
+    {"_edge", {TypeSignature({Value::Type::PATH, Value::Type::INT}, Value::Type::EDGE)}},
     {"json_extract",
      {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
@@ -1582,23 +1583,6 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["near"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      // auto result = geo::GeoFilter::near(args);
-      // if (!result.ok()) {
-      //     return std::string("");
-      // } else {
-      //     return std::move(result).value();
-      // }
-      // TODO
-      UNUSED(args);
-      return std::string("");
-    };
-  }
-  {
     auto &attr = functions_["cos_similarity"];
     attr.minArity_ = 2;
     attr.maxArity_ = INT64_MAX;
@@ -1724,7 +1708,6 @@ FunctionManager::FunctionManager() {
           if (args[0].get().isStr()) {
             auto result = time::TimeUtils::parseTime(args[0].get().getStr());
             if (!result.ok()) {
-              DLOG(ERROR) << "DEBUG POINT: " << result.status();
               return Value::kNullBadData;
             }
             if (result.value().withTimeZone) {
@@ -2034,7 +2017,7 @@ FunctionManager::FunctionManager() {
     // More information of encoding could be found in `NebulaKeyUtils.h`
     auto &attr = functions_["none_direct_dst"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
@@ -2050,8 +2033,18 @@ FunctionManager::FunctionManager() {
           return v.vid;
         }
         case Value::Type::LIST: {
-          const auto &listVal = args[0].get().getList();
-          auto &lastVal = listVal.values.back();
+          const auto &listVal = args[0].get().getList().values;
+          if (listVal.empty()) {
+            if (args.size() == 2) {
+              if (args[1].get().type() == Value::Type::VERTEX) {
+                const auto &v = args[1].get().getVertex();
+                return v.vid;
+              }
+              return Value::kNullBadType;
+            }
+            return Value::kNullBadType;
+          }
+          auto &lastVal = listVal.back();
           if (lastVal.isEdge()) {
             return lastVal.getEdge().dst;
           } else if (lastVal.isVertex()) {
@@ -2184,7 +2177,8 @@ FunctionManager::FunctionManager() {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          return args[0].get().getList().values.front();
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.front();
         }
         default: {
           return Value::kNullBadType;
@@ -2203,7 +2197,8 @@ FunctionManager::FunctionManager() {
           return Value::kNullValue;
         }
         case Value::Type::LIST: {
-          return args[0].get().getList().values.back();
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.back();
         }
         default: {
           return Value::kNullBadType;
@@ -2859,6 +2854,39 @@ FunctionManager::FunctionManager() {
         return p.src.vid;
       } else {
         return p.steps[nodeIndex - 1].dst.vid;
+      }
+    };
+  }
+  {
+    auto &attr = functions_["_edge"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isPath() || !args[1].get().isInt()) {
+        return Value::kNullBadType;
+      }
+
+      const auto &p = args[0].get().getPath();
+      const std::size_t edgeIndex = args[1].get().getInt();
+      if (edgeIndex < 0 || edgeIndex >= p.steps.size()) {
+        DLOG(FATAL) << "Out of range edge index.";
+        return Value::kNullOutOfRange;
+      }
+      if (edgeIndex == 0) {
+        Edge edge;
+        edge.src = p.src.vid;
+        edge.dst = p.steps[0].dst.vid;
+        edge.type = p.steps[0].type;
+        edge.ranking = p.steps[0].ranking;
+        return edge;
+      } else {
+        Edge edge;
+        edge.src = p.steps[edgeIndex - 1].dst.vid;
+        edge.dst = p.steps[edgeIndex].dst.vid;
+        edge.type = p.steps[edgeIndex].type;
+        edge.ranking = p.steps[edgeIndex].ranking;
+        return edge;
       }
     };
   }

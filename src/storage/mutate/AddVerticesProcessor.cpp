@@ -35,6 +35,18 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     onFinished();
     return;
   }
+
+  auto schema = env_->schemaMan_->getAllLatestVerTagSchema(spaceId_);
+  if (!schema.ok()) {
+    LOG(ERROR) << "Load schema failed";
+    for (auto& part : partVertices) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND, part.first);
+    }
+    onFinished();
+    return;
+  }
+  tagSchema_ = schema.value();
+
   spaceVidLen_ = ret.value();
   callingNum_ = partVertices.size();
 
@@ -88,12 +100,13 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;
 
-        auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
-        if (!schema) {
+        auto schemaIter = tagSchema_.find(tagId);
+        if (schemaIter == tagSchema_.end()) {
           LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
           code = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
           break;
         }
+        auto schema = schemaIter->second.get();
 
         auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         if (ifNotExists_) {
@@ -118,7 +131,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         }
 
         WriteResult wRet;
-        auto retEnc = encodeRowVal(schema.get(), propNames, props, wRet);
+        auto retEnc = encodeRowVal(schema, propNames, props, wRet);
         if (!retEnc.ok()) {
           LOG(ERROR) << retEnc.status();
           code = writeResultTo(wRet, false);
@@ -169,12 +182,13 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;
 
-        auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
-        if (!schema) {
+        auto schemaIter = tagSchema_.find(tagId);
+        if (schemaIter == tagSchema_.end()) {
           LOG(ERROR) << "Space " << spaceId_ << ", Tag " << tagId << " invalid";
           code = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
           break;
         }
+        auto schema = schemaIter->second.get();
 
         auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         // collect values
@@ -186,7 +200,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         }
 
         WriteResult writeResult;
-        auto encode = encodeRowVal(schema.get(), propNames, props, writeResult);
+        auto encode = encodeRowVal(schema, propNames, props, writeResult);
         if (!encode.ok()) {
           LOG(ERROR) << encode.status();
           code = writeResultTo(writeResult, false);
@@ -227,12 +241,13 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
     RowReaderWrapper oldReader;
     RowReaderWrapper newReader =
         RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, value);
-    auto schema = env_->schemaMan_->getTagSchema(spaceId_, tagId);
-    if (!schema) {
+    auto schemaIter = tagSchema_.find(tagId);
+    if (schemaIter == tagSchema_.end()) {
       ret.code = nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
       DLOG(INFO) << "===>>> failed";
       return ret;
     }
+    auto schema = schemaIter->second.get();
     std::string oldVal;
     if (!ignoreExistedIndex_) {
       // read the old key value and initialize row reader if exists
@@ -255,7 +270,7 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
       if (tagId == index->get_schema_id().get_tag_id()) {
         // step 1, Delete old version index if exists.
         if (oldReader != nullptr) {
-          auto oldIndexKeys = indexKeys(partId, vId.str(), oldReader.get(), index, schema.get());
+          auto oldIndexKeys = indexKeys(partId, vId.str(), oldReader.get(), index, schema);
           if (!oldIndexKeys.empty()) {
             // Check the index is building for the specified partition or
             // not.
@@ -281,10 +296,10 @@ kvstore::MergeableAtomicOpResult AddVerticesProcessor::addVerticesWithIndex(
 
         // step 2, Insert new vertex index
         if (newReader != nullptr) {
-          auto newIndexKeys = indexKeys(partId, vId.str(), newReader.get(), index, schema.get());
+          auto newIndexKeys = indexKeys(partId, vId.str(), newReader.get(), index, schema);
           if (!newIndexKeys.empty()) {
             // check if index has ttl field, write it to index value if exists
-            auto field = CommonUtils::ttlValue(schema.get(), newReader.get());
+            auto field = CommonUtils::ttlValue(schema, newReader.get());
             auto indexVal = field.ok() ? IndexKeyUtils::indexVal(std::move(field).value()) : "";
             auto indexState = env_->getIndexState(spaceId_, partId);
             if (env_->checkRebuilding(indexState)) {
@@ -335,9 +350,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddVerticesProcessor::findOldValue
 std::vector<std::string> AddVerticesProcessor::indexKeys(
     PartitionID partId,
     const VertexID& vId,
-    RowReader* reader,
+    RowReaderWrapper* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-    const meta::SchemaProviderIf* latestSchema) {
+    const meta::NebulaSchemaProvider* latestSchema) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index.get(), latestSchema);
   if (!values.ok()) {
     return {};

@@ -52,7 +52,7 @@ const std::unordered_set<graph::PlanNode::Kind> RemoveNoopProjectRule::kQueries{
     PlanNode::Kind::kAssign,
     PlanNode::Kind::kBFSShortest,
     PlanNode::Kind::kMultiShortestPath,
-    PlanNode::Kind::kProduceAllPaths,
+    PlanNode::Kind::kAllPaths,
     PlanNode::Kind::kCartesianProduct,
     PlanNode::Kind::kSubgraph,
     PlanNode::Kind::kDataCollect,

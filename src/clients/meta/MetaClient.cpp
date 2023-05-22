@@ -369,8 +369,6 @@ bool MetaClient::loadData() {
     return *hostItem.hostAddr_ref();
   });
 
-  loadLeader(hostItems, spaceIndexByName_);
-
   decltype(localCache_) oldCache;
   {
     oldCache = std::move(localCache_);
@@ -385,6 +383,8 @@ bool MetaClient::loadData() {
     spaceAllEdgeMap_ = std::move(spaceAllEdgeMap);
     storageHosts_ = std::move(hosts);
   }
+
+  loadLeader(hostItems, spaceIndexByName_);
 
   localDataLastUpdateTime_.store(metadLastUpdateTime_.load());
   auto newMetaData = new MetaData();
@@ -1264,11 +1264,13 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
 }
 
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
-                                                                const std::string& newSpaceName) {
+                                                                const std::string& newSpaceName,
+                                                                bool ifNotExists) {
   memory::MemoryCheckOffGuard g;
   cpp2::CreateSpaceAsReq req;
   req.old_space_name_ref() = oldSpaceName;
   req.new_space_name_ref() = newSpaceName;
+  req.if_not_exists_ref() = ifNotExists;
   folly::Promise<StatusOr<GraphSpaceID>> promise;
   auto future = promise.getFuture();
   getResponse(

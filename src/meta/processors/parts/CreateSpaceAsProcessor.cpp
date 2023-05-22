@@ -33,6 +33,14 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
   }
 
   if (nebula::ok(newSpaceId)) {
+    if (req.get_if_not_exists()) {
+      rc_ = nebula::cpp2::ErrorCode::SUCCEEDED;
+      cpp2::ID id;
+      id.space_id_ref() = static_cast<GraphSpaceID>(nebula::value(newSpaceId));
+      resp_.id_ref() = id;
+      return;
+    }
+
     rc_ = nebula::cpp2::ErrorCode::E_EXISTED;
     LOG(INFO) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
               << "] failed. New space already exists.";

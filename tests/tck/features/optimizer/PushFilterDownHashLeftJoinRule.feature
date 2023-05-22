@@ -19,14 +19,14 @@ Feature: Push Filter down HashLeftJoin rule
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
     And the execution plan should be:
       | id | name         | dependencies | operator info                    |
-      | 8  | Project      | 11           |                                  |
-      | 11 | HashLeftJoin | 13,5         |                                  |
-      | 13 | Project      | 14           |                                  |
-      | 14 | GetNeighbors | 0            | {"filter": "(like.likeness>90)"} |
-      | 0  | Start        |              |                                  |
-      | 5  | Project      | 4            |                                  |
-      | 4  | GetVertices  | 3            |                                  |
-      | 3  | Argument     |              |                                  |
+      | 9  | Project      | 12           |                                  |
+      | 12 | HashLeftJoin | 13,6         |                                  |
+      | 13 | ExpandAll    | 2            | {"filter": "(like.likeness>90)"} |
+      | 2  | Expand       | 1            |                                  |
+      | 1  | Start        |              |                                  |
+      | 6  | Project      | 5            |                                  |
+      | 5  | GetVertices  | 4            |                                  |
+      | 4  | Argument     |              |                                  |
     When profiling query:
       """
       GO 2 STEPS FROM 'Tony Parker' OVER like
@@ -39,18 +39,14 @@ Feature: Push Filter down HashLeftJoin rule
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
     And the execution plan should be:
       | id | name         | dependencies | operator info                    |
-      | 12 | Project      | 15           |                                  |
-      | 15 | HashLeftJoin | 17,9         |                                  |
-      | 17 | Project      | 18           |                                  |
-      | 18 | GetNeighbors | 4            | {"filter": "(like.likeness>90)"} |
-      | 4  | Loop         | 0            | {"loopBody": "3"}                |
-      | 3  | Dedup        | 2            |                                  |
-      | 2  | GetDstBySrc  | 1            |                                  |
+      | 9  | Project      | 12           |                                  |
+      | 12 | HashLeftJoin | 13,6         |                                  |
+      | 13 | ExpandAll    | 2            | {"filter": "(like.likeness>90)"} |
+      | 2  | Expand       | 1            |                                  |
       | 1  | Start        |              |                                  |
-      | 0  | Start        |              |                                  |
-      | 9  | Project      | 8            |                                  |
-      | 8  | GetVertices  | 7            |                                  |
-      | 7  | Argument     |              |                                  |
+      | 6  | Project      | 5            |                                  |
+      | 5  | GetVertices  | 4            |                                  |
+      | 4  | Argument     |              |                                  |
     When profiling query:
       """
       $hop1 = GO FROM 'Tony Parker' OVER * BIDIRECT YIELD DISTINCT id($$) as dst;
@@ -66,20 +62,22 @@ Feature: Push Filter down HashLeftJoin rule
       | "Boris Diaw" | "Spurs"   | ["team"] |
       | "Boris Diaw" | "Suns"    | ["team"] |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                                |
-      | 19 | TopN         | 14           |                                                              |
-      | 14 | Dedup        | 13           |                                                              |
-      | 13 | Project      | 21           |                                                              |
-      | 21 | InnerJoin    | 24           |                                                              |
-      | 24 | HashLeftJoin | 26,9         |                                                              |
-      | 26 | Project      | 27           |                                                              |
-      | 27 | GetNeighbors | 2            | {"filter": "((like.likeness>80) OR like.likeness IS EMPTY)"} |
-      | 2  | Dedup        | 1            |                                                              |
-      | 1  | GetDstBySrc  | 0            |                                                              |
-      | 0  | Start        |              |                                                              |
-      | 9  | Project      | 8            |                                                              |
-      | 8  | GetVertices  | 7            |                                                              |
-      | 7  | Argument     |              |                                                              |
+      | id | name          | dependencies | operator info                                                |
+      | 19 | TopN          | 16           |                                                              |
+      | 16 | Dedup         | 15           |                                                              |
+      | 15 | Project       | 22           |                                                              |
+      | 22 | HashInnerJoin | 4,25         |                                                              |
+      | 4  | Project       | 3            |                                                              |
+      | 3  | Dedup         | 2            |                                                              |
+      | 2  | Expand        | 0            |                                                              |
+      | 0  | Start         |              |                                                              |
+      | 25 | HashLeftJoin  | 26,11        |                                                              |
+      | 26 | ExpandAll     | 7            | {"filter": "((like.likeness>80) OR like.likeness IS EMPTY)"} |
+      | 7  | Expand        | 6            |                                                              |
+      | 6  | Argument      |              |                                                              |
+      | 11 | Project       | 10           |                                                              |
+      | 10 | GetVertices   | 9            |                                                              |
+      | 9  | Argument      |              |                                                              |
 
   Scenario: NOT push filter down HashLeftJoin
     When profiling query:
@@ -94,16 +92,16 @@ Feature: Push Filter down HashLeftJoin rule
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
     And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 8  | Project      | 7            |               |
-      | 7  | Filter       | 6            |               |
-      | 6  | HashLeftJoin | 2,5          |               |
-      | 2  | Project      | 1            |               |
-      | 1  | GetNeighbors | 0            |               |
-      | 0  | Start        |              |               |
-      | 5  | Project      | 4            |               |
-      | 4  | GetVertices  | 3            |               |
-      | 3  | Argument     |              |               |
+      | id | name         | dependencies | operator info                                     |
+      | 9  | Project      | 8            |                                                   |
+      | 8  | Filter       | 7            | {"condition": "(($__COL_0>90) OR ($__COL_1>30))"} |
+      | 7  | HashLeftJoin | 3,6          |                                                   |
+      | 3  | ExpandAll    | 2            |                                                   |
+      | 2  | Expand       | 1            |                                                   |
+      | 1  | Start        |              |                                                   |
+      | 6  | Project      | 5            |                                                   |
+      | 5  | GetVertices  | 4            |                                                   |
+      | 4  | Argument     |              |                                                   |
     When profiling query:
       """
       GO FROM "Tony Parker" OVER like
@@ -117,15 +115,15 @@ Feature: Push Filter down HashLeftJoin rule
       | "Tim Duncan"        | 95       | 42  |
     And the execution plan should be:
       | id | name         | dependencies | operator info                    |
-      | 8  | Project      | 12           |                                  |
-      | 12 | Filter       | 11           | {"condition" : "($__COL_0>=32)"} |
-      | 11 | HashLeftJoin | 14,5         |                                  |
-      | 14 | Project      | 15           |                                  |
-      | 15 | GetNeighbors | 0            |                                  |
-      | 0  | Start        |              |                                  |
-      | 5  | Project      | 4            |                                  |
-      | 4  | GetVertices  | 3            |                                  |
-      | 3  | Argument     |              |                                  |
+      | 9  | Project      | 8            |                                  |
+      | 8  | Filter       | 7            | {"condition": "($__COL_0>=32)"}  |
+      | 7  | HashLeftJoin | 3,6          |                                  |
+      | 3  | ExpandAll    | 2            | {"filter": "(like.likeness>85)"} |
+      | 2  | Expand       | 1            |                                  |
+      | 1  | Start        |              |                                  |
+      | 6  | Project      | 5            |                                  |
+      | 5  | GetVertices  | 4            |                                  |
+      | 4  | Argument     |              |                                  |
     When profiling query:
       """
       LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
@@ -141,24 +139,26 @@ Feature: Push Filter down HashLeftJoin rule
       | "Tim Duncan"   |
     And the execution plan should be:
       | id | name               | dependencies | operator info |
-      | 26 | Project            | 36           |               |
-      | 36 | InnerJoin          | 35           |               |
-      | 35 | Filter             | 23           |               |
-      | 23 | HashLeftJoin       | 19,20        |               |
-      | 19 | Project            | 32           |               |
-      | 32 | GetNeighbors       | 15           |               |
-      | 15 | Project            | 34           |               |
-      | 34 | InnerJoin          | 33           |               |
-      | 33 | Filter             | 12           |               |
-      | 12 | HashLeftJoin       | 8, 11        |               |
-      | 8  | Project            | 31           |               |
-      | 31 | GetNeighbors       | 28           |               |
+      | 26 | Project            | 34           |               |
+      | 34 | HashInnerJoin      | 15,33        |               |
+      | 15 | Project            | 31           |               |
+      | 31 | HashInnerJoin      | 28,30        |               |
       | 28 | Project            | 27           |               |
       | 27 | TagIndexPrefixScan | 0            |               |
       | 0  | Start              |              |               |
+      | 30 | Filter             | 29           |               |
+      | 29 | HashLeftJoin       | 8,11         |               |
+      | 8  | ExpandAll          | 7            |               |
+      | 7  | Expand             | 6            |               |
+      | 6  | Argument           |              |               |
       | 11 | Project            | 10           |               |
       | 10 | GetVertices        | 9            |               |
       | 9  | Argument           |              |               |
+      | 33 | Filter             | 32           |               |
+      | 32 | HashLeftJoin       | 19,22        |               |
+      | 19 | ExpandAll          | 18           |               |
+      | 18 | Expand             | 17           |               |
+      | 17 | Argument           |              |               |
       | 22 | Project            | 21           |               |
       | 21 | GetVertices        | 20           |               |
       | 20 | Argument           |              |               |

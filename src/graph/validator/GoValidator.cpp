@@ -56,22 +56,9 @@ Status GoValidator::validateImpl() {
       exprProps.varProps().size() > 1) {
     return Status::SemanticError("Only support single input in a go sentence.");
   }
-
   goCtx_->isSimple = isSimpleCase();
-  if (goCtx_->isSimple) {
-    // Need to unify all EdgeDstIdExpr to *._dst.
-    // eg. serve._dst will be unified to *._dst
-    rewrite2EdgeDst();
-  }
+
   NG_RETURN_IF_ERROR(buildColumns());
-  if (goCtx_->isSimple) {
-    auto iter = propExprColMap_.find("*._dst");
-    if (iter != propExprColMap_.end()) {
-      goCtx_->dstIdColName = iter->second->alias();
-    }
-    // Rewrite *._dst/serve._dst to $dstIdColName
-    rewriteEdgeDst2VarProp();
-  }
   return Status::OK();
 }
 
@@ -83,6 +70,10 @@ Status GoValidator::validateWhere(WhereClause* where) {
   }
 
   auto expr = where->filter();
+  if (!checkDstPropOrVertexExist(expr)) {
+    return Status::SemanticError("`%s' is not support in go sentence.", expr->toString().c_str());
+  }
+
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto foldRes = ExpressionUtils::foldConstantExpr(where->filter());
   NG_RETURN_IF_ERROR(foldRes);
@@ -148,13 +139,11 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
   for (auto col : yield->columns()) {
     const auto& colName = col->name();
-    auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
-    if (vertexExpr != nullptr &&
-        static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
+    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
+    if (!checkDstPropOrVertexExist(col->expr())) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
-    col->setExpr(rewriteVertexEdge2EdgeProp(col->expr()));
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
@@ -191,7 +180,8 @@ Status GoValidator::extractTagIds() {
 Status GoValidator::extractPropExprs(const Expression* expr,
                                      std::unordered_set<std::string>& uniqueExpr) {
   ExtractPropExprVisitor visitor(vctx_,
-                                 goCtx_->srcEdgePropsExpr,
+                                 goCtx_->srcPropsExpr,
+                                 goCtx_->edgePropsExpr,
                                  goCtx_->dstPropsExpr,
                                  inputPropCols_,
                                  propExprColMap_,
@@ -251,29 +241,11 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
 // collect the input properties used in the query,
 // rewrites output expression to Input/Variable expression to get properties from previous plan node
 Status GoValidator::buildColumns() {
-  const auto& exprProps = goCtx_->exprProps;
-  const auto& dstTagProps = exprProps.dstTagProps();
-  const auto& inputProps = exprProps.inputProps();
-  const auto& varProps = exprProps.varProps();
-  const auto& from = goCtx_->from;
   auto pool = qctx_->objPool();
-
-  if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
-      from.fromType == FromType::kInstantExpr) {
-    return Status::OK();
-  }
-
-  if (!exprProps.isAllPropsEmpty() || from.fromType != FromType::kInstantExpr) {
-    goCtx_->srcEdgePropsExpr = pool->makeAndAdd<YieldColumns>();
-  }
-
-  if (!dstTagProps.empty()) {
-    goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
-  }
-
-  if (!inputProps.empty() || !varProps.empty()) {
-    inputPropCols_ = pool->makeAndAdd<YieldColumns>();
-  }
+  goCtx_->srcPropsExpr = pool->makeAndAdd<YieldColumns>();
+  goCtx_->edgePropsExpr = pool->makeAndAdd<YieldColumns>();
+  goCtx_->dstPropsExpr = pool->makeAndAdd<YieldColumns>();
+  inputPropCols_ = pool->makeAndAdd<YieldColumns>();
 
   std::unordered_set<std::string> uniqueEdgeVertexExpr;
   auto filter = goCtx_->filter;
@@ -292,41 +264,52 @@ Status GoValidator::buildColumns() {
   return Status::OK();
 }
 
+bool GoValidator::checkDstPropOrVertexExist(const Expression* expr) {
+  auto filterExprs = ExpressionUtils::collectAll(
+      expr, {Expression::Kind::kVertex, Expression::Kind::kDstProperty});
+  for (auto filterExpr : filterExprs) {
+    if (filterExpr->kind() == Expression::Kind::kDstProperty) {
+      goCtx_->joinDst = true;
+    } else {
+      auto& name = static_cast<const VertexExpression*>(filterExpr)->name();
+      if (name == "VERTEX") {
+        return false;
+      }
+      if (name == "$$") {
+        goCtx_->joinDst = true;
+      }
+    }
+  }
+  return true;
+}
+
 bool GoValidator::isSimpleCase() {
-  // Check limit clause
-  if (!goCtx_->limits.empty()) {
+  if (!goCtx_->limits.empty() || !goCtx_->distinct || goCtx_->filter != nullptr) {
     return false;
   }
-  // Check if the filter or yield cluase uses:
+  // Check if the yield cluase uses:
   // 1. src tag props,
   // 2. or edge props, except the dst id of edge.
   // 3. input or var props.
   auto& exprProps = goCtx_->exprProps;
-  if (!exprProps.srcTagProps().empty()) return false;
+  if (!exprProps.srcTagProps().empty() || !exprProps.dstTagProps().empty()) {
+    return false;
+  }
   if (!exprProps.edgeProps().empty()) {
     for (auto& edgeProp : exprProps.edgeProps()) {
       auto props = edgeProp.second;
-      if (props.size() != 1) return false;
-      if (props.find(kDst) == props.end()) return false;
-    }
-  }
-  if (exprProps.hasInputVarProperty()) return false;
-
-  // Check filter clause
-  // Because GetDstBySrc doesn't support filter push down,
-  // so we don't optimize such case.
-  if (goCtx_->filter) {
-    if (ExpressionUtils::findEdgeDstExpr(goCtx_->filter)) {
-      return false;
+      if (props.size() != 1 && props.find(kDst) == props.end()) {
+        return false;
+      }
     }
   }
 
-  // Check yield clause
-  if (!goCtx_->distinct) return false;
   bool atLeastOneDstId = false;
   for (auto& col : goCtx_->yieldExpr->columns()) {
     auto expr = col->expr();
-    if (expr->kind() != Expression::Kind::kEdgeDst) continue;
+    if (expr->kind() != Expression::Kind::kEdgeDst) {
+      return false;
+    }
     atLeastOneDstId = true;
     auto dstIdExpr = static_cast<const EdgeDstIdExpression*>(expr);
     if (dstIdExpr->sym() != "*" && goCtx_->over.edgeTypes.size() != 1) {
@@ -334,45 +317,6 @@ bool GoValidator::isSimpleCase() {
     }
   }
   return atLeastOneDstId;
-}
-
-void GoValidator::rewrite2EdgeDst() {
-  auto matcher = [](const Expression* e) -> bool {
-    if (e->kind() != Expression::Kind::kEdgeDst) {
-      return false;
-    }
-    auto* edgeDstExpr = static_cast<const EdgeDstIdExpression*>(e);
-    return edgeDstExpr->sym() != "*";
-  };
-  auto rewriter = [this](const Expression*) -> Expression* {
-    return EdgeDstIdExpression::make(qctx_->objPool(), "*");
-  };
-
-  if (goCtx_->filter != nullptr) {
-    goCtx_->filter = RewriteVisitor::transform(goCtx_->filter, matcher, rewriter);
-  }
-  auto* newYieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
-  for (auto* col : goCtx_->yieldExpr->columns()) {
-    newYieldExpr->addColumn(
-        new YieldColumn(RewriteVisitor::transform(col->expr(), matcher, rewriter), col->alias()));
-  }
-  goCtx_->yieldExpr = newYieldExpr;
-}
-
-void GoValidator::rewriteEdgeDst2VarProp() {
-  auto matcher = [](const Expression* expr) { return expr->kind() == Expression::Kind::kEdgeDst; };
-  auto rewriter = [this](const Expression*) {
-    return VariablePropertyExpression::make(qctx_->objPool(), "", goCtx_->dstIdColName);
-  };
-  if (goCtx_->filter != nullptr) {
-    goCtx_->filter = RewriteVisitor::transform(goCtx_->filter, matcher, rewriter);
-  }
-  auto* newYieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
-  for (auto* col : goCtx_->yieldExpr->columns()) {
-    newYieldExpr->addColumn(
-        new YieldColumn(RewriteVisitor::transform(col->expr(), matcher, rewriter), col->alias()));
-  }
-  goCtx_->yieldExpr = newYieldExpr;
 }
 
 }  // namespace graph

@@ -259,24 +259,36 @@ class GetNeighbors : public Explore {
   bool random_{false};
 };
 
-// Get Edge dst id by src id
-class GetDstBySrc : public Explore {
+class Expand : public Explore {
  public:
-  static GetDstBySrc* make(QueryContext* qctx,
-                           PlanNode* input,
-                           GraphSpaceID space,
-                           Expression* src = nullptr,
-                           std::vector<EdgeType> edgeTypes = {}) {
-    return qctx->objPool()->makeAndAdd<GetDstBySrc>(
-        qctx, Kind::kGetDstBySrc, input, space, src, std::move(edgeTypes));
+  static Expand* make(QueryContext* qctx,
+                      PlanNode* input,
+                      GraphSpaceID space,
+                      bool sample = false,
+                      size_t maxSteps = 0,
+                      std::unique_ptr<std::vector<EdgeProp>>&& edgeProps = nullptr) {
+    return qctx->objPool()->makeAndAdd<Expand>(
+        qctx, Kind::kExpand, input, space, sample, maxSteps, std::move(edgeProps));
   }
 
-  Expression* src() const {
-    return src_;
+  bool sample() const {
+    return sample_;
   }
 
-  void setSrc(Expression* src) {
-    src_ = src;
+  std::vector<int64_t> stepLimits() const {
+    return stepLimits_;
+  }
+
+  void setStepLimits(std::vector<int64_t>& limits) {
+    stepLimits_ = limits;
+  }
+
+  const std::vector<EdgeProp>* edgeProps() const {
+    return edgeProps_.get();
+  }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> edgeProps) {
+    edgeProps_ = std::move(edgeProps);
   }
 
   const std::vector<EdgeType>& edgeTypes() const {
@@ -287,25 +299,135 @@ class GetDstBySrc : public Explore {
     edgeTypes_ = std::move(edgeTypes);
   }
 
-  PlanNode* clone() const override;
+  bool joinInput() const {
+    return joinInput_;
+  }
+
+  void setJoinInput(bool joinInput) {
+    joinInput_ = joinInput;
+  }
+
+  size_t maxSteps() const {
+    return maxSteps_;
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  PlanNode* clone() const override;
 
  protected:
   friend ObjectPool;
-  GetDstBySrc(QueryContext* qctx,
-              Kind kind,
-              PlanNode* input,
-              GraphSpaceID space,
-              Expression* src,
-              std::vector<EdgeType> edgeTypes)
-      : Explore(qctx, kind, input, space), src_(src), edgeTypes_(std::move(edgeTypes)) {}
+  Expand(QueryContext* qctx,
+         Kind kind,
+         PlanNode* input,
+         GraphSpaceID space,
+         bool sample,
+         size_t maxSteps,
+         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps)
+      : Explore(qctx, kind, input, space),
+        sample_(sample),
+        maxSteps_(maxSteps),
+        edgeProps_(std::move(edgeProps)) {}
 
-  void cloneMembers(const GetDstBySrc&);
+  void cloneMembers(const Expand&);
+
+ protected:
+  bool sample_{false};
+  size_t maxSteps_{0};
+  std::unique_ptr<std::vector<EdgeProp>> edgeProps_{nullptr};
+  std::vector<int64_t> stepLimits_;
+  bool joinInput_{false};
+  std::vector<EdgeType> edgeTypes_;
+};
+
+class ExpandAll : public Expand {
+ public:
+  static ExpandAll* make(QueryContext* qctx,
+                         PlanNode* input,
+                         GraphSpaceID space,
+                         bool sample = false,
+                         size_t minSteps = 0,
+                         size_t maxSteps = 0,
+                         std::unique_ptr<std::vector<EdgeProp>>&& edgeProps = nullptr,
+                         std::unique_ptr<std::vector<VertexProp>>&& vertexProps = nullptr,
+                         YieldColumns* vertexColumns = nullptr,
+                         YieldColumns* edgeColumns = nullptr) {
+    return qctx->objPool()->makeAndAdd<ExpandAll>(qctx,
+                                                  Kind::kExpandAll,
+                                                  input,
+                                                  space,
+                                                  sample,
+                                                  minSteps,
+                                                  maxSteps,
+                                                  std::move(edgeProps),
+                                                  std::move(vertexProps),
+                                                  vertexColumns,
+                                                  edgeColumns);
+  }
+
+  const std::vector<VertexProp>* vertexProps() const {
+    return vertexProps_.get();
+  }
+
+  size_t minSteps() const {
+    return minSteps_;
+  }
+
+  YieldColumns* vertexColumns() const {
+    return vertexColumns_;
+  }
+
+  YieldColumns* edgeColumns() const {
+    return edgeColumns_;
+  }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> vertexProps) {
+    vertexProps_ = std::move(vertexProps);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  PlanNode* clone() const override;
+
+ protected:
+  friend ObjectPool;
+  ExpandAll(QueryContext* qctx,
+            Kind kind,
+            PlanNode* input,
+            GraphSpaceID space,
+            bool sample,
+            size_t minSteps,
+            size_t maxSteps,
+            std::unique_ptr<std::vector<EdgeProp>>&& edgeProps,
+            std::unique_ptr<std::vector<VertexProp>>&& vertexProps,
+            YieldColumns* vertexColumns,
+            YieldColumns* edgeColumns)
+      : Expand(qctx, kind, input, space, sample, maxSteps, std::move(edgeProps)),
+        minSteps_(minSteps),
+        vertexProps_(std::move(vertexProps)),
+        vertexColumns_(vertexColumns),
+        edgeColumns_(edgeColumns) {
+    std::vector<std::string> colNames;
+    if (vertexColumns_ && edgeColumns_) {
+      colNames = vertexColumns_->names();
+      auto edgeColNames = edgeColumns_->names();
+      colNames.insert(colNames.end(), edgeColNames.begin(), edgeColNames.end());
+    } else if (vertexColumns_) {
+      colNames = vertexColumns_->names();
+    } else if (edgeColumns_) {
+      colNames = edgeColumns_->names();
+    }
+    setLimit(-1);
+    setColNames(colNames);
+  }
+
+  void cloneMembers(const ExpandAll&);
 
  private:
-  // vertices may be parsing from runtime.
-  Expression* src_{nullptr};
-  std::vector<EdgeType> edgeTypes_;
+  size_t minSteps_{0};
+  std::unique_ptr<std::vector<VertexProp>> vertexProps_{nullptr};
+  YieldColumns* vertexColumns_{nullptr};
+  YieldColumns* edgeColumns_{nullptr};
 };
 
 // Get property with given vertex keys.
@@ -584,6 +706,14 @@ class IndexScan : public Explore {
     yieldColumns_ = yieldColumns;
   }
 
+  void setLazyIndexHint(bool lazy) {
+    lazyIndexHint_ = lazy;
+  }
+
+  bool lazyIndexHint() const {
+    return lazyIndexHint_;
+  }
+
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -617,6 +747,7 @@ class IndexScan : public Explore {
   int32_t schemaId_;
 
   YieldColumns* yieldColumns_;
+  bool lazyIndexHint_{false};
 };
 
 class FulltextIndexScan : public Explore {
@@ -1326,7 +1457,6 @@ class DataCollect final : public VariableDependencyNode {
   enum class DCKind : uint8_t {
     kSubgraph,
     kRowBasedMove,
-    kMToN,
     kBFSShortest,
     kAllPaths,
     kMultiplePairShortest,
@@ -1335,10 +1465,6 @@ class DataCollect final : public VariableDependencyNode {
 
   static DataCollect* make(QueryContext* qctx, DCKind kind) {
     return qctx->objPool()->makeAndAdd<DataCollect>(qctx, kind);
-  }
-
-  void setMToN(StepClause step) {
-    step_ = std::move(step);
   }
 
   void setDistinct(bool distinct) {
@@ -1361,10 +1487,6 @@ class DataCollect final : public VariableDependencyNode {
     std::transform(
         inputVars_.begin(), inputVars_.end(), vars.begin(), [](auto& var) { return var->name; });
     return vars;
-  }
-
-  StepClause step() const {
-    return step_;
   }
 
   bool distinct() const {
@@ -1392,8 +1514,6 @@ class DataCollect final : public VariableDependencyNode {
 
  private:
   DCKind kind_;
-  // using for m to n steps
-  StepClause step_;
   std::vector<Value::Type> colType_;
   bool distinct_{false};
 };
@@ -1654,8 +1774,16 @@ class Traverse final : public GetNeighbors {
     firstStepFilter_ = filter;
   }
 
+  void setGenPath(bool genPath) {
+    genPath_ = genPath;
+  }
+
   Expression* tagFilter() const {
     return tagFilter_;
+  }
+
+  bool genPath() const {
+    return genPath_;
   }
 
   void setTagFilter(Expression* tagFilter) {
@@ -1679,6 +1807,7 @@ class Traverse final : public GetNeighbors {
   // Push down filter in first step
   Expression* firstStepFilter_{nullptr};
   Expression* tagFilter_{nullptr};
+  bool genPath_{false};
 };
 
 // Append vertices to a path.
@@ -1829,6 +1958,33 @@ class HashInnerJoin final : public HashJoin {
             qctx, Kind::kHashInnerJoin, left, right, std::move(hashKeys), std::move(probeKeys)) {}
 
   void cloneMembers(const HashInnerJoin&);
+};
+
+class CrossJoin final : public BinaryInputNode {
+ public:
+  static CrossJoin* make(QueryContext* qctx, PlanNode* left, PlanNode* right) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx, left, right);
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  PlanNode* clone() const override;
+
+  void accept(PlanNodeVisitor* visitor) override;
+
+ private:
+  friend ObjectPool;
+
+  // used for clone only
+  static CrossJoin* make(QueryContext* qctx) {
+    return qctx->objPool()->makeAndAdd<CrossJoin>(qctx);
+  }
+
+  void cloneMembers(const CrossJoin& r);
+
+  CrossJoin(QueryContext* qctx, PlanNode* left, PlanNode* right);
+  // use for clone
+  explicit CrossJoin(QueryContext* qctx);
 };
 
 // Roll Up Apply two results from two inputs.

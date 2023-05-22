@@ -72,7 +72,7 @@ class UpgraderSpace {
   bool isValidVidLen(VertexID srcVId, VertexID dstVId = "");
 
   void encodeVertexValue(PartitionID partId,
-                         RowReader* reader,
+                         RowReaderWrapper* reader,
                          const meta::NebulaSchemaProvider* schema,
                          std::string& newkey,
                          VertexID& strVid,
@@ -80,18 +80,18 @@ class UpgraderSpace {
                          std::vector<kvstore::KV>& data);
 
   // Used for vertex and edge
-  std::string encodeRowVal(const RowReader* reader,
+  std::string encodeRowVal(const RowReaderWrapper* reader,
                            const meta::NebulaSchemaProvider* schema,
                            std::vector<std::string>& fieldName);
 
   std::vector<std::string> indexVertexKeys(PartitionID partId,
                                            VertexID& vId,
-                                           RowReader* reader,
+                                           RowReaderWrapper* reader,
                                            std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                           const meta::SchemaProviderIf* latestSchema);
+                                           const meta::NebulaSchemaProvider* latestSchema);
 
   void encodeEdgeValue(PartitionID partId,
-                       RowReader* reader,
+                       RowReaderWrapper* reader,
                        const meta::NebulaSchemaProvider* schema,
                        std::string& newkey,
                        VertexID& svId,
@@ -101,15 +101,15 @@ class UpgraderSpace {
                        std::vector<kvstore::KV>& data);
 
   std::vector<std::string> indexEdgeKeys(PartitionID partId,
-                                         RowReader* reader,
+                                         RowReaderWrapper* reader,
                                          VertexID& svId,
                                          EdgeRanking rank,
                                          VertexID& dstId,
                                          std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                         const meta::SchemaProviderIf* latestSchema);
+                                         const meta::NebulaSchemaProvider* latestSchema);
 
   WriteResult convertValue(const meta::NebulaSchemaProvider* newSchema,
-                           const meta::SchemaProviderIf* oldSchema,
+                           const meta::NebulaSchemaProvider* oldSchema,
                            std::string& name,
                            Value& val);
   void runPartV1();

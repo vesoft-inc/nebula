@@ -110,6 +110,19 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
   return root;
 }
 
+bool MatchSolver::extractTagPropName(const Expression* expr,
+                                     const std::string& alias,
+                                     const std::string& label,
+                                     std::string* propName) {
+  if (expr->kind() != Expression::Kind::kLabelTagProperty) return false;
+  auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
+  if (tagPropExpr->sym() != label) return false;
+  auto propExpr = static_cast<const PropertyExpression*>(tagPropExpr->label());
+  if (propExpr->prop() != alias) return false;
+  *propName = tagPropExpr->prop();
+  return true;
+}
+
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const std::string& alias,
                                          Expression* filter,
@@ -168,23 +181,21 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       }
       propName = la->right()->value().getStr();
     } else {
-      const LabelTagPropertyExpression* la = nullptr;
       if (left->kind() == Expression::Kind::kLabelTagProperty &&
           right->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelTagPropertyExpression*>(left);
+        if (!extractTagPropName(left, alias, label, &propName)) {
+          continue;
+        }
         constant = static_cast<const ConstantExpression*>(right);
       } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
                  left->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelTagPropertyExpression*>(right);
+        if (!extractTagPropName(right, alias, label, &propName)) {
+          continue;
+        }
         constant = static_cast<const ConstantExpression*>(left);
       } else {
         continue;
       }
-      if (static_cast<const PropertyExpression*>(la->label())->prop() != alias ||
-          la->sym() != label) {
-        continue;
-      }
-      propName = la->prop();
     }
 
     auto* tpExpr =
@@ -207,8 +218,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
 
   auto* root = relationals[0];
   for (auto i = 1u; i < relationals.size(); i++) {
-    auto* left = root;
-    root = LogicalExpression::makeAnd(qctx->objPool(), left, relationals[i]);
+    root = LogicalExpression::makeAnd(qctx->objPool(), root, relationals[i]);
   }
 
   return root;
@@ -231,21 +241,17 @@ static YieldColumn* buildVertexColumn(ObjectPool* pool, const std::string& alias
   return new YieldColumn(InputPropertyExpression::make(pool, alias), alias);
 }
 
-static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge) {
+static YieldColumn* buildEdgeColumn(QueryContext* qctx, const EdgeInfo& edge, bool genPath) {
   Expression* expr = nullptr;
+  const std::string& edgeName = genPath ? edge.innerAlias : edge.alias;
   auto pool = qctx->objPool();
   if (edge.range == nullptr) {
     expr = SubscriptExpression::make(
-        pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
+        pool, InputPropertyExpression::make(pool, edgeName), ConstantExpression::make(pool, 0));
   } else {
-    auto innerVar = qctx->vctx()->anonVarGen()->getVar();
-    auto* args = ArgumentList::make(pool);
-    args->addArgument(VariableExpression::makeInner(pool, innerVar));
-    auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
-    expr = ListComprehensionExpression::make(
-        pool, innerVar, InputPropertyExpression::make(pool, edge.alias), filter);
+    expr = InputPropertyExpression::make(pool, edgeName);
   }
-  return new YieldColumn(expr, edge.alias);
+  return new YieldColumn(expr, edgeName);
 }
 
 // static
@@ -262,23 +268,30 @@ void MatchSolver::buildProjectColumns(QueryContext* qctx, const Path& path, SubP
     }
   };
 
-  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo) {
+  auto addEdge = [columns, &colNames, qctx](auto& edgeInfo, bool genPath = false) {
     if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      columns->addColumn(buildEdgeColumn(qctx, edgeInfo));
-      colNames.emplace_back(edgeInfo.alias);
+      columns->addColumn(buildEdgeColumn(qctx, edgeInfo, genPath));
+      if (genPath) {
+        colNames.emplace_back(edgeInfo.innerAlias);
+      } else {
+        colNames.emplace_back(edgeInfo.alias);
+      }
     }
   };
 
   for (size_t i = 0; i < edgeInfos.size(); i++) {
     addNode(nodeInfos[i]);
     addEdge(edgeInfos[i]);
+    if (path.genPath) {
+      addEdge(edgeInfos[i], true);
+    }
   }
 
   // last vertex
   DCHECK(!nodeInfos.empty());
   addNode(nodeInfos.back());
 
-  if (!path.anonymous) {
+  if (path.genPath) {
     DCHECK(!path.alias.empty());
     columns->addColumn(new YieldColumn(DCHECK_NOTNULL(path.pathBuild), path.alias));
     colNames.emplace_back(path.alias);

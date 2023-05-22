@@ -52,7 +52,7 @@ RowReaderWrapper RowReaderWrapper::getEdgePropReader(meta::SchemaManager* schema
 }
 
 // static
-RowReaderWrapper RowReaderWrapper::getRowReader(const meta::SchemaProviderIf* schema,
+RowReaderWrapper RowReaderWrapper::getRowReader(const meta::NebulaSchemaProvider* schema,
                                                 folly::StringPiece row) {
   SchemaVer schemaVer;
   int32_t readerVer;
@@ -77,45 +77,26 @@ RowReaderWrapper RowReaderWrapper::getRowReader(
   return RowReaderWrapper(schemas[schemaVer].get(), row, readerVer);
 }
 
-RowReaderWrapper::RowReaderWrapper(const meta::SchemaProviderIf* schema,
+RowReaderWrapper::RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
                                    const folly::StringPiece& row,
-                                   int32_t& readerVer)
-    : readerVer_(readerVer) {
+                                   int32_t& readerVer) {
+  CHECK_EQ(readerVer, 2);
   CHECK_NOTNULL(schema);
-  if (readerVer_ == 1) {
-    readerV1_.resetImpl(schema, row);
-    currReader_ = &readerV1_;
-  } else if (readerVer_ == 2) {
-    readerV2_.resetImpl(schema, row);
-    currReader_ = &readerV2_;
-  } else {
-    LOG(FATAL) << "Should not reach here";
-    readerV2_.resetImpl(schema, row);
-    currReader_ = &readerV2_;
-  }
+  readerV2_.resetImpl(schema, row);
+  currReader_ = &readerV2_;
 }
 
-bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema,
+bool RowReaderWrapper::reset(meta::NebulaSchemaProvider const* schema,
                              folly::StringPiece row,
                              int32_t readerVer) {
+  CHECK_EQ(readerVer, 2);
   CHECK_NOTNULL(schema);
-  readerVer_ = readerVer;
-  if (readerVer_ == 1) {
-    readerV1_.resetImpl(schema, row);
-    currReader_ = &readerV1_;
-    return true;
-  } else if (readerVer_ == 2) {
-    readerV2_.resetImpl(schema, row);
-    currReader_ = &readerV2_;
-    return true;
-  } else {
-    LOG(WARNING) << "Unsupported row reader version " << readerVer;
-    currReader_ = nullptr;
-    return false;
-  }
+  readerV2_.resetImpl(schema, row);
+  currReader_ = &readerV2_;
+  return true;
 }
 
-bool RowReaderWrapper::reset(meta::SchemaProviderIf const* schema, folly::StringPiece row) {
+bool RowReaderWrapper::reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row) {
   currReader_ = nullptr;
   if (schema == nullptr) {
     return false;

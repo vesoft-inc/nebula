@@ -756,7 +756,6 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
       Expression::Kind::kVarProperty,
       Expression::Kind::kInputProperty,
       // Expression::Kind::kLabelAttribute, valid only for update edge
-      Expression::Kind::kSubscript,
       Expression::Kind::kUUID,
       Expression::Kind::kTagProperty,
       Expression::Kind::kLabelTagProperty,

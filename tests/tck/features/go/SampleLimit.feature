@@ -69,6 +69,7 @@ Feature: Sample and limit
       GO 3 STEPS FROM 'Tim Duncan' OVER like YIELD like._dst LIMIT [1, 2, 3]
       """
     Then the result should be, in any order:
-      | like._dst       |
-      | 'Manu Ginobili' |
-      | 'Tony Parker'   |
+      | like._dst |
+      | /[\s\w+]/ |
+      | /[\s\w+]/ |
+      | /[\s\w+]/ |

@@ -24,6 +24,7 @@ std::unique_ptr<PlanNodeDescription> CreateSpaceAsNode::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("oldSpaceName", oldSpaceName_, desc.get());
   addDescription("newSpaceName", newSpaceName_, desc.get());
+  addDescription("ifNotExists", folly::toJson(util::toJson(ifNotExists_)), desc.get());
   return desc;
 }
 

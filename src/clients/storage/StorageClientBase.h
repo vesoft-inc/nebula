@@ -20,8 +20,6 @@
 DECLARE_int32(storage_client_timeout_ms);
 DECLARE_uint32(storage_client_retry_interval_ms);
 
-constexpr int32_t kInternalPortOffset = -2;
-
 namespace nebula {
 namespace storage {
 
@@ -34,21 +32,18 @@ class StorageRpcResponse final {
   };
 
   explicit StorageRpcResponse(size_t reqsSent) : totalReqsSent_(reqsSent) {
-    lock_ = std::make_unique<std::mutex>();
+    responses_.reserve(reqsSent);
   }
 
   bool succeeded() const {
-    std::lock_guard<std::mutex> g(*lock_);
     return result_ == Result::ALL_SUCCEEDED;
   }
 
   int32_t maxLatency() const {
-    std::lock_guard<std::mutex> g(*lock_);
     return maxLatency_;
   }
 
-  void setLatency(HostAddr host, int32_t latency, int32_t e2eLatency) {
-    std::lock_guard<std::mutex> g(*lock_);
+  void setLatency(const HostAddr& host, int32_t latency, int32_t e2eLatency) {
     if (latency > maxLatency_) {
       maxLatency_ = latency;
     }
@@ -56,26 +51,22 @@ class StorageRpcResponse final {
   }
 
   void markFailure() {
-    std::lock_guard<std::mutex> g(*lock_);
     result_ = Result::PARTIAL_SUCCEEDED;
     ++failedReqs_;
   }
 
   // A value between [0, 100], representing a percentage
   int32_t completeness() const {
-    std::lock_guard<std::mutex> g(*lock_);
     DCHECK_NE(totalReqsSent_, 0);
     return totalReqsSent_ == 0 ? 0 : (totalReqsSent_ - failedReqs_) * 100 / totalReqsSent_;
   }
 
   void emplaceFailedPart(PartitionID partId, nebula::cpp2::ErrorCode errorCode) {
-    std::lock_guard<std::mutex> g(*lock_);
     failedParts_.emplace(partId, errorCode);
   }
 
   void appendFailedParts(const std::vector<PartitionID>& partsId,
                          nebula::cpp2::ErrorCode errorCode) {
-    std::lock_guard<std::mutex> g(*lock_);
     failedParts_.reserve(failedParts_.size() + partsId.size());
     for (const auto& partId : partsId) {
       failedParts_.emplace(partId, errorCode);
@@ -83,32 +74,26 @@ class StorageRpcResponse final {
   }
 
   void addResponse(Response&& resp) {
-    std::lock_guard<std::mutex> g(*lock_);
     responses_.emplace_back(std::move(resp));
   }
 
-  // Not thread-safe.
   const std::unordered_map<PartitionID, nebula::cpp2::ErrorCode>& failedParts() const {
     return failedParts_;
   }
 
-  // Not thread-safe.
   std::vector<Response>& responses() {
     return responses_;
   }
 
-  // Not thread-safe.
   const std::vector<Response>& responses() const {
     return responses_;
   }
 
-  // Not thread-safe.
   const std::vector<std::tuple<HostAddr, int32_t, int32_t>>& hostLatency() const {
     return hostLatency_;
   }
 
  private:
-  std::unique_ptr<std::mutex> lock_;
   const size_t totalReqsSent_;
   size_t failedReqs_{0};
 

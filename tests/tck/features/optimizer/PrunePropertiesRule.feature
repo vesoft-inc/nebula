@@ -401,17 +401,18 @@ Feature: Prune Properties rule
       | scount |
       | 270    |
     And the execution plan should be:
-      | id | name          | dependencies | operator info          |
-      | 12 | Aggregate     | 13           |                        |
-      | 13 | HashInnerJoin | 15, 11       |                        |
-      | 15 | Project       | 4            |                        |
-      | 4  | Traverse      | 3            | { "vertexProps": "" }  |
-      | 3  | Traverse      | 14           | {  "vertexProps": "" } |
-      | 14 | IndexScan     | 2            |                        |
-      | 2  | Start         |              |                        |
-      | 11 | Project       | 9            |                        |
-      | 9  | Traverse      | 8            | {  "vertexProps": "" } |
-      | 8  | Argument      |              |                        |
+      | id | name           | dependencies | operator info          |
+      | 12 | Aggregate      | 13           |                        |
+      | 13 | HashInnerJoin  | 15, 11       |                        |
+      | 15 | Project        | 5            |                        |
+      | 5  | AppendVertices | 4            |                        |
+      | 4  | Traverse       | 3            | { "vertexProps": "" }  |
+      | 3  | Traverse       | 14           | {  "vertexProps": "" } |
+      | 14 | IndexScan      | 2            |                        |
+      | 2  | Start          |              |                        |
+      | 11 | Project        | 9            |                        |
+      | 9  | Traverse       | 8            |                        |
+      | 8  | Argument       |              |                        |
 
   @distonly
   Scenario: return function
@@ -445,9 +446,8 @@ Feature: Prune Properties rule
       | 24                   |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                           |
-      | 7  | Aggregate      | 6            |                                                                                         |
-      | 6  | Project        | 5            |                                                                                         |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"] }]" }                                                |
+      | 7  | Aggregate      | 8            |                                                                                         |
+      | 8  | AppendVertices | 4            | {  "props": "[{\"props\":[\"age\"] }]" }                                                |
       | 4  | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
       | 2  | Dedup          | 1            |                                                                                         |
       | 1  | PassThrough    | 3            |                                                                                         |
@@ -463,9 +463,8 @@ Feature: Prune Properties rule
       | 24        |
     And the execution plan should be:
       | id | name           | dependencies | operator info                                                                               |
-      | 7  | Aggregate      | 6            |                                                                                             |
-      | 6  | Project        | 5            |                                                                                             |
-      | 5  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" } |
+      | 7  | Aggregate      | 8            |                                                                                             |
+      | 8  | AppendVertices | 4            | {  "props": "[{\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }, {\"props\":[\"_tag\"] }]" } |
       | 4  | Traverse       | 2            | {"vertexProps": "" , "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }    |
       | 2  | Dedup          | 1            |                                                                                             |
       | 1  | PassThrough    | 3            |                                                                                             |
@@ -580,6 +579,7 @@ Feature: Prune Properties rule
       | 21 | Project        | 20           |                                                                                                                                          |
       | 20 | Filter         | 25           |                                                                                                                                          |
       | 25 | AppendVertices | 24           | {  "props": "[{ \"props\":[\"name\",\"_tag\"]}]" }                                                                                       |
+      | 24 | Filter         | 24           |                                                                                                                                          |
       | 24 | Traverse       | 23           | {"vertexProps": "[{ \"props\":[\"age\"]}]", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                          |
       | 23 | Traverse       | 22           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
       | 22 | Traverse       | 2            | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
@@ -587,7 +587,7 @@ Feature: Prune Properties rule
       | 1  | PassThrough    | 3            |                                                                                                                                          |
       | 3  | Start          |              |                                                                                                                                          |
       | 26 | Project        | 14           |                                                                                                                                          |
-      | 14 | Traverse       | 13           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"start_year\", \"end_year\"]}]"  }          |
+      | 14 | Traverse       | 13           | {"edgeProps": "[{  \"props\": [\"_src\", \"_type\", \"_rank\", \"_dst\", \"start_year\", \"end_year\"]}]"  }                             |
       | 13 | Traverse       | 12           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  }                                                  |
       | 12 | Traverse       | 11           | {"vertexProps": "", "edgeProps": "[{  \"props\": [\"_type\", \"_rank\", \"_dst\"]}, {  \"props\": [\"_type\", \"_rank\", \"_dst\"]}]"  } |
       | 11 | Argument       |              |                                                                                                                                          |

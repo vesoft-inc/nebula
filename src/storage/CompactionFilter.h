@@ -16,6 +16,10 @@
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
 
+DEFINE_int32(min_level_for_custom_filter,
+             4,
+             "Minimal level compaction which will go through custom compaction filter");
+
 namespace nebula {
 namespace storage {
 
@@ -28,9 +32,15 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
     CHECK_NOTNULL(schemaMan_);
   }
 
-  bool filter(GraphSpaceID spaceId,
+  bool filter(int level,
+              GraphSpaceID spaceId,
               const folly::StringPiece& key,
               const folly::StringPiece& val) const override {
+    if (level < FLAGS_min_level_for_custom_filter) {
+      // for upper level such as L0/L1, we don't go through the custom
+      // validation to achieve better performance
+      return false;
+    }
     if (NebulaKeyUtils::isTag(vIdLen_, key)) {
       return !tagValid(spaceId, key, val);
     } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
@@ -106,7 +116,8 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
   }
 
   // TODO(panda) Optimize the method in the future
-  bool ttlExpired(const meta::SchemaProviderIf* schema, nebula::RowReader* reader) const {
+  bool ttlExpired(const meta::NebulaSchemaProvider* schema,
+                  nebula::RowReaderWrapper* reader) const {
     if (schema == nullptr) {
       return true;
     }
@@ -120,7 +131,7 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
     return CommonUtils::checkDataExpiredForTTL(schema, reader, ttl.second.second, ttl.second.first);
   }
 
-  bool ttlExpired(const meta::SchemaProviderIf* schema, const Value& v) const {
+  bool ttlExpired(const meta::NebulaSchemaProvider* schema, const Value& v) const {
     if (schema == nullptr) {
       return true;
     }

@@ -10,13 +10,15 @@ namespace graph {
 
 ExtractPropExprVisitor::ExtractPropExprVisitor(
     ValidateContext* vctx,
-    YieldColumns* srcAndEdgePropCols,
+    YieldColumns* srcPropCols,
+    YieldColumns* edgePropCols,
     YieldColumns* dstPropCols,
     YieldColumns* inputPropCols,
     std::unordered_map<std::string, YieldColumn*>& propExprColMap,
     std::unordered_set<std::string>& uniqueEdgeVertexCol)
     : vctx_(DCHECK_NOTNULL(vctx)),
-      srcAndEdgePropCols_(srcAndEdgePropCols),
+      srcPropCols_(srcPropCols),
+      edgePropCols_(edgePropCols),
       dstPropCols_(dstPropCols),
       inputPropCols_(inputPropCols),
       propExprColMap_(propExprColMap),
@@ -30,7 +32,7 @@ void ExtractPropExprVisitor::visit(VertexExpression* expr) {
   const auto& colName = expr->name();
   if (uniqueEdgeVertexCol_.emplace(colName).second) {
     if (colName == "$^") {
-      srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), colName));
+      srcPropCols_->addColumn(new YieldColumn(expr->clone(), colName));
     } else {
       dstPropCols_->addColumn(new YieldColumn(expr->clone(), colName));
     }
@@ -39,7 +41,7 @@ void ExtractPropExprVisitor::visit(VertexExpression* expr) {
 
 void ExtractPropExprVisitor::visit(EdgeExpression* expr) {
   if (uniqueEdgeVertexCol_.emplace(expr->toString()).second) {
-    srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), expr->toString()));
+    edgePropCols_->addColumn(new YieldColumn(expr->clone(), expr->toString()));
   }
 }
 
@@ -89,7 +91,6 @@ void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
     }
   }
@@ -107,7 +108,6 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }
@@ -161,7 +161,6 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
       break;
     }
     default: {
-      DLOG(FATAL) << "Invalid Kind " << expr->kind();
       reportError(expr);
       return;
     }
@@ -171,7 +170,11 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
     auto newExpr = propExpr->clone();
     auto col = new YieldColumn(newExpr, vctx_->anonColGen()->getCol());
     propExprColMap_.emplace(propExpr->toString(), col);
-    srcAndEdgePropCols_->addColumn(col);
+    if (expr->kind() == Expression::Kind::kSrcProperty) {
+      srcPropCols_->addColumn(col);
+    } else {
+      edgePropCols_->addColumn(col);
+    }
   }
 }
 

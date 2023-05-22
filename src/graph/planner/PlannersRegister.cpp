@@ -13,6 +13,8 @@
 #include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/ScanSeek.h"
 #include "graph/planner/match/StartVidFinder.h"
+#include "graph/planner/match/VariablePropIndexSeek.h"
+#include "graph/planner/match/VariableVertexIdSeek.h"
 #include "graph/planner/match/VertexIdSeek.h"
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
@@ -98,6 +100,12 @@ void PlannersRegister::registerMatch() {
   // MATCH(n:Tag{prop:value}) RETURN n
   // MATCH(n:Tag) WHERE n.prop = value RETURN n
   startVidFinders.emplace_back(&PropIndexSeek::make);
+
+  // WITH 'xxx' AS vid MATCH(n) WHERE id(n)==vid RETURN n
+  startVidFinders.emplace_back(&VariableVertexIdSeek::make);
+
+  // WITH "xxx" AS prop MATCH(n:Tag) WHERE n.Tag.prop==prop RETURN n
+  startVidFinders.emplace_back(&VariablePropIndexSeek::make);
 
   // seek by tag or edge(index)
   // MATCH(n: tag) RETURN n

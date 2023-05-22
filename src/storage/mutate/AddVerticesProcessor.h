@@ -40,9 +40,9 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
 
   std::vector<std::string> indexKeys(PartitionID partId,
                                      const VertexID& vId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                     const meta::SchemaProviderIf* latestSchema);
+                                     const meta::NebulaSchemaProvider* latestSchema);
 
   void deleteDupVid(std::vector<cpp2::NewVertex>& vertices);
 
@@ -55,6 +55,7 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
   bool ignoreExistedIndex_{false};
+  meta::TagSchema tagSchema_;
 };
 
 }  // namespace storage

@@ -18,7 +18,7 @@ runs:
         tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
         tagnum=$(echo $tag | sed "s/^v//")
         majorver=$(echo $tag | cut -d "." -f 1)
-        echo "::set-output name=tag::$tag"
-        echo "::set-output name=tagnum::$tagnum"
-        echo "::set-output name=majorver::$majorver"
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+        echo "tagnum=$tagnum" >> $GITHUB_OUTPUT
+        echo "majorver=$majorver" >> $GITHUB_OUTPUT
       shell: bash

@@ -16,7 +16,7 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema)
     : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
   CHECK(!!schema_);
 
@@ -88,14 +88,14 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
   isSet_.resize(schema_->getNumFields(), false);
 }
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, std::string&& encoded)
     : schema_(schema), finished_(false), outOfSpaceStr_(false) {
   auto len = encoded.size();
   buf_ = std::move(encoded).substr(0, len - sizeof(int64_t));
   processV2EncodedStr();
 }
 
-RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded)
+RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema, const std::string& encoded)
     : schema_(schema),
       buf_(encoded.substr(0, encoded.size() - sizeof(int64_t))),
       finished_(false),
@@ -103,7 +103,7 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema, const std::string
   processV2EncodedStr();
 }
 
-RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
+RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchema()) {
   for (size_t i = 0; i < reader.numFields(); i++) {
     Value v = reader.getValueByIndex(i);
     switch (v.type()) {
@@ -656,11 +656,17 @@ WriteResult RowWriterV2::write(ssize_t index, const char* v) {
   return write(index, folly::StringPiece(v));
 }
 
-WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) {
+WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v, bool isWKB) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
-    case PropertyType::GEOGRAPHY:  // write wkb
+    case PropertyType::GEOGRAPHY: {
+      // If v is a not a WKB string, we need report error.
+      if (!isWKB) {
+        return WriteResult::TYPE_MISMATCH;
+      }
+      [[fallthrough]];
+    }
     case PropertyType::STRING: {
       if (isSet_[index]) {
         // The string value has already been set, we need to turn it
@@ -809,8 +815,10 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
       folly::to<uint32_t>(geoShape) != folly::to<uint32_t>(v.shape())) {
     return WriteResult::TYPE_MISMATCH;
   }
+  // Geography is stored as WKB format.
+  // WKB is a binary string.
   std::string wkb = v.asWKB();
-  return write(index, folly::StringPiece(wkb));
+  return write(index, folly::StringPiece(wkb), true);
 }
 
 WriteResult RowWriterV2::checkUnsetFields() {

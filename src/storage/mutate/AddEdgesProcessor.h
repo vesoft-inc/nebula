@@ -45,10 +45,10 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
                                                              const folly::StringPiece& rawKey);
 
   std::vector<std::string> indexKeys(PartitionID partId,
-                                     RowReader* reader,
+                                     RowReaderWrapper* reader,
                                      const folly::StringPiece& rawKey,
                                      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                     const meta::SchemaProviderIf* latestSchema);
+                                     const meta::NebulaSchemaProvider* latestSchema);
 
   nebula::cpp2::ErrorCode deleteDupEdge(std::vector<cpp2::NewEdge>& edges);
 
@@ -57,6 +57,7 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
   bool ignoreExistedIndex_{false};
+  meta::EdgeSchema edgeSchema_;
 
   /// this is a hook function to keep out-edge and in-edge consist
   using ConsistOper = std::function<void(kvstore::BatchHolder&, std::vector<kvstore::KV>*)>;

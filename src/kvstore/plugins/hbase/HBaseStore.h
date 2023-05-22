@@ -9,8 +9,8 @@
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
+#include "common/meta/NebulaSchemaProvider.h"
 #include "common/meta/SchemaManager.h"
-#include "common/meta/SchemaProviderIf.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/plugins/hbase/HBaseClient.h"
@@ -75,9 +75,7 @@ class HBaseStore : public KVStore {
     return {-1, -1};
   }
 
-  const void* GetSnapshot(GraphSpaceID spaceId,
-                          PartitionID partID,
-                          bool canReadFromFollower = false) override {
+  const void* GetSnapshot(GraphSpaceID spaceId, PartitionID partID) override {
     UNUSED(spaceId);
     UNUSED(partID);
     UNUSED(canReadFromFollower);
@@ -223,9 +221,9 @@ class HBaseStore : public KVStore {
 
   inline std::string spaceIdToTableName(GraphSpaceID spaceId);
 
-  std::shared_ptr<const meta::SchemaProviderIf> getSchema(GraphSpaceID spaceId,
-                                                          const std::string& key,
-                                                          SchemaVer version = -1);
+  std::shared_ptr<const meta::NebulaSchemaProvider> getSchema(GraphSpaceID spaceId,
+                                                              const std::string& key,
+                                                              SchemaVer version = -1);
 
   std::string encode(GraphSpaceID spaceId, const std::string& key, KVMap& values);
 

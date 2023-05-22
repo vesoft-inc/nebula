@@ -248,6 +248,44 @@ Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryConte
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+std::vector<const Expression *> ExpressionUtils::ExtractInnerVarExprs(const Expression *expr,
+                                                                      QueryContext *qctx) {
+  auto finder = [qctx](const Expression *e) -> bool {
+    auto ve = static_cast<const VariableExpression *>(e);
+    return e->kind() == Expression::Kind::kVar && !qctx->existParameter(ve->var()) &&
+           !ve->isInner();
+  };
+
+  if (finder(expr)) {
+    return {expr};
+  }
+  FindVisitor visitor(finder);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  return visitor.results();
+}
+
+std::vector<std::string> ExpressionUtils::ExtractInnerVars(const Expression *expr,
+                                                           QueryContext *qctx) {
+  auto finder = [qctx](const Expression *e) -> bool {
+    auto ve = static_cast<const VariableExpression *>(e);
+    return e->kind() == Expression::Kind::kVar && !qctx->existParameter(ve->var()) &&
+           !ve->isInner();
+  };
+
+  if (finder(expr)) {
+    return {static_cast<const VariableExpression *>(expr)->var()};
+  }
+  FindVisitor visitor(finder, true);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  auto varExprs = visitor.results();
+  std::vector<std::string> vars;
+  vars.reserve(varExprs.size());
+  for (const auto *varExpr : varExprs) {
+    vars.emplace_back(static_cast<const VariableExpression *>(varExpr)->var());
+  }
+  return vars;
+}
+
 Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
   auto matcher = [](const Expression *e) -> bool {
     if (e->kind() != Expression::Kind::kRelIn) {
@@ -301,7 +339,6 @@ Expression *ExpressionUtils::rewriteInnerInExpr(const Expression *expr) {
           singleExpr = nullptr;
         }
       }
-
     } else {
       DCHECK(kind == Expression::Kind::kList || kind == Expression::Kind::kSet);
       auto ce = static_cast<const ContainerExpression *>(rhs);
@@ -951,16 +988,23 @@ Expression *ExpressionUtils::flattenInnerLogicalExpr(const Expression *expr) {
   return allFlattenExpr;
 }
 
-bool ExpressionUtils::checkVarPropIfExist(const std::vector<std::string> &columns,
-                                          const Expression *e) {
-  auto varProps = graph::ExpressionUtils::collectAll(e, {Expression::Kind::kVarProperty});
-  if (varProps.empty()) {
+bool ExpressionUtils::checkColName(const std::vector<std::string> &columns, const Expression *e) {
+  auto exprs = graph::ExpressionUtils::collectAll(
+      e, {Expression::Kind::kVarProperty, Expression::Kind::kVertex, Expression::Kind::kEdge});
+  if (exprs.empty()) {
     return false;
   }
-  for (const auto *expr : varProps) {
-    DCHECK_EQ(expr->kind(), Expression::Kind::kVarProperty);
-    auto iter = std::find_if(columns.begin(), columns.end(), [expr](const std::string &item) {
-      return !item.compare(static_cast<const VariablePropertyExpression *>(expr)->prop());
+  for (const auto *expr : exprs) {
+    std::string colName;
+    if (expr->kind() == Expression::Kind::kVarProperty) {
+      colName = static_cast<const VariablePropertyExpression *>(expr)->prop();
+    } else if (expr->kind() == Expression::Kind::kVertex) {
+      colName = static_cast<const VertexExpression *>(expr)->name();
+    } else {
+      colName = static_cast<const EdgeExpression *>(expr)->toString();
+    }
+    auto iter = std::find_if(columns.begin(), columns.end(), [&colName](const std::string &item) {
+      return !item.compare(colName);
     });
     if (iter == columns.end()) {
       return false;
@@ -993,6 +1037,12 @@ void ExpressionUtils::splitFilter(const Expression *expr,
 
   std::vector<Expression *> &operands = logicExpr->operands();
   for (auto &operand : operands) {
+    // TODO(czp): Sink all NOTs to second layer [[Refactor]]
+    // TODO(czp): If find any not, dont pick this operand for now
+    if (ExpressionUtils::findAny(operand, {Expression::Kind::kUnaryNot})) {
+      filterUnpickedPtr->addOperand(operand->clone());
+      continue;
+    }
     if (picker(operand)) {
       filterPickedPtr->addOperand(operand->clone());
     } else {
@@ -1620,6 +1670,41 @@ bool ExpressionUtils::isOneStepEdgeProp(const std::string &edgeAlias, const Expr
     return edgePropExpr;
   };
 
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
+// Transform Label Tag property expression like $-.v.player.name to Tag property like player.name
+// for more friendly to push down
+// \param pool object pool to hold ownership of objects alloacted
+// \param node the name of node, i.e. v in pattern (v)
+// \param expr the filter expression
+/*static*/ Expression *ExpressionUtils::rewriteVertexPropertyFilter(ObjectPool *pool,
+                                                                    const std::string &node,
+                                                                    Expression *expr) {
+  graph::RewriteVisitor::Matcher matcher = [&node](const Expression *e) -> bool {
+    if (e->kind() != Expression::Kind::kLabelTagProperty) {
+      return false;
+    }
+    auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
+    auto *labelExpr = ltpExpr->label();
+    DCHECK(labelExpr->kind() == Expression::Kind::kInputProperty ||
+           labelExpr->kind() == Expression::Kind::kVarProperty);
+    if (labelExpr->kind() != Expression::Kind::kInputProperty &&
+        labelExpr->kind() != Expression::Kind::kVarProperty) {
+      return false;
+    }
+    auto *inputExpr = static_cast<const PropertyExpression *>(labelExpr);
+    if (inputExpr->prop() != node) {
+      return false;
+    }
+    return true;
+  };
+  graph::RewriteVisitor::Rewriter rewriter = [pool](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kLabelTagProperty);
+    auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
+    auto *tagPropExpr = TagPropertyExpression::make(pool, ltpExpr->sym(), ltpExpr->prop());
+    return tagPropExpr;
+  };
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }
 

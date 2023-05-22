@@ -8,7 +8,7 @@
 
 #include <folly/concurrency/ConcurrentHashMap.h>
 
-#include "codec/RowReader.h"
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "common/base/ConcurrentLRUCache.h"
 #include "common/meta/IndexManager.h"
@@ -260,20 +260,21 @@ class CommonUtils final {
    * @param ttlDuration Ttl property duration
    * @return Whether data is expired
    */
-  static bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
-                                     RowReader* reader,
+  static bool checkDataExpiredForTTL(const meta::NebulaSchemaProvider* schema,
+                                     RowReaderWrapper* reader,
                                      const std::string& ttlCol,
                                      int64_t ttlDuration);
 
-  static bool checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
+  static bool checkDataExpiredForTTL(const meta::NebulaSchemaProvider* schema,
                                      const Value& v,
                                      const std::string& ttlCol,
                                      int64_t ttlDuration);
 
   static std::pair<bool, std::pair<int64_t, std::string>> ttlProps(
-      const meta::SchemaProviderIf* schema);
+      const meta::NebulaSchemaProvider* schema);
 
-  static StatusOr<Value> ttlValue(const meta::SchemaProviderIf* schema, RowReader* reader);
+  static StatusOr<Value> ttlValue(const meta::NebulaSchemaProvider* schema,
+                                  RowReaderWrapper* reader);
 };
 
 }  // namespace storage

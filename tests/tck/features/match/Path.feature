@@ -37,6 +37,20 @@ Feature: Matching paths
     Then the result should be, in any order:
       | count(p) | count(p2) |
       | 966      | 966       |
+    When executing query:
+      """
+      match p = (v:Label_5)-[e:Rel_0]->(v1:Label_1),
+      p2 = (v)<-[e1:Rel_0]-(v1)
+      where id(v) == 47
+      and (p!=p2 or p<p2 or p>p2)
+      and e == e1
+      and v == v
+      and v1 == v1
+      return count(*)
+      """
+    Then the result should be, in any order:
+      | count(*) |
+      | 0        |
 
   # The correctness of the following test cases needs to be verified, mark it @skip for now
   @skip
@@ -203,9 +217,10 @@ Feature: Matching paths
       match p = (v:Label_0)
       return count(p)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | count(p) |
+      | 60       |
 
-  @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5185
   Scenario: conflicting type
     When executing query:
       """
@@ -214,7 +229,7 @@ Feature: Matching paths
       where id(v) in [100] and id(v3) in [80]
       return count(p), count(p2)
       """
-    Then a SemanticError should be raised at runtime: `p': defined with conflicting type
+    Then a SemanticError should be raised at runtime: `p': alias redefined with a different type
 
   Scenario: use of defined vertices
     # edges cannot be redefined, tested in Scenario: distinct edges and paths

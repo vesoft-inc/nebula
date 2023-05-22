@@ -16,10 +16,17 @@ endif
 CXX := g++
 CXX_FLAGS := -c -I ../src/ -I $(3PP_PATH)/include/ -fPIC
 
+UDF ?= standard_deviation
+
 all: standard_deviation.cpp
-  $(CXX) $(CXX_FLAGS) standard_deviation.cpp -o standard_deviation.o
-  $(CXX) -shared -o standard_deviation.so standard_deviation.o
+	$(CXX) $(CXX_FLAGS) $(UDF).cpp -o $(UDF).o
+	$(CXX) -shared -o $(UDF).so $(UDF).o
 
 clean:
-  rm ./*.o
-  rm ./*.so
+	rm ./*.o
+	rm ./*.so
+
+.PHONY: help
+help:
+	@echo "Usage: make UDF=<udf_name>"
+	@echo "Example: make UDF=standard_deviation"

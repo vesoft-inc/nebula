@@ -405,7 +405,6 @@ nebula_add_executable(
         ../../codec/test/RowWriterV1.cpp
     OBJECTS
         ${storage_test_deps}
-        $<TARGET_OBJECTS:codec_test_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
@@ -575,22 +574,6 @@ nebula_add_test(
         gtest
         curl
 )
-
-#nebula_add_executable(
-#    NAME
-#        storage_lookup_bm
-#    SOURCES
-#        StorageLookupBenchmark.cpp
-#    OBJECTS
-#        ${storage_test_deps}
-#    LIBRARIES
-#        ${ROCKSDB_LIBRARIES}
-#        ${THRIFT_LIBRARIES}
-#        follybenchmark
-#        boost_regex
-#        wangle
-#        gtest
-#)
 
 nebula_add_test(
     NAME

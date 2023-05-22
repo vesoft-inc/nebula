@@ -5,11 +5,11 @@
 nebula_add_library(
     optimizer_obj
     OBJECT
-    OptimizerUtils.cpp
     Optimizer.cpp
     OptGroup.cpp
     OptRule.cpp
     OptContext.cpp
+    rule/PushFilterDownCrossJoinRule.cpp
     rule/PushFilterDownGetNbrsRule.cpp
     rule/RemoveNoopProjectRule.cpp
     rule/CombineFilterRule.cpp
@@ -20,17 +20,21 @@ nebula_add_library(
     rule/MergeGetNbrsAndProjectRule.cpp
     rule/IndexScanRule.cpp
     rule/PushLimitDownGetNeighborsRule.cpp
+    rule/PushLimitDownExpandAllRule.cpp
     rule/PushStepSampleDownGetNeighborsRule.cpp
     rule/PushStepLimitDownGetNeighborsRule.cpp
     rule/TopNRule.cpp
     rule/PushEFilterDownRule.cpp
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
+    rule/PushFilterDownExpandAllRule.cpp
+    rule/PushFilterDownAllPathsRule.cpp
     rule/PushFilterDownHashInnerJoinRule.cpp
     rule/PushFilterDownHashLeftJoinRule.cpp
     rule/PushFilterDownInnerJoinRule.cpp
     rule/PushFilterDownNodeRule.cpp
     rule/PushFilterDownScanVerticesRule.cpp
+    rule/PushFilterDownTraverseRule.cpp
     rule/PushVFilterDownScanVerticesRule.cpp
     rule/OptimizeEdgeIndexScanByFilterRule.cpp
     rule/OptimizeTagIndexScanByFilterRule.cpp
@@ -45,17 +49,18 @@ nebula_add_library(
     rule/EdgeIndexFullScanRule.cpp
     rule/PushLimitDownIndexScanRule.cpp
     rule/PushLimitDownProjectRule.cpp
+    rule/PushLimitDownAllPathsRule.cpp
     rule/EliminateRowCollectRule.cpp
     rule/PushLimitDownScanAppendVerticesRule.cpp
     rule/GetEdgesTransformAppendVerticesLimitRule.cpp
     rule/GetEdgesTransformRule.cpp
     rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
     rule/PushTopNDownIndexScanRule.cpp
-    rule/EliminateAppendVerticesRule.cpp
     rule/PushLimitDownScanEdgesRule.cpp
-    rule/RemoveProjectDedupBeforeGetDstBySrcRule.cpp
-    rule/PushFilterDownTraverseRule.cpp
+    rule/PushFilterThroughAppendVerticesRule.cpp
     rule/RemoveAppendVerticesBelowJoinRule.cpp
+    rule/EmbedEdgeAllPredIntoTraverseRule.cpp
+    rule/PushFilterThroughAppendVerticesRule.cpp
 )
 
 nebula_add_subdirectory(test)

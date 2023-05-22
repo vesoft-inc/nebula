@@ -6,7 +6,7 @@
 #ifndef GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
 #define GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
 
-#include "graph/visitor/ExprVisitorImpl.h"
+#include "common/expression/ExprVisitorImpl.h"
 
 namespace nebula {
 namespace graph {

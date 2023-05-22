@@ -191,12 +191,9 @@ class NebulaStore : public KVStore, public Handler {
    *
    * @param spaceId
    * @param partID
-   * @param canReadFromFollower
    * @return const void* Snapshot pointer.
    */
-  const void* GetSnapshot(GraphSpaceID spaceId,
-                          PartitionID partID,
-                          bool canReadFromFollower = false) override;
+  const void* GetSnapshot(GraphSpaceID spaceId, PartitionID partID) override;
 
   /**
    * @brief Release snapshot from engine.
@@ -776,6 +773,17 @@ class NebulaStore : public KVStore, public Handler {
   void updateSpaceOption(GraphSpaceID spaceId,
                          const std::unordered_map<std::string, std::string>& options,
                          bool isDbOption) override;
+
+  /**
+   * @brief Asynchronously start a new KV engine on specified path
+   *
+   * @param spaceId Space ID
+   * @param dataPath
+   * @param walPath
+   * @return folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>>
+   */
+  folly::Future<std::pair<GraphSpaceID, std::unique_ptr<KVEngine>>> newEngineAsync(
+      GraphSpaceID spaceId, const std::string& dataPath, const std::string& walPath);
 
   /**
    * @brief Start a new kv engine on specified path

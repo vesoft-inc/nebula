@@ -8,9 +8,8 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "codec/RowReader.h"
 #include "common/base/Base.h"
-#include "common/meta/SchemaProviderIf.h"
+#include "common/meta/NebulaSchemaProvider.h"
 
 namespace nebula {
 
@@ -19,31 +18,44 @@ class RowReaderWrapper;
 /**
  * This class decodes the data from version 2.0
  */
-class RowReaderV2 : public RowReader {
+class RowReaderV2 {
   friend class RowReaderWrapper;
 
   FRIEND_TEST(RowReaderV2, encodedData);
-  FRIEND_TEST(ScanEdgePropBench, ProcessEdgeProps);
 
  public:
-  ~RowReaderV2() override = default;
+  ~RowReaderV2() = default;
 
-  Value getValueByName(const std::string& prop) const override;
-  Value getValueByIndex(const int64_t index) const override;
-  int64_t getTimestamp() const noexcept override;
+  Value getValueByName(const std::string& prop) const;
+  Value getValueByIndex(const int64_t index) const;
+  int64_t getTimestamp() const noexcept;
 
-  int32_t readerVer() const noexcept override {
-    return 2;
-  }
-
-  size_t headerLen() const noexcept override {
+  size_t headerLen() const noexcept {
     return headerLen_;
   }
 
- protected:
-  bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) override;
+  const meta::NebulaSchemaProvider* getSchema() const {
+    return schema_;
+  }
+
+  SchemaVer schemaVer() const noexcept {
+    return schema_->getVersion();
+  }
+
+  size_t numFields() const noexcept {
+    return schema_->getNumFields();
+  }
+
+  const std::string getData() const {
+    return data_.toString();
+  }
 
  private:
+  bool resetImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
+
+ private:
+  meta::NebulaSchemaProvider const* schema_;
+  folly::StringPiece data_;
   size_t headerLen_;
   size_t numNullBytes_;
 

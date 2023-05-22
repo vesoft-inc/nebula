@@ -30,9 +30,11 @@ Feature: Explain and Profile
       | EXPLAIN | row        |
       | EXPLAIN | dot        |
       | EXPLAIN | dot:struct |
+      | EXPLAIN | tck        |
       | PROFILE | row        |
       | PROFILE | dot        |
       | PROFILE | dot:struct |
+      | PROFILE | tck        |
 
   Scenario Outline: Error format
     When executing query:
@@ -80,12 +82,9 @@ Feature: Explain and Profile
       | count(*) |
       | 6        |
     And the execution plan should be:
-      | id | name         | dependencies | profiling data                                                                                                                                                  | operator info     |
-      | 7  | Aggregate    | 6            | {"version":0, "rows": 1}                                                                                                                                        |                   |
-      | 6  | Project      | 5            | {"version":0, "rows": 6}                                                                                                                                        |                   |
-      | 5  | GetNeighbors | 4            | {"version":0, "rows": 6, "resp[0]": {"vertices": 3}}                                                                                                            |                   |
-      | 4  | Loop         | 0            | [{"version":0, "rows": 1},{"version":1, "rows": 1},{"version":2, "rows": 1},{"version":3, "rows": 1}]                                                           | {"loopBody": "3"} |
-      | 3  | Dedup        | 2            | [{"version":0, "rows": 2},{"version":1, "rows": 3},{"version":2, "rows": 3}]                                                                                    |                   |
-      | 2  | GetDstBySrc  | 1            | [{"version":0, "rows": 2, "resp[0]": {"vertices": 2}},{"version":1, "rows": 3, "resp[0]":{"vertices": 3}}, {"version":2, "rows": 3, "resp[0]":{"vertices": 3}}] |                   |
-      | 1  | Start        |              | [{"version":0, "rows": 0},{"version":1, "rows": 0},{"version":2, "rows": 0}]                                                                                    |                   |
-      | 0  | Start        |              | {"version":0, "rows": 0}                                                                                                                                        |                   |
+      | id | name      | dependencies | profiling data           | operator info |
+      | 5  | Aggregate | 4            | {"version":0, "rows": 1} |               |
+      | 4  | Project   | 3            | {"version":0, "rows": 6} |               |
+      | 3  | ExpandAll | 2            | {"version":0, "rows": 6} |               |
+      | 2  | Expand    | 1            |                          |               |
+      | 1  | Start     |              |                          |               |

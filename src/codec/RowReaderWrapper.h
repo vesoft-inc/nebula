@@ -8,18 +8,18 @@
 
 #include <gtest/gtest_prod.h>
 
-#include "codec/RowReaderV1.h"
 #include "codec/RowReaderV2.h"
 #include "common/base/Base.h"
+#include "common/datatypes/Value.h"
+#include "common/meta/NebulaSchemaProvider.h"
+#include "common/meta/SchemaManager.h"
 
 namespace nebula {
 
 /**
  * @brief A wrapper class to hide details of RowReaderV1 and RowReaderV2
  */
-class RowReaderWrapper : public RowReader {
-  FRIEND_TEST(RowReaderV1, headerInfo);
-  FRIEND_TEST(RowReaderV1, encodedData);
+class RowReaderWrapper {
   FRIEND_TEST(RowReaderV2, encodedData);
 
  public:
@@ -35,16 +35,8 @@ class RowReaderWrapper : public RowReader {
    * @param rhs
    */
   RowReaderWrapper(RowReaderWrapper&& rhs) {
-    this->readerVer_ = rhs.readerVer_;
-    if (this->readerVer_ == 1) {
-      this->readerV1_ = std::move(rhs.readerV1_);
-      this->currReader_ = &(this->readerV1_);
-    } else if (this->readerVer_ == 2) {
-      this->readerV2_ = std::move(rhs.readerV2_);
-      this->currReader_ = &(this->readerV2_);
-    } else {
-      this->currReader_ = nullptr;
-    }
+    this->readerV2_ = std::move(rhs.readerV2_);
+    this->currReader_ = &(this->readerV2_);
   }
 
   /**
@@ -54,16 +46,8 @@ class RowReaderWrapper : public RowReader {
    * @return RowReaderWrapper&
    */
   RowReaderWrapper& operator=(RowReaderWrapper&& rhs) {
-    this->readerVer_ = rhs.readerVer_;
-    if (this->readerVer_ == 1) {
-      this->readerV1_ = std::move(rhs.readerV1_);
-      this->currReader_ = &(this->readerV1_);
-    } else if (this->readerVer_ == 2) {
-      this->readerV2_ = std::move(rhs.readerV2_);
-      this->currReader_ = &(this->readerV2_);
-    } else {
-      this->currReader_ = nullptr;
-    }
+    this->readerV2_ = std::move(rhs.readerV2_);
+    this->currReader_ = &(this->readerV2_);
     return *this;
   }
 
@@ -102,7 +86,7 @@ class RowReaderWrapper : public RowReader {
    * @param row
    * @return RowReaderWrapper
    */
-  static RowReaderWrapper getRowReader(meta::SchemaProviderIf const* schema,
+  static RowReaderWrapper getRowReader(meta::NebulaSchemaProvider const* schema,
                                        folly::StringPiece row);
 
   /**
@@ -125,7 +109,7 @@ class RowReaderWrapper : public RowReader {
    * @param row
    * @param readerVer Row reader version
    */
-  RowReaderWrapper(const meta::SchemaProviderIf* schema,
+  RowReaderWrapper(const meta::NebulaSchemaProvider* schema,
                    const folly::StringPiece& row,
                    int32_t& readerVer);
 
@@ -137,7 +121,7 @@ class RowReaderWrapper : public RowReader {
    * @param readVer
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row, int32_t readVer);
+  bool reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row, int32_t readVer);
 
   /**
    * @brief Reset current row reader wrapper to of given schema and data
@@ -146,7 +130,7 @@ class RowReaderWrapper : public RowReader {
    * @param row
    * @return Whether reset succeed
    */
-  bool reset(meta::SchemaProviderIf const* schema, folly::StringPiece row);
+  bool reset(meta::NebulaSchemaProvider const* schema, folly::StringPiece row);
 
   /**
    * @brief Reset current row reader wrapper of given schemas and data, the schemas are stored in
@@ -159,58 +143,43 @@ class RowReaderWrapper : public RowReader {
   bool reset(const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
              folly::StringPiece row);
 
-  Value getValueByName(const std::string& prop) const override {
+  Value getValueByName(const std::string& prop) const {
     DCHECK(!!currReader_);
     return currReader_->getValueByName(prop);
   }
 
-  Value getValueByIndex(const int64_t index) const override {
+  Value getValueByIndex(const int64_t index) const {
     DCHECK(!!currReader_);
     return currReader_->getValueByIndex(index);
   }
 
-  int64_t getTimestamp() const noexcept override {
+  int64_t getTimestamp() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->getTimestamp();
   }
 
-  int32_t readerVer() const noexcept override {
-    DCHECK(!!currReader_);
-    return currReader_->readerVer();
-  }
-
   // Return the number of bytes used for the header info
-  size_t headerLen() const noexcept override {
+  size_t headerLen() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->headerLen();
   }
 
-  Iterator begin() const override {
-    DCHECK(!!currReader_);
-    return currReader_->begin();
-  }
-
-  const Iterator& end() const override {
-    DCHECK(!!currReader_);
-    return currReader_->end();
-  }
-
-  SchemaVer schemaVer() const noexcept override {
+  SchemaVer schemaVer() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->schemaVer();
   }
 
-  size_t numFields() const noexcept override {
+  size_t numFields() const noexcept {
     DCHECK(!!currReader_);
     return currReader_->numFields();
   }
 
-  const meta::SchemaProviderIf* getSchema() const override {
+  const meta::NebulaSchemaProvider* getSchema() const {
     DCHECK(!!currReader_);
     return currReader_->getSchema();
   }
 
-  const std::string getData() const override {
+  const std::string getData() const {
     DCHECK(!!currReader_);
     return currReader_->getData();
   }
@@ -281,10 +250,8 @@ class RowReaderWrapper : public RowReader {
   }
 
  private:
-  RowReaderV1 readerV1_;
   RowReaderV2 readerV2_;
-  RowReader* currReader_ = nullptr;
-  int32_t readerVer_ = 0;
+  RowReaderV2* currReader_ = nullptr;
 };
 
 }  // namespace nebula

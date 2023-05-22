@@ -820,45 +820,621 @@ Feature: Basic match
       """
     Then a ExecutionError should be raised at runtime: Failed to evaluate condition: v.player.name. For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
 
-  Scenario: Unimplemented features
+  Scenario: Scan
     When executing query:
       """
       MATCH (v) RETURN v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v                                                                                                   |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
+      | ("Aron Baynes":player{age:32,name:"Aron Baynes"})                                                   |
+      | ("Ben Simmons":player{age:22,name:"Ben Simmons"})                                                   |
+      | ("Blake Griffin":player{age:30,name:"Blake Griffin"})                                               |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Bucks":team{name:"Bucks"})                                                                        |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Cory Joseph":player{age:27,name:"Cory Joseph"})                                                   |
+      | ("Damian Lillard":player{age:28,name:"Damian Lillard"})                                             |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("DeAndre Jordan":player{age:30,name:"DeAndre Jordan"})                                             |
+      | ("Dejounte Murray":player{age:29,name:"Dejounte Murray"})                                           |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Giannis Antetokounmpo":player{age:24,name:"Giannis Antetokounmpo"})                               |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Jazz":team{name:"Jazz"})                                                                          |
+      | ("Joel Embiid":player{age:25,name:"Joel Embiid"})                                                   |
+      | ("Jonathon Simmons":player{age:29,name:"Jonathon Simmons"})                                         |
+      | ("Kevin Durant":player{age:30,name:"Kevin Durant"})                                                 |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Klay Thompson":player{age:29,name:"Klay Thompson"})                                               |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Kobe Bryant":player{age:40,name:"Kobe Bryant"})                                                   |
+      | ("Kristaps Porzingis":player{age:23,name:"Kristaps Porzingis"})                                     |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("Kyrie Irving":player{age:26,name:"Kyrie Irving"})                                                 |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Luka Doncic":player{age:20,name:"Luka Doncic"})                                                   |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Marc Gasol":player{age:34,name:"Marc Gasol"})                                                     |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Nets":team{name:"Nets"})                                                                          |
+      | ("Nobody":player{age:0,name:"Nobody"})                                                              |
+      | ("Nuggets":team{name:"Nuggets"})                                                                    |
+      | ("Null1":player{age:-1,name:NULL})                                                                  |
+      | ("Null2":player{age:-2,name:NULL})                                                                  |
+      | ("Null3":player{age:-3,name:NULL})                                                                  |
+      | ("Null4":player{age:-4,name:NULL})                                                                  |
+      | ("Pacers":team{name:"Pacers"})                                                                      |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Paul George":player{age:28,name:"Paul George"})                                                   |
+      | ("Pelicans":team{name:"Pelicans"})                                                                  |
+      | ("Pistons":team{name:"Pistons"})                                                                    |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Ricky Rubio":player{age:28,name:"Ricky Rubio"})                                                   |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Stephen Curry":player{age:31,name:"Stephen Curry"})                                               |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Tiago Splitter":player{age:34,name:"Tiago Splitter"})                                             |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Timberwolves":team{name:"Timberwolves"})                                                          |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Trail Blazers":team{name:"Trail Blazers"})                                                        |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Wizards":team{name:"Wizards"})                                                                    |
+      | ("Yao Ming":player{age:38,name:"Yao Ming"})                                                         |
     When executing query:
       """
       MATCH (v:player:bachelor) RETURN v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v                                                                                                   |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
     # TODO(jie): Optimize this case
     When executing query:
       """
       MATCH (v) WHERE v.player.age == 18 RETURN v LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v |
     When executing query:
       """
       MATCH (v:player{age:23}:bachelor) RETURN v
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v |
     When executing query:
       """
       MATCH () -[]-> (v) RETURN *
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | v                                                                                                   |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Nets":team{name:"Nets"})                                                                          |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("Paul George":player{age:28,name:"Paul George"})                                                   |
+      | ("Bucks":team{name:"Bucks"})                                                                        |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Pelicans":team{name:"Pelicans"})                                                                  |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("Kristaps Porzingis":player{age:23,name:"Kristaps Porzingis"})                                     |
+      | ("Bucks":team{name:"Bucks"})                                                                        |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Kobe Bryant":player{age:40,name:"Kobe Bryant"})                                                   |
+      | ("Marc Gasol":player{age:34,name:"Marc Gasol"})                                                     |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Trail Blazers":team{name:"Trail Blazers"})                                                        |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Stephen Curry":player{age:31,name:"Stephen Curry"})                                               |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Luka Doncic":player{age:20,name:"Luka Doncic"})                                                   |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Nets":team{name:"Nets"})                                                                          |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Nuggets":team{name:"Nuggets"})                                                                    |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Wizards":team{name:"Wizards"})                                                                    |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Kobe Bryant":player{age:40,name:"Kobe Bryant"})                                                   |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Pistons":team{name:"Pistons"})                                                                    |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Bucks":team{name:"Bucks"})                                                                        |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Ben Simmons":player{age:22,name:"Ben Simmons"})                                                   |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Wizards":team{name:"Wizards"})                                                                    |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("Kevin Durant":player{age:30,name:"Kevin Durant"})                                                 |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Pacers":team{name:"Pacers"})                                                                      |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Pacers":team{name:"Pacers"})                                                                      |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Jazz":team{name:"Jazz"})                                                                          |
+      | ("Timberwolves":team{name:"Timberwolves"})                                                          |
+      | ("Trail Blazers":team{name:"Trail Blazers"})                                                        |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Pacers":team{name:"Pacers"})                                                                      |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Stephen Curry":player{age:31,name:"Stephen Curry"})                                               |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Nuggets":team{name:"Nuggets"})                                                                    |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Jazz":team{name:"Jazz"})                                                                          |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Pistons":team{name:"Pistons"})                                                                    |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Joel Embiid":player{age:25,name:"Joel Embiid"})                                                   |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Pistons":team{name:"Pistons"})                                                                    |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
     When executing query:
       """
-      MATCH () --> (v) --> () RETURN *
+      MATCH () --> (v) --> () RETURN count(*)
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | count(*) |
+      | 511      |
     # The 0 step means node scan in fact, but p and t has no label or properties for index seek
     # So it's not workable now
     When executing query:
       """
       MATCH (p)-[:serve*0..3]->(t) RETURN p
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | p                                                                                                   |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tiago Splitter":player{age:34,name:"Tiago Splitter"})                                             |
+      | ("Spurs":team{name:"Spurs"})                                                                        |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Pistons":team{name:"Pistons"})                                                                    |
+      | ("Pacers":team{name:"Pacers"})                                                                      |
+      | ("Null4":player{age:-4,name:NULL})                                                                  |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("Null3":player{age:-3,name:NULL})                                                                  |
+      | ("Nuggets":team{name:"Nuggets"})                                                                    |
+      | ("Nets":team{name:"Nets"})                                                                          |
+      | ("Mavericks":team{name:"Mavericks"})                                                                |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Pelicans":team{name:"Pelicans"})                                                                  |
+      | ("Marc Gasol":player{age:34,name:"Marc Gasol"})                                                     |
+      | ("Stephen Curry":player{age:31,name:"Stephen Curry"})                                               |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Luka Doncic":player{age:20,name:"Luka Doncic"})                                                   |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Null2":player{age:-2,name:NULL})                                                                  |
+      | ("Lakers":team{name:"Lakers"})                                                                      |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Kyrie Irving":player{age:26,name:"Kyrie Irving"})                                                 |
+      | ("Kristaps Porzingis":player{age:23,name:"Kristaps Porzingis"})                                     |
+      | ("Kobe Bryant":player{age:40,name:"Kobe Bryant"})                                                   |
+      | ("Knicks":team{name:"Knicks"})                                                                      |
+      | ("Kings":team{name:"Kings"})                                                                        |
+      | ("Kevin Durant":player{age:30,name:"Kevin Durant"})                                                 |
+      | ("Magic":team{name:"Magic"})                                                                        |
+      | ("Jazz":team{name:"Jazz"})                                                                          |
+      | ("Wizards":team{name:"Wizards"})                                                                    |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Null1":player{age:-1,name:NULL})                                                                  |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Hornets":team{name:"Hornets"})                                                                    |
+      | ("Heat":team{name:"Heat"})                                                                          |
+      | ("Hawks":team{name:"Hawks"})                                                                        |
+      | ("Grizzlies":team{name:"Grizzlies"})                                                                |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Timberwolves":team{name:"Timberwolves"})                                                          |
+      | ("Giannis Antetokounmpo":player{age:24,name:"Giannis Antetokounmpo"})                               |
+      | ("Joel Embiid":player{age:25,name:"Joel Embiid"})                                                   |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("Dejounte Murray":player{age:29,name:"Dejounte Murray"})                                           |
+      | ("Suns":team{name:"Suns"})                                                                          |
+      | ("Paul George":player{age:28,name:"Paul George"})                                                   |
+      | ("Nobody":player{age:0,name:"Nobody"})                                                              |
+      | ("Jonathon Simmons":player{age:29,name:"Jonathon Simmons"})                                         |
+      | ("DeAndre Jordan":player{age:30,name:"DeAndre Jordan"})                                             |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("Ricky Rubio":player{age:28,name:"Ricky Rubio"})                                                   |
+      | ("Damian Lillard":player{age:28,name:"Damian Lillard"})                                             |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("Cory Joseph":player{age:27,name:"Cory Joseph"})                                                   |
+      | ("Trail Blazers":team{name:"Trail Blazers"})                                                        |
+      | ("Raptors":team{name:"Raptors"})                                                                    |
+      | ("Clippers":team{name:"Clippers"})                                                                  |
+      | ("Warriors":team{name:"Warriors"})                                                                  |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Thunders":team{name:"Thunders"})                                                                  |
+      | ("Celtics":team{name:"Celtics"})                                                                    |
+      | ("Klay Thompson":player{age:29,name:"Klay Thompson"})                                               |
+      | ("Cavaliers":team{name:"Cavaliers"})                                                                |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Rockets":team{name:"Rockets"})                                                                    |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Bulls":team{name:"Bulls"})                                                                        |
+      | ("Bucks":team{name:"Bucks"})                                                                        |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Blake Griffin":player{age:30,name:"Blake Griffin"})                                               |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Ben Simmons":player{age:22,name:"Ben Simmons"})                                                   |
+      | ("Yao Ming":player{age:38,name:"Yao Ming"})                                                         |
+      | ("Aron Baynes":player{age:32,name:"Aron Baynes"})                                                   |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
+      | ("76ers":team{name:"76ers"})                                                                        |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Vince Carter":player{age:42,name:"Vince Carter"})                                                 |
+      | ("Tim Duncan":player{age:42,name:"Tim Duncan"}:bachelor{name:"Tim Duncan",speciality:"psychology"}) |
+      | ("Tiago Splitter":player{age:34,name:"Tiago Splitter"})                                             |
+      | ("Tiago Splitter":player{age:34,name:"Tiago Splitter"})                                             |
+      | ("Tiago Splitter":player{age:34,name:"Tiago Splitter"})                                             |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Shaquille O'Neal":player{age:47,name:"Shaquille O'Neal"})                                         |
+      | ("Russell Westbrook":player{age:30,name:"Russell Westbrook"})                                       |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Ray Allen":player{age:43,name:"Ray Allen"})                                                       |
+      | ("Marc Gasol":player{age:34,name:"Marc Gasol"})                                                     |
+      | ("Marc Gasol":player{age:34,name:"Marc Gasol"})                                                     |
+      | ("Stephen Curry":player{age:31,name:"Stephen Curry"})                                               |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Rajon Rondo":player{age:33,name:"Rajon Rondo"})                                                   |
+      | ("Manu Ginobili":player{age:41,name:"Manu Ginobili"})                                               |
+      | ("Luka Doncic":player{age:20,name:"Luka Doncic"})                                                   |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("Paul Gasol":player{age:38,name:"Paul Gasol"})                                                     |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("LaMarcus Aldridge":player{age:33,name:"LaMarcus Aldridge"})                                       |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Steve Nash":player{age:45,name:"Steve Nash"})                                                     |
+      | ("Kyrie Irving":player{age:26,name:"Kyrie Irving"})                                                 |
+      | ("Kyrie Irving":player{age:26,name:"Kyrie Irving"})                                                 |
+      | ("Kristaps Porzingis":player{age:23,name:"Kristaps Porzingis"})                                     |
+      | ("Kristaps Porzingis":player{age:23,name:"Kristaps Porzingis"})                                     |
+      | ("Kobe Bryant":player{age:40,name:"Kobe Bryant"})                                                   |
+      | ("Kevin Durant":player{age:30,name:"Kevin Durant"})                                                 |
+      | ("Kevin Durant":player{age:30,name:"Kevin Durant"})                                                 |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Rudy Gay":player{age:32,name:"Rudy Gay"})                                                         |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("Jason Kidd":player{age:45,name:"Jason Kidd"})                                                     |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("James Harden":player{age:29,name:"James Harden"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("JaVale McGee":player{age:31,name:"JaVale McGee"})                                                 |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Tracy McGrady":player{age:39,name:"Tracy McGrady"})                                               |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Grant Hill":player{age:46,name:"Grant Hill"})                                                     |
+      | ("Giannis Antetokounmpo":player{age:24,name:"Giannis Antetokounmpo"})                               |
+      | ("Joel Embiid":player{age:25,name:"Joel Embiid"})                                                   |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dwight Howard":player{age:33,name:"Dwight Howard"})                                               |
+      | ("Dirk Nowitzki":player{age:40,name:"Dirk Nowitzki"})                                               |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("Kyle Anderson":player{age:25,name:"Kyle Anderson"})                                               |
+      | ("Dejounte Murray":player{age:29,name:"Dejounte Murray"})                                           |
+      | ("Paul George":player{age:28,name:"Paul George"})                                                   |
+      | ("Paul George":player{age:28,name:"Paul George"})                                                   |
+      | ("Jonathon Simmons":player{age:29,name:"Jonathon Simmons"})                                         |
+      | ("Jonathon Simmons":player{age:29,name:"Jonathon Simmons"})                                         |
+      | ("Jonathon Simmons":player{age:29,name:"Jonathon Simmons"})                                         |
+      | ("DeAndre Jordan":player{age:30,name:"DeAndre Jordan"})                                             |
+      | ("DeAndre Jordan":player{age:30,name:"DeAndre Jordan"})                                             |
+      | ("DeAndre Jordan":player{age:30,name:"DeAndre Jordan"})                                             |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("David West":player{age:38,name:"David West"})                                                     |
+      | ("Ricky Rubio":player{age:28,name:"Ricky Rubio"})                                                   |
+      | ("Ricky Rubio":player{age:28,name:"Ricky Rubio"})                                                   |
+      | ("Damian Lillard":player{age:28,name:"Damian Lillard"})                                             |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Dwyane Wade":player{age:37,name:"Dwyane Wade"})                                                   |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("Danny Green":player{age:31,name:"Danny Green"})                                                   |
+      | ("Cory Joseph":player{age:27,name:"Cory Joseph"})                                                   |
+      | ("Cory Joseph":player{age:27,name:"Cory Joseph"})                                                   |
+      | ("Cory Joseph":player{age:27,name:"Cory Joseph"})                                                   |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Marco Belinelli":player{age:32,name:"Marco Belinelli"})                                           |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Chris Paul":player{age:33,name:"Chris Paul"})                                                     |
+      | ("Klay Thompson":player{age:29,name:"Klay Thompson"})                                               |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("Carmelo Anthony":player{age:34,name:"Carmelo Anthony"})                                           |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("LeBron James":player{age:34,name:"LeBron James"})                                                 |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Boris Diaw":player{age:36,name:"Boris Diaw"})                                                     |
+      | ("Blake Griffin":player{age:30,name:"Blake Griffin"})                                               |
+      | ("Blake Griffin":player{age:30,name:"Blake Griffin"})                                               |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Tony Parker":player{age:36,name:"Tony Parker"})                                                   |
+      | ("Ben Simmons":player{age:22,name:"Ben Simmons"})                                                   |
+      | ("Yao Ming":player{age:38,name:"Yao Ming"})                                                         |
+      | ("Aron Baynes":player{age:32,name:"Aron Baynes"})                                                   |
+      | ("Aron Baynes":player{age:32,name:"Aron Baynes"})                                                   |
+      | ("Aron Baynes":player{age:32,name:"Aron Baynes"})                                                   |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
+      | ("Amar'e Stoudemire":player{age:36,name:"Amar'e Stoudemire"})                                       |
 
   Scenario: Get property or tag from a vertex
     When executing query:
@@ -873,8 +1449,17 @@ Feature: Basic match
       MATCH (v:player{name:"Tim Duncan"}) RETURN v.player AS vtag
       """
     Then the result should be, in any order:
-      | vtag                |
-      | {name:"Tim Duncan"} |
+      | vtag                          |
+      | {age: 42, name: "Tim Duncan"} |
+    When executing query:
+      """
+      match (v)
+      where id(v) == "Tim Duncan"
+      return v.player, v.bachelor.name
+      """
+    Then the result should be, in any order:
+      | v.player                      | v.bachelor.name |
+      | {age: 42, name: "Tim Duncan"} | "Tim Duncan"    |
     When executing query:
       """
       MATCH (v:player)-[]->(b) WHERE v.age > 30 RETURN v.player.name AS vname
@@ -1174,7 +1759,251 @@ Feature: Basic match
       RETURN rank(e)
       limit 10000
       """
-    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
     When executing query:
       """
       match ()-[e]->()
@@ -1182,7 +2011,251 @@ Feature: Basic match
       RETURN rank(e)
       limit 10000
       """
-    Then an ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+    Then the result should be, in any order:
+      | rank(e) |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 1       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
+      | 0       |
 
   Scenario: match_with_wrong_syntax
     When executing query:
@@ -1291,8 +2364,17 @@ Feature: Basic match
       WHERE size([ii in e WHERE (v)-[ii]-(v2) | ii])>1
       RETURN count(*) AS cnt
       """
-    # FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
-    Then a SemanticError should be raised at runtime: PatternExpression are not allowed to introduce new variables: `ii'.
+    Then the result should be, in any order, with relax comparison:
+      | cnt |
+      | 0   |
+    When executing query:
+      """
+      MATCH p=(v:player)-[]->() where [ii in relationships(p) where (v)-[ii]->()]
+      RETURN count(*) AS cnt
+      """
+    Then the result should be, in any order, with relax comparison:
+      | cnt |
+      | 243 |
 
 # Then the result should be, in any order:
 # | cnt |
