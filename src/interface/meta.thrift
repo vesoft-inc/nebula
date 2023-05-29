@@ -1045,6 +1045,7 @@ struct FTIndex {
     1: common.GraphSpaceID  space_id,
     2: common.SchemaID      depend_schema,
     3: list<binary>         fields,
+    4: binary               analyzer,
 }
 
 struct CreateFTIndexReq {

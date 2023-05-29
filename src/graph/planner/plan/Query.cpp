@@ -1059,7 +1059,7 @@ PlanNode* PatternApply::clone() const {
 }
 
 PlanNode* FulltextIndexScan::clone() const {
-  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_, isEdge_);
+  auto ret = FulltextIndexScan::make(qctx_, searchExpr_, isEdge_);
   ret->cloneMembers(*this);
   return ret;
 }

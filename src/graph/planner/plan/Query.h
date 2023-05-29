@@ -753,13 +753,9 @@ class IndexScan : public Explore {
 class FulltextIndexScan : public Explore {
  public:
   static FulltextIndexScan* make(QueryContext* qctx,
-                                 const std::string& index,
                                  TextSearchExpression* searchExpr,
                                  bool isEdge) {
-    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr, isEdge);
-  }
-  const std::string& index() const {
-    return index_;
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, searchExpr, isEdge);
   }
 
   TextSearchExpression* searchExpression() const {
@@ -776,15 +772,10 @@ class FulltextIndexScan : public Explore {
 
  protected:
   friend ObjectPool;
-  FulltextIndexScan(QueryContext* qctx,
-                    const std::string& index,
-                    TextSearchExpression* searchExpr,
-                    bool isEdge)
+  FulltextIndexScan(QueryContext* qctx, TextSearchExpression* searchExpr, bool isEdge)
       : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
-        index_(index),
         searchExpr_(searchExpr),
         isEdge_(isEdge) {}
-  std::string index_;
   TextSearchExpression* searchExpr_{nullptr};
   bool isEdge_{false};
 };

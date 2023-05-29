@@ -64,6 +64,7 @@ using namespace nebula;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
+    std::pair<int64_t, int64_t>            *intintval;
     nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
@@ -153,8 +154,6 @@ using namespace nebula;
     nebula::IndexFieldList                 *index_field_list;
     CaseList                               *case_list;
     nebula::TextSearchArgument             *text_search_argument;
-    nebula::TextSearchArgument             *base_text_search_argument;
-    nebula::TextSearchArgument             *fuzzy_text_search_argument;
     nebula::meta::cpp2::ServiceClient      *service_client_item;
     nebula::ServiceClientList              *service_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
@@ -164,7 +163,7 @@ using namespace nebula;
 %destructor {} <sentences>
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
-%destructor {} <text_search_argument> <base_text_search_argument> <fuzzy_text_search_argument>
+%destructor {} <text_search_argument>
 %destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
 %destructor { delete $$; } <*>
 
@@ -204,7 +203,7 @@ using namespace nebula;
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO KW_NEW
 %token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
-%token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
+%token KW_AUTO KW_ES_QUERY KW_ES_MATCH
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
@@ -339,8 +338,6 @@ using namespace nebula;
 %type <match_step_range> match_step_range
 %type <order_factors> match_order_by
 %type <text_search_argument> text_search_argument
-%type <base_text_search_argument> base_text_search_argument
-%type <fuzzy_text_search_argument> fuzzy_text_search_argument
 %type <service_client_item> service_client_item
 %type <service_client_list> service_client_list
 
@@ -409,6 +406,8 @@ using namespace nebula;
 %type <boolval> opt_if_exists
 %type <boolval> opt_with_properties
 %type <boolval> opt_ignore_existed_index
+
+%type <intintval> text_search_limit
 
 // Define precedence and associativity of tokens.
 // Associativity:
@@ -547,10 +546,8 @@ unreserved_keyword
     | KW_STATS              { $$ = new std::string("stats"); }
     | KW_STATUS             { $$ = new std::string("status"); }
     | KW_AUTO               { $$ = new std::string("auto"); }
-    | KW_FUZZY              { $$ = new std::string("fuzzy"); }
-    | KW_PREFIX             { $$ = new std::string("prefix"); }
-    | KW_REGEXP             { $$ = new std::string("regexp"); }
-    | KW_WILDCARD           { $$ = new std::string("wildcard"); }
+    | KW_ES_QUERY           { $$ = new std::string("es_query"); }
+    | KW_ES_MATCH           { $$ = new std::string("es_match"); }
     | KW_TEXT               { $$ = new std::string("text"); }
     | KW_SEARCH             { $$ = new std::string("search"); }
     | KW_CLIENTS            { $$ = new std::string("clients"); }
@@ -2071,119 +2068,57 @@ sign_out_service_sentence
     }
     ;
 
-base_text_search_argument
-    : name_label DOT name_label COMMA STRING {
-        auto arg = TextSearchArgument::make(qctx->objPool(), *$1, *$3, *$5);
-        $$ = arg;
-        delete $1;
-        delete $3;
-        delete $5;
+text_search_limit
+    : %empty {
+        $$ = new std::pair<int64_t,int64_t>(0, 0);
+    }
+    | COMMA legal_integer {
+        $$ = new std::pair<int64_t,int64_t>($2, 0);
+    }
+    | COMMA legal_integer COMMA legal_integer{
+        $$ = new std::pair<int64_t,int64_t>($2, $4);
     }
     ;
 
-fuzzy_text_search_argument
-   : base_text_search_argument COMMA KW_AUTO COMMA KW_AND {
-        $$ = $1;
-        $$->setFuzziness(-1);
-        $$->setOP("and");
-   }
-   | base_text_search_argument COMMA KW_AUTO COMMA KW_OR {
-        $$ = $1;
-        $$->setFuzziness(-1);
-        $$->setOP("or");
-   }
-   | base_text_search_argument COMMA legal_integer COMMA KW_AND {
-        if ($3 != 0 && $3 != 1 && $3 != 2) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
-        }
-        $$ = $1;
-        $$->setFuzziness($3);
-        $$->setOP("and");
-   }
-   | base_text_search_argument COMMA legal_integer COMMA KW_OR {
-        if ($3 != 0 && $3 != 1 && $3 != 2) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
-        }
-        $$ = $1;
-        $$->setFuzziness($3);
-        $$->setOP("or");
-   }
-
 text_search_argument
-    : base_text_search_argument {
-        $$ = $1;
+    : STRING COMMA STRING COMMA L_BRACKET name_label_list R_BRACKET text_search_limit{
+        std::vector<std::string> props;
+        for(auto& p:$6->labels()){
+            props.push_back(*p);
+        }
+        delete $6;
+        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, props, $8->first, $8->second);
+        delete $8;
+        $$  = args;
     }
-    | fuzzy_text_search_argument {
-        $$ = $1;
+    | STRING COMMA STRING text_search_limit{
+        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, {}, $4->first, $4->second);
+        delete $4;
+        $$  = args;
     }
-    | base_text_search_argument COMMA legal_integer {
-        if ($3 < 1) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
+    | STRING COMMA L_BRACKET name_label_list R_BRACKET text_search_limit{
+        std::vector<std::string> props;
+        for(auto& p:$4->labels()){
+            props.push_back(*p);
         }
-        $$ = $1;
-        $$->setLimit($3);
+        delete $4;
+        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props, $6->first, $6->second);
+        delete $6;
+        $$  = args;
     }
-    | base_text_search_argument COMMA legal_integer COMMA legal_integer {
-        if ($3 < 1) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
-        }
-        if ($5 < 1) {
-            throw nebula::GraphParser::syntax_error(@5, "Out of range:");
-        }
-        $$ = $1;
-        $$->setLimit($3);
-        $$->setTimeout($5);
-    }
-    | fuzzy_text_search_argument COMMA legal_integer {
-        if ($3 < 1) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
-        }
-        $$ = $1;
-        $$->setLimit($3);
-    }
-    | fuzzy_text_search_argument COMMA legal_integer COMMA legal_integer {
-        if ($3 < 1) {
-            throw nebula::GraphParser::syntax_error(@3, "Out of range:");
-        }
-        if ($5 < 1) {
-            throw nebula::GraphParser::syntax_error(@5, "Out of range:");
-        }
-        $$ = $1;
-        $$->setLimit($3);
-        $$->setTimeout($5);
+    | STRING text_search_limit{
+        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {}, $2->first, $2->second);
+        delete $2;
+        $$  = args;
     }
     ;
 
 text_search_expression
-    : KW_PREFIX L_PAREN text_search_argument R_PAREN {
-        if (!$3->op().empty()) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        if ($3->fuzziness() != -2) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        $$ = TextSearchExpression::makePrefix(qctx->objPool(), $3);
+    : KW_ES_MATCH L_PAREN text_search_argument R_PAREN KW_FROM{
+        $$ = TextSearchExpression::makeMatch(qctx->objPool(), $3);
     }
-    | KW_WILDCARD L_PAREN text_search_argument R_PAREN {
-        if (!$3->op().empty()) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        if ($3->fuzziness() != -2) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        $$ = TextSearchExpression::makeWildcard(qctx->objPool(), $3);
-    }
-    | KW_REGEXP L_PAREN text_search_argument R_PAREN {
-        if (!$3->op().empty()) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        if ($3->fuzziness() != -2) {
-            throw nebula::GraphParser::syntax_error(@3, "argument error:");
-        }
-        $$ = TextSearchExpression::makeRegexp(qctx->objPool(), $3);
-    }
-    | KW_FUZZY L_PAREN text_search_argument R_PAREN {
-        $$ = TextSearchExpression::makeFuzzy(qctx->objPool(), $3);
+    | KW_ES_QUERY L_PAREN text_search_argument R_PAREN {
+        $$ = TextSearchExpression::makeQuery(qctx->objPool(), $3);
     }
     ;
 

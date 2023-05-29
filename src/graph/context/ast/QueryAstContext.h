@@ -122,7 +122,6 @@ struct LookupContext final : public AstContext {
 
   // fulltext index
   bool isFulltextIndex{false};
-  std::string fulltextIndex;
   Expression* fulltextExpr{nullptr};
 
   // order by

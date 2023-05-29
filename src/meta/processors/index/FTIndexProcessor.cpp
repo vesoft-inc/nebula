@@ -125,7 +125,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
         HttpClient::instance(), protocol, client.get_host().toRawString(), user, password);
   }
   plugin::ESAdapter esAdapter(std::move(esClients));
-  auto createIndexresult = esAdapter.createIndex(name);
+  auto createIndexresult = esAdapter.createIndex(name, index.get_fields(), index.get_analyzer());
   if (!createIndexresult.ok()) {
     LOG(ERROR) << createIndexresult.message();
     handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);

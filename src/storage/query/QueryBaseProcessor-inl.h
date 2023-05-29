@@ -628,10 +628,8 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
     case Expression::Kind::kUUID:
     case Expression::Kind::kPathBuild:
     case Expression::Kind::kColumn:
-    case Expression::Kind::kTSPrefix:
-    case Expression::Kind::kTSWildcard:
-    case Expression::Kind::kTSRegexp:
-    case Expression::Kind::kTSFuzzy:
+    case Expression::Kind::kESQUERY:
+    case Expression::Kind::kESMATCH:
     case Expression::Kind::kAggregate:
     case Expression::Kind::kSubscriptRange:
     case Expression::Kind::kVersionedVar:

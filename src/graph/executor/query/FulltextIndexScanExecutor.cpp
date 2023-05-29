@@ -21,7 +21,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
   }
   esAdapter_ = std::move(esAdapterResult).value();
   auto* ftIndexScan = asNode<FulltextIndexScan>(node());
-  auto esQueryResult = accessFulltextIndex(ftIndexScan->index(), ftIndexScan->searchExpression());
+  auto esQueryResult = accessFulltextIndex(ftIndexScan->searchExpression());
   if (!esQueryResult.ok()) {
     LOG(ERROR) << esQueryResult.status().message();
     return esQueryResult.status();
@@ -32,12 +32,14 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
     if (ftIndexScan->isEdge()) {
       DataSet edges({kSrc, kRank, kDst});
       for (auto& item : esResultValue.items) {
+        // TODO(hs.zhang): return item.score
         edges.emplace_back(Row({item.src, item.rank, item.dst}));
       }
       finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
       DataSet vertices({kVid});
       for (auto& item : esResultValue.items) {
+        // TODO(hs.zhang): return item.score
         vertices.emplace_back(Row({item.vid}));
       }
       finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
@@ -67,45 +69,31 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
 }
 
 StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
-    const std::string& index, TextSearchExpression* tsExpr) {
+    TextSearchExpression* tsExpr) {
   std::function<StatusOr<nebula::plugin::ESQueryResult>()> execFunc;
   plugin::ESAdapter& esAdapter = esAdapter_;
   switch (tsExpr->kind()) {
-    case Expression::Kind::kTSFuzzy: {
-      std::string pattern = tsExpr->arg()->val();
-      int fuzziness = tsExpr->arg()->fuzziness();
-      int64_t size = tsExpr->arg()->limit();
-      int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, pattern, &esAdapter, fuzziness, size, timeout]() {
-        return esAdapter.fuzzy(
-            index, pattern, fuzziness < 0 ? "AUTO" : std::to_string(fuzziness), size, timeout);
+    case Expression::Kind::kESMATCH: {
+      auto arg = tsExpr->arg();
+      auto index = arg->index();
+      auto query = arg->query();
+      auto props = arg->props();
+      auto count = arg->count();
+      auto offset = arg->offset();
+      execFunc = [=, &esAdapter]() {
+        return esAdapter.multiMatch(index, query, props, offset, count);
       };
       break;
     }
-    case Expression::Kind::kTSPrefix: {
-      std::string pattern = tsExpr->arg()->val();
-      int64_t size = tsExpr->arg()->limit();
-      int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
-        return esAdapter.prefix(index, pattern, size, timeout);
-      };
-      break;
-    }
-    case Expression::Kind::kTSRegexp: {
-      std::string pattern = tsExpr->arg()->val();
-      int64_t size = tsExpr->arg()->limit();
-      int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
-        return esAdapter.regexp(index, pattern, size, timeout);
-      };
-      break;
-    }
-    case Expression::Kind::kTSWildcard: {
-      std::string pattern = tsExpr->arg()->val();
-      int64_t size = tsExpr->arg()->limit();
-      int64_t timeout = tsExpr->arg()->timeout();
-      execFunc = [&index, pattern, &esAdapter, size, timeout]() {
-        return esAdapter.wildcard(index, pattern, size, timeout);
+    case Expression::Kind::kESQUERY: {
+      auto arg = tsExpr->arg();
+      auto index = arg->index();
+      auto query = arg->query();
+      auto props = arg->props();
+      auto count = arg->count();
+      auto offset = arg->offset();
+      execFunc = [=, &esAdapter]() {
+        return esAdapter.queryString(index, query, props, offset, count);
       };
       break;
     }
