@@ -63,7 +63,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
         // MemoryTrackerVerified
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        addState("total_rpc", getPropsTime.elapsedInUSec());
+        addState("total_rpc", getPropsTime);
         addStats(rpcResp);
         if (FLAGS_max_job_size <= 1) {
           return folly::makeFuture<Status>(handleResp(std::move(rpcResp)));

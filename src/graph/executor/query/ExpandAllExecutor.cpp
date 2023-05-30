@@ -81,7 +81,7 @@ folly::Future<Status> ExpandAllExecutor::GetDstBySrc() {
       .via(runner())
       .ensure([this, getDstTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getDstTime.elapsedInUSec()));
+        addState("total_rpc_time", getDstTime);
       })
       .thenValue([this](StorageRpcResponse<GetDstBySrcResponse>&& resps) {
         memory::MemoryCheckGuard guard;
@@ -95,8 +95,7 @@ folly::Future<Status> ExpandAllExecutor::GetDstBySrc() {
             size = (*result.dsts_ref()).size();
           }
           auto info = util::collectRespProfileData(result.result, hostLatency[i], size);
-          otherStats_.emplace(folly::sformat("step{} resp [{}]", currentStep_, i),
-                              folly::toPrettyJson(info));
+          addState(folly::sformat("step{} resp [{}]", currentStep_, i), info);
         }
         auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
         if (!result.ok()) {
@@ -172,7 +171,7 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                                            : stepLimits_[currentStep_ - 2];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           std::string timeName = "graphExpandAllTime+" + folly::to<std::string>(currentStep_);
-          otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
+          addState(timeName, expandTime);
         });
       })
       .thenValue([this](Status s) -> folly::Future<Status> {
@@ -219,7 +218,7 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
     preVisitedVids_.swap(visitedVids);
     preDst2VidsMap_.swap(dst2VidsMap);
     std::string timeName = "graphCacheExpandAllTime+" + folly::to<std::string>(currentStep_);
-    otherStats_.emplace(timeName, folly::sformat("{}(us)", expandTime.elapsedInUSec()));
+    addState(timeName, expandTime);
     if (!nextStepVids_.empty()) {
       return getNeighbors();
     }

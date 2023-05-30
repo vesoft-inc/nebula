@@ -22,8 +22,11 @@
 DECLARE_int32(max_expression_depth);
 
 namespace nebula {
+
 class ObjectPool;
+
 namespace graph {
+
 class ExpressionUtils {
  public:
   explicit ExpressionUtils(...) = delete;

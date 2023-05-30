@@ -33,12 +33,15 @@ using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFind
 // 4. VariableVertexIdSeek
 // WITH "xx" AS vid MATCH (v:Tag) WHERE id(v)==vid RETURN v
 //
-// 5. LabelIndexSeek finds if a plan could traverse from some vids that could be
+// 5. VariablePropIndexSeek
+// WITH "xx" AS prop MATCH (v:Tag) WHERE v.Tag.prop==prop RETURN v
+//
+// 6. LabelIndexSeek finds if a plan could traverse from some vids that could be
 // read from the label indices.
 // MATCH(n: tag) RETURN n
 // MATCH(s)-[:edge]->(e) RETURN e
 //
-// 6. ScanSeek finds if a plan could traverse from some vids by scanning.
+// 7. ScanSeek finds if a plan could traverse from some vids by scanning.
 //
 class StartVidFinder {
  public:

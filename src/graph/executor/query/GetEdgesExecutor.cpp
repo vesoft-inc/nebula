@@ -98,7 +98,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
+        addState("total_rpc", getPropsTime);
       })
       .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         memory::MemoryCheckGuard guard;

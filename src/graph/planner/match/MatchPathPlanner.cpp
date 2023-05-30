@@ -114,7 +114,7 @@ Status MatchPathPlanner::findStarts(WhereClauseContext* bindWhereClause,
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
       NodeContext nodeCtx(qctx, bindWhereClause, spaceId, &nodeInfos[i]);
-      nodeCtx.nodeAliasesAvailable = &nodeAliasesSeen;
+      nodeCtx.aliasesAvailable = &nodeAliasesSeen;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);

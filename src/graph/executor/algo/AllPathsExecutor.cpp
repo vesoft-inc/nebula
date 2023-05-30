@@ -159,10 +159,7 @@ folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
         time::Duration buildAdjTime;
         auto key = folly::sformat("buildAdjTime {}step[{}]", reverse ? "reverse " : "", step);
         expand(iter.get(), reverse);
-        {
-          std::lock_guard<folly::SpinLock> lk(statsLock_);
-          otherStats_.emplace(key, folly::sformat("{}(us)", buildAdjTime.elapsedInUSec()));
-        }
+        addState(key, buildAdjTime);
         return Status::OK();
       });
 }
@@ -212,10 +209,7 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
   time::Duration buildPathTime;
   auto future = buildPathMultiJobs();
   return future.via(runner())
-      .ensure([this, buildPathTime]() {
-        otherStats_.emplace("build_path_time",
-                            folly::sformat("{}(us)", buildPathTime.elapsedInUSec()));
-      })
+      .ensure([this, buildPathTime]() { addState("build_path_time", buildPathTime); })
       .thenValue([this](auto&& resp) {
         UNUSED(resp);
         if (!withProp_ || emptyPropVids_.empty()) {
@@ -254,8 +248,7 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
       })
       .thenValue([this, conjunctPathTime](auto&& resps) {
         NG_RETURN_IF_ERROR(resps);
-        otherStats_.emplace("conjunct_path_time",
-                            folly::sformat("{}(us)", conjunctPathTime.elapsedInUSec()));
+        addState("conjunct_path_time", conjunctPathTime);
         return Status::OK();
       });
 }

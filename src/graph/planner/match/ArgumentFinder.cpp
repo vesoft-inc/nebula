@@ -10,7 +10,7 @@
 namespace nebula {
 namespace graph {
 bool ArgumentFinder::matchNode(NodeContext* nodeCtx) {
-  return nodeCtx->nodeAliasesAvailable->count(nodeCtx->info->alias) > 0;
+  return nodeCtx->aliasesAvailable->count(nodeCtx->info->alias) > 0;
 }
 
 bool ArgumentFinder::matchEdge(EdgeContext* nodeCtx) {
