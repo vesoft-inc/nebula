@@ -96,7 +96,6 @@ class Expression {
 
     kPathBuild,
     // text or key word search expression
-    kESMATCH,
     kESQUERY,
 
     kAggregate,

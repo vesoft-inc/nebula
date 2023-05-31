@@ -76,11 +76,6 @@ class ESAdapter {
 
   virtual Status bulk(const ESBulk& bulk, bool refresh = false);
 
-  virtual StatusOr<ESQueryResult> multiMatch(const std::string& index,
-                                             const std::string& query,
-                                             const std::vector<std::string>& fields,
-                                             int64_t from,
-                                             int64_t size);
 
   virtual StatusOr<ESQueryResult> queryString(const std::string& index,
                                               const std::string& query,

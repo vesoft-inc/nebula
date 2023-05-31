@@ -551,16 +551,6 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   return expr;
 }
 
-// Check does test search contains properties search in test search expression
-// StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
-//   auto tsExpr = static_cast<TextSearchExpression*>(expr);
-//   auto prop = tsExpr->arg()->prop();
-//   auto metaClient = qctx_->getMetaClient();
-//   auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
-//   NG_RETURN_IF_ERROR(tsi);
-//   auto tsName = tsi.value().first;
-//   return tsName;
-// }
 
 // Reverse position of operands in relational expression and keep the origin semantic.
 // Transform (A > B) to (B < A)
@@ -645,16 +635,6 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
-// Generate text search filter, check validity and rewrite
-// StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
-//   auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
-//   NG_RETURN_IF_ERROR(esAdapterRet);
-//   auto esAdapter = std::move(esAdapterRet).value();
-//   auto tsIndex = checkTSExpr(filter);
-//   NG_RETURN_IF_ERROR(tsIndex);
-//   return FTIndexUtils::rewriteTSFilter(
-//       qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), esAdapter);
-// }
 
 }  // namespace graph
 }  // namespace nebula

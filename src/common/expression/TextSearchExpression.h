@@ -16,10 +16,8 @@ class TextSearchArgument final {
   static TextSearchArgument* make(ObjectPool* pool,
                                   const std::string& index,
                                   const std::string& query,
-                                  const std::vector<std::string>& props,
-                                  int64_t count,
-                                  int64_t offset) {
-    return pool->makeAndAdd<TextSearchArgument>(index, query, props, count, offset);
+                                  const std::vector<std::string>& props) {
+    return pool->makeAndAdd<TextSearchArgument>(index, query, props);
   }
 
   ~TextSearchArgument() = default;
@@ -52,10 +50,8 @@ class TextSearchArgument final {
   friend ObjectPool;
   TextSearchArgument(const std::string& index,
                      const std::string& query,
-                     const std::vector<std::string>& props,
-                     int64_t count,
-                     int64_t offset)
-      : index_(index), query_(query), props_(props), count_(count), offset_(offset) {}
+                     const std::vector<std::string>& props)
+      : index_(index), query_(query), props_(props) {}
 
  private:
   std::string index_;
@@ -67,10 +63,6 @@ class TextSearchArgument final {
 
 class TextSearchExpression : public Expression {
  public:
-  static TextSearchExpression* makeMatch(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kESMATCH, arg);
-  }
-
   static TextSearchExpression* makeQuery(ObjectPool* pool, TextSearchArgument* arg) {
     return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kESQUERY, arg);
   }
@@ -93,8 +85,9 @@ class TextSearchExpression : public Expression {
   std::string toString() const override;
 
   Expression* clone() const override {
-    auto arg = TextSearchArgument::make(
-        pool_, arg_->index(), arg_->query(), arg_->props(), arg_->count(), arg_->offset());
+    auto arg = TextSearchArgument::make(pool_, arg_->index(), arg_->query(), arg_->props());
+    arg->count() = arg_->count();
+    arg->offset() = arg_->offset();
     return TextSearchExpression::make(pool_, kind_, arg);
   }
 

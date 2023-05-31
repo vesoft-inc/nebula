@@ -17,7 +17,7 @@ std::string TextSearchArgument::toString() const {
   std::string buf;
   buf.reserve(64);
   if (!index_.empty()) {
-    buf += "\"", index_ + "\", ";
+    buf += "\"" + index_ + "\", ";
   }
   buf += "\"" + query_ + "\"";
   if (!props_.empty()) {
@@ -30,14 +30,6 @@ std::string TextSearchArgument::toString() const {
     }
     buf += "]";
   }
-
-  if (count_ != 0) {
-    buf += ", " + std::to_string(count_);
-    if (offset_) {
-      buf += ", " + std::to_string(offset_);
-    }
-  }
-
   return buf;
 }
 
@@ -54,10 +46,6 @@ std::string TextSearchExpression::toString() const {
   std::string buf;
   buf.reserve(64);
   switch (kind_) {
-    case Kind::kESMATCH: {
-      buf = "ES_MATCH(";
-      break;
-    }
     case Kind::kESQUERY: {
       buf = "ES_QUERY(";
       break;

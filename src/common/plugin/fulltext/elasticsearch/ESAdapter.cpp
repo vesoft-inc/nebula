@@ -72,16 +72,16 @@ Status ESAdapter::createIndex(const std::string& name,
     {
       "mappings":{
         "properties":{
-          "@vid": {
+          "vid": {
             "type": "keyword"
           },
-          "@src": {
+          "src": {
             "type": "keyword"
           },
-          "@dst": {
+          "dst": {
             "type": "keyword"
           },
-          "@rank": {
+          "rank": {
             "type": "long"
           }
         }
@@ -185,26 +185,6 @@ Status ESAdapter::bulk(const ESBulk& bulk, bool refresh) {
     return Status::Error(folly::toJson(error));
   }
   return Status::Error(folly::toJson(resp));
-}
-
-StatusOr<ESQueryResult> ESAdapter::multiMatch(const std::string& index,
-                                              const std::string& query,
-                                              const std::vector<std::string>& fields,
-                                              int64_t from,
-                                              int64_t size) {
-  folly::dynamic body = folly::dynamic::object();
-  body["query"] = folly::dynamic::object();
-  body["query"]["multi_match"] = folly::dynamic::object();
-  body["query"]["multi_match"]["query"] = query;
-  body["query"]["multi_match"]["fields"] = folly::dynamic::array();
-  for (auto& field : fields) {
-    body["query"]["multi_match"]["fields"].push_back(field);
-  }
-  if (size > 0) {
-    body["size"] = size;
-    body["from"] = from;
-  }
-  return ESAdapter::query(index, body, 2000);
 }
 
 StatusOr<ESQueryResult> ESAdapter::queryString(const std::string& index,

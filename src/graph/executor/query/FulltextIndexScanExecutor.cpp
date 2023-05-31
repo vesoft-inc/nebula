@@ -73,18 +73,6 @@ StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
   std::function<StatusOr<nebula::plugin::ESQueryResult>()> execFunc;
   plugin::ESAdapter& esAdapter = esAdapter_;
   switch (tsExpr->kind()) {
-    case Expression::Kind::kESMATCH: {
-      auto arg = tsExpr->arg();
-      auto index = arg->index();
-      auto query = arg->query();
-      auto props = arg->props();
-      auto count = arg->count();
-      auto offset = arg->offset();
-      execFunc = [=, &esAdapter]() {
-        return esAdapter.multiMatch(index, query, props, offset, count);
-      };
-      break;
-    }
     case Expression::Kind::kESQUERY: {
       auto arg = tsExpr->arg();
       auto index = arg->index();

@@ -64,7 +64,6 @@ using namespace nebula;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
-    std::pair<int64_t, int64_t>            *intintval;
     nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
@@ -203,7 +202,7 @@ using namespace nebula;
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO KW_NEW
 %token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
-%token KW_AUTO KW_ES_QUERY KW_ES_MATCH
+%token KW_AUTO KW_ES_QUERY KW_ANALYZER
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
@@ -227,7 +226,7 @@ using namespace nebula;
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL IPV4
 
-%type <strval> name_label unreserved_keyword predicate_name
+%type <strval> name_label unreserved_keyword predicate_name opt_analyzer
 %type <expr> expression expression_internal
 %type <expr> property_expression
 %type <expr> vertex_prop_expression
@@ -407,8 +406,6 @@ using namespace nebula;
 %type <boolval> opt_with_properties
 %type <boolval> opt_ignore_existed_index
 
-%type <intintval> text_search_limit
-
 // Define precedence and associativity of tokens.
 // Associativity:
 // The associativity of an operator op determines how repeated uses of the operator nest:
@@ -547,7 +544,6 @@ unreserved_keyword
     | KW_STATUS             { $$ = new std::string("status"); }
     | KW_AUTO               { $$ = new std::string("auto"); }
     | KW_ES_QUERY           { $$ = new std::string("es_query"); }
-    | KW_ES_MATCH           { $$ = new std::string("es_match"); }
     | KW_TEXT               { $$ = new std::string("text"); }
     | KW_SEARCH             { $$ = new std::string("search"); }
     | KW_CLIENTS            { $$ = new std::string("clients"); }
@@ -2068,56 +2064,38 @@ sign_out_service_sentence
     }
     ;
 
-text_search_limit
-    : %empty {
-        $$ = new std::pair<int64_t,int64_t>(0, 0);
-    }
-    | COMMA legal_integer {
-        $$ = new std::pair<int64_t,int64_t>($2, 0);
-    }
-    | COMMA legal_integer COMMA legal_integer{
-        $$ = new std::pair<int64_t,int64_t>($2, $4);
-    }
-    ;
 
 text_search_argument
-    : STRING COMMA STRING COMMA L_BRACKET name_label_list R_BRACKET text_search_limit{
+    : STRING COMMA STRING COMMA L_BRACKET name_label_list R_BRACKET{
         std::vector<std::string> props;
         for(auto& p:$6->labels()){
             props.push_back(*p);
         }
         delete $6;
-        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, props, $8->first, $8->second);
-        delete $8;
+        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, props);
         $$  = args;
     }
-    | STRING COMMA STRING text_search_limit{
-        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, {}, $4->first, $4->second);
-        delete $4;
+    | STRING COMMA STRING {
+        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, {});
         $$  = args;
     }
-    | STRING COMMA L_BRACKET name_label_list R_BRACKET text_search_limit{
+    | STRING COMMA L_BRACKET name_label_list R_BRACKET {
         std::vector<std::string> props;
         for(auto& p:$4->labels()){
             props.push_back(*p);
         }
         delete $4;
-        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props, $6->first, $6->second);
-        delete $6;
+        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props);
         $$  = args;
-    }
-    | STRING text_search_limit{
-        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {}, $2->first, $2->second);
-        delete $2;
+    } 
+    | STRING {
+        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {});
         $$  = args;
     }
     ;
 
 text_search_expression
-    : KW_ES_MATCH L_PAREN text_search_argument R_PAREN KW_FROM{
-        $$ = TextSearchExpression::makeMatch(qctx->objPool(), $3);
-    }
-    | KW_ES_QUERY L_PAREN text_search_argument R_PAREN {
+    : KW_ES_QUERY L_PAREN text_search_argument R_PAREN {
         $$ = TextSearchExpression::makeQuery(qctx->objPool(), $3);
     }
     ;
@@ -2649,12 +2627,21 @@ create_edge_index_sentence
     }
     ;
 
-create_fulltext_index_sentence
-    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
-        $$ = new CreateFTIndexSentence(false, $5, $7, $9);
+opt_analyzer
+    : %empty {
+        $$ = nullptr;
     }
-    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label R_PAREN {
-        $$ = new CreateFTIndexSentence(true, $5, $7, $9);
+    | KW_USE KW_ANALYZER ASSIGN STRING {
+        $$ = $4;
+    }
+    ;
+
+create_fulltext_index_sentence
+    : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN opt_analyzer {
+        $$ = new CreateFTIndexSentence(false, $5, $7, $9, $11);
+    }
+    | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN opt_analyzer {
+        $$ = new CreateFTIndexSentence(true, $5, $7, $9, $11);
     }
     ;
 

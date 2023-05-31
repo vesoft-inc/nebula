@@ -2929,139 +2929,24 @@ TEST_F(ParserTest, Zone) {
 
 TEST_F(ParserTest, FullText) {
   {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\")";
+    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"abc\", \"qwerty\", [a,b,c,d])";
     auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\")";
+    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"qwerty\", [a,b,c,d])";
     auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\")";
+    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"index1\", \"qwerty\")";
     auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\")";
+    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"qwerty\")";
     auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1, 2)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", 1, 2)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", 1, 2)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 1, 2)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", AUTO, AND)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", AUTO, OR)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, AND)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1, 1)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, -1, 1)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 0, OR, 1, -1)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", -1, OR, 1, 1)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE FUZZY(t1.c1, \"a\", 4, OR, 1, 1)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", -1, 2)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", 1, -2)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE PREFIX(t1.c1, \"a\", AUTO, AND)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE WILDCARD(t1.c1, \"a\", AUTO, AND)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE REGEXP(t1.c1, \"a\", AUTO, AND)";
-    auto result = parse(query);
-    ASSERT_FALSE(result.ok());
+    EXPECT_TRUE(result.ok()) << result.status();
   }
 }
 

@@ -512,7 +512,6 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
-    case Expression::Kind::kESMATCH:
     case Expression::Kind::kESQUERY: {
       LOG(FATAL) << "Should not decode text search expression";
       return exp;
@@ -718,9 +717,6 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kPathBuild:
       os << "PathBuild";
-      break;
-    case Expression::Kind::kESMATCH:
-      os << "ESMatch";
       break;
     case Expression::Kind::kESQUERY:
       os << "ESQuery";
