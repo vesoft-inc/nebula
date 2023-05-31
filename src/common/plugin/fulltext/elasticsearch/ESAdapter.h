@@ -76,7 +76,6 @@ class ESAdapter {
 
   virtual Status bulk(const ESBulk& bulk, bool refresh = false);
 
-
   virtual StatusOr<ESQueryResult> queryString(const std::string& index,
                                               const std::string& query,
                                               const std::vector<std::string>& fields,
