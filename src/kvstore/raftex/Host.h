@@ -252,8 +252,8 @@ class Host final : public std::enable_shared_from_this<Host> {
   mutable std::mutex lock_;
 
   // If stopped_ is true, we will not send any request to the peer;
-  // If stopped_ is not true:
-  //  1. not match paused_ is true or not, we can send HB request or AskForVote request;
+  // If stopped_ is false:
+  //  1. no mater whether paused_ is true or not, we can send HB request or AskForVote request;
   //  2. Only if paused_ is false, we can send appendlog request, of course, including HB
   //     request and AskForRequest request
   // See canAppendLog() and canSendHBOrVote()
