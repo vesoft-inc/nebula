@@ -245,12 +245,8 @@ Status LookupValidator::validateWhere() {
         }
       }
       if (!undefinedParams.empty()) {
-        return Status::SemanticError(
-            "Undefined parameters: " +
-            std::accumulate(++undefinedParams.begin(),
-                            undefinedParams.end(),
-                            *undefinedParams.begin(),
-                            [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
+        auto msg = folly::join(", ", undefinedParams);
+        return Status::SemanticError("Undefined parameters: %s", msg.c_str());
       }
       filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
     }
