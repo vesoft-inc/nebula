@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/optimizer/rule/PushLimitDownGetVerticesRule.h"
+#include "graph/optimizer/rule/PushLimitDownGetEdgesRule.h"
 
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -11,7 +11,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 
-using nebula::graph::GetVertices;
+using nebula::graph::GetEdges;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
 using nebula::graph::QueryContext;
@@ -19,34 +19,34 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> PushLimitDownGetVerticesRule::kInstance =
-    std::unique_ptr<PushLimitDownGetVerticesRule>(new PushLimitDownGetVerticesRule());
+std::unique_ptr<OptRule> PushLimitDownGetEdgesRule::kInstance =
+    std::unique_ptr<PushLimitDownGetEdgesRule>(new PushLimitDownGetEdgesRule());
 
-PushLimitDownGetVerticesRule::PushLimitDownGetVerticesRule() {
+PushLimitDownGetEdgesRule::PushLimitDownGetEdgesRule() {
   RuleSet::QueryRules().addRule(this);
 }
 
-const Pattern &PushLimitDownGetVerticesRule::pattern() const {
+const Pattern &PushLimitDownGetEdgesRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
-                                           {Pattern::create(graph::PlanNode::Kind::kGetVertices)});
+                                           {Pattern::create(graph::PlanNode::Kind::kGetEdges)});
   return pattern;
 }
 
-StatusOr<OptRule::TransformResult> PushLimitDownGetVerticesRule::transform(
+StatusOr<OptRule::TransformResult> PushLimitDownGetEdgesRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto *qctx = octx->qctx();
   auto limitGroupNode = matched.node;
-  auto gvGroupNode = matched.dependencies.front().node;
+  auto geGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto gv = static_cast<const GetVertices *>(gvGroupNode->node());
+  const auto ge = static_cast<const GetEdges *>(geGroupNode->node());
 
   if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
     return TransformResult::noTransform();
   }
   int64_t limitRows = limit->offset() + limit->count(qctx);
-  auto gvLimit = gv->limit(qctx);
-  if (gvLimit >= 0 && limitRows >= gvLimit) {
+  auto geLimit = ge->limit(qctx);
+  if (geLimit >= 0 && limitRows >= geLimit) {
     return TransformResult::noTransform();
   }
 
@@ -54,15 +54,15 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetVerticesRule::transform(
   newLimit->setOutputVar(limit->outputVar());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newGv = static_cast<GetVertices *>(gv->clone());
-  newGv->setLimit(limitRows);
-  auto newGvGroup = OptGroup::create(octx);
-  auto newGvGroupNode = newGvGroup->makeGroupNode(newGv);
+  auto newGe = static_cast<GetEdges *>(ge->clone());
+  newGe->setLimit(limitRows);
+  auto newGeGroup = OptGroup::create(octx);
+  auto newGeGroupNode = newGeGroup->makeGroupNode(newGe);
 
-  newLimitGroupNode->dependsOn(newGvGroup);
-  newLimit->setInputVar(newGv->outputVar());
-  for (auto dep : gvGroupNode->dependencies()) {
-    newGvGroupNode->dependsOn(dep);
+  newLimitGroupNode->dependsOn(newGeGroup);
+  newLimit->setInputVar(newGe->outputVar());
+  for (auto dep : geGroupNode->dependencies()) {
+    newGeGroupNode->dependsOn(dep);
   }
 
   TransformResult result;
@@ -71,8 +71,8 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetVerticesRule::transform(
   return result;
 }
 
-std::string PushLimitDownGetVerticesRule::toString() const {
-  return "PushLimitDownGetVerticesRule";
+std::string PushLimitDownGetEdgesRule::toString() const {
+  return "PushLimitDownGetEdgesRule";
 }
 
 }  // namespace opt

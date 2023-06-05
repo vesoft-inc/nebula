@@ -3,15 +3,15 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETVERTICESRULE_H
-#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETVERTICESRULE_H
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE_H
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE_H
 
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
 
-//  Embedding limit to [[GetVertices]]
+//  Embedding limit to [[GetEdges]]
 //  Required conditions:
 //   1. Match the pattern
 //  Benefits:
@@ -26,7 +26,7 @@ namespace opt {
 //  +--------+--------+
 //           |
 // +---------+---------+
-// |    GetVertcies    |
+// |      GetEdges     |
 // +---------+---------+
 //
 //  After:
@@ -37,11 +37,11 @@ namespace opt {
 //  +--------+--------+
 //           |
 // +---------+---------+
-// |    GetVertices    |
+// |     GetEdges      |
 // |     (limit=3)     |
 // +---------+---------+
 
-class PushLimitDownGetVerticesRule final : public OptRule {
+class PushLimitDownGetEdgesRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -51,7 +51,7 @@ class PushLimitDownGetVerticesRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  PushLimitDownGetVerticesRule();
+  PushLimitDownGetEdgesRule();
 
   static std::unique_ptr<OptRule> kInstance;
 };
