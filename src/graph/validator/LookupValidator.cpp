@@ -102,19 +102,9 @@ Status LookupValidator::validateYieldEdge() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
-      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
-      if (schemaName != sentence()->from()) {
-        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
-      }
-    }
-    col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, Expression::Kind::kVertex));
 
     auto colExpr = col->expr();
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
@@ -132,19 +122,9 @@ Status LookupValidator::validateYieldTag() {
   auto yield = sentence()->yieldClause();
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
-      if (schemaName != sentence()->from()) {
-        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
-      }
-    }
-    col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, Expression::Kind::kEdge));
 
     auto colExpr = col->expr();
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
@@ -406,8 +386,8 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 }
 
 // Rewrite expression of geo search.
-// Put geo expression to left, check validity of geo search, check schema validity, fold expression,
-// rewrite attribute expression to fit semantic.
+// Put geo expression to left, check validity of geo search, check schema validity, fold
+// expression, rewrite attribute expression to fit semantic.
 StatusOr<Expression*> LookupValidator::rewriteGeoPredicate(Expression* expr) {
   // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
   // so that LabelAttributeExpr is always on the left
@@ -633,6 +613,39 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
+
+Status LookupValidator::validateYieldColumn(YieldColumn* col, Expression::Kind kind) {
+  if (ExpressionUtils::hasAny(col->expr(), {kind})) {
+    return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+  }
+
+  switch (col->expr()->kind()) {
+    case Expression::Kind::kLabelAttribute: {
+      auto expr = static_cast<LabelAttributeExpression*>(col->expr());
+      const auto& schemaName = expr->left()->name();
+      if (schemaName != sentence()->from()) {
+        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
+      }
+      break;
+    }
+    case Expression::Kind::kFunctionCall: {
+      auto funcExpr = static_cast<FunctionCallExpression*>(col->expr());
+      if (funcExpr->name() == "score") {
+        lookupCtx_->hasScore = true;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  auto colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
+  NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
+  col->setExpr(colExpr);
+
+  return Status::OK();
+}
 
 }  // namespace graph
 }  // namespace nebula

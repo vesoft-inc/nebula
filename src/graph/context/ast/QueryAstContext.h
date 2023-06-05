@@ -122,6 +122,7 @@ struct LookupContext final : public AstContext {
 
   // fulltext index
   bool isFulltextIndex{false};
+  bool hasScore{false};
   Expression* fulltextExpr{nullptr};
 
   // order by
