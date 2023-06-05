@@ -990,7 +990,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED:
       return Status::Error("Could not add a host, which is not a storage and not expired either");
     default:
-      return Status::Error("Unknown error!");
+      return Status::Error("Unknown error %d!", static_cast<int>(resp.get_code()));
   }
 }
 

@@ -98,7 +98,7 @@ Status ESAdapter::createIndex(const std::string& name,
     mappings["properties"][field] = std::move(f);
   }
 
-  auto result = randomClient().createIndex(name, mappings);
+  auto result = randomClient().createIndex(name, obj);
   if (!result.ok()) {
     return result.status();
   }
