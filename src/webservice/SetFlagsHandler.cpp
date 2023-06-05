@@ -38,6 +38,7 @@ void SetFlagsHandler::onBody(std::unique_ptr<folly::IOBuf> body) noexcept {
 
 void SetFlagsHandler::onEOM() noexcept {
   folly::dynamic flags;
+  folly::dynamic reply;
   try {
     if (!body_) {
       LOG(ERROR) << "Got an empty body";
@@ -55,15 +56,19 @@ void SetFlagsHandler::onEOM() noexcept {
   }
   switch (err_) {
     case HttpCode::E_UNSUPPORTED_METHOD:
+      reply = folly::dynamic::object("errorMessage", "Unsupported method");
       ResponseBuilder(downstream_)
           .status(WebServiceUtils::to(HttpStatusCode::METHOD_NOT_ALLOWED),
                   WebServiceUtils::toString(HttpStatusCode::METHOD_NOT_ALLOWED))
+          .body(folly::toPrettyJson(reply))
           .sendWithEOM();
       return;
     case HttpCode::E_UNPROCESSABLE:
+      reply = folly::dynamic::object("errorMessage", "Bad request");
       ResponseBuilder(downstream_)
           .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
                   WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
+          .body(folly::toPrettyJson(reply))
           .sendWithEOM();
       return;
     default:
@@ -72,20 +77,30 @@ void SetFlagsHandler::onEOM() noexcept {
 
   folly::dynamic failedOptions = folly::dynamic::array();
   for (auto &item : flags.items()) {
-    const std::string &name = item.first.asString();
-    const std::string &value = item.second.asString();
-    const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
-    if (newValue.empty()) {
-      failedOptions.push_back(name);
+    try {
+      const std::string &name = item.first.asString();
+      const std::string &value = item.second.asString();
+      const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
+      if (newValue.empty()) {
+        failedOptions.push_back(name);
+      }
+    } catch (const std::exception &e) {
+      LOG(ERROR) << "Fail to update flags: " << e.what();
+      reply = folly::dynamic::object("errorMessage", "Bad request parameter");
+      ResponseBuilder(downstream_)
+          .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                  WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
+          .body(folly::toPrettyJson(reply))
+          .sendWithEOM();
+      return;
     }
   }
-  folly::dynamic body = failedOptions.empty()
-                            ? folly::dynamic::object("errCode", 0)
-                            : folly::dynamic::object("failedOptions", failedOptions);
+  reply = failedOptions.empty() ? folly::dynamic::object("errCode", 0)
+                                : folly::dynamic::object("failedOptions", failedOptions);
   ResponseBuilder(downstream_)
       .status(WebServiceUtils::to(HttpStatusCode::OK),
               WebServiceUtils::toString(HttpStatusCode::OK))
-      .body(folly::toPrettyJson(body))
+      .body(folly::toPrettyJson(reply))
       .sendWithEOM();
 }
 
