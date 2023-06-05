@@ -21,19 +21,16 @@ namespace graph {
 
 int64_t Explore::limit(QueryContext* qctx) const {
   DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
-  return DCHECK_NOTNULL(limit_)
-      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
-      .getInt();
+  QueryExpressionContext ctx(qctx ? qctx->ectx() : nullptr);
+  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
 }
 
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
   addDescription("dedup", folly::toJson(util::toJson(dedup_)), desc.get());
-  addDescription(
-      "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
-  std::string filter = filter_ == nullptr ? "" : filter_->toString();
-  addDescription("filter", filter, desc.get());
+  addDescription("limit", limit_ ? limit_->toString() : "", desc.get());
+  addDescription("filter", filter_ ? filter_->toString() : "", desc.get());
   addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
   return desc;
 }
