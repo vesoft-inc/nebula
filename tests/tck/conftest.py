@@ -248,7 +248,7 @@ def add_listeners(request, exec_ctx):
     values = result.row_values(0)
     host = values[0]
     port = values[1]
-    add_listener = f"ADD LISTENER ELASTICSEARCH  {host}:{port}"
+    add_listener = f"ADD LISTENER ELASTICSEARCH {host}:{port}"
     exec_ctx['result_set'] = []
     exec_query(request, add_listener, exec_ctx)
     result = exec_ctx["result_set"][0]

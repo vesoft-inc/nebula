@@ -28,7 +28,7 @@ int64_t Explore::limit(QueryContext* qctx) const {
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
-  addDescription("dedup", folly::toJson(util::toJson(dedup_)), desc.get());
+  addDescription("dedup", folly::to<std::string>(dedup_), desc.get());
   addDescription("limit", limit_ ? limit_->toString() : "", desc.get());
   addDescription("filter", filter_ ? filter_->toString() : "", desc.get());
   addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
@@ -1063,8 +1063,9 @@ PlanNode* FulltextIndexScan::clone() const {
 
 std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
   auto desc = Explore::explain();
-  addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
-  // TODO(hs.zhang): add all infomation
+  addDescription("isEdge", folly::to<string>(isEdge_), desc.get());
+  addDescription("searchExpr", searchExpr_->toString(), desc.get());
+  addDescription("index", index_, desc.get());
   return desc;
 }
 

@@ -28,7 +28,7 @@ PushLimitDownFulltextIndexScanRule::PushLimitDownFulltextIndexScanRule() {
 
 const Pattern &PushLimitDownFulltextIndexScanRule::pattern() const {
   static Pattern pattern =
-      Pattern::create({graph::PlanNode::Kind::kGetNeighbors, graph::PlanNode::Kind::kGetEdges},
+      Pattern::create({graph::PlanNode::Kind::kGetVertices, graph::PlanNode::Kind::kGetEdges},
                       {Pattern::create(graph::PlanNode::Kind::kFulltextIndexScan)});
   return pattern;
 }
