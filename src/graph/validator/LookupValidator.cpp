@@ -112,9 +112,10 @@ Status LookupValidator::validateYieldEdge() {
       }
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto colExpr = col->expr();
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
@@ -141,9 +142,10 @@ Status LookupValidator::validateYieldTag() {
       }
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto colExpr = col->expr();
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
