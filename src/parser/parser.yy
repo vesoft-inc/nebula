@@ -2073,10 +2073,14 @@ text_search_argument
         }
         delete $6;
         auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, props);
+        delete $1;
+        delete $3;
         $$  = args;
     }
     | STRING COMMA STRING {
         auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, {});
+        delete $1;
+        delete $3;
         $$  = args;
     }
     | STRING COMMA L_BRACKET name_label_list R_BRACKET {
@@ -2086,10 +2090,12 @@ text_search_argument
         }
         delete $4;
         auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props);
+        delete $1;
         $$  = args;
     } 
     | STRING {
         auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {});
+        delete $1;
         $$  = args;
     }
     ;
