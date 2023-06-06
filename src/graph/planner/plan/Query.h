@@ -766,6 +766,14 @@ class FulltextIndexScan : public Explore {
     return isEdge_;
   }
 
+  int64_t offset() const {
+    return offset_;
+  }
+
+  void setOffset(int64_t offset) {
+    offset_ = offset;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -779,6 +787,7 @@ class FulltextIndexScan : public Explore {
 
   TextSearchExpression* searchExpr_{nullptr};
   bool isEdge_{false};
+  int64_t offset_{-1};
 };
 
 // Scan vertices
