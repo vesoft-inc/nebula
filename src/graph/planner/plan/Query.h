@@ -776,6 +776,7 @@ class FulltextIndexScan : public Explore {
       : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
         searchExpr_(searchExpr),
         isEdge_(isEdge) {}
+
   TextSearchExpression* searchExpr_{nullptr};
   bool isEdge_{false};
 };
