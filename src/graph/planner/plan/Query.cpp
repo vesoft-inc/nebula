@@ -1058,6 +1058,7 @@ PlanNode* PatternApply::clone() const {
 PlanNode* FulltextIndexScan::clone() const {
   auto ret = FulltextIndexScan::make(qctx_, searchExpr_, isEdge_);
   ret->cloneMembers(*this);
+  ret->setOffset(offset_);
   return ret;
 }
 
