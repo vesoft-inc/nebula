@@ -1065,7 +1065,6 @@ std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
   auto desc = Explore::explain();
   addDescription("isEdge", folly::to<string>(isEdge_), desc.get());
   addDescription("searchExpr", searchExpr_->toString(), desc.get());
-  addDescription("index", index_, desc.get());
   return desc;
 }
 
