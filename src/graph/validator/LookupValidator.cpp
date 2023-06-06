@@ -100,17 +100,8 @@ void LookupValidator::extractExprProps() {
 // check type and collect properties.
 Status LookupValidator::validateYieldEdge() {
   auto yield = sentence()->yieldClause();
-  auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    NG_RETURN_IF_ERROR(validateYieldColumn(col, Expression::Kind::kVertex));
-
-    auto colExpr = col->expr();
-
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, true));
   }
   return Status::OK();
 }
@@ -120,17 +111,8 @@ Status LookupValidator::validateYieldEdge() {
 // check type and collect properties.
 Status LookupValidator::validateYieldTag() {
   auto yield = sentence()->yieldClause();
-  auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    NG_RETURN_IF_ERROR(validateYieldColumn(col, Expression::Kind::kEdge));
-
-    auto colExpr = col->expr();
-
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, false));
   }
   return Status::OK();
 }
@@ -614,7 +596,8 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
 }
 
 
-Status LookupValidator::validateYieldColumn(YieldColumn* col, Expression::Kind kind) {
+Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
+  auto kind = isEdge ? Expression::Kind::kVertex : Expression::Kind::kEdge;
   if (ExpressionUtils::hasAny(col->expr(), {kind})) {
     return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
   }
@@ -639,8 +622,15 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, Expression::Kind k
       break;
   }
 
-  auto colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
+  auto colExpr = isEdge ? ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr())
+                        : ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
   NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
+  auto typeStatus = deduceExprType(colExpr);
+  NG_RETURN_IF_ERROR(typeStatus);
+  outputs_.emplace_back(col->name(), typeStatus.value());
+  lookupCtx_->yieldExpr->addColumn(col->clone().release());
+  NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
 
   col->setExpr(colExpr);
 

@@ -31,7 +31,7 @@ class LookupValidator final : public Validator {
   Status validateWhere();
   Status validateYieldTag();
   Status validateYieldEdge();
-  Status validateYieldColumn(YieldColumn* col, Expression::Kind kind);
+  Status validateYieldColumn(YieldColumn* col, bool isEdge);
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   Status checkRelExpr(RelationalExpression* expr);
