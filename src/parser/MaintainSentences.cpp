@@ -494,8 +494,7 @@ std::string CreateFTIndexSentence::toString() const {
   buf += " ON ";
   buf += *schemaName_;
   buf += "(";
-  std::vector<std::string> fieldDefs;
-  fieldDefs.emplace_back(field());
+  std::vector<std::string> fieldDefs = fields();
   std::string fields;
   folly::join(", ", fieldDefs, fields);
   buf += fields;

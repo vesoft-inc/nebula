@@ -14,60 +14,32 @@ namespace nebula {
 class TextSearchArgument final {
  public:
   static TextSearchArgument* make(ObjectPool* pool,
-                                  const std::string& from,
-                                  const std::string& prop,
-                                  const std::string& val) {
-    return pool->makeAndAdd<TextSearchArgument>(from, prop, val);
+                                  const std::string& index,
+                                  const std::string& query,
+                                  const std::vector<std::string>& props) {
+    return pool->makeAndAdd<TextSearchArgument>(index, query, props);
   }
 
   ~TextSearchArgument() = default;
 
-  void setVal(const std::string& val) {
-    val_ = val;
+  std::string& index() {
+    return index_;
   }
 
-  const std::string& from() {
-    return from_;
+  std::string& query() {
+    return query_;
   }
 
-  const std::string& prop() {
-    return prop_;
+  std::vector<std::string>& props() {
+    return props_;
   }
 
-  const std::string& val() const {
-    return val_;
+  int64_t& offset() {
+    return offset_;
   }
 
-  void setOP(const std::string& op) {
-    op_ = op;
-  }
-
-  const std::string& op() const {
-    return op_;
-  }
-
-  void setFuzziness(int32_t fuzz) {
-    fuzziness_ = fuzz;
-  }
-
-  int32_t fuzziness() {
-    return fuzziness_;
-  }
-
-  void setLimit(int32_t limit) {
-    limit_ = limit;
-  }
-
-  int32_t limit() {
-    return limit_;
-  }
-
-  void setTimeout(int32_t timeout) {
-    timeout_ = timeout;
-  }
-
-  int32_t timeout() {
-    return timeout_;
+  int64_t& count() {
+    return count_;
   }
 
   bool operator==(const TextSearchArgument& rhs) const;
@@ -76,35 +48,23 @@ class TextSearchArgument final {
 
  private:
   friend ObjectPool;
-  TextSearchArgument(const std::string& from, const std::string& prop, const std::string& val)
-      : from_(from), prop_(prop), val_(val) {}
+  TextSearchArgument(const std::string& index,
+                     const std::string& query,
+                     const std::vector<std::string>& props)
+      : index_(index), query_(query), props_(props) {}
 
  private:
-  std::string from_;
-  std::string prop_;
-  std::string val_;
-  std::string op_;
-  int32_t fuzziness_{-2};
-  int32_t limit_{10000};
-  int32_t timeout_{-1};
+  std::string index_;
+  std::string query_;
+  std::vector<std::string> props_;
+  int64_t count_ = 0;
+  int64_t offset_ = 0;
 };
 
 class TextSearchExpression : public Expression {
  public:
-  static TextSearchExpression* makePrefix(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSPrefix, arg);
-  }
-
-  static TextSearchExpression* makeWildcard(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSWildcard, arg);
-  }
-
-  static TextSearchExpression* makeRegexp(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSRegexp, arg);
-  }
-
-  static TextSearchExpression* makeFuzzy(ObjectPool* pool, TextSearchArgument* arg) {
-    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kTSFuzzy, arg);
+  static TextSearchExpression* makeQuery(ObjectPool* pool, TextSearchArgument* arg) {
+    return pool->makeAndAdd<TextSearchExpression>(pool, Kind::kESQUERY, arg);
   }
 
   static TextSearchExpression* make(ObjectPool* pool, Kind kind, TextSearchArgument* arg) {
@@ -125,7 +85,9 @@ class TextSearchExpression : public Expression {
   std::string toString() const override;
 
   Expression* clone() const override {
-    auto arg = TextSearchArgument::make(pool_, arg_->from(), arg_->prop(), arg_->val());
+    auto arg = TextSearchArgument::make(pool_, arg_->index(), arg_->query(), arg_->props());
+    arg->count() = arg_->count();
+    arg->offset() = arg_->offset();
     return TextSearchExpression::make(pool_, kind_, arg);
   }
 

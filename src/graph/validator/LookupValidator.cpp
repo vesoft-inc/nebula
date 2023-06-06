@@ -213,12 +213,46 @@ Status LookupValidator::validateWhere() {
     lookupCtx_->isFulltextIndex = true;
     lookupCtx_->fulltextExpr = filter;
     auto tsExpr = static_cast<TextSearchExpression*>(filter);
-    auto prop = tsExpr->arg()->prop();
+    auto arg = tsExpr->arg();
+    std::string& index = arg->index();
     auto metaClient = qctx_->getMetaClient();
-    auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
-    NG_RETURN_IF_ERROR(tsi);
-    auto tsName = tsi.value().first;
-    lookupCtx_->fulltextIndex = tsName;
+    meta::cpp2::FTIndex ftIndex;
+    if (index.empty()) {
+      auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
+      NG_RETURN_IF_ERROR(result);
+      auto indexes = std::move(result).value();
+      if (indexes.size() == 0) {
+        return Status::Error("There is no ft index of schema");
+      } else if (indexes.size() > 1) {
+        return Status::Error("There is more than one schema, one must be specified");
+      }
+      index = indexes.begin()->first;
+      ftIndex = indexes.begin()->second;
+    } else {
+      // TODO(hs.zhang): Directly get `ftIndex` by `index`
+      auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
+      NG_RETURN_IF_ERROR(result);
+      auto indexes = std::move(result).value();
+      auto iter = indexes.find(index);
+      if (iter == indexes.end()) {
+        return Status::Error("Index %s is not found", index.c_str());
+      }
+      ftIndex = iter->second;
+    }
+    auto& props = arg->props();
+    if (props.empty()) {
+      for (auto& f : *ftIndex.fields()) {
+        props.push_back(f);
+      }
+    } else {
+      std::set<std::string> fields(ftIndex.fields()->begin(), ftIndex.fields()->end());
+      for (auto& p : props) {
+        if (fields.count(p)) {
+          continue;
+        }
+        return Status::Error("Index %s does not include %s", index.c_str(), p.c_str());
+      }
+    }
   } else {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
@@ -517,16 +551,6 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   return expr;
 }
 
-// Check does test search contains properties search in test search expression
-StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
-  auto tsExpr = static_cast<TextSearchExpression*>(expr);
-  auto prop = tsExpr->arg()->prop();
-  auto metaClient = qctx_->getMetaClient();
-  auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
-  NG_RETURN_IF_ERROR(tsi);
-  auto tsName = tsi.value().first;
-  return tsName;
-}
 
 // Reverse position of operands in relational expression and keep the origin semantic.
 // Transform (A > B) to (B < A)
@@ -611,16 +635,6 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
-// Generate text search filter, check validity and rewrite
-StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
-  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(esAdapterRet);
-  auto esAdapter = std::move(esAdapterRet).value();
-  auto tsIndex = checkTSExpr(filter);
-  NG_RETURN_IF_ERROR(tsIndex);
-  return FTIndexUtils::rewriteTSFilter(
-      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), esAdapter);
-}
 
 }  // namespace graph
 }  // namespace nebula
