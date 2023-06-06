@@ -9,6 +9,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/Constants.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -511,7 +512,6 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   return expr;
 }
 
-
 // Reverse position of operands in relational expression and keep the origin semantic.
 // Transform (A > B) to (B < A)
 Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
@@ -595,7 +595,6 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
-
 Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
   auto kind = isEdge ? Expression::Kind::kVertex : Expression::Kind::kEdge;
   if (ExpressionUtils::hasAny(col->expr(), {kind})) {
@@ -613,7 +612,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     }
     case Expression::Kind::kFunctionCall: {
       auto funcExpr = static_cast<FunctionCallExpression*>(col->expr());
-      if (funcExpr->name() == "score") {
+      if (funcExpr->name() == kScore) {
         lookupCtx_->hasScore = true;
       }
       break;
@@ -622,8 +621,18 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
       break;
   }
 
-  auto colExpr = isEdge ? ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr())
-                        : ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
+  Expression* colExpr = nullptr;
+  if (lookupCtx_->hasScore) {
+    // Rewrite score() to $-.score
+    colExpr = InputPropertyExpression::make(qctx_->objPool(), kScore);
+  } else {
+    if (isEdge) {
+      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
+    } else {
+      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
+    }
+  }
+
   NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 
   auto typeStatus = deduceExprType(colExpr);

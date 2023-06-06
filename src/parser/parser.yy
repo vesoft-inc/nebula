@@ -2092,7 +2092,7 @@ text_search_argument
         auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props);
         delete $1;
         $$  = args;
-    } 
+    }
     | STRING {
         auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {});
         delete $1;
