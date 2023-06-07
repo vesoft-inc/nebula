@@ -601,6 +601,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
   }
 
+  bool scoreCol = false;
   switch (col->expr()->kind()) {
     case Expression::Kind::kLabelAttribute: {
       auto expr = static_cast<LabelAttributeExpression*>(col->expr());
@@ -616,7 +617,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
         if (col->alias().empty()) {
           return Status::SemanticError("Yield column should have an alias for score()");
         }
-        lookupCtx_->hasScore = true;
+        scoreCol = true;
       }
       break;
     }
@@ -625,12 +626,13 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
   }
 
   Expression* colExpr = nullptr;
-  if (lookupCtx_->hasScore) {
+  if (scoreCol) {
     // Rewrite score() to $score
     colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
     col->setExpr(colExpr);
     outputs_.emplace_back(col->name(), Value::Type::FLOAT);
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
+    lookupCtx_->hasScore = true;
   } else {
     if (isEdge) {
       colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
