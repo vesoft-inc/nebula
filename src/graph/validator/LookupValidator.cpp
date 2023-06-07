@@ -647,7 +647,11 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
+    if (isEdge) {
+      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
+    } else {
+      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
+    }
   }
 
   return Status::OK();
