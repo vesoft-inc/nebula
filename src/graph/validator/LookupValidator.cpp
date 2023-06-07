@@ -613,6 +613,9 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     case Expression::Kind::kFunctionCall: {
       auto funcExpr = static_cast<FunctionCallExpression*>(col->expr());
       if (funcExpr->name() == kScore) {
+        if (col->alias().empty()) {
+          return Status::SemanticError("Yield column should have an alias for score()");
+        }
         lookupCtx_->hasScore = true;
       }
       break;
@@ -624,24 +627,26 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
   Expression* colExpr = nullptr;
   if (lookupCtx_->hasScore) {
     // Rewrite score() to $-.score
-    colExpr = InputPropertyExpression::make(qctx_->objPool(), kScore);
+    colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
+    col->setExpr(colExpr);
+    outputs_.emplace_back(col->name(), Value::Type::FLOAT);
+    lookupCtx_->yieldExpr->addColumn(col->clone().release());
   } else {
     if (isEdge) {
       colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
     } else {
       colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
     }
+
+    col->setExpr(colExpr);
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
+    auto typeStatus = deduceExprType(colExpr);
+    NG_RETURN_IF_ERROR(typeStatus);
+    outputs_.emplace_back(col->name(), typeStatus.value());
+    lookupCtx_->yieldExpr->addColumn(col->clone().release());
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
   }
-
-  NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
-
-  auto typeStatus = deduceExprType(colExpr);
-  NG_RETURN_IF_ERROR(typeStatus);
-  outputs_.emplace_back(col->name(), typeStatus.value());
-  lookupCtx_->yieldExpr->addColumn(col->clone().release());
-  NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
-
-  col->setExpr(colExpr);
 
   return Status::OK();
 }

@@ -19,10 +19,12 @@ struct ESQueryResult {
     Item() = default;
     Item(const std::string& vid, double score);
     Item(const std::string& src, const std::string& dst, int64_t rank, double score);
+
     std::string vid;       // for vertex
     std::string src, dst;  // for edge
     int64_t rank = 0;      // for edge
     double score;
+
     bool operator==(const Item& item) const {
       return vid == item.vid && src == item.src && dst == item.dst && rank == item.rank &&
              score == item.score;

@@ -436,6 +436,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"json_extract",
      {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
+    {"score", {TypeSignature({}, Value::Type::__EMPTY__)}},
 };
 
 // static
