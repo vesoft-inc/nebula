@@ -74,7 +74,6 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
   auto newFt = static_cast<FulltextIndexScan *>(ft->clone());
   newFt->setLimit(limit->count() + limit->offset());
   newFt->setOffset(limit->offset());
-  newFt->setInputVar(ft->inputVar());
   auto newFtGroup = OptGroup::create(octx);
   auto newFtGroupNode = newFtGroup->makeGroupNode(newFt);
 
@@ -94,7 +93,6 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
   auto argGroupNode = matched.result({0, 0, 1, 0}).node;
   auto arg = static_cast<const Argument *>(argGroupNode->node());
   auto newArg = static_cast<Argument *>(arg->clone());
-  newArg->setInputVar(arg->inputVar());
   auto newArgGroup = OptGroup::create(octx);
   auto newArgGroupNode = newArgGroup->makeGroupNode(newArg);
 
