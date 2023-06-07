@@ -626,7 +626,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
 
   Expression* colExpr = nullptr;
   if (lookupCtx_->hasScore) {
-    // Rewrite score() to $-.score
+    // Rewrite score() to $score
     colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
     col->setExpr(colExpr);
     outputs_.emplace_back(col->name(), Value::Type::FLOAT);
