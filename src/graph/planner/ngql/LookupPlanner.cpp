@@ -35,14 +35,17 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
     auto expr = static_cast<TextSearchExpression*>(lookupCtx->fulltextExpr);
     auto fulltextIndexScan =
         FulltextIndexScan::make(qctx, expr, lookupCtx->isEdge, lookupCtx->schemaId);
-    fulltextIndexScan->setColNames({kIdColName});
     plan.tail = fulltextIndexScan;
     plan.root = fulltextIndexScan;
 
     if (lookupCtx->hasScore) {
+      fulltextIndexScan->setColNames({kIdColName, kScore});
+
       auto argument = Argument::make(qctx, kIdColName);
       argument->setInputVertexRequired(false);
       plan.root = argument;
+    } else {
+      fulltextIndexScan->setColNames({kIdColName});
     }
 
     auto* pool = qctx->objPool();
