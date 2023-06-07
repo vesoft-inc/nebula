@@ -78,6 +78,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
   auto newFtGroupNode = newFtGroup->makeGroupNode(newFt);
 
   newJoinGroupNode->dependsOn(newFtGroup);
+  newJoin->setLeftVar(newFt->outputVar());
   for (auto dep : ftGroupNode->dependencies()) {
     newFtGroupNode->dependsOn(dep);
   }
@@ -89,6 +90,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
   auto newExploreGroupNode = newExploreGroup->makeGroupNode(newExplore);
 
   newJoinGroupNode->dependsOn(newExploreGroup);
+  newJoin->setRightVar(newExplore->outputVar());
 
   auto argGroupNode = matched.result({0, 0, 1, 0}).node;
   auto arg = static_cast<const Argument *>(argGroupNode->node());
