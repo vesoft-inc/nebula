@@ -1058,12 +1058,14 @@ PlanNode* PatternApply::clone() const {
 PlanNode* FulltextIndexScan::clone() const {
   auto ret = FulltextIndexScan::make(qctx_, searchExpr_, isEdge_);
   ret->cloneMembers(*this);
+  ret->setOffset(offset_);
   return ret;
 }
 
 std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
   auto desc = Explore::explain();
-  addDescription("isEdge", folly::to<string>(isEdge_), desc.get());
+  addDescription("isEdge", folly::to<std::string>(isEdge_), desc.get());
+  addDescription("offset", folly::to<std::string>(offset_), desc.get());
   addDescription("searchExpr", searchExpr_->toString(), desc.get());
   return desc;
 }
