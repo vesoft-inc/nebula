@@ -3,8 +3,8 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE_H
-#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE_H
+#ifndef GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE2_H_
+#define GRAPH_OPTIMIZER_RULE_PUSHLIMITDOWNGETEDGESRULE2_H_
 
 #include "graph/optimizer/OptRule.h"
 
@@ -20,30 +20,26 @@ namespace opt {
 //  Transformation:
 //  Before:
 //
-// +----------------------+
-// | GetVertices/GetEdges |
-// |    (limit=3)         |
-// +---------+------------+
-//           |
-// +---------+---------+
-// | FulltextIndexScan |
-// +---------+---------+
+// Limit (count=3, offset=1)
+//   `- HashInnerJoin
+//       |- GetVertices/GetEdges
+//       |   `- Argument
+//       `- FulltextIndexScan
 //
 //  After:
 //
-// +----------------------+
-// | GetVertices/GetEdges |
-// |    (limit=3)         |
-// +---------+------------+
-//           |
-// +---------+---------+
-// | FulltextIndexScan |
-// |     (limit=3)     |
-// +---------+---------+
+// Limit (count=3, offset=1)
+//   `- HashInnerJoin
+//       |- GetVertices/GetEdges
+//       |   `- Argument
+//       `- FulltextIndexScan (limit=4, offset=1)
+//
 
-class PushLimitDownFulltextIndexScanRule final : public OptRule {
+class PushLimitDownFulltextIndexScanRule2 final : public OptRule {
  public:
   const Pattern &pattern() const override;
+
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
 
   StatusOr<OptRule::TransformResult> transform(OptContext *ctx,
                                                const MatchedResult &matched) const override;
@@ -51,7 +47,7 @@ class PushLimitDownFulltextIndexScanRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  PushLimitDownFulltextIndexScanRule();
+  PushLimitDownFulltextIndexScanRule2();
 
   static std::unique_ptr<OptRule> kInstance;
 };

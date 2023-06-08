@@ -436,6 +436,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"json_extract",
      {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
+    {"score", {TypeSignature({}, Value::Type::__EMPTY__)}},
 };
 
 // static
@@ -2930,6 +2931,17 @@ FunctionManager::FunctionManager() {
           return arg.get();
         }
       }
+      return Value::kNullValue;
+    };
+  }
+  // Score function is used to identify the score of a full-text search
+  {
+    auto &attr = functions_["score"];
+    attr.minArity_ = 0;
+    attr.maxArity_ = 0;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &) -> Value {
+      // Only placeholder, will be replaced by actual expression and need not to be evaluated
       return Value::kNullValue;
     };
   }

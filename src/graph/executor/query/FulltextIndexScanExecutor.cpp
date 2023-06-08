@@ -5,6 +5,7 @@
 #include "graph/executor/query/FulltextIndexScanExecutor.h"
 
 #include "common/datatypes/DataSet.h"
+#include "common/datatypes/Edge.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/FTIndexUtils.h"
 
@@ -30,10 +31,15 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
   const auto& space = qctx()->rctx()->session()->space();
   if (!isIntVidType(space)) {
     if (ftIndexScan->isEdge()) {
-      DataSet edges({kSrc, kRank, kDst});
+      DataSet edges({"edge"});
       for (auto& item : esResultValue.items) {
         // TODO(hs.zhang): return item.score
-        edges.emplace_back(Row({item.src, item.rank, item.dst}));
+        Edge edge;
+        edge.src = item.src;
+        edge.dst = item.dst;
+        edge.ranking = item.rank;
+        edge.type = ftIndexScan->schemaId();
+        edges.emplace_back(Row({std::move(edge)}));
       }
       finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {

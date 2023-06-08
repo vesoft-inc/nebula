@@ -12,17 +12,11 @@
 #include "graph/context/ast/AstContext.h"
 #include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
+#include "graph/util/Constants.h"
 
 namespace nebula {
 namespace graph {
 class Planner;
-
-extern const char* kSrcVID;
-extern const char* kDstVID;
-extern const char* kRanking;
-extern const char* kVertexID;
-extern const char* kVertices;
-extern const char* kEdges;
 
 std::ostream& operator<<(std::ostream& os, const SubPlan& subplan);
 
