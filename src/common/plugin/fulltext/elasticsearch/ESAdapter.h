@@ -80,7 +80,6 @@ class ESAdapter {
 
   virtual StatusOr<ESQueryResult> queryString(const std::string& index,
                                               const std::string& query,
-                                              const std::vector<std::string>& fields,
                                               int64_t from,
                                               int64_t size);
 

@@ -10,26 +10,14 @@
 namespace nebula {
 
 bool TextSearchArgument::operator==(const TextSearchArgument& rhs) const {
-  return index_ == rhs.index_ && query_ == rhs.query_ && props_ == rhs.props_;
+  return index_ == rhs.index_ && query_ == rhs.query_;
 }
 
 std::string TextSearchArgument::toString() const {
   std::string buf;
   buf.reserve(64);
-  if (!index_.empty()) {
-    buf += "\"" + index_ + "\", ";
-  }
+  buf += "\"" + index_ + "\", ";
   buf += "\"" + query_ + "\"";
-  if (!props_.empty()) {
-    buf += ", [";
-    for (size_t i = 0; i < props_.size(); i++) {
-      buf += props_[i];
-      if (i != props_.size() - 1) {
-        buf += ", ";
-      }
-    }
-    buf += "]";
-  }
   return buf;
 }
 
