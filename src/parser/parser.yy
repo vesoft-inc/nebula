@@ -2066,7 +2066,7 @@ sign_out_service_sentence
 
 
 text_search_argument
-    : STRING COMMA STRING {
+    : name_label COMMA STRING {
         auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3);
         delete $1;
         delete $3;
