@@ -16,7 +16,7 @@ bool TextSearchArgument::operator==(const TextSearchArgument& rhs) const {
 std::string TextSearchArgument::toString() const {
   std::string buf;
   buf.reserve(64);
-  buf += "\"" + index_ + "\", ";
+  buf += index_ + ", ";
   buf += "\"" + query_ + "\"";
   return buf;
 }
