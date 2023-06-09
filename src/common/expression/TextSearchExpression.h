@@ -15,9 +15,8 @@ class TextSearchArgument final {
  public:
   static TextSearchArgument* make(ObjectPool* pool,
                                   const std::string& index,
-                                  const std::string& query,
-                                  const std::vector<std::string>& props) {
-    return pool->makeAndAdd<TextSearchArgument>(index, query, props);
+                                  const std::string& query) {
+    return pool->makeAndAdd<TextSearchArgument>(index, query);
   }
 
   ~TextSearchArgument() = default;
@@ -30,35 +29,18 @@ class TextSearchArgument final {
     return query_;
   }
 
-  std::vector<std::string>& props() {
-    return props_;
-  }
-
-  int64_t& offset() {
-    return offset_;
-  }
-
-  int64_t& count() {
-    return count_;
-  }
-
   bool operator==(const TextSearchArgument& rhs) const;
 
   std::string toString() const;
 
  private:
   friend ObjectPool;
-  TextSearchArgument(const std::string& index,
-                     const std::string& query,
-                     const std::vector<std::string>& props)
-      : index_(index), query_(query), props_(props) {}
+  TextSearchArgument(const std::string& index, const std::string& query)
+      : index_(index), query_(query) {}
 
  private:
   std::string index_;
   std::string query_;
-  std::vector<std::string> props_;
-  int64_t count_ = 0;
-  int64_t offset_ = 0;
 };
 
 class TextSearchExpression : public Expression {
@@ -85,9 +67,7 @@ class TextSearchExpression : public Expression {
   std::string toString() const override;
 
   Expression* clone() const override {
-    auto arg = TextSearchArgument::make(pool_, arg_->index(), arg_->query(), arg_->props());
-    arg->count() = arg_->count();
-    arg->offset() = arg_->offset();
+    auto arg = TextSearchArgument::make(pool_, arg_->index(), arg_->query());
     return TextSearchExpression::make(pool_, kind_, arg);
   }
 

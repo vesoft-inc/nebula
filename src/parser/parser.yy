@@ -2066,36 +2066,10 @@ sign_out_service_sentence
 
 
 text_search_argument
-    : STRING COMMA STRING COMMA L_BRACKET name_label_list R_BRACKET{
-        std::vector<std::string> props;
-        for(auto& p:$6->labels()){
-            props.push_back(*p);
-        }
-        delete $6;
-        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, props);
+    : name_label COMMA STRING {
+        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3);
         delete $1;
         delete $3;
-        $$  = args;
-    }
-    | STRING COMMA STRING {
-        auto args = TextSearchArgument::make(qctx->objPool(), *$1, *$3, {});
-        delete $1;
-        delete $3;
-        $$  = args;
-    }
-    | STRING COMMA L_BRACKET name_label_list R_BRACKET {
-        std::vector<std::string> props;
-        for(auto& p:$4->labels()){
-            props.push_back(*p);
-        }
-        delete $4;
-        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, props);
-        delete $1;
-        $$  = args;
-    }
-    | STRING {
-        auto args = TextSearchArgument::make(qctx->objPool(), "", *$1, {});
-        delete $1;
         $$  = args;
     }
     ;
@@ -2637,8 +2611,8 @@ opt_analyzer
     : %empty {
         $$ = nullptr;
     }
-    | KW_USE KW_ANALYZER ASSIGN STRING {
-        $$ = $4;
+    | KW_ANALYZER ASSIGN STRING {
+        $$ = $3;
     }
     ;
 

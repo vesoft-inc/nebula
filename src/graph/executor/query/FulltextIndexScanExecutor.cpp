@@ -33,20 +33,18 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
     if (ftIndexScan->isEdge()) {
       DataSet edges({"edge"});
       for (auto& item : esResultValue.items) {
-        // TODO(hs.zhang): return item.score
         Edge edge;
         edge.src = item.src;
         edge.dst = item.dst;
         edge.ranking = item.rank;
         edge.type = ftIndexScan->schemaId();
-        edges.emplace_back(Row({std::move(edge)}));
+        edges.emplace_back(Row({std::move(edge), item.score}));
       }
       finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
       DataSet vertices({kVid});
       for (auto& item : esResultValue.items) {
-        // TODO(hs.zhang): return item.score
-        vertices.emplace_back(Row({item.vid}));
+        vertices.emplace_back(Row({item.vid, item.score}));
       }
       finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
     }
@@ -78,17 +76,15 @@ StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
     TextSearchExpression* tsExpr) {
   std::function<StatusOr<nebula::plugin::ESQueryResult>()> execFunc;
   plugin::ESAdapter& esAdapter = esAdapter_;
+  auto* ftIndexScan = asNode<FulltextIndexScan>(node());
   switch (tsExpr->kind()) {
     case Expression::Kind::kESQUERY: {
       auto arg = tsExpr->arg();
       auto index = arg->index();
       auto query = arg->query();
-      auto props = arg->props();
-      auto count = arg->count();
-      auto offset = arg->offset();
-      execFunc = [=, &esAdapter]() {
-        return esAdapter.queryString(index, query, props, offset, count);
-      };
+      int64_t offset = ftIndexScan->offset();
+      int64_t count = ftIndexScan->limit();
+      execFunc = [=, &esAdapter]() { return esAdapter.queryString(index, query, offset, count); };
       break;
     }
     default: {

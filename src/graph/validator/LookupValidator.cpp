@@ -164,42 +164,14 @@ Status LookupValidator::validateWhere() {
     std::string& index = arg->index();
     auto metaClient = qctx_->getMetaClient();
     meta::cpp2::FTIndex ftIndex;
-    if (index.empty()) {
-      auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
-      NG_RETURN_IF_ERROR(result);
-      auto indexes = std::move(result).value();
-      if (indexes.size() == 0) {
-        return Status::Error("There is no ft index of schema");
-      } else if (indexes.size() > 1) {
-        return Status::Error("There is more than one schema, one must be specified");
-      }
-      index = indexes.begin()->first;
-      ftIndex = indexes.begin()->second;
-    } else {
-      // TODO(hs.zhang): Directly get `ftIndex` by `index`
-      auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
-      NG_RETURN_IF_ERROR(result);
-      auto indexes = std::move(result).value();
-      auto iter = indexes.find(index);
-      if (iter == indexes.end()) {
-        return Status::Error("Index %s is not found", index.c_str());
-      }
-      ftIndex = iter->second;
+    auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
+    NG_RETURN_IF_ERROR(result);
+    auto indexes = std::move(result).value();
+    auto iter = indexes.find(index);
+    if (iter == indexes.end()) {
+      return Status::Error("Index %s is not found", index.c_str());
     }
-    auto& props = arg->props();
-    if (props.empty()) {
-      for (auto& f : *ftIndex.fields()) {
-        props.push_back(f);
-      }
-    } else {
-      std::set<std::string> fields(ftIndex.fields()->begin(), ftIndex.fields()->end());
-      for (auto& p : props) {
-        if (fields.count(p)) {
-          continue;
-        }
-        return Status::Error("Index %s does not include %s", index.c_str(), p.c_str());
-      }
-    }
+    ftIndex = iter->second;
   } else {
     if (filter != nullptr) {
       auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);

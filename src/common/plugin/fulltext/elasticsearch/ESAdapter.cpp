@@ -189,17 +189,12 @@ Status ESAdapter::bulk(const ESBulk& bulk, bool refresh) {
 
 StatusOr<ESQueryResult> ESAdapter::queryString(const std::string& index,
                                                const std::string& query,
-                                               const std::vector<std::string>& fields,
                                                int64_t from,
                                                int64_t size) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["query_string"] = folly::dynamic::object();
   body["query"]["query_string"]["query"] = query;
-  body["query"]["query_string"]["fields"] = folly::dynamic::array();
-  for (auto& field : fields) {
-    body["query"]["query_string"]["fields"].push_back(field);
-  }
   if (size > 0) {
     body["size"] = size;
     body["from"] = from;

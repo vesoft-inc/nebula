@@ -2929,22 +2929,7 @@ TEST_F(ParserTest, Zone) {
 
 TEST_F(ParserTest, FullText) {
   {
-    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"abc\", \"qwerty\", [a,b,c,d])";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"qwerty\", [a,b,c,d])";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"index1\", \"qwerty\")";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(\"qwerty\")";
+    std::string query = "LOOKUP ON t1 WHERE ES_QUERY(abc, \"qwerty\")";
     auto result = parse(query);
     EXPECT_TRUE(result.ok()) << result.status();
   }
