@@ -44,6 +44,11 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
 
   // verify the columns.
   auto schema = MetaKeyUtils::parseSchema(iter->val());
+  if (schema.get_schema_prop().get_ttl_col() && !schema.get_schema_prop().get_ttl_col()->empty()) {
+    handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+    onFinished();
+    return;
+  }
   auto columns = schema.get_columns();
   for (const auto& col : index.get_fields()) {
     auto targetCol = std::find_if(
