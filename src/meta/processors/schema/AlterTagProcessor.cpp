@@ -70,6 +70,7 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   }
 
   auto indexes = std::move(nebula::value(iCode));
+
   auto existIndex = !indexes.empty();
   if (existIndex) {
     auto iStatus = indexCheck(indexes, tagItems);
@@ -81,11 +82,28 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
       return;
     }
   }
+  // Check fulltext index
+  auto ftIdxRet = getFTIndex(spaceId, tagId);
+  bool existFTIndex = false;
+  if (nebula::ok(ftIdxRet)) {
+    auto fti = std::move(nebula::value(ftIdxRet));
+    existFTIndex = !fti.empty();
+    auto ftStatus = ftIndexCheck(fti, tagItems);
+    if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      handleErrorCode(ftStatus);
+      onFinished();
+      return;
+    }
+  } else if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
+    handleErrorCode(nebula::error(ftIdxRet));
+    onFinished();
+    return;
+  }
 
   auto& alterSchemaProp = req.get_schema_prop();
 
   // If index exist, could not alter ttl column
-  if (existIndex) {
+  if (existIndex || existFTIndex) {
     int64_t duration = 0;
     if (alterSchemaProp.get_ttl_duration()) {
       duration = *alterSchemaProp.get_ttl_duration();
@@ -100,22 +118,6 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
       onFinished();
       return;
     }
-  }
-
-  // Check fulltext index
-  auto ftIdxRet = getFTIndex(spaceId, tagId);
-  if (nebula::ok(ftIdxRet)) {
-    auto fti = std::move(nebula::value(ftIdxRet));
-    auto ftStatus = ftIndexCheck(fti, tagItems);
-    if (ftStatus != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      handleErrorCode(ftStatus);
-      onFinished();
-      return;
-    }
-  } else if (nebula::error(ftIdxRet) != nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND) {
-    handleErrorCode(nebula::error(ftIdxRet));
-    onFinished();
-    return;
   }
 
   for (auto& tagItem : tagItems) {
