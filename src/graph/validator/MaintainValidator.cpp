@@ -599,10 +599,7 @@ Status AddHostsIntoZoneValidator::toPlan() {
 Status CreateFTIndexValidator::validateImpl() {
   auto sentence = static_cast<CreateFTIndexSentence *>(sentence_);
   folly::StringPiece name = folly::StringPiece(*sentence->indexName());
-  if (!name.startsWith(kFulltextIndexNamePrefix)) {
-    return Status::SyntaxError("Index name must begin with \"%s\"",
-                               kFulltextIndexNamePrefix.c_str());
-  }
+
   if (name.size() > kFulltextIndexNameLength) {
     return Status::SyntaxError(fmt::format("Fulltext index name's length must less equal than {}",
                                            kFulltextIndexNameLength));
@@ -639,7 +636,10 @@ Status CreateFTIndexValidator::validateImpl() {
   }
   index_.space_id_ref() = space.id;
   index_.depend_schema_ref() = std::move(id);
-  index_.fields_ref()->push_back(sentence->field());
+  for (auto &f : sentence->fields()) {
+    index_.fields_ref()->push_back(f);
+  }
+  index_.analyzer_ref() = sentence->analyzer();
   return Status::OK();
 }
 

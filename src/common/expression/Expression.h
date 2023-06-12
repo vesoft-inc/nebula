@@ -96,10 +96,7 @@ class Expression {
 
     kPathBuild,
     // text or key word search expression
-    kTSPrefix,
-    kTSWildcard,
-    kTSRegexp,
-    kTSFuzzy,
+    kESQUERY,
 
     kAggregate,
     kIsNull,

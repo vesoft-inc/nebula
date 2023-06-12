@@ -231,7 +231,7 @@ void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<cons
   if (range == hashTable.end()) {
     return;
   }
-  for (std::size_t i = 0; i < (range->second.size() - 1); ++i) {
+  for (std::size_t i = 0, e = range->second.size() - 1; i < e; ++i) {
     if (exchange_) {
       ds.rows.emplace_back(newRow(rRow, *range->second[i]));
     } else {

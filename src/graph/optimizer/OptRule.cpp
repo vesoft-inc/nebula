@@ -55,8 +55,9 @@ Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Patter
   return Pattern(kind, std::move(patterns));
 }
 
-/*static*/ Pattern Pattern::create(std::initializer_list<graph::PlanNode::Kind> kinds,
-                                   std::initializer_list<Pattern> patterns) {
+/*static*/
+Pattern Pattern::create(std::initializer_list<graph::PlanNode::Kind> kinds,
+                        std::initializer_list<Pattern> patterns) {
   return Pattern(std::move(kinds), std::move(patterns));
 }
 

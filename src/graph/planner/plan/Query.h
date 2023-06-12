@@ -753,13 +753,10 @@ class IndexScan : public Explore {
 class FulltextIndexScan : public Explore {
  public:
   static FulltextIndexScan* make(QueryContext* qctx,
-                                 const std::string& index,
                                  TextSearchExpression* searchExpr,
-                                 bool isEdge) {
-    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr, isEdge);
-  }
-  const std::string& index() const {
-    return index_;
+                                 bool isEdge,
+                                 int32_t schemaId) {
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, searchExpr, isEdge, schemaId);
   }
 
   TextSearchExpression* searchExpression() const {
@@ -770,6 +767,18 @@ class FulltextIndexScan : public Explore {
     return isEdge_;
   }
 
+  int64_t offset() const {
+    return offset_;
+  }
+
+  void setOffset(int64_t offset) {
+    offset_ = offset;
+  }
+
+  int32_t schemaId() const {
+    return schemaId_;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -777,16 +786,18 @@ class FulltextIndexScan : public Explore {
  protected:
   friend ObjectPool;
   FulltextIndexScan(QueryContext* qctx,
-                    const std::string& index,
                     TextSearchExpression* searchExpr,
-                    bool isEdge)
+                    bool isEdge,
+                    int32_t schemaId)
       : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
-        index_(index),
         searchExpr_(searchExpr),
-        isEdge_(isEdge) {}
-  std::string index_;
+        isEdge_(isEdge),
+        schemaId_(schemaId) {}
+
   TextSearchExpression* searchExpr_{nullptr};
   bool isEdge_{false};
+  int64_t offset_{-1};
+  int32_t schemaId_;
 };
 
 // Scan vertices

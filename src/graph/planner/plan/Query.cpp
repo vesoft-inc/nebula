@@ -21,19 +21,16 @@ namespace graph {
 
 int64_t Explore::limit(QueryContext* qctx) const {
   DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
-  return DCHECK_NOTNULL(limit_)
-      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
-      .getInt();
+  QueryExpressionContext ctx(qctx ? qctx->ectx() : nullptr);
+  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
 }
 
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
-  addDescription("dedup", folly::toJson(util::toJson(dedup_)), desc.get());
-  addDescription(
-      "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
-  std::string filter = filter_ == nullptr ? "" : filter_->toString();
-  addDescription("filter", filter, desc.get());
+  addDescription("dedup", folly::to<std::string>(dedup_), desc.get());
+  addDescription("limit", limit_ ? limit_->toString() : "", desc.get());
+  addDescription("filter", filter_ ? filter_->toString() : "", desc.get());
   addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
   return desc;
 }
@@ -1059,15 +1056,18 @@ PlanNode* PatternApply::clone() const {
 }
 
 PlanNode* FulltextIndexScan::clone() const {
-  auto ret = FulltextIndexScan::make(qctx_, index_, searchExpr_, isEdge_);
+  auto ret = FulltextIndexScan::make(qctx_, searchExpr_, isEdge_, schemaId_);
   ret->cloneMembers(*this);
+  ret->setOffset(offset_);
   return ret;
 }
 
 std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
   auto desc = Explore::explain();
-  addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
-  // TODO(hs.zhang): add all infomation
+  addDescription("isEdge", folly::to<std::string>(isEdge_), desc.get());
+  addDescription("offset", folly::to<std::string>(offset_), desc.get());
+  addDescription("schemaId", folly::to<string>(schemaId_), desc.get());
+  addDescription("searchExpr", searchExpr_->toString(), desc.get());
   return desc;
 }
 

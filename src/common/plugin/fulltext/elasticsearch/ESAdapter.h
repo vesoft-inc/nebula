@@ -17,18 +17,20 @@ namespace nebula::plugin {
 struct ESQueryResult {
   struct Item {
     Item() = default;
-    Item(const std::string& vid, const std::string& text);
-    Item(const std::string& src, const std::string& dst, int64_t rank, const std::string& text);
+    Item(const std::string& vid, double score);
+    Item(const std::string& src, const std::string& dst, int64_t rank, double score);
+
     std::string vid;       // for vertex
     std::string src, dst;  // for edge
     int64_t rank = 0;      // for edge
-    std::string text;
+    double score;
+
     bool operator==(const Item& item) const {
       return vid == item.vid && src == item.src && dst == item.dst && rank == item.rank &&
-             text == item.text;
+             score == item.score;
     }
     std::ostream& operator<<(std::ostream& out) {
-      out << fmt::format("vid={}, src={}, dst={}, rank={}, text={}", vid, src, dst, rank, text);
+      out << fmt::format("vid={}, src={}, dst={}, rank={}, score={}", vid, src, dst, rank, score);
       return out;
     }
   };
@@ -67,143 +69,19 @@ class ESAdapter {
   }
   virtual ~ESAdapter() = default;
   virtual void setClients(std::vector<ESClient>&& clients);
-  virtual Status createIndex(const std::string& name);
+  virtual Status createIndex(const std::string& name,
+                             const std::vector<std::string>& fields,
+                             const std::string& analyzer);
   virtual Status dropIndex(const std::string& name);
   virtual Status clearIndex(const std::string& name, bool refresh = false);
   virtual StatusOr<bool> isIndexExist(const std::string& name);
 
   virtual Status bulk(const ESBulk& bulk, bool refresh = false);
 
-  /**
-   * @brief
-   *
-   * Query:
-   *
-   * GET /_search
-   * {
-   *   "query": {
-   *     "prefix": {
-   *       "text": {
-   *         "value": $pattern
-   *       }
-   *     }
-   *   }
-   * }
-   *
-   * @param index
-   * @param pattern
-   * @return StatusOr<ESQueryResult>
-   */
-  virtual StatusOr<ESQueryResult> prefix(const std::string& index,
-                                         const std::string& pattern,
-                                         int64_t size = -1,
-                                         int64_t timeout = -1);
-
-  /**
-   * @brief
-   *
-   *
-   * Query:
-   *
-   * GET /_search
-   * {
-   *   "query": {
-   *     "fuzzy": {
-   *       "text": {
-   *         "value": $pattern
-   *       }
-   *     }
-   *   }
-   * }
-   *
-   * @param index
-   * @param pattern
-   * @return StatusOr<ESQueryResult>
-   */
-  virtual StatusOr<ESQueryResult> fuzzy(const std::string& index,
-                                        const std::string& pattern,
-                                        const std::string& fuzziness,
-                                        int64_t size = -1,
-                                        int64_t timeout = -1);
-
-  /**
-   * @brief
-   *
-   * Query:
-   *
-   * GET /_search
-   * {
-   *   "query": {
-   *     "regexp": {
-   *       "text": {
-   *         "value": $pattern
-   *       }
-   *     }
-   *   }
-   * }
-   *
-   * @param index
-   * @param pattern
-   * @return StatusOr<ESQueryResult>
-   */
-  virtual StatusOr<ESQueryResult> regexp(const std::string& index,
-                                         const std::string& pattern,
-                                         int64_t size = -1,
-                                         int64_t timeout = -1);
-
-  /**
-   * @brief
-   *
-   * Query:
-   *
-   * GET /_search
-   * {
-   *   "query": {
-   *     "wildcard": {
-   *       "text": {
-   *         "value": $pattern
-   *       }
-   *     }
-   *   }
-   * }
-   *
-   * @param index
-   * @param pattern
-   * @return StatusOr<ESQueryResult>
-   */
-  virtual StatusOr<ESQueryResult> wildcard(const std::string& index,
-                                           const std::string& pattern,
-                                           int64_t size = -1,
-                                           int64_t timeout = -1);
-
-  // /**
-  //  * @brief
-  //  *
-  //  * Query:
-  //  *
-  //  * GET /_search
-  //  * {
-  //  *   "query": {
-  //  *     "bool": {
-  //  *       "must": [
-  //  *         {
-  //  *           "term": {
-  //  *             "text": {
-  //  *               "value": $words[i]
-  //  *             }
-  //  *           }
-  //  *         },
-  //  *         ...
-  //  *       ]
-  //  *     }
-  //  *   }
-  //  * }
-  //  *
-  //  * @param index
-  //  * @param words
-  //  * @return StatusOr<ESQueryResult>
-  //  */
-  // StatusOr<ESQueryResult> term(const std::string& index, const std::vector<std::string>& words);
+  virtual StatusOr<ESQueryResult> queryString(const std::string& index,
+                                              const std::string& query,
+                                              int64_t from,
+                                              int64_t size);
 
   virtual StatusOr<ESQueryResult> match_all(const std::string& index);
   StatusOr<ESQueryResult> query(const std::string& index,

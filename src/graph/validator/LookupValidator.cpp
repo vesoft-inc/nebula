@@ -9,6 +9,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/Constants.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -100,26 +101,8 @@ void LookupValidator::extractExprProps() {
 // check type and collect properties.
 Status LookupValidator::validateYieldEdge() {
   auto yield = sentence()->yieldClause();
-  auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
-      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
-      if (schemaName != sentence()->from()) {
-        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
-      }
-    }
-    col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
-
-    auto colExpr = col->expr();
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, true));
   }
   return Status::OK();
 }
@@ -129,26 +112,8 @@ Status LookupValidator::validateYieldEdge() {
 // check type and collect properties.
 Status LookupValidator::validateYieldTag() {
   auto yield = sentence()->yieldClause();
-  auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
-      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
-      if (schemaName != sentence()->from()) {
-        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
-      }
-    }
-    col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
-
-    auto colExpr = col->expr();
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
+    NG_RETURN_IF_ERROR(validateYieldColumn(col, false));
   }
   return Status::OK();
 }
@@ -191,35 +156,37 @@ Status LookupValidator::validateWhere() {
   }
 
   auto* filter = whereClause->filter();
-  if (filter != nullptr) {
-    auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
-    std::vector<std::string> undefinedParams;
-    for (const auto& var : vars) {
-      if (!vctx_->existVar(var)) {
-        undefinedParams.emplace_back(var);
-      }
-    }
-    if (!undefinedParams.empty()) {
-      return Status::SemanticError(
-          "Undefined parameters: " +
-          std::accumulate(++undefinedParams.begin(),
-                          undefinedParams.end(),
-                          *undefinedParams.begin(),
-                          [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
-    }
-    filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
-  }
   if (FTIndexUtils::needTextSearch(filter)) {
     lookupCtx_->isFulltextIndex = true;
     lookupCtx_->fulltextExpr = filter;
     auto tsExpr = static_cast<TextSearchExpression*>(filter);
-    auto prop = tsExpr->arg()->prop();
+    auto arg = tsExpr->arg();
+    std::string& index = arg->index();
     auto metaClient = qctx_->getMetaClient();
-    auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
-    NG_RETURN_IF_ERROR(tsi);
-    auto tsName = tsi.value().first;
-    lookupCtx_->fulltextIndex = tsName;
+    meta::cpp2::FTIndex ftIndex;
+    auto result = metaClient->getFTIndexFromCache(spaceId(), schemaId());
+    NG_RETURN_IF_ERROR(result);
+    auto indexes = std::move(result).value();
+    auto iter = indexes.find(index);
+    if (iter == indexes.end()) {
+      return Status::Error("Index %s is not found", index.c_str());
+    }
+    ftIndex = iter->second;
   } else {
+    if (filter != nullptr) {
+      auto vars = graph::ExpressionUtils::ExtractInnerVars(filter, qctx_);
+      std::vector<std::string> undefinedParams;
+      for (const auto& var : vars) {
+        if (!vctx_->existVar(var)) {
+          undefinedParams.emplace_back(var);
+        }
+      }
+      if (!undefinedParams.empty()) {
+        auto msg = folly::join(", ", undefinedParams);
+        return Status::SemanticError("Undefined parameters: %s", msg.c_str());
+      }
+      filter = graph::ExpressionUtils::rewriteParameter(filter, qctx_);
+    }
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
@@ -374,8 +341,8 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 }
 
 // Rewrite expression of geo search.
-// Put geo expression to left, check validity of geo search, check schema validity, fold expression,
-// rewrite attribute expression to fit semantic.
+// Put geo expression to left, check validity of geo search, check schema validity, fold
+// expression, rewrite attribute expression to fit semantic.
 StatusOr<Expression*> LookupValidator::rewriteGeoPredicate(Expression* expr) {
   // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
   // so that LabelAttributeExpr is always on the left
@@ -517,17 +484,6 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   return expr;
 }
 
-// Check does test search contains properties search in test search expression
-StatusOr<std::string> LookupValidator::checkTSExpr(Expression* expr) {
-  auto tsExpr = static_cast<TextSearchExpression*>(expr);
-  auto prop = tsExpr->arg()->prop();
-  auto metaClient = qctx_->getMetaClient();
-  auto tsi = metaClient->getFTIndexFromCache(spaceId(), schemaId(), prop);
-  NG_RETURN_IF_ERROR(tsi);
-  auto tsName = tsi.value().first;
-  return tsName;
-}
-
 // Reverse position of operands in relational expression and keep the origin semantic.
 // Transform (A > B) to (B < A)
 Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
@@ -611,15 +567,66 @@ Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>
   return Status::OK();
 }
 
-// Generate text search filter, check validity and rewrite
-StatusOr<Expression*> LookupValidator::genTsFilter(Expression* filter) {
-  auto esAdapterRet = FTIndexUtils::getESAdapter(qctx_->getMetaClient());
-  NG_RETURN_IF_ERROR(esAdapterRet);
-  auto esAdapter = std::move(esAdapterRet).value();
-  auto tsIndex = checkTSExpr(filter);
-  NG_RETURN_IF_ERROR(tsIndex);
-  return FTIndexUtils::rewriteTSFilter(
-      qctx_->objPool(), lookupCtx_->isEdge, filter, tsIndex.value(), esAdapter);
+Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
+  auto kind = isEdge ? Expression::Kind::kVertex : Expression::Kind::kEdge;
+  if (ExpressionUtils::hasAny(col->expr(), {kind})) {
+    return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+  }
+
+  bool scoreCol = false;
+  switch (col->expr()->kind()) {
+    case Expression::Kind::kLabelAttribute: {
+      auto expr = static_cast<LabelAttributeExpression*>(col->expr());
+      const auto& schemaName = expr->left()->name();
+      if (schemaName != sentence()->from()) {
+        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
+      }
+      break;
+    }
+    case Expression::Kind::kFunctionCall: {
+      auto funcExpr = static_cast<FunctionCallExpression*>(col->expr());
+      if (funcExpr->name() == kScore) {
+        if (col->alias().empty()) {
+          return Status::SemanticError("Yield column should have an alias for score()");
+        }
+        scoreCol = true;
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  Expression* colExpr = nullptr;
+  if (scoreCol) {
+    // Rewrite score() to $score
+    colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
+    col->setExpr(colExpr);
+    outputs_.emplace_back(col->name(), Value::Type::FLOAT);
+    lookupCtx_->yieldExpr->addColumn(col->clone().release());
+    lookupCtx_->hasScore = true;
+  } else {
+    if (isEdge) {
+      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
+    } else {
+      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
+    }
+
+    col->setExpr(colExpr);
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+
+    auto typeStatus = deduceExprType(colExpr);
+    NG_RETURN_IF_ERROR(typeStatus);
+    outputs_.emplace_back(col->name(), typeStatus.value());
+    lookupCtx_->yieldExpr->addColumn(col->clone().release());
+    if (isEdge) {
+      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
+    } else {
+      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
+    }
+  }
+
+  return Status::OK();
 }
 
 }  // namespace graph

@@ -112,11 +112,6 @@ Feature: Yield Sentence
       | [1]           |
     When executing query:
       """
-      YIELD prefix(edge1.prop1,"高")
-      """
-    Then a SyntaxError should be raised at runtime: syntax error near `(edge1.p'
-    When executing query:
-      """
       YIELD (int)"1"
       """
     Then the result should be, in any order:
