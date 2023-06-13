@@ -13,6 +13,7 @@ ArgumentExecutor::ArgumentExecutor(const PlanNode *node, QueryContext *qctx)
     : Executor("ArgumentExecutor", node, qctx) {}
 
 folly::Future<Status> ArgumentExecutor::execute() {
+  LOG(INFO) << "xxxxxxxxxxxxxxx";
   // MemoryTrackerVerified
   auto *argNode = asNode<Argument>(node());
   auto &alias = argNode->getAlias();
@@ -22,6 +23,9 @@ folly::Future<Status> ArgumentExecutor::execute() {
 
   DataSet ds;
   ds.colNames = argNode->colNames();
+  for (auto name : ds.colNames) {
+    LOG(INFO) << name;
+  }
   ds.rows.reserve(sz);
 
   VidHashSet unique;
@@ -62,6 +66,7 @@ folly::Future<Status> ArgumentExecutor::execute() {
       }
     }
   }
+  LOG(INFO) << ds;
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 }  // namespace graph

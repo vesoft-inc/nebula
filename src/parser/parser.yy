@@ -572,6 +572,7 @@ unreserved_keyword
     | KW_DIVIDE             { $$ = new std::string("divide"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
+    | KW_ANALYZER           { $$ = new std::string("analyzer"); }
     ;
 
 expression

@@ -22,7 +22,7 @@ void ESBulk::put(const std::string& indexName,
                  const std::string& src,
                  const std::string& dst,
                  int64_t rank,
-                 const std::string& text) {
+                 std::map<std::string, std::string> data) {
   folly::dynamic action = folly::dynamic::object();
   folly::dynamic metadata = folly::dynamic::object();
   folly::dynamic body = folly::dynamic::object();
@@ -35,7 +35,9 @@ void ESBulk::put(const std::string& indexName,
   body["src"] = src;
   body["dst"] = dst;
   body["rank"] = rank;
-  body["text"] = text;
+  for (auto& [key, value] : data) {
+    body[key] = value;
+  }
   documents_[indexName].emplace_back(std::move(action));
   documents_[indexName].emplace_back(std::move(body));
 }
