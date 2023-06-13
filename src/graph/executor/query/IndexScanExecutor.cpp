@@ -53,7 +53,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     }
 
     if (ops.empty()) {
-      return finish(ResultBuilder().value(Value(List())).iter(Iterator::Kind::kProp).build());
+      return finish(ResultBuilder().value(Value(DataSet())).iter(Iterator::Kind::kProp).build());
     }
 
     if (ops.size() == 1u) {
