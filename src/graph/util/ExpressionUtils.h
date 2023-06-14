@@ -77,9 +77,6 @@ class ExpressionUtils {
   // rewrite LabelAttr to EdgeProp
   static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr, bool toAttrExpr = false);
 
-  // rewrite Vertex/Edge expression to VariablePropertyExpression
-  static Expression* rewriteVertexEdgeExprToVarPropExpr(const Expression* expr);
-
   // rewrite Agg to VarProp
   static Expression* rewriteAgg2VarProp(const Expression* expr);
 

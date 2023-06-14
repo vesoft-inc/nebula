@@ -229,18 +229,6 @@ Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr, b
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-// static
-Expression *ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(const Expression *expr) {
-  ObjectPool *pool = expr->getObjPool();
-  auto matcher = [](const Expression *e) -> bool {
-    return e->kind() == Expression::Kind::kVertex || e->kind() == Expression::Kind::kEdge;
-  };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
-    return VariablePropertyExpression::make(pool, "", e->toString());
-  };
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
-}
-
 Expression *ExpressionUtils::rewriteInnerVar(const Expression *expr, std::string newVar) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
