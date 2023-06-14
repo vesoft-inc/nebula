@@ -100,7 +100,6 @@ void LookupValidator::extractExprProps() {
 // Disable invalid expressions, check schema name, rewrites expression to fit semantic,
 // check type and collect properties.
 Status LookupValidator::validateYieldEdge() {
-  NG_RETURN_IF_ERROR(validateScoreColumn());
   auto yield = sentence()->yieldClause();
   for (auto col : yield->columns()) {
     NG_RETURN_IF_ERROR(validateYieldColumn(col, true));
@@ -128,6 +127,8 @@ Status LookupValidator::validateYield() {
   lookupCtx_->dedup = yieldClause->isDistinct();
   lookupCtx_->yieldExpr = qctx_->objPool()->makeAndAdd<YieldColumns>();
 
+  NG_RETURN_IF_ERROR(validateScoreColumn());
+
   if (lookupCtx_->isEdge) {
     idxReturnCols_.emplace_back(nebula::kSrc);
     idxReturnCols_.emplace_back(nebula::kDst);
@@ -138,7 +139,7 @@ Status LookupValidator::validateYield() {
     idxReturnCols_.emplace_back(nebula::kVid);
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
-  if (exprProps_.hasInputVarProperty()) {
+  if (exprProps_.hasInputVarProperty() && !lookupCtx_->hasScore) {
     return Status::SemanticError("unsupported input/variable property expression in yield.");
   }
   if (exprProps_.hasSrcDstTagProperty()) {
@@ -602,11 +603,17 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     outputs_.emplace_back(col->name(), Value::Type::FLOAT);
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
   } else {
-    auto colExpr = ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(col->expr());
+    auto colExpr = col->expr();
+    // When there is no score in the output columns, keep the original execution plan
+    // unchanged, otherwise rewrite all vertex/edge expression to the VarPropExpression
     if (isEdge) {
       colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(colExpr, lookupCtx_->hasScore);
     } else {
       colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(colExpr, lookupCtx_->hasScore);
+    }
+
+    if (lookupCtx_->hasScore) {
+      colExpr = ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(colExpr);
     }
 
     col->setExpr(colExpr);
