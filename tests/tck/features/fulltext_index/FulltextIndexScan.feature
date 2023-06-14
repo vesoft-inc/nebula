@@ -65,8 +65,31 @@ Feature: FulltextIndexTest
     Then the result should be, in any order:
       | id  | prop1    | prop2          |
       | "1" | "abc"    | "nebula graph" |
-      | "2" | "abcde"  | "nebula-graph" |
-      | "6" | "abcxyz" | "nebula graph" |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2 |
+      LIMIT 3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2          |
+      | "1" | "abc"    | "nebula graph" |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2 |
+      LIMIT 1,3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2          |
     When executing query:
       """
       LOOKUP ON tag2
@@ -78,24 +101,8 @@ Feature: FulltextIndexTest
         score() AS sc
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2          |
-      | "1" | "abc"    | "nebula graph" |
-      | "2" | "abcde"  | "nebula-graph" |
-      | "6" | "abcxyz" | "nebula graph" |
-    When executing query:
-      """
-      LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
-      YIELD
-        id(vertex) AS id,
-        tag2.prop1 AS prop1,
-        tag2.prop2 AS prop2
-      """
-    Then the result should be, in any order:
-      | id  | prop1    | prop2          |
-      | "1" | "abc"    | "nebula graph" |
-      | "2" | "abcde"  | "nebula-graph" |
-      | "6" | "abcxyz" | "nebula graph" |
+      | id  | prop1 | prop2          | sc        |
+      | "1" | "abc" | "nebula graph" | 1.7917595 |
     When executing query:
       """
       LOOKUP ON tag2
@@ -104,13 +111,25 @@ Feature: FulltextIndexTest
         id(vertex) AS id,
         tag2.prop1 AS prop1,
         tag2.prop2 AS prop2,
-        score() AS sc
+        score() AS sc |
+      LIMIT 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2          |
-      | "1" | "abc"    | "nebula graph" |
-      | "2" | "abcde"  | "nebula-graph" |
-      | "6" | "abcxyz" | "nebula graph" |
+      | id  | prop1 | prop2          | sc        |
+      | "1" | "abc" | "nebula graph" | 1.7917595 |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2,
+        score() AS sc |
+      LIMIT 1,3
+      """
+    Then the result should be, in any order:
+      | id  | prop1 | prop2          | sc        |
     When executing query:
       """
       LOOKUP ON tag2
@@ -122,6 +141,8 @@ Feature: FulltextIndexTest
       """
     Then the result should be, in any order:
       | id  | prop1    | prop2             |
+      | "4" | "zyx"    | "Nebula"          |
+      | "5" | "cba"    | "neBula"          |
       | "1" | "abc"    | "nebula graph"    |
       | "2" | "abcde"  | "nebula-graph"    |
       | "3" | "bcd"    | "nebula database" |
@@ -135,17 +156,81 @@ Feature: FulltextIndexTest
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2 |
+      LIMIT 3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2             |
+      | "4" | "zyx"    | "Nebula"          |
+      | "5" | "cba"    | "neBula"          |
+      | "1" | "abc"    | "nebula graph"    |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2 |
+      LIMIT 1, 3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2             |
+      | "5" | "cba"    | "neBula"          |
+      | "1" | "abc"    | "nebula graph"    |
+      | "2" | "abcde"  | "nebula-graph"    |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
         tag2.prop2 AS prop2,
         score() AS sc
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2             |
-      | "1" | "abc"    | "nebula graph"    |
-      | "2" | "abcde"  | "nebula-graph"    |
-      | "3" | "bcd"    | "nebula database" |
-      | "6" | "abcxyz" | "nebula graph"    |
-      | "7" | "xyz"    | "nebula graph"    |
-      | "8" | "123456" | "nebula graph"    |
+      | id  | prop1    | prop2             | sc          |
+      | "4" | "zyx"    | "Nebula"          | 0.0693102   |
+      | "5" | "cba"    | "neBula"          | 0.0693102   |
+      | "1" | "abc"    | "nebula graph"    | 0.054002427 |
+      | "2" | "abcde"  | "nebula-graph"    | 0.054002427 |
+      | "3" | "bcd"    | "nebula database" | 0.054002427 |
+      | "6" | "abcxyz" | "nebula graph"    | 0.054002427 |
+      | "7" | "xyz"    | "nebula graph"    | 0.054002427 |
+      | "8" | "123456" | "nebula graph"    | 0.054002427 |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2,
+        score() AS sc |
+      LIMIT 3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2             | sc          |
+      | "4" | "zyx"    | "Nebula"          | 0.0693102   |
+      | "5" | "cba"    | "neBula"          | 0.0693102   |
+      | "1" | "abc"    | "nebula graph"    | 0.054002427 |
+    When executing query:
+      """
+      LOOKUP ON tag2
+      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      YIELD
+        id(vertex) AS id,
+        tag2.prop1 AS prop1,
+        tag2.prop2 AS prop2,
+        score() AS sc |
+      LIMIT 1, 3
+      """
+    Then the result should be, in any order:
+      | id  | prop1    | prop2             | sc          |
+      | "5" | "cba"    | "neBula"          | 0.0693102   |
+      | "1" | "abc"    | "nebula graph"    | 0.054002427 |
+      | "2" | "abcde"  | "nebula-graph"    | 0.054002427 |
     When executing query:
       """
       LOOKUP ON edge2
@@ -157,9 +242,40 @@ Feature: FulltextIndexTest
         edge2.prop1 AS prop1
       """
     Then the result should be, in any order:
-      | src | dst | rank | prop1    |
-      | "3" | "4" | 5    | "高性能" |
-      | "4" | "5" | 7    | "高吞吐" |
+      | src | dst | rank | prop1                |
+      | "3" | "4" | 5    | "高性能"             |
+      | "4" | "5" | 7    | "高吞吐"             |
+      | "2" | "3" | 3    | "性能高效的图数据库" |
+    When executing query:
+      """
+      LOOKUP ON edge2
+      WHERE ES_QUERY(nebula_index_edge2_prop1, "高")
+      YIELD
+        src(edge) AS src,
+        dst(edge) AS dst,
+        rank(edge) AS rank,
+        edge2.prop1 AS prop1 |
+      LIMIT 2
+      """
+    Then the result should be, in any order:
+      | src | dst | rank | prop1                |
+      | "3" | "4" | 5    | "高性能"             |
+      | "4" | "5" | 7    | "高吞吐"             |
+    When executing query:
+      """
+      LOOKUP ON edge2
+      WHERE ES_QUERY(nebula_index_edge2_prop1, "高")
+      YIELD
+        src(edge) AS src,
+        dst(edge) AS dst,
+        rank(edge) AS rank,
+        edge2.prop1 AS prop1 |
+      LIMIT 1, 2
+      """
+    Then the result should be, in any order:
+      | src | dst | rank | prop1                |
+      | "4" | "5" | 7    | "高吞吐"             |
+      | "2" | "3" | 3    | "性能高效的图数据库" |
     When executing query:
       """
       LOOKUP ON edge2
@@ -172,6 +288,39 @@ Feature: FulltextIndexTest
         score() AS sc
       """
     Then the result should be, in any order:
-      | src | dst | rank | prop1    |
-      | "3" | "4" | 5    | "高性能" |
-      | "4" | "5" | 7    | "高吞吐" |
+      | src | dst | rank | prop1                | sc        |
+      | "3" | "4" | 5    | "高性能"             | 1.1120702 |
+      | "4" | "5" | 7    | "高吞吐"             | 1.1120702 |
+      | "2" | "3" | 3    | "性能高效的图数据库" | 0.6913923 |
+    When executing query:
+      """
+      LOOKUP ON edge2
+      WHERE ES_QUERY(nebula_index_edge2_prop1, "高")
+      YIELD
+        src(edge) AS src,
+        dst(edge) AS dst,
+        rank(edge) AS rank,
+        edge2.prop1 AS prop1,
+        score() AS sc |
+      LIMIT 2
+      """
+    Then the result should be, in any order:
+      | src | dst | rank | prop1                | sc        |
+      | "3" | "4" | 5    | "高性能"             | 1.1120702 |
+      | "4" | "5" | 7    | "高吞吐"             | 1.1120702 |
+    When executing query:
+      """
+      LOOKUP ON edge2
+      WHERE ES_QUERY(nebula_index_edge2_prop1, "高")
+      YIELD
+        src(edge) AS src,
+        dst(edge) AS dst,
+        rank(edge) AS rank,
+        edge2.prop1 AS prop1,
+        score() AS sc |
+      LIMIT 1,2
+      """
+    Then the result should be, in any order:
+      | src | dst | rank | prop1                | sc        |
+      | "4" | "5" | 7    | "高吞吐"             | 1.1120702 |
+      | "2" | "3" | 3    | "性能高效的图数据库" | 0.6913923 |
