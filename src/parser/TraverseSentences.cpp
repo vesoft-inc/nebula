@@ -145,6 +145,33 @@ std::string OrderBySentence::toString() const {
   return folly::stringPrintf("ORDER BY %s", orderFactors_->toString().c_str());
 }
 
+std::string SamplingFactor::toString() const {
+  switch (sampling_type_) {
+    case BINARY:
+      return folly::stringPrintf("%s %ld BINARY,", expr_->toString().c_str(), count_);
+    case ALIAS:
+      return folly::stringPrintf("%s %ld ALIAS", expr_->toString().c_str(), count_);
+    default:
+      LOG(FATAL) << "Unknown Sampling Type: " << sampling_type_;
+  }
+}
+
+std::string SamplingFactors::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  for (auto &factor : factors_) {
+    buf += factor->toString();
+  }
+  if (!buf.empty()) {
+    buf.resize(buf.size() - 1);
+  }
+  return buf;
+}
+
+std::string SamplingSentence::toString() const {
+  return folly::stringPrintf("SAMPLING %s", samplingFactors_->toString().c_str());
+}
+
 std::string FetchVerticesSentence::toString() const {
   std::string buf;
   buf.reserve(256);

@@ -54,6 +54,10 @@ class MatchValidator final : public Validator {
                          const YieldColumns *yieldColumns,
                          OrderByClauseContext &orderByCtx) const;
 
+  Status validateSampling(const SamplingFactors *factors,
+                          const YieldColumns *yieldColumns,
+                          SamplingClauseContext &samplingCtx) const;
+
   Status validateGroup(YieldClauseContext &yieldCtx);
 
   Status validateYield(YieldClauseContext &yieldCtx);

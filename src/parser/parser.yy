@@ -118,6 +118,8 @@ using namespace nebula;
     nebula::IndexParamItem                 *index_param_item;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
+    nebula::SamplingFactor                 *sampling_factor;
+    nebula::SamplingFactors                *sampling_factors;
     nebula::meta::cpp2::ConfigModule        config_module;
     nebula::meta::cpp2::ListHostType       list_host_type;
     nebula::ConfigRowItem                  *config_row_item;
@@ -183,7 +185,7 @@ using namespace nebula;
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
-%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
+%token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING KW_SAMPLING KW_BINARY KW_ALIAS
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
 %token KW_SHORTEST KW_PATH KW_NOLOOP KW_SHORTESTPATH KW_ALLSHORTESTPATHS
@@ -294,6 +296,8 @@ using namespace nebula;
 %type <index_param_item> index_param_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
+%type <sampling_factor> sampling_factor
+%type <sampling_factors> sampling_factors
 %type <config_module> config_module_enum
 %type <list_host_type> list_host_type
 %type <config_row_item> show_config_item get_config_item set_config_item
@@ -336,6 +340,7 @@ using namespace nebula;
 %type <match_clause_list> reading_clauses reading_with_clause reading_with_clauses
 %type <match_step_range> match_step_range
 %type <order_factors> match_order_by
+%type <sampling_factors> match_sampling
 %type <text_search_argument> text_search_argument
 %type <service_client_item> service_client_item
 %type <service_client_list> service_client_list
@@ -388,7 +393,7 @@ using namespace nebula;
 
 %type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
-%type <sentence> group_by_sentence order_by_sentence limit_sentence
+%type <sentence> group_by_sentence order_by_sentence limit_sentence sampling_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
 %type <sentence> set_sentence piped_sentence assignment_sentence match_sentences
 %type <sentence> yield_sentence use_sentence
@@ -572,6 +577,7 @@ unreserved_keyword
     | KW_DIVIDE             { $$ = new std::string("divide"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
+    | KW_SAMPLING           { $$ = new std::string("sampling"); }
     ;
 
 expression
@@ -1662,11 +1668,11 @@ unwind_sentence
     ;
 
 with_clause
-    : KW_WITH match_return_items match_order_by match_skip match_limit where_clause {
-        $$ = new WithClause($2, $3, $4, $5, $6, false/*distinct*/);
+    : KW_WITH match_return_items match_sampling match_order_by match_skip match_limit where_clause {
+        $$ = new WithClause($2, $3, $4, $5, $6, $7, false/*distinct*/);
     }
-    | KW_WITH KW_DISTINCT match_return_items match_order_by match_skip match_limit where_clause {
-        $$ = new WithClause($3, $4, $5, $6, $7, true);
+    | KW_WITH KW_DISTINCT match_return_items match_sampling match_order_by match_skip match_limit where_clause {
+        $$ = new WithClause($3, $4, $5, $6, $7, $8, true);
     }
     ;
 
@@ -1942,11 +1948,11 @@ match_edge_type_list
     ;
 
 match_return
-    : KW_RETURN match_return_items match_order_by match_skip match_limit {
-        $$ = new MatchReturn($2, $3, $4, $5);
+    : KW_RETURN match_return_items match_sampling match_order_by match_skip match_limit {
+        $$ = new MatchReturn($2, $3, $4, $5, $6);
     }
-    | KW_RETURN KW_DISTINCT match_return_items match_order_by match_skip match_limit {
-        $$ = new MatchReturn($3, $4, $5, $6, true);
+    | KW_RETURN KW_DISTINCT match_return_items match_sampling match_order_by match_skip match_limit {
+        $$ = new MatchReturn($3, $4, $5, $6, $7, true);
     }
     ;
 
@@ -1967,6 +1973,15 @@ match_order_by
     }
     | KW_ORDER KW_BY order_factors {
         $$ = $3;
+    }
+    ;
+
+match_sampling
+    : %empty {
+        $$ = nullptr;
+    }
+    | KW_SAMPLING sampling_factors {
+        $$ = $2;
     }
     ;
 
@@ -2127,6 +2142,36 @@ order_factors
 order_by_sentence
     : KW_ORDER KW_BY order_factors {
         $$ = new OrderBySentence($3);
+    }
+    ;
+
+sampling_factor
+    : expression legal_integer {
+        $$ = new SamplingFactor($1, $2, SamplingFactor::BINARY);
+    }
+    | expression legal_integer KW_BINARY {
+        $$ = new SamplingFactor($1, $2, SamplingFactor::BINARY);
+    }
+    | expression legal_integer KW_ALIAS {
+        $$ = new SamplingFactor($1, $2, SamplingFactor::ALIAS);
+    }
+    ;
+
+sampling_factors
+    : sampling_factor {
+        auto factors = new SamplingFactors();
+        factors->addFactor($1);
+        $$ = factors;
+    }
+    | sampling_factors COMMA sampling_factor {
+        $1->addFactor($3);
+        $$ = $1;
+    }
+    ;
+
+sampling_sentence
+    : KW_SAMPLING sampling_factors {
+        $$ = new SamplingSentence($2);
     }
     ;
 
@@ -2843,6 +2888,7 @@ traverse_sentence
     | go_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
+    | sampling_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }

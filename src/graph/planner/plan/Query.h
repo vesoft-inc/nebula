@@ -1154,6 +1154,58 @@ class Sort final : public SingleInputNode {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors_;
 };
 
+struct SamplingParams {
+  size_t colIdx;
+  size_t count;
+  SamplingFactor::SamplingType samplingType;
+
+  SamplingParams() = default;
+  SamplingParams(size_t col_idx, size_t c, SamplingFactor::SamplingType st)
+      : colIdx(col_idx), count(c), samplingType(st) {}
+};
+
+// Sampling the given record set.
+class Sampling final : public SingleInputNode {
+ public:
+  static Sampling* make(QueryContext* qctx,
+                        PlanNode* input,
+                        std::vector<SamplingParams> factors = {}) {
+    return qctx->objPool()->makeAndAdd<Sampling>(qctx, input, std::move(factors));
+  }
+
+  const std::vector<SamplingParams>& factors() const {
+    return factors_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  friend ObjectPool;
+  Sampling(QueryContext* qctx, PlanNode* input, std::vector<SamplingParams> factors)
+      : SingleInputNode(qctx, Kind::kSampling, input) {
+    factors_ = std::move(factors);
+  }
+
+  std::vector<std::vector<std::string>> factorsString() const {
+    auto cols = colNames();
+    std::vector<std::vector<std::string>> result;
+    for (auto& factor : factors_) {
+      std::string colName = cols[factor.colIdx];
+      std::string order =
+          factor.samplingType == SamplingFactor::SamplingType::BINARY ? "BINARY" : "ALIAS";
+      std::vector temp = {colName, std::to_string(factor.count), order};
+      result.emplace_back(temp);
+    }
+    return result;
+  }
+
+  void cloneMembers(const Sampling&);
+
+ private:
+  std::vector<SamplingParams> factors_;
+};
+
 // Output the records with the given limitation.
 class Limit final : public SingleInputNode {
  public:

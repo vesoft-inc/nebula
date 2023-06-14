@@ -11,8 +11,8 @@
 #include "common/expression/Expression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "graph/context/ast/AstContext.h"
+#include "graph/planner/plan/Query.h"
 #include "parser/MatchSentence.h"
-
 namespace nebula {
 namespace graph {
 enum class CypherClauseKind : uint8_t {
@@ -22,6 +22,7 @@ enum class CypherClauseKind : uint8_t {
   kWhere,
   kReturn,
   kOrderBy,
+  kSampling,
   kPagination,
   kYield,
   kShortestPath,
@@ -142,6 +143,12 @@ struct OrderByClauseContext final : CypherClauseContextBase {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> indexedOrderFactors;
 };
 
+struct SamplingClauseContext final : CypherClauseContextBase {
+  SamplingClauseContext() : CypherClauseContextBase(CypherClauseKind::kSampling) {}
+
+  std::vector<SamplingParams> indexedSamplingFactors;
+};
+
 struct PaginationContext final : CypherClauseContextBase {
   PaginationContext() : CypherClauseContextBase(CypherClauseKind::kPagination) {}
 
@@ -176,6 +183,7 @@ struct YieldClauseContext final : CypherClauseContextBase {
 struct ReturnClauseContext final : CypherClauseContextBase {
   ReturnClauseContext() : CypherClauseContextBase(CypherClauseKind::kReturn) {}
 
+  std::unique_ptr<SamplingClauseContext> sampling;
   std::unique_ptr<OrderByClauseContext> order;
   std::unique_ptr<PaginationContext> pagination;
   std::unique_ptr<YieldClauseContext> yield;
@@ -184,6 +192,7 @@ struct ReturnClauseContext final : CypherClauseContextBase {
 struct WithClauseContext final : CypherClauseContextBase {
   WithClauseContext() : CypherClauseContextBase(CypherClauseKind::kWith) {}
 
+  std::unique_ptr<SamplingClauseContext> sampling;
   std::unique_ptr<OrderByClauseContext> order;
   std::unique_ptr<PaginationContext> pagination;
   std::unique_ptr<WhereClauseContext> where;

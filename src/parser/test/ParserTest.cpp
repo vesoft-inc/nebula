@@ -1763,6 +1763,14 @@ TEST_F(ParserTest, UnreservedKeywords) {
   }
   {
     std::string query =
+        "GO FROM \"123\" OVER like YIELD $$.tag1.EMAIL, like.users,"
+        "like._src, like._dst, like.type, $^.tag2.SPACE "
+        "| SAMPLING $-.SPACE 5 binary";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
         "GO FROM UUID() OVER like YIELD $$.tag1.EMAIL, like.users,"
         "like._src, like._dst, like.type, $^.tag2.SPACE "
         "| ORDER BY $-.SPACE";
@@ -1848,6 +1856,11 @@ TEST_F(ParserTest, DownloadAndIngest) {
 TEST_F(ParserTest, Agg) {
   {
     std::string query = "ORDER BY $-.id";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "SAMPLING $-.id 5 binary";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

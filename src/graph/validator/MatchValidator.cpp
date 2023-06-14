@@ -525,6 +525,13 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   NG_RETURN_IF_ERROR(validatePagination(ret->skip(), ret->limit(), *paginationCtx));
   retClauseCtx.pagination = std::move(paginationCtx);
 
+  if (ret->samplingFactors() != nullptr) {
+    auto samplingCtx = getContext<SamplingClauseContext>();
+    NG_RETURN_IF_ERROR(
+        validateSampling(ret->samplingFactors(), retClauseCtx.yield->yieldColumns, *samplingCtx));
+    retClauseCtx.sampling = std::move(samplingCtx);
+  }
+
   if (ret->orderFactors() != nullptr) {
     auto orderByCtx = getContext<OrderByClauseContext>();
     NG_RETURN_IF_ERROR(
@@ -891,6 +898,47 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
         return Status::SemanticError("Column `%s' not found", name.c_str());
       }
       orderByCtx.indexedOrderFactors.emplace_back(iter->second, factor->orderType());
+    }
+  }
+
+  return Status::OK();
+}
+
+// Check validity of order by options.
+// Disable duplicate columns,
+// check expression of column (only constant expression and label expression)
+Status MatchValidator::validateSampling(const SamplingFactors *factors,
+                                        const YieldColumns *yieldColumns,
+                                        SamplingClauseContext &samplingCtx) const {
+  if (factors != nullptr) {
+    std::vector<std::string> inputColList;
+    inputColList.reserve(yieldColumns->columns().size());
+    for (auto *col : yieldColumns->columns()) {
+      inputColList.emplace_back(col->name());
+    }
+    std::unordered_map<std::string, size_t> inputColIndices;
+    for (auto i = 0u; i < inputColList.size(); i++) {
+      if (!inputColIndices.emplace(inputColList[i], i).second) {
+        return Status::SemanticError("Duplicated columns not allowed: %s", inputColList[i].c_str());
+      }
+    }
+
+    for (auto &factor : factors->factors()) {
+      if (factor->count() < 0) {
+        return Status::SemanticError("Sampling count");
+      }
+      auto factorExpr = factor->expr();
+      if (ExpressionUtils::isEvaluableExpr(factorExpr, qctx_)) continue;
+      if (factorExpr->kind() != Expression::Kind::kLabel) {
+        return Status::SemanticError("Only column name can be used as sort item");
+      }
+      auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
+      auto iter = inputColIndices.find(name);
+      if (iter == inputColIndices.end()) {
+        return Status::SemanticError("Column `%s' not found", name.c_str());
+      }
+      samplingCtx.indexedSamplingFactors.emplace_back(
+          SamplingParams(iter->second, factor->count(), factor->samplingType()));
     }
   }
 

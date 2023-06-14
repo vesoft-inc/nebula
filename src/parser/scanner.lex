@@ -167,6 +167,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "GET"                       { return TokenType::KW_GET; }
 "OF"                        { return TokenType::KW_OF; }
 "ORDER"                     { return TokenType::KW_ORDER; }
+"SAMPLING"                  { return TokenType::KW_SAMPLING; }
 "INGEST"                    { return TokenType::KW_INGEST; }
 "COMPACT"                   { return TokenType::KW_COMPACT; }
 "FLUSH"                     { return TokenType::KW_FLUSH; }
@@ -174,6 +175,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "ASC"                       { return TokenType::KW_ASC; }
 "ASCENDING"                 { return TokenType::KW_ASCENDING; }
 "DESCENDING"                { return TokenType::KW_DESCENDING; }
+"BINARY"                    { return TokenType::KW_BINARY; }
+"ALIAS"                     { return TokenType::KW_ALIAS; }
 "DISTINCT"                  { return TokenType::KW_DISTINCT; }
 "FETCH"                     { return TokenType::KW_FETCH; }
 "PROP"                      { return TokenType::KW_PROP; }

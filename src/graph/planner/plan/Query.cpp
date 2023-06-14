@@ -498,6 +498,28 @@ void Sort::cloneMembers(const Sort& p) {
   factors_ = std::move(factors);
 }
 
+std::unique_ptr<PlanNodeDescription> Sampling::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("factors", folly::toJson(util::toJson(factorsString())), desc.get());
+  return desc;
+}
+
+PlanNode* Sampling::clone() const {
+  auto* newSampling = Sampling::make(qctx_, nullptr);
+  newSampling->cloneMembers(*this);
+  return newSampling;
+}
+
+void Sampling::cloneMembers(const Sampling& p) {
+  SingleInputNode::cloneMembers(p);
+
+  std::vector<SamplingParams> factors;
+  for (const auto& factor : p.factors()) {
+    factors.emplace_back(factor);
+  }
+  factors_ = std::move(factors);
+}
+
 // Get constant count value
 int64_t Limit::count(QueryContext* qctx) const {
   if (count_ == nullptr) {

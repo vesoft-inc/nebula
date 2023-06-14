@@ -301,6 +301,81 @@ class OrderBySentence final : public Sentence {
   std::unique_ptr<OrderFactors> orderFactors_;
 };
 
+class SamplingFactor final {
+ public:
+  enum SamplingType : uint8_t { BINARY, ALIAS };
+
+  SamplingFactor(Expression* expr, int64_t count, SamplingType sp) {
+    expr_ = expr;
+    count_ = count;
+    sampling_type_ = sp;
+  }
+
+  Expression* expr() {
+    return expr_;
+  }
+
+  void setExpr(Expression* expr) {
+    expr_ = expr;
+  }
+
+  int64_t count() {
+    return count_;
+  }
+
+  SamplingType samplingType() {
+    return sampling_type_;
+  }
+
+  std::string toString() const;
+
+ private:
+  Expression* expr_{nullptr};
+  int64_t count_;
+  SamplingType sampling_type_;
+};
+
+class SamplingFactors final {
+ public:
+  void addFactor(SamplingFactor* factor) {
+    factors_.emplace_back(factor);
+  }
+
+  auto& factors() {
+    return factors_;
+  }
+
+  const auto& factors() const {
+    return factors_;
+  }
+
+  std::string toString() const;
+
+ private:
+  std::vector<std::unique_ptr<SamplingFactor>> factors_;
+};
+
+class SamplingSentence final : public Sentence {
+ public:
+  explicit SamplingSentence(SamplingFactors* factors) {
+    samplingFactors_.reset(factors);
+    kind_ = Kind::kSampling;
+  }
+
+  auto& factors() {
+    return samplingFactors_->factors();
+  }
+
+  const auto& factors() const {
+    return samplingFactors_->factors();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<SamplingFactors> samplingFactors_;
+};
+
 class FetchVerticesSentence final : public Sentence {
  public:
   FetchVerticesSentence(NameLabelList* tags, VertexIDList* vidList, YieldClause* clause) {

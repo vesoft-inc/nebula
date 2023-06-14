@@ -31,6 +31,7 @@
 #include "graph/validator/OrderByValidator.h"
 #include "graph/validator/PipeValidator.h"
 #include "graph/validator/ReportError.h"
+#include "graph/validator/SamplingValidator.h"
 #include "graph/validator/SequentialValidator.h"
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UnwindValidator.h"
@@ -72,6 +73,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<LimitValidator>(sentence, context);
     case Sentence::Kind::kOrderBy:
       return std::make_unique<OrderByValidator>(sentence, context);
+    case Sentence::Kind::kSampling:
+      return std::make_unique<SamplingValidator>(sentence, context);
     case Sentence::Kind::kYield:
       return std::make_unique<YieldValidator>(sentence, context);
     case Sentence::Kind::kGroupBy:

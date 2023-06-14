@@ -86,6 +86,7 @@
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/query/RollUpApplyExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
+#include "graph/executor/query/SamplingExecutor.h"
 #include "graph/executor/query/ScanEdgesExecutor.h"
 #include "graph/executor/query/ScanVerticesExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
@@ -179,6 +180,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kTopN: {
       return pool->makeAndAdd<TopNExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kSampling: {
+      return pool->makeAndAdd<SamplingExecutor>(node, qctx);
     }
     case PlanNode::Kind::kFilter: {
       return pool->makeAndAdd<FilterExecutor>(node, qctx);

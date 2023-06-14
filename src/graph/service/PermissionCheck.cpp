@@ -138,6 +138,7 @@ namespace graph {
     case Sentence::Kind::kLookup:
     case Sentence::Kind::kYield:
     case Sentence::Kind::kOrderBy:
+    case Sentence::Kind::kSampling:
     case Sentence::Kind::kFetchVertices:
     case Sentence::Kind::kFetchEdges:
     case Sentence::Kind::kFindPath:
