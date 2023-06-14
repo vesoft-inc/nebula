@@ -2929,6 +2929,16 @@ TEST_F(ParserTest, Zone) {
 
 TEST_F(ParserTest, FullText) {
   {
+    std::string query = "CREATE FULLTEXT TAG INDEX i1 on t1(str)";
+    auto result = parse(query);
+    EXPECT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE FULLTEXT TAG INDEX i1 on t1(str) analyzer=\"standard\"";
+    auto result = parse(query);
+    EXPECT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "LOOKUP ON t1 WHERE ES_QUERY(abc, \"qwerty\")";
     auto result = parse(query);
     EXPECT_TRUE(result.ok()) << result.status();
