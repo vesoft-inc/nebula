@@ -32,7 +32,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
   const auto& space = qctx()->rctx()->session()->space();
   if (!isIntVidType(space)) {
     if (ftIndexScan->isEdge()) {
-      DataSet edges({"edge", kScore});
+      DataSet edges({"id", kScore});
       for (auto& item : esResultValue.items) {
         Edge edge;
         edge.src = item.src;
@@ -43,7 +43,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       }
       finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
-      DataSet vertices({kVid, kScore});
+      DataSet vertices({"id", kScore});
       for (auto& item : esResultValue.items) {
         vertices.emplace_back(Row({item.vid, item.score}));
       }
@@ -51,7 +51,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
     }
   } else {
     if (ftIndexScan->isEdge()) {
-      DataSet edges({"edge", kScore});
+      DataSet edges({"id", kScore});
       for (auto& item : esResultValue.items) {
         Edge edge;
         edge.src = item.src;
@@ -62,7 +62,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       }
       finish(ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
     } else {
-      DataSet vertices({kVid, kScore});
+      DataSet vertices({"id", kScore});
       for (auto& item : esResultValue.items) {
         std::string vidStr = item.vid;
         int64_t vid = *reinterpret_cast<int64_t*>(vidStr.data());

@@ -36,7 +36,7 @@ void ESBulk::put(const std::string& indexName,
   body["dst"] = dst;
   body["rank"] = rank;
   for (auto& [key, value] : data) {
-    body[key] = value;
+    body[key] = std::move(value);
   }
   documents_[indexName].emplace_back(std::move(action));
   documents_[indexName].emplace_back(std::move(body));

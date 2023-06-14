@@ -151,7 +151,7 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
         data[field] = std::move(v).getStr();
       }
     }
-    callback(type, indexName, vid, src, dst, rank, data);
+    callback(type, indexName, vid, src, dst, rank, std::move(data));
   }
 }
 
