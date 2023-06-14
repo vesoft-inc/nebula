@@ -22,6 +22,7 @@ namespace graph {
 //  GetVertices,
 //  GetEdges,
 //  IndexScan
+//  FulltextIndexScan
 class Explore : public SingleInputNode {
  public:
   GraphSpaceID space() const {
@@ -35,6 +36,8 @@ class Explore : public SingleInputNode {
   bool dedup() const {
     return dedup_;
   }
+
+  int64_t getValidLimit() const;
 
   // Get the constant limit value
   int64_t limit(QueryContext* qctx = nullptr) const;

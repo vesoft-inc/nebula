@@ -35,10 +35,6 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-  auto limit = gv->limit();
-  if (limit < 0) {
-    limit = std::numeric_limits<int32_t>::max();
-  }
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
                  std::move(vertices),
@@ -47,7 +43,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                  gv->exprs(),
                  gv->dedup(),
                  gv->orderBy(),
-                 limit,
+                 gv->getValidLimit(),
                  gv->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {

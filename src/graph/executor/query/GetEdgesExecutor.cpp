@@ -85,10 +85,6 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
                                           qctx()->rctx()->session()->id(),
                                           qctx()->plan()->id(),
                                           qctx()->plan()->isProfileEnabled());
-  auto limit = ge->limit(qctx());
-  if (limit < 0) {
-    limit = std::numeric_limits<int64_t>::max();
-  }
   return DCHECK_NOTNULL(client)
       ->getProps(param,
                  std::move(edges),
@@ -97,7 +93,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
                  ge->exprs(),
                  ge->dedup(),
                  ge->orderBy(),
-                 limit,
+                 ge->getValidLimit(),
                  ge->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {
