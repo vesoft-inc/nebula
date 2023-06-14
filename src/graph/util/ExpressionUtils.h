@@ -72,10 +72,13 @@ class ExpressionUtils {
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
   // rewrite LabelAttr to tagProp
-  static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
+  static Expression* rewriteLabelAttr2TagProp(const Expression* expr, bool toAttrExpr = false);
 
   // rewrite LabelAttr to EdgeProp
-  static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr);
+  static Expression* rewriteLabelAttr2EdgeProp(const Expression* expr, bool toAttrExpr = false);
+
+  // rewrite Vertex/Edge expression to VariablePropertyExpression
+  static Expression* rewriteVertexEdgeExprToVarPropExpr(const Expression* expr);
 
   // rewrite Agg to VarProp
   static Expression* rewriteAgg2VarProp(const Expression* expr);

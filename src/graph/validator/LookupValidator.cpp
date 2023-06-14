@@ -100,6 +100,7 @@ void LookupValidator::extractExprProps() {
 // Disable invalid expressions, check schema name, rewrites expression to fit semantic,
 // check type and collect properties.
 Status LookupValidator::validateYieldEdge() {
+  NG_RETURN_IF_ERROR(validateScoreColumn());
   auto yield = sentence()->yieldClause();
   for (auto col : yield->columns()) {
     NG_RETURN_IF_ERROR(validateYieldColumn(col, true));
@@ -586,9 +587,6 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     case Expression::Kind::kFunctionCall: {
       auto funcExpr = static_cast<FunctionCallExpression*>(col->expr());
       if (funcExpr->name() == kScore) {
-        if (col->alias().empty()) {
-          return Status::SemanticError("Yield column should have an alias for score()");
-        }
         scoreCol = true;
       }
       break;
@@ -597,19 +595,18 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
       break;
   }
 
-  Expression* colExpr = nullptr;
   if (scoreCol) {
     // Rewrite score() to $score
-    colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
+    auto colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
     col->setExpr(colExpr);
     outputs_.emplace_back(col->name(), Value::Type::FLOAT);
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
-    lookupCtx_->hasScore = true;
   } else {
+    auto colExpr = ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(col->expr());
     if (isEdge) {
-      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
+      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(colExpr, lookupCtx_->hasScore);
     } else {
-      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
+      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(colExpr, lookupCtx_->hasScore);
     }
 
     col->setExpr(colExpr);
@@ -626,6 +623,23 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     }
   }
 
+  return Status::OK();
+}
+
+Status LookupValidator::validateScoreColumn() {
+  auto yield = sentence()->yieldClause();
+  for (auto col : yield->columns()) {
+    auto expr = col->expr();
+    if (expr->kind() == Expression::Kind::kFunctionCall) {
+      auto funcExpr = static_cast<FunctionCallExpression*>(expr);
+      if (funcExpr->name() == kScore) {
+        if (col->alias().empty()) {
+          return Status::SemanticError("Yield column should have an alias for score()");
+        }
+        lookupCtx_->hasScore = true;
+      }
+    }
+  }
   return Status::OK();
 }
 

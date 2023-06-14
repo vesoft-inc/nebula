@@ -190,33 +190,54 @@ Expression *ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
+Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr, bool toAttrExpr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
+  auto rewriter = [pool, toAttrExpr](const Expression *e) -> Expression * {
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
+    if (toAttrExpr) {
+      auto tagExpr = AttributeExpression::make(
+          pool, VertexExpression::make(pool), ConstantExpression::make(pool, leftName));
+      return AttributeExpression::make(pool, tagExpr, ConstantExpression::make(pool, rightName));
+    }
     return TagPropertyExpression::make(pool, leftName, rightName);
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
+Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr, bool toAttrExpr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
+  auto rewriter = [pool, toAttrExpr](const Expression *e) -> Expression * {
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
+    if (toAttrExpr) {
+      return AttributeExpression::make(
+          pool, EdgeExpression::make(pool), ConstantExpression::make(pool, rightName));
+    }
     return EdgePropertyExpression::make(pool, leftName, rightName);
   };
 
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
+}
+
+// static
+Expression *ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(const Expression *expr) {
+  ObjectPool *pool = expr->getObjPool();
+  auto matcher = [](const Expression *e) -> bool {
+    return e->kind() == Expression::Kind::kVertex || e->kind() == Expression::Kind::kEdge;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    return VariablePropertyExpression::make(pool, "", e->toString());
+  };
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
