@@ -770,6 +770,10 @@ class FulltextIndexScan : public Explore {
     return isEdge_;
   }
 
+  int64_t getValidOffset() const {
+    return offset_ >= 0 ? offset_ : 0;
+  }
+
   int64_t offset() const {
     return offset_;
   }
