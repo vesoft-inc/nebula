@@ -441,7 +441,7 @@ class GetVertices : public Explore {
                            std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                            bool dedup = false,
                            std::vector<storage::cpp2::OrderBy> orderBy = {},
-                           int64_t limit = std::numeric_limits<int64_t>::max(),
+                           int64_t limit = -1,
                            Expression* filter = nullptr) {
     return qctx->objPool()->makeAndAdd<GetVertices>(qctx,
                                                     Kind::kGetVertices,
@@ -547,7 +547,7 @@ class GetEdges final : public Explore {
                         std::unique_ptr<std::vector<EdgeProp>>&& props = nullptr,
                         std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                         bool dedup = false,
-                        int64_t limit = std::numeric_limits<int64_t>::max(),
+                        int64_t limit = -1,
                         std::vector<storage::cpp2::OrderBy> orderBy = {},
                         Expression* filter = nullptr) {
     return qctx->objPool()->makeAndAdd<GetEdges>(qctx,
