@@ -612,10 +612,6 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
       colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(colExpr, lookupCtx_->hasScore);
     }
 
-    if (lookupCtx_->hasScore) {
-      colExpr = ExpressionUtils::rewriteVertexEdgeExprToVarPropExpr(colExpr);
-    }
-
     col->setExpr(colExpr);
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 
