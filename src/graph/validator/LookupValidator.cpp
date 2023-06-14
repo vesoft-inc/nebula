@@ -604,8 +604,8 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
   } else {
     auto colExpr = col->expr();
-    // When there is no score in the output columns, keep the original execution plan
-    // unchanged, otherwise rewrite all vertex/edge expression to the VarPropExpression
+    // When there is no score() function in the output columns, keep the original execution plan
+    // unchanged, otherwise rewrite all vertex/edge property expression to the attribute expression
     if (isEdge) {
       colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(colExpr, lookupCtx_->hasScore);
     } else {

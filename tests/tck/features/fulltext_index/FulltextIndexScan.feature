@@ -63,8 +63,8 @@ Feature: FulltextIndexTest
         tag2.prop2 AS prop2
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2          |
-      | "1" | "abc"    | "nebula graph" |
+      | id  | prop1 | prop2          |
+      | "1" | "abc" | "nebula graph" |
     When executing query:
       """
       LOOKUP ON tag2
@@ -76,8 +76,8 @@ Feature: FulltextIndexTest
       LIMIT 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2          |
-      | "1" | "abc"    | "nebula graph" |
+      | id  | prop1 | prop2          |
+      | "1" | "abc" | "nebula graph" |
     When executing query:
       """
       LOOKUP ON tag2
@@ -89,7 +89,7 @@ Feature: FulltextIndexTest
       LIMIT 1,3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2          |
+      | id | prop1 | prop2 |
     When executing query:
       """
       LOOKUP ON tag2
@@ -129,7 +129,7 @@ Feature: FulltextIndexTest
       LIMIT 1,3
       """
     Then the result should be, in any order:
-      | id  | prop1 | prop2          | sc        |
+      | id | prop1 | prop2 | sc |
     When executing query:
       """
       LOOKUP ON tag2
@@ -160,10 +160,10 @@ Feature: FulltextIndexTest
       LIMIT 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2             |
-      | "4" | "zyx"    | "Nebula"          |
-      | "5" | "cba"    | "neBula"          |
-      | "1" | "abc"    | "nebula graph"    |
+      | id  | prop1 | prop2          |
+      | "4" | "zyx" | "Nebula"       |
+      | "5" | "cba" | "neBula"       |
+      | "1" | "abc" | "nebula graph" |
     When executing query:
       """
       LOOKUP ON tag2
@@ -175,10 +175,10 @@ Feature: FulltextIndexTest
       LIMIT 1, 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2             |
-      | "5" | "cba"    | "neBula"          |
-      | "1" | "abc"    | "nebula graph"    |
-      | "2" | "abcde"  | "nebula-graph"    |
+      | id  | prop1   | prop2          |
+      | "5" | "cba"   | "neBula"       |
+      | "1" | "abc"   | "nebula graph" |
+      | "2" | "abcde" | "nebula-graph" |
     When executing query:
       """
       LOOKUP ON tag2
@@ -211,10 +211,10 @@ Feature: FulltextIndexTest
       LIMIT 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2             | sc          |
-      | "4" | "zyx"    | "Nebula"          | 0.0693102   |
-      | "5" | "cba"    | "neBula"          | 0.0693102   |
-      | "1" | "abc"    | "nebula graph"    | 0.054002427 |
+      | id  | prop1 | prop2          | sc          |
+      | "4" | "zyx" | "Nebula"       | 0.0693102   |
+      | "5" | "cba" | "neBula"       | 0.0693102   |
+      | "1" | "abc" | "nebula graph" | 0.054002427 |
     When executing query:
       """
       LOOKUP ON tag2
@@ -227,10 +227,10 @@ Feature: FulltextIndexTest
       LIMIT 1, 3
       """
     Then the result should be, in any order:
-      | id  | prop1    | prop2             | sc          |
-      | "5" | "cba"    | "neBula"          | 0.0693102   |
-      | "1" | "abc"    | "nebula graph"    | 0.054002427 |
-      | "2" | "abcde"  | "nebula-graph"    | 0.054002427 |
+      | id  | prop1   | prop2          | sc          |
+      | "5" | "cba"   | "neBula"       | 0.0693102   |
+      | "1" | "abc"   | "nebula graph" | 0.054002427 |
+      | "2" | "abcde" | "nebula-graph" | 0.054002427 |
     When executing query:
       """
       LOOKUP ON edge2
@@ -258,9 +258,9 @@ Feature: FulltextIndexTest
       LIMIT 2
       """
     Then the result should be, in any order:
-      | src | dst | rank | prop1                |
-      | "3" | "4" | 5    | "高性能"             |
-      | "4" | "5" | 7    | "高吞吐"             |
+      | src | dst | rank | prop1    |
+      | "3" | "4" | 5    | "高性能" |
+      | "4" | "5" | 7    | "高吞吐" |
     When executing query:
       """
       LOOKUP ON edge2
@@ -305,9 +305,9 @@ Feature: FulltextIndexTest
       LIMIT 2
       """
     Then the result should be, in any order:
-      | src | dst | rank | prop1                | sc        |
-      | "3" | "4" | 5    | "高性能"             | 1.1120702 |
-      | "4" | "5" | 7    | "高吞吐"             | 1.1120702 |
+      | src | dst | rank | prop1    | sc        |
+      | "3" | "4" | 5    | "高性能" | 1.1120702 |
+      | "4" | "5" | 7    | "高吞吐" | 1.1120702 |
     When executing query:
       """
       LOOKUP ON edge2
