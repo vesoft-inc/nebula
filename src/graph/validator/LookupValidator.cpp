@@ -603,15 +603,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     outputs_.emplace_back(col->name(), Value::Type::FLOAT);
     lookupCtx_->yieldExpr->addColumn(col->clone().release());
   } else {
-    auto colExpr = col->expr();
-    // When there is no score() function in the output columns, keep the original execution plan
-    // unchanged, otherwise rewrite all vertex/edge property expression to the attribute expression
-    if (isEdge) {
-      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(colExpr, lookupCtx_->hasScore);
-    } else {
-      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(colExpr, lookupCtx_->hasScore);
-    }
-
+    auto colExpr = ExpressionUtils::rewriteLabelAttr2PropExpr(col->expr(), isEdge);
     col->setExpr(colExpr);
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 

@@ -190,39 +190,37 @@ Expression *ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr, bool toAttrExpr) {
+Expression *ExpressionUtils::rewriteLabelAttr2PropExpr(const Expression *expr, bool isEdge) {
+  if (isEdge) {
+    return rewriteLabelAttr2EdgeProp(expr);
+  }
+  return rewriteLabelAttr2TagProp(expr);
+}
+
+Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool, toAttrExpr](const Expression *e) -> Expression * {
+  auto rewriter = [pool](const Expression *e) -> Expression * {
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
-    if (toAttrExpr) {
-      auto tagExpr = AttributeExpression::make(
-          pool, VertexExpression::make(pool), ConstantExpression::make(pool, leftName));
-      return AttributeExpression::make(pool, tagExpr, ConstantExpression::make(pool, rightName));
-    }
     return TagPropertyExpression::make(pool, leftName, rightName);
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
-Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr, bool toAttrExpr) {
+Expression *ExpressionUtils::rewriteLabelAttr2EdgeProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
     return e->kind() == Expression::Kind::kLabelAttribute;
   };
-  auto rewriter = [pool, toAttrExpr](const Expression *e) -> Expression * {
+  auto rewriter = [pool](const Expression *e) -> Expression * {
     auto labelAttrExpr = static_cast<const LabelAttributeExpression *>(e);
     auto leftName = labelAttrExpr->left()->name();
     auto rightName = labelAttrExpr->right()->value().getStr();
-    if (toAttrExpr) {
-      return AttributeExpression::make(
-          pool, EdgeExpression::make(pool), ConstantExpression::make(pool, rightName));
-    }
     return EdgePropertyExpression::make(pool, leftName, rightName);
   };
 
