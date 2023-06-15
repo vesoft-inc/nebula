@@ -69,7 +69,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
           GetEdges::make(qctx, plan.root, spaceId, src, type, rank, dst, std::move(edgeProps));
 
       hashKeys = {ColumnExpression::make(pool, 0)};
-      probeKeys = {ColumnExpression::make(pool, 0)};
+      probeKeys = {EdgeExpression::make(pool)};
     } else {
       storage::cpp2::VertexProp vertexProp;
       vertexProp.tag_ref() = lookupCtx->schemaId;
@@ -80,7 +80,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
           qctx, plan.root, spaceId, ColumnExpression::make(pool, 0), std::move(vertexProps));
 
       hashKeys = {ColumnExpression::make(pool, 0)};
-      probeKeys = {FunctionCallExpression::make(pool, "id", {ColumnExpression::make(pool, 0)})};
+      probeKeys = {FunctionCallExpression::make(pool, "id", {VertexExpression::make(pool)})};
     }
 
     if (lookupCtx->hasScore) {

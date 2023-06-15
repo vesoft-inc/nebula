@@ -44,7 +44,7 @@ class ESBulk {
            const std::string& src,
            const std::string& dst,
            int64_t rank,
-           const std::string& text);
+           std::map<std::string, std::string> data);
   void delete_(const std::string& indexName,
                const std::string& vid,
                const std::string& src,

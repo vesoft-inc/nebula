@@ -112,7 +112,7 @@ class ESListener : public Listener {
                                       const std::string& src,
                                       const std::string& dst,
                                       int64_t rank,
-                                      const std::string& text)>;
+                                      std::map<std::string, std::string> data)>;
   void pickTagAndEdgeData(BatchLogType type,
                           const std::string& key,
                           const std::string& value,

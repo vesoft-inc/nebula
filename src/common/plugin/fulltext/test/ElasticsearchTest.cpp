@@ -324,7 +324,8 @@ TEST_F(ESTest, bulk) {
   plugin::ESClient client(mockHttpClient, "http", "127.0.0.1:9200", "", "");
   plugin::ESAdapter adapter(std::vector<plugin::ESClient>({client}));
   plugin::ESBulk bulk;
-  bulk.put("nebula_index_1", "1", "", "", 0, "vertex text");
+  std::map<std::string, std::string> data{{"text", "vretex text"}};
+  bulk.put("nebula_index_1", "1", "", "", 0, data);
   bulk.delete_("nebula_index_2", "", "a", "b", 10);
   {
     auto result = adapter.bulk(bulk, true);
