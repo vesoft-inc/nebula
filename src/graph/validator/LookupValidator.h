@@ -32,7 +32,6 @@ class LookupValidator final : public Validator {
   Status validateYieldTag();
   Status validateYieldEdge();
   Status validateYieldColumn(YieldColumn* col, bool isEdge);
-  Status validateScoreColumn();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   Status checkRelExpr(RelationalExpression* expr);
