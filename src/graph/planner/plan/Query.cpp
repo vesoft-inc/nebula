@@ -19,10 +19,18 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
+int64_t Explore::getValidLimit() const {
+  auto limit = this->limit();
+  if (limit < 0) {
+    limit = std::numeric_limits<int64_t>::max();
+  }
+  return limit;
+}
+
 int64_t Explore::limit(QueryContext* qctx) const {
   DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
   QueryExpressionContext ctx(qctx ? qctx->ectx() : nullptr);
-  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+  return limit(ctx);
 }
 
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {

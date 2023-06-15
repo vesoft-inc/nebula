@@ -84,10 +84,12 @@ StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
       auto arg = tsExpr->arg();
       auto index = arg->index();
       auto query = arg->query();
-      int64_t offset = ftIndexScan->offset();
-      int64_t count = ftIndexScan->limit() > std::numeric_limits<int32_t>::max()
-                          ? std::numeric_limits<int32_t>::max()
-                          : ftIndexScan->limit();
+      int64_t offset = ftIndexScan->getValidOffset();
+      auto limit = ftIndexScan->limit();
+      if (limit > std::numeric_limits<int32_t>::max()) {
+        limit = std::numeric_limits<int32_t>::max();
+      }
+      int64_t count = limit - offset;
       execFunc = [=, &esAdapter]() { return esAdapter.queryString(index, query, offset, count); };
       break;
     }

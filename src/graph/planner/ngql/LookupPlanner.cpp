@@ -65,8 +65,12 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
       auto rank = FunctionCallExpression::make(pool, "rank", {ColumnExpression::make(pool, 0)});
       auto dst = FunctionCallExpression::make(pool, "dst", {ColumnExpression::make(pool, 0)});
 
-      plan.root =
+      auto ge =
           GetEdges::make(qctx, plan.root, spaceId, src, type, rank, dst, std::move(edgeProps));
+
+      auto yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(EdgeExpression::make(pool)));
+      plan.root = Project::make(qctx, ge, yieldColumns);
 
       hashKeys = {ColumnExpression::make(pool, 0)};
       probeKeys = {EdgeExpression::make(pool)};
@@ -76,8 +80,12 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
       vertexProp.props_ref() = lookupCtx->idxReturnCols;
       auto vertexProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
       vertexProps->emplace_back(std::move(vertexProp));
-      plan.root = GetVertices::make(
+      auto gv = GetVertices::make(
           qctx, plan.root, spaceId, ColumnExpression::make(pool, 0), std::move(vertexProps));
+
+      auto yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool)));
+      plan.root = Project::make(qctx, gv, yieldColumns);
 
       hashKeys = {ColumnExpression::make(pool, 0)};
       probeKeys = {FunctionCallExpression::make(pool, "id", {VertexExpression::make(pool)})};

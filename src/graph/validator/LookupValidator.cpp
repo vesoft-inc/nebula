@@ -573,7 +573,7 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
     return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
   }
 
-  bool scoreCol = false;
+  bool isScoreCol = false;
   switch (col->expr()->kind()) {
     case Expression::Kind::kLabelAttribute: {
       auto expr = static_cast<LabelAttributeExpression*>(col->expr());
@@ -589,7 +589,8 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
         if (col->alias().empty()) {
           return Status::SemanticError("Yield column should have an alias for score()");
         }
-        scoreCol = true;
+        isScoreCol = true;
+        lookupCtx_->hasScore = true;
       }
       break;
     }
@@ -598,32 +599,24 @@ Status LookupValidator::validateYieldColumn(YieldColumn* col, bool isEdge) {
   }
 
   Expression* colExpr = nullptr;
-  if (scoreCol) {
+  if (isScoreCol) {
     // Rewrite score() to $score
     colExpr = VariablePropertyExpression::make(qctx_->objPool(), "", kScore);
-    col->setExpr(colExpr);
-    outputs_.emplace_back(col->name(), Value::Type::FLOAT);
-    lookupCtx_->yieldExpr->addColumn(col->clone().release());
-    lookupCtx_->hasScore = true;
   } else {
-    if (isEdge) {
-      colExpr = ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr());
-    } else {
-      colExpr = ExpressionUtils::rewriteLabelAttr2TagProp(col->expr());
-    }
+    colExpr = ExpressionUtils::rewriteLabelAttr2PropExpr(col->expr(), isEdge);
+  }
+  col->setExpr(colExpr);
+  NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
 
-    col->setExpr(colExpr);
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
-
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    lookupCtx_->yieldExpr->addColumn(col->clone().release());
-    if (isEdge) {
-      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
-    } else {
-      NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
-    }
+  auto typeStatus = deduceExprType(colExpr);
+  NG_RETURN_IF_ERROR(typeStatus);
+  auto type = isScoreCol ? Value::Type::FLOAT : typeStatus.value();
+  outputs_.emplace_back(col->name(), type);
+  lookupCtx_->yieldExpr->addColumn(col->clone().release());
+  if (isEdge) {
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
+  } else {
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
   }
 
   return Status::OK();
