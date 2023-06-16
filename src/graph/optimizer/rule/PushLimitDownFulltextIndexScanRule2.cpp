@@ -64,18 +64,13 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.result().node;
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  auto newLimit = static_cast<Limit *>(limit->clone());
-  newLimit->setOutputVar(limit->outputVar());
-  auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto joinGroupNode = matched.result({0, 0}).node;
   auto join = static_cast<const HashInnerJoin *>(joinGroupNode->node());
   auto newJoin = static_cast<HashInnerJoin *>(join->clone());
-  auto newJoinGroup = OptGroup::create(octx);
-  auto newJoinGroupNode = newJoinGroup->makeGroupNode(newJoin);
+  auto newJoinGroupNode = OptGroupNode::create(octx, newJoin, limitGroupNode->group());
 
-  newLimitGroupNode->dependsOn(newJoinGroup);
-  newLimit->setInputVar(newJoin->outputVar());
+  newJoin->setOutputVar(limit->outputVar());
 
   auto ftGroupNode = matched.result({0, 0, 0}).node;
   const auto ft = static_cast<const FulltextIndexScan *>(ftGroupNode->node());
@@ -123,7 +118,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
 
   TransformResult result;
   result.eraseAll = true;
-  result.newGroupNodes.emplace_back(newLimitGroupNode);
+  result.newGroupNodes.emplace_back(newJoinGroupNode);
   return result;
 }
 

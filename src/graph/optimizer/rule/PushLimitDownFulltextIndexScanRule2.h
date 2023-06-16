@@ -29,12 +29,11 @@ namespace opt {
 //
 //  After:
 //
-// Limit (count=3, offset=1)
-//   `- HashInnerJoin
-//       |- Project
-//       |   `- GetVertices/GetEdges
-//       |       `- Argument
-//       `-FulltextIndexScan (limit=4, offset=1)
+// HashInnerJoin
+//  |- Project
+//  |   `- GetVertices/GetEdges
+//  |       `- Argument
+//  `-FulltextIndexScan (limit=4, offset=1)
 //
 
 class PushLimitDownFulltextIndexScanRule2 final : public OptRule {
