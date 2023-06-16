@@ -23,7 +23,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       CREATE FULLTEXT TAG INDEX nebula_index_tag2_prop1 on tag2(prop1);
-      CREATE FULLTEXT TAG INDEX nebula_index_tag2_prop2 on tag2(prop2);
+      CREATE FULLTEXT TAG INDEX nebula_index_tag2_props on tag2(prop1, prop2);
       CREATE FULLTEXT EDGE INDEX nebula_index_edge2_prop1 on edge2(prop1);
       """
     Then the execution should be successful
@@ -53,7 +53,7 @@ Feature: FulltextIndexTest
       """
     Then the execution should be successful
     And wait 10 seconds
-    When executing query:
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -65,7 +65,13 @@ Feature: FulltextIndexTest
     Then the result should be, in any order:
       | id  | prop1 | prop2          |
       | "1" | "abc" | "nebula graph" |
-    When executing query:
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info |
+      | 5  | Project           | 14           |                |               |
+      | 14 | GetVertices       | 15           |                |               |
+      | 15 | FulltextIndexScan | 0            |                |               |
+      | 0  | Start             |              |                |               |
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -78,7 +84,14 @@ Feature: FulltextIndexTest
     Then the result should be, in any order:
       | id  | prop1 | prop2          |
       | "1" | "abc" | "nebula graph" |
-    When executing query:
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info |
+      | 10 | Project           | 11           |                |               |
+      | 11 | Limit             | 13           |                | {"count": 3}  |
+      | 13 | GetVertices       | 14           |                | {"limit": 3}  |
+      | 14 | FulltextIndexScan | 0            |                | {"limit": 3}  |
+      | 0  | Start             |              |                |               |
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -90,7 +103,13 @@ Feature: FulltextIndexTest
       """
     Then the result should be, in any order:
       | id | prop1 | prop2 |
-    When executing query:
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info           |
+      | 10 | Project           | 15           |                |                         |
+      | 15 | GetVertices       | 16           |                | {"limit":4}             |
+      | 16 | FulltextIndexScan | 0            |                | {"offset":1, "limit":4} |
+      | 0  | Start             |              |                |                         |
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -103,7 +122,16 @@ Feature: FulltextIndexTest
     Then the result should be, in any order:
       | id  | prop1 | prop2          | sc        |
       | "1" | "abc" | "nebula graph" | 1.7917595 |
-    When executing query:
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info |
+      | 6  | Project           | 5            |                |               |
+      | 5  | HashInnerJoin     | 1,4          |                |               |
+      | 1  | FulltextIndexScan | 0            |                |               |
+      | 0  | Start             |              |                |               |
+      | 4  | Project           | 3            |                |               |
+      | 3  | GetVertices       | 2            |                |               |
+      | 2  | Argument          |              |                |               |
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -117,7 +145,16 @@ Feature: FulltextIndexTest
     Then the result should be, in any order:
       | id  | prop1 | prop2          | sc        |
       | "1" | "abc" | "nebula graph" | 1.7917595 |
-    When executing query:
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info |
+      | 9  | Project           | 10           |                |               |
+      | 10 | HashInnerJoin     | 11,12        |                |               |
+      | 11 | FulltextIndexScan | 0            |                | {"limit":3}   |
+      | 0  | Start             |              |                |               |
+      | 12 | Project           | 13           |                |               |
+      | 13 | GetVertices       | 14           |                |               |
+      | 14 | Argument          |              |                |               |
+    When profiling query:
       """
       LOOKUP ON tag2
       WHERE ES_QUERY(nebula_index_tag2_prop1, "abc")
@@ -130,10 +167,19 @@ Feature: FulltextIndexTest
       """
     Then the result should be, in any order:
       | id | prop1 | prop2 | sc |
+    And the execution plan should be:
+      | id | name              | dependencies | profiling data | operator info          |
+      | 9  | Project           | 10           |                |                        |
+      | 10 | HashInnerJoin     | 11,12        |                |                        |
+      | 11 | FulltextIndexScan | 0            |                | {"offset":1,"limit":4} |
+      | 0  | Start             |              |                |                        |
+      | 12 | Project           | 13           |                |                        |
+      | 13 | GetVertices       | 14           |                |                        |
+      | 14 | Argument          |              |                |                        |
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -152,7 +198,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -167,7 +213,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -182,7 +228,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -202,7 +248,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -218,7 +264,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,

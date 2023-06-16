@@ -22,17 +22,18 @@ namespace opt {
 //
 // Limit (count=3, offset=1)
 //   `- HashInnerJoin
-//       |- GetVertices/GetEdges
-//       |   `- Argument
+//       |- Project
+//       |   `- GetVertices/GetEdges
+//       |       `- Argument
 //       `- FulltextIndexScan
 //
 //  After:
 //
-// Limit (count=3, offset=1)
-//   `- HashInnerJoin
-//       |- GetVertices/GetEdges
-//       |   `- Argument
-//       `- FulltextIndexScan (limit=4, offset=1)
+// HashInnerJoin
+//  |- Project
+//  |   `- GetVertices/GetEdges
+//  |       `- Argument
+//  `-FulltextIndexScan (limit=4, offset=1)
 //
 
 class PushLimitDownFulltextIndexScanRule2 final : public OptRule {
