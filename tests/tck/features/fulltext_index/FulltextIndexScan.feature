@@ -23,7 +23,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       CREATE FULLTEXT TAG INDEX nebula_index_tag2_prop1 on tag2(prop1);
-      CREATE FULLTEXT TAG INDEX nebula_index_tag2_prop2 on tag2(prop2);
+      CREATE FULLTEXT TAG INDEX nebula_index_tag2_props on tag2(prop1, prop2);
       CREATE FULLTEXT EDGE INDEX nebula_index_edge2_prop1 on edge2(prop1);
       """
     Then the execution should be successful
@@ -133,7 +133,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -152,7 +152,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -167,7 +167,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -182,7 +182,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -202,7 +202,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
@@ -218,7 +218,7 @@ Feature: FulltextIndexTest
     When executing query:
       """
       LOOKUP ON tag2
-      WHERE ES_QUERY(nebula_index_tag2_prop2, "nebula")
+      WHERE ES_QUERY(nebula_index_tag2_props, "nebula")
       YIELD
         id(vertex) AS id,
         tag2.prop1 AS prop1,
