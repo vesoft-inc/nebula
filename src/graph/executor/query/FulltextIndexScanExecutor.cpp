@@ -90,6 +90,9 @@ StatusOr<plugin::ESQueryResult> FulltextIndexScanExecutor::accessFulltextIndex(
         limit = std::numeric_limits<int32_t>::max();
       }
       int64_t count = limit - offset;
+      if (count == 0) {
+        return plugin::ESQueryResult();
+      }
       execFunc = [=, &esAdapter]() { return esAdapter.queryString(index, query, offset, count); };
       break;
     }
