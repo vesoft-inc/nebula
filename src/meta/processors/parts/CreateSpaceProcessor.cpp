@@ -191,6 +191,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
     auto now = time::WallClock::fastNowInMilliSec();
     auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+    bool zoneActive = false;
     for (auto& host : hosts) {
       auto key = MetaKeyUtils::hostKey(host.host, host.port);
       auto ret = doGet(key);
@@ -202,7 +203,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       HostInfo info = HostInfo::decode(nebula::value(ret));
       if (now - info.lastHBTimeInMilliSec_ <
           FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
-        activeZoneSize += 1;
+        zoneActive = true;
         auto hostIter = hostLoading_.find(host);
         if (hostIter == hostLoading_.end()) {
           hostLoading_[host] = 0;
@@ -215,6 +216,9 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       }
     }
 
+    if (zoneActive) {
+      activeZoneSize += 1;
+    }
     CHECK_CODE_AND_BREAK();
     zoneHosts[zone] = std::move(hosts);
   }
