@@ -132,19 +132,19 @@ jobs:
               ;;
             esac
             ;;
-            clang-*)
-              # build with Sanitizer
-              cmake \
-                  -DCOMPILER_LAUNCHER_OPTION=sccache \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
-                  -DNEBULA_USE_LINKER=mold \
-                  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-                  -DENABLE_MEMORY_TRACKER=off \
-                  -DENABLE_ASAN=on \
-                  -DENABLE_TESTING=on \
-                  -GNinja \
-                  -B build
+          clang-*)
+            # build with Sanitizer
+            cmake \
+                -DCOMPILER_LAUNCHER_OPTION=sccache \
+                -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
+                -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
+                -DNEBULA_USE_LINKER=mold \
+                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DENABLE_MEMORY_TRACKER=off \
+                -DENABLE_ASAN=on \
+                -DENABLE_TESTING=on \
+                -GNinja \
+                -B build
             ;;
           esac
       - name: Make
