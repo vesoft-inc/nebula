@@ -131,9 +131,6 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
   }
 
   for (auto& index : ftIndexes) {
-    if (index.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
-    }
     std::map<std::string, std::string> data;
     std::string indexName = index.first;
     if (type == BatchLogType::OP_BATCH_PUT) {
