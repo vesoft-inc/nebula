@@ -36,21 +36,12 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
       ->getMetaClient()
       ->dropFTIndex(spaceId, inode->getName())
       .via(runner())
-      .thenValue([this, inode, spaceId](StatusOr<bool> resp) {
+      .thenValue([inode, spaceId](StatusOr<bool> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
                        << "' failed: " << resp.status();
           return resp.status();
-        }
-        auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
-        if (!esAdapterRet.ok()) {
-          LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
-        }
-        auto esAdapter = std::move(esAdapterRet).value();
-        auto ftRet = esAdapter.dropIndex(inode->getName());
-        if (!ftRet.ok()) {
-          LOG(WARNING) << "Drop fulltext index '" << inode->getName() << "' failed: " << ftRet;
         }
         return Status::OK();
       });
