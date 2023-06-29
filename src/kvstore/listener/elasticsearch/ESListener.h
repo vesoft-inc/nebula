@@ -118,7 +118,7 @@ class ESListener : public Listener {
                           const std::string& value,
                           const PickFunc& func);
 
-  std::string truncateVid(const std::string& vid);
+  std::string normalizeVid(const std::string& vid);
 
   StatusOr<::nebula::plugin::ESAdapter> getESAdapter();
 
