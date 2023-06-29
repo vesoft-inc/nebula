@@ -101,7 +101,6 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
     }
     vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    vid = truncateVid(vid);
   } else {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     if (edgeType < 0) {
@@ -122,9 +121,6 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
     dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
     rank = NebulaKeyUtils::getRank(vIdLen_, key);
-
-    src = truncateVid(src);
-    dst = truncateVid(dst);
   }
   if (ftIndexes.empty()) {
     return;
