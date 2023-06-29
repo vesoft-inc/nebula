@@ -101,7 +101,7 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
     }
     vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    src = normalizeVid(vid);
+    vid = normalizeVid(vid);
   } else {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     if (edgeType < 0) {
