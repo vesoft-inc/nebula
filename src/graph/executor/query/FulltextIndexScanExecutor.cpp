@@ -54,8 +54,8 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       DataSet edges({"id", kScore});
       for (auto& item : esResultValue.items) {
         Edge edge;
-        edge.src = item.src;
-        edge.dst = item.dst;
+        edge.src = *reinterpret_cast<int64_t*>(item.src.data());
+        edge.dst = *reinterpret_cast<int64_t*>(item.dst.data());
         edge.ranking = item.rank;
         edge.type = ftIndexScan->schemaId();
         edges.emplace_back(Row({std::move(edge), item.score}));
