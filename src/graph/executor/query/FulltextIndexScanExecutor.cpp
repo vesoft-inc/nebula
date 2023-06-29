@@ -66,7 +66,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       for (auto& item : esResultValue.items) {
         std::string vidStr = item.vid;
         int64_t vid = *reinterpret_cast<int64_t*>(vidStr.data());
-        vertices.emplace_back(Row({vid}));
+        vertices.emplace_back(Row({vid, item.score}));
       }
       finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
     }
