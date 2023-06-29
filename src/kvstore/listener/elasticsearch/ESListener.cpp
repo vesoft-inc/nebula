@@ -101,6 +101,7 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
     }
     vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
+    src = normalizeVid(vid);
   } else {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     if (edgeType < 0) {
@@ -121,6 +122,9 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     src = NebulaKeyUtils::getSrcId(vIdLen_, key).toString();
     dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
     rank = NebulaKeyUtils::getRank(vIdLen_, key);
+
+    src = normalizeVid(src);
+    dst = normalizeVid(dst);
   }
   if (ftIndexes.empty()) {
     return;
@@ -360,11 +364,12 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
   return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
 }
 
-std::string ESListener::truncateVid(const std::string& vid) {
+std::string ESListener::normalizeVid(const std::string& vid) {
   if (!isIntVid_) {
     return folly::rtrim(folly::StringPiece(vid), [](char c) { return c == '\0'; }).toString();
+  } else {
+    return std::to_string(*reinterpret_cast<const int64_t*>(vid.data()));
   }
-  return vid;
 }
 
 StatusOr<::nebula::plugin::ESAdapter> ESListener::getESAdapter() {

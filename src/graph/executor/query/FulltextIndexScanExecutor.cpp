@@ -54,8 +54,8 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       DataSet edges({"id", kScore});
       for (auto& item : esResultValue.items) {
         Edge edge;
-        edge.src = *reinterpret_cast<int64_t*>(item.src.data());
-        edge.dst = *reinterpret_cast<int64_t*>(item.dst.data());
+        edge.src = std::stol(item.src);
+        edge.dst = std::stol(item.dst);
         edge.ranking = item.rank;
         edge.type = ftIndexScan->schemaId();
         edges.emplace_back(Row({std::move(edge), item.score}));
@@ -65,7 +65,7 @@ folly::Future<Status> FulltextIndexScanExecutor::execute() {
       DataSet vertices({"id", kScore});
       for (auto& item : esResultValue.items) {
         std::string vidStr = item.vid;
-        int64_t vid = *reinterpret_cast<int64_t*>(vidStr.data());
+        int64_t vid = std::stol(vidStr);
         vertices.emplace_back(Row({vid, item.score}));
       }
       finish(ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
