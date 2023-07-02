@@ -1606,3 +1606,123 @@ Feature: Match By Variable
       | 10 | Traverse       | 1            |                |               |
       | 1  | IndexScan      | 2            |                |               |
       | 2  | Start          |              |                |               |
+
+  Scenario: bugfix
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name1 as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info |
+      | 14 | Aggregate      | 13           |                |               |
+      | 13 | Filter         | 12           |                |               |
+      | 12 | CrossJoin      | 6,11         |                |               |
+      | 6  | Project        | 16           |                |               |
+      | 16 | AppendVertices | 2            |                |               |
+      | 2  | Dedup          | 1            |                |               |
+      | 1  | PassThrough    | 3            |                |               |
+      | 3  | Start          |              |                |               |
+      | 11 | Project        | 18           |                |               |
+      | 18 | AppendVertices | 17           |                |               |
+      | 17 | Traverse       | 8            |                |               |
+      | 8  | IndexScan      | 7            |                |               |
+      | 7  | Argument       |              |                |               |
+    When profiling query:
+      """
+      match (v:player)
+      where id(v) == 'A'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name==name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    And the execution plan should be:
+      | id | name           | dependencies | profiling data | operator info |
+      | 14 | Aggregate      | 13           |                |               |
+      | 13 | Filter         | 12           |                |               |
+      | 12 | CrossJoin      | 6,11         |                |               |
+      | 6  | Project        | 16           |                |               |
+      | 16 | AppendVertices | 2            |                |               |
+      | 2  | Dedup          | 1            |                |               |
+      | 1  | PassThrough    | 3            |                |               |
+      | 3  | Start          |              |                |               |
+      | 11 | Project        | 18           |                |               |
+      | 18 | AppendVertices | 17           |                |               |
+      | 17 | Traverse       | 8            |                |               |
+      | 8  | IndexScan      | 7            |                |               |
+      | 7  | Argument       |              |                |               |
+    When executing query:
+      """
+      match (v:player)
+      where id(v) == 'Yao Ming'
+      with v.player.name1 as name
+      match (v1:player)--(v2:player)
+      where v1.player.name IN name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    When executing query:
+      """
+      match (v:player)
+      where id(v) == 'A'
+      with v.player.name as name
+      match (v1:player)--(v2:player)
+      where v1.player.name IN name
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    When executing query:
+      """
+      with NULL as vid
+      match (v:player)
+      where id(v)==vid
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    When executing query:
+      """
+      with LIST[] as vid
+      match (v:player)
+      where id(v)==vid
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    When executing query:
+      """
+      with NULL as vid
+      match (v:player)
+      where id(v) IN vid
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |
+    When executing query:
+      """
+      with LIST[] as vid
+      match (v:player)
+      where id(v) IN vid
+      return count(*) as n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n |
+      | 0 |

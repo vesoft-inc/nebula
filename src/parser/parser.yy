@@ -572,6 +572,7 @@ unreserved_keyword
     | KW_DIVIDE             { $$ = new std::string("divide"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
+    | KW_ANALYZER           { $$ = new std::string("analyzer"); }
     ;
 
 expression
@@ -2618,10 +2619,15 @@ opt_analyzer
 
 create_fulltext_index_sentence
     : KW_CREATE KW_FULLTEXT KW_TAG KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN opt_analyzer {
-        $$ = new CreateFTIndexSentence(false, $5, $7, $9, $11);
+        auto sentence = new CreateFTIndexSentence(false, $5, $7, $9, $11);
+        delete $9;
+        $$ = sentence;
+        
     }
     | KW_CREATE KW_FULLTEXT KW_EDGE KW_INDEX name_label KW_ON name_label L_PAREN name_label_list R_PAREN opt_analyzer {
-        $$ = new CreateFTIndexSentence(true, $5, $7, $9, $11);
+        auto sentence = new CreateFTIndexSentence(true, $5, $7, $9, $11);
+        delete $9;
+        $$ = sentence;
     }
     ;
 

@@ -18,6 +18,7 @@ using nebula::graph::FulltextIndexScan;
 using nebula::graph::HashInnerJoin;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
+using nebula::graph::Project;
 using nebula::graph::QueryContext;
 
 namespace nebula {
@@ -38,9 +39,16 @@ const Pattern &PushLimitDownFulltextIndexScanRule2::pattern() const {
               PlanNode::Kind::kHashInnerJoin,
               {
                   Pattern::create(PlanNode::Kind::kFulltextIndexScan),
-                  Pattern::create({PlanNode::Kind::kGetVertices, PlanNode::Kind::kGetEdges},
+                  Pattern::create(PlanNode::Kind::kProject,
                                   {
-                                      Pattern::create(PlanNode::Kind::kArgument),
+                                      Pattern::create(
+                                          {
+                                              PlanNode::Kind::kGetVertices,
+                                              PlanNode::Kind::kGetEdges,
+                                          },
+                                          {
+                                              Pattern::create(PlanNode::Kind::kArgument),
+                                          }),
                                   }),
               }),
       });
@@ -56,18 +64,13 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.result().node;
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  auto newLimit = static_cast<Limit *>(limit->clone());
-  newLimit->setOutputVar(limit->outputVar());
-  auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto joinGroupNode = matched.result({0, 0}).node;
   auto join = static_cast<const HashInnerJoin *>(joinGroupNode->node());
   auto newJoin = static_cast<HashInnerJoin *>(join->clone());
-  auto newJoinGroup = OptGroup::create(octx);
-  auto newJoinGroupNode = newJoinGroup->makeGroupNode(newJoin);
+  auto newJoinGroupNode = OptGroupNode::create(octx, newJoin, limitGroupNode->group());
 
-  newLimitGroupNode->dependsOn(newJoinGroup);
-  newLimit->setInputVar(newJoin->outputVar());
+  newJoin->setOutputVar(limit->outputVar());
 
   auto ftGroupNode = matched.result({0, 0, 0}).node;
   const auto ft = static_cast<const FulltextIndexScan *>(ftGroupNode->node());
@@ -83,16 +86,25 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
     newFtGroupNode->dependsOn(dep);
   }
 
-  auto exploreGroupNode = matched.result({0, 0, 1}).node;
+  auto projGroupNode = matched.result({0, 0, 1}).node;
+  auto proj = static_cast<const Project *>(projGroupNode->node());
+  auto newProj = static_cast<Project *>(proj->clone());
+  auto newProjGroup = OptGroup::create(octx);
+  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
+
+  newJoinGroupNode->dependsOn(newProjGroup);
+  newJoin->setRightVar(newProj->outputVar());
+
+  auto exploreGroupNode = matched.result({0, 0, 1, 0}).node;
   auto explore = static_cast<const Explore *>(exploreGroupNode->node());
   auto newExplore = static_cast<Explore *>(explore->clone());
   auto newExploreGroup = OptGroup::create(octx);
   auto newExploreGroupNode = newExploreGroup->makeGroupNode(newExplore);
 
-  newJoinGroupNode->dependsOn(newExploreGroup);
-  newJoin->setRightVar(newExplore->outputVar());
+  newProjGroupNode->dependsOn(newExploreGroup);
+  newProj->setInputVar(newExplore->outputVar());
 
-  auto argGroupNode = matched.result({0, 0, 1, 0}).node;
+  auto argGroupNode = matched.result({0, 0, 1, 0, 0}).node;
   auto arg = static_cast<const Argument *>(argGroupNode->node());
   auto newArg = static_cast<Argument *>(arg->clone());
   auto newArgGroup = OptGroup::create(octx);
@@ -106,7 +118,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownFulltextIndexScanRule2::transfor
 
   TransformResult result;
   result.eraseAll = true;
-  result.newGroupNodes.emplace_back(newLimitGroupNode);
+  result.newGroupNodes.emplace_back(newJoinGroupNode);
   return result;
 }
 

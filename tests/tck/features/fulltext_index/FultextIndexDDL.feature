@@ -40,9 +40,9 @@ Feature: FulltextIndexTest
       SHOW FULLTEXT INDEXES;
       """
     Then the result should be, in any order:
-      | Name                         | Schema Type | Schema Name | Fields  |
-      | "nebula_index_ddl_tag_prop1" | "Tag"       | "ddl_tag"   | "prop1" |
-      | "nebula_index_ddl_tag_prop2" | "Tag"       | "ddl_tag"   | "prop2" |
+      | Name                         | Schema Type | Schema Name | Fields  | Analyzer  |
+      | "nebula_index_ddl_tag_prop1" | "Tag"       | "ddl_tag"   | "prop1" | "default" |
+      | "nebula_index_ddl_tag_prop2" | "Tag"       | "ddl_tag"   | "prop2" | "default" |
     When executing query:
       """
       DROP FULLTEXT INDEX nebula_index_ddl_tag_prop1;
@@ -58,7 +58,7 @@ Feature: FulltextIndexTest
       SHOW FULLTEXT INDEXES;
       """
     Then the result should be, in any order:
-      | Name | Schema Type | Schema Name | Fields |
+      | Name | Schema Type | Schema Name | Fields | Analyzer |
     When executing query:
       """
       CREATE FULLTEXT TAG INDEX nebula_index_ddl_tag_prop1 on ddl_tag(prop2);
@@ -69,8 +69,8 @@ Feature: FulltextIndexTest
       SHOW FULLTEXT INDEXES;
       """
     Then the result should be, in any order:
-      | Name                         | Schema Type | Schema Name | Fields  |
-      | "nebula_index_ddl_tag_prop1" | "Tag"       | "ddl_tag"   | "prop2" |
+      | Name                         | Schema Type | Schema Name | Fields  | Analyzer  |
+      | "nebula_index_ddl_tag_prop1" | "Tag"       | "ddl_tag"   | "prop2" | "default" |
     When executing query:
       """
       DROP TAG ddl_tag;

@@ -190,6 +190,13 @@ Expression *ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+Expression *ExpressionUtils::rewriteLabelAttr2PropExpr(const Expression *expr, bool isEdge) {
+  if (isEdge) {
+    return rewriteLabelAttr2EdgeProp(expr);
+  }
+  return rewriteLabelAttr2TagProp(expr);
+}
+
 Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {

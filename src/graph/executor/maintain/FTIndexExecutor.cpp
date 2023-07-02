@@ -36,21 +36,12 @@ folly::Future<Status> DropFTIndexExecutor::execute() {
       ->getMetaClient()
       ->dropFTIndex(spaceId, inode->getName())
       .via(runner())
-      .thenValue([this, inode, spaceId](StatusOr<bool> resp) {
+      .thenValue([inode, spaceId](StatusOr<bool> resp) {
         memory::MemoryCheckGuard guard;
         if (!resp.ok()) {
           LOG(WARNING) << "SpaceId: " << spaceId << ", Drop fulltext index `" << inode->getName()
                        << "' failed: " << resp.status();
           return resp.status();
-        }
-        auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
-        if (!esAdapterRet.ok()) {
-          LOG(WARNING) << "Get text search clients failed: " << esAdapterRet.status();
-        }
-        auto esAdapter = std::move(esAdapterRet).value();
-        auto ftRet = esAdapter.dropIndex(inode->getName());
-        if (!ftRet.ok()) {
-          LOG(WARNING) << "Drop fulltext index '" << inode->getName() << "' failed: " << ftRet;
         }
         return Status::OK();
       });
@@ -70,7 +61,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
 
         auto indexes = std::move(resp).value();
         DataSet dataSet;
-        dataSet.colNames = {"Name", "Schema Type", "Schema Name", "Fields"};
+        dataSet.colNames = {"Name", "Schema Type", "Schema Name", "Fields", "Analyzer"};
         for (auto &index : indexes) {
           if (index.second.get_space_id() != spaceId) {
             continue;
@@ -92,6 +83,11 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
           row.values.emplace_back(isEdge ? "Edge" : "Tag");
           row.values.emplace_back(std::move(shmNameRet).value());
           row.values.emplace_back(std::move(fields));
+          std::string analyzer = index.second.get_analyzer();
+          if (analyzer.empty()) {
+            analyzer = "default";
+          }
+          row.values.emplace_back(analyzer);
           dataSet.rows.emplace_back(std::move(row));
         }
         return finish(ResultBuilder()

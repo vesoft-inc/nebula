@@ -93,7 +93,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
                  ge->exprs(),
                  ge->dedup(),
                  ge->orderBy(),
-                 ge->limit(qctx()),
+                 ge->getValidLimit(),
                  ge->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {

@@ -78,6 +78,10 @@ class SequentialIter : public Iterator {
 
   StatusOr<std::size_t> getColumnIndex(const std::string& col) const override;
 
+  const Value& getTagProp(const std::string& tag, const std::string& prop) const override;
+
+  const Value& getEdgeProp(const std::string& edge, const std::string& prop) const override;
+
   Value getVertex(const std::string& name = "") override;
 
   Value getEdge() const override;

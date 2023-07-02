@@ -283,6 +283,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "HTTP"                      { return TokenType::KW_HTTP; }
 "HTTPS"                     { return TokenType::KW_HTTPS; }
 "FULLTEXT"                  { return TokenType::KW_FULLTEXT; }
+"ANALYZER"                  { return TokenType::KW_ANALYZER; }
 "AUTO"                      { return TokenType::KW_AUTO; }
 "ES_QUERY"                  { return TokenType::KW_ES_QUERY; }
 "TEXT"                      { return TokenType::KW_TEXT; }

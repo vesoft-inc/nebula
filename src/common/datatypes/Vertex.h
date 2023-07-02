@@ -107,6 +107,7 @@ struct Vertex {
   bool contains(const Value& key) const;
 
   const Value& value(const std::string& key) const;
+  const Value& getTagProp(const std::string& tagName, const std::string& prop) const;
 };
 
 inline void swap(Vertex& a, Vertex& b) {
