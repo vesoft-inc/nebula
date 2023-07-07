@@ -66,7 +66,7 @@ jobs:
             compiler: clang-10
     env:
       # SCCACHE_CACHE_SIZE: "10G" 
-      SCCACHE_ENDPOINT: "https://mimio.vesoft-inc.com:9000"
+      SCCACHE_ENDPOINT: "https://minio.vesoft-inc.com"
       SCCACHE_BUCKET: "ci-sccache"
       SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
       AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_KEY }}
