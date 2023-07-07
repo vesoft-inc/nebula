@@ -211,7 +211,9 @@ folly::Future<Status> AllPathsExecutor::buildResult() {
   return future.via(runner())
       .ensure([this, buildPathTime]() { addState("build_path_time", buildPathTime); })
       .thenValue([this](auto&& resp) {
-        UNUSED(resp);
+        if (!resp.ok()) {
+          return folly::makeFuture<Status>(std::move(resp));
+        }
         if (!withProp_ || emptyPropVids_.empty()) {
           finish(ResultBuilder().value(Value(std::move(result_))).build());
           return folly::makeFuture<Status>(Status::OK());
@@ -259,7 +261,6 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
     size_t end,
     std::shared_ptr<std::vector<NPath*>> pathsPtr,
     bool reverse) {
-  memory::MemoryCheckGuard guard;
   auto maxStep = reverse ? rightSteps_ : leftSteps_;
   if (step > maxStep) {
     return folly::makeFuture<std::vector<NPath*>>(std::vector<NPath*>());
@@ -334,6 +335,7 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
   }
   return folly::collect(futures).via(runner()).thenValue(
       [currentStepResult = newPathsPtr](std::vector<std::vector<NPath*>>&& paths) {
+        memory::MemoryCheckGuard guard;
         std::vector<NPath*> result = std::move(*currentStepResult);
         for (auto& path : paths) {
           if (path.empty()) {
@@ -458,7 +460,6 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
 
 folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPaths,
                                                      std::vector<NPath*>& rightPaths) {
-  memory::MemoryCheckGuard guard;
   if (leftPaths.empty() || rightPaths.empty()) {
     return folly::makeFuture<Status>(Status::OK());
   }
@@ -486,8 +487,10 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           runner(), [this, start, end, reverse]() { return probe(start, end, reverse); }));
     }
   }
-  return folly::collect(futures).via(runner()).thenValue(
-      [this, path = std::move(oneWayPath)](std::vector<std::vector<Row>>&& resps) {
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this, path = std::move(oneWayPath)](std::vector<std::vector<Row>>&& resps) {
+        memory::MemoryCheckGuard guard;
         result_.rows = std::move(path);
         for (auto& rows : resps) {
           if (rows.empty()) {
@@ -510,6 +513,14 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           result_.rows.resize(limit_);
         }
         return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
@@ -546,6 +557,9 @@ std::vector<Row> AllPathsExecutor::probe(size_t start, size_t end, bool reverse)
   std::vector<Row> result;
   Row emptyPropVerticesRow;
   for (size_t i = start; i < end; ++i) {
+    if (memoryExceeded_.load(std::memory_order_acquire) == true) {
+      break;
+    }
     auto& probePath = probePaths_[i];
     auto& edgeVal = probePath->edge;
     const auto& intersectVid = edgeVal.getEdge().dst;
