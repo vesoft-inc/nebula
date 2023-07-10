@@ -72,6 +72,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET }}
       SCCACHE_LOG: debug
+      SCCACHE_NO_DAEMON: 1
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       options: --cap-add=SYS_PTRACE
