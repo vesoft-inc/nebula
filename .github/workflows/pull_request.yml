@@ -236,3 +236,4 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path:  ./build/server_*/logs/
+          
