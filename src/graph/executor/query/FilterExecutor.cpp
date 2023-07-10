@@ -13,6 +13,9 @@ namespace graph {
 folly::Future<Status> FilterExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *filter = asNode<Filter>(node());
+  if (filter->alwaysFalse()) {
+    return finish(ResultBuilder().value(Value(DataSet(filter->colNames()))).build());
+  }
   auto iter = ectx_->getResult(filter->inputVar()).iter();
   if (iter == nullptr || iter->isDefaultIter()) {
     auto status = Status::Error("iterator is nullptr or DefaultIter");

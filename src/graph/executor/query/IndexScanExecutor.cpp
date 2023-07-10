@@ -23,6 +23,9 @@ folly::Future<Status> IndexScanExecutor::execute() {
 folly::Future<Status> IndexScanExecutor::indexScan() {
   StorageClient *storageClient = qctx_->getStorageClient();
   auto *lookup = asNode<IndexScan>(node());
+  if (lookup->alwaysFalse()) {
+    return finish(ResultBuilder().value(Value(DataSet(lookup->colNames()))).build());
+  }
   auto objPool = qctx()->objPool();
 
   IndexQueryContextList ictxs;

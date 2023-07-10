@@ -22,6 +22,9 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *sv = asNode<ScanVertices>(node());
+  if (sv->alwaysFalse()) {
+    return finish(ResultBuilder().value(Value(DataSet(sv->colNames()))).build());
+  }
   StorageClient *storageClient = qctx()->getStorageClient();
 
   time::Duration scanVertexTime;

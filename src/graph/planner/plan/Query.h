@@ -713,8 +713,16 @@ class IndexScan : public Explore {
     lazyIndexHint_ = lazy;
   }
 
+  void setAlwaysFalse() {
+    alwaysFalse_ = true;
+  }
+
   bool lazyIndexHint() const {
     return lazyIndexHint_;
+  }
+
+  bool alwaysFalse() const {
+    return alwaysFalse_;
   }
 
   PlanNode* clone() const override;
@@ -751,6 +759,7 @@ class IndexScan : public Explore {
 
   YieldColumns* yieldColumns_;
   bool lazyIndexHint_{false};
+  bool alwaysFalse_{false};
 };
 
 class FulltextIndexScan : public Explore {
@@ -846,6 +855,14 @@ class ScanVertices final : public Explore {
     exprs_ = std::move(exprs);
   }
 
+  void setAlwaysFalse() {
+    alwaysFalse_ = true;
+  }
+
+  bool alwaysFalse() const {
+    return alwaysFalse_;
+  }
+
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -871,6 +888,7 @@ class ScanVertices final : public Explore {
   std::unique_ptr<std::vector<VertexProp>> props_;
   // expression to get
   std::unique_ptr<std::vector<Expr>> exprs_;
+  bool alwaysFalse_{false};
 };
 
 // Scan edges
@@ -959,6 +977,14 @@ class Filter final : public SingleInputNode {
     condition_ = condition;
   }
 
+  void setAlwaysFalse() {
+    alwaysFalse_ = true;
+  }
+
+  bool alwaysFalse() const {
+    return alwaysFalse_;
+  }
+
   bool needStableFilter() const {
     return needStableFilter_;
   }
@@ -977,6 +1003,7 @@ class Filter final : public SingleInputNode {
   // Remain result when true
   Expression* condition_{nullptr};
   bool needStableFilter_;
+  bool alwaysFalse_{false};
 };
 
 // Now we have three kind of set operations:

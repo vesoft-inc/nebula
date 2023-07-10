@@ -270,6 +270,7 @@ std::unique_ptr<PlanNodeDescription> IndexScan::explain() const {
   addDescription("isEdge", folly::toJson(util::toJson(isEdge_)), desc.get());
   addDescription("returnCols", folly::toJson(util::toJson(returnCols_)), desc.get());
   addDescription("indexCtx", folly::toJson(util::toJson(contexts_)), desc.get());
+  addDescription("alwaysFalse", alwaysFalse_ ? "true" : "false", desc.get());
   return desc;
 }
 
@@ -287,12 +288,14 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   isEdge_ = g.isEdge();
   schemaId_ = g.schemaId();
   yieldColumns_ = g.yieldColumns();
+  alwaysFalse_ = g.alwaysFalse();
 }
 
 std::unique_ptr<PlanNodeDescription> ScanVertices::explain() const {
   auto desc = Explore::explain();
   addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
   addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  addDescription("alwaysFalse", alwaysFalse_ ? "true" : "fasle", desc.get());
   return desc;
 }
 
@@ -316,6 +319,7 @@ void ScanVertices::cloneMembers(const ScanVertices& gv) {
     auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
     setExprs(std::move(exprsPtr));
   }
+  alwaysFalse_ = gv.alwaysFalse();
 }
 
 std::unique_ptr<PlanNodeDescription> ScanEdges::explain() const {
@@ -362,6 +366,7 @@ std::unique_ptr<PlanNodeDescription> Filter::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
   addDescription("isStable", needStableFilter_ ? "true" : "false", desc.get());
+  addDescription("alwaysFalse", alwaysFalse_ ? "true" : "false", desc.get());
   return desc;
 }
 
@@ -380,6 +385,7 @@ void Filter::cloneMembers(const Filter& f) {
 
   condition_ = f.condition()->clone();
   needStableFilter_ = f.needStableFilter();
+  alwaysFalse_ = f.alwaysFalse_;
 }
 
 void SetOp::cloneMembers(const SetOp& s) {
