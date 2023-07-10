@@ -155,7 +155,7 @@ jobs:
             case ${{ matrix.os }} in
             centos7)
               # build with Release type
-              ninja -j $(nproc)
+              ninja -v -j $(nproc)
               ;;
             ubuntu2004)
               # build with Debug type
