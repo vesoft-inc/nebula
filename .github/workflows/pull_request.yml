@@ -71,6 +71,7 @@ jobs:
       SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
       AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET }}
+      SCCACHE_LOG: debug
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       options: --cap-add=SYS_PTRACE
