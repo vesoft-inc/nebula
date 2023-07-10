@@ -65,14 +65,12 @@ jobs:
           - os: centos7
             compiler: clang-10
     env:
-      # SCCACHE_CACHE_SIZE: "10G" 
-      SCCACHE_ENDPOINT: "https://minio.vesoft-inc.com"
-      SCCACHE_BUCKET: "ci-sccache"
-      SCCACHE_S3_KEY_PREFIX: ${{ github.repository }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET }}
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     services:
       elasticsearch:
@@ -91,8 +89,6 @@ jobs:
       - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
       - uses: actions/checkout@v3
       - name: Prepare environment
         id: prepare
@@ -108,7 +104,6 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCOMPILER_LAUNCHER_OPTION=sccache \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DNEBULA_USE_LINKER=mold \
@@ -120,7 +115,6 @@ jobs:
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCOMPILER_LAUNCHER_OPTION=sccache \
                   -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
                   -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DNEBULA_USE_LINKER=mold \
@@ -135,7 +129,6 @@ jobs:
           clang-*)
             # build with Sanitizer
             cmake \
-                -DCOMPILER_LAUNCHER_OPTION=sccache \
                 -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
                 -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
                 -DNEBULA_USE_LINKER=mold \
@@ -154,17 +147,23 @@ jobs:
             case ${{ matrix.os }} in
             centos7)
               # build with Release type
+              ccache -z
               ninja -j $(nproc)
+              ccache -s
               ;;
             ubuntu2004)
               # build with Debug type
+              ccache -z
               ninja -j $(nproc)
+              ccache -s
               ;;
             esac
             ;;
           clang-*)
             # build with Sanitizer
+            ccache -z
             ninja -j $(nproc)
+            ccache -s
             ;;
           esac
         working-directory: build/
