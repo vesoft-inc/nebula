@@ -681,29 +681,29 @@ Feature: Embed edge all predicate into Traverse
       | "Lakers"        | 0          | NULL     |
       | "Kings"         | 0          | NULL     |
     And the execution plan should be:
-      | id | name           | dependencies | profiling data | operator info                                                                    |
-      | 28 | TopN           | 24           |                |                                                                                  |
-      | 24 | Project        | 30           |                |                                                                                  |
-      | 30 | Aggregate      | 29           |                |                                                                                  |
+      | id | name           | dependencies | profiling data | operator info                                                                |
+      | 28 | TopN           | 24           |                |                                                                              |
+      | 24 | Project        | 30           |                |                                                                              |
+      | 30 | Aggregate      | 29           |                |                                                                              |
       | 29 | Filter         | 44           |                | {"condition": "($e2 IS NULL OR all(__VAR_2 IN $e2 WHERE $__VAR_2 IS NULL))"} |
-      | 44 | HashLeftJoin   | 15,43        |                |                                                                                  |
-      | 15 | Dedup          | 14           |                |                                                                                  |
-      | 14 | Project        | 35           |                |                                                                                  |
-      | 35 | HashInnerJoin  | 53,50        |                |                                                                                  |
-      | 53 | Project        | 53           |                |                                                                                  |
-      | 53 | Filter         | 52           |                | {"condition": "(id($-.friend)!=\"Tony Parker\")"}                                |
-      | 52 | AppendVertices | 59           |                |                                                                                  |
-      | 59 | Filter         | 60           |                | {"condition": "(id($-.person)==\"Tony Parker\")"}                                |
-      | 60 | Traverse       | 2            |                | {"filter": "((like.likeness>0) AND (like.likeness>1))"}                          |
-      | 2  | Dedup          | 1            |                |                                                                                  |
-      | 1  | PassThrough    | 3            |                |                                                                                  |
-      | 3  | Start          |              |                |                                                                                  |
-      | 50 | Project        | 55           |                |                                                                                  |
-      | 55 | AppendVertices | 61           |                |                                                                                  |
-      | 61 | Traverse       | 8            |                |                                                                                  |
-      | 8  | Argument       |              |                |                                                                                  |
-      | 43 | Project        | 39           |                |                                                                                  |
-      | 39 | AppendVertices | 39           |                |                                                                                  |
-      | 39 | Traverse       | 17           |                |                                                                                  |
-      | 17 | Traverse       | 16           |                |                                                                                  |
-      | 16 | Argument       |              |                |                                                                                  |
+      | 44 | HashLeftJoin   | 15,43        |                |                                                                              |
+      | 15 | Dedup          | 14           |                |                                                                              |
+      | 14 | Project        | 35           |                |                                                                              |
+      | 35 | HashInnerJoin  | 53,50        |                |                                                                              |
+      | 53 | Project        | 53           |                |                                                                              |
+      | 53 | Filter         | 52           |                | {"condition": "(id($-.friend)!=\"Tony Parker\")"}                            |
+      | 52 | AppendVertices | 59           |                |                                                                              |
+      | 59 | Filter         | 60           |                | {"condition": "(id($-.person)==\"Tony Parker\")"}                            |
+      | 60 | Traverse       | 2            |                | {"filter": "((like.likeness>0) AND (like.likeness>1))"}                      |
+      | 2  | Dedup          | 1            |                |                                                                              |
+      | 1  | PassThrough    | 3            |                |                                                                              |
+      | 3  | Start          |              |                |                                                                              |
+      | 50 | Project        | 55           |                |                                                                              |
+      | 55 | AppendVertices | 61           |                |                                                                              |
+      | 61 | Traverse       | 8            |                |                                                                              |
+      | 8  | Argument       |              |                |                                                                              |
+      | 43 | Project        | 39           |                |                                                                              |
+      | 39 | AppendVertices | 39           |                |                                                                              |
+      | 39 | Traverse       | 17           |                |                                                                              |
+      | 17 | Traverse       | 16           |                |                                                                              |
+      | 16 | Argument       |              |                |                                                                              |

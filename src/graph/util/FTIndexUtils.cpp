@@ -41,6 +41,5 @@ StatusOr<::nebula::plugin::ESAdapter> FTIndexUtils::getESAdapter(meta::MetaClien
   return ::nebula::plugin::ESAdapter(std::move(clients));
 }
 
-
 }  // namespace graph
 }  // namespace nebula
