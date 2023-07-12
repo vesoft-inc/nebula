@@ -19,8 +19,7 @@ class FulltextIndexScanExecutor final : public Executor {
   folly::Future<Status> execute() override;
 
  private:
-  StatusOr<plugin::ESQueryResult> accessFulltextIndex(const std::string& index,
-                                                      TextSearchExpression* expr);
+  StatusOr<plugin::ESQueryResult> accessFulltextIndex(TextSearchExpression* expr);
 
   bool isIntVidType(const SpaceInfo& space) const {
     return (*space.spaceDesc.vid_type_ref()).type == nebula::cpp2::PropertyType::INT64;

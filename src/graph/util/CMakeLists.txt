@@ -5,6 +5,7 @@
 
 nebula_add_library(
     util_obj OBJECT
+    Constants.cpp
     ExpressionUtils.cpp
     SchemaUtil.cpp
     IndexUtil.cpp

@@ -32,9 +32,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
 
 // SystemInfo will always be backed up
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemInfoMaps{
-    {"autoIncrementId", {"__id__", true}},
-    {"lastUpdateTime", {"__last_update_time__", true}},
-    {"clusterId", {"__meta_cluster_id_key__", true}}};
+    {"autoIncrementId", {"__id__", true}}, {"lastUpdateTime", {"__last_update_time__", true}}};
 
 // name => {prefix, parseSpaceid}, nullptr means that the backup should be skipped.
 static const std::unordered_map<

@@ -190,6 +190,13 @@ Expression *ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+Expression *ExpressionUtils::rewriteLabelAttr2PropExpr(const Expression *expr, bool isEdge) {
+  if (isEdge) {
+    return rewriteLabelAttr2EdgeProp(expr);
+  }
+  return rewriteLabelAttr2TagProp(expr);
+}
+
 Expression *ExpressionUtils::rewriteLabelAttr2TagProp(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
   auto matcher = [](const Expression *e) -> bool {
@@ -1557,10 +1564,7 @@ bool ExpressionUtils::checkExprDepth(const Expression *expr) {
         case Expression::Kind::kUUID:
         case Expression::Kind::kPathBuild:
         case Expression::Kind::kColumn:
-        case Expression::Kind::kTSPrefix:
-        case Expression::Kind::kTSWildcard:
-        case Expression::Kind::kTSRegexp:
-        case Expression::Kind::kTSFuzzy:
+        case Expression::Kind::kESQUERY:
         case Expression::Kind::kAggregate:
         case Expression::Kind::kSubscriptRange:
         case Expression::Kind::kVersionedVar:

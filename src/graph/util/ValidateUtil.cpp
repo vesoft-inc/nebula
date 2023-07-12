@@ -10,6 +10,7 @@
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/Utils.h"
 
 namespace nebula {
 namespace graph {
@@ -74,14 +75,8 @@ Status ValidateUtil::validateOver(QueryContext* qctx, const OverClause* clause, 
 Status ValidateUtil::invalidLabelIdentifiers(const Expression* expr) {
   auto labelExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kLabel});
   if (!labelExprs.empty()) {
-    std::stringstream ss;
-    ss << "Invalid label identifiers: ";
-    for (auto* label : labelExprs) {
-      ss << label->toString() << ",";
-    }
-    auto errMsg = ss.str();
-    errMsg.pop_back();
-    return Status::SemanticError(std::move(errMsg));
+    auto errMsg = util::join(labelExprs, [](auto* e) { return e->toString(); });
+    return Status::SemanticError("Invalid label identifiers: %s", errMsg.c_str());
   }
   return Status::OK();
 }

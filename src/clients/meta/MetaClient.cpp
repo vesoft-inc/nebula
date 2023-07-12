@@ -989,8 +989,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Related fulltext index exists, please drop it first");
     case nebula::cpp2::ErrorCode::E_HOST_CAN_NOT_BE_ADDED:
       return Status::Error("Could not add a host, which is not a storage and not expired either");
+    case nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE:
+      return Status::Error("Access elasticsearch failed");
     default:
-      return Status::Error("Unknown error!");
+      return Status::Error("Unknown error %d!", static_cast<int>(resp.get_code()));
   }
 }
 

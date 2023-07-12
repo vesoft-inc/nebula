@@ -44,6 +44,11 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
 
   // verify the columns.
   auto schema = MetaKeyUtils::parseSchema(iter->val());
+  if (schema.get_schema_prop().get_ttl_col() && !schema.get_schema_prop().get_ttl_col()->empty()) {
+    handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+    onFinished();
+    return;
+  }
   auto columns = schema.get_columns();
   for (const auto& col : index.get_fields()) {
     auto targetCol = std::find_if(
@@ -125,7 +130,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
         HttpClient::instance(), protocol, client.get_host().toRawString(), user, password);
   }
   plugin::ESAdapter esAdapter(std::move(esClients));
-  auto createIndexresult = esAdapter.createIndex(name);
+  auto createIndexresult = esAdapter.createIndex(name, index.get_fields(), index.get_analyzer());
   if (!createIndexresult.ok()) {
     LOG(ERROR) << createIndexresult.message();
     handleErrorCode(nebula::cpp2::ErrorCode::E_ACCESS_ES_FAILURE);

@@ -41,9 +41,9 @@ bool ESListener::apply(const BatchHolder& batch) {
                           const std::string& src,
                           const std::string& dst,
                           int64_t rank,
-                          const std::string& text) {
+                          std::map<std::string, std::string> data) {
     if (type == BatchLogType::OP_BATCH_PUT) {
-      bulk.put(index, vid, src, dst, rank, text);
+      bulk.put(index, vid, src, dst, rank, std::move(data));
     } else if (type == BatchLogType::OP_BATCH_REMOVE) {
       bulk.delete_(index, vid, src, dst, rank);
     } else {
@@ -101,7 +101,7 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
     }
     vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    vid = truncateVid(vid);
+    vid = normalizeVid(vid);
   } else {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     if (edgeType < 0) {
@@ -123,32 +123,32 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     dst = NebulaKeyUtils::getDstId(vIdLen_, key).toString();
     rank = NebulaKeyUtils::getRank(vIdLen_, key);
 
-    src = truncateVid(src);
-    dst = truncateVid(dst);
+    src = normalizeVid(src);
+    dst = normalizeVid(dst);
   }
   if (ftIndexes.empty()) {
     return;
   }
 
   for (auto& index : ftIndexes) {
-    if (index.second.get_fields().size() > 1) {
-      LOG(ERROR) << "Only one field will create fulltext index";
-    }
-    std::string text;
+    std::map<std::string, std::string> data;
     std::string indexName = index.first;
     if (type == BatchLogType::OP_BATCH_PUT) {
-      auto field = index.second.get_fields().front();
-      auto v = reader->getValueByName(field);
-      if (v.type() == Value::Type::NULLVALUE) {
-        callback(BatchLogType::OP_BATCH_REMOVE, indexName, vid, src, dst, 0, text);
-        continue;
+      for (auto& field : index.second.get_fields()) {
+        auto v = reader->getValueByName(field);
+        if (v.type() == Value::Type::NULLVALUE) {
+          data[field] = "";
+          continue;
+        }
+        if (v.type() != Value::Type::STRING) {
+          data[field] = "";
+          LOG(ERROR) << "Can't create fulltext index on type " << v.type();
+          continue;
+        }
+        data[field] = std::move(v).getStr();
       }
-      if (v.type() != Value::Type::STRING) {
-        LOG(ERROR) << "Can't create fulltext index on type " << v.type();
-      }
-      text = std::move(v).getStr();
     }
-    callback(type, indexName, vid, src, dst, rank, text);
+    callback(type, indexName, vid, src, dst, rank, std::move(data));
   }
 }
 
@@ -364,11 +364,12 @@ std::tuple<nebula::cpp2::ErrorCode, int64_t, int64_t> ESListener::commitSnapshot
   return {nebula::cpp2::ErrorCode::SUCCEEDED, count, size};
 }
 
-std::string ESListener::truncateVid(const std::string& vid) {
+std::string ESListener::normalizeVid(const std::string& vid) {
   if (!isIntVid_) {
     return folly::rtrim(folly::StringPiece(vid), [](char c) { return c == '\0'; }).toString();
+  } else {
+    return std::to_string(*reinterpret_cast<const int64_t*>(vid.data()));
   }
-  return vid;
 }
 
 StatusOr<::nebula::plugin::ESAdapter> ESListener::getESAdapter() {

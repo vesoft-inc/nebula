@@ -153,8 +153,13 @@ void DeducePropsVisitor::visit(InputPropertyExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(VariablePropertyExpression *expr) {
-  exprProps_->insertVarProp(expr->sym(), expr->prop());
-  userDefinedVarNameList_->emplace(expr->sym());
+  auto sym = expr->sym();
+  // If the variable is not defined, it is an expression which get the expr->prop() column
+  // and skip it
+  if (!sym.empty()) {
+    exprProps_->insertVarProp(sym, expr->prop());
+    userDefinedVarNameList_->emplace(sym);
+  }
 }
 
 void DeducePropsVisitor::visit(DestPropertyExpression *expr) {

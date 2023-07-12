@@ -2097,10 +2097,6 @@ void RaftPart::sendHeartbeat() {
           if (!hosts[resp.first]->isLearner() &&
               resp.second.get_error_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
             ++numSucceeded;
-            // only metad 0 space 0 part need this state now.
-            if (spaceId_ == kDefaultSpaceId) {
-              hosts[resp.first]->setLastHeartbeatTime(time::WallClock::fastNowInMilliSec());
-            }
           }
           highestTerm = std::max(highestTerm, resp.second.get_current_term());
         }

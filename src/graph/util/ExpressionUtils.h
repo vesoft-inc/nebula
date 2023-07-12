@@ -71,6 +71,9 @@ class ExpressionUtils {
   static Expression* rewriteEdgePropFunc2LabelAttribute(
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
 
+  // rewrite LabelAttr expr to property expr
+  static Expression* rewriteLabelAttr2PropExpr(const Expression* expr, bool isEdge);
+
   // rewrite LabelAttr to tagProp
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 

@@ -49,12 +49,8 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
 
   auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filterExpr, qctx_);
   if (!undefinedParams.empty()) {
-    return Status::SemanticError(
-        "Undefined parameters: " +
-        std::accumulate(++undefinedParams.begin(),
-                        undefinedParams.end(),
-                        *undefinedParams.begin(),
-                        [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
+    auto msg = folly::join(", ", undefinedParams);
+    return Status::SemanticError("Undefined parameters: %s", msg.c_str());
   }
   auto* newFilter = graph::ExpressionUtils::rewriteParameter(filterExpr, qctx_);
 
