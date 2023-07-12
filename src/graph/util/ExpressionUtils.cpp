@@ -16,6 +16,7 @@
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/visitor/FoldConstantExprVisitor.h"
 #include "graph/visitor/PropertyTrackerVisitor.h"
+#include "graph/visitor/RewriteVisitor.h"
 
 DEFINE_int32(max_expression_depth, 512, "Max depth of expression tree.");
 
@@ -1708,6 +1709,32 @@ bool ExpressionUtils::isOneStepEdgeProp(const std::string &edgeAlias, const Expr
     auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
     auto *tagPropExpr = TagPropertyExpression::make(pool, ltpExpr->sym(), ltpExpr->prop());
     return tagPropExpr;
+  };
+  return graph::RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
+/*static*/ Expression *ExpressionUtils::rewriteAlwaysNullLabelTagProperty(
+    ObjectPool *pool, meta::SchemaManager *schemaMan, GraphSpaceID spaceId, Expression *expr) {
+  auto matcher = [spaceId, schemaMan](const Expression *e) -> bool {
+    if (e->kind() == Expression::Kind::kLabelTagProperty) {
+      auto *ltpExpr = static_cast<const LabelTagPropertyExpression *>(e);
+      auto tagSchema = schemaMan->getTagSchema(spaceId, ltpExpr->sym());
+      if (tagSchema == nullptr) {
+        // no such tag
+        return true;
+      }
+      auto found = tagSchema->getFieldIndex(ltpExpr->prop());
+      if (found < 0) {
+        // no such property
+        return true;
+      }
+    }
+    return false;
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    DCHECK_EQ(e->kind(), Expression::Kind::kLabelTagProperty);
+    UNUSED(e);
+    return ConstantExpression::make(pool);
   };
   return graph::RewriteVisitor::transform(expr, matcher, rewriter);
 }

@@ -94,6 +94,7 @@
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
 #include "graph/executor/query/UnwindExecutor.h"
+#include "graph/executor/query/ValueExecutor.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Maintain.h"
@@ -256,6 +257,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kDedup: {
       return pool->makeAndAdd<DedupExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kValue: {
+      return pool->makeAndAdd<ValueExecutor>(node, qctx);
     }
     case PlanNode::Kind::kAssign: {
       return pool->makeAndAdd<AssignExecutor>(node, qctx);

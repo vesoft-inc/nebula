@@ -367,6 +367,11 @@ Status MatchValidator::validateFilter(const Expression *filter,
   // rewrite Attribute to LabelTagProperty
   newFilter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value(),
                                                         whereClauseCtx.aliasesAvailable);
+  newFilter = ExpressionUtils::rewriteAlwaysNullLabelTagProperty(
+      qctx_->objPool(), qctx_->schemaMng(), space_.id, newFilter);
+  auto result = ExpressionUtils::foldConstantExpr(newFilter);
+  NG_RETURN_IF_ERROR(result);
+  newFilter = result.value();
   newFilter = ExpressionUtils::rewriteEdgePropFunc2LabelAttribute(newFilter,
                                                                   whereClauseCtx.aliasesAvailable);
 
