@@ -2052,6 +2052,28 @@ class PatternApply : public BinaryInputNode {
   bool isAntiPred_{false};
 };
 
+class ValueNode : public SingleInputNode {
+ public:
+  // Value with empty result
+  static ValueNode* make(QueryContext* qctx, PlanNode* dep, DataSet value) {
+    return qctx->objPool()->makeAndAdd<ValueNode>(qctx, dep, std::move(value));
+  }
+
+  Value value() const {
+    return value_;
+  }
+
+ private:
+  friend ObjectPool;
+  ValueNode(QueryContext* qctx, PlanNode* dep, DataSet value)
+      : SingleInputNode(qctx, Kind::kValue, dep), value_(std::move(value)) {
+    setColNames(value_.colNames);
+  }
+
+ private:
+  DataSet value_;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

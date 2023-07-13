@@ -213,6 +213,11 @@ RuleSet &RuleSet::DefaultRules() {
   return kDefaultRules;
 }
 
+RuleSet &RuleSet::QueryRules0() {
+  static RuleSet kQueryRules0("QueryRuleSet0");
+  return kQueryRules0;
+}
+
 RuleSet &RuleSet::QueryRules() {
   static RuleSet kQueryRules("QueryRuleSet");
   return kQueryRules;
@@ -229,6 +234,15 @@ RuleSet *RuleSet::addRule(const OptRule *rule) {
     LOG(WARNING) << "Rule set " << name_ << " has contained this rule: " << rule->toString();
   }
   return this;
+}
+
+std::string RuleSet::toString() const {
+  std::stringstream ss;
+  ss << "RuleSet: " << name_ << std::endl;
+  for (auto rule : rules_) {
+    ss << rule->toString() << std::endl;
+  }
+  return ss.str();
 }
 
 void RuleSet::merge(const RuleSet &ruleset) {
