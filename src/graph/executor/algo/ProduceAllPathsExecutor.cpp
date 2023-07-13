@@ -49,7 +49,7 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
       })
       .thenValue([this](auto&& status) {
         memory::MemoryCheckGuard guard;
-        UNUSED(status);
+        NG_RETURN_IF_ERROR(status);
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
@@ -132,6 +132,9 @@ DataSet ProduceAllPathsExecutor::doConjunct(Interims::iterator startIter,
         auto backwardPath = rPath;
         backwardPath.reverse();
         forwardPath.append(std::move(backwardPath));
+        if (memoryExceeded_.load(std::memory_order_acquire) == true) {
+          return ds;
+        }
         if (forwardPath.hasDuplicateEdges()) {
           continue;
         }
@@ -194,17 +197,27 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
-    preLeftPaths_.swap(leftPaths_);
-    preRightPaths_.swap(rightPaths_);
-    leftPaths_.clear();
-    rightPaths_.clear();
-    return Status::OK();
-  });
+  return folly::collect(futures)
+      .via(runner())
+      .thenValue([this](auto&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& resp : resps) {
+          currentDs_.append(std::move(resp));
+        }
+        preLeftPaths_.swap(leftPaths_);
+        preRightPaths_.swap(rightPaths_);
+        leftPaths_.clear();
+        rightPaths_.clear();
+        return Status::OK();
+      })
+      .thenError(folly::tag_t<std::bad_alloc>{},
+                 [this](const std::bad_alloc&) {
+                   memoryExceeded_ = true;
+                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
+        return folly::makeFuture<Status>(std::runtime_error(e.what()));
+      });
 }
 
 void ProduceAllPathsExecutor::setNextStepVid(Interims& paths, const string& var) {
