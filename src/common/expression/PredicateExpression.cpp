@@ -20,11 +20,13 @@ const Value& PredicateExpression::evalExists(ExpressionContext& ctx) {
   DCHECK(collection_->kind() == Expression::Kind::kAttribute ||
          collection_->kind() == Expression::Kind::kSubscript ||
          collection_->kind() == Expression::Kind::kLabelTagProperty ||
-         collection_->kind() == Expression::Kind::kTagProperty)
+         collection_->kind() == Expression::Kind::kTagProperty ||
+         collection_->kind() == Expression::Kind::kConstant)
       << "actual kind: " << collection_->kind() << ", toString: " << toString();
 
   if (collection_->kind() == Expression::Kind::kLabelTagProperty ||
-      collection_->kind() == Expression::Kind::kTagProperty) {
+      collection_->kind() == Expression::Kind::kTagProperty ||
+      collection_->kind() == Expression::Kind::kConstant) {
     auto v = collection_->eval(ctx);
     result_ = (!v.isNull()) && (!v.empty());
     return result_;

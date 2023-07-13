@@ -96,6 +96,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Loop";
     case Kind::kDedup:
       return "Dedup";
+    case Kind::kValue:
+      return "Value";
     case Kind::kPassThrough:
       return "PassThrough";
     case Kind::kAssign:

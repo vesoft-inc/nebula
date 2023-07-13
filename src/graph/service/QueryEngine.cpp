@@ -37,6 +37,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   // Set default optimizer rules
   std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
   if (FLAGS_enable_optimizer) {
+    rulesets.emplace_back(&opt::RuleSet::QueryRules0());
     rulesets.emplace_back(&opt::RuleSet::QueryRules());
   }
   optimizer_ = std::make_unique<opt::Optimizer>(rulesets);
