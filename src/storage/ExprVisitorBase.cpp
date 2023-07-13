@@ -33,9 +33,7 @@ void ExprVisitorBase::visit(SubscriptExpression *expr) {
   expr->left()->accept(this);
   expr->right()->accept(this);
 }
-void ExprVisitorBase::visit(AttributeExpression *expr) {
-  fatal(expr);
-}
+void ExprVisitorBase::visit(AttributeExpression *) {}
 void ExprVisitorBase::visit(LogicalExpression *expr) {
   for (auto operand : expr->operands()) {
     operand->accept(this);

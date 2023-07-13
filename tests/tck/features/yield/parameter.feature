@@ -4,7 +4,8 @@
 Feature: Parameter
 
   Background:
-    Given a graph with space named "nba"
+    Given an empty graph
+    And load "nba" csv data to a new space
     Given parameters: {"p1":1,"p2":true,"p3":"Tim Duncan","p4":3.3,"p5":[1,true,3],"p6":{"a":3,"b":false,"c":"Tim Duncan"},"p7":{"a":{"b":{"c":"Tim Duncan","d":[1,2,3,true,"Tim Duncan"]}}},"p8":"Manu Ginobili", "p9":["Tim Duncan","Tony Parker"]}
 
   Scenario: [param-test-001] without define param
@@ -253,7 +254,7 @@ Feature: Parameter
       """
       LOOKUP ON player WHERE player.age>$p2+43
       """
-    Then a SemanticError should be raised at runtime: Column type error : age
+    Then a SemanticError should be raised at runtime: Type error `(true+43)'
     When executing query:
       """
       MATCH (v:player) RETURN  v LIMIT $p6
@@ -330,3 +331,18 @@ Feature: Parameter
       | v        |
       | BAD_TYPE |
       | BAD_TYPE |
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p6.c and player.age in [43,35,42,45] yield id(vertex) AS VertexID;RETURN count($var.VertexID) AS record
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p3 and player.age in [43,35,42,45] yield id(vertex) AS VertexID;RETURN count($var.VertexID) AS record
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      $var=lookup on player where player.name==$p7.a.b.d[4] and player.age in [43,35,42,45] yield id(vertex) AS VertexID;RETURN count($var.VertexID) AS record
+      """
+    Then the execution should be successful
