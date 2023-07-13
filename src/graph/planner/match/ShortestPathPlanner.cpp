@@ -55,6 +55,10 @@ StatusOr<SubPlan> ShortestPathPlanner::transform(WhereClauseContext* bindWhereCl
   SubPlan subplan;
   bool singleShortest = path_.pathType == Path::PathType::kSingleShortest;
   auto& nodeInfos = path_.nodeInfos;
+  if (nodeInfos.front().alias == nodeInfos.back().alias) {
+    return Status::SemanticError(
+        "The shortest path algorithm does not work when the start and end nodes are the same");
+  }
   auto& edge = path_.edgeInfos.front();
   std::vector<std::string> colNames;
   colNames.emplace_back(nodeInfos.front().alias);
