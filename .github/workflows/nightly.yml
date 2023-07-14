@@ -29,11 +29,11 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: "^1.16.7"
       - name: package
@@ -45,7 +45,7 @@ jobs:
         run: |
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
-          echo "::set-output name=subdir::$subdir"
+          echo "subdir=$subdir" >> $GITHUB_OUTPUT
       # - uses: actions/upload-artifact@v1
       #   with:
       #     name: ${{ matrix.os }}-nightly
@@ -64,17 +64,17 @@ jobs:
     needs: package
     runs-on: [self-hosted, nebula]
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
-      - uses: docker/login-action@v1
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/setup-qemu-action@v1
-      - uses: docker/setup-buildx-action@v1
-      - uses: docker/build-push-action@v2
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -84,7 +84,7 @@ jobs:
           target: graphd
           cache-to: type=local,dest=/tmp/buildx-cache,mode=max
           push: true
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -94,7 +94,7 @@ jobs:
           target: storaged
           cache-from: type=local,src=/tmp/buildx-cache
           push: true
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -104,7 +104,7 @@ jobs:
           target: metad
           cache-from: type=local,src=/tmp/buildx-cache
           push: true
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v4
         with:
           context: .
           file: ./docker/Dockerfile
@@ -137,10 +137,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Prepare environment
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
@@ -190,12 +190,12 @@ jobs:
       - name: coverage
         run: |
           ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         with:
           files: fastcov.info
           fail_ci_if_error: false
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -234,32 +234,32 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@2.0.1
+      - uses: webiny/action-post-run@3.0.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: output some vars
         id: vars
         env:
           SHA_EXT: sha256sum.txt
         run: |
           subdir=$(date -u +%Y.%m.%d)
-          echo "::set-output name=subdir::$subdir"
+          echo "subdir=$subdir" >> $GITHUB_OUTPUT
 
       - id: oss_package
         run: |
           case ${{ matrix.os }} in
           ubuntu1804)
-            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu1804.amd64.tar.gz"
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu1804.amd64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           ubuntu2004)
-            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu2004.amd64.tar.gz"
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu2004.amd64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           centos7)
-            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el7.x86_64.tar.gz"
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el7.x86_64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           centos8)
-            echo "::set-output name=p::nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el8.x86_64.tar.gz"
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el8.x86_64.tar.gz" >> $GITHUB_OUTPUT
             ;;
           esac
       - name: Prepare environment
@@ -270,7 +270,7 @@ jobs:
       - name: CMake
         id: cmake
         run: |
-          echo "::set-output name=j::8"
+          echo "j=8" >> $GITHUB_OUTPUT
       - name: download from oss
         run: |
           ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
@@ -303,7 +303,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
