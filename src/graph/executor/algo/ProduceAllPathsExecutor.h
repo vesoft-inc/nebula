@@ -64,6 +64,7 @@ class ProduceAllPathsExecutor final : public Executor {
  private:
   const ProduceAllPaths* pathNode_{nullptr};
   bool noLoop_{false};
+  std::atomic<bool> memoryExceeded_{false};
   size_t step_{1};
   Interims preLeftPaths_;
   Interims leftPaths_;
