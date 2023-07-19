@@ -981,3 +981,19 @@ Feature: Prune Properties rule
     Then the result should be, in any order:
       | bit_and(a) |
       | 1984       |
+
+  Scenario: Return *
+    Given a graph with space named "nba"
+    When executing query:
+      """
+      MATCH (v:player)-[e*1..2]->(v2:player) WHERE id(v) =='Yao Ming'  RETURN *
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                               | e                                                                                                                         | v2                                                                                                          |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}]]                                                                | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]]                                                                   | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}], [:like "Shaquille O'Neal"->"JaVale McGee" @0 {likeness: 100}]] | ("JaVale McGee" :player{age: 31, name: "JaVale McGee"})                                                     |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}], [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]]    | ("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"}) |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}], [:like "Tracy McGrady"->"Grant Hill" @0 {likeness: 90}]]          | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}], [:like "Tracy McGrady"->"Kobe Bryant" @0 {likeness: 90}]]         | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"})                                                       |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}], [:like "Tracy McGrady"->"Rudy Gay" @0 {likeness: 90}]]            | ("Rudy Gay" :player{age: 32, name: "Rudy Gay"})                                                             |
