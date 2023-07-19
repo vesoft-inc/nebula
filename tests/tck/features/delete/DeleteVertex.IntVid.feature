@@ -232,6 +232,11 @@ Feature: Delete int vid of vertex
       | "Manu Ginobili" |
     When executing query:
       """
+      GO FROM hash("Boris Diaw") OVER like YIELD edge as e | DELETE VERTEX src($-.e) WITH EDGE
+      """
+    Then a SemanticError should be raised at runtime: `src($-.e)' is not an evaluable expression.
+    When executing query:
+      """
       GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then the execution should be successful

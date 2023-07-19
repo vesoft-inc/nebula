@@ -90,6 +90,11 @@ Feature: delete vertex without edge
       | 3 | 1  |
     When executing query:
       """
+      GO FROM 1 OVER e YIELD edge as e1 | DELETE VERTEX dst($-.e1)
+      """
+    Then a SemanticError should be raised at runtime: `dst($-.e1)' is not an evaluable expression.
+    When executing query:
+      """
       DELETE VERTEX 1;
       """
     Then the execution should be successful

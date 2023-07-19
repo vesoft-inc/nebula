@@ -326,6 +326,10 @@ Status DeleteVerticesValidator::validateImpl() {
   } else {
     auto vIds = sentence->vertices()->vidList();
     for (auto vId : vIds) {
+      if (!ExpressionUtils::isEvaluableExpr(vId, qctx_)) {
+        return Status::SemanticError("`%s' is not an evaluable expression.",
+                                     vId->toString().c_str());
+      }
       auto idStatus = SchemaUtil::toVertexID(vId, vidType_);
       NG_RETURN_IF_ERROR(idStatus);
       vertices_.emplace_back(std::move(idStatus).value());
@@ -464,6 +468,10 @@ Status DeleteTagsValidator::validateImpl() {
   } else {
     auto vIds = sentence->vertices()->vidList();
     for (auto vId : vIds) {
+      if (!ExpressionUtils::isEvaluableExpr(vId, qctx_)) {
+        return Status::SemanticError("`%s' is not an evaluable expression.",
+                                     vId->toString().c_str());
+      }
       auto idStatus = SchemaUtil::toVertexID(vId, vidType_);
       NG_RETURN_IF_ERROR(idStatus);
       vertices_.emplace_back(std::move(idStatus).value());
@@ -551,6 +559,14 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeK
   for (auto &edgeKey : edgeKeys) {
     Row row;
     storage::cpp2::EdgeKey key;
+    if (!ExpressionUtils::isEvaluableExpr(edgeKey->srcid(), qctx_)) {
+      return Status::SemanticError("`%s' is not an evaluable expression.",
+                                   edgeKey->srcid()->toString().c_str());
+    }
+    if (!ExpressionUtils::isEvaluableExpr(edgeKey->dstid(), qctx_)) {
+      return Status::SemanticError("`%s' is not an evaluable expression.",
+                                   edgeKey->dstid()->toString().c_str());
+    }
     auto srcIdStatus = SchemaUtil::toVertexID(edgeKey->srcid(), vidType_);
     NG_RETURN_IF_ERROR(srcIdStatus);
     auto dstIdStatus = SchemaUtil::toVertexID(edgeKey->dstid(), vidType_);
