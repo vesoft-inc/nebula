@@ -1,0 +1,151 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+nebula_add_test(
+    NAME
+        nebula_key_utils_test
+    SOURCES
+        NebulaKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+        $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+    LIBRARIES
+        gtest
+        ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME
+        index_key_utils_test
+    SOURCES
+        IndexKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+        $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+    LIBRARIES
+        gtest
+        ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME
+        operation_key_utils_test
+    SOURCES
+        OperationKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:meta_keyutils_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:ast_match_path_obj>
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:agg_function_manager_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+        $<TARGET_OBJECTS:codec_obj>
+        $<TARGET_OBJECTS:meta_obj>
+        $<TARGET_OBJECTS:conf_obj>
+        $<TARGET_OBJECTS:meta_client_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+    LIBRARIES
+        gtest
+        ${THRIFT_LIBRARIES}
+)
+
+nebula_add_test(
+    NAME
+        meta_key_utils_test
+    SOURCES
+        MetaKeyUtilsTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:meta_keyutils_obj>
+        $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:thrift_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:network_obj>
+        $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:process_obj>
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        gtest
+)

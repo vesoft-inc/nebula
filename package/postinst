@@ -1,0 +1,12 @@
+#!/bin/bash
+
+install_dir=/usr/local/nebula
+daemons=(metad graphd storaged)
+for daemon in ${daemons[@]}
+do
+    if [[ ! -f ${install_dir}/etc/nebula-${daemon}.conf ]] && [[ -f ${install_dir}/etc/nebula-${daemon}.conf.default ]]; then
+        cp ${install_dir}/etc/nebula-${daemon}.conf.default ${install_dir}/etc/nebula-${daemon}.conf
+        chmod 644 ${install_dir}/etc/nebula-${daemon}.conf
+    fi
+done
+

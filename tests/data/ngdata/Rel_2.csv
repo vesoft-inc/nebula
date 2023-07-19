@@ -1,0 +1,288 @@
+:SRC_VID(int),:DST_VID(int),Rel_2.Rel_2_4_String:string,Rel_2.Rel_2_3_geography_point:geography(point),Rel_2.Rel_2_6_Bool:bool,Rel_2.Rel_2_9_Double:double,Rel_2.Rel_2_0_Int:int,Rel_2.Rel_2_5_String:string,Rel_2.Rel_2_7_time:time,Rel_2.Rel_2_2_String:string,Rel_2.Rel_2_8_geography_polygon:geography(polygon),Rel_2.Rel_2_1_Double:double,Rel_2.Rel_2_10_Double:double
+12,84,'David West',"ST_GeogFromText(""POINT(33 73)"")",false,0.795985,16,'David West',time(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.545681,0.065058
+46,101,'Yao Ming',"ST_GeogFromText(""POINT(55 15)"")",true,0.956811,24,'Marco Belinelli',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.910788,0.547010
+67,83,'Tiago Splitter',"ST_GeogFromText(""POINT(14 50)"")",false,0.949018,79,'Rudy Gay',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.402084,0.984318
+16,81,'Cory Joseph',"ST_GeogFromText(""POINT(45 59)"")",false,0.999381,48,'Damian Lillard',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.325211,0.216501
+75,54,'David West',"ST_GeogFromText(""POINT(2 19)"")",false,0.590895,38,'DeAndre Jordan',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.046656,0.044509
+40,52,'Null4',"ST_GeogFromText(""POINT(54 46)"")",true,0.376394,89,'Rudy Gay',time(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.734882,0.779313
+17,61,'Manu Ginobili',"ST_GeogFromText(""POINT(9 46)"")",false,0.627126,25,'Paul George',time(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.775255,0.457425
+4,47,'Dirk Nowitzki',"ST_GeogFromText(""POINT(16 71)"")",true,0.767503,72,'Damian Lillard',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.619121,0.622144
+92,44,'Blake Griffin',"ST_GeogFromText(""POINT(40 69)"")",false,0.968368,74,'Chris Paul',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.341837,0.261038
+20,75,'Jonathon Simmons',"ST_GeogFromText(""POINT(32 24)"")",false,0.193709,46,'JaVale McGee',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.624049,0.823357
+69,79,'Dwyane Wade',"ST_GeogFromText(""POINT(71 60)"")",false,0.244596,27,'Danny Green',time(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.794907,0.425872
+78,6,'Rudy Gay',"ST_GeogFromText(""POINT(77 33)"")",false,0.692196,2,'Ricky Rubio',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.886888,0.645739
+25,71,'LeBron James',"ST_GeogFromText(""POINT(75 41)"")",true,0.621258,36,'Ricky Rubio',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.281776,0.891583
+82,105,'Amar\'e Stoudemire',"ST_GeogFromText(""POINT(75 33)"")",true,0.189137,35,'Marco Belinelli',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.135027,0.235517
+102,41,'Ray Allen',"ST_GeogFromText(""POINT(39 25)"")",true,0.090704,30,'Jason Kidd',time(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.319116,0.556265
+68,84,'Cory Joseph',"ST_GeogFromText(""POINT(1 50)"")",false,0.659389,43,'Luka Doncic',time(),'David West',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.000043,0.701343
+86,103,'Tony Parker',"ST_GeogFromText(""POINT(61 68)"")",true,0.712433,7,'Rudy Gay',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.847296,0.289452
+104,3,'Ricky Rubio',"ST_GeogFromText(""POINT(85 82)"")",true,0.903845,67,'Kyrie Irving',time(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.327454,0.065819
+14,67,'James Harden',"ST_GeogFromText(""POINT(26 41)"")",true,0.136624,23,'Null3',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.812499,0.795684
+59,54,'Shaquile O\'Neal',"ST_GeogFromText(""POINT(27 44)"")",true,0.885571,54,'Kyle Anderson',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.990681,0.293630
+4,43,'Tiago Splitter',"ST_GeogFromText(""POINT(82 77)"")",true,0.785974,37,'Kobe Bryant',time(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.497639,0.301557
+29,22,'Kyrie Irving',"ST_GeogFromText(""POINT(55 11)"")",true,0.457160,97,'Amar\'e Stoudemire',time(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.607803,0.370730
+77,37,'Boris Diaw',"ST_GeogFromText(""POINT(7 62)"")",false,0.312386,40,'Tiago Splitter',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.431122,0.544434
+56,98,'Vince Carter',"ST_GeogFromText(""POINT(14 17)"")",false,0.037189,62,'Boris Diaw',time(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.753950,0.390262
+95,52,'Dwyane Wade',"ST_GeogFromText(""POINT(36 68)"")",true,0.980739,24,'Carmelo Anthony',time(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.332857,0.147296
+10,20,'Kobe Bryant',"ST_GeogFromText(""POINT(86 53)"")",false,0.004797,7,'Kyrie Irving',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.097219,0.358575
+93,39,'Nobody',"ST_GeogFromText(""POINT(19 57)"")",false,0.500712,67,'Kristaps Porzingis',time(),'Carmelo Anthony',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.869604,0.735906
+1,10,'Ben Simmons',"ST_GeogFromText(""POINT(20 82)"")",false,0.393411,63,'Joel Embiid',time(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.661467,0.437838
+44,92,'Paul Gasol',"ST_GeogFromText(""POINT(28 11)"")",false,0.132670,87,'Kyle Anderson',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.736493,0.490782
+57,4,'Marco Belinelli',"ST_GeogFromText(""POINT(11 70)"")",false,0.859329,30,'Carmelo Anthony',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.885308,0.921063
+30,36,'Cory Joseph',"ST_GeogFromText(""POINT(50 20)"")",false,0.542152,11,'Steve Nash',time(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.006374,0.490885
+46,93,'Null4',"ST_GeogFromText(""POINT(80 43)"")",false,0.421045,24,'Kevin Durant',time(),'Chris Paul',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.536550,0.762805
+67,26,'Tony Parker',"ST_GeogFromText(""POINT(22 29)"")",false,0.508669,97,'Aron Baynes',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.842031,0.500424
+32,52,'Steve Nash',"ST_GeogFromText(""POINT(68 39)"")",true,0.555184,55,'Boris Diaw',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.512369,0.146606
+70,90,'Cory Joseph',"ST_GeogFromText(""POINT(11 36)"")",true,0.311611,74,'Steve Nash',time(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.028664,0.328316
+25,73,'Chris Paul',"ST_GeogFromText(""POINT(45 28)"")",true,0.680825,73,'Null3',time(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.220750,0.344322
+22,44,'Vince Carter',"ST_GeogFromText(""POINT(38 68)"")",false,0.677492,48,'Dirk Nowitzki',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.285174,0.961843
+85,96,'Jonathon Simmons',"ST_GeogFromText(""POINT(7 7)"")",true,0.157369,59,'Paul Gasol',time(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.306933,0.503321
+39,58,'Luka Doncic',"ST_GeogFromText(""POINT(14 0)"")",false,0.944389,73,'Yao Ming',time(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.973793,0.486433
+36,70,'Damian Lillard',"ST_GeogFromText(""POINT(10 36)"")",true,0.838638,34,'Jonathon Simmons',time(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.678198,0.335708
+52,75,'Klay Thompson',"ST_GeogFromText(""POINT(19 66)"")",false,0.691468,77,'Dejounte Murray',time(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.896364,0.228315
+32,76,'Nobody',"ST_GeogFromText(""POINT(41 67)"")",false,0.906657,28,'Ray Allen',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.163902,0.951436
+25,37,'Joel Embiid',"ST_GeogFromText(""POINT(5 66)"")",false,0.943860,13,'Rudy Gay',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.867662,0.077411
+29,108,'Russell Westbrook',"ST_GeogFromText(""POINT(75 16)"")",true,0.932225,21,'Blake Griffin',time(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.782484,0.786829
+15,37,'Dejounte Murray',"ST_GeogFromText(""POINT(20 16)"")",true,0.381522,32,'Tracy McGrady',time(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.516257,0.520501
+32,28,'Blake Griffin',"ST_GeogFromText(""POINT(39 63)"")",true,0.940499,26,'Aron Baynes',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.524234,0.957299
+84,42,'Klay Thompson',"ST_GeogFromText(""POINT(80 2)"")",false,0.529646,31,'Danny Green',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.330911,0.636551
+35,92,'Kristaps Porzingis',"ST_GeogFromText(""POINT(0 0)"")",false,0.183211,47,'Shaquile O\'Neal',time(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.590254,0.756948
+38,12,'Chris Paul',"ST_GeogFromText(""POINT(29 79)"")",false,0.594759,75,'Kristaps Porzingis',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.566206,0.196815
+75,66,'Danny Green',"ST_GeogFromText(""POINT(58 31)"")",false,0.071930,6,'Manu Ginobili',time(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.485450,0.250053
+49,73,'Blake Griffin',"ST_GeogFromText(""POINT(5 49)"")",false,0.599473,31,'Kyrie Irving',time(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.292861,0.507294
+105,2,'Rudy Gay',"ST_GeogFromText(""POINT(30 32)"")",false,0.875844,1,'Klay Thompson',time(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.894897,0.366438
+67,78,'Blake Griffin',"ST_GeogFromText(""POINT(45 23)"")",true,0.036887,0,'Dejounte Murray',time(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.912160,0.695336
+99,68,'Jonathon Simmons',"ST_GeogFromText(""POINT(5 66)"")",true,0.625834,91,'Russell Westbrook',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.301966,0.076608
+23,96,'Kyrie Irving',"ST_GeogFromText(""POINT(18 70)"")",true,0.605931,11,'Tony Parker',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.460316,0.306089
+33,85,'Russell Westbrook',"ST_GeogFromText(""POINT(2 4)"")",true,0.946598,14,'Aron Baynes',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.848733,0.248802
+23,91,'Jonathon Simmons',"ST_GeogFromText(""POINT(46 89)"")",true,0.763668,32,'Ricky Rubio',time(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.395366,0.189431
+25,4,'Null3',"ST_GeogFromText(""POINT(40 31)"")",false,0.159869,83,'Danny Green',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.343085,0.894822
+11,94,'Blake Griffin',"ST_GeogFromText(""POINT(30 32)"")",true,0.547409,25,'Aron Baynes',time(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.385069,0.725984
+6,101,'Stephen Curry',"ST_GeogFromText(""POINT(80 58)"")",false,0.763134,48,'Carmelo Anthony',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.008001,0.333697
+65,73,'Ricky Rubio',"ST_GeogFromText(""POINT(27 38)"")",true,0.424378,80,'Yao Ming',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.382954,0.187495
+13,16,'Ben Simmons',"ST_GeogFromText(""POINT(39 83)"")",true,0.792917,76,'Jason Kidd',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.566646,0.891451
+37,99,'Nobody',"ST_GeogFromText(""POINT(61 70)"")",true,0.026712,48,'Kevin Durant',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.924628,0.622569
+8,38,'Tony Parker',"ST_GeogFromText(""POINT(60 5)"")",false,0.016763,54,'Tim Duncan',time(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.440719,0.122491
+32,42,'Null1',"ST_GeogFromText(""POINT(64 3)"")",true,0.222385,6,'LaMarcus Aldridge',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.846655,0.405448
+61,7,'Stephen Curry',"ST_GeogFromText(""POINT(45 41)"")",true,0.041290,11,'Yao Ming',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.521010,0.305892
+32,82,'Danny Green',"ST_GeogFromText(""POINT(88 69)"")",true,0.890269,88,'JaVale McGee',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.986535,0.965103
+96,95,'Null1',"ST_GeogFromText(""POINT(52 3)"")",false,0.005117,87,'Klay Thompson',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.233084,0.547266
+103,53,'Tiago Splitter',"ST_GeogFromText(""POINT(67 88)"")",false,0.830043,10,'Joel Embiid',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.227756,0.350137
+14,47,'Grant Hill',"ST_GeogFromText(""POINT(40 55)"")",false,0.494305,35,'Jason Kidd',time(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.442498,0.974683
+4,74,'Stephen Curry',"ST_GeogFromText(""POINT(8 32)"")",true,0.154159,61,'Chris Paul',time(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.066759,0.367539
+51,52,'Paul Gasol',"ST_GeogFromText(""POINT(79 26)"")",true,0.985837,67,'Dwight Howard',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.330553,0.647370
+99,45,'DeAndre Jordan',"ST_GeogFromText(""POINT(33 63)"")",true,0.793366,1,'Carmelo Anthony',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.657223,0.111380
+51,71,'Null4',"ST_GeogFromText(""POINT(65 28)"")",false,0.243211,88,'Stephen Curry',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.471150,0.489632
+11,12,'Blake Griffin',"ST_GeogFromText(""POINT(27 5)"")",true,0.456254,22,'Boris Diaw',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.856480,0.347848
+104,1,'Steve Nash',"ST_GeogFromText(""POINT(0 71)"")",true,0.352716,71,'Null1',time(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.430851,0.313996
+45,8,'David West',"ST_GeogFromText(""POINT(75 25)"")",false,0.015129,0,'Klay Thompson',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.246312,0.493230
+17,73,'Joel Embiid',"ST_GeogFromText(""POINT(30 28)"")",false,0.685686,69,'Kevin Durant',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.437216,0.257130
+21,29,'Rudy Gay',"ST_GeogFromText(""POINT(9 27)"")",true,0.682224,16,'Kyle Anderson',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.696553,0.377421
+53,33,'Dejounte Murray',"ST_GeogFromText(""POINT(41 11)"")",false,0.551605,26,'Null3',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.731166,0.053936
+58,63,'Giannis Antetokounmpo',"ST_GeogFromText(""POINT(83 21)"")",false,0.288328,60,'DeAndre Jordan',time(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.772762,0.345205
+77,85,'Tiago Splitter',"ST_GeogFromText(""POINT(7 42)"")",true,0.879039,74,'Blake Griffin',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.152615,0.122637
+97,16,'Damian Lillard',"ST_GeogFromText(""POINT(47 19)"")",true,0.533473,17,'Boris Diaw',time(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.000942,0.521460
+56,27,'Rajon Rondo',"ST_GeogFromText(""POINT(28 74)"")",true,0.824470,40,'Dwight Howard',time(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.308368,0.646446
+71,41,'Manu Ginobili',"ST_GeogFromText(""POINT(73 68)"")",false,0.833266,24,'Boris Diaw',time(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.115430,0.140666
+72,5,'David West',"ST_GeogFromText(""POINT(78 23)"")",false,0.982723,41,'Klay Thompson',time(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.306043,0.982769
+54,3,'Null3',"ST_GeogFromText(""POINT(50 45)"")",true,0.716922,15,'Ray Allen',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.059726,0.306511
+86,92,'Cory Joseph',"ST_GeogFromText(""POINT(41 6)"")",false,0.774577,20,'Dirk Nowitzki',time(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.368021,0.542972
+21,52,'Yao Ming',"ST_GeogFromText(""POINT(66 86)"")",false,0.720606,45,'Kobe Bryant',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.134611,0.580903
+28,100,'LeBron James',"ST_GeogFromText(""POINT(12 71)"")",false,0.880051,2,'Steve Nash',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.705549,0.928088
+107,9,'Ray Allen',"ST_GeogFromText(""POINT(29 32)"")",false,0.914249,99,'Manu Ginobili',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.721355,0.862938
+94,41,'Null2',"ST_GeogFromText(""POINT(54 5)"")",true,0.978302,75,'Dwyane Wade',time(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.241834,0.028952
+86,27,'Tony Parker',"ST_GeogFromText(""POINT(24 77)"")",false,0.705052,35,'Chris Paul',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.459597,0.255593
+9,37,'Boris Diaw',"ST_GeogFromText(""POINT(46 5)"")",false,0.210099,68,'Aron Baynes',time(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.267969,0.417410
+77,83,'Kristaps Porzingis',"ST_GeogFromText(""POINT(26 24)"")",true,0.254990,15,'Marco Belinelli',time(),'Kyle Anderson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.863814,0.459716
+54,86,'Ricky Rubio',"ST_GeogFromText(""POINT(30 5)"")",true,0.212121,20,'Null1',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.767692,0.755503
+26,70,'Jason Kidd',"ST_GeogFromText(""POINT(66 45)"")",false,0.510191,68,'Kobe Bryant',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.483156,0.890421
+95,61,'Steve Nash',"ST_GeogFromText(""POINT(26 78)"")",false,0.919540,99,'Stephen Curry',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.440864,0.863823
+47,108,'Stephen Curry',"ST_GeogFromText(""POINT(4 14)"")",true,0.446975,71,'Chris Paul',time(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.402396,0.545503
+67,2,'Damian Lillard',"ST_GeogFromText(""POINT(20 68)"")",true,0.898102,33,'DeAndre Jordan',time(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.561440,0.477665
+89,37,'Jonathon Simmons',"ST_GeogFromText(""POINT(58 18)"")",true,0.743495,60,'Cory Joseph',time(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.013707,0.266714
+19,1,'Ricky Rubio',"ST_GeogFromText(""POINT(20 51)"")",true,0.486700,62,'Joel Embiid',time(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.823688,0.905365
+38,45,'Null2',"ST_GeogFromText(""POINT(18 12)"")",false,0.718561,4,'Damian Lillard',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.320391,0.206980
+72,60,'Blake Griffin',"ST_GeogFromText(""POINT(39 13)"")",true,0.406684,29,'Yao Ming',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.731535,0.584502
+33,26,'Dwight Howard',"ST_GeogFromText(""POINT(78 23)"")",true,0.341092,11,'Danny Green',time(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.505651,0.009876
+27,42,'JaVale McGee',"ST_GeogFromText(""POINT(75 3)"")",true,0.108730,64,'Giannis Antetokounmpo',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.967574,0.215478
+92,99,'Chris Paul',"ST_GeogFromText(""POINT(18 22)"")",true,0.272630,8,'Jonathon Simmons',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.148110,0.095026
+12,61,'Carmelo Anthony',"ST_GeogFromText(""POINT(43 46)"")",false,0.348005,78,'Kyle Anderson',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.249264,0.897082
+75,52,'JaVale McGee',"ST_GeogFromText(""POINT(23 1)"")",false,0.466355,79,'Kyle Anderson',time(),'Kyle Anderson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.692967,0.455613
+27,84,'Kyle Anderson',"ST_GeogFromText(""POINT(21 9)"")",true,0.890178,27,'Giannis Antetokounmpo',time(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.752563,0.197624
+86,53,'Kyle Anderson',"ST_GeogFromText(""POINT(83 50)"")",true,0.358257,77,'JaVale McGee',time(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.907108,0.831974
+97,12,'Paul Gasol',"ST_GeogFromText(""POINT(32 69)"")",false,0.943440,45,'Amar\'e Stoudemire',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.819864,0.267050
+71,65,'Danny Green',"ST_GeogFromText(""POINT(37 0)"")",true,0.244592,31,'Null1',time(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.150526,0.991090
+68,17,'Vince Carter',"ST_GeogFromText(""POINT(33 30)"")",false,0.493499,86,'Boris Diaw',time(),'Steve Nash',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.457143,0.678458
+54,37,'Null1',"ST_GeogFromText(""POINT(38 4)"")",true,0.717372,13,'Cory Joseph',time(),'Grant Hill',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.429297,0.282173
+94,53,'Dejounte Murray',"ST_GeogFromText(""POINT(30 53)"")",true,0.059710,63,'Null2',time(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.541584,0.794279
+85,93,'Luka Doncic',"ST_GeogFromText(""POINT(8 67)"")",true,0.917997,38,'LeBron James',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.705401,0.794281
+18,51,'Ben Simmons',"ST_GeogFromText(""POINT(76 84)"")",false,0.196065,25,'Giannis Antetokounmpo',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.911099,0.064195
+22,107,'Null2',"ST_GeogFromText(""POINT(0 29)"")",false,0.311002,34,'Chris Paul',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.424745,0.623030
+100,43,'Null1',"ST_GeogFromText(""POINT(11 15)"")",false,0.601170,61,'Carmelo Anthony',time(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.785552,0.577866
+92,108,'Rajon Rondo',"ST_GeogFromText(""POINT(69 85)"")",true,0.688234,5,'Jonathon Simmons',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.624089,0.151290
+97,77,'Kevin Durant',"ST_GeogFromText(""POINT(10 31)"")",true,0.865765,8,'Tracy McGrady',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.883966,0.028860
+93,36,'Danny Green',"ST_GeogFromText(""POINT(1 58)"")",true,0.465690,97,'Null1',time(),'DeAndre Jordan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.661235,0.127346
+76,63,'DeAndre Jordan',"ST_GeogFromText(""POINT(49 81)"")",false,0.638677,23,'Paul Gasol',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.069884,0.869163
+25,99,'Nobody',"ST_GeogFromText(""POINT(15 43)"")",true,0.322839,15,'Dwight Howard',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.476768,0.788235
+49,33,'Paul George',"ST_GeogFromText(""POINT(34 84)"")",false,0.102528,48,'Ben Simmons',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.139182,0.287426
+107,75,'Ben Simmons',"ST_GeogFromText(""POINT(56 84)"")",false,0.944419,8,'Stephen Curry',time(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.106683,0.057457
+77,27,'David West',"ST_GeogFromText(""POINT(18 68)"")",true,0.652364,93,'Paul Gasol',time(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.816479,0.603164
+26,30,'Marc Gasol',"ST_GeogFromText(""POINT(38 31)"")",true,0.518250,87,'Dejounte Murray',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.041717,0.969105
+19,88,'Dejounte Murray',"ST_GeogFromText(""POINT(43 52)"")",false,0.390176,31,'Carmelo Anthony',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.083959,0.002282
+41,51,'Luka Doncic',"ST_GeogFromText(""POINT(26 49)"")",false,0.419363,68,'Blake Griffin',time(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.117506,0.063579
+69,101,'Shaquile O\'Neal',"ST_GeogFromText(""POINT(63 27)"")",true,0.627571,28,'Ben Simmons',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.189341,0.135327
+3,74,'Klay Thompson',"ST_GeogFromText(""POINT(19 70)"")",false,0.947493,0,'Grant Hill',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.467788,0.798698
+44,28,'Ricky Rubio',"ST_GeogFromText(""POINT(41 74)"")",false,0.427582,95,'Rajon Rondo',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.513130,0.771608
+86,96,'Null2',"ST_GeogFromText(""POINT(10 82)"")",true,0.188000,71,'Dirk Nowitzki',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.403191,0.265197
+60,27,'Blake Griffin',"ST_GeogFromText(""POINT(4 27)"")",true,0.217589,5,'Tim Duncan',time(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.189655,0.716469
+38,56,'Amar\'e Stoudemire',"ST_GeogFromText(""POINT(9 16)"")",false,0.811326,70,'Steve Nash',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.202707,0.994925
+42,25,'Jonathon Simmons',"ST_GeogFromText(""POINT(73 44)"")",false,0.778443,90,'Chris Paul',time(),'Kevin Durant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.770203,0.337616
+55,100,'Yao Ming',"ST_GeogFromText(""POINT(52 60)"")",true,0.619592,55,'Jonathon Simmons',time(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.765363,0.706795
+46,5,'Stephen Curry',"ST_GeogFromText(""POINT(86 36)"")",true,0.444011,87,'Kyle Anderson',time(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.282430,0.971563
+100,20,'Tracy McGrady',"ST_GeogFromText(""POINT(69 65)"")",true,0.358272,69,'Blake Griffin',time(),'Kyle Anderson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.775783,0.719324
+35,69,'Aron Baynes',"ST_GeogFromText(""POINT(23 48)"")",false,0.434979,77,'Dejounte Murray',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.898083,0.436548
+1,82,'Paul George',"ST_GeogFromText(""POINT(50 44)"")",false,0.460660,60,'Blake Griffin',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.115912,0.220149
+36,71,'Danny Green',"ST_GeogFromText(""POINT(12 46)"")",false,0.112588,31,'Giannis Antetokounmpo',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.101793,0.807316
+98,77,'Null1',"ST_GeogFromText(""POINT(16 39)"")",false,0.355017,50,'Tracy McGrady',time(),'Boris Diaw',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.435063,0.242268
+8,41,'James Harden',"ST_GeogFromText(""POINT(5 15)"")",false,0.512273,27,'Danny Green',time(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.925899,0.468120
+26,85,'Yao Ming',"ST_GeogFromText(""POINT(35 9)"")",false,0.810290,48,'Dejounte Murray',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.257005,0.696261
+64,95,'Kyle Anderson',"ST_GeogFromText(""POINT(23 15)"")",false,0.665658,37,'Tony Parker',time(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.809165,0.220321
+103,99,'Dwight Howard',"ST_GeogFromText(""POINT(47 23)"")",false,0.833754,89,'Danny Green',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.398773,0.705525
+12,33,'Steve Nash',"ST_GeogFromText(""POINT(56 77)"")",true,0.362552,75,'Carmelo Anthony',time(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.307097,0.603853
+3,84,'Dejounte Murray',"ST_GeogFromText(""POINT(20 9)"")",false,0.383565,59,'Boris Diaw',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.532747,0.692484
+55,97,'Kristaps Porzingis',"ST_GeogFromText(""POINT(34 77)"")",false,0.772394,43,'Ray Allen',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.993259,0.848219
+60,70,'Marc Gasol',"ST_GeogFromText(""POINT(36 63)"")",false,0.080520,0,'Ben Simmons',time(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.398801,0.828507
+29,79,'Null1',"ST_GeogFromText(""POINT(53 47)"")",true,0.872124,93,'Shaquile O\'Neal',time(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.831555,0.576008
+83,19,'Klay Thompson',"ST_GeogFromText(""POINT(67 80)"")",true,0.275992,65,'Vince Carter',time(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.894009,0.134548
+67,39,'Klay Thompson',"ST_GeogFromText(""POINT(71 49)"")",true,0.060976,6,'Jonathon Simmons',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.949753,0.432071
+37,70,'Null2',"ST_GeogFromText(""POINT(57 40)"")",true,0.986777,37,'Null3',time(),'Nobody',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.009847,0.573732
+13,36,'Boris Diaw',"ST_GeogFromText(""POINT(34 71)"")",false,0.042990,67,'Stephen Curry',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.304235,0.767990
+8,36,'Ray Allen',"ST_GeogFromText(""POINT(29 1)"")",true,0.655180,6,'Carmelo Anthony',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.939737,0.839299
+48,98,'Chris Paul',"ST_GeogFromText(""POINT(76 57)"")",true,0.382451,52,'Cory Joseph',time(),'David West',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.226490,0.029686
+4,104,'Boris Diaw',"ST_GeogFromText(""POINT(70 42)"")",true,0.744619,46,'Vince Carter',time(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.485010,0.745465
+58,41,'Steve Nash',"ST_GeogFromText(""POINT(62 38)"")",true,0.537638,3,'Dejounte Murray',time(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.389165,0.781754
+76,9,'Ricky Rubio',"ST_GeogFromText(""POINT(40 58)"")",true,0.704790,16,'Kyle Anderson',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.466981,0.603907
+44,7,'Ben Simmons',"ST_GeogFromText(""POINT(1 51)"")",false,0.192718,22,'Paul George',time(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.378926,0.202056
+101,99,'Aron Baynes',"ST_GeogFromText(""POINT(63 20)"")",false,0.239994,18,'David West',time(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.272735,0.895063
+47,80,'Kyrie Irving',"ST_GeogFromText(""POINT(64 64)"")",true,0.933223,62,'David West',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.337320,0.335415
+96,28,'Aron Baynes',"ST_GeogFromText(""POINT(39 15)"")",false,0.576455,96,'DeAndre Jordan',time(),'Russell Westbrook',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.532727,0.531673
+99,15,'Tiago Splitter',"ST_GeogFromText(""POINT(66 0)"")",false,0.251476,14,'Null2',time(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.624743,0.832870
+106,44,'Giannis Antetokounmpo',"ST_GeogFromText(""POINT(48 38)"")",false,0.882141,77,'Marco Belinelli',time(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.265474,0.484006
+76,30,'Danny Green',"ST_GeogFromText(""POINT(68 11)"")",false,0.613027,19,'Kyle Anderson',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.105888,0.507624
+39,76,'Tony Parker',"ST_GeogFromText(""POINT(9 82)"")",true,0.661848,55,'Yao Ming',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.770415,0.204435
+10,14,'Ben Simmons',"ST_GeogFromText(""POINT(79 9)"")",false,0.925896,69,'James Harden',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.335604,0.006128
+106,75,'Jason Kidd',"ST_GeogFromText(""POINT(42 21)"")",true,0.178371,10,'Jason Kidd',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.054565,0.209197
+36,106,'Luka Doncic',"ST_GeogFromText(""POINT(7 48)"")",true,0.664234,31,'Paul George',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.703348,0.819791
+24,89,'Tony Parker',"ST_GeogFromText(""POINT(69 17)"")",false,0.615277,55,'Kyle Anderson',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.321638,0.211134
+68,28,'Damian Lillard',"ST_GeogFromText(""POINT(82 84)"")",false,0.467683,1,'Ricky Rubio',time(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.729737,0.752105
+48,6,'Shaquile O\'Neal',"ST_GeogFromText(""POINT(72 62)"")",false,0.262008,11,'Kyrie Irving',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.605530,0.006671
+65,11,'Yao Ming',"ST_GeogFromText(""POINT(23 0)"")",false,0.280181,10,'Aron Baynes',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.519795,0.431333
+48,17,'Tiago Splitter',"ST_GeogFromText(""POINT(56 70)"")",false,0.842086,81,'James Harden',time(),'Tim Duncan',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.837502,0.199629
+70,68,'Cory Joseph',"ST_GeogFromText(""POINT(3 0)"")",true,0.580510,84,'Ben Simmons',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.215811,0.060243
+85,86,'Cory Joseph',"ST_GeogFromText(""POINT(28 78)"")",false,0.197440,84,'Jonathon Simmons',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.969724,0.188556
+61,19,'Damian Lillard',"ST_GeogFromText(""POINT(36 40)"")",true,0.355973,48,'DeAndre Jordan',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.555200,0.915697
+55,16,'Cory Joseph',"ST_GeogFromText(""POINT(49 31)"")",false,0.417280,30,'Tim Duncan',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.796906,0.819943
+100,101,'Dwight Howard',"ST_GeogFromText(""POINT(70 7)"")",false,0.869462,52,'Kevin Durant',time(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.792612,0.495774
+70,55,'Null4',"ST_GeogFromText(""POINT(13 53)"")",true,0.882475,84,'Dwight Howard',time(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.345766,0.699184
+85,17,'Kyrie Irving',"ST_GeogFromText(""POINT(6 64)"")",false,0.128330,18,'Marc Gasol',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.956918,0.263755
+18,74,'Dejounte Murray',"ST_GeogFromText(""POINT(8 8)"")",true,0.328142,29,'JaVale McGee',time(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.001128,0.765668
+45,83,'Paul Gasol',"ST_GeogFromText(""POINT(33 26)"")",false,0.795608,88,'Marco Belinelli',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.454086,0.680370
+56,56,'Kyrie Irving',"ST_GeogFromText(""POINT(54 55)"")",false,0.554469,93,'Vince Carter',time(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.138401,0.611889
+39,85,'Luka Doncic',"ST_GeogFromText(""POINT(47 33)"")",true,0.923939,66,'Tony Parker',time(),'Rajon Rondo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.998729,0.411004
+39,12,'LaMarcus Aldridge',"ST_GeogFromText(""POINT(58 30)"")",true,0.813629,92,'LaMarcus Aldridge',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.806880,0.424635
+44,4,'Jason Kidd',"ST_GeogFromText(""POINT(46 51)"")",false,0.971129,45,'Ray Allen',time(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.057691,0.948507
+99,28,'LaMarcus Aldridge',"ST_GeogFromText(""POINT(54 31)"")",false,0.628958,62,'Tiago Splitter',time(),'Vince Carter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.879592,0.418118
+28,13,'Null2',"ST_GeogFromText(""POINT(25 24)"")",true,0.699995,44,'Kyle Anderson',time(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.045007,0.501212
+21,82,'Kobe Bryant',"ST_GeogFromText(""POINT(86 53)"")",true,0.227490,7,'Jonathon Simmons',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.878962,0.346345
+95,17,'James Harden',"ST_GeogFromText(""POINT(32 42)"")",true,0.942377,26,'Damian Lillard',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.846258,0.760890
+23,2,'Null3',"ST_GeogFromText(""POINT(89 68)"")",true,0.087228,39,'Shaquile O\'Neal',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.453013,0.982102
+52,8,'Yao Ming',"ST_GeogFromText(""POINT(34 72)"")",true,0.675805,99,'Ray Allen',time(),'Joel Embiid',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.833460,0.477463
+35,35,'James Harden',"ST_GeogFromText(""POINT(50 43)"")",false,0.731598,93,'Marco Belinelli',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.363641,0.911433
+58,18,'Null4',"ST_GeogFromText(""POINT(89 25)"")",true,0.761362,44,'Dejounte Murray',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.221992,0.365796
+22,66,'Russell Westbrook',"ST_GeogFromText(""POINT(19 14)"")",false,0.344861,80,'Null4',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.049885,0.848964
+4,2,'Kyrie Irving',"ST_GeogFromText(""POINT(58 56)"")",false,0.665856,6,'Marco Belinelli',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.892496,0.452859
+20,28,'LaMarcus Aldridge',"ST_GeogFromText(""POINT(78 40)"")",true,0.418233,69,'Danny Green',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.270968,0.979530
+88,84,'Ricky Rubio',"ST_GeogFromText(""POINT(48 2)"")",true,0.791910,43,'Rudy Gay',time(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.933569,0.739107
+92,19,'Giannis Antetokounmpo',"ST_GeogFromText(""POINT(72 47)"")",true,0.376358,1,'Kevin Durant',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.756792,0.698729
+47,88,'Null2',"ST_GeogFromText(""POINT(31 31)"")",true,0.347014,84,'Grant Hill',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.580575,0.364523
+81,46,'Ray Allen',"ST_GeogFromText(""POINT(54 52)"")",false,0.219647,71,'Nobody',time(),'Danny Green',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.362387,0.911521
+24,83,'Tony Parker',"ST_GeogFromText(""POINT(83 80)"")",true,0.678259,71,'Luka Doncic',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.619294,0.922400
+58,36,'Nobody',"ST_GeogFromText(""POINT(25 65)"")",false,0.581221,47,'Blake Griffin',time(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.872410,0.016209
+1,65,'Paul George',"ST_GeogFromText(""POINT(37 21)"")",true,0.914533,20,'Dwyane Wade',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.487955,0.758327
+48,33,'Blake Griffin',"ST_GeogFromText(""POINT(28 44)"")",false,0.900005,80,'James Harden',time(),'Null3',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.744340,0.383248
+88,33,'Kobe Bryant',"ST_GeogFromText(""POINT(2 9)"")",true,0.452340,20,'Dejounte Murray',time(),'Chris Paul',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.269623,0.977930
+64,66,'Grant Hill',"ST_GeogFromText(""POINT(57 45)"")",false,0.983595,76,'Nobody',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.393359,0.245032
+27,17,'Cory Joseph',"ST_GeogFromText(""POINT(32 75)"")",true,0.532882,68,'Damian Lillard',time(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.529150,0.321167
+81,10,'Grant Hill',"ST_GeogFromText(""POINT(40 70)"")",true,0.025361,86,'Klay Thompson',time(),'Stephen Curry',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.653128,0.137708
+64,57,'Null2',"ST_GeogFromText(""POINT(76 27)"")",false,0.636490,67,'Steve Nash',time(),'Null2',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.199513,0.840198
+60,89,'Dirk Nowitzki',"ST_GeogFromText(""POINT(29 74)"")",false,0.853033,33,'LaMarcus Aldridge',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.778527,0.408428
+73,22,'Ray Allen',"ST_GeogFromText(""POINT(3 3)"")",false,0.082620,89,'Russell Westbrook',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.719503,0.700967
+67,102,'Carmelo Anthony',"ST_GeogFromText(""POINT(52 66)"")",true,0.364259,1,'Dejounte Murray',time(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.003862,0.314923
+89,8,'Klay Thompson',"ST_GeogFromText(""POINT(25 37)"")",false,0.013317,14,'LaMarcus Aldridge',time(),'Kristaps Porzingis',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.410347,0.318446
+54,104,'Russell Westbrook',"ST_GeogFromText(""POINT(20 58)"")",true,0.113416,39,'Nobody',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.227581,0.768148
+43,11,'Shaquile O\'Neal',"ST_GeogFromText(""POINT(10 75)"")",true,0.743714,96,'Danny Green',time(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.935667,0.025548
+108,29,'Chris Paul',"ST_GeogFromText(""POINT(15 89)"")",true,0.788328,6,'Danny Green',time(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.279681,0.149894
+2,31,'Damian Lillard',"ST_GeogFromText(""POINT(68 52)"")",false,0.885297,69,'Damian Lillard',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.413790,0.333952
+89,43,'Jason Kidd',"ST_GeogFromText(""POINT(53 76)"")",true,0.462045,60,'Kobe Bryant',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.713659,0.958489
+7,22,'Boris Diaw',"ST_GeogFromText(""POINT(17 15)"")",true,0.228030,34,'Jonathon Simmons',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.251267,0.372627
+383,42,'Damian Lillard',"ST_GeogFromText(""POINT(10 87)"")",false,0.134334,37,'Kevin Durant',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.908270,0.079899
+383,48,'Cory Joseph',"ST_GeogFromText(""POINT(80 73)"")",true,0.180437,26,'Kyrie Irving',time(),'LeBron James',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.554423,0.408959
+383,27,'Klay Thompson',"ST_GeogFromText(""POINT(19 24)"")",false,0.210507,97,'LeBron James',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.904229,0.469460
+35,383,'Jonathon Simmons',"ST_GeogFromText(""POINT(82 38)"")",false,0.845384,65,'Dirk Nowitzki',time(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.126351,0.515556
+383,87,'Kobe Bryant',"ST_GeogFromText(""POINT(13 61)"")",true,0.784946,42,'Tiago Splitter',time(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.741192,0.483502
+383,40,'Danny Green',"ST_GeogFromText(""POINT(25 19)"")",false,0.386651,97,'Marco Belinelli',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.460848,0.750820
+383,107,'Marco Belinelli',"ST_GeogFromText(""POINT(49 78)"")",false,0.520632,89,'Steve Nash',time(),'Aron Baynes',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.026091,0.129786
+383,63,'Amar\'e Stoudemire',"ST_GeogFromText(""POINT(67 34)"")",true,0.840460,48,'Ben Simmons',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.602936,0.050946
+383,75,'Tim Duncan',"ST_GeogFromText(""POINT(6 6)"")",false,0.144826,36,'Rudy Gay',time(),'Dirk Nowitzki',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.910503,0.393417
+56,383,'Giannis Antetokounmpo',"ST_GeogFromText(""POINT(44 47)"")",true,0.484975,84,'Grant Hill',time(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.723150,0.639305
+383,34,'Danny Green',"ST_GeogFromText(""POINT(5 13)"")",true,0.394005,39,'Boris Diaw',time(),'Jonathon Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.854161,0.498314
+383,38,'Dwight Howard',"ST_GeogFromText(""POINT(14 79)"")",true,0.246943,78,'Yao Ming',time(),'Cory Joseph',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.906567,0.518525
+86,383,'Marc Gasol',"ST_GeogFromText(""POINT(34 87)"")",false,0.680890,6,'Boris Diaw',time(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.799981,0.691404
+383,90,'Tracy McGrady',"ST_GeogFromText(""POINT(44 7)"")",false,0.111405,37,'Rudy Gay',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.168841,0.914497
+383,89,'Vince Carter',"ST_GeogFromText(""POINT(17 15)"")",true,0.364952,65,'Tiago Splitter',time(),'Damian Lillard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.234036,0.656645
+383,64,'Luka Doncic',"ST_GeogFromText(""POINT(1 16)"")",true,0.631365,14,'Nobody',time(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.978667,0.304250
+383,8,'Aron Baynes',"ST_GeogFromText(""POINT(85 0)"")",true,0.812336,46,'Jason Kidd',time(),'Kyle Anderson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.031337,0.456799
+383,56,'Yao Ming',"ST_GeogFromText(""POINT(67 26)"")",false,0.272880,88,'Rajon Rondo',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.320403,0.515927
+383,26,'Jason Kidd',"ST_GeogFromText(""POINT(40 52)"")",true,0.831491,63,'Blake Griffin',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.937916,0.926745
+383,54,'Steve Nash',"ST_GeogFromText(""POINT(1 29)"")",true,0.703145,14,'Damian Lillard',time(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.925698,0.811759
+383,83,'Jason Kidd',"ST_GeogFromText(""POINT(42 60)"")",true,0.810122,97,'Boris Diaw',time(),'Null4',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.812949,0.232090
+383,93,'Russell Westbrook',"ST_GeogFromText(""POINT(89 69)"")",true,0.396964,35,'Dejounte Murray',time(),'JaVale McGee',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.200036,0.688351
+383,23,'Marc Gasol',"ST_GeogFromText(""POINT(15 49)"")",true,0.054428,39,'LaMarcus Aldridge',time(),'LaMarcus Aldridge',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.603971,0.956117
+383,74,'Tony Parker',"ST_GeogFromText(""POINT(84 42)"")",true,0.346031,73,'Ray Allen',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.791155,0.913326
+82,383,'Carmelo Anthony',"ST_GeogFromText(""POINT(4 85)"")",false,0.032745,60,'Shaquile O\'Neal',time(),'Rudy Gay',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.762090,0.036356
+383,33,'Ray Allen',"ST_GeogFromText(""POINT(61 53)"")",true,0.647229,14,'Rudy Gay',time(),'Null1',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.277638,0.796444
+383,17,'James Harden',"ST_GeogFromText(""POINT(44 23)"")",false,0.332458,38,'Dwight Howard',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.231430,0.683655
+383,97,'Rudy Gay',"ST_GeogFromText(""POINT(57 56)"")",true,0.857297,76,'Tony Parker',time(),'Giannis Antetokounmpo',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.008315,0.614213
+383,55,'Rajon Rondo',"ST_GeogFromText(""POINT(0 6)"")",true,0.971665,44,'Null2',time(),'James Harden',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.893049,0.791197
+383,7,'Steve Nash',"ST_GeogFromText(""POINT(45 80)"")",true,0.578555,93,'Tiago Splitter',time(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.509078,0.008448
+383,39,'Boris Diaw',"ST_GeogFromText(""POINT(42 78)"")",false,0.742620,31,'Kristaps Porzingis',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.436931,0.853087
+383,70,'Jason Kidd',"ST_GeogFromText(""POINT(60 30)"")",true,0.122607,8,'David West',time(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.195501,0.743651
+383,72,'Tim Duncan',"ST_GeogFromText(""POINT(16 71)"")",false,0.848886,7,'LaMarcus Aldridge',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.556213,0.333559
+383,30,'Dwight Howard',"ST_GeogFromText(""POINT(72 43)"")",true,0.341042,14,'Kobe Bryant',time(),'Marc Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.054278,0.123915
+383,49,'Boris Diaw',"ST_GeogFromText(""POINT(28 26)"")",true,0.188488,27,'Ricky Rubio',time(),'Luka Doncic',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.856718,0.306423
+383,45,'Dejounte Murray',"ST_GeogFromText(""POINT(18 88)"")",true,0.498641,48,'Tim Duncan',time(),'Paul George',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.249789,0.406485
+383,59,'Rudy Gay',"ST_GeogFromText(""POINT(85 69)"")",true,0.200943,74,'Tim Duncan',time(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.305085,0.530206
+383,82,'Yao Ming',"ST_GeogFromText(""POINT(73 74)"")",false,0.223542,42,'Klay Thompson',time(),'Blake Griffin',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.832719,0.241516
+383,98,'Boris Diaw',"ST_GeogFromText(""POINT(10 35)"")",false,0.396401,92,'Dejounte Murray',time(),'Dejounte Murray',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.160710,0.723810
+383,36,'Kevin Durant',"ST_GeogFromText(""POINT(79 67)"")",false,0.940793,76,'Ben Simmons',time(),'Tony Parker',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.556071,0.018157
+383,60,'Grant Hill',"ST_GeogFromText(""POINT(31 26)"")",true,0.995156,5,'Marco Belinelli',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.855552,0.865383
+74,383,'DeAndre Jordan',"ST_GeogFromText(""POINT(26 75)"")",true,0.423836,3,'Tiago Splitter',time(),'Marco Belinelli',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.542078,0.056792
+383,100,'Marco Belinelli',"ST_GeogFromText(""POINT(45 45)"")",true,0.382319,32,'Amar\'e Stoudemire',time(),'Paul Gasol',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.865023,0.490036
+383,24,'Paul George',"ST_GeogFromText(""POINT(11 58)"")",false,0.208565,16,'Null2',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.254133,0.297900
+383,105,'JaVale McGee',"ST_GeogFromText(""POINT(20 11)"")",false,0.656430,58,'Kyle Anderson',time(),'Tiago Splitter',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.032656,0.604305
+383,99,'Tony Parker',"ST_GeogFromText(""POINT(89 62)"")",true,0.828202,99,'Amar\'e Stoudemire',time(),'Yao Ming',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.878655,0.672614
+383,68,'Tracy McGrady',"ST_GeogFromText(""POINT(80 18)"")",false,0.278481,15,'Kevin Durant',time(),'Ray Allen',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.796411,0.114248
+383,1,'Jonathon Simmons',"ST_GeogFromText(""POINT(89 9)"")",false,0.201620,11,'Blake Griffin',time(),'Jason Kidd',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.061062,0.549558
+383,9,'Dwight Howard',"ST_GeogFromText(""POINT(56 55)"")",false,0.491033,30,'LeBron James',time(),'Klay Thompson',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.966563,0.339076
+383,19,'DeAndre Jordan',"ST_GeogFromText(""POINT(20 84)"")",false,0.067954,33,'Jonathon Simmons',time(),'Tracy McGrady',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.630616,0.773029
+60,383,'Dejounte Murray',"ST_GeogFromText(""POINT(57 85)"")",true,0.167278,50,'Dwyane Wade',time(),'Dwight Howard',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.399494,0.442468
+383,104,'DeAndre Jordan',"ST_GeogFromText(""POINT(86 15)"")",true,0.580015,72,'JaVale McGee',time(),'Shaquile O\'Neal',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.505989,0.180706
+383,31,'Kyrie Irving',"ST_GeogFromText(""POINT(19 11)"")",true,0.316361,20,'Marco Belinelli',time(),'Ben Simmons',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.822915,0.950172
+19,19,'Danny Green',"ST_GeogFromText(""POINT(61 26)"")",true,0.112668,71,'DeAndre Jordan',time(),'Kobe Bryant',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.197721,0.833110
+57,57,'Klay Thompson',"ST_GeogFromText(""POINT(6 13)"")",false,0.494272,90,'DeAndre Jordan',time(),null,"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.347401,0.757626
+79,79,'Kyle Anderson',"ST_GeogFromText(""POINT(62 13)"")",false,0.799966,75,'James Harden',time(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.904506,0.185396
+92,92,'JaVale McGee',"ST_GeogFromText(""POINT(89 21)"")",false,0.685996,36,'James Harden',time(),'Amar\'e Stoudemire',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.588093,0.339292
+61,61,'Carmelo Anthony',"ST_GeogFromText(""POINT(59 4)"")",false,0.916238,21,'Tim Duncan',time(),'Ricky Rubio',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.323912,0.683845
+47,47,'Joel Embiid',"ST_GeogFromText(""POINT(0 69)"")",true,0.950730,11,'Paul George',time(),'Kyrie Irving',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.622202,0.517117
+6,6,'Tracy McGrady',"ST_GeogFromText(""POINT(46 45)"")",false,0.257044,28,'LeBron James',time(),'Dwyane Wade',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.865554,0.337066
+62,62,'Paul Gasol',"ST_GeogFromText(""POINT(55 32)"")",false,0.625229,72,'Tim Duncan',time(),'Manu Ginobili',"ST_GeogFromText(""POLYGON((0 1, 1 2, 2 3, 0 1))"")",0.333604,0.610818

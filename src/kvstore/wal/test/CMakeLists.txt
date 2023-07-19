@@ -1,0 +1,81 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+set(WAL_TEST_LIBS
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:memory_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
+)
+
+nebula_add_test(
+    NAME
+        file_based_wal_test
+    SOURCES
+        FileBasedWalTest.cpp
+    OBJECTS
+        ${WAL_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        inmemory_log_buffer_test
+    SOURCES
+        InMemoryLogBufferTest.cpp
+        InMemoryLogBuffer.cpp
+    OBJECTS
+        ${WAL_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        atomic_log_buffer_test
+    SOURCES
+        AtomicLogBufferTest.cpp
+    OBJECTS
+        ${WAL_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        gtest
+)
+
+nebula_add_executable(
+    NAME
+        log_bufferr_bm
+    SOURCES
+        LogBufferBenchmark.cpp
+        InMemoryLogBuffer.cpp
+    OBJECTS
+        ${WAL_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        follybenchmark
+        boost_regex
+)
+
+nebula_add_test(
+    NAME
+        wal_file_iter_test
+    SOURCES
+        WalFileIterTest.cpp
+    OBJECTS
+        ${WAL_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        gtest
+)

@@ -1,0 +1,135 @@
+space:
+  name: nba
+  partitionNum: 1
+  replicaFactor: 1
+  vidType: FIXED_STRING(32)
+  charset: utf8
+  collate: utf8_bin
+schema: |
+  CREATE TAG IF NOT EXISTS player(name string, age int);
+  CREATE TAG IF NOT EXISTS team(name string);
+  CREATE TAG IF NOT EXISTS bachelor(name string, speciality string);
+  CREATE EDGE IF NOT EXISTS like(likeness int);
+  CREATE EDGE IF NOT EXISTS serve(start_year int, end_year int);
+  CREATE EDGE IF NOT EXISTS teammate(start_year int, end_year int);
+  CREATE TAG INDEX IF NOT EXISTS player_name_index ON player(name(64));
+  CREATE TAG INDEX IF NOT EXISTS player_age_index ON player(age);
+  CREATE TAG INDEX IF NOT EXISTS team_name_index ON team(name(64));
+  CREATE TAG INDEX IF NOT EXISTS bachelor_index ON bachelor();
+  CREATE EDGE INDEX IF NOT EXISTS serve_start_end_index ON serve(start_year, end_year);
+  CREATE EDGE INDEX IF NOT EXISTS like_likeness_index ON like(likeness);
+files:
+  - path: ./null.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: player
+          props:
+            - name: name
+              type: string
+              index: 1
+            - name: age
+              type: int
+              index: 2
+  - path: ./player.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: player
+          props:
+            - name: name
+              type: string
+              index: 1
+            - name: age
+              type: int
+              index: 2
+  - path: ./bachelor.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: bachelor
+          props:
+            - name: name
+              type: string
+              index: 1
+            - name: speciality
+              type: string
+              index: 2
+  - path: ./team.csv
+    withHeader: true
+    type: vertex
+    vertex:
+      vid:
+        index: 0
+        type: string
+      tags:
+        - name: team
+          props:
+            - name: name
+              type: string
+              index: 1
+  - path: ./like.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: like
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: likeness
+          type: int
+          index: 2
+  - path: ./serve.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: serve
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      rank:
+        index: 2
+      props:
+        - name: start_year
+          type: int
+          index: 3
+        - name: end_year
+          type: int
+          index: 4
+  - path: ./teammate.csv
+    withHeader: true
+    type: edge
+    edge:
+      name: teammate
+      srcVID:
+        type: string
+        index: 0
+      dstVID:
+        type: string
+        index: 1
+      props:
+        - name: start_year
+          type: int
+          index: 2
+        - name: end_year
+          type: int
+          index: 3

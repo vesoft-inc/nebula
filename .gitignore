@@ -1,0 +1,70 @@
+*.swp
+*.so
+*.DS_Store
+
+# build
+pkg-build
+build
+_build
+_build.log
+_install
+install
+bin/
+install_manifest.txt
+src/version/Version.cpp
+
+# ccls
+.ccls
+.ccls-cache
+compile_commands.json
+# clangd cache
+.clangd/
+
+gen-*
+
+# cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+CTestTestfile.cmake
+CMakeFiles/
+Testing/
+target/
+cluster.id
+pids/
+modules/
+
+# tests
+!tests/Makefile
+tests/secrets
+reformat-gherkin
+nebula-python
+
+# IDE
+.idea/
+.project
+.settings/
+.classpath
+cmake-build*/
+.vscode/
+.cache/
+core.*
+workspace.*
+.metals/
+.cproject
+
+#py
+*.egg-info
+*.pot
+*.py[co]
+__pycache__
+venv/
+
+#lock
+*.lock
+
+#ctags
+.tags
+/.vs

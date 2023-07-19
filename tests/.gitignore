@@ -1,0 +1,3 @@
+.pytest
+.pytest_cache
+tck-report.json

@@ -1,0 +1,21 @@
+FROM vesoft/nebula-dev:centos7 as builder
+
+ENV BUILD_IN_DOCKER TRUE
+ARG VERSION=
+
+COPY . /home/nebula/BUILD
+
+RUN cd /home/nebula/BUILD/package \
+  && ./package.sh -v "${VERSION}"
+
+FROM centos:7
+
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
+
+WORKDIR /usr/local/nebula
+
+RUN rpm -ivh *.rpm \
+  && rm -rf *.rpm
+
+# default entrypoint
+ENTRYPOINT ["/usr/local/nebula/bin/db_dump"]

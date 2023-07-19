@@ -1,0 +1,72 @@
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+nebula_add_library(
+    optimizer_obj
+    OBJECT
+    Optimizer.cpp
+    OptGroup.cpp
+    OptRule.cpp
+    OptContext.cpp
+    rule/PushFilterDownCrossJoinRule.cpp
+    rule/PushFilterDownGetNbrsRule.cpp
+    rule/RemoveNoopProjectRule.cpp
+    rule/CombineFilterRule.cpp
+    rule/CollapseProjectRule.cpp
+    rule/MergeGetVerticesAndDedupRule.cpp
+    rule/MergeGetVerticesAndProjectRule.cpp
+    rule/MergeGetNbrsAndDedupRule.cpp
+    rule/MergeGetNbrsAndProjectRule.cpp
+    rule/MergeLimitAndFulltextIndexScanRule.cpp
+    rule/IndexScanRule.cpp
+    rule/PushLimitDownGetNeighborsRule.cpp
+    rule/PushLimitDownGetVerticesRule.cpp
+    rule/PushLimitDownGetEdgesRule.cpp
+    rule/PushLimitDownFulltextIndexScanRule.cpp
+    rule/PushLimitDownFulltextIndexScanRule2.cpp
+    rule/PushLimitDownExpandAllRule.cpp
+    rule/PushStepSampleDownGetNeighborsRule.cpp
+    rule/PushStepLimitDownGetNeighborsRule.cpp
+    rule/TopNRule.cpp
+    rule/PushEFilterDownRule.cpp
+    rule/PushFilterDownAggregateRule.cpp
+    rule/PushFilterDownProjectRule.cpp
+    rule/PushFilterDownExpandAllRule.cpp
+    rule/PushFilterDownAllPathsRule.cpp
+    rule/PushFilterDownHashInnerJoinRule.cpp
+    rule/PushFilterDownHashLeftJoinRule.cpp
+    rule/PushFilterDownInnerJoinRule.cpp
+    rule/PushFilterDownNodeRule.cpp
+    rule/PushFilterDownScanVerticesRule.cpp
+    rule/PushFilterDownTraverseRule.cpp
+    rule/PushVFilterDownScanVerticesRule.cpp
+    rule/OptimizeEdgeIndexScanByFilterRule.cpp
+    rule/OptimizeTagIndexScanByFilterRule.cpp
+    rule/UnionAllIndexScanBaseRule.cpp
+    rule/UnionAllTagIndexScanRule.cpp
+    rule/UnionAllEdgeIndexScanRule.cpp
+    rule/GeoPredicateIndexScanBaseRule.cpp
+    rule/GeoPredicateTagIndexScanRule.cpp
+    rule/GeoPredicateEdgeIndexScanRule.cpp
+    rule/IndexFullScanBaseRule.cpp
+    rule/TagIndexFullScanRule.cpp
+    rule/EdgeIndexFullScanRule.cpp
+    rule/PushLimitDownIndexScanRule.cpp
+    rule/PushLimitDownProjectRule.cpp
+    rule/PushLimitDownAllPathsRule.cpp
+    rule/EliminateRowCollectRule.cpp
+    rule/PushLimitDownScanAppendVerticesRule.cpp
+    rule/GetEdgesTransformAppendVerticesLimitRule.cpp
+    rule/GetEdgesTransformRule.cpp
+    rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
+    rule/PushTopNDownIndexScanRule.cpp
+    rule/PushLimitDownScanEdgesRule.cpp
+    rule/PushFilterThroughAppendVerticesRule.cpp
+    rule/RemoveAppendVerticesBelowJoinRule.cpp
+    rule/EmbedEdgeAllPredIntoTraverseRule.cpp
+    rule/PushFilterThroughAppendVerticesRule.cpp
+    rule/EliminateFilterRule.cpp
+)
+
+nebula_add_subdirectory(test)

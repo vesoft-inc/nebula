@@ -1,0 +1,38 @@
+name: Auto Cherry Pick 
+on:
+  workflow_dispatch:
+    inputs:
+      pr_label:
+        description: "Cherry pick label such as 'cherry-pick-v3.2'"
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  auto-cherry-pick:
+      #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
+    runs-on: [self-hosted, nebula-fast]
+    container:
+      image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
+      credentials:
+        username: ${{ secrets.HARBOR_USERNAME }}
+        password: ${{ secrets.HARBOR_PASSWORD }}
+    steps:
+      - name: keep workspace empty  
+        run: |
+          rm -rf *
+      - name: git config set
+        env:
+          GH_BOT_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global url."https://${GH_BOT_PAT}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+            export GOPRIVATE="github.com/vesoft-inc"
+      - name: auto cherry pick
+        uses: xigongdaEricyang/cherry-pick-robot@with-python
+        with:
+            repo_token: ${{ secrets.GITHUB_TOKEN }}
+            pr_label: ${{ github.event.inputs.pr_label }}
+            #pr_num: ${{ github.event.pull_request.number }}
+            auto_merge: true

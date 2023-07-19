@@ -1,0 +1,190 @@
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+nebula_add_library(
+    meta_service_handler OBJECT
+    MetaServiceHandler.cpp
+    MetaServiceUtils.cpp
+    ActiveHostsMan.cpp
+    processors/parts/ListHostsProcessor.cpp
+    processors/parts/ListPartsProcessor.cpp
+    processors/parts/CreateSpaceProcessor.cpp
+    processors/parts/CreateSpaceAsProcessor.cpp
+    processors/parts/GetSpaceProcessor.cpp
+    processors/parts/ListSpacesProcessor.cpp
+    processors/parts/DropSpaceProcessor.cpp
+    processors/parts/GetPartsAllocProcessor.cpp
+    processors/parts/AlterSpaceProcessor.cpp
+    processors/schema/CreateTagProcessor.cpp
+    processors/schema/AlterTagProcessor.cpp
+    processors/schema/GetTagProcessor.cpp
+    processors/schema/ListTagsProcessor.cpp
+    processors/schema/DropTagProcessor.cpp
+    processors/schema/CreateEdgeProcessor.cpp
+    processors/schema/AlterEdgeProcessor.cpp
+    processors/schema/GetEdgeProcessor.cpp
+    processors/schema/ListEdgesProcessor.cpp
+    processors/schema/DropEdgeProcessor.cpp
+    processors/schema/SchemaUtil.cpp
+    processors/id/GetWorkerIdProcessor.cpp
+    processors/index/CreateTagIndexProcessor.cpp
+    processors/index/DropTagIndexProcessor.cpp
+    processors/index/GetTagIndexProcessor.cpp
+    processors/index/ListTagIndexesProcessor.cpp
+    processors/index/CreateEdgeIndexProcessor.cpp
+    processors/index/DropEdgeIndexProcessor.cpp
+    processors/index/GetEdgeIndexProcessor.cpp
+    processors/index/ListEdgeIndexesProcessor.cpp
+    processors/service/ServiceProcessor.cpp
+    processors/index/FTIndexProcessor.cpp
+    processors/admin/HBProcessor.cpp
+    processors/admin/AgentHBProcessor.cpp
+    processors/admin/ClearSpaceProcessor.cpp
+    processors/user/AuthenticationProcessor.cpp
+    processors/admin/CreateSnapshotProcessor.cpp
+    processors/admin/DropSnapshotProcessor.cpp
+    processors/admin/ListSnapshotsProcessor.cpp
+    processors/admin/AdminClient.cpp
+    processors/admin/SnapShot.cpp
+    processors/admin/CreateBackupProcessor.cpp
+    processors/admin/RestoreProcessor.cpp
+    processors/admin/ListClusterInfoProcessor.cpp
+    processors/admin/GetMetaDirInfoProcessor.cpp
+    processors/admin/VerifyClientVersionProcessor.cpp
+    processors/admin/SaveGraphVersionProcessor.cpp
+    processors/config/RegConfigProcessor.cpp
+    processors/config/GetConfigProcessor.cpp
+    processors/config/ListConfigsProcessor.cpp
+    processors/config/SetConfigProcessor.cpp
+    processors/job/JobManager.cpp
+    processors/job/JobDescription.cpp
+    processors/job/TaskDescription.cpp
+    processors/job/JobStatus.cpp
+    processors/job/AdminJobProcessor.cpp
+    processors/job/ReportTaskProcessor.cpp
+    processors/job/StorageJobExecutor.cpp
+    processors/job/JobExecutor.cpp
+    processors/job/MetaJobExecutor.cpp
+    processors/job/SimpleConcurrentJobExecutor.cpp
+    processors/job/CompactJobExecutor.cpp
+    processors/job/FlushJobExecutor.cpp
+    processors/job/DownloadJobExecutor.cpp
+    processors/job/IngestJobExecutor.cpp
+    processors/job/BalancePlan.cpp
+    processors/job/BalanceTask.cpp
+    processors/job/BalanceJobExecutor.cpp
+    processors/job/ZoneBalanceJobExecutor.cpp
+    processors/job/DataBalanceJobExecutor.cpp
+    processors/job/LeaderBalanceJobExecutor.cpp
+    processors/job/RebuildJobExecutor.cpp
+    processors/job/RebuildTagJobExecutor.cpp
+    processors/job/RebuildEdgeJobExecutor.cpp
+    processors/job/RebuildFTJobExecutor.cpp
+    processors/job/StatsJobExecutor.cpp
+    processors/job/GetStatsProcessor.cpp
+    processors/job/ListTagIndexStatusProcessor.cpp
+    processors/job/ListEdgeIndexStatusProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
+    processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
+    processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/DivideZoneProcessor.cpp
+    processors/zone/ListZonesProcessor.cpp
+    processors/listener/ListenerProcessor.cpp
+    processors/session/SessionManagerProcessor.cpp
+    processors/id/GetSegmentIdProcessor.cpp
+)
+
+add_dependencies(
+    meta_service_handler
+    meta_version_man_obj
+)
+
+nebula_add_library(
+    meta_version_man_obj OBJECT
+    MetaVersionMan.cpp
+)
+
+add_dependencies(
+    meta_version_man_obj
+    meta_v2_thrift_obj
+)
+
+set(meta_test_deps
+    $<TARGET_OBJECTS:hdfs_helper_obj>
+    $<TARGET_OBJECTS:mock_obj>
+    $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v2_thrift_obj>
+    $<TARGET_OBJECTS:meta_data_upgrade_obj>
+    $<TARGET_OBJECTS:storage_admin_service_handler>
+    $<TARGET_OBJECTS:graph_storage_service_handler>
+    $<TARGET_OBJECTS:storage_transaction_executor>
+    $<TARGET_OBJECTS:storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_base_obj>
+    $<TARGET_OBJECTS:internal_storage_client_obj>
+    $<TARGET_OBJECTS:storage_common_obj>
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:listener_obj>
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
+    $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
+    $<TARGET_OBJECTS:meta_client_obj>
+    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:memory_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:conf_obj>
+    $<TARGET_OBJECTS:codec_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
+    $<TARGET_OBJECTS:segment_id_obj>
+    $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    $<TARGET_OBJECTS:agg_function_manager_obj>
+    $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
+    $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:http_client_obj>
+)
+
+if(ENABLE_STANDALONE_VERSION)
+set(meta_test_deps
+    ${meta_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
+
+nebula_add_subdirectory(http)
+nebula_add_subdirectory(test)
+nebula_add_subdirectory(upgrade)
+nebula_add_subdirectory(stats)

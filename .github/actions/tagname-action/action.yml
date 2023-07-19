@@ -1,0 +1,24 @@
+name: "Extract tag information"
+description: "Extract tag information"
+outputs:
+  tag:
+    description: "tag name"
+    value: ${{ steps.tag.outputs.tag }}
+  tagnum:
+    description: "tag number"
+    value: ${{ steps.tag.outputs.tagnum }}
+  majorver:
+    description: "major version"
+    value: ${{ steps.tag.outputs.majorver }}
+runs:
+  using: "composite"
+  steps:
+    - id: tag
+      run: |
+        tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
+        tagnum=$(echo $tag | sed "s/^v//")
+        majorver=$(echo $tag | cut -d "." -f 1)
+        echo "tag=$tag" >> $GITHUB_OUTPUT
+        echo "tagnum=$tagnum" >> $GITHUB_OUTPUT
+        echo "majorver=$majorver" >> $GITHUB_OUTPUT
+      shell: bash

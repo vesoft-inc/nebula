@@ -1,0 +1,97 @@
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+nebula_add_library(
+    executor_obj OBJECT
+    Executor.cpp
+    StorageAccessExecutor.cpp
+    logic/LoopExecutor.cpp
+    logic/PassThroughExecutor.cpp
+    logic/StartExecutor.cpp
+    logic/SelectExecutor.cpp
+    logic/ArgumentExecutor.cpp
+    query/AggregateExecutor.cpp
+    query/DedupExecutor.cpp
+    query/FilterExecutor.cpp
+    query/FulltextIndexScanExecutor.cpp
+    query/GetEdgesExecutor.cpp
+    query/GetNeighborsExecutor.cpp
+    query/GetVerticesExecutor.cpp
+    query/IntersectExecutor.cpp
+    query/LimitExecutor.cpp
+    query/SampleExecutor.cpp
+    query/MinusExecutor.cpp
+    query/ProjectExecutor.cpp
+    query/UnwindExecutor.cpp
+    query/SortExecutor.cpp
+    query/TopNExecutor.cpp
+    query/IndexScanExecutor.cpp
+    query/SetExecutor.cpp
+    query/UnionExecutor.cpp
+    query/UnionAllVersionVarExecutor.cpp
+    query/DataCollectExecutor.cpp
+    query/JoinExecutor.cpp
+    query/LeftJoinExecutor.cpp
+    query/InnerJoinExecutor.cpp
+    query/IndexScanExecutor.cpp
+    query/AssignExecutor.cpp
+    query/ScanVerticesExecutor.cpp
+    query/ScanEdgesExecutor.cpp
+    query/TraverseExecutor.cpp
+    query/ExpandExecutor.cpp
+    query/ExpandAllExecutor.cpp
+    query/AppendVerticesExecutor.cpp
+    query/RollUpApplyExecutor.cpp
+    query/PatternApplyExecutor.cpp
+    query/ValueExecutor.cpp
+    algo/BFSShortestPathExecutor.cpp
+    algo/MultiShortestPathExecutor.cpp
+    algo/AllPathsExecutor.cpp
+    algo/ShortestPathExecutor.cpp
+    algo/CartesianProductExecutor.cpp
+    algo/SubgraphExecutor.cpp
+    algo/ShortestPathBase.cpp
+    algo/SingleShortestPath.cpp
+    algo/BatchShortestPath.cpp
+    admin/AddHostsExecutor.cpp
+    admin/DropHostsExecutor.cpp
+    admin/SwitchSpaceExecutor.cpp
+    admin/CreateUserExecutor.cpp
+    admin/DropUserExecutor.cpp
+    admin/UpdateUserExecutor.cpp
+    admin/GrantRoleExecutor.cpp
+    admin/RevokeRoleExecutor.cpp
+    admin/ChangePasswordExecutor.cpp
+    admin/ListUserRolesExecutor.cpp
+    admin/ListUsersExecutor.cpp
+    admin/DescribeUserExecutor.cpp
+    admin/ListRolesExecutor.cpp
+    admin/SubmitJobExecutor.cpp
+    admin/ShowHostsExecutor.cpp
+    admin/ShowMetaLeaderExecutor.cpp
+    admin/SpaceExecutor.cpp
+    admin/SnapshotExecutor.cpp
+    admin/ListenerExecutor.cpp
+    admin/PartExecutor.cpp
+    admin/CharsetExecutor.cpp
+    admin/ShowStatsExecutor.cpp
+    admin/ConfigExecutor.cpp
+    admin/ZoneExecutor.cpp
+    admin/ShowServiceClientsExecutor.cpp
+    admin/SignInServiceExecutor.cpp
+    admin/SignOutServiceExecutor.cpp
+    admin/SessionExecutor.cpp
+    admin/ShowQueriesExecutor.cpp
+    admin/KillQueryExecutor.cpp
+    maintain/TagExecutor.cpp
+    maintain/TagIndexExecutor.cpp
+    maintain/EdgeExecutor.cpp
+    maintain/EdgeIndexExecutor.cpp
+    maintain/FTIndexExecutor.cpp
+    mutate/InsertExecutor.cpp
+    mutate/DeleteExecutor.cpp
+    mutate/UpdateExecutor.cpp
+)
+
+nebula_add_subdirectory(test)

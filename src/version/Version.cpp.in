@@ -1,0 +1,38 @@
+/* Copyright (c) 2020 vesoft inc. All rights reserved.
+ *
+ * This source code is licensed under Apache 2.0 License.
+ */
+
+#include <folly/Format.h>
+
+#include "version/Version.h"
+
+#cmakedefine NEBULA_BUILD_VERSION
+
+namespace nebula {
+
+std::string gitInfoSha() { return "@GIT_INFO_SHA@"; }
+
+std::string versionString(bool verbose) {
+  std::string version = getOriginVersion();
+  if (!version.empty()) {
+    version += ", ";
+  }
+  if (verbose) {
+    version += folly::sformat("Git: {}, ", gitInfoSha());
+  }
+  version += folly::sformat("Build Time: {} {}", __DATE__, __TIME__);
+  if (verbose) {
+    version += "\nThis source code is licensed under Apache 2.0 License.";
+  }
+  return version;
+}
+
+std::string getOriginVersion() {
+#if defined(NEBULA_BUILD_VERSION)
+  return "@NEBULA_BUILD_VERSION@";
+#else
+  return "";
+#endif
+}
+}  // namespace nebula

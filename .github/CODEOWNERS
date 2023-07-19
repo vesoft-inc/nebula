@@ -1,0 +1,6 @@
+#Require an approved review in PRs including files with a designated code owner.
+/conf/ @vesoft-inc/tech-committee-reviewers
+/src/kvstore/raftex/ @critical27
+/cmake/ @vesoft-inc/tech-committee-reviewers
+*.thrift @vesoft-inc/tech-committee-reviewers
+*.yy @dutor @codesigner

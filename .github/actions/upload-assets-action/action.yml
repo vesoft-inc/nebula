@@ -1,0 +1,40 @@
+name: 'Upload release assets'
+description: 'Upload file to release assets'
+inputs:
+  tag:
+    description: 'git tag'
+    required: true
+    default: ${{ github.ref }}
+  asset-path:
+    description: 'file path to be uploaded'
+    required: true
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        GH_RELEASE="https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ inputs.tag }}"
+        upload_url=$(curl -s --request GET --url $GH_RELEASE | grep -oP '(?<="upload_url": ")[^"]*' | cut -d'{' -f1)
+        j=0
+        if [ -d ${{ inputs.asset-path }} ]; then
+            for filename in `ls ${{ inputs.asset-path }}`;
+            do
+                folder_list[j]=${{ inputs.asset-path }}/$filename
+                j=`expr $j + 1`
+            done
+        else
+            folder_list[0]=${{ inputs.asset-path }}
+        fi
+        echo "Uploading asset... "
+        for filepath in ${folder_list[@]};
+        do
+            filename=$(basename "${filepath}")
+            content_type=$(file -b --mime-type ${filepath})
+            curl --silent \
+                --request POST \
+                --url "$upload_url?name=$filename" \
+                --header "authorization: Bearer ${{ github.token }}" \
+                --header "content-type: $content_type" \
+                --data-binary @"${filepath}"
+        done
+      shell: bash

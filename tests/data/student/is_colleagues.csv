@@ -1,0 +1,8 @@
+:SRC_VID(string),:DST_VID(string),is_colleagues.start_year:int,is_colleagues.end_year:int
+2001,2002,2015,0
+2001,2007,2014,0
+2001,2003,2018,0
+2003,2004,2013,2017
+2002,2001,2016,2017
+2007,2001,2013,2018
+2010,2008,2018,0

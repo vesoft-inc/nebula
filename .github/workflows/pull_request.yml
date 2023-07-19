@@ -1,0 +1,239 @@
+name: pull_request
+
+on:
+  pull_request:
+    types: [synchronize, reopened, labeled]
+    branches:
+      - master
+      - 'release-**'
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: lint
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/checkout@v3
+        with:
+          clean: false
+      - name: Check License Header
+        uses: apache/skywalking-eyes/header@main 
+      - name: Ensure clang-format-10 is available
+        run: |
+          command -v clang-format-10 > /dev/null || (sudo apt update && sudo apt install -y clang-format-10)
+      - name: Cpplint
+        run: |
+          ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only ${{ github.event.pull_request.base.sha }} HEAD)
+      - name: Format check
+        run: |
+          git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          [ -s /tmp/.clang-format-diff ] && exit 1 || true
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+      - name: Prepare Gherkin exec environ
+        run: make init-all -C tests
+      - name: Check Gherkin feature format
+        run: make check-and-diff -C tests
+
+  build:
+    name: build
+    needs: lint
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+          - ubuntu2004
+        compiler:
+          - gcc-9.3
+          - clang-10
+        exclude:
+          - os: centos7
+            compiler: clang-10
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              cmake \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DNEBULA_USE_LINKER=mold \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DENABLE_TESTING=on \
+                  -GNinja \
+                  -B build
+              ;;
+            ubuntu2004)
+              # build with Debug type
+              cmake \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DNEBULA_USE_LINKER=mold \
+                  -DCMAKE_BUILD_TYPE=Debug \
+                  -DENABLE_TESTING=on \
+                  -DENABLE_COVERAGE=on \
+                  -GNinja \
+                  -B build
+              ;;
+            esac
+            ;;
+          clang-*)
+            # build with Sanitizer
+            cmake \
+                -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
+                -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
+                -DNEBULA_USE_LINKER=mold \
+                -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+                -DENABLE_MEMORY_TRACKER=off \
+                -DENABLE_ASAN=on \
+                -DENABLE_TESTING=on \
+                -GNinja \
+                -B build
+            ;;
+          esac
+      - name: Make
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              ccache -z
+              ninja -j $(nproc)
+              ccache -s
+              ;;
+            ubuntu2004)
+              # build with Debug type
+              ccache -z
+              ninja -j $(nproc)
+              ccache -s
+              ;;
+            esac
+            ;;
+          clang-*)
+            # build with Sanitizer
+            ccache -z
+            ninja -j $(nproc)
+            ccache -s
+            ;;
+          esac
+        working-directory: build/
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup cluster
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make CONTAINERIZED=true ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
+        working-directory: tests/
+        timeout-minutes: 4
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=8 test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false ENABLE_FT_INDEX=true ES_ADDRESS='"elasticsearch":9200' J=8 tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=8 ldbc
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: coverage
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
+      - uses: codecov/codecov-action@v3
+        if: ${{ matrix.compiler == 'gcc-9.3' && matrix.os == 'ubuntu2004' }}
+        with:
+          files: fastcov.info
+          fail_ci_if_error: false
+      - name: Sanitizer
+        if: ${{ always() }}
+        run: |
+          exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  ./build/server_*/logs/
+

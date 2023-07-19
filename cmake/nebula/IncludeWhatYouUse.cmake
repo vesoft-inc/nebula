@@ -1,0 +1,10 @@
+if(ENABLE_INCLUDE_WHAT_YOU_USE)
+  find_program(INCLUDE_WHAT_YOU_USE include-what-you-use)
+  if(INCLUDE_WHAT_YOU_USE)
+    message("use include-what-you-use")
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "include-what-you-use;-Xiwyu;--transitive_includes_only")
+  else()
+    message(STATUS "iwyu requested but executable not found")
+  endif()
+endif()
+

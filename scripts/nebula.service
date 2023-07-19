@@ -1,0 +1,301 @@
+#! /bin/bash
+
+function usage {
+    echo "Usage: ${USAGE_INFO}"
+}
+
+[[ -z ${USAGE_INFO} ]] && USAGE_INFO="${0} [-v] [-c /path/to/config] <start|stop|restart|status|kill> <metad|graphd|storaged|all>"
+
+if [[ $# == 0 ]]; then
+    usage
+    exit 1
+fi
+
+# Original directory
+OLD_DIR=$(pwd)
+# Path to this script
+SCRIPT_PATH=$(readlink -f $0)
+# Directory of this script
+SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
+# Installation directory, i.e. parent of SCRIPT_DIR
+# For now we assume that the directory hierarchy of the nebula installation is:
+# root/bin, root/etc/, root/scripts, etc.
+INSTALL_ROOT=$(cd ${SCRIPT_DIR}/.. &>/dev/null; pwd)
+UTILS_PATH=${SCRIPT_DIR}/utils.sh
+
+cd ${INSTALL_ROOT}
+
+
+[[ -f ${UTILS_PATH} ]] || ERROR_AND_EXIT "${UTILS_PATH} not exist"
+
+source ${UTILS_PATH} || exit 1
+
+function on_exit {
+    cd ${OLD_DIR} &>/dev/null
+}
+
+trap on_exit EXIT
+
+
+ACTION=
+CONFIG=
+DAEMON=
+TARGET=
+TARGETS=()
+VERBOSE=0
+
+# Parsing options from arguments
+while getopts ":hvc:" opt; do
+    case $opt in
+        h)
+            usage
+            exit 0
+            ;;
+        c)
+            CONFIG=${OPTARG}
+            ;;
+        v)
+            VERBOSE=1
+            ;;
+        \?)
+            ERROR "Invalid option: -${OPTARG}"
+            usage
+            exit 1
+            ;;
+        :)
+            ERROR_AND_EXIT "Option -${OPTARG} requires an argument."
+            ;;
+    esac
+done
+
+# Regard the last two operands as `action' and `target'
+shift $((OPTIND - 1))
+if [[ $# != 2 ]]; then
+    usage
+    exit 1
+fi
+ACTION=${1}
+TARGET=${2}
+
+if [ -e ${INSTALL_ROOT}/bin/nebula-standalone ]
+then
+    ALLTARGET=(standalone)
+else
+    ALLTARGET=(metad graphd storaged)
+fi
+
+# Collect the daemons on which we perform the action on
+case ${TARGET} in
+    metad)
+        TARGETS=(${TARGET})
+        ;;
+    graphd)
+        TARGETS=(${TARGET})
+        ;;
+    storaged)
+        TARGETS=(${TARGET})
+        ;;
+    storaged-listener)
+        TARGETS=(${TARGET})
+        ;;
+    standalone)
+        TARGETS=(${TARGET})
+        ;;
+    all)
+        TARGETS=${ALLTARGET[*]}
+        ;;
+    *)
+        ERROR "Unknown daemon \`${DAEMON}'"
+        usage
+        exit 1
+esac
+
+# If the target is `all', the specified config file will be discarded
+if [[ -n ${CONFIG} ]] && [[ ${TARGET} == "all" ]]; then
+    WARN "Config file specified but the target is \`all'"
+    CONFIG=
+fi
+
+
+# args: <daemon name> [config file]
+function start_daemon {
+    local daemon_name=nebula-${1}
+    local config=${2}
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+     if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
+
+    [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    pid_file=$(get_pid_file_from_config ${config})
+    if [[ -f ${pid_file} ]]; then
+        if is_process_running ${pid_file}; then
+            ERROR "${daemon_name} already running: $(cat ${pid_file})"
+            exit 1
+        fi
+    fi
+
+    log_dir=$(get_log_dir_from_config ${config})
+    [[ -z ${log_dir} ]] && log_dir=logs
+    make_log_dir_if_absent ${log_dir} || ERROR_AND_EXIT "Failed to create ${log_dir}"
+
+    local command="${executable} --flagfile ${config}"
+    INFO "Starting ${daemon_name}..."
+    eval ${command}
+    code=$?
+    INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
+}
+
+
+# args: <pid file> [signal name]
+function stop_by_pid_file {
+    local pid_file=${1}
+    local signame=${2}
+    [[ -z ${signame} ]] && signame=TERM
+
+    if is_process_running ${pid_file}; then
+        [[ ${VERBOSE} -ne 0 ]] && INFO "Send SIG${signame} to $(cat ${pid_file})"
+        kill -s ${signame} $(cat ${pid_file})
+    else
+        [[ ${VERBOSE} -ne 0 ]] && INFO "No such process" || code=$?
+    fi
+}
+
+
+# args: <daemon name> [config file]
+function stop_daemon {
+    local daemon_name=nebula-${1}
+    local config=${2}
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
+
+    [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    INFO "Stopping ${daemon_name}..."
+    stop_by_pid_file $(get_pid_file_from_config ${config})
+    code=$? 
+    INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
+}
+
+
+# args: <daemon name> [config file]
+function wait_daemon_to_exit {
+    local daemon_name=nebula-${1}
+    local config=${2}
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
+
+    [[ -e ${executable} ]] || ERROR_AND_EXIT "${executable} not found"
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    wait_for_exit $(get_pid_file_from_config ${config}) 5
+}
+
+
+# args: <daemon name> [config file]
+function restart_daemon {
+    stop_daemon $@
+    wait_daemon_to_exit $@
+    start_daemon $@
+}
+
+
+# args: <daemon name> [config file]
+function kill_daemon {
+    local daemon_name=nebula-${1}
+    local config=${2}
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    INFO "Force killing ${daemon_name}..."
+    stop_by_pid_file $(get_pid_file_from_config ${config}) "KILL"
+    code=$? 
+    INFO "Done"
+    [[ ${code} -ne 0 ]] && exit ${code}
+}
+
+
+# args: <daemon name> [config file]
+function status_daemon {
+    local daemon_name=nebula-${1}
+    local config=${2}
+
+    local executable=${INSTALL_ROOT}/bin/${daemon_name}
+    if [[ $daemon_name == *-listener ]]; then
+        executable=${INSTALL_ROOT}/bin/${daemon_name%-listener*}
+    fi
+
+    local daemon_version=$(daemon_version ${executable})
+
+    [[ -z ${config} ]] && config=${INSTALL_ROOT}/etc/${daemon_name}.conf
+
+    [[ -f ${config} ]] || ERROR_AND_EXIT "${config} not found"
+
+    local pid_file=$(get_pid_file_from_config ${config})
+    if is_process_running ${pid_file}; then
+        local port=$(get_port_from_config ${config})
+        if is_port_listened_on ${port}; then
+            port=${GREEN}${port}${NC}
+        else
+            port=${BLINK}${RED}${port}${NC}
+            if [[ $daemon_name == nebula-storaged ]]; then
+                WARN "${daemon_name} after v3.0.0 will not start service until it is added to cluster."
+                WARN "See Manage Storage hosts:${RED}ADD HOSTS${NC} in https://docs.nebula-graph.io/"
+            fi
+        fi
+        INFO "${daemon_name}(${daemon_version}): Running as $(cat ${pid_file}), Listening on ${port}"
+    else
+        INFO "${daemon_name}(${daemon_version}): Exited"
+    fi
+}
+
+# To perform some environment checking
+env_check
+
+# The main driver
+for DAEMON in ${TARGETS[@]}
+do
+    case ${ACTION} in
+        start)
+            start_daemon ${DAEMON} ${CONFIG}
+            ;;
+        stop)
+            stop_daemon ${DAEMON} ${CONFIG}
+            ;;
+        restart)
+            restart_daemon ${DAEMON} ${CONFIG}
+            ;;
+        kill)
+            kill_daemon ${DAEMON} ${CONFIG}
+            ;;
+        status)
+            status_daemon ${DAEMON} ${CONFIG}
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+exit 0

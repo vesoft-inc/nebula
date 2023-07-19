@@ -1,0 +1,400 @@
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  package:
+    name: build package
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu1604
+          - ubuntu1804
+          - ubuntu2004
+          # - centos6
+          - centos7
+          - centos8
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: "^1.16.7"
+      - name: package
+        run: ./package/package.sh -t Release -r ON -p OFF -s FALSE -k OFF
+      - name: output some vars
+        id: vars
+        env:
+          SHA_EXT: sha256sum.txt
+        run: |
+          find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
+          subdir=$(date -u +%Y.%m.%d)
+          echo "subdir=$subdir" >> $GITHUB_OUTPUT
+      # - uses: actions/upload-artifact@v3
+      #   with:
+      #     name: ${{ matrix.os }}-nightly
+      #     path: pkg-build/cpack_output
+      - uses: ./.github/actions/upload-to-oss-action
+        with:
+          key-id: ${{ secrets.OSS_ID }}
+          key-secret: ${{ secrets.OSS_SECRET }}
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          bucket: nebula-graph
+          asset-path: pkg-build/cpack_output
+          target-path: package/nightly/${{ steps.vars.outputs.subdir }}
+
+  docker:
+    name: build docker image
+    needs: package
+    runs-on: [self-hosted, nebula]
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-graphd:nightly
+          target: graphd
+          cache-to: type=local,dest=/tmp/buildx-cache,mode=max
+          push: true
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-storaged:nightly
+          target: storaged
+          cache-from: type=local,src=/tmp/buildx-cache
+          push: true
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-metad:nightly
+          target: metad
+          cache-from: type=local,src=/tmp/buildx-cache
+          push: true
+      - uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            vesoft/nebula-tools:nightly
+          target: tools
+          cache-from: type=local,src=/tmp/buildx-cache
+          push: true
+      - name: delete the cache
+        run: |
+          rm -rf /tmp/buildx-cache
+
+  coverage:
+    name: coverage
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+        compiler:
+          - gcc-9.3
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      env:
+        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+        CCACHE_MAXSIZE: 8G
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - name: Prepare environment
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        run: |
+          cmake \
+              -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+              -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DENABLE_TESTING=on \
+              -DENABLE_COVERAGE=on \
+              -GNinja \
+              -B build
+      - name: Make
+        run: |
+          ccache -z
+          ninja -j $(($(nproc)/2+1))
+          ccache -s
+        working-directory: build/
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup cluster
+        run: |
+          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=8 test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=8 tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: coverage
+        run: |
+          ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include /usr/lib /opt/vesoft build/ tests/ /test /mock .lex .yy
+      - uses: codecov/codecov-action@v3
+        with:
+          files: fastcov.info
+          fail_ci_if_error: false
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path: ./build/server_*/logs/
+
+  test:
+    name: Tck test
+    needs: package
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu1804
+          - ubuntu2004
+          - centos7
+          - centos8
+        extra_config:
+          - "ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=false"
+          - "ENABLE_SSL=false CA_SIGNED=false QUERY_CONCURRENTLY=true"
+    env:
+      OSS_DIR: nebula-graph/package/nightly
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+    services:
+      elasticsearch:
+        image: elasticsearch:7.17.7
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd "curl elasticsearch:9200"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - name: output some vars
+        id: vars
+        env:
+          SHA_EXT: sha256sum.txt
+        run: |
+          subdir=$(date -u +%Y.%m.%d)
+          echo "subdir=$subdir" >> $GITHUB_OUTPUT
+
+      - id: oss_package
+        run: |
+          case ${{ matrix.os }} in
+          ubuntu1804)
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu1804.amd64.tar.gz" >> $GITHUB_OUTPUT
+            ;;
+          ubuntu2004)
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.ubuntu2004.amd64.tar.gz" >> $GITHUB_OUTPUT
+            ;;
+          centos7)
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el7.x86_64.tar.gz" >> $GITHUB_OUTPUT
+            ;;
+          centos8)
+            echo "p=nebula-graph-${{ steps.vars.outputs.subdir }}-nightly.el8.x86_64.tar.gz" >> $GITHUB_OUTPUT
+            ;;
+          esac
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          echo "j=8" >> $GITHUB_OUTPUT
+      - name: download from oss
+        run: |
+          ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
+                    -i ${{ secrets.OSS_ID }} \
+                    -k  ${{ secrets.OSS_SECRET }} \
+                    -f cp oss://${{ env.OSS_DIR  }}/${{ steps.vars.outputs.subdir }}/${{ steps.oss_package.outputs.p }} \
+                    build/.
+          tar zxvf build/${{ steps.oss_package.outputs.p }} -C build
+          d=`echo ${{ steps.oss_package.outputs.p }} | sed 's/.tar.gz//'`
+          mv build/${d}/* build/.
+
+      - name: Setup cluster
+        run: |
+          make CONTAINERIZED=true ${{ matrix.extra_config }} up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path: ./build/server_*/logs*/
+
+  standalone:
+    name: standalone-build-tck
+    runs-on: [self-hosted, nebula]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - centos7
+        compiler:
+          - gcc-9.3
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - uses: webiny/action-post-run@3.0.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v3
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # build with Release type
+              cmake \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  -DENABLE_TESTING=on \
+                  -DENABLE_STANDALONE_VERSION=on \
+                  -GNinja \
+                  -B build
+              echo "::set-output name=j::8"
+              ;;
+            esac
+            ;;
+          esac
+      - name: Make
+        run: |
+          ccache -z
+          ninja -j $(nproc)
+          ccache -s
+        working-directory: build/
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: |
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -LE segment_id_test
+          ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure -L segment_id_test
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup Cluster
+        run: |
+          make standalone-up
+        working-directory: tests/
+        timeout-minutes: 4
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} standalone-tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: LDBC
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} ldbc
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  ./build/server_*/logs/

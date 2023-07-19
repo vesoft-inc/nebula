@@ -1,0 +1,11 @@
+:VID(string),teacher.grade:int,teacher.subject:string
+2001,5,Math
+2002,3,English
+2003,6,Math
+2004,5,English
+2005,4,Art
+2006,3,Chinese
+2007,2,Science
+2008,4,Music
+2009,2,Sports
+2010,5,Chinese

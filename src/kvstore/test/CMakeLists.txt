@@ -1,0 +1,230 @@
+# Copyright (c) 2022 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+
+set(KVSTORE_TEST_LIBS
+    $<TARGET_OBJECTS:kvstore_obj>
+    $<TARGET_OBJECTS:raftex_obj>
+    $<TARGET_OBJECTS:listener_obj>
+    $<TARGET_OBJECTS:wal_obj>
+    $<TARGET_OBJECTS:disk_man_obj>
+    $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
+    $<TARGET_OBJECTS:codec_obj>
+    $<TARGET_OBJECTS:meta_obj>
+    $<TARGET_OBJECTS:meta_client_obj>
+    $<TARGET_OBJECTS:ws_obj>
+    $<TARGET_OBJECTS:ws_common_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:conf_obj>
+    $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:memory_obj>
+    $<TARGET_OBJECTS:fs_obj>
+    $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
+    $<TARGET_OBJECTS:network_obj>
+    $<TARGET_OBJECTS:thrift_obj>
+    $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:expression_obj>
+    $<TARGET_OBJECTS:ast_match_path_obj>
+    $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
+    $<TARGET_OBJECTS:agg_function_manager_obj>
+    $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
+    $<TARGET_OBJECTS:process_obj>
+    $<TARGET_OBJECTS:es_adapter_obj>
+    $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:http_client_obj>
+)
+
+nebula_add_test(
+    NAME
+        kvstore_common_test
+    SOURCES
+        CommonTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        part_test
+    SOURCES
+        PartTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        rocks_engine_test
+    SOURCES
+        RocksEngineTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        nebula_store_test
+    SOURCES
+        NebulaStoreTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        rocks_engine_config_test
+    SOURCES
+        RocksEngineConfigTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        disk_man_test
+    SOURCES
+        DiskManagerTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        log_encoder_test
+    SOURCES
+        LogEncoderTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_test(
+    NAME
+        snapshot_link_test
+    SOURCES
+        SnapshotLinkTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)
+
+nebula_add_executable(
+    NAME
+        multi_versions_perf_test_bm
+    SOURCES
+        MultiVersionBenchmark.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        follybenchmark
+        boost_regex
+        curl
+)
+
+nebula_add_executable(
+    NAME
+        part_performance_test
+    SOURCES
+        PartPerformanceTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        follybenchmark
+        gtest
+        boost_regex
+        curl
+)
+
+nebula_add_test(
+    NAME
+        rate_limiter_test
+    SOURCES
+        RateLimiterTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+)

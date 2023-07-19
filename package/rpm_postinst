@@ -1,0 +1,11 @@
+#!/bin/bash
+
+daemons=(metad graphd storaged)
+for daemon in ${daemons[@]}
+do
+    if [[ ! -f $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf ]] && [[ -f $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf.default ]]; then
+        cp $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf.default $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf
+        chmod 644 $RPM_INSTALL_PREFIX/etc/nebula-${daemon}.conf
+    fi
+done
+
