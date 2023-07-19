@@ -249,6 +249,11 @@ Feature: Delete int vid of tag
     # delete one tag
     When executing query:
       """
+      GO FROM hash("Tim Duncan") OVER serve YIELD edge as e | DELETE TAG team FROM src($-.e)
+      """
+    Then a SemanticError should be raised at runtime: `src($-.e)' is not an evaluable expression.
+    When executing query:
+      """
       GO FROM hash("Tim Duncan") OVER serve YIELD serve._dst as id | DELETE TAG team FROM $-.id
       """
     Then the execution should be successful
