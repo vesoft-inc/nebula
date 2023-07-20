@@ -40,7 +40,7 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
       .thenValue([this](auto&& status) {
         memory::MemoryCheckGuard guard;
@@ -197,11 +197,12 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
       .thenValue([this](auto&& resps) {
         memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
+        for (auto& respValue : resps) {
+          auto resp = std::move(respValue).value();
           currentDs_.append(std::move(resp));
         }
         preLeftPaths_.swap(leftPaths_);
