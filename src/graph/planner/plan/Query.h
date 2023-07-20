@@ -6,6 +6,8 @@
 #ifndef GRAPH_PLANNER_PLAN_QUERY_H_
 #define GRAPH_PLANNER_PLAN_QUERY_H_
 
+#include <glog/logging.h>
+
 #include "common/expression/AggregateExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -1713,7 +1715,15 @@ class Traverse final : public GetNeighbors {
 
   const std::string& edgeAlias() const {
     DCHECK(!this->colNames().empty());
-    return this->colNames().back();
+    const auto& colNames = this->colNames();
+    auto n = colNames.size();
+
+    if (!genPath_) {
+      return colNames[n - 1];
+    }
+    // When a path needs to be generated, Traverse outputs one more column
+    DCHECK_GT(n, 2);
+    return colNames[n - 2];
   }
 
   void setStepRange(const MatchStepRange& range) {
@@ -2040,6 +2050,28 @@ class PatternApply : public BinaryInputNode {
   // Common columns of subplans on both sides
   std::vector<Expression*> keyCols_;
   bool isAntiPred_{false};
+};
+
+class ValueNode : public SingleInputNode {
+ public:
+  // Value with empty result
+  static ValueNode* make(QueryContext* qctx, PlanNode* dep, DataSet value) {
+    return qctx->objPool()->makeAndAdd<ValueNode>(qctx, dep, std::move(value));
+  }
+
+  Value value() const {
+    return value_;
+  }
+
+ private:
+  friend ObjectPool;
+  ValueNode(QueryContext* qctx, PlanNode* dep, DataSet value)
+      : SingleInputNode(qctx, Kind::kValue, dep), value_(std::move(value)) {
+    setColNames(value_.colNames);
+  }
+
+ private:
+  DataSet value_;
 };
 
 }  // namespace graph

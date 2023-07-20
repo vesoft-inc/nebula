@@ -44,6 +44,7 @@ size_t ShortestPathExecutor::checkInput(HashSet& startVids, HashSet& endVids) {
   auto iter = ectx_->getResult(pathNode_->inputVar()).iter();
   const auto& metaVidType = *(qctx()->rctx()->session()->space().spaceDesc.vid_type_ref());
   auto vidType = SchemaUtil::propTypeToValueType(metaVidType.get_type());
+  bool isZeroStep = pathNode_->stepRange().min() == 0;
   for (; iter->valid(); iter->next()) {
     auto start = iter->getColumn(0);
     auto end = iter->getColumn(1);
@@ -52,8 +53,10 @@ size_t ShortestPathExecutor::checkInput(HashSet& startVids, HashSet& endVids) {
                  << ", end type: " << end.type() << ", space vid type: " << vidType;
       continue;
     }
-    if (start == end) {
-      // continue or return error
+
+    // When the minimum number of steps is 0, and the starting node and the destination node
+    // are the same. the shortest path between the two nodes is 0
+    if (isZeroStep && start == end) {
       continue;
     }
     startVids.emplace(std::move(start));

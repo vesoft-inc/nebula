@@ -746,3 +746,69 @@ Feature: single shortestPath
       | <("JaVale McGee":player{age:31,name:"JaVale McGee"})-[:serve@0{end_year:2018,start_year:2016}]->("Warriors":team{name:"Warriors"})<-[:serve@0{end_year:2009,start_year:2007}]-("Marco Belinelli":player{age:32,name:"Marco Belinelli"})-[:like@0{likeness:50}]->("Tony Parker":player{age:36,name:"Tony Parker"})>                                                                                                                                                                              |
       | <("LeBron James":player{age:34,name:"LeBron James"})<-[:like@0{likeness:99}]-("Dejounte Murray":player{age:29,name:"Dejounte Murray"})-[:like@0{likeness:99}]->("Tony Parker":player{age:36,name:"Tony Parker"})>                                                                                                                                                                                                                                                                               |
       | <("Kings":team{name:"Kings"})<-[:serve@0{end_year:2016,start_year:2015}]-("Marco Belinelli":player{age:32,name:"Marco Belinelli"})-[:like@0{likeness:50}]->("Tony Parker":player{age:36,name:"Tony Parker"})>                                                                                                                                                                                                                                                                                   |
+
+  Scenario: shortestPath for same start and end node
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'})
+      MATCH p = shortestPath((a)-[:like*1..3]-(a))
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: The shortest path algorithm does not work when the start and end nodes are the same
+    When executing query:
+      """
+      MATCH p = shortestPath((a:player{name:'Yao Ming'})-[:like*1..3]-(a))
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: The shortest path algorithm does not work when the start and end nodes are the same
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'}), (b:player{name:'Yao Ming'})
+      MATCH p = shortestPath((a)-[:like*0..3]-(b))
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      MATCH p = shortestPath((a)-[:like*0..3]-(b))
+        WHERE id(a) == 'Yao Ming' AND id(b) == 'Yao Ming'
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'}), (b:player{name:'Yao Ming'})
+      MATCH p = shortestPath((a)-[:like*1..3]-(b))
+      RETURN a, b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                               | b                                               |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'})
+      MATCH p = shortestPath((a)-[:like*1..3]-(b:player{name:'Yao Ming'}))
+      RETURN a,b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                               | b                                               |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+    When executing query:
+      """
+      MATCH p = shortestPath((a:player{name:'Yao Ming'})-[:like*1..3]-(b:player{name:'Yao Ming'}))
+      RETURN a,b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                               | b                                               |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+    When executing query:
+      """
+      MATCH p = shortestPath((a)-[:like*1..3]-(b))
+        WHERE id(a) == 'Yao Ming' AND id(b) == 'Yao Ming'
+      RETURN a,b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                               | b                                               |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |

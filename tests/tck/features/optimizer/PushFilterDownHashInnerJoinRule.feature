@@ -263,19 +263,18 @@ Feature: Push Filter down HashInnerJoin rule
       | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}] | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"}) |
       | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}] | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"}) |
     And the execution plan should be:
-      | id | name           | dependencies | operator info                                                      |
-      | 20 | TopN           | 15           |                                                                    |
-      | 15 | Project        | 14           |                                                                    |
-      | 14 | Filter         | 13           | { "condition": "(($e.likeness>90) OR (vv.team.start_year>2000))" } |
-      | 13 | HashInnerJoin  | 16,12        |                                                                    |
-      | 16 | Project        | 5            |                                                                    |
-      | 5  | AppendVertices | 17           |                                                                    |
-      | 17 | Traverse       | 2            |                                                                    |
-      | 2  | Dedup          | 1            |                                                                    |
-      | 1  | PassThrough    | 3            |                                                                    |
-      | 3  | Start          |              |                                                                    |
-      | 12 | Project        | 11           |                                                                    |
-      | 11 | AppendVertices | 10           |                                                                    |
-      | 10 | Traverse       | 8            |                                                                    |
-      | 8  | Argument       | 9            |                                                                    |
-      | 9  | Start          |              |                                                                    |
+      | id | name           | dependencies | operator info |
+      | 20 | TopN           | 15           |               |
+      | 15 | Project        | 13           |               |
+      | 13 | HashInnerJoin  | 16,12        |               |
+      | 16 | Project        | 5            |               |
+      | 5  | AppendVertices | 17           |               |
+      | 17 | Traverse       | 2            |               |
+      | 2  | Dedup          | 1            |               |
+      | 1  | PassThrough    | 3            |               |
+      | 3  | Start          |              |               |
+      | 12 | Project        | 11           |               |
+      | 11 | AppendVertices | 10           |               |
+      | 10 | Traverse       | 8            |               |
+      | 8  | Argument       | 9            |               |
+      | 9  | Start          |              |               |

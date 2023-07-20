@@ -17,7 +17,7 @@
 #include "storage/StorageFlags.h"
 
 DEFINE_int32(min_level_for_custom_filter,
-             4,
+             0,
              "Minimal level compaction which will go through custom compaction filter");
 
 namespace nebula {

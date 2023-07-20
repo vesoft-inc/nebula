@@ -478,6 +478,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
 std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
                                              size_t minStep,
                                              size_t maxStep) {
+  memory::MemoryCheckGuard guard;
   auto vidIter = adjList_.find(initVertex);
   if (vidIter == adjList_.end()) {
     return std::vector<Row>();

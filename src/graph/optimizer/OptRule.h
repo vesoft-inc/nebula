@@ -128,6 +128,7 @@ class OptRule {
 class RuleSet final {
  public:
   static RuleSet &DefaultRules();
+  static RuleSet &QueryRules0();
   static RuleSet &QueryRules();
 
   RuleSet *addRule(const OptRule *rule);
@@ -137,6 +138,8 @@ class RuleSet final {
   const std::vector<const OptRule *> &rules() const {
     return rules_;
   }
+
+  std::string toString() const;
 
  private:
   explicit RuleSet(const std::string &name);

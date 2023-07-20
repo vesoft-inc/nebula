@@ -169,6 +169,13 @@ class Host final : public std::enable_shared_from_this<Host> {
   nebula::cpp2::ErrorCode canAppendLog() const;
 
   /**
+   * @brief Whether Host can send HB or AskForVote request to the peer
+   *
+   * @return nebula::cpp2::ErrorCode
+   */
+  nebula::cpp2::ErrorCode canSendHBOrVote() const;
+
+  /**
    * @brief Send append log rpc
    *
    * @param eb The eventbase to send rpc
@@ -244,6 +251,12 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   mutable std::mutex lock_;
 
+  // If stopped_ is true, we will not send any request to the peer;
+  // If stopped_ is false:
+  //  1. no mater whether paused_ is true or not, we can send HB request or AskForVote request;
+  //  2. Only if paused_ is false, we can send appendlog request, of course, including HB
+  //     request and AskForRequest request
+  // See canAppendLog() and canSendHBOrVote()
   bool paused_{false};
   bool stopped_{false};
 

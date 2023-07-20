@@ -898,3 +898,73 @@ Feature: allShortestPaths
       | 11 | Argument       |              |               |
       | 14 | Project        | 13           |               |
       | 13 | Argument       |              |               |
+
+  Scenario: allShortestPaths for same start and end node
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'})
+      MATCH p = allShortestPaths((a)-[:like*1..3]-(a))
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: The shortest path algorithm does not work when the start and end nodes are the same
+    When executing query:
+      """
+      MATCH p = allShortestPaths((a:player{name:'Yao Ming'})-[:like*1..3]-(a))
+      RETURN p
+      """
+    Then a SemanticError should be raised at runtime: The shortest path algorithm does not work when the start and end nodes are the same
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'}), (b:player{name:'Yao Ming'})
+      MATCH p = allShortestPaths((a)-[:like*0..3]-(b))
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      MATCH p = allShortestPaths((a)-[:like*0..3]-(b))
+        WHERE id(a) == 'Yao Ming' AND id(b) == 'Yao Ming'
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'}), (b:player{name:'Yao Ming'})
+      MATCH p = allShortestPaths((a)-[:like*1..3]-(b))
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                     |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})>       |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
+    When executing query:
+      """
+      MATCH (a:player{name:'Yao Ming'})
+      MATCH p = allShortestPaths((a)-[:like*1..3]-(b:player{name:'Yao Ming'}))
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                     |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})>       |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
+    When executing query:
+      """
+      MATCH p = allShortestPaths((a:player{name:'Yao Ming'})-[:like*1..3]-(b:player{name:'Yao Ming'}))
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                     |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})>       |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
+    When executing query:
+      """
+      MATCH p = allShortestPaths((a)-[:like*1..3]-(b))
+        WHERE id(a) == 'Yao Ming' AND id(b) == 'Yao Ming'
+      RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                     |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})>       |
+      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
