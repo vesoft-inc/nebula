@@ -40,11 +40,20 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this](auto&& status) {
+      .thenValue([this](std::vector<folly::Try<Status>>&& resps) {
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+        }
         memory::MemoryCheckGuard guard;
-        UNUSED(status);
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
@@ -132,9 +141,6 @@ DataSet ProduceAllPathsExecutor::doConjunct(Interims::iterator startIter,
         auto backwardPath = rPath;
         backwardPath.reverse();
         forwardPath.append(std::move(backwardPath));
-        if (memoryExceeded_.load(std::memory_order_acquire) == true) {
-          return ds;
-        }
         if (forwardPath.hasDuplicateEdges()) {
           continue;
         }
@@ -197,11 +203,19 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures)
-      .via(runner())
-      .thenValue([this](auto&& resps) {
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<DataSet>>&& resps) {
         memory::MemoryCheckGuard guard;
-        for (auto& resp : resps) {
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto resp = std::move(respVal).value();
           currentDs_.append(std::move(resp));
         }
         preLeftPaths_.swap(leftPaths_);
@@ -209,14 +223,6 @@ folly::Future<Status> ProduceAllPathsExecutor::conjunctPath() {
         leftPaths_.clear();
         rightPaths_.clear();
         return Status::OK();
-      })
-      .thenError(folly::tag_t<std::bad_alloc>{},
-                 [this](const std::bad_alloc&) {
-                   memoryExceeded_ = true;
-                   return folly::makeFuture<Status>(Executor::memoryExceededStatus());
-                 })
-      .thenError(folly::tag_t<std::exception>{}, [](const std::exception& e) {
-        return folly::makeFuture<Status>(std::runtime_error(e.what()));
       });
 }
 
