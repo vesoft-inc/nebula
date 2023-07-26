@@ -11,7 +11,6 @@
 #include "graph/util/ToJson.h"
 namespace nebula {
 namespace graph {
-
 PlanNode* AllPaths::clone() const {
   auto* path = AllPaths::make(qctx_, nullptr, nullptr, space_, steps_, noLoop_, withProp_);
   path->cloneMembers(*this);

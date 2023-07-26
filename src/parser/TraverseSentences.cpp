@@ -236,6 +236,10 @@ std::string FindPathSentence::toString() const {
     buf += " ";
     buf += yield_->toString();
   }
+  if (limit_ != nullptr) {
+    buf += " ";
+    buf += limit_->toString();
+  }
   return buf;
 }
 

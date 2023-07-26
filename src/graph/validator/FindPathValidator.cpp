@@ -27,6 +27,10 @@ Status FindPathValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateWhere(fpSentence->where()));
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(fpSentence->step(), pathCtx_->steps));
   NG_RETURN_IF_ERROR(validateYield(fpSentence->yield()));
+  auto limitClause = fpSentence->limit();
+  if (limitClause != nullptr) {
+    pathCtx_->limit = limitClause->limit();
+  }
 
   return Status::OK();
 }

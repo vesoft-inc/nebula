@@ -240,10 +240,6 @@ DataSet MultiShortestPathExecutor::doConjunct(
       [this](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
         for (const auto& leftPath : leftPaths) {
           for (const auto& rightPath : rightPaths) {
-            cnt_.fetch_add(1, std::memory_order_relaxed);
-            if (cnt_.load(std::memory_order_relaxed) > limit_) {
-              break;
-            }
             auto forwardPath = leftPath;
             auto backwardPath = rightPath;
             backwardPath.reverse();
@@ -251,8 +247,11 @@ DataSet MultiShortestPathExecutor::doConjunct(
             Row row;
             row.values.emplace_back(std::move(forwardPath));
             ds.rows.emplace_back(std::move(row));
+            cnt_.fetch_add(1, std::memory_order_relaxed);
             if (singleShortest_) {
               return;
+            if (cnt_.load(std::memory_order_relaxed) > limit_) {
+              break;
             }
           }
         }

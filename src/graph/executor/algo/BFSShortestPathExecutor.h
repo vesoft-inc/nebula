@@ -71,6 +71,8 @@ class BFSShortestPathExecutor final : public Executor {
   std::vector<std::unordered_multimap<Value, Edge>> allRightEdges_;
   DataSet currentDs_;
   std::string terminateEarlyVar_;
+  size_t limit_{std::numeric_limits<size_t>::max()};
+  std::atomic<size_t> cnt_{0};
 };
 }  // namespace graph
 }  // namespace nebula

@@ -79,6 +79,7 @@ using namespace nebula;
     nebula::ColumnNameList                 *column_name_list;
     nebula::StepClause                     *step_clause;
     nebula::StepClause                     *find_path_upto_clause;
+    nebula::LimitClause                    *find_path_limit_clause;
     nebula::FromClause                     *from_clause;
     nebula::ToClause                       *to_clause;
     nebula::VertexIDList                   *vid_list;
@@ -307,6 +308,7 @@ using namespace nebula;
 %type <edge_key_ref> edge_key_ref
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
+%type <find_path_limit_clause> find_path_limit_clause
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
@@ -2282,7 +2284,7 @@ find_path_sentence
         s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
+    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause find_path_limit_clause {
         auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
@@ -2290,6 +2292,7 @@ find_path_sentence
         s->setWhere($8);
         s->setStep($9);
         s->setYield($10);
+        s->setLimit($11);
         $$ = s;
     }
     | KW_FIND KW_SINGLE KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
@@ -2324,6 +2327,13 @@ find_path_upto_clause
     : %empty { $$ = new StepClause(5); }
     | KW_UPTO legal_integer KW_STEPS {
         $$ = new StepClause($2);
+    }
+    ;
+
+find_path_limit_clause
+    : %empty { $$ = new LimitClause(-1); }
+    | KW_LIMIT legal_integer {
+        $$ = new LimitClause($2);
     }
     ;
 

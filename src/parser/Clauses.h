@@ -10,6 +10,21 @@
 #include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
+class LimitClause final {
+ public:
+  explicit LimitClause(int64_t limit) : limit_(limit) {}
+
+  std::string toString() const {
+    return folly::stringPrintf("LIMIT %ld", limit_);
+  }
+
+  int64_t limit() const {
+    return limit_;
+  }
+
+ private:
+  int64_t limit_{-1};
+};
 class StepClause final {
  public:
   explicit StepClause(uint32_t steps = 1) {
