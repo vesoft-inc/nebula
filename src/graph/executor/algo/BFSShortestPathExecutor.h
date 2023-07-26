@@ -55,7 +55,7 @@ class BFSShortestPathExecutor final : public Executor {
 
   folly::Future<Status> conjunctPath();
 
-  DataSet doConjunct(const std::vector<Value>& meetVids, bool oddStep) const;
+  DataSet doConjunct(const std::vector<Value>& meetVids, bool oddStep);
 
   std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids,
                                                   bool reverse,

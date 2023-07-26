@@ -14,6 +14,9 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   singleShortest_ = pathNode_->singleShortest();
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
 
   if (step_ == 1) {
@@ -198,14 +201,17 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
       });
 }
 
-DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
-                                            bool oddStep) const {
+DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, bool oddStep) {
   DataSet ds;
   auto leftPaths = createPath(meetVids, false, oddStep);
   auto rightPaths = createPath(meetVids, true, oddStep);
   for (auto& leftPath : leftPaths) {
     auto range = rightPaths.equal_range(leftPath.first);
     for (auto& rightPath = range.first; rightPath != range.second; ++rightPath) {
+      cnt_.fetch_add(1, std::memory_order_relaxed);
+      if (cnt_.load(std::memory_order_relaxed) > limit_) {
+        return ds;
+      }
       Path result = leftPath.second;
       result.reverse();
       result.append(rightPath->second);
