@@ -40,12 +40,41 @@ void AllPaths::cloneMembers(const AllPaths& path) {
   }
 }
 
+PlanNode* BFSShortestPath::clone() const {
+  auto* path = BFSShortestPath::make(qctx_, nullptr, nullptr, steps_);
+  path->cloneMembers(*this);
+  return path;
+}
+
+void BFSShortestPath::cloneMembers(const BFSShortestPath& path) {
+  BinaryInputNode::cloneMembers(path);
+  leftVidVar_ = path.leftVidVar_;
+  rightVidVar_ = path.rightVidVar_;
+  terminateEarlyVar_ = path.terminateEarlyVar_;
+  limit_ = path.limit_;
+}
+
+PlanNode* MultiShortestPath::clone() const {
+  auto* path = MultiShortestPath::make(qctx_, nullptr, nullptr, steps_);
+  path->cloneMembers(*this);
+  return path;
+}
+
+void MultiShortestPath::cloneMembers(const MultiShortestPath& path) {
+  BinaryInputNode::cloneMembers(path);
+  leftVidVar_ = path.leftVidVar_;
+  rightVidVar_ = path.rightVidVar_;
+  terminationVar_ = path.terminationVar_;
+  limit_ = path.limit_;
+}
+
 std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   auto desc = BinaryInputNode::explain();
   addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
   addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
+  addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
   return desc;
 }
 
@@ -55,6 +84,7 @@ std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
+  addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
   return desc;
 }
 

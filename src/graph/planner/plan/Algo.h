@@ -59,6 +59,16 @@ class MultiShortestPath : public BinaryInputNode {
     singleShortest_ = singleShortest;
   }
 
+  void setLimit(int64_t limit) {
+    limit_ = limit;
+  }
+
+  int64_t limit() const {
+    return limit_;
+  }
+
+  PlanNode* clone() const override;
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
@@ -66,12 +76,15 @@ class MultiShortestPath : public BinaryInputNode {
   MultiShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
       : BinaryInputNode(qctx, Kind::kMultiShortestPath, left, right), steps_(steps) {}
 
+  void cloneMembers(const MultiShortestPath&);
+
  private:
   bool singleShortest_{false};
-  size_t steps_{0};
   std::string leftVidVar_;
   std::string rightVidVar_;
   std::string terminationVar_;
+  size_t steps_{0};
+  int64_t limit_{-1};
 };
 
 class BFSShortestPath : public BinaryInputNode {
@@ -116,6 +129,16 @@ class BFSShortestPath : public BinaryInputNode {
     singleShortest_ = singleShortest;
   }
 
+  void setLimit(int64_t limit) {
+    limit_ = limit;
+  }
+
+  int64_t limit() const {
+    return limit_;
+  }
+
+  PlanNode* clone() const override;
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
@@ -123,12 +146,15 @@ class BFSShortestPath : public BinaryInputNode {
   BFSShortestPath(QueryContext* qctx, PlanNode* left, PlanNode* right, size_t steps)
       : BinaryInputNode(qctx, Kind::kBFSShortest, left, right), steps_(steps) {}
 
+  void cloneMembers(const BFSShortestPath&);
+
  private:
   bool singleShortest_{false};
   std::string leftVidVar_;
   std::string rightVidVar_;
   std::string terminateEarlyVar_;
   size_t steps_{0};
+  int64_t limit_{-1};
 };
 
 class AllPaths final : public BinaryInputNode {
