@@ -2331,7 +2331,7 @@ find_path_upto_clause
     ;
 
 find_path_limit_clause
-    : %empty { $$ = new LimitClause(-1); }
+    : %empty { $$ = nullptr; }
     | KW_LIMIT legal_integer {
         $$ = new LimitClause($2);
     }
