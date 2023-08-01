@@ -35,6 +35,7 @@ class YieldValidator final : public Validator {
  private:
   Status validateYieldAndBuildOutputs(const YieldClause *clause);
   Status validateWhere(const WhereClause *clause);
+  Status validateJoin(const JoinClause *clause);
   Status makeOutputColumn(YieldColumn *column);
   Status makeImplicitGroupByValidator();
   Status validateImplicitGroupBy();

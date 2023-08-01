@@ -34,6 +34,7 @@ Status YieldValidator::validateImpl() {
   } else {
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
   }
+  NG_RETURN_IF_ERROR(validateJoin(yield->joinClause()));
 
   if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty() ||
       !exprProps_.edgeProps().empty()) {
@@ -169,6 +170,43 @@ Status YieldValidator::validateWhere(const WhereClause *where) {
   auto foldRes = ExpressionUtils::foldConstantExpr(filter);
   NG_RETURN_IF_ERROR(foldRes);
   filterCondition_ = foldRes.value();
+  return Status::OK();
+}
+
+Status YieldValidator::validateJoin(const JoinClause *join) {
+  if (join == nullptr) {
+    return Status::OK();
+  }
+  auto *leftVarExpr = join->leftVarExpr();
+  auto *rightVarExpr = join->rightVarExpr();
+  DCHECK_EQ(leftVarExpr->kind(), Expression::Kind::kVar);
+  DCHECK_EQ(rightVarExpr->kind(), Expression::Kind::kVar);
+  auto leftVar = static_cast<VariableExpression *>(leftVarExpr)->var();
+  auto rightVar = static_cast<VariableExpression *>(rightVarExpr)->var();
+
+  auto *leftConditionExpr = join->leftConditionExpr();
+  auto *rightConditionExpr = join->rightConditionExpr();
+  DCHECK_EQ(leftConditionExpr->kind(), Expression::Kind::kVarProperty);
+  DCHECK_EQ(rightConditionExpr->kind(), Expression::Kind::kVarProperty);
+  auto &leftConditionVar = static_cast<VariablePropertyExpression *>(leftConditionExpr)->sym();
+  auto &rightConditionVar = static_cast<VariablePropertyExpression *>(rightConditionExpr)->sym();
+
+  if (leftVar != leftConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 leftVar.c_str(),
+                                 leftConditionVar.c_str());
+  }
+
+  if (rightVar != rightConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 rightVar.c_str(),
+                                 rightConditionVar.c_str());
+  }
+
+  auto typeStatus = deduceExprType(leftConditionExpr);
+  NG_RETURN_IF_ERROR(typeStatus);
+  typeStatus = deduceExprType(rightConditionExpr);
+  NG_RETURN_IF_ERROR(typeStatus);
   return Status::OK();
 }
 

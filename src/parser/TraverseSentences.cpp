@@ -252,6 +252,10 @@ std::string YieldSentence::toString() const {
     buf += " ";
     buf += whereClause_->toString();
   }
+  if (joinClause_ != nullptr) {
+    buf += " ";
+    buf += joinClause_->toString();
+  }
   return buf;
 }
 

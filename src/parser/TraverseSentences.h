@@ -540,6 +540,10 @@ class YieldSentence final : public Sentence {
     whereClause_.reset(clause);
   }
 
+  void setJoinClause(JoinClause* clause) {
+    joinClause_.reset(clause);
+  }
+
   WhereClause* where() const {
     return whereClause_.get();
   }
@@ -548,11 +552,16 @@ class YieldSentence final : public Sentence {
     return yieldClause_.get();
   }
 
+  JoinClause* joinClause() const {
+    return joinClause_.get();
+  }
+
   std::string toString() const override;
 
  private:
   std::unique_ptr<YieldClause> yieldClause_;
   std::unique_ptr<WhereClause> whereClause_;
+  std::unique_ptr<JoinClause> joinClause_;
 };
 
 class GroupBySentence final : public Sentence {
