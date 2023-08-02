@@ -206,13 +206,13 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
   if (leftVar_ != leftConditionVar) {
     return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
                                  leftVar_.c_str(),
-                                 leftConditionVar.c_str());
+                                 leftConditionExpr_->toString().c_str());
   }
 
   if (rightVar_ != rightConditionVar) {
     return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
                                  rightVar_.c_str(),
-                                 rightConditionVar.c_str());
+                                 rightConditionExpr_->toString().c_str());
   }
 
   auto typeStatus = deduceExprType(leftConditionExpr_);
