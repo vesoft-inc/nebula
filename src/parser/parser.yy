@@ -19,7 +19,6 @@
 #include <cstddef>
 #include "parser/ExplainSentence.h"
 #include "parser/SequentialSentences.h"
-#include "parser/Clauses.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "common/expression/AttributeExpression.h"
 #include "common/expression/LabelAttributeExpression.h"

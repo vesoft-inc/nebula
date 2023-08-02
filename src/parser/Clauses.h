@@ -525,6 +525,10 @@ class JoinClause final {
     return rightConditionExpr_;
   }
 
+  JoinMode joinMode() const {
+    return joinMode_;
+  }
+
   std::string toString() const;
 
  private:
