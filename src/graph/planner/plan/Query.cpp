@@ -703,6 +703,10 @@ std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
 PlanNode* DataCollect::clone() const {
   auto* newDataCollect = DataCollect::make(qctx_, kind_);
   newDataCollect->cloneMembers(*this);
+  // when cloning, the number of dependencies will be lost, needs to be added manually
+  for (size_t i = 0; i < numDeps(); ++i) {
+    newDataCollect->addDep(nullptr);
+  }
   return newDataCollect;
 }
 
