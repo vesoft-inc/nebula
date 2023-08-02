@@ -20,8 +20,8 @@ namespace graph {
 Status ExpandAllExecutor::buildRequestVids() {
   SCOPED_TIMER(&execTime_);
   const auto& inputVar = expand_->inputVar();
-  auto inputIter = ectx_->getResult(inputVar).iterRef();
-  auto iter = static_cast<SequentialIter*>(inputIter);
+  auto inputIter = ectx_->getResult(inputVar).iter();
+  auto iter = static_cast<SequentialIter*>(inputIter.get());
   size_t iterSize = iter->size();
   nextStepVids_.reserve(iterSize);
   if (joinInput_) {
