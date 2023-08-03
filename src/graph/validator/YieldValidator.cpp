@@ -198,6 +198,31 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
   DCHECK_EQ(rightConditionExpr_->kind(), Expression::Kind::kVarProperty);
   auto &leftConditionVar = static_cast<VariablePropertyExpression *>(leftConditionExpr_)->sym();
   auto &rightConditionVar = static_cast<VariablePropertyExpression *>(rightConditionExpr_)->sym();
+  auto &leftConditionCol = static_cast<VariablePropertyExpression *>(leftConditionExpr_)->prop();
+  auto &rightConditionCol = static_cast<VariablePropertyExpression *>(rightConditionExpr_)->prop();
+
+  auto *varPtr = qctx_->symTable()->getVar(leftVar_);
+  DCHECK(varPtr != nullptr);
+  std::vector<std::string> leftColNames = varPtr->colNames;
+  varPtr = qctx_->symTable()->getVar(rightVar_);
+  DCHECK(varPtr != nullptr);
+  std::vector<std::string> rightColNames = varPtr->colNames;
+  for (auto &leftColName : leftColNames) {
+    if (leftColName == leftConditionCol) {
+      continue;
+    }
+    for (auto &rightColName : rightColNames) {
+      if (rightColName != rightConditionCol && rightColName == leftColName) {
+        return Status::SemanticError(
+            "column name `%s' of $%s and column name `%s' of $%s are the same, please rename it to "
+            "a non-duplicate column name.",
+            leftColName.c_str(),
+            leftVar_.c_str(),
+            rightColName.c_str(),
+            rightVar_.c_str());
+      }
+    }
+  }
 
   if (leftVar_ == rightVar_) {
     return Status::SemanticError("do not support self-join.");
@@ -224,11 +249,8 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
 
 Status YieldValidator::buildJoinPlan() {
   auto *varPtr = qctx_->symTable()->getVar(leftVar_);
-  DCHECK(varPtr != nullptr);
   std::vector<std::string> colNames = varPtr->colNames;
-
   varPtr = qctx_->symTable()->getVar(rightVar_);
-  DCHECK(varPtr != nullptr);
   colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
 
   auto *join = InnerJoin::make(qctx_,

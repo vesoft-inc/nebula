@@ -10,6 +10,13 @@ Feature: join
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
+      $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e;
+      YIELD $a.vid AS id, $b.e AS e FROM $a INNER JOIN $b ON $a.vid == $b.vid
+      """
+    Then a SemanticError should be raised at runtime:  column name `e' of $a and column name `e' of $b are the same, please rename it to a non-duplicate column name.
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
       $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e2;
       YIELD $a.vid AS id, $b.e2 AS e FROM $a LEFT JOIN $b ON $a.vid == $b.vid
       """
