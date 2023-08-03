@@ -18,6 +18,27 @@ Feature: join
       """
       $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
       $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e2;
+      YIELD $a.vid AS id, $b.e2 AS e FROM $a RIGHT JOIN $b ON $a.vid == $b.vid
+      """
+    Then a SemanticError should be raised at runtime:  only support inner join.
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
+      $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e2;
+      YIELD $a.vid AS id, $b.e2 AS e FROM $a OUTER JOIN $b ON $a.vid == $b.vid
+      """
+    Then a SemanticError should be raised at runtime:  only support inner join.
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
+      $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e2;
+      YIELD $a.vid AS id, $b.e2 AS e FROM $a SEMI JOIN $b ON $a.vid == $b.vid
+      """
+    Then a SemanticError should be raised at runtime:  only support inner join.
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
+      $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e2;
       YIELD $a.vid AS id, $b.e2 AS e FROM $a INNER JOIN $a ON $a.vid == $a.vid
       """
     Then a SemanticError should be raised at runtime:  do not support self-join.
@@ -79,6 +100,38 @@ Feature: join
       | "LaMarcus Aldridge" | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
       | "Manu Ginobili"     | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
       | "Tim Duncan"        | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as dst, edge as e;
+      $b = GO FROM $a.dst OVER like YIELD id($^) as src, id($$) as vid, edge AS e2;
+      YIELD $b.vid AS vid, $a.e AS e1, $b.e2 AS e2 FROM $a INNER JOIN $b ON $a.dst == $b.src
+      | GO FROM $-.vid OVER like YIELD $-.vid AS src, $$ AS dst, $-.e1 AS e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src                 | dst                                                                                                         | e                                                       |
+      | "LaMarcus Aldridge" | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "LaMarcus Aldridge" | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Tim Duncan"        | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | "Tim Duncan"        | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Manu Ginobili"     | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as dst, edge as e;
+      $b = GO FROM $a.dst OVER like YIELD id($^) as src, id($$) as vid, edge AS e2;
+      $c = YIELD $b.vid AS vid, $a.e AS e1, $b.e2 AS e2 FROM $a INNER JOIN $b ON $a.dst == $b.src;
+      GO FROM $c.vid OVER like YIELD $c.vid AS src, $$ AS dst, $c.e1 AS e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src                 | dst                                                                                                         | e                                                       |
+      | "LaMarcus Aldridge" | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "LaMarcus Aldridge" | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Tim Duncan"        | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | "Tim Duncan"        | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+      | "Manu Ginobili"     | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
 
   Scenario: join lookup
     When executing query:
@@ -88,7 +141,7 @@ Feature: join
       YIELD $b.vid AS vid, $a.v AS v, $b.e2 AS e2 FROM $a INNER JOIN $b ON $a.dst == $b.src
       """
     Then the result should be, in any order, with relax comparison:
-      | vid                 | e1                                                    | e2                                                           |
+      | vid                 | v                                                     | e2                                                           |
       | "LaMarcus Aldridge" | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
       | "Manu Ginobili"     | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
       | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"}) | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
