@@ -75,6 +75,7 @@ class MultiShortestPathExecutor final : public Executor {
 
  private:
   const MultiShortestPath* pathNode_{nullptr};
+  bool singleShortest_{false};
   size_t step_{1};
   std::string terminationVar_;
   // {src, <dst, true>}

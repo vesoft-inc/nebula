@@ -449,6 +449,10 @@ class FindPathSentence final : public Sentence {
     yield_.reset(yield);
   }
 
+  void setSingleShortest(bool singleShortest) {
+    singleShortest_ = singleShortest;
+  }
+
   FromClause* from() const {
     return from_.get();
   }
@@ -485,12 +489,17 @@ class FindPathSentence final : public Sentence {
     return noLoop_;
   }
 
+  bool singleShortest() const {
+    return singleShortest_;
+  }
+
   std::string toString() const override;
 
  private:
   bool isShortest_;
   bool withProp_;
   bool noLoop_;
+  bool singleShortest_{false};
   std::unique_ptr<FromClause> from_;
   std::unique_ptr<ToClause> to_;
   std::unique_ptr<OverClause> over_;

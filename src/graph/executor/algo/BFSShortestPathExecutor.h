@@ -63,6 +63,7 @@ class BFSShortestPathExecutor final : public Executor {
 
  private:
   const BFSShortestPath* pathNode_{nullptr};
+  bool singleShortest_{false};
   size_t step_{1};
   HashSet leftVisitedVids_;
   HashSet rightVisitedVids_;

@@ -201,6 +201,22 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
   auto &leftConditionCol = static_cast<VariablePropertyExpression *>(leftConditionExpr_)->prop();
   auto &rightConditionCol = static_cast<VariablePropertyExpression *>(rightConditionExpr_)->prop();
 
+  if (leftVar_ == rightVar_) {
+    return Status::SemanticError("do not support self-join.");
+  }
+
+  if (leftVar_ != leftConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 leftVar_.c_str(),
+                                 leftConditionExpr_->toString().c_str());
+  }
+
+  if (rightVar_ != rightConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 rightVar_.c_str(),
+                                 rightConditionExpr_->toString().c_str());
+  }
+
   auto *varPtr = qctx_->symTable()->getVar(leftVar_);
   DCHECK(varPtr != nullptr);
   std::vector<std::string> leftColNames = varPtr->colNames;
@@ -222,22 +238,6 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
             rightVar_.c_str());
       }
     }
-  }
-
-  if (leftVar_ == rightVar_) {
-    return Status::SemanticError("do not support self-join.");
-  }
-
-  if (leftVar_ != leftConditionVar) {
-    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
-                                 leftVar_.c_str(),
-                                 leftConditionExpr_->toString().c_str());
-  }
-
-  if (rightVar_ != rightConditionVar) {
-    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
-                                 rightVar_.c_str(),
-                                 rightConditionExpr_->toString().c_str());
   }
 
   auto typeStatus = deduceExprType(leftConditionExpr_);

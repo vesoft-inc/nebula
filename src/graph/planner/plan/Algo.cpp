@@ -45,6 +45,7 @@ std::unique_ptr<PlanNodeDescription> BFSShortestPath::explain() const {
   addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
   addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
   return desc;
 }
 
@@ -53,6 +54,7 @@ std::unique_ptr<PlanNodeDescription> MultiShortestPath::explain() const {
   addDescription("LeftNextVidVar", folly::toJson(util::toJson(leftVidVar_)), desc.get());
   addDescription("RightNextVidVar", folly::toJson(util::toJson(rightVidVar_)), desc.get());
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
+  addDescription("singleShortest", folly::toJson(util::toJson(singleShortest_)), desc.get());
   return desc;
 }
 

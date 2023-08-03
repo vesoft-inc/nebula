@@ -204,6 +204,9 @@ std::string FindPathSentence::toString() const {
   if (noLoop_) {
     buf += " NOLOOP PATH";
   } else if (isShortest_) {
+    if (singleShortest_) {
+      buf += " SINGLE ";
+    }
     buf += " SHORTEST PATH";
   } else {
     buf += " ALL PATH";

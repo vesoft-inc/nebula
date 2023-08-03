@@ -2278,6 +2278,17 @@ find_path_sentence
         s->setYield($10);
         $$ = s;
     }
+    | KW_FIND KW_SINGLE KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
+        auto *s = new FindPathSentence(true, $5, false);
+        s->setSingleShortest(true);
+        s->setFrom($6);
+        s->setTo($7);
+        s->setOver($8);
+        s->setWhere($9);
+        s->setStep($10);
+        s->setYield($11);
+        $$ = s;
+    }
     | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, true);
         s->setFrom($5);
