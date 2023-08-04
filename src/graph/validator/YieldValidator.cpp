@@ -248,17 +248,26 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
 }
 
 Status YieldValidator::buildJoinPlan() {
+  PlanNode *leftDep = nullptr;
+  PlanNode *rightDep = nullptr;
   auto *varPtr = qctx_->symTable()->getVar(leftVar_);
   std::vector<std::string> colNames = varPtr->colNames;
+
+  DCHECK_EQ(varPtr->writtenBy.size(), 1);
+  for (auto node : varPtr->writtenBy) {
+    leftDep = node;
+  }
+
   varPtr = qctx_->symTable()->getVar(rightVar_);
   colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
+  DCHECK_EQ(varPtr->writtenBy.size(), 1);
+  for (auto node : varPtr->writtenBy) {
+    rightDep = node;
+  }
 
-  auto *join = InnerJoin::make(qctx_,
-                               nullptr,
-                               {leftVar_, ExecutionContext::kLatestVersion},
-                               {rightVar_, ExecutionContext::kLatestVersion},
-                               {leftConditionExpr_},
-                               {rightConditionExpr_});
+  auto *join =
+      HashInnerJoin::make(qctx_, leftDep, rightDep, {leftConditionExpr_}, {rightConditionExpr_});
+
   join->setColNames(std::move(colNames));
 
   auto *project = Project::make(qctx_, join, columns_);

@@ -1,7 +1,6 @@
 # Copyright (c) 2023 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: join
 
   Background:
@@ -228,3 +227,103 @@ Feature: join
       | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")>   | "Manu Ginobili"     | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")> |
       | <("Tony Parker")-[:like@0 {}]->("LaMarcus Aldridge")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")>   | "Manu Ginobili"     | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")> |
       | <("Tony Parker")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Manu Ginobili")>        | "Manu Ginobili"     | <("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")-[:like@0 {}]->("Tony Parker")> |
+
+  Scenario: multiple join
+    When executing query:
+      """
+      $a = LOOKUP ON player WHERE player.name == 'Tony Parker' YIELD id(vertex) as dst, vertex AS v;
+      $b = GO FROM 'Tony Parker', 'Manu Ginobili' OVER like YIELD id($^) as src, id($$) as vid, edge AS e2;
+      $c = YIELD $b.vid AS vid, $a.v AS v, $b.e2 AS e2 FROM $a INNER JOIN $b ON $a.dst == $b.src;
+      $d = GO 4 STEPS FROM $b.vid OVER like BIDIRECT YIELD id($$) as vid, edge AS e3;
+      YIELD $d.e3 AS e, $c.e2 AS e2 FROM $c INNER JOIN $d ON $c.vid == $d.vid
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                               | e2                                                           |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}]    | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}]    | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}]    | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}]    | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]    | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]        | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]        | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]        | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]        | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]           | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {likeness: 70}]       | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {likeness: 70}]       | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {likeness: 70}]       | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {likeness: 70}]       | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Damian Lillard"->"LaMarcus Aldridge" @0 {likeness: 80}] | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Damian Lillard"->"LaMarcus Aldridge" @0 {likeness: 80}] | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Damian Lillard"->"LaMarcus Aldridge" @0 {likeness: 80}] | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Damian Lillard"->"LaMarcus Aldridge" @0 {likeness: 80}] | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |

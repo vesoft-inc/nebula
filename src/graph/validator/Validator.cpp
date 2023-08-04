@@ -308,7 +308,7 @@ std::vector<std::string> Validator::getOutColNames() const {
 Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   DCHECK(node != nullptr);
   DCHECK(appended != nullptr);
-  if (node->kind() == PlanNode::Kind::kArgument) {
+  if (node->kind() == PlanNode::Kind::kArgument || node->kind() == PlanNode::Kind::kHashInnerJoin) {
     return Status::OK();
   }
 
