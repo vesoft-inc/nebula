@@ -1131,6 +1131,20 @@ function_call_expression
             throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
         }
     }
+    | KW_LEFT L_PAREN opt_argument_list R_PAREN {
+        if (FunctionManager::find("left", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "left", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
+    }
+    | KW_RIGHT L_PAREN opt_argument_list R_PAREN {
+        if (FunctionManager::find("right", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "right", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
+    }
     ;
 
 uuid_expression
