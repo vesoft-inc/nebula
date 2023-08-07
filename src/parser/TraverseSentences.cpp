@@ -239,7 +239,6 @@ std::string FindPathSentence::toString() const {
   if (limit_ != -1) {
     buf += " ";
     buf += folly::stringPrintf("LIMIT %ld", limit_);
-    ;
   }
   return buf;
 }
