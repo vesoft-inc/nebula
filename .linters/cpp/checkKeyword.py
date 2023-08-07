@@ -119,6 +119,13 @@ reserved_key_words = [
     'KW_GEOGRAPHY',
     'KW_DURATION',
     'KW_ACROSS',
+    'KW_JOIN',
+    'KW_LEFT',
+    'KW_RIGHT',
+    'KW_INNER',
+    'KW_OUTER',
+    'KW_SEMI',
+    'KW_ANTI',
 ]
 
 

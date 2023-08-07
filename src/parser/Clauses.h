@@ -483,5 +483,61 @@ class NameLabelList {
   std::vector<std::unique_ptr<std::string>> labels_;
 };
 
+enum class JoinMode {
+  kInnerJoin = 0,
+  kLeftJoin = 1,
+  kRightJoin = 2,
+  kOuterJoin = 3,
+  kSemiJoin = 4,
+  kAntiJoin = 5,
+  kCrossJoin = 6,
+};
+
+class JoinClause final {
+ public:
+  explicit JoinClause(JoinMode joinMode, Expression *leftVarExpr, Expression *rightVarExpr)
+      : joinMode_(joinMode), leftVarExpr_(leftVarExpr), rightVarExpr_(rightVarExpr) {}
+
+  explicit JoinClause(JoinMode joinMode,
+                      Expression *leftVarExpr,
+                      Expression *rightVarExpr,
+                      Expression *leftConditionExpr,
+                      Expression *rightConditionExpr)
+      : joinMode_(joinMode),
+        leftVarExpr_(leftVarExpr),
+        rightVarExpr_(rightVarExpr),
+        leftConditionExpr_(leftConditionExpr),
+        rightConditionExpr_(rightConditionExpr) {}
+
+  Expression *leftVarExpr() const {
+    return leftVarExpr_;
+  }
+
+  Expression *rightVarExpr() const {
+    return rightVarExpr_;
+  }
+
+  Expression *leftConditionExpr() const {
+    return leftConditionExpr_;
+  }
+
+  Expression *rightConditionExpr() const {
+    return rightConditionExpr_;
+  }
+
+  JoinMode joinMode() const {
+    return joinMode_;
+  }
+
+  std::string toString() const;
+
+ private:
+  JoinMode joinMode_;
+  Expression *leftVarExpr_;
+  Expression *rightVarExpr_;
+  Expression *leftConditionExpr_;
+  Expression *rightConditionExpr_;
+};
+
 }  // namespace nebula
 #endif  // PARSER_CLAUSES_H_

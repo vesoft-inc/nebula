@@ -1,0 +1,87 @@
+# Copyright (c) 2023 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+Feature: Single Shortest Path
+
+  Background:
+    Given a graph with space named "nba"
+
+  Scenario: Single Shortest Path zero step
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan" , "Yao Ming" TO "Tony Parker" OVER like UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan", "Yao Ming" TO "Tony Parker", "Spurs" OVER * UPTO 0 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan", "Yao Ming" TO "Tony Parker", "Spurs" OVER * UPTO -1 STEPS YIELD path as p
+      """
+    Then a SyntaxError should be raised at runtime: syntax error near `-1 STEPS'
+
+  Scenario: [1] Single Shortest Path
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER * BIDIRECT YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                  |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")>     |
+      | <("Tim Duncan")<-[:teammate@0 {}]-("Tony Parker")> |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")>     |
+      | <("Tim Duncan")-[:teammate@0 {}]->("Tony Parker")> |
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan" TO "Tony Parker" OVER * BIDIRECT YIELD path as p
+      | YIELD startnode($-.p), endnode($-.p)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | startnode($-.p) | endnode($-.p)   |
+      | ("Tim Duncan")  | ("Tony Parker") |
+
+  Scenario: [2] Single Shortest Path
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                       |
+      | <("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                                                                                                          |
+      | <("Tim Duncan")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>                                                               |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:like@0 {}]->("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:like@0 {}]->("Tim Duncan")<-[:like@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                 |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                     |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                      |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                      |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                       |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                     |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")>                                  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Raptors")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>                                    |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Bulls")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")> |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Marco Belinelli")-[:serve@1 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>  |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Tiago Splitter")-[:serve@0 {}]->("Spurs")<-[:serve@0 {}]-("Paul Gasol")-[:serve@0 {}]->("Bucks")<-[:serve@0 {}]-("Giannis Antetokounmpo")>   |
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      | YIELD startnode($-.p), endnode($-.p)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | startnode($-.p) | endnode($-.p)             |
+      | ("Tim Duncan")  | ("Yao Ming")              |
+      | ("Tim Duncan")  | ("Giannis Antetokounmpo") |
+      | ("Joel Embiid") | ("Yao Ming")              |
+      | ("Joel Embiid") | ("Giannis Antetokounmpo") |

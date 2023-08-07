@@ -54,6 +54,7 @@ struct PathContext final : AstContext {
   std::string toVidsVar;
 
   bool isShortest{false};
+  bool singleShortest{false};
   bool isWeight{false};
   bool noLoop{false};
   bool withProp{false};

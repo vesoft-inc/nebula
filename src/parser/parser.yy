@@ -63,6 +63,7 @@ using namespace nebula;
     bool                                    boolval;
     int64_t                                 intval;
     double                                  doubleval;
+    nebula::JoinMode                        join_mode;
     std::string                            *strval;
     nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
@@ -89,6 +90,7 @@ using namespace nebula;
     nebula::WhereClause                    *lookup_where_clause;
     nebula::WhenClause                     *when_clause;
     nebula::YieldClause                    *yield_clause;
+    nebula::JoinClause                     *join_clause;
     nebula::YieldClause                    *group_by_yield_clause;
     nebula::YieldColumns                   *yield_columns;
     nebula::YieldColumn                    *yield_column;
@@ -163,7 +165,7 @@ using namespace nebula;
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
 %destructor {} <text_search_argument>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape> <join_mode>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -212,6 +214,7 @@ using namespace nebula;
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
+%token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
@@ -268,6 +271,8 @@ using namespace nebula;
 %type <where_clause> where_clause
 %type <lookup_where_clause> lookup_where_clause
 %type <when_clause> when_clause
+%type <join_mode> join_mode
+%type <join_clause> join_clause
 %type <truncate_clause> truncate_clause
 %type <yield_clause> yield_clause group_by_yield_clause
 %type <yield_columns> yield_columns
@@ -1126,6 +1131,20 @@ function_call_expression
             throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
         }
     }
+    | KW_LEFT L_PAREN opt_argument_list R_PAREN {
+        if (FunctionManager::find("left", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "left", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
+    }
+    | KW_RIGHT L_PAREN opt_argument_list R_PAREN {
+        if (FunctionManager::find("right", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "right", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
+    }
     ;
 
 uuid_expression
@@ -1627,6 +1646,44 @@ group_clause
     : yield_columns { $$ = new GroupClause($1); }
     ;
 
+join_mode
+    : KW_INNER KW_JOIN {
+        $$ = JoinMode::kInnerJoin;
+    }
+    | KW_LEFT KW_JOIN {
+        $$ = JoinMode::kLeftJoin;
+    }
+    | KW_RIGHT KW_JOIN {
+        $$ = JoinMode::kRightJoin;
+    }
+    | KW_OUTER KW_JOIN {
+        $$ = JoinMode::kOuterJoin;
+    }
+    | KW_SEMI KW_JOIN {
+        $$ = JoinMode::kSemiJoin;
+    }
+    | KW_ANTI KW_JOIN {
+        $$ = JoinMode::kAntiJoin;
+    }
+    ;
+
+join_clause
+    : KW_FROM VARIABLE KW_JOIN VARIABLE {
+        auto leftVarExpr = VariableExpression::make(qctx->objPool(), *$2);
+        auto rightVarExpr = VariableExpression::make(qctx->objPool(), *$4);
+        delete $2;
+        delete $4;
+        $$ = new JoinClause(JoinMode::kCrossJoin, leftVarExpr, rightVarExpr);
+    }
+    | KW_FROM VARIABLE join_mode VARIABLE KW_ON var_prop_expression EQ var_prop_expression {
+        auto leftVarExpr = VariableExpression::make(qctx->objPool(), *$2);
+        auto rightVarExpr = VariableExpression::make(qctx->objPool(), *$4);
+        delete $2;
+        delete $4;
+        $$ = new JoinClause($3, leftVarExpr, rightVarExpr, $6, $8);
+    }
+    ;
+
 yield_sentence
     : KW_YIELD yield_columns where_clause {
         auto *s = new YieldSentence($2);
@@ -1636,6 +1693,16 @@ yield_sentence
     | KW_YIELD KW_DISTINCT yield_columns where_clause {
         auto *s = new YieldSentence($3, true);
         s->setWhereClause($4);
+        $$ = s;
+    }
+    | KW_YIELD yield_columns join_clause {
+        auto *s = new YieldSentence($2);
+        s->setJoinClause($3);
+        $$ = s;
+    }
+    | KW_YIELD KW_DISTINCT yield_columns join_clause {
+        auto *s = new YieldSentence($3, true);
+        s->setJoinClause($4);
         $$ = s;
     }
     | KW_RETURN yield_columns {
@@ -2223,6 +2290,17 @@ find_path_sentence
         s->setWhere($8);
         s->setStep($9);
         s->setYield($10);
+        $$ = s;
+    }
+    | KW_FIND KW_SINGLE KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
+        auto *s = new FindPathSentence(true, $5, false);
+        s->setSingleShortest(true);
+        s->setFrom($6);
+        s->setTo($7);
+        s->setOver($8);
+        s->setWhere($9);
+        s->setStep($10);
+        s->setYield($11);
         $$ = s;
     }
     | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {

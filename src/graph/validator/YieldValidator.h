@@ -35,18 +35,25 @@ class YieldValidator final : public Validator {
  private:
   Status validateYieldAndBuildOutputs(const YieldClause *clause);
   Status validateWhere(const WhereClause *clause);
+  Status validateJoin(const JoinClause *clause);
   Status makeOutputColumn(YieldColumn *column);
   Status makeImplicitGroupByValidator();
   Status validateImplicitGroupBy();
-  void genConstantExprValues();
+  Status buildJoinPlan();
 
  private:
+  bool isDistinct_{false};
   YieldColumns *columns_{nullptr};
   std::string constantExprVar_;
   std::string userDefinedVarName_;
   Expression *filterCondition_{nullptr};
   // validate for agg
   std::unique_ptr<GroupByValidator> groupByValidator_{nullptr};
+
+  std::string leftVar_;
+  std::string rightVar_;
+  Expression *leftConditionExpr_{nullptr};
+  Expression *rightConditionExpr_{nullptr};
 };
 
 }  // namespace graph

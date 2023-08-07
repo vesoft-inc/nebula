@@ -189,6 +189,13 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
 "ACROSS"                    { return TokenType::KW_ACROSS; }
+"JOIN"                      { return TokenType::KW_JOIN; }
+"LEFT"                      { return TokenType::KW_LEFT; }
+"RIGHT"                     { return TokenType::KW_RIGHT; }
+"INNER"                     { return TokenType::KW_INNER; }
+"OUTER"                     { return TokenType::KW_OUTER; }
+"SEMI"                      { return TokenType::KW_SEMI; }
+"ANTI"                      { return TokenType::KW_ANTI; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,
