@@ -20,6 +20,7 @@ Status FindPathValidator::validateImpl() {
   pathCtx_->withProp = fpSentence->withProp();
   pathCtx_->singleShortest = fpSentence->singleShortest();
   pathCtx_->inputVarName = inputVarName_;
+  pathCtx_->limit = fpSentence->limit();
 
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->from(), pathCtx_->from));
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->to(), pathCtx_->to));
@@ -27,10 +28,6 @@ Status FindPathValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateWhere(fpSentence->where()));
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(fpSentence->step(), pathCtx_->steps));
   NG_RETURN_IF_ERROR(validateYield(fpSentence->yield()));
-  auto limitClause = fpSentence->limit();
-  if (limitClause != nullptr) {
-    pathCtx_->limit = limitClause->limit();
-  }
 
   return Status::OK();
 }

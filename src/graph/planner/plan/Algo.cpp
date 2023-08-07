@@ -47,6 +47,7 @@ PlanNode* BFSShortestPath::clone() const {
 
 void BFSShortestPath::cloneMembers(const BFSShortestPath& path) {
   BinaryInputNode::cloneMembers(path);
+  singleShortest_ = path.singleShortest_;
   leftVidVar_ = path.leftVidVar_;
   rightVidVar_ = path.rightVidVar_;
   terminateEarlyVar_ = path.terminateEarlyVar_;
@@ -61,6 +62,7 @@ PlanNode* MultiShortestPath::clone() const {
 
 void MultiShortestPath::cloneMembers(const MultiShortestPath& path) {
   BinaryInputNode::cloneMembers(path);
+  singleShortest_ = path.singleShortest_;
   leftVidVar_ = path.leftVidVar_;
   rightVidVar_ = path.rightVidVar_;
   terminationVar_ = path.terminationVar_;

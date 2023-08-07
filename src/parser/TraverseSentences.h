@@ -425,8 +425,8 @@ class FindPathSentence final : public Sentence {
     noLoop_ = noLoop;
   }
 
-  void setLimit(LimitClause* clause) {
-    limit_.reset(clause);
+  void setLimit(int64_t limit) {
+    limit_ = limit;
   }
 
   void setFrom(FromClause* clause) {
@@ -477,8 +477,8 @@ class FindPathSentence final : public Sentence {
     return where_.get();
   }
 
-  LimitClause* limit() const {
-    return limit_.get();
+  int64_t limit() const {
+    return limit_;
   }
 
   YieldClause* yield() const {
@@ -508,13 +508,13 @@ class FindPathSentence final : public Sentence {
   bool withProp_;
   bool noLoop_;
   bool singleShortest_{false};
+  int64_t limit_{-1};
   std::unique_ptr<FromClause> from_;
   std::unique_ptr<ToClause> to_;
   std::unique_ptr<OverClause> over_;
   std::unique_ptr<StepClause> step_;
   std::unique_ptr<WhereClause> where_;
   std::unique_ptr<YieldClause> yield_;
-  std::unique_ptr<LimitClause> limit_;
 };
 
 class LimitSentence final : public Sentence {
