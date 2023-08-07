@@ -218,11 +218,7 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, 
       Row row;
       row.emplace_back(std::move(result));
       ds.rows.emplace_back(std::move(row));
-      cnt_.fetch_add(1, std::memory_order_relaxed);
       if (singleShortest_) {
-        return ds;
-      }
-      if (cnt_.load(std::memory_order_relaxed) > limit_) {
         return ds;
       }
     }

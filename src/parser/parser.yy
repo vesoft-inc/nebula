@@ -308,7 +308,6 @@ using namespace nebula;
 %type <edge_key_ref> edge_key_ref
 %type <to_clause> to_clause
 %type <find_path_upto_clause> find_path_upto_clause
-%type <find_path_limit_clause> find_path_limit_clause
 %type <group_clause> group_clause
 %type <host_list> host_list
 %type <host_item> host_item
@@ -2956,7 +2955,25 @@ traverse_sentence
 piped_sentence
     : traverse_sentence { $$ = $1; }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
-    | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
+    | piped_sentence PIPE limit_sentence {
+        auto kind = $1->kind();
+        if (kind == Sentence::Kind::kFindPath) {
+            auto path = static_cast<FindPathSentence*>($1);
+            auto limit = static_cast<LimitSentence *>($3);
+            auto shortest = path->isShortest();
+            auto offset = limit->offset();
+            if (shortest && offset == 0) {
+                auto limitValue = limit->count();
+                UNUSED(limitValue);
+                path->setLimit(nullptr);
+                $$ = path;
+            } else {
+                $$ = new PipedSentence($1, $3);
+            } 
+        } else {
+            $$ = new PipedSentence($1, $3); 
+        }
+    }
     ;
 
 set_sentence
