@@ -42,6 +42,7 @@ struct PathContext final : AstContext {
   Starts to;
   StepClause steps;
   Over over;
+  int64_t limit{-1};
   Expression* filter{nullptr};
   std::vector<std::string> colNames;
 

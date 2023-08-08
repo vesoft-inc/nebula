@@ -2946,7 +2946,24 @@ traverse_sentence
 piped_sentence
     : traverse_sentence { $$ = $1; }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
-    | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
+    | piped_sentence PIPE limit_sentence {
+        auto kind = $1->kind();
+        if (kind == Sentence::Kind::kFindPath) {
+            auto path = static_cast<FindPathSentence*>($1);
+            auto limit = static_cast<LimitSentence *>($3);
+            auto shortest = path->isShortest();
+            auto offset = limit->offset();
+            if (shortest && offset == 0) {
+                auto limitValue = limit->count();
+                path->setLimit(limitValue);
+                $$ = path;
+            } else {
+                $$ = new PipedSentence($1, $3);
+            } 
+        } else {
+            $$ = new PipedSentence($1, $3); 
+        }
+    }
     ;
 
 set_sentence

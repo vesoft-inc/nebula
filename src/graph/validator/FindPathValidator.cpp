@@ -20,6 +20,7 @@ Status FindPathValidator::validateImpl() {
   pathCtx_->withProp = fpSentence->withProp();
   pathCtx_->singleShortest = fpSentence->singleShortest();
   pathCtx_->inputVarName = inputVarName_;
+  pathCtx_->limit = fpSentence->limit();
 
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->from(), pathCtx_->from));
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->to(), pathCtx_->to));

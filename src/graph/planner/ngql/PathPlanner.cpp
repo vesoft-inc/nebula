@@ -118,6 +118,7 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* left, PlanNode* right) {
   path->setColNames({kPathStr});
   path->setTerminateEarlyVar(terminateEarlyVar);
   path->setSingleShortest(pathCtx_->singleShortest);
+  path->setLimit(pathCtx_->limit);
 
   auto* loopCondition = singlePairLoopCondition(steps, path->outputVar(), terminateEarlyVar);
   auto* loop = Loop::make(qctx, nullptr, path, loopCondition);
@@ -223,6 +224,7 @@ SubPlan PathPlanner::multiPairPlan(PlanNode* left, PlanNode* right) {
   path->setTerminationVar(terminationVar);
   path->setSingleShortest(pathCtx_->singleShortest);
   path->setColNames({kPathStr});
+  path->setLimit(pathCtx_->limit);
 
   SubPlan loopDep = loopDepPlan();
   auto* loopCondition = multiPairLoopCondition(steps, terminationVar);

@@ -86,6 +86,8 @@ class MultiShortestPathExecutor final : public Executor {
   Interims historyLeftPaths_;
   Interims historyRightPaths_;
   DataSet currentDs_;
+  size_t limit_{std::numeric_limits<size_t>::max()};
+  std::atomic<size_t> cnt_{0};
 };
 
 }  // namespace graph

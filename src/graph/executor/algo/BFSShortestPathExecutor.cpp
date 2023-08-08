@@ -14,6 +14,9 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
   singleShortest_ = pathNode_->singleShortest();
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
 
   if (step_ == 1) {
@@ -47,7 +50,6 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   return folly::collectAll(futures)
       .via(runner())
       .thenValue([this](std::vector<folly::Try<Status>>&& resps) {
-        memory::MemoryCheckGuard guard;
         for (auto& respVal : resps) {
           if (respVal.hasException()) {
             auto ex = respVal.exception().get_exception<std::bad_alloc>();
@@ -58,6 +60,7 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
             }
           }
         }
+        memory::MemoryCheckGuard guard;
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
@@ -198,9 +201,9 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
       });
 }
 
-DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
-                                            bool oddStep) const {
+DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, bool oddStep) {
   DataSet ds;
+  size_t count = 0;
   auto leftPaths = createPath(meetVids, false, oddStep);
   auto rightPaths = createPath(meetVids, true, oddStep);
   for (auto& leftPath : leftPaths) {
@@ -213,6 +216,9 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
       row.emplace_back(std::move(result));
       ds.rows.emplace_back(std::move(row));
       if (singleShortest_) {
+        return ds;
+      }
+      if (++count >= limit_) {
         return ds;
       }
     }

@@ -85,3 +85,31 @@ Feature: Single Shortest Path
       | ("Tim Duncan")  | ("Giannis Antetokounmpo") |
       | ("Joel Embiid") | ("Yao Ming")              |
       | ("Joel Embiid") | ("Giannis Antetokounmpo") |
+
+  Scenario: single shortest Path With Limit
+    When executing query:
+      """
+      FIND SINGLE SHORTEST PATH FROM "Shaquille O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
+      ORDER BY $-.p | LIMIT 2
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                         |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                               |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      | ORDER by $-.p | LIMIT 2
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                      |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Shaquille O'Neal")<-[:like@0 {}]-("Yao Ming")> |
+      | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>    |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      | LIMIT 3 | YIELD count(*) as num
+      """
+    Then the result should be, in any order, with relax comparison:
+      | num |
+      | 3   |

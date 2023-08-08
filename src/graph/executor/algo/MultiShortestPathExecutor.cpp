@@ -10,6 +10,9 @@ namespace graph {
 folly::Future<Status> MultiShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<MultiShortestPath>(node());
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   terminationVar_ = pathNode_->terminationVar();
   singleShortest_ = pathNode_->singleShortest();
 
@@ -237,6 +240,9 @@ DataSet MultiShortestPathExecutor::doConjunct(
       [this](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
         for (const auto& leftPath : leftPaths) {
           for (const auto& rightPath : rightPaths) {
+            if (++cnt_ > limit_) {
+              break;
+            }
             auto forwardPath = leftPath;
             auto backwardPath = rightPath;
             backwardPath.reverse();
@@ -262,6 +268,9 @@ DataSet MultiShortestPathExecutor::doConjunct(
           if (found->second.first == rightPath.first) {
             if (singleShortest_ && !found->second.second) {
               break;
+            }
+            if (cnt_.load(std::memory_order_relaxed) > limit_) {
+              return ds;
             }
             buildPaths(leftPath.second, rightPath.second, ds);
             found->second.second = false;
@@ -371,7 +380,7 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
             ++iter;
           }
         }
-        if (terminationMap_.empty()) {
+        if (terminationMap_.empty() || cnt_.load(std::memory_order_relaxed) >= limit_) {
           ectx_->setValue(terminationVar_, true);
           return true;
         }
