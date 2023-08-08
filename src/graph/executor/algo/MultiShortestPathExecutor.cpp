@@ -240,8 +240,7 @@ DataSet MultiShortestPathExecutor::doConjunct(
       [this](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
         for (const auto& leftPath : leftPaths) {
           for (const auto& rightPath : rightPaths) {
-            cnt_.fetch_add(1, std::memory_order_relaxed);
-            if (cnt_.load(std::memory_order_relaxed) > limit_) {
+            if (++cnt_ > limit_) {
               break;
             }
             auto forwardPath = leftPath;
@@ -381,7 +380,7 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
             ++iter;
           }
         }
-        if (terminationMap_.empty() || cnt_.load(std::memory_order_relaxed) > limit_) {
+        if (terminationMap_.empty() || cnt_.load(std::memory_order_relaxed) >= limit_) {
           ectx_->setValue(terminationVar_, true);
           return true;
         }

@@ -203,15 +203,12 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
 
 DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, bool oddStep) {
   DataSet ds;
+  size_t count = 0;
   auto leftPaths = createPath(meetVids, false, oddStep);
   auto rightPaths = createPath(meetVids, true, oddStep);
   for (auto& leftPath : leftPaths) {
     auto range = rightPaths.equal_range(leftPath.first);
     for (auto& rightPath = range.first; rightPath != range.second; ++rightPath) {
-      cnt_.fetch_add(1, std::memory_order_relaxed);
-      if (cnt_.load(std::memory_order_relaxed) > limit_) {
-        return ds;
-      }
       Path result = leftPath.second;
       result.reverse();
       result.append(rightPath->second);
@@ -219,6 +216,9 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, 
       row.emplace_back(std::move(result));
       ds.rows.emplace_back(std::move(row));
       if (singleShortest_) {
+        return ds;
+      }
+      if (++count >= limit_) {
         return ds;
       }
     }
