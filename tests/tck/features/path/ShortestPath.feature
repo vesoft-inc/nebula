@@ -639,3 +639,27 @@ Feature: Shortest Path
     Then the result should be, in any order, with relax comparison:
       | relationships                                  |
       | [[:like "Tiago Splitter"->"Tim Duncan" @0 {}]] |
+
+  Scenario: Shortest Path With Loop
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan" OVER like BIDIRECT YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                             |
+      | <("Tim Duncan")<-[:like@0 {}]-("Manu Ginobili")<-[:like@0 {}]-("Tim Duncan")> |
+      | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan", "Tony Parker" OVER like BIDIRECT YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                             |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")>                                |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")>                                |
+      | <("Tim Duncan")<-[:like@0 {}]-("Manu Ginobili")<-[:like@0 {}]-("Tim Duncan")> |
+      | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
