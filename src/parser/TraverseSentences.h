@@ -425,6 +425,10 @@ class FindPathSentence final : public Sentence {
     noLoop_ = noLoop;
   }
 
+  void setLimit(int64_t limit) {
+    limit_ = limit;
+  }
+
   void setFrom(FromClause* clause) {
     from_.reset(clause);
   }
@@ -449,6 +453,10 @@ class FindPathSentence final : public Sentence {
     yield_.reset(yield);
   }
 
+  void setSingleShortest(bool singleShortest) {
+    singleShortest_ = singleShortest;
+  }
+
   FromClause* from() const {
     return from_.get();
   }
@@ -469,6 +477,10 @@ class FindPathSentence final : public Sentence {
     return where_.get();
   }
 
+  int64_t limit() const {
+    return limit_;
+  }
+
   YieldClause* yield() const {
     return yield_.get();
   }
@@ -485,12 +497,18 @@ class FindPathSentence final : public Sentence {
     return noLoop_;
   }
 
+  bool singleShortest() const {
+    return singleShortest_;
+  }
+
   std::string toString() const override;
 
  private:
   bool isShortest_;
   bool withProp_;
   bool noLoop_;
+  bool singleShortest_{false};
+  int64_t limit_{-1};
   std::unique_ptr<FromClause> from_;
   std::unique_ptr<ToClause> to_;
   std::unique_ptr<OverClause> over_;
@@ -540,6 +558,10 @@ class YieldSentence final : public Sentence {
     whereClause_.reset(clause);
   }
 
+  void setJoinClause(JoinClause* clause) {
+    joinClause_.reset(clause);
+  }
+
   WhereClause* where() const {
     return whereClause_.get();
   }
@@ -548,11 +570,16 @@ class YieldSentence final : public Sentence {
     return yieldClause_.get();
   }
 
+  JoinClause* joinClause() const {
+    return joinClause_.get();
+  }
+
   std::string toString() const override;
 
  private:
   std::unique_ptr<YieldClause> yieldClause_;
   std::unique_ptr<WhereClause> whereClause_;
+  std::unique_ptr<JoinClause> joinClause_;
 };
 
 class GroupBySentence final : public Sentence {

@@ -10,7 +10,11 @@ namespace graph {
 folly::Future<Status> MultiShortestPathExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<MultiShortestPath>(node());
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   terminationVar_ = pathNode_->terminationVar();
+  singleShortest_ = pathNode_->singleShortest();
 
   if (step_ == 1) {
     init();
@@ -28,12 +32,21 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this](auto&& status) {
-        memory::MemoryCheckGuard guard;
+      .thenValue([this](std::vector<folly::Try<Status>>&& resps) {
         // oddStep
-        UNUSED(status);
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+        }
+        memory::MemoryCheckGuard guard;
         return conjunctPath(true);
       })
       .thenValue([this](auto&& termination) {
@@ -224,9 +237,12 @@ Status MultiShortestPathExecutor::buildPath(bool reverse) {
 DataSet MultiShortestPathExecutor::doConjunct(
     const std::vector<std::pair<Interims::iterator, Interims::iterator>>& iters) {
   auto buildPaths =
-      [](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
+      [this](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
         for (const auto& leftPath : leftPaths) {
           for (const auto& rightPath : rightPaths) {
+            if (++cnt_ > limit_) {
+              break;
+            }
             auto forwardPath = leftPath;
             auto backwardPath = rightPath;
             backwardPath.reverse();
@@ -234,6 +250,9 @@ DataSet MultiShortestPathExecutor::doConjunct(
             Row row;
             row.values.emplace_back(std::move(forwardPath));
             ds.rows.emplace_back(std::move(row));
+            if (singleShortest_) {
+              return;
+            }
           }
         }
       };
@@ -247,6 +266,12 @@ DataSet MultiShortestPathExecutor::doConjunct(
       for (const auto& rightPath : rightPaths) {
         for (auto found = range.first; found != range.second; ++found) {
           if (found->second.first == rightPath.first) {
+            if (singleShortest_ && !found->second.second) {
+              break;
+            }
+            if (cnt_.load(std::memory_order_relaxed) > limit_) {
+              return ds;
+            }
             buildPaths(leftPath.second, rightPath.second, ds);
             found->second.second = false;
           }
@@ -312,25 +337,55 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     futures.emplace_back(std::move(future));
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<DataSet>>&& resps) {
+        memory::MemoryCheckGuard guard;
+        std::unordered_map<Value, std::unordered_set<Value>> uniquePath;
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto ds = std::move(respVal).value();
+          if (singleShortest_) {
+            for (auto& row : ds.rows) {
+              auto& pathVal = row.values.front();
+              auto& path = pathVal.getPath();
+              auto& src = path.src.vid;
+              auto& dst = path.steps.back().dst.vid;
+              auto findSrc = uniquePath.find(src);
+              if (findSrc == uniquePath.end()) {
+                uniquePath[src] = {dst};
+                currentDs_.rows.emplace_back(std::move(row));
+              } else {
+                if (findSrc->second.find(dst) == findSrc->second.end()) {
+                  findSrc->second.emplace(dst);
+                  currentDs_.rows.emplace_back(std::move(row));
+                }
+              }
+            }
+          } else {
+            currentDs_.append(std::move(ds));
+          }
+        }
 
-    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-      if (!iter->second.second) {
-        iter = terminationMap_.erase(iter);
-      } else {
-        ++iter;
-      }
-    }
-    if (terminationMap_.empty()) {
-      ectx_->setValue(terminationVar_, true);
-      return true;
-    }
-    return false;
-  });
+        for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
+          if (!iter->second.second) {
+            iter = terminationMap_.erase(iter);
+          } else {
+            ++iter;
+          }
+        }
+        if (terminationMap_.empty() || cnt_.load(std::memory_order_relaxed) >= limit_) {
+          ectx_->setValue(terminationVar_, true);
+          return true;
+        }
+        return false;
+      });
 }
 
 void MultiShortestPathExecutor::setNextStepVid(const Interims& paths, const string& var) {

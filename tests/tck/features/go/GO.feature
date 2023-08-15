@@ -2050,3 +2050,18 @@ Feature: Go Sentence
       | "Grant Hill"         | "Grant Hill"         |
       | "Vince Carter"       | "Vince Carter"       |
       | "Yao Ming"           | "Yao Ming"           |
+
+  Scenario: multiple statements refer to the same variable
+    When executing query:
+      """
+      $m1= LOOKUP ON player WHERE player.name == 'Tim Duncan' YIELD id(vertex) AS vid;
+      $m2 = GO 2 TO 10 STEPS FROM $m1.vid OVER like YIELD distinct id($$) AS dst
+            INTERSECT
+            GO 4 TO 7 STEPS FROM $m1.vid OVER like REVERSELY YIELD distinct id($$) AS dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 |
+      | "LaMarcus Aldridge" |
+      | "Tim Duncan"        |
+      | "Manu Ginobili"     |
+      | "Tony Parker"       |

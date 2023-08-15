@@ -13,19 +13,16 @@ namespace nebula::plugin {
 
 using namespace fmt::literals;  // NOLINT
 
-ESQueryResult::Item::Item(const std::string& v, const std::string& t) : vid(v), text(t) {}
-ESQueryResult::Item::Item(const std::string& s,
-                          const std::string& d,
-                          int64_t r,
-                          const std::string& t)
-    : src(s), dst(d), rank(r), text(t) {}
+ESQueryResult::Item::Item(const std::string& v, double sc) : vid(v), score(sc) {}
+ESQueryResult::Item::Item(const std::string& s, const std::string& d, int64_t r, double sc)
+    : src(s), dst(d), rank(r), score(sc) {}
 
 void ESBulk::put(const std::string& indexName,
                  const std::string& vid,
                  const std::string& src,
                  const std::string& dst,
                  int64_t rank,
-                 const std::string& text) {
+                 std::map<std::string, std::string> data) {
   folly::dynamic action = folly::dynamic::object();
   folly::dynamic metadata = folly::dynamic::object();
   folly::dynamic body = folly::dynamic::object();
@@ -38,7 +35,9 @@ void ESBulk::put(const std::string& indexName,
   body["src"] = src;
   body["dst"] = dst;
   body["rank"] = rank;
-  body["text"] = text;
+  for (auto& [key, value] : data) {
+    body[key] = std::move(value);
+  }
   documents_[indexName].emplace_back(std::move(action));
   documents_[indexName].emplace_back(std::move(body));
 }
@@ -68,8 +67,10 @@ void ESAdapter::setClients(std::vector<ESClient>&& clients) {
   clients_ = std::move(clients);
 }
 
-Status ESAdapter::createIndex(const std::string& name) {
-  folly::dynamic mappings = folly::parseJson(R"(
+Status ESAdapter::createIndex(const std::string& name,
+                              const std::vector<std::string>& fields,
+                              const std::string& analyzer) {
+  folly::dynamic obj = folly::parseJson(R"(
     {
       "mappings":{
         "properties":{
@@ -84,15 +85,22 @@ Status ESAdapter::createIndex(const std::string& name) {
           },
           "rank": {
             "type": "long"
-          },
-          "text": {
-            "type": "keyword"
           }
         }
       }
     }
   )");
-  auto result = randomClient().createIndex(name, mappings);
+  auto& mappings = obj["mappings"];
+  for (auto& field : fields) {
+    folly::dynamic f = folly::dynamic::object();
+    f["type"] = "text";
+    if (!analyzer.empty()) {
+      f["analyzer"] = analyzer;
+    }
+    mappings["properties"][field] = std::move(f);
+  }
+
+  auto result = randomClient().createIndex(name, obj);
   if (!result.ok()) {
     return result.status();
   }
@@ -181,69 +189,20 @@ Status ESAdapter::bulk(const ESBulk& bulk, bool refresh) {
   return Status::Error(folly::toJson(resp));
 }
 
-StatusOr<ESQueryResult> ESAdapter::prefix(const std::string& index,
-                                          const std::string& pattern,
-                                          int64_t size,
-                                          int64_t timeout) {
+StatusOr<ESQueryResult> ESAdapter::queryString(const std::string& index,
+                                               const std::string& query,
+                                               int64_t from,
+                                               int64_t size) {
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
-  body["query"]["prefix"] = folly::dynamic::object();
-  body["query"]["prefix"]["text"] = pattern;
+  body["query"]["query_string"] = folly::dynamic::object();
+  body["query"]["query_string"]["query"] = query;
   if (size > 0) {
     body["size"] = size;
-    body["from"] = 0;
+    body["from"] = from;
   }
-  return ESAdapter::query(index, body, timeout);
+  return ESAdapter::query(index, body, 2000);
 }
-
-StatusOr<ESQueryResult> ESAdapter::wildcard(const std::string& index,
-                                            const std::string& pattern,
-                                            int64_t size,
-                                            int64_t timeout) {
-  folly::dynamic body = folly::dynamic::object();
-  body["query"] = folly::dynamic::object();
-  body["query"]["wildcard"] = folly::dynamic::object("text", pattern);
-  if (size > 0) {
-    body["size"] = size;
-    body["from"] = 0;
-  }
-  return ESAdapter::query(index, body, timeout);
-}
-
-StatusOr<ESQueryResult> ESAdapter::regexp(const std::string& index,
-                                          const std::string& pattern,
-                                          int64_t size,
-                                          int64_t timeout) {
-  folly::dynamic body = folly::dynamic::object();
-  body["query"] = folly::dynamic::object();
-  body["query"]["regexp"] = folly::dynamic::object("text", pattern);
-  if (size > 0) {
-    body["size"] = size;
-    body["from"] = 0;
-  }
-  return ESAdapter::query(index, body, timeout);
-}
-
-StatusOr<ESQueryResult> ESAdapter::fuzzy(const std::string& index,
-                                         const std::string& pattern,
-                                         const std::string& fuzziness,
-                                         int64_t size,
-                                         int64_t timeout) {
-  folly::dynamic body = folly::dynamic::object();
-  body["query"] = folly::dynamic::object();
-  body["query"]["fuzzy"] = folly::dynamic::object();
-  body["query"]["fuzzy"]["text"] = folly::dynamic::object("value", pattern)("fuzziness", fuzziness);
-  if (size > 0) {
-    body["size"] = size;
-    body["from"] = 0;
-  }
-  return ESAdapter::query(index, body, timeout);
-}
-
-// StatusOr<ESQueryResult> ESAdapter::term(const std::string& index,const std::vector<std::string>&
-// words){
-//   folly::dynamic query = folly::dynamic::object("query",folly::dynam)
-// }
 
 StatusOr<ESQueryResult> ESAdapter::match_all(const std::string& index) {
   folly::dynamic body = folly::dynamic::object();
@@ -266,7 +225,11 @@ StatusOr<ESQueryResult> ESAdapter::query(const std::string& index,
     for (auto& hit : hits) {
       auto source = hit["_source"];
       ESQueryResult::Item item;
-      item.text = source["text"].getString();
+      if (hit["_score"].isInt()) {
+        item.score = hit["_score"].getInt();
+      } else if (hit["_score"].isDouble()) {
+        item.score = hit["_score"].getDouble();
+      }
       item.src = source["src"].getString();
       item.dst = source["dst"].getString();
       item.rank = source["rank"].getInt();

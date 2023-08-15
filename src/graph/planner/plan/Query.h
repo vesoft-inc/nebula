@@ -6,6 +6,8 @@
 #ifndef GRAPH_PLANNER_PLAN_QUERY_H_
 #define GRAPH_PLANNER_PLAN_QUERY_H_
 
+#include <glog/logging.h>
+
 #include "common/expression/AggregateExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -22,6 +24,7 @@ namespace graph {
 //  GetVertices,
 //  GetEdges,
 //  IndexScan
+//  FulltextIndexScan
 class Explore : public SingleInputNode {
  public:
   GraphSpaceID space() const {
@@ -35,6 +38,8 @@ class Explore : public SingleInputNode {
   bool dedup() const {
     return dedup_;
   }
+
+  int64_t getValidLimit() const;
 
   // Get the constant limit value
   int64_t limit(QueryContext* qctx = nullptr) const;
@@ -441,7 +446,7 @@ class GetVertices : public Explore {
                            std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                            bool dedup = false,
                            std::vector<storage::cpp2::OrderBy> orderBy = {},
-                           int64_t limit = std::numeric_limits<int64_t>::max(),
+                           int64_t limit = -1,
                            Expression* filter = nullptr) {
     return qctx->objPool()->makeAndAdd<GetVertices>(qctx,
                                                     Kind::kGetVertices,
@@ -547,7 +552,7 @@ class GetEdges final : public Explore {
                         std::unique_ptr<std::vector<EdgeProp>>&& props = nullptr,
                         std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
                         bool dedup = false,
-                        int64_t limit = std::numeric_limits<int64_t>::max(),
+                        int64_t limit = -1,
                         std::vector<storage::cpp2::OrderBy> orderBy = {},
                         Expression* filter = nullptr) {
     return qctx->objPool()->makeAndAdd<GetEdges>(qctx,
@@ -753,13 +758,10 @@ class IndexScan : public Explore {
 class FulltextIndexScan : public Explore {
  public:
   static FulltextIndexScan* make(QueryContext* qctx,
-                                 const std::string& index,
                                  TextSearchExpression* searchExpr,
-                                 bool isEdge) {
-    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, index, searchExpr, isEdge);
-  }
-  const std::string& index() const {
-    return index_;
+                                 bool isEdge,
+                                 int32_t schemaId) {
+    return qctx->objPool()->makeAndAdd<FulltextIndexScan>(qctx, searchExpr, isEdge, schemaId);
   }
 
   TextSearchExpression* searchExpression() const {
@@ -770,6 +772,22 @@ class FulltextIndexScan : public Explore {
     return isEdge_;
   }
 
+  int64_t getValidOffset() const {
+    return offset_ >= 0 ? offset_ : 0;
+  }
+
+  int64_t offset() const {
+    return offset_;
+  }
+
+  void setOffset(int64_t offset) {
+    offset_ = offset;
+  }
+
+  int32_t schemaId() const {
+    return schemaId_;
+  }
+
   PlanNode* clone() const override;
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -777,16 +795,18 @@ class FulltextIndexScan : public Explore {
  protected:
   friend ObjectPool;
   FulltextIndexScan(QueryContext* qctx,
-                    const std::string& index,
                     TextSearchExpression* searchExpr,
-                    bool isEdge)
+                    bool isEdge,
+                    int32_t schemaId)
       : Explore(qctx, Kind::kFulltextIndexScan, nullptr, 0, false, -1, nullptr, {}),
-        index_(index),
         searchExpr_(searchExpr),
-        isEdge_(isEdge) {}
-  std::string index_;
+        isEdge_(isEdge),
+        schemaId_(schemaId) {}
+
   TextSearchExpression* searchExpr_{nullptr};
   bool isEdge_{false};
+  int64_t offset_{-1};
+  int32_t schemaId_;
 };
 
 // Scan vertices
@@ -1695,7 +1715,15 @@ class Traverse final : public GetNeighbors {
 
   const std::string& edgeAlias() const {
     DCHECK(!this->colNames().empty());
-    return this->colNames().back();
+    const auto& colNames = this->colNames();
+    auto n = colNames.size();
+
+    if (!genPath_) {
+      return colNames[n - 1];
+    }
+    // When a path needs to be generated, Traverse outputs one more column
+    DCHECK_GT(n, 2);
+    return colNames[n - 2];
   }
 
   void setStepRange(const MatchStepRange& range) {
@@ -2022,6 +2050,28 @@ class PatternApply : public BinaryInputNode {
   // Common columns of subplans on both sides
   std::vector<Expression*> keyCols_;
   bool isAntiPred_{false};
+};
+
+class ValueNode : public SingleInputNode {
+ public:
+  // Value with empty result
+  static ValueNode* make(QueryContext* qctx, PlanNode* dep, DataSet value) {
+    return qctx->objPool()->makeAndAdd<ValueNode>(qctx, dep, std::move(value));
+  }
+
+  Value value() const {
+    return value_;
+  }
+
+ private:
+  friend ObjectPool;
+  ValueNode(QueryContext* qctx, PlanNode* dep, DataSet value)
+      : SingleInputNode(qctx, Kind::kValue, dep), value_(std::move(value)) {
+    setColNames(value_.colNames);
+  }
+
+ private:
+  DataSet value_;
 };
 
 }  // namespace graph

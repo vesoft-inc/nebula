@@ -6,7 +6,7 @@
 #define GRAPH_EXECUTOR_ADMIN_SHOW_FT_INDEXES_EXECUTOR_H_
 
 #include "graph/executor/Executor.h"
-// full-text indexes are used to do prefix, wildcard, regexp, and fuzzy search on a string property.
+// full-text indexes are used to do "query_string" search on a string property.
 // you can use the WHERE clause to specify the search strings in LOOKUP statements.
 namespace nebula {
 namespace graph {

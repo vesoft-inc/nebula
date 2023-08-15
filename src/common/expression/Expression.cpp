@@ -512,10 +512,7 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
-    case Expression::Kind::kTSPrefix:
-    case Expression::Kind::kTSWildcard:
-    case Expression::Kind::kTSRegexp:
-    case Expression::Kind::kTSFuzzy: {
+    case Expression::Kind::kESQUERY: {
       LOG(FATAL) << "Should not decode text search expression";
       return exp;
     }
@@ -721,17 +718,8 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
     case Expression::Kind::kPathBuild:
       os << "PathBuild";
       break;
-    case Expression::Kind::kTSPrefix:
-      os << "Prefix";
-      break;
-    case Expression::Kind::kTSWildcard:
-      os << "Wildcard";
-      break;
-    case Expression::Kind::kTSRegexp:
-      os << "Regexp";
-      break;
-    case Expression::Kind::kTSFuzzy:
-      os << "Fuzzy";
+    case Expression::Kind::kESQUERY:
+      os << "ESQuery";
       break;
     case Expression::Kind::kListComprehension:
       os << "ListComprehension";

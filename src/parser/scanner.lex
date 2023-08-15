@@ -189,6 +189,13 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "FORMAT"                    { return TokenType::KW_FORMAT; }
 "CASE"                      { return TokenType::KW_CASE; }
 "ACROSS"                    { return TokenType::KW_ACROSS; }
+"JOIN"                      { return TokenType::KW_JOIN; }
+"LEFT"                      { return TokenType::KW_LEFT; }
+"RIGHT"                     { return TokenType::KW_RIGHT; }
+"INNER"                     { return TokenType::KW_INNER; }
+"OUTER"                     { return TokenType::KW_OUTER; }
+"SEMI"                      { return TokenType::KW_SEMI; }
+"ANTI"                      { return TokenType::KW_ANTI; }
 
  /**
   * TODO(dutor) Manage the dynamic allocated objects with an object pool,
@@ -283,11 +290,9 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "HTTP"                      { return TokenType::KW_HTTP; }
 "HTTPS"                     { return TokenType::KW_HTTPS; }
 "FULLTEXT"                  { return TokenType::KW_FULLTEXT; }
+"ANALYZER"                  { return TokenType::KW_ANALYZER; }
 "AUTO"                      { return TokenType::KW_AUTO; }
-"FUZZY"                     { return TokenType::KW_FUZZY; }
-"PREFIX"                    { return TokenType::KW_PREFIX; }
-"REGEXP"                    { return TokenType::KW_REGEXP; }
-"WILDCARD"                  { return TokenType::KW_WILDCARD; }
+"ES_QUERY"                  { return TokenType::KW_ES_QUERY; }
 "TEXT"                      { return TokenType::KW_TEXT; }
 "SEARCH"                    { return TokenType::KW_SEARCH; }
 "CLIENTS"                   { return TokenType::KW_CLIENTS; }

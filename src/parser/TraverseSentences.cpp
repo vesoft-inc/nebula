@@ -204,6 +204,9 @@ std::string FindPathSentence::toString() const {
   if (noLoop_) {
     buf += " NOLOOP PATH";
   } else if (isShortest_) {
+    if (singleShortest_) {
+      buf += " SINGLE ";
+    }
     buf += " SHORTEST PATH";
   } else {
     buf += " ALL PATH";
@@ -233,6 +236,10 @@ std::string FindPathSentence::toString() const {
     buf += " ";
     buf += yield_->toString();
   }
+  if (limit_ != -1) {
+    buf += " ";
+    buf += folly::stringPrintf("LIMIT %ld", limit_);
+  }
   return buf;
 }
 
@@ -251,6 +258,10 @@ std::string YieldSentence::toString() const {
   if (whereClause_ != nullptr) {
     buf += " ";
     buf += whereClause_->toString();
+  }
+  if (joinClause_ != nullptr) {
+    buf += " ";
+    buf += joinClause_->toString();
   }
   return buf;
 }

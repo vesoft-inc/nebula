@@ -13,6 +13,10 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   // MemoryTrackerVerified
   SCOPED_TIMER(&execTime_);
   pathNode_ = asNode<BFSShortestPath>(node());
+  singleShortest_ = pathNode_->singleShortest();
+  if (pathNode_->limit() != -1) {
+    limit_ = pathNode_->limit();
+  }
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
 
   if (step_ == 1) {
@@ -43,16 +47,25 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this](auto&& status) {
+      .thenValue([this](std::vector<folly::Try<Status>>&& resps) {
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+        }
         memory::MemoryCheckGuard guard;
-        UNUSED(status);
         return conjunctPath();
       })
       .thenValue([this](auto&& status) {
         memory::MemoryCheckGuard guard;
-        UNUSED(status);
+        NG_RETURN_IF_ERROR(status);
         step_++;
         DataSet ds;
         ds.colNames = pathNode_->colNames();
@@ -166,18 +179,31 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
     }
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
-    return Status::OK();
-  });
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<DataSet>>&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto resp = std::move(respVal).value();
+          currentDs_.append(std::move(resp));
+        }
+        if (singleShortest_) {
+          currentDs_.rows.resize(1);
+        }
+        return Status::OK();
+      });
 }
 
-DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
-                                            bool oddStep) const {
+DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids, bool oddStep) {
   DataSet ds;
+  size_t count = 0;
   auto leftPaths = createPath(meetVids, false, oddStep);
   auto rightPaths = createPath(meetVids, true, oddStep);
   for (auto& leftPath : leftPaths) {
@@ -189,6 +215,12 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
       Row row;
       row.emplace_back(std::move(result));
       ds.rows.emplace_back(std::move(row));
+      if (singleShortest_) {
+        return ds;
+      }
+      if (++count >= limit_) {
+        return ds;
+      }
     }
   }
   return ds;

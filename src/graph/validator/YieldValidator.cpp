@@ -23,8 +23,9 @@ Status YieldValidator::validateImpl() {
   if (qctx_->vctx()->spaceChosen()) {
     space_ = vctx_->whichSpace();
   }
-
   auto yield = static_cast<YieldSentence *>(sentence_);
+  isDistinct_ = yield->yield()->isDistinct();
+
   if (yield->yield()->yields()->hasAgg()) {
     NG_RETURN_IF_ERROR(makeImplicitGroupByValidator());
   }
@@ -34,6 +35,7 @@ Status YieldValidator::validateImpl() {
   } else {
     NG_RETURN_IF_ERROR(validateYieldAndBuildOutputs(yield->yield()));
   }
+  NG_RETURN_IF_ERROR(validateJoin(yield->joinClause()));
 
   if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty() ||
       !exprProps_.edgeProps().empty()) {
@@ -44,16 +46,18 @@ Status YieldValidator::validateImpl() {
     return Status::SemanticError("Not support both input and variable.");
   }
 
-  if (!exprProps_.varProps().empty() && exprProps_.varProps().size() > 1) {
-    return Status::SemanticError("Only one variable allowed to use.");
-  }
-
-  if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
-    // TODO: Support Multiple userDefinedVars
-    if (userDefinedVarNameList_.size() != 1) {
-      return Status::SemanticError("Multiple user defined vars not supported yet.");
+  if (yield->joinClause() == nullptr) {
+    if (!exprProps_.varProps().empty() && exprProps_.varProps().size() > 1) {
+      return Status::SemanticError("Only one variable allowed to use.");
     }
-    userDefinedVarName_ = *userDefinedVarNameList_.begin();
+
+    if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
+      // TODO: Support Multiple userDefinedVars
+      if (userDefinedVarNameList_.size() != 1) {
+        return Status::SemanticError("Multiple user defined vars not supported yet.");
+      }
+      userDefinedVarName_ = *userDefinedVarNameList_.begin();
+    }
   }
 
   return Status::OK();
@@ -172,9 +176,118 @@ Status YieldValidator::validateWhere(const WhereClause *where) {
   return Status::OK();
 }
 
+Status YieldValidator::validateJoin(const JoinClause *join) {
+  if (join == nullptr) {
+    return Status::OK();
+  }
+
+  if (join->joinMode() != JoinMode::kInnerJoin) {
+    return Status::SemanticError("only support inner join.");
+  }
+
+  auto *leftVarExpr = join->leftVarExpr();
+  auto *rightVarExpr = join->rightVarExpr();
+  DCHECK_EQ(leftVarExpr->kind(), Expression::Kind::kVar);
+  DCHECK_EQ(rightVarExpr->kind(), Expression::Kind::kVar);
+  leftVar_ = static_cast<VariableExpression *>(leftVarExpr)->var();
+  rightVar_ = static_cast<VariableExpression *>(rightVarExpr)->var();
+
+  leftConditionExpr_ = join->leftConditionExpr();
+  rightConditionExpr_ = join->rightConditionExpr();
+  DCHECK_EQ(leftConditionExpr_->kind(), Expression::Kind::kVarProperty);
+  DCHECK_EQ(rightConditionExpr_->kind(), Expression::Kind::kVarProperty);
+  auto &leftConditionVar = static_cast<VariablePropertyExpression *>(leftConditionExpr_)->sym();
+  auto &rightConditionVar = static_cast<VariablePropertyExpression *>(rightConditionExpr_)->sym();
+  auto &leftConditionCol = static_cast<VariablePropertyExpression *>(leftConditionExpr_)->prop();
+  auto &rightConditionCol = static_cast<VariablePropertyExpression *>(rightConditionExpr_)->prop();
+
+  if (leftVar_ == rightVar_) {
+    return Status::SemanticError("do not support self-join.");
+  }
+
+  if (leftVar_ != leftConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 leftVar_.c_str(),
+                                 leftConditionExpr_->toString().c_str());
+  }
+
+  if (rightVar_ != rightConditionVar) {
+    return Status::SemanticError("`%s' should be consistent with join condition variable `%s'.",
+                                 rightVar_.c_str(),
+                                 rightConditionExpr_->toString().c_str());
+  }
+
+  auto *varPtr = qctx_->symTable()->getVar(leftVar_);
+  DCHECK(varPtr != nullptr);
+  std::vector<std::string> leftColNames = varPtr->colNames;
+  varPtr = qctx_->symTable()->getVar(rightVar_);
+  DCHECK(varPtr != nullptr);
+  std::vector<std::string> rightColNames = varPtr->colNames;
+  for (auto &leftColName : leftColNames) {
+    if (leftColName == leftConditionCol) {
+      continue;
+    }
+    for (auto &rightColName : rightColNames) {
+      if (rightColName != rightConditionCol && rightColName == leftColName) {
+        return Status::SemanticError(
+            "column name `%s' of $%s and column name `%s' of $%s are the same, please rename it to "
+            "a non-duplicate column name.",
+            leftColName.c_str(),
+            leftVar_.c_str(),
+            rightColName.c_str(),
+            rightVar_.c_str());
+      }
+    }
+  }
+
+  auto typeStatus = deduceExprType(leftConditionExpr_);
+  NG_RETURN_IF_ERROR(typeStatus);
+  typeStatus = deduceExprType(rightConditionExpr_);
+  NG_RETURN_IF_ERROR(typeStatus);
+  return Status::OK();
+}
+
+Status YieldValidator::buildJoinPlan() {
+  PlanNode *leftDep = nullptr;
+  PlanNode *rightDep = nullptr;
+  auto *varPtr = qctx_->symTable()->getVar(leftVar_);
+  std::vector<std::string> colNames = varPtr->colNames;
+
+  DCHECK_EQ(varPtr->writtenBy.size(), 1);
+  for (auto node : varPtr->writtenBy) {
+    leftDep = node;
+  }
+
+  varPtr = qctx_->symTable()->getVar(rightVar_);
+  colNames.insert(colNames.end(), varPtr->colNames.begin(), varPtr->colNames.end());
+  DCHECK_EQ(varPtr->writtenBy.size(), 1);
+  for (auto node : varPtr->writtenBy) {
+    rightDep = node;
+  }
+
+  auto *join =
+      HashInnerJoin::make(qctx_, leftDep, rightDep, {leftConditionExpr_}, {rightConditionExpr_});
+
+  join->setColNames(std::move(colNames));
+
+  auto *project = Project::make(qctx_, join, columns_);
+  project->setColNames(getOutColNames());
+
+  if (isDistinct_) {
+    root_ = Dedup::make(qctx_, project);
+  } else {
+    root_ = project;
+  }
+  tail_ = join;
+  return Status::OK();
+}
+
 // Generate plan according to input, implicit group by and yield columns.
 Status YieldValidator::toPlan() {
   auto yield = static_cast<const YieldSentence *>(sentence_);
+  if (yield->joinClause()) {
+    return buildJoinPlan();
+  }
 
   std::string inputVar;
   std::vector<std::string> colNames(inputs_.size());
@@ -233,7 +346,7 @@ Status YieldValidator::toPlan() {
     }
   }
 
-  if (yield->yield()->isDistinct()) {
+  if (isDistinct_) {
     root_ = Dedup::make(qctx_, dedupDep);
   } else {
     root_ = dedupDep;

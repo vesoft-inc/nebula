@@ -75,6 +75,7 @@ class MultiShortestPathExecutor final : public Executor {
 
  private:
   const MultiShortestPath* pathNode_{nullptr};
+  bool singleShortest_{false};
   size_t step_{1};
   std::string terminationVar_;
   // {src, <dst, true>}
@@ -85,6 +86,8 @@ class MultiShortestPathExecutor final : public Executor {
   Interims historyLeftPaths_;
   Interims historyRightPaths_;
   DataSet currentDs_;
+  size_t limit_{std::numeric_limits<size_t>::max()};
+  std::atomic<size_t> cnt_{0};
 };
 
 }  // namespace graph

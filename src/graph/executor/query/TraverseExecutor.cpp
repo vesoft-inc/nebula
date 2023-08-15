@@ -36,8 +36,8 @@ folly::Future<Status> TraverseExecutor::execute() {
 Status TraverseExecutor::buildRequestVids() {
   SCOPED_TIMER(&execTime_);
   const auto& inputVar = traverse_->inputVar();
-  auto inputIter = ectx_->getResult(inputVar).iterRef();
-  auto iter = static_cast<SequentialIter*>(inputIter);
+  auto inputIter = ectx_->getResult(inputVar).iter();
+  auto iter = static_cast<SequentialIter*>(inputIter.get());
   size_t iterSize = iter->size();
   vids_.reserve(iterSize);
   auto* src = traverse_->src();
@@ -478,6 +478,7 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
 std::vector<Row> TraverseExecutor::buildPath(const Value& initVertex,
                                              size_t minStep,
                                              size_t maxStep) {
+  memory::MemoryCheckGuard guard;
   auto vidIter = adjList_.find(initVertex);
   if (vidIter == adjList_.end()) {
     return std::vector<Row>();

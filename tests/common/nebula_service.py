@@ -594,7 +594,7 @@ class NebulaService(object):
         print("add hosts cmd is {}".format(cmd))
         resp = client.execute(cmd)
         assert resp.is_succeeded(), resp.error_msg()
-        
+
         # sign text search service
         NEBULA_TEST_ES_ADDRESS = os.environ.get("NEBULA_TEST_ES_ADDRESS")
         if NEBULA_TEST_ES_ADDRESS is not None:

@@ -82,9 +82,8 @@ const Value& Edge::value(const std::string& key) const {
   auto find = props.find(key);
   if (find != props.end()) {
     return find->second;
-  } else {
-    return Value::kNullValue;
   }
+  return Value::kNullValue;
 }
 
 bool Edge::operator<(const Edge& rhs) const {

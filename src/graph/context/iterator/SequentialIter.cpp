@@ -126,6 +126,25 @@ StatusOr<std::size_t> SequentialIter::getColumnIndex(const std::string& col) con
   return index->second;
 }
 
+const Value& SequentialIter::getTagProp(const std::string& tag, const std::string& prop) const {
+  const auto& val = this->getColumn("VERTEX");
+  if (val.isVertex()) {
+    const auto& vertex = val.getVertex();
+    return vertex.getTagProp(tag, prop);
+  }
+  return Value::kNullValue;
+}
+
+const Value& SequentialIter::getEdgeProp(const std::string& edge, const std::string& prop) const {
+  DCHECK(!edge.empty());
+  const auto& val = this->getColumn("EDGE");
+  if (val.isEdge()) {
+    const auto& e = val.getEdge();
+    return e.value(prop);
+  }
+  return Value::kNullValue;
+}
+
 Value SequentialIter::getVertex(const std::string& name) {
   return getColumn(name);
 }

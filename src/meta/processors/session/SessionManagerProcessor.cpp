@@ -133,10 +133,8 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
     sessions.emplace_back(std::move(session));
     iter->next();
   }
+  LOG(INFO) << "resp session size: " << sessions.size();
   resp_.sessions_ref() = std::move(sessions);
-  for (auto& session : resp_.get_sessions()) {
-    LOG(INFO) << "resp list session: " << session.get_session_id();
-  }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

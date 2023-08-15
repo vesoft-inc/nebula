@@ -228,4 +228,40 @@ std::string BoundClause::toString() const {
   return buf;
 }
 
+std::string enum2String(JoinMode joinMode) {
+  switch (joinMode) {
+    case JoinMode::kInnerJoin:
+      return " INNER JOIN ";
+    case JoinMode::kLeftJoin:
+      return " LEFT JOIN ";
+    case JoinMode::kRightJoin:
+      return " RIGHT JOIN ";
+    case JoinMode::kOuterJoin:
+      return " OUTER JOIN ";
+    case JoinMode::kSemiJoin:
+      return " SEMI JOIN ";
+    case JoinMode::kAntiJoin:
+      return " ANTI JOIN ";
+    case JoinMode::kCrossJoin:
+      return " CROSS JOIN ";
+  }
+  return "INVALID JOIN MODE";
+}
+
+std::string JoinClause::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "From ";
+  buf += leftVarExpr_->toString();
+  buf += enum2String(joinMode_);
+  buf += rightVarExpr_->toString();
+  if (joinMode_ != JoinMode::kCrossJoin) {
+    buf += " ON ";
+    buf += leftConditionExpr_->toString();
+    buf += " == ";
+    buf += rightConditionExpr_->toString();
+  }
+  return buf;
+}
+
 }  // namespace nebula

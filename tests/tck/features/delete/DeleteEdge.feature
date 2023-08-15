@@ -226,6 +226,12 @@ Feature: Delete string vid of edge
       | "Tim Duncan"  |
     When executing query:
       """
+      GO FROM "Boris Diaw" OVER like YIELD edge as e
+      | DELETE EDGE like src($-.e)->dst($-.e)
+      """
+    Then a SemanticError should be raised at runtime: `src($-.e)' is not an evaluable expression.
+    When executing query:
+      """
       GO FROM "Boris Diaw" OVER like
       YIELD like._src as src, like._dst as dst, like._rank as rank
       | DELETE EDGE like $-.src->$-.dst @ $-.rank

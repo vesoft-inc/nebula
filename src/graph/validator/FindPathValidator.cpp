@@ -18,7 +18,9 @@ Status FindPathValidator::validateImpl() {
   pathCtx_->isShortest = fpSentence->isShortest();
   pathCtx_->noLoop = fpSentence->noLoop();
   pathCtx_->withProp = fpSentence->withProp();
+  pathCtx_->singleShortest = fpSentence->singleShortest();
   pathCtx_->inputVarName = inputVarName_;
+  pathCtx_->limit = fpSentence->limit();
 
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->from(), pathCtx_->from));
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->to(), pathCtx_->to));
@@ -49,12 +51,8 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
 
   auto undefinedParams = graph::ExpressionUtils::ExtractInnerVars(filterExpr, qctx_);
   if (!undefinedParams.empty()) {
-    return Status::SemanticError(
-        "Undefined parameters: " +
-        std::accumulate(++undefinedParams.begin(),
-                        undefinedParams.end(),
-                        *undefinedParams.begin(),
-                        [](auto& lhs, auto& rhs) { return lhs + ", " + rhs; }));
+    auto msg = folly::join(", ", undefinedParams);
+    return Status::SemanticError("Undefined parameters: %s", msg.c_str());
   }
   auto* newFilter = graph::ExpressionUtils::rewriteParameter(filterExpr, qctx_);
 

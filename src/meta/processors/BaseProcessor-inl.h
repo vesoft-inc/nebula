@@ -482,7 +482,9 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
     const std::vector<cpp2::AlterSchemaItem>& alterItems) {
   std::set<std::string> cols;
   for (auto& [indexName, index] : ftIndices) {
-    cols.insert(index.fields_ref()->front());
+    for (auto& field : *index.fields_ref()) {
+      cols.insert(field);
+    }
   }
   for (const auto& item : alterItems) {
     if (*item.op_ref() == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||

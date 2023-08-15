@@ -55,7 +55,7 @@ class BFSShortestPathExecutor final : public Executor {
 
   folly::Future<Status> conjunctPath();
 
-  DataSet doConjunct(const std::vector<Value>& meetVids, bool oddStep) const;
+  DataSet doConjunct(const std::vector<Value>& meetVids, bool oddStep);
 
   std::unordered_multimap<Value, Path> createPath(std::vector<Value> meetVids,
                                                   bool reverse,
@@ -63,6 +63,7 @@ class BFSShortestPathExecutor final : public Executor {
 
  private:
   const BFSShortestPath* pathNode_{nullptr};
+  bool singleShortest_{false};
   size_t step_{1};
   HashSet leftVisitedVids_;
   HashSet rightVisitedVids_;
@@ -70,6 +71,7 @@ class BFSShortestPathExecutor final : public Executor {
   std::vector<std::unordered_multimap<Value, Edge>> allRightEdges_;
   DataSet currentDs_;
   std::string terminateEarlyVar_;
+  size_t limit_{std::numeric_limits<size_t>::max()};
 };
 }  // namespace graph
 }  // namespace nebula

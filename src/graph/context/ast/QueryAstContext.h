@@ -42,6 +42,7 @@ struct PathContext final : AstContext {
   Starts to;
   StepClause steps;
   Over over;
+  int64_t limit{-1};
   Expression* filter{nullptr};
   std::vector<std::string> colNames;
 
@@ -54,6 +55,7 @@ struct PathContext final : AstContext {
   std::string toVidsVar;
 
   bool isShortest{false};
+  bool singleShortest{false};
   bool isWeight{false};
   bool noLoop{false};
   bool withProp{false};
@@ -122,7 +124,7 @@ struct LookupContext final : public AstContext {
 
   // fulltext index
   bool isFulltextIndex{false};
-  std::string fulltextIndex;
+  bool hasScore{false};
   Expression* fulltextExpr{nullptr};
 
   // order by

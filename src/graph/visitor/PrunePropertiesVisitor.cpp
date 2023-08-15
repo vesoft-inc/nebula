@@ -363,12 +363,18 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
 }
 
 void PrunePropertiesVisitor::visitCurrent(AppendVertices *node) {
+  auto &colNames = node->colNames();
+  DCHECK(!colNames.empty());
   if (rootNode_) {
+    //  the output of project is the same as that of appendvertices
+    //  (redundant project are deleted by CollapseProjectRule)
+    //  so the properties of all variables should be extracted
+    for (auto &colName : colNames) {
+      propsUsed_.colsSet.emplace(colName);
+    }
     rootNode_ = false;
     return;
   }
-  auto &colNames = node->colNames();
-  DCHECK(!colNames.empty());
   auto &nodeAlias = colNames.back();
   auto it = propsUsed_.colsSet.find(nodeAlias);
   if (it != propsUsed_.colsSet.end()) {

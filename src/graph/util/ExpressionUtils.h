@@ -14,6 +14,7 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UnaryExpression.h"
+#include "common/thrift/ThriftTypes.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "graph/visitor/FindVisitor.h"
@@ -70,6 +71,9 @@ class ExpressionUtils {
   // rewrite rank(e) to e._rank
   static Expression* rewriteEdgePropFunc2LabelAttribute(
       const Expression* expr, const std::unordered_map<std::string, AliasType>& aliasTypeMap);
+
+  // rewrite LabelAttr expr to property expr
+  static Expression* rewriteLabelAttr2PropExpr(const Expression* expr, bool isEdge);
 
   // rewrite LabelAttr to tagProp
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
@@ -262,6 +266,12 @@ class ExpressionUtils {
   static Expression* rewriteVertexPropertyFilter(ObjectPool* pool,
                                                  const std::string& node,
                                                  Expression* expr);
+
+  // label.not_exists_tag.prop => null
+  static Expression* rewriteAlwaysNullLabelTagProperty(ObjectPool* pool,
+                                                       meta::SchemaManager* schemaMan,
+                                                       GraphSpaceID spaceId,
+                                                       Expression* expr);
 };
 
 }  // namespace graph

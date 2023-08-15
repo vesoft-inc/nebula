@@ -112,8 +112,6 @@ Status DataCollectExecutor::rowBasedMove(const std::vector<std::string>& vars) {
       for (; seqIter->valid(); seqIter->next()) {
         ds.rows.emplace_back(seqIter->moveRow());
       }
-    } else {
-      return Status::Error("Iterator should be kind of SequentialIter.");
     }
   }
   result_.setDataSet(std::move(ds));
@@ -140,10 +138,6 @@ Status DataCollectExecutor::collectAllPaths(const std::vector<std::string>& vars
         for (; seqIter->valid(); seqIter->next()) {
           ds.rows.emplace_back(seqIter->moveRow());
         }
-      } else {
-        std::stringstream msg;
-        msg << "Iterator should be kind of SequentialIter, but was: " << iter->kind();
-        return Status::Error(msg.str());
       }
     }
   }

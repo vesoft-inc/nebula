@@ -61,6 +61,18 @@ const Value& Vertex::value(const std::string& key) const {
   return Value::kNullValue;
 }
 
+const Value& Vertex::getTagProp(const std::string& tagName, const std::string& prop) const {
+  for (const auto& tag : tags) {
+    if (tag.name == tagName) {
+      auto find = tag.props.find(prop);
+      if (find != tag.props.end()) {
+        return find->second;
+      }
+    }
+  }
+  return Value::kNullValue;
+}
+
 std::string Vertex::toString() const {
   std::stringstream os;
   os << "(" << vid << ")";
