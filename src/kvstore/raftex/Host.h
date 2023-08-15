@@ -92,6 +92,7 @@ class Host final : public std::enable_shared_from_this<Host> {
     committedLogId_ = 0;
     sendingSnapshot_ = false;
     followerCommittedLogId_ = 0;
+    lastHeartbeatTime_ = 0;
   }
 
   /**
