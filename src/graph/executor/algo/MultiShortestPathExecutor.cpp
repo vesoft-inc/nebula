@@ -28,12 +28,21 @@ folly::Future<Status> MultiShortestPathExecutor::execute() {
   futures.emplace_back(std::move(leftFuture));
   futures.emplace_back(std::move(rightFuture));
 
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this](auto&& status) {
-        memory::MemoryCheckGuard guard;
+      .thenValue([this](std::vector<folly::Try<Status>>&& resps) {
         // oddStep
-        UNUSED(status);
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+        }
+        memory::MemoryCheckGuard guard;
         return conjunctPath(true);
       })
       .thenValue([this](auto&& termination) {
@@ -312,25 +321,35 @@ folly::Future<bool> MultiShortestPathExecutor::conjunctPath(bool oddStep) {
     futures.emplace_back(std::move(future));
   }
 
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      currentDs_.append(std::move(resp));
-    }
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<DataSet>>&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto resp = std::move(respVal).value();
+          currentDs_.append(std::move(resp));
+        }
 
-    for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
-      if (!iter->second.second) {
-        iter = terminationMap_.erase(iter);
-      } else {
-        ++iter;
-      }
-    }
-    if (terminationMap_.empty()) {
-      ectx_->setValue(terminationVar_, true);
-      return true;
-    }
-    return false;
-  });
+        for (auto iter = terminationMap_.begin(); iter != terminationMap_.end();) {
+          if (!iter->second.second) {
+            iter = terminationMap_.erase(iter);
+          } else {
+            ++iter;
+          }
+        }
+        if (terminationMap_.empty()) {
+          ectx_->setValue(terminationVar_, true);
+          return true;
+        }
+        return false;
+      });
 }
 
 void MultiShortestPathExecutor::setNextStepVid(const Interims& paths, const string& var) {
