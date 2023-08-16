@@ -5,6 +5,7 @@
 
 #include "FunctionManager.h"
 
+#include <float.h>
 #include <folly/json.h>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -68,8 +69,12 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT, Value::Type::STRING},
+                    Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT, Value::Type::STRING},
+                    Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -568,7 +573,7 @@ FunctionManager::FunctionManager() {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 2;
+    attr.maxArity_ = 3;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
@@ -583,7 +588,7 @@ FunctionManager::FunctionManager() {
               auto decimal = args[1].get().getInt();
               auto factor = pow(10.0, decimal);
 
-              string mode = "down";
+              string mode = "half_up";
               if (args.size() == 3 && args[2].get().type() == Value::Type::STRING) {
                 mode = args[2].get().getStr();
               }
@@ -591,58 +596,47 @@ FunctionManager::FunctionManager() {
                 auto roundedVal = std::round(val * factor) / factor;
 
                 if (val < 0) {
-                  // For negative numbers, round away from zero by adjusting the result.
                   if (roundedVal > val) {
                     roundedVal -= 1.0 / factor;
                   }
                 } else if (val > 0) {
-                  // For positive numbers, round away from zero by adjusting the result.
                   if (roundedVal < val) {
                     roundedVal += 1.0 / factor;
                   }
                 }
                 return roundedVal;
               } else if (mode == "down") {
-                return std::round(val * factor) / factor;
+                auto roundedVal = std::round(val * factor) / factor;
+                if (val < 0) {
+                  if (roundedVal < val) {
+                    roundedVal += 1.0 / factor;
+                  }
+                } else if (val > 0) {
+                  if (roundedVal > val) {
+                    roundedVal -= 1.0 / factor;
+                  }
+                }
+                return roundedVal;
               } else if (mode == "ceiling") {
                 return std::ceil(val * factor) / factor;
               } else if (mode == "floor") {
-                return std::floor(value * factor) / factor;
+                return std::floor(val * factor) / factor;
               } else if (mode == "half_up") {
-                auto roundedVal = std::round(val * factor) / factor;
-
-                // Calculate the distance to the original value for tie-breaking.
-                auto distanceToOriginal = std::abs(roundedVal * factor - val);
-                auto epsilon = 1.0 / (2.0 * factor);
-
-                if (distanceToOriginal < epsilon) {
-                  // Handle ties by rounding away from zero.
-                  if (val > 0) {
-                    roundedVal += epsilon;
-                  } else if (val < 0) {
-                    roundedVal -= epsilon;
-                  }
-                }
-
-                return roundedVal;
+                return std::round(val * factor) / factor;
               } else if (mode == "half_down") {
-                auto roundedVal = std::round(val * factor) / factor;
-
-                // Calculate the distance to the original value for tie-breaking.
-                auto distanceToOriginal = std::abs(roundedVal * factor - val);
-                auto epsilon = 1.0 / (2.0 * factor);
-
-                if (distanceToOriginal < epsilon) {
-                  // Handle ties by rounding towards zero for positive values,
-                  // and away from zero for negative values.
-                  if (val > 0) {
-                    roundedVal = std::floor(val * factor) / factor;
-                  } else if (val < 0) {
-                    roundedVal = std::ceil(val * factor) / factor;
+                auto next_largest = std::ceil(val * factor) / factor;
+                auto next_smallest = std::floor(val * factor) / factor;
+                if (std::fabs((val - next_smallest) - (next_largest - val)) < FLT_EPSILON) {
+                  if (val < 0) {
+                    return next_largest;
+                  } else {
+                    return next_smallest;
                   }
+                } else if (val - next_smallest > next_largest - val) {
+                  return next_largest;
+                } else {
+                  return next_smallest;
                 }
-
-                return roundedVal;
               } else {
                 return Value::kNullBadType;
               }

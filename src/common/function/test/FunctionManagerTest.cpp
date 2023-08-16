@@ -107,6 +107,22 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"round1", {11111.11111, 2}},
     {"round2", {11111.11111, -1}},
     {"round3", {11111.11111, -5}},
+    {"round4", {1.249, 1, "up"}},
+    {"round5", {-1.251, 1, "up"}},
+    {"round6", {1.25, 1, "up"}},
+    {"round7", {-1.35, 1, "up"}},
+    {"round8", {1.249, 1, "down"}},
+    {"round9", {-1.251, 1, "down"}},
+    {"round10", {1.25, 1, "down"}},
+    {"round11", {-1.35, 1, "down"}},
+    {"round12", {1.249, 1, "ceiling"}},
+    {"round13", {-1.251, 1, "ceiling"}},
+    {"round14", {1.25, 1, "ceiling"}},
+    {"round15", {-1.35, 1, "ceiling"}},
+    {"round16", {1.249, 1, "floor"}},
+    {"round17", {-1.251, 1, "floor"}},
+    {"round18", {1.25, 1, "floor"}},
+    {"round19", {-1.35, 1, "floor"}},
     {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
@@ -282,6 +298,22 @@ TEST_F(FunctionManagerTest, functionCall) {
     TEST_FUNCTION(round, args_["round1"], 11111.11);
     TEST_FUNCTION(round, args_["round2"], 11110.0);
     TEST_FUNCTION(round, args_["round3"], 0.0);
+    TEST_FUNCTION(round, args_["round4"], 1.3);
+    TEST_FUNCTION(round, args_["round5"], -1.3);
+    TEST_FUNCTION(round, args_["round6"], 1.3);
+    TEST_FUNCTION(round, args_["round7"], -1.4);
+    TEST_FUNCTION(round, args_["round8"], 1.2);
+    TEST_FUNCTION(round, args_["round9"], -1.2);
+    TEST_FUNCTION(round, args_["round10"], 1.2);
+    TEST_FUNCTION(round, args_["round11"], -1.3);
+    TEST_FUNCTION(round, args_["round12"], 1.3);
+    TEST_FUNCTION(round, args_["round13"], -1.2);
+    TEST_FUNCTION(round, args_["round14"], 1.3);
+    TEST_FUNCTION(round, args_["round15"], -1.3);
+    TEST_FUNCTION(round, args_["round16"], 1.2);
+    TEST_FUNCTION(round, args_["round17"], -1.3);
+    TEST_FUNCTION(round, args_["round18"], 1.2);
+    TEST_FUNCTION(round, args_["round19"], -1.4);
   }
   {
     TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));
