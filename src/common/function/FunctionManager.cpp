@@ -637,6 +637,20 @@ FunctionManager::FunctionManager() {
                 } else {
                   return next_smallest;
                 }
+              } else if (mode == "half_even") {
+                auto next_largest = std::ceil(val * factor) / factor;
+                auto next_smallest = std::floor(val * factor) / factor;
+                if (std::fabs((val - next_smallest) - (next_largest - val)) < FLT_EPSILON) {
+                  if (std::fmod(next_smallest * factor, 2.0) == 1.0) {
+                    return next_largest;
+                  } else {
+                    return next_smallest;
+                  }
+                } else if (val - next_smallest > next_largest - val) {
+                  return next_largest;
+                } else {
+                  return next_smallest;
+                }
               } else {
                 return Value::kNullBadType;
               }
