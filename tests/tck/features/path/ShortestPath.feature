@@ -354,9 +354,11 @@ Feature: Shortest Path
       | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                        |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")>                              |
-      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
+      | p                                                                                |
+      | <("Tim Duncan")-[:like@0{}]->("Manu Ginobili")>                                  |
+      | <("Tim Duncan")-[:like@0{}]->("Tony Parker")-[:like@0{}]->("LaMarcus Aldridge")> |
+      | <("Tim Duncan")-[:like@0{}]->("Tony Parker")-[:like@0{}]->("Tim Duncan")>        |
+      | <("Tim Duncan")-[:like@0{}]->("Manu Ginobili")-[:like@0{}]->("Tim Duncan")>      |
 
   Scenario: [1] Shortest Path With Limit
     When executing query:
@@ -639,3 +641,27 @@ Feature: Shortest Path
     Then the result should be, in any order, with relax comparison:
       | relationships                                  |
       | [[:like "Tiago Splitter"->"Tim Duncan" @0 {}]] |
+
+  Scenario: Shortest Path With Loop
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan" OVER like BIDIRECT YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                             |
+      | <("Tim Duncan")<-[:like@0 {}]-("Manu Ginobili")<-[:like@0 {}]-("Tim Duncan")> |
+      | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan", "Tony Parker" OVER like BIDIRECT YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                             |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")>                                |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")>                                |
+      | <("Tim Duncan")<-[:like@0 {}]-("Manu Ginobili")<-[:like@0 {}]-("Tim Duncan")> |
+      | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
+      | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
+      | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
