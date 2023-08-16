@@ -577,10 +577,86 @@ FunctionManager::FunctionManager() {
         }
         case Value::Type::INT:
         case Value::Type::FLOAT: {
-          if (args.size() == 2) {
+          if (args.size() >= 2) {
             if (args[1].get().type() == Value::Type::INT) {
+              auto val = args[0].get().getFloat();
               auto decimal = args[1].get().getInt();
-              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+              auto factor = pow(10.0, decimal);
+
+              string mode = "down";
+              if (args.size() == 3 && args[2].get().type() == Value::Type::STRING) {
+                mode = args[2].get().getStr();
+              }
+
+              switch (mode) {
+                case "up": {
+                  auto roundedVal = std::round(val * factor) / factor;
+
+                  if (val < 0) {
+                    // For negative numbers, round away from zero by adjusting the result.
+                    if (roundedVal > val) {
+                      roundedVal -= 1.0 / factor;
+                    }
+                  } else if (val > 0) {
+                    // For positive numbers, round away from zero by adjusting the result.
+                    if (roundedVal < val) {
+                      roundedVal += 1.0 / factor;
+                    }
+                  }
+                  return roundedVal;
+                }
+                case "down": {
+                  return std::round(val * factor) / factor;
+                }
+                case "ceiling": {
+                  return std::ceil(val * factor) / factor;
+                }
+                case "floor": {
+                  return std::floor(value * factor) / factor;
+                }
+                case "half_up": {
+                  auto roundedVal = std::round(val * factor) / factor;
+
+                  // Calculate the distance to the original value for tie-breaking.
+                  auto distanceToOriginal = std::abs(roundedVal * factor - val);
+                  auto epsilon = 1.0 / (2.0 * factor);
+
+                  if (distanceToOriginal < epsilon) {
+                    // Handle ties by rounding away from zero.
+                    if (val > 0) {
+                      roundedVal += epsilon;
+                    } else if (val < 0) {
+                      roundedVal -= epsilon;
+                    }
+                  }
+
+                  return roundedVal;
+                }
+                case "half_down": {
+                  auto roundedVal = std::round(val * factor) / factor;
+
+                  // Calculate the distance to the original value for tie-breaking.
+                  auto distanceToOriginal = std::abs(roundedVal * factor - val);
+                  auto epsilon = 1.0 / (2.0 * factor);
+
+                  if (distanceToOriginal < epsilon) {
+                    // Handle ties by rounding towards zero for positive values,
+                    // and away from zero for negative values.
+                    if (val > 0) {
+                      roundedVal = std::floor(val * factor) / factor;
+                    } else if (val < 0) {
+                      roundedVal = std::ceil(val * factor) / factor;
+                    }
+                  }
+
+                  return roundedVal;
+                }
+                case "half_even":
+                  break;
+                default: {
+                  return Value::kNullBadType;
+                }
+              }
             } else {
               return Value::kNullBadType;
             }
