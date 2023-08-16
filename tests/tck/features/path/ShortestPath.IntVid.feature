@@ -309,9 +309,11 @@ Feature: Integer Vid Shortest Path
       | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                        |
-      | <("Tim Duncan")-[:like]->("Manu Ginobili")>                              |
-      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")> |
+      | p                                                                                |
+      | <("Tim Duncan")-[:like@0{}]->("Manu Ginobili")>                                  |
+      | <("Tim Duncan")-[:like@0{}]->("Tony Parker")-[:like@0{}]->("LaMarcus Aldridge")> |
+      | <("Tim Duncan")-[:like@0{}]->("Tony Parker")-[:like@0{}]->("Tim Duncan")>        |
+      | <("Tim Duncan")-[:like@0{}]->("Manu Ginobili")-[:like@0{}]->("Tim Duncan")>      |
 
   Scenario: Integer Vid [1] Shortest Path With Limit
     When executing query:
