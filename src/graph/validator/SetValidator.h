@@ -41,6 +41,8 @@ class SetValidator final : public Validator {
    */
   Status toPlan() override;
 
+  void removeStartNode(Validator* validator);
+
  private:
   std::unique_ptr<Validator> lValidator_;
   std::unique_ptr<Validator> rValidator_;
