@@ -111,9 +111,7 @@ void MultiShortestPathExecutor::init() {
   }
   for (const auto& leftVid : leftVids) {
     for (const auto& rightVid : rightVids) {
-      if (leftVid != rightVid) {
-        terminationMap_.emplace(leftVid, std::make_pair(rightVid, true));
-      }
+      terminationMap_.emplace(leftVid, std::make_pair(rightVid, true));
     }
   }
 }
@@ -240,13 +238,16 @@ DataSet MultiShortestPathExecutor::doConjunct(
       [this](const std::vector<Path>& leftPaths, const std::vector<Path>& rightPaths, DataSet& ds) {
         for (const auto& leftPath : leftPaths) {
           for (const auto& rightPath : rightPaths) {
-            if (++cnt_ > limit_) {
-              break;
-            }
             auto forwardPath = leftPath;
             auto backwardPath = rightPath;
             backwardPath.reverse();
             forwardPath.append(std::move(backwardPath));
+            if (forwardPath.hasDuplicateEdges()) {
+              continue;
+            }
+            if (++cnt_ > limit_) {
+              return;
+            }
             Row row;
             row.values.emplace_back(std::move(forwardPath));
             ds.rows.emplace_back(std::move(row));
