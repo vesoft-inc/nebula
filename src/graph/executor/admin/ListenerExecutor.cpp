@@ -69,7 +69,7 @@ folly::Future<Status> ShowListenerExecutor::execute() {
           return a.host_ref() < b.host_ref();
         });
 
-        DataSet result({"PartId", "Type", "Host", "Status"});
+        DataSet result({"PartId", "Type", "Host", "Host Status"});
         for (const auto& info : listenerInfos) {
           Row row;
           row.values.emplace_back(info.get_part_id());
