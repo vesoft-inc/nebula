@@ -138,7 +138,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"round32", {1.5, 0, "half_up"}},
     {"round33", {1.5, 0, "half_down"}},
     {"round34", {12.22, 0, "half_up"}},
-    {"round35", {-1.5, 1}},
+    {"round35", {1.5, 0}},
+    {"round36", {-1.5, 1}},
+    {"round37", {1.25, 1, "dummy_mode"}},
     {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
@@ -345,7 +347,9 @@ TEST_F(FunctionManagerTest, functionCall) {
     TEST_FUNCTION(round, args_["round32"], 2.0);
     TEST_FUNCTION(round, args_["round33"], 1.0);
     TEST_FUNCTION(round, args_["round34"], 12.0);
-    TEST_FUNCTION(round, args_["round35"], -1.5);
+    TEST_FUNCTION(round, args_["round35"], 2.0);
+    TEST_FUNCTION(round, args_["round36"], -1.5);
+    TEST_FUNCTION(round, args_["round37"], Value::kNullBadData);
   }
   {
     TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));
