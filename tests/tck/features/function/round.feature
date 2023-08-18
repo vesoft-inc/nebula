@@ -218,27 +218,19 @@ Feature: Round
       """
       RETURN round(3.125, 3.2) as result
       """
-    Then the result should be, in any order:
-      | result   |
-      | BAD_TYPE |
+    Then a SemanticError should be raised at runtime: SemanticError: `round(3.125,3.2)' is not a valid expression : Parameter's type error
     When executing query:
       """
       RETURN round(3.125, 3.2, 42) as result
       """
-    Then the result should be, in any order:
-      | result   |
-      | BAD_TYPE |
+    Then a SemanticError should be raised at runtime: SemanticError: `round(3.125,3.2,42)' is not a valid expression : Parameter's type error
     When executing query:
       """
       RETURN round("3.124", 3) as result
       """
-    Then the result should be, in any order:
-      | result   |
-      | BAD_TYPE |
+    Then a SemanticError should be raised at runtime: SemanticError: `round("3.125",3)' is not a valid expression : Parameter's type error
     When executing query:
       """
       RETURN round(1.4, "fs", "half_up") as result
       """
-    Then the result should be, in any order:
-      | result   |
-      | BAD_TYPE |
+    Then a SemanticError should be raised at runtime: SemanticError: `round(1.4,"fs","half_up")' is not a valid expression : Parameter's type error
