@@ -205,6 +205,9 @@ DataSet BFSShortestPathExecutor::doConjunct(const std::vector<Value>& meetVids,
       Path result = leftPath.second;
       result.reverse();
       result.append(rightPath->second);
+      if (result.hasDuplicateEdges()) {
+        continue;
+      }
       Row row;
       row.emplace_back(std::move(result));
       ds.rows.emplace_back(std::move(row));
