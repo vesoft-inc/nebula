@@ -8,6 +8,7 @@
 #include <float.h>
 #include <folly/json.h>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <cstdint>
 
@@ -69,8 +70,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT, Value::Type::INT, Value::Type::STRING},
-                    Value::Type::FLOAT),
+      TypeSignature({Value::Type::INT, Value::Type::INT, Value::Type::STRING}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT, Value::Type::INT, Value::Type::STRING},
@@ -592,64 +592,46 @@ FunctionManager::FunctionManager() {
               if (args.size() == 3 && args[2].get().type() == Value::Type::STRING) {
                 mode = args[2].get().getStr();
               }
-              if (mode == "up") {
+              if (boost::iequals(mode, "up")) {
                 auto roundedVal = std::round(val * factor) / factor;
-
-                if (val < 0) {
-                  if (roundedVal > val) {
-                    roundedVal -= 1.0 / factor;
-                  }
-                } else if (val > 0) {
-                  if (roundedVal < val) {
-                    roundedVal += 1.0 / factor;
-                  }
+                if ((val < 0) && (roundedVal > val)) {
+                  roundedVal -= 1.0 / factor;
+                } else if ((val > 0) && (roundedVal < val)) {
+                  roundedVal += 1.0 / factor;
                 }
                 return roundedVal;
-              } else if (mode == "down") {
+              } else if (boost::iequals(mode, "down")) {
                 auto roundedVal = std::round(val * factor) / factor;
-                if (val < 0) {
-                  if (roundedVal < val) {
-                    roundedVal += 1.0 / factor;
-                  }
-                } else if (val > 0) {
-                  if (roundedVal > val) {
-                    roundedVal -= 1.0 / factor;
-                  }
+                if ((val < 0) && (roundedVal < val)) {
+                  roundedVal += 1.0 / factor;
+                } else if ((val > 0) && (roundedVal > val)) {
+                  roundedVal -= 1.0 / factor;
                 }
                 return roundedVal;
-              } else if (mode == "ceiling") {
+              } else if (boost::iequals(mode, "ceiling")) {
                 return std::ceil(val * factor) / factor;
-              } else if (mode == "floor") {
+              } else if (boost::iequals(mode, "floor")) {
                 return std::floor(val * factor) / factor;
-              } else if (mode == "half_up") {
+              } else if (boost::iequals(mode, "half_up")) {
                 return std::round(val * factor) / factor;
-              } else if (mode == "half_down") {
-                auto next_largest = std::ceil(val * factor) / factor;
-                auto next_smallest = std::floor(val * factor) / factor;
-                if (std::fabs((val - next_smallest) - (next_largest - val)) < FLT_EPSILON) {
-                  if (val < 0) {
-                    return next_largest;
-                  } else {
-                    return next_smallest;
-                  }
-                } else if (val - next_smallest > next_largest - val) {
-                  return next_largest;
+              } else if (boost::iequals(mode, "half_down")) {
+                auto val_factor = val * factor;
+                auto integral_part = 0.0;
+                auto fraction_part = std::fabs(std::modf(val_factor, &integral_part));
+                if (((fraction_part <= 0.5) && (val < 0)) || ((fraction_part > 0.5) && (val > 0))) {
+                  return std::ceil(val_factor) / factor;
                 } else {
-                  return next_smallest;
+                  return std::floor(val_factor) / factor;
                 }
-              } else if (mode == "half_even") {
-                auto next_largest = std::ceil(val * factor) / factor;
-                auto next_smallest = std::floor(val * factor) / factor;
-                if (std::fabs((val - next_smallest) - (next_largest - val)) < FLT_EPSILON) {
-                  if (std::fmod(next_smallest * factor, 2.0) == 1.0) {
-                    return next_largest;
-                  } else {
-                    return next_smallest;
-                  }
-                } else if (val - next_smallest > next_largest - val) {
-                  return next_largest;
+              } else if (boost::iequals(mode, "half_even")) {
+                auto val_factor = val * factor;
+                auto integral_part = 0.0;
+                auto fraction_part = std::fabs(std::modf(val_factor, &integral_part));
+                if (((fraction_part == 0.5) && (std::fmod(val_factor - 0.5, 2.0) == 1.0)) ||
+                    ((fraction_part > 0.5) && (val > 0)) || ((fraction_part < 0.5) && (val < 0))) {
+                  return std::ceil(val_factor) / factor;
                 } else {
-                  return next_smallest;
+                  return std::floor(val_factor) / factor;
                 }
               } else {
                 return Value::kNullBadType;
