@@ -228,7 +228,7 @@ Feature: Round
       """
       RETURN round("3.124", 3) as result
       """
-    Then a SemanticError should be raised at runtime: `round("3.125",3)' is not a valid expression : Parameter's type error
+    Then a SemanticError should be raised at runtime: `round("3.124",3)' is not a valid expression : Parameter's type error
     When executing query:
       """
       RETURN round(1.4, "fs", "half_up") as result
