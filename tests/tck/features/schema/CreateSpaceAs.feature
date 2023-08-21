@@ -164,6 +164,24 @@ Feature: Create space as another space
     Then the result should be, in any order:
       | src | dst | rank |
       | "1" | "2" | 0    |
+    When executing query:
+      """
+      create tag t2 (col1 int);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index i3 on t2(col1);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      show tag indexes;
+      """
+    Then the result should be, in any order:
+      | Index Name | By Tag | Columns  |
+      | "i1"       | "t1"   | ["col1"] |
+      | "i3"       | "t2"   | ["col1"] |
     Then drop the used space
 
   Scenario: clone space if not exist
