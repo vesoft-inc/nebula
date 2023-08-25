@@ -12,7 +12,10 @@ DEFINE_int32(client_idle_timeout_secs,
              28800,
              "The number of seconds NebulaGraph service waits before closing the idle connections");
 DEFINE_int32(session_idle_timeout_secs, 28800, "The number of seconds before idle sessions expire");
-DEFINE_int32(session_reclaim_interval_secs, 60, "Period we try to reclaim expired sessions");
+DEFINE_int32(
+    session_reclaim_interval_secs,
+    60,
+    "Period we try to reclaim expired sessions and update session information to the meta server");
 DEFINE_int32(num_netio_threads,
              0,
              "The number of networking threads, 0 for number of physical CPU cores");
