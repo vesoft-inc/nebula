@@ -482,7 +482,143 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
   return Status::Error("Parameter's type error");
 }
 
-FunctionManager::FunctionManager() {
+void FunctionManager::registerTrigonometricFunctions() {
+  {
+    auto &attr = functions_["sin"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::sin(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::sin(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["asin"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::asin(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::asin(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["cos"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::cos(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::cos(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["acos"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::acos(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::acos(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["tan"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::tan(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::tan(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["atan"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::INT: {
+          return std::atan(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          return std::atan(args[0].get().getFloat());
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+}
+
+void FunctionManager::registerMathFunctions() {
+  registerTrigonometricFunctions();
   {
     // absolute value
     auto &attr = functions_["abs"];
@@ -505,27 +641,6 @@ FunctionManager::FunctionManager() {
         }
       }
     };
-  }
-  {
-    auto &attr = functions_["bit_and"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() & args[1].get(); };
-  }
-  {
-    auto &attr = functions_["bit_or"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() | args[1].get(); };
-  }
-  {
-    auto &attr = functions_["bit_xor"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get() ^ args[1].get(); };
   }
   {
     // to nearest integer value not greater than x
@@ -918,138 +1033,6 @@ FunctionManager::FunctionManager() {
   }
 
   {
-    auto &attr = functions_["sin"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::sin(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::sin(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["asin"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::asin(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::asin(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["cos"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::cos(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::cos(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["acos"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::acos(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::acos(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["tan"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::tan(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::tan(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["atan"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::INT: {
-          return std::atan(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          return std::atan(args[0].get().getFloat());
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
     auto &attr = functions_["sign"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -1073,6 +1056,66 @@ FunctionManager::FunctionManager() {
       }
     };
   }
+
+  {
+    auto &attr = functions_["cos_similarity"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args.size() % 2 != 0) {
+        LOG(ERROR) << "The number of arguments must be even.";
+        // value range of cos is [-1, 1]
+        // it means error when we return -2
+        return static_cast<double>(-2);
+      }
+      // sum(xi * yi) / (sqrt(sum(pow(xi))) + sqrt(sum(pow(yi))))
+      auto mid = args.size() / 2;
+      double s1 = 0, s2 = 0, s3 = 0;
+      for (decltype(args.size()) i = 0; i < mid; ++i) {
+        if (args[i].get().isNumeric() && args[i + mid].get().isNumeric()) {
+          auto xi = args[i].get().isInt() ? args[i].get().getInt() : args[i].get().getFloat();
+          auto yi = args[i + mid].get().isInt() ? args[i + mid].get().getInt()
+                                                : args[i + mid].get().getFloat();
+          s1 += (xi * yi);
+          s2 += (xi * xi);
+          s3 += (yi * yi);
+        } else {
+          return Value::kNullBadType;
+        }
+      }
+      if (std::abs(s2) <= kEpsilon || std::abs(s3) <= kEpsilon) {
+        return static_cast<double>(-2);
+      } else {
+        return s1 / (std::sqrt(s2) * std::sqrt(s3));
+      }
+    };
+  }
+}
+
+void FunctionManager::registerBitwiseAndHashFunctions() {
+  {
+    auto &attr = functions_["bit_and"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get() & args[1].get(); };
+  }
+  {
+    auto &attr = functions_["bit_or"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get() | args[1].get(); };
+  }
+  {
+    auto &attr = functions_["bit_xor"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get() ^ args[1].get(); };
+  }
+
   {
     auto &attr = functions_["rand"];
     attr.minArity_ = 0;
@@ -1152,16 +1195,36 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    // unix timestamp
-    auto &attr = functions_["now"];
-    attr.minArity_ = 0;
-    attr.maxArity_ = 0;
-    setCompleteNonPure(attr);
+    // 64bit signed hash value
+    auto &attr = functions_["hash"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      UNUSED(args);
-      return ::time(NULL);
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE:
+        case Value::Type::__EMPTY__:
+        case Value::Type::INT:
+        case Value::Type::FLOAT:
+        case Value::Type::BOOL:
+        case Value::Type::STRING:
+        case Value::Type::DATE:
+        case Value::Type::DATETIME:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::PATH:
+        case Value::Type::LIST: {
+          return static_cast<int64_t>(std::hash<nebula::Value>()(args[0].get()));
+        }
+        default:
+          LOG(ERROR) << "Hash has not been implemented for " << args[0].get().type();
+          return Value::kNullBadType;
+      }
     };
   }
+}
+
+void FunctionManager::registerStringFunctions() {
   {
     auto &attr = functions_["strcasecmp"];
     attr.minArity_ = 2;
@@ -1444,75 +1507,6 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["tostring"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE:
-          return Value::kNullValue;
-        case Value::Type::INT: {
-          return folly::to<std::string>(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
-          auto str = folly::to<std::string>(args[0].get().getFloat());
-          std::size_t found = str.find('.');
-          if (found == std::string::npos) {
-            str += ".0";
-          }
-          return str;
-        }
-        case Value::Type::BOOL: {
-          return args[0].get().getBool() ? "true" : "false";
-        }
-        case Value::Type::STRING: {
-          return args[0].get().getStr();
-        }
-        case Value::Type::DATE: {
-          return args[0].get().getDate().toString();
-        }
-        case Value::Type::TIME: {
-          return args[0].get().getTime().toString();
-        }
-        case Value::Type::DATETIME: {
-          return args[0].get().getDateTime().toString();
-        }
-        default:
-          LOG(ERROR) << "toString has not been implemented for " << args[0].get().type();
-          return Value::kNullBadType;
-      }
-    };
-  }
-  {
-    auto &attr = functions_["toboolean"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toBool(); };
-  }
-  {
-    auto &attr = functions_["tofloat"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toFloat(); };
-  }
-  {
-    auto &attr = functions_["tointeger"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
-  }
-  {
-    auto &attr = functions_["toset"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
-  }
-  {
     auto &attr = functions_["lpad"];
     attr.minArity_ = 3;
     attr.maxArity_ = 3;
@@ -1605,79 +1599,144 @@ FunctionManager::FunctionManager() {
     };
     functions_["substring"] = attr;
   }
+
   {
-    // 64bit signed hash value
-    auto &attr = functions_["hash"];
+    auto &attr = functions_["concat"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      std::stringstream os;
+      for (size_t i = 0; i < args.size(); ++i) {
+        switch (args[i].get().type()) {
+          case Value::Type::NULLVALUE: {
+            return Value::kNullValue;
+          }
+          case Value::Type::BOOL: {
+            os << (args[i].get().getBool() ? "true" : "false");
+            break;
+          }
+          case Value::Type::INT: {
+            os << args[i].get().getInt();
+            break;
+          }
+          case Value::Type::FLOAT: {
+            os << args[i].get().getFloat();
+            break;
+          }
+          case Value::Type::STRING: {
+            os << args[i].get().getStr();
+            break;
+          }
+          case Value::Type::DATETIME: {
+            os << args[i].get().getDateTime();
+            break;
+          }
+          case Value::Type::DATE: {
+            os << args[i].get().getDate();
+            break;
+          }
+          case Value::Type::TIME: {
+            os << args[i].get().getTime();
+            break;
+          }
+          default: {
+            return Value::kNullBadData;
+          }
+        }
+      }
+      return os.str();
+    };
+  }
+  {
+    auto &attr = functions_["concat_ws"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isNull() || !args[0].get().isStr()) {
+        return Value::kNullValue;
+      }
+      std::vector<std::string> result;
+      result.reserve(args.size() - 1);
+      for (size_t i = 1; i < args.size(); ++i) {
+        switch (args[i].get().type()) {
+          case Value::Type::NULLVALUE: {
+            continue;
+          }
+          case Value::Type::BOOL:
+          case Value::Type::INT:
+          case Value::Type::FLOAT:
+          case Value::Type::DATE:
+          case Value::Type::DATETIME:
+          case Value::Type::TIME: {
+            result.emplace_back(args[i].get().toString());
+            break;
+          }
+          case Value::Type::STRING: {
+            result.emplace_back(args[i].get().getStr());
+            break;
+          }
+          default: {
+            return Value::kNullBadData;
+          }
+        }
+      }
+      return folly::join(args[0].get().getStr(), result);
+    };
+  }
+  {
+    auto &attr = functions_["json_extract"];
+    // note, we don't support second argument(path) like MySQL JSON_EXTRACT for now
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE:
-        case Value::Type::__EMPTY__:
-        case Value::Type::INT:
-        case Value::Type::FLOAT:
-        case Value::Type::BOOL:
-        case Value::Type::STRING:
-        case Value::Type::DATE:
-        case Value::Type::DATETIME:
-        case Value::Type::VERTEX:
-        case Value::Type::EDGE:
-        case Value::Type::PATH:
-        case Value::Type::LIST: {
-          return static_cast<int64_t>(std::hash<nebula::Value>()(args[0].get()));
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto json = args[0].get().getStr();
+
+      // invalid string to json will be caught and returned as null
+      try {
+        auto obj = folly::parseJson(json);
+        if (!obj.isObject()) {
+          return Value::kNullBadData;
         }
-        default:
-          LOG(ERROR) << "Hash has not been implemented for " << args[0].get().type();
-          return Value::kNullBadType;
+        // if obj is empty, i.e. "{}", return empty map
+        if (obj.empty()) {
+          return Map();
+        }
+        return Map(obj);
+      } catch (const std::exception &e) {
+        return Value::kNullBadData;
       }
     };
   }
   {
-    auto &attr = functions_["udf_is_in"];
+    auto &attr = functions_["extract"];
     attr.minArity_ = 2;
-    attr.maxArity_ = INT64_MAX;
+    attr.maxArity_ = 2;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      return std::find(args.begin() + 1, args.end(), args[0].get()) != args.end();
+      if (!args[0].get().isStr() || !args[1].get().isStr()) {
+        return Value::kNullBadType;
+      }
+
+      const auto &s = args[0].get().getStr();
+      std::regex rgx(args[1].get().getStr());
+      List res;
+      for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
+        res.emplace_back(beg->str());
+      }
+      return res;
     };
   }
+}
+
+void FunctionManager::registerCastFunctions() {
   {
-    auto &attr = functions_["cos_similarity"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = INT64_MAX;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (args.size() % 2 != 0) {
-        LOG(ERROR) << "The number of arguments must be even.";
-        // value range of cos is [-1, 1]
-        // it means error when we return -2
-        return static_cast<double>(-2);
-      }
-      // sum(xi * yi) / (sqrt(sum(pow(xi))) + sqrt(sum(pow(yi))))
-      auto mid = args.size() / 2;
-      double s1 = 0, s2 = 0, s3 = 0;
-      for (decltype(args.size()) i = 0; i < mid; ++i) {
-        if (args[i].get().isNumeric() && args[i + mid].get().isNumeric()) {
-          auto xi = args[i].get().isInt() ? args[i].get().getInt() : args[i].get().getFloat();
-          auto yi = args[i + mid].get().isInt() ? args[i + mid].get().getInt()
-                                                : args[i + mid].get().getFloat();
-          s1 += (xi * yi);
-          s2 += (xi * xi);
-          s3 += (yi * yi);
-        } else {
-          return Value::kNullBadType;
-        }
-      }
-      if (std::abs(s2) <= kEpsilon || std::abs(s3) <= kEpsilon) {
-        return static_cast<double>(-2);
-      } else {
-        return s1 / (std::sqrt(s2) * std::sqrt(s3));
-      }
-    };
-  }
-  {
-    auto &attr = functions_["size"];
+    auto &attr = functions_["tostring"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
@@ -1685,30 +1744,78 @@ FunctionManager::FunctionManager() {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE:
           return Value::kNullValue;
-        case Value::Type::__EMPTY__:
-          return Value::kEmpty;
-        case Value::Type::STRING:
-          return static_cast<int64_t>(args[0].get().getStr().size());
-        case Value::Type::LIST:
-          return static_cast<int64_t>(args[0].get().getList().size());
-        case Value::Type::MAP:
-          return static_cast<int64_t>(args[0].get().getMap().size());
-        case Value::Type::SET:
-          return static_cast<int64_t>(args[0].get().getSet().size());
-        case Value::Type::DATASET:
-          return static_cast<int64_t>(args[0].get().getDataSet().size());
-        case Value::Type::INT:
-        case Value::Type::FLOAT:
-        case Value::Type::BOOL:
-        case Value::Type::DATE:
-        case Value::Type::DATETIME:
-        case Value::Type::VERTEX:
-        case Value::Type::EDGE:
-        case Value::Type::PATH:
+        case Value::Type::INT: {
+          return folly::to<std::string>(args[0].get().getInt());
+        }
+        case Value::Type::FLOAT: {
+          auto str = folly::to<std::string>(args[0].get().getFloat());
+          std::size_t found = str.find('.');
+          if (found == std::string::npos) {
+            str += ".0";
+          }
+          return str;
+        }
+        case Value::Type::BOOL: {
+          return args[0].get().getBool() ? "true" : "false";
+        }
+        case Value::Type::STRING: {
+          return args[0].get().getStr();
+        }
+        case Value::Type::DATE: {
+          return args[0].get().getDate().toString();
+        }
+        case Value::Type::TIME: {
+          return args[0].get().getTime().toString();
+        }
+        case Value::Type::DATETIME: {
+          return args[0].get().getDateTime().toString();
+        }
         default:
-          LOG(ERROR) << "size() has not been implemented for " << args[0].get().type();
+          LOG(ERROR) << "toString has not been implemented for " << args[0].get().type();
           return Value::kNullBadType;
       }
+    };
+  }
+  {
+    auto &attr = functions_["toboolean"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toBool(); };
+  }
+  {
+    auto &attr = functions_["tofloat"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toFloat(); };
+  }
+  {
+    auto &attr = functions_["tointeger"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toInt(); };
+  }
+  {
+    auto &attr = functions_["toset"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return Value(args[0].get()).toSet(); };
+  }
+}
+
+void FunctionManager::registerDateTimeFunctions() {
+  {
+    // unix timestamp
+    auto &attr = functions_["now"];
+    attr.minArity_ = 0;
+    attr.maxArity_ = 0;
+    setCompleteNonPure(attr);
+    attr.body_ = [](const auto &args) -> Value {
+      UNUSED(args);
+      return ::time(NULL);
     };
   }
   {
@@ -1851,139 +1958,24 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["range"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 3;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isInt() || !args[1].get().isInt()) {
-        return Value::kNullBadType;
-      }
-
-      int64_t start = args[0].get().getInt();
-      int64_t end = args[1].get().getInt();
-      int64_t step = 1;
-      if (args.size() == 3) {
-        if (!args[2].get().isInt()) {
-          return Value::kNullBadType;
-        }
-        step = args[2].get().getInt();
-      }
-      if (step == 0) {
-        return Value::kNullBadData;
-      }
-
-      List res;
-      for (auto i = start; step > 0 ? i <= end : i >= end; i = i + step) {
-        res.emplace_back(i);
-      }
-      return Value(res);
-    };
-  }
-  {
-    auto &attr = functions_["id"];
+    auto &attr = functions_["duration"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::VERTEX: {
-          return args[0].get().getVertex().vid;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["_joinkey"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      const Value &value = args[0].get();
-      switch (value.type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::VERTEX: {
-          return value.getVertex().vid;
-        }
-        // NOTE:
-        // id() on Edge is designed to be used get a Join key when
-        // Join operator performed on edge, the returned id is a
-        // string encoded the {src, dst, type, ranking} tuple
-        case Value::Type::EDGE: {
-          return value.getEdge().id();
-        }
-        // The root cause is the edge-type data format of Traverse executor
-        case Value::Type::LIST: {
-          auto &edges = value.getList().values;
-          if (edges.size() == 1 && edges[0].isEdge()) {
-            return edges[0].getEdge().id();
-          } else {
-            return args[0];
-          }
-        }
-        default: {
-          // Join on the origin type
-          return args[0];
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["tags"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::VERTEX: {
-          List tags;
-          for (auto &tag : args[0].get().getVertex().tags) {
-            tags.emplace_back(tag.name);
-          }
-          return tags;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-    functions_["labels"] = attr;
-  }
-  {
-    auto &attr = functions_["properties"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::VERTEX: {
-          Map props;
-          for (auto &tag : args[0].get().getVertex().tags) {
-            props.kvs.insert(tag.props.cbegin(), tag.props.cend());
-          }
-          return Value(std::move(props));
-        }
-        case Value::Type::EDGE: {
-          Map props;
-          props.kvs = args[0].get().getEdge().props;
-          return Value(std::move(props));
-        }
+      const auto &arg = args[0].get();
+      switch (arg.type()) {
         case Value::Type::MAP: {
-          return args[0].get();
+          auto result = time::TimeUtils::durationFromMap(arg.getMap());
+          if (result.ok()) {
+            return result.value();
+          } else {
+            return Value::kNullBadData;
+          }
+        }
+        case Value::Type::STRING: {
+          // TODO
+          return Value::kNullBadType;
         }
         default: {
           return Value::kNullBadType;
@@ -1991,592 +1983,9 @@ FunctionManager::FunctionManager() {
       }
     };
   }
-  {
-    auto &attr = functions_["type"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          return args[0].get().getEdge().name;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["typeid"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          return args[0].get().getEdge().type;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-{
-  auto &attr = functions_["is_inversed"];
-  attr.minArity_ = 1;
-  attr.maxArity_ = 1;
-  attr.isAlwaysPure_ = true;
-  attr.body_ = [](const auto &args) -> Value {
-    switch (args[0].get().type()) {
-      case Value::Type::NULLVALUE: {
-        return Value::kNullValue;
-      }
-      case Value::Type::EDGE: {
-        return args[0].get().getEdge().type < 0;
-      }
-      default: {
-        return Value::kNullBadType;
-      }
-    }
-  };
 }
-  {
-    auto &attr = functions_["src"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
-          return edge.type > 0 ? edge.src : edge.dst;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["dst"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
-          return edge.type > 0 ? edge.dst : edge.src;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    // `none_direct_dst` always return the dstId of an edge key
-    // without considering the direction of the edge type.
-    // The encoding of the edge key is:
-    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
-    // More information of encoding could be found in `NebulaKeyUtils.h`
-    auto &attr = functions_["none_direct_dst"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 2;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
-          return edge.dst;
-        }
-        case Value::Type::VERTEX: {
-          const auto &v = args[0].get().getVertex();
-          return v.vid;
-        }
-        case Value::Type::LIST: {
-          const auto &listVal = args[0].get().getList().values;
-          if (listVal.empty()) {
-            if (args.size() == 2) {
-              if (args[1].get().type() == Value::Type::VERTEX) {
-                const auto &v = args[1].get().getVertex();
-                return v.vid;
-              }
-              return Value::kNullBadType;
-            }
-            return Value::kNullBadType;
-          }
-          auto &lastVal = listVal.back();
-          if (lastVal.isEdge()) {
-            return lastVal.getEdge().dst;
-          } else if (lastVal.isVertex()) {
-            return lastVal.getVertex().vid;
-          } else {
-            return Value::kNullBadType;
-          }
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    // `none_direct_src` always return the srcId of an edge key
-    // without considering the direction of the edge type.
-    // The encoding of the edge key is:
-    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
-    // More information of encoding could be found in `NebulaKeyUtils.h`
-    auto &attr = functions_["none_direct_src"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          const auto &edge = args[0].get().getEdge();
-          return edge.src;
-        }
-        case Value::Type::VERTEX: {
-          const auto &v = args[0].get().getVertex();
-          return v.vid;
-        }
-        case Value::Type::LIST: {
-          const auto &listVal = args[0].get().getList();
-          auto &firstVal = listVal.values.front();
-          if (firstVal.isEdge()) {
-            return firstVal.getEdge().src;
-          } else if (firstVal.isVertex()) {
-            return firstVal.getVertex().vid;
-          } else {
-            return Value::kNullBadType;
-          }
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["rank"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          return args[0].get().getEdge().ranking;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["startnode"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          return Vertex(args[0].get().getEdge().src, {});
-        }
-        case Value::Type::PATH: {
-          return args[0].get().getPath().src;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["endnode"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::EDGE: {
-          return Vertex(args[0].get().getEdge().dst, {});
-        }
-        case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
-          if (path.steps.empty()) {
-            return path.src;
-          }
-          return path.steps.back().dst;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["head"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          const auto &items = args[0].get().getList().values;
-          return items.empty() ? Value::kNullValue : items.front();
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["last"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          const auto &items = args[0].get().getList().values;
-          return items.empty() ? Value::kNullValue : items.back();
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["coalesce"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = INT64_MAX;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      for (size_t i = 0; i < args.size(); ++i) {
-        if (args[i].get().type() != Value::Type::NULLVALUE) {
-          return args[i].get();
-        }
-      }
-      return Value::kNullValue;
-    };
-  }
-  {
-    auto &attr = functions_["keys"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      std::set<std::string> tmp;
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::VERTEX: {
-          for (auto &tag : args[0].get().getVertex().tags) {
-            for (auto &prop : tag.props) {
-              tmp.emplace(prop.first);
-            }
-          }
-          break;
-        }
-        case Value::Type::EDGE: {
-          for (auto &prop : args[0].get().getEdge().props) {
-            tmp.emplace(prop.first);
-          }
-          break;
-        }
-        case Value::Type::MAP: {
-          for (auto &kv : args[0].get().getMap().kvs) {
-            tmp.emplace(kv.first);
-          }
-          break;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-      List result;
-      result.values.assign(tmp.cbegin(), tmp.cend());
-      return result;
-    };
-  }
-  {
-    auto &attr = functions_["nodes"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
-          List result;
-          result.emplace_back(path.src);
-          for (auto &step : path.steps) {
-            result.emplace_back(step.dst);
-          }
-          return result;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["tail"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::LIST: {
-          auto &list = args[0].get().getList();
-          if (list.empty()) {
-            return List();
-          }
-          return List(std::vector<Value>(list.values.begin() + 1, list.values.end()));
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["relationships"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      switch (args[0].get().type()) {
-        case Value::Type::NULLVALUE: {
-          return Value::kNullValue;
-        }
-        case Value::Type::PATH: {
-          auto &path = args[0].get().getPath();
-          List result;
-          auto src = path.src.vid;
-          for (size_t i = 0; i < path.steps.size(); ++i) {
-            Edge edge;
-            edge.src = src;
-            edge.dst = path.steps[i].dst.vid;
-            edge.type = path.steps[i].type;
-            edge.name = path.steps[i].name;
-            edge.ranking = path.steps[i].ranking;
-            edge.props = path.steps[i].props;
 
-            src = edge.dst;
-            result.values.emplace_back(std::move(edge));
-          }
-          return result;
-        }
-        default: {
-          return Value::kNullBadType;
-        }
-      }
-    };
-  }
-  {
-    auto &attr = functions_["hassameedgeinpath"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isPath()) {
-        return Value::kNullBadType;
-      }
-      auto &path = args[0].get().getPath();
-      return path.hasDuplicateEdges();
-    };
-  }
-  {
-    auto &attr = functions_["hassamevertexinpath"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isPath()) {
-        return Value::kNullBadType;
-      }
-      auto &path = args[0].get().getPath();
-      return path.hasDuplicateVertices();
-    };
-  }
-  {
-    auto &attr = functions_["reversepath"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isPath()) {
-        return Value::kNullBadType;
-      }
-      auto path = args[0].get().getPath();
-      path.reverse();
-      return path;
-    };
-  }
-  {
-    auto &attr = functions_["datasetrowcol"];
-    attr.minArity_ = 3;
-    attr.maxArity_ = 3;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isDataSet() || !args[1].get().isInt() ||
-          !(args[2].get().isInt() || args[2].get().isStr())) {
-        return Value::kNullBadType;
-      }
-      const auto &ds = args[0].get().getDataSet();
-      if (ds.rowSize() < 1 || ds.colSize() < 1) {
-        return Value::kNullBadData;
-      }
-      const auto &colNames = ds.colNames;
-      int64_t rowIndex = args[1].get().getInt();
-      int64_t colIndex =
-          args[2].get().isInt()
-              ? args[2].get().getInt()
-              : std::distance(colNames.begin(),
-                              std::find(colNames.begin(), colNames.end(), args[2].get().getStr()));
-      if (rowIndex < 0 || colIndex < 0) {
-        return Value::kNullBadData;
-      }
-      if (static_cast<size_t>(rowIndex) >= ds.rowSize() ||
-          static_cast<size_t>(colIndex) >= ds.colSize()) {
-        return Value::kNullBadData;
-      }
-      return ds.rows[rowIndex][colIndex];
-    };
-  }
-  {
-    auto &attr = functions_["concat"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = INT64_MAX;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      std::stringstream os;
-      for (size_t i = 0; i < args.size(); ++i) {
-        switch (args[i].get().type()) {
-          case Value::Type::NULLVALUE: {
-            return Value::kNullValue;
-          }
-          case Value::Type::BOOL: {
-            os << (args[i].get().getBool() ? "true" : "false");
-            break;
-          }
-          case Value::Type::INT: {
-            os << args[i].get().getInt();
-            break;
-          }
-          case Value::Type::FLOAT: {
-            os << args[i].get().getFloat();
-            break;
-          }
-          case Value::Type::STRING: {
-            os << args[i].get().getStr();
-            break;
-          }
-          case Value::Type::DATETIME: {
-            os << args[i].get().getDateTime();
-            break;
-          }
-          case Value::Type::DATE: {
-            os << args[i].get().getDate();
-            break;
-          }
-          case Value::Type::TIME: {
-            os << args[i].get().getTime();
-            break;
-          }
-          default: {
-            return Value::kNullBadData;
-          }
-        }
-      }
-      return os.str();
-    };
-  }
-  {
-    auto &attr = functions_["concat_ws"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = INT64_MAX;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (args[0].get().isNull() || !args[0].get().isStr()) {
-        return Value::kNullValue;
-      }
-      std::vector<std::string> result;
-      result.reserve(args.size() - 1);
-      for (size_t i = 1; i < args.size(); ++i) {
-        switch (args[i].get().type()) {
-          case Value::Type::NULLVALUE: {
-            continue;
-          }
-          case Value::Type::BOOL:
-          case Value::Type::INT:
-          case Value::Type::FLOAT:
-          case Value::Type::DATE:
-          case Value::Type::DATETIME:
-          case Value::Type::TIME: {
-            result.emplace_back(args[i].get().toString());
-            break;
-          }
-          case Value::Type::STRING: {
-            result.emplace_back(args[i].get().getStr());
-            break;
-          }
-          default: {
-            return Value::kNullBadData;
-          }
-        }
-      }
-      return folly::join(args[0].get().getStr(), result);
-    };
-  }
+void FunctionManager::registerGeoFunctions() {
   // geo constructors
   {
     auto &attr = functions_["st_point"];
@@ -2861,56 +2270,124 @@ FunctionManager::FunctionManager() {
       return List(vals);
     };
   }
+}
+
+void FunctionManager::registerInternalFunctions() {
   {
-    auto &attr = functions_["is_edge"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    auto &attr = functions_["udf_is_in"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = INT64_MAX;
     attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
+    attr.body_ = [](const auto &args) -> Value {
+      return std::find(args.begin() + 1, args.end(), args[0].get()) != args.end();
+    };
   }
   {
-    auto &attr = functions_["duration"];
+    auto &attr = functions_["_joinkey"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      const auto &arg = args[0].get();
-      switch (arg.type()) {
-        case Value::Type::MAP: {
-          auto result = time::TimeUtils::durationFromMap(arg.getMap());
-          if (result.ok()) {
-            return result.value();
+      const Value &value = args[0].get();
+      switch (value.type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          return value.getVertex().vid;
+        }
+        // NOTE:
+        // id() on Edge is designed to be used get a Join key when
+        // Join operator performed on edge, the returned id is a
+        // string encoded the {src, dst, type, ranking} tuple
+        case Value::Type::EDGE: {
+          return value.getEdge().id();
+        }
+        // The root cause is the edge-type data format of Traverse executor
+        case Value::Type::LIST: {
+          auto &edges = value.getList().values;
+          if (edges.size() == 1 && edges[0].isEdge()) {
+            return edges[0].getEdge().id();
           } else {
-            return Value::kNullBadData;
+            return args[0];
           }
         }
-        case Value::Type::STRING: {
-          // TODO
-          return Value::kNullBadType;
-        }
         default: {
-          return Value::kNullBadType;
+          // Join on the origin type
+          return args[0];
         }
       }
     };
   }
   {
-    auto &attr = functions_["extract"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
+    auto &attr = functions_["hassameedgeinpath"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isStr() || !args[1].get().isStr()) {
+      if (!args[0].get().isPath()) {
         return Value::kNullBadType;
       }
-
-      const auto &s = args[0].get().getStr();
-      std::regex rgx(args[1].get().getStr());
-      List res;
-      for (std::sregex_iterator beg(s.begin(), s.end(), rgx), end{}; beg != end; ++beg) {
-        res.emplace_back(beg->str());
+      auto &path = args[0].get().getPath();
+      return path.hasDuplicateEdges();
+    };
+  }
+  {
+    auto &attr = functions_["hassamevertexinpath"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isPath()) {
+        return Value::kNullBadType;
       }
-      return res;
+      auto &path = args[0].get().getPath();
+      return path.hasDuplicateVertices();
+    };
+  }
+  {
+    auto &attr = functions_["reversepath"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isPath()) {
+        return Value::kNullBadType;
+      }
+      auto path = args[0].get().getPath();
+      path.reverse();
+      return path;
+    };
+  }
+  {
+    auto &attr = functions_["datasetrowcol"];
+    attr.minArity_ = 3;
+    attr.maxArity_ = 3;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isDataSet() || !args[1].get().isInt() ||
+          !(args[2].get().isInt() || args[2].get().isStr())) {
+        return Value::kNullBadType;
+      }
+      const auto &ds = args[0].get().getDataSet();
+      if (ds.rowSize() < 1 || ds.colSize() < 1) {
+        return Value::kNullBadData;
+      }
+      const auto &colNames = ds.colNames;
+      int64_t rowIndex = args[1].get().getInt();
+      int64_t colIndex =
+          args[2].get().isInt()
+              ? args[2].get().getInt()
+              : std::distance(colNames.begin(),
+                              std::find(colNames.begin(), colNames.end(), args[2].get().getStr()));
+      if (rowIndex < 0 || colIndex < 0) {
+        return Value::kNullBadData;
+      }
+      if (static_cast<size_t>(rowIndex) >= ds.rowSize() ||
+          static_cast<size_t>(colIndex) >= ds.colSize()) {
+        return Value::kNullBadData;
+      }
+      return ds.rows[rowIndex][colIndex];
     };
   }
   {
@@ -2969,34 +2446,6 @@ FunctionManager::FunctionManager() {
       }
     };
   }
-  {
-    auto &attr = functions_["json_extract"];
-    // note, we don't support second argument(path) like MySQL JSON_EXTRACT for now
-    attr.minArity_ = 1;
-    attr.maxArity_ = 1;
-    attr.isAlwaysPure_ = true;
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      auto json = args[0].get().getStr();
-
-      // invalid string to json will be caught and returned as null
-      try {
-        auto obj = folly::parseJson(json);
-        if (!obj.isObject()) {
-          return Value::kNullBadData;
-        }
-        // if obj is empty, i.e. "{}", return empty map
-        if (obj.empty()) {
-          return Map();
-        }
-        return Map(obj);
-      } catch (const std::exception &e) {
-        return Value::kNullBadData;
-      }
-    };
-  }
   // Get any argument which is not empty/null
   {
     auto &attr = functions_["_any"];
@@ -3023,6 +2472,633 @@ FunctionManager::FunctionManager() {
       return Value::kNullValue;
     };
   }
+}
+
+void FunctionManager::registerListFunctions() {
+  {
+    auto &attr = functions_["size"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE:
+          return Value::kNullValue;
+        case Value::Type::__EMPTY__:
+          return Value::kEmpty;
+        case Value::Type::STRING:
+          return static_cast<int64_t>(args[0].get().getStr().size());
+        case Value::Type::LIST:
+          return static_cast<int64_t>(args[0].get().getList().size());
+        case Value::Type::MAP:
+          return static_cast<int64_t>(args[0].get().getMap().size());
+        case Value::Type::SET:
+          return static_cast<int64_t>(args[0].get().getSet().size());
+        case Value::Type::DATASET:
+          return static_cast<int64_t>(args[0].get().getDataSet().size());
+        case Value::Type::INT:
+        case Value::Type::FLOAT:
+        case Value::Type::BOOL:
+        case Value::Type::DATE:
+        case Value::Type::DATETIME:
+        case Value::Type::VERTEX:
+        case Value::Type::EDGE:
+        case Value::Type::PATH:
+        default:
+          LOG(ERROR) << "size() has not been implemented for " << args[0].get().type();
+          return Value::kNullBadType;
+      }
+    };
+  }
+
+  {
+    auto &attr = functions_["range"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 3;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isInt() || !args[1].get().isInt()) {
+        return Value::kNullBadType;
+      }
+
+      int64_t start = args[0].get().getInt();
+      int64_t end = args[1].get().getInt();
+      int64_t step = 1;
+      if (args.size() == 3) {
+        if (!args[2].get().isInt()) {
+          return Value::kNullBadType;
+        }
+        step = args[2].get().getInt();
+      }
+      if (step == 0) {
+        return Value::kNullBadData;
+      }
+
+      List res;
+      for (auto i = start; step > 0 ? i <= end : i >= end; i = i + step) {
+        res.emplace_back(i);
+      }
+      return Value(res);
+    };
+  }
+  {
+    auto &attr = functions_["keys"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      std::set<std::string> tmp;
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          for (auto &tag : args[0].get().getVertex().tags) {
+            for (auto &prop : tag.props) {
+              tmp.emplace(prop.first);
+            }
+          }
+          break;
+        }
+        case Value::Type::EDGE: {
+          for (auto &prop : args[0].get().getEdge().props) {
+            tmp.emplace(prop.first);
+          }
+          break;
+        }
+        case Value::Type::MAP: {
+          for (auto &kv : args[0].get().getMap().kvs) {
+            tmp.emplace(kv.first);
+          }
+          break;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+      List result;
+      result.values.assign(tmp.cbegin(), tmp.cend());
+      return result;
+    };
+  }
+  {
+    auto &attr = functions_["nodes"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::PATH: {
+          auto &path = args[0].get().getPath();
+          List result;
+          result.emplace_back(path.src);
+          for (auto &step : path.steps) {
+            result.emplace_back(step.dst);
+          }
+          return result;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["tail"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::LIST: {
+          auto &list = args[0].get().getList();
+          if (list.empty()) {
+            return List();
+          }
+          return List(std::vector<Value>(list.values.begin() + 1, list.values.end()));
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["relationships"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::PATH: {
+          auto &path = args[0].get().getPath();
+          List result;
+          auto src = path.src.vid;
+          for (size_t i = 0; i < path.steps.size(); ++i) {
+            Edge edge;
+            edge.src = src;
+            edge.dst = path.steps[i].dst.vid;
+            edge.type = path.steps[i].type;
+            edge.name = path.steps[i].name;
+            edge.ranking = path.steps[i].ranking;
+            edge.props = path.steps[i].props;
+
+            src = edge.dst;
+            result.values.emplace_back(std::move(edge));
+          }
+          return result;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+}
+
+void FunctionManager::registerScalarFunctions() {
+  {
+    auto &attr = functions_["startnode"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return Vertex(args[0].get().getEdge().src, {});
+        }
+        case Value::Type::PATH: {
+          return args[0].get().getPath().src;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["endnode"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return Vertex(args[0].get().getEdge().dst, {});
+        }
+        case Value::Type::PATH: {
+          auto &path = args[0].get().getPath();
+          if (path.steps.empty()) {
+            return path.src;
+          }
+          return path.steps.back().dst;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["head"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::LIST: {
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.front();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["last"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::LIST: {
+          const auto &items = args[0].get().getList().values;
+          return items.empty() ? Value::kNullValue : items.back();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["coalesce"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i].get().type() != Value::Type::NULLVALUE) {
+          return args[i].get();
+        }
+      }
+      return Value::kNullValue;
+    };
+  }
+}
+
+void FunctionManager::registerGraphElementFunctions() {
+  {
+    auto &attr = functions_["id"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          return args[0].get().getVertex().vid;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["tags"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          List tags;
+          for (auto &tag : args[0].get().getVertex().tags) {
+            tags.emplace_back(tag.name);
+          }
+          return tags;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+    functions_["labels"] = attr;
+  }
+  {
+    auto &attr = functions_["properties"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::VERTEX: {
+          Map props;
+          for (auto &tag : args[0].get().getVertex().tags) {
+            props.kvs.insert(tag.props.cbegin(), tag.props.cend());
+          }
+          return Value(std::move(props));
+        }
+        case Value::Type::EDGE: {
+          Map props;
+          props.kvs = args[0].get().getEdge().props;
+          return Value(std::move(props));
+        }
+        case Value::Type::MAP: {
+          return args[0].get();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["type"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return args[0].get().getEdge().name;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["typeid"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return args[0].get().getEdge().type;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    // `is_inversed(e)` is equivalent to `typeid(e) < 0`
+    auto &attr = functions_["is_inversed"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return args[0].get().getEdge().type < 0;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["src"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.type > 0 ? edge.src : edge.dst;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.type > 0 ? edge.dst : edge.src;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    // `none_direct_dst` always return the dstId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList().values;
+          if (listVal.empty()) {
+            if (args.size() == 2) {
+              if (args[1].get().type() == Value::Type::VERTEX) {
+                const auto &v = args[1].get().getVertex();
+                return v.vid;
+              }
+              return Value::kNullBadType;
+            }
+            return Value::kNullBadType;
+          }
+          auto &lastVal = listVal.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    // `none_direct_src` always return the srcId of an edge key
+    // without considering the direction of the edge type.
+    // The encoding of the edge key is:
+    // type(1) + partId(3) + srcId(*) + edgeType(4) + edgeRank(8) + dstId(*) + placeHolder(1)
+    // More information of encoding could be found in `NebulaKeyUtils.h`
+    auto &attr = functions_["none_direct_src"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.src;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &firstVal = listVal.values.front();
+          if (firstVal.isEdge()) {
+            return firstVal.getEdge().src;
+          } else if (firstVal.isVertex()) {
+            return firstVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["rank"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          return args[0].get().getEdge().ranking;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
+  }
+}
+
+FunctionManager::FunctionManager() {
+  // Register functions
+
+  // Math functions
+  // sin, asin, cos, acos, tan, atan, abs, floor, ceil, round, sqrt, cbrt, hypot, pow, e,
+  // exp, exp2, log, log2, log10, pi, radians, sign, cos_similarity
+  registerMathFunctions();
+  // Bitwise, Rand, Hash functions
+  // bit_and, bit_or, bit_xor, rand, rand32, rand64, hash
+  registerBitwiseAndHashFunctions();
+  // String functions
+  // strcasecmp, lower, upper, length, trim, ltrim, rtrim, left, right, replace, reverse,
+  // split, lpad, rpad, substr, concat, concat_ws, json_extract, extract
+  registerStringFunctions();
+  // Type conversion functions
+  // tostring, toboolean, tofloat, tointeger, toset
+  registerCastFunctions();
+  // Date Time functions
+  // now, date, time, datetime, timestamp, duration
+  registerDateTimeFunctions();
+  // Geo Spatial functions
+  // st_point, st_geogfromtext, st_astext, st_centroid, st_isvalid, st_intersects,
+  // st_covers, st_coveredby, st_dwithin, st_distance, s2_cellidfrompoint, s2_coveringcellids
+  registerGeoFunctions();
+  // Internal functions
+  // udf_is_in, _joinkey, hassameedgeinpath, hassamevertexinpath, reversepath, datasetrowcol
+  // _nodeid, _edge, _any, score
+  registerInternalFunctions();
+  // List functions
+  // size, range, keys, nodes, tail, relationships
+  registerListFunctions();
+  // Scalar functions
+  // startnode, endnode, head, last, coalesce
+  registerScalarFunctions();
+  // Graph element functions
+  // id, tags, properties, type, typeid, is_inversed, src, dst, none_direct_dst, none_direct_src
+  // rank, is_edge
+  registerGraphElementFunctions();
 }  // NOLINT
 
 // static
