@@ -1,0 +1,46 @@
+  Feature: is_inversed Function
+
+    Background:
+      Test is_inversed function
+    
+    Scenario: Test this is equivalent to typeid(e) < 0
+        When executing query:
+            """
+            MATCH (v1:player{name:"Tim Duncan"})-[e]-(v2:player{name:"Tony Parker"})
+            RETURN IS_INVERSED(e) == TYPEID(e)AS result;
+            """
+        Then the result should be, in any order:
+            | result |
+            | true   |
+            | true   |
+
+    Scenario: Test Positive Cases
+      When executing query:
+        """
+        MATCH (v1:player{name:"Tim Duncan"})-[e:serve]->(v2:team)
+        RETURN IS_INVERSED(e) AS result;
+        """
+      Then the result should be, in any order:
+        | result |
+        | true   |
+      When executing query:
+        """
+        MATCH (v1:player{name:"Tim Duncan"})-[e]-(v2:player{name:"Tony Parker"})
+        RETURN IS_INVERSED(e) AS result;
+        """
+      Then the result should be, in any order:
+        | result |
+        | true   |
+        | false  |
+
+    Scenario: Test Cases With Invalid Input
+      When executing query:
+        """
+        YIELD IS_INVERSED("fuzz") AS result;
+        """
+      Then a SemanticError should be raised at runtime: `IS_INVERSED("fuzz")' is not a valid expression : Parameter's type error
+      When executing query:
+        """
+        YIELD IS_INVERSED(3.1415926) AS result;
+        """
+      Then a SemanticError should be raised at runtime: `IS_INVERSED(3.1415926)' is not a valid expression : Parameter's type error

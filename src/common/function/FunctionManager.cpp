@@ -265,6 +265,10 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::EDGE}, Value::Type::INT),
      }},
+    {"is_inversed",
+     {
+         TypeSignature({Value::Type::EDGE}, Value::Type::BOOL),
+     }},
     {"rank",
      {
          TypeSignature({Value::Type::EDGE}, Value::Type::INT),
@@ -2025,6 +2029,25 @@ FunctionManager::FunctionManager() {
       }
     };
   }
+{
+  auto &attr = functions_["is_inversed"];
+  attr.minArity_ = 1;
+  attr.maxArity_ = 1;
+  attr.isAlwaysPure_ = true;
+  attr.body_ = [](const auto &args) -> Value {
+    switch (args[0].get().type()) {
+      case Value::Type::NULLVALUE: {
+        return Value::kNullValue;
+      }
+      case Value::Type::EDGE: {
+        return args[0].get().getEdge().type < 0;
+      }
+      default: {
+        return Value::kNullBadType;
+      }
+    }
+  };
+}
   {
     auto &attr = functions_["src"];
     attr.minArity_ = 1;

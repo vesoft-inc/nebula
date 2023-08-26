@@ -1506,6 +1506,11 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(Value::Type::INT, result.value());
   }
   {
+    auto result = FunctionManager::getReturnType("is_inversed", {Value::Type::EDGE});
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_EQ(Value::Type::BOOL, result.value());
+  }
+  {
     auto result = FunctionManager::getReturnType("rank", {Value::Type::EDGE});
     ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(Value::Type::INT, result.value());
@@ -1696,6 +1701,7 @@ TEST_F(FunctionManagerTest, SchemaRelated) {
                        })));
   TEST_SCHEMA_FUNCTION("type", edge, Value("type"));
   TEST_SCHEMA_FUNCTION("typeid", edge, Value(1));
+  TEST_SCHEMA_FUNCTION("is_inversed", edge, Value(false));
   TEST_SCHEMA_FUNCTION("src", edge, Value("src"));
   TEST_SCHEMA_FUNCTION("dst", edge, Value("dst"));
   TEST_SCHEMA_FUNCTION("rank", edge, Value(123));
