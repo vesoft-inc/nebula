@@ -32,6 +32,14 @@
         | result |
         | true   |
         | false  |
+      When executing query:
+        """
+        GO FROM "player100" OVER follow REVERSELY YIELD is_inversed(edge) AS result
+        | GROUP BY $-.result YIELD $-.result AS result, count(*) AS count
+        """
+      Then the result should be, in any order:
+        | result | count |
+        | true   | 10    |
 
     Scenario: Test Cases With Invalid Input
       When executing query:
