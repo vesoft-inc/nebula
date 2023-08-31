@@ -701,3 +701,10 @@ Feature: Shortest Path
       | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
       | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
       | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan"  OVER * BIDIRECT YIELD path as p | LIMIT 5 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 5        |

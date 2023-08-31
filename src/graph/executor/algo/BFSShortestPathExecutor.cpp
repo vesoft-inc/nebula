@@ -199,6 +199,9 @@ folly::Future<Status> BFSShortestPathExecutor::conjunctPath() {
           auto resp = std::move(respVal).value();
           currentDs_.append(std::move(resp));
         }
+        if (currentDs_.size() > limit_) {
+          currentDs_.rows.resize(limit_);
+        }
         if (singleShortest_) {
           currentDs_.rows.resize(1);
         }
