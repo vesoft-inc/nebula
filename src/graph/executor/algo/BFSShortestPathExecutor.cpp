@@ -17,6 +17,11 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
   if (pathNode_->limit() != -1) {
     limit_ = pathNode_->limit();
   }
+  if (limit_ == 0) {
+    DataSet ds;
+    ds.colNames = pathNode_->colNames();
+    return finish(ResultBuilder().value(Value(std::move(ds))).build());
+  }
   terminateEarlyVar_ = pathNode_->terminateEarlyVar();
 
   if (step_ == 1) {

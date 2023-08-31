@@ -107,9 +107,45 @@ Feature: Single Shortest Path
       | <("Joel Embiid")-[:serve@0 {}]->("76ers")<-[:serve@0 {}]-("Jonathon Simmons")-[:serve@0 {}]->("Magic")<-[:serve@0 {}]-("Tracy McGrady")<-[:like@0 {}]-("Yao Ming")>    |
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
+      FIND SINGLE SHORTEST PATH FROM "Tim Duncan",  "Joel Embiid" TO "Giannis Antetokounmpo", "Yao Ming" OVER * BIDIRECT UPTO 18 STEPS YIELD path as p
       | LIMIT 3 | YIELD count(*) as num
       """
     Then the result should be, in any order, with relax comparison:
       | num |
       | 3   |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SINGLE SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 0 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 0        |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SINGLE SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SINGLE SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 0, 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SINGLE SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 100, 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
