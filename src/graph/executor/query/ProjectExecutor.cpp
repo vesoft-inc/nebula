@@ -29,10 +29,20 @@ folly::Future<Status> ProjectExecutor::execute() {
       return handleJob(begin, end, tmpIter);
     };
 
-    auto gather = [this, result = std::move(ds)](auto &&results) mutable {
+    auto gather = [this, result = std::move(ds)](
+                      std::vector<folly::Try<StatusOr<DataSet>>> &&results) mutable {
       memory::MemoryCheckGuard guard;
-      for (auto &r : results) {
-        auto &&rows = std::move(r).value();
+      for (auto &respVal : results) {
+        if (respVal.hasException()) {
+          auto ex = respVal.exception().get_exception<std::bad_alloc>();
+          if (ex) {
+            throw std::bad_alloc();
+          } else {
+            throw std::runtime_error(respVal.exception().what().c_str());
+          }
+        }
+        auto res = std::move(respVal).value();
+        auto &&rows = std::move(res).value();
         result.rows.insert(result.rows.end(),
                            std::make_move_iterator(rows.begin()),
                            std::make_move_iterator(rows.end()));
