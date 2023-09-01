@@ -149,13 +149,22 @@ folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& pr
     return ds;
   };
 
-  auto gather = [this](auto&& results) mutable -> Status {
+  auto gather = [this](std::vector<folly::Try<StatusOr<DataSet>>>&& results) mutable -> Status {
     memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();
-    for (auto& r : results) {
-      auto&& rows = std::move(r).value();
+    for (auto& respVal : results) {
+      if (respVal.hasException()) {
+        auto ex = respVal.exception().get_exception<std::bad_alloc>();
+        if (ex) {
+          throw std::bad_alloc();
+        } else {
+          throw std::runtime_error(respVal.exception().what().c_str());
+        }
+      }
+      auto res = std::move(respVal).value();
+      auto&& rows = std::move(res).value();
       result.rows.insert(result.rows.end(),
                          std::make_move_iterator(rows.begin()),
                          std::make_move_iterator(rows.end()));
@@ -180,13 +189,22 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Ite
     return ds;
   };
 
-  auto gather = [this](auto&& results) mutable -> Status {
+  auto gather = [this](std::vector<folly::Try<StatusOr<DataSet>>>&& results) mutable -> Status {
     memory::MemoryCheckGuard guard;
     DataSet result;
     auto* joinNode = asNode<Join>(node());
     result.colNames = joinNode->colNames();
-    for (auto& r : results) {
-      auto&& rows = std::move(r).value();
+    for (auto& respVal : results) {
+      if (respVal.hasException()) {
+        auto ex = respVal.exception().get_exception<std::bad_alloc>();
+        if (ex) {
+          throw std::bad_alloc();
+        } else {
+          throw std::runtime_error(respVal.exception().what().c_str());
+        }
+      }
+      auto res = std::move(respVal).value();
+      auto&& rows = std::move(res).value();
       result.rows.insert(result.rows.end(),
                          std::make_move_iterator(rows.begin()),
                          std::make_move_iterator(rows.end()));
