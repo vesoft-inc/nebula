@@ -218,10 +218,14 @@ Status YieldValidator::validateJoin(const JoinClause *join) {
   }
 
   auto *varPtr = qctx_->symTable()->getVar(leftVar_);
-  DCHECK(varPtr != nullptr);
+  if (varPtr == nullptr) {
+    return Status::SemanticError("variable: `%s' not exist", leftVar_.c_str());
+  }
   std::vector<std::string> leftColNames = varPtr->colNames;
   varPtr = qctx_->symTable()->getVar(rightVar_);
-  DCHECK(varPtr != nullptr);
+  if (varPtr == nullptr) {
+    return Status::SemanticError("variable: `%s' not exist", rightVar_.c_str());
+  }
   std::vector<std::string> rightColNames = varPtr->colNames;
   for (auto &leftColName : leftColNames) {
     if (leftColName == leftConditionCol) {
