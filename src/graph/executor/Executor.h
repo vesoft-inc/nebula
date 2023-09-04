@@ -195,7 +195,7 @@ auto Executor::runMultiJobs(ScatterFunc &&scatter, GatherFunc &&gather, Iterator
   }
 
   // Gather all results and do post works
-  return folly::collect(futures).via(runner()).thenValue(std::move(gather));
+  return folly::collectAll(futures).via(runner()).thenValue(std::move(gather));
 }
 }  // namespace graph
 }  // namespace nebula

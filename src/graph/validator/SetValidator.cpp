@@ -77,10 +77,28 @@ Status SetValidator::toPlan() {
     tail_ = lValidator_->tail();
     return Status::OK();
   }
+  removeStartNode(lValidator_.get());
+  removeStartNode(rValidator_.get());
   tail_ = PassThroughNode::make(qctx_, nullptr);
   NG_RETURN_IF_ERROR(lValidator_->appendPlan(tail_));
   NG_RETURN_IF_ERROR(rValidator_->appendPlan(tail_));
   return Status::OK();
+}
+
+void SetValidator::removeStartNode(Validator* validator) {
+  if (validator->tail()->kind() != PlanNode::Kind::kStart) {
+    return;
+  }
+
+  PlanNode* node = validator->root();
+  while (node->dependencies()[0]->dependencies().size() > 0UL) {
+    node = const_cast<PlanNode*>(node->dependencies()[0]);
+  }
+  if (node->dependencies().size() == 1UL) {
+    // Remain one size for add dependency
+    node->dependencies()[0] = nullptr;
+    validator->setTail(node);
+  }
 }
 
 }  // namespace graph
