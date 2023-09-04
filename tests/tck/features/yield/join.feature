@@ -70,6 +70,18 @@ Feature: join
       | YIELD $a.vid AS id, $-.e2 AS e FROM $a INNER JOIN $- ON $a.vid == $-.vid
       """
     Then a SyntaxError should be raised at runtime: syntax error near `$-'
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as a;
+      $b = YIELD $a.a from $a inner join $b on $a.a == $b.a
+      """
+    Then a SemanticError should be raised at runtime: variable: `b' not exist
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as a;
+      YIELD $a.a from $a inner join $b on $a.a == $b.a
+      """
+    Then a SemanticError should be raised at runtime: variable: `b' not exist
 
   Scenario: join go
     When executing query:

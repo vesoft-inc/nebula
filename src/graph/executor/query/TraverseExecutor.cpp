@@ -456,10 +456,19 @@ folly::Future<Status> TraverseExecutor::buildPathMultiJobs(size_t minStep, size_
     return rows;
   };
 
-  auto gather = [this](std::vector<std::vector<Row>> resp) mutable -> Status {
+  auto gather = [this](std::vector<folly::Try<std::vector<Row>>>&& resps) mutable -> Status {
     // MemoryTrackerVerified
     memory::MemoryCheckGuard guard;
-    for (auto& rows : resp) {
+    for (auto& respVal : resps) {
+      if (respVal.hasException()) {
+        auto ex = respVal.exception().get_exception<std::bad_alloc>();
+        if (ex) {
+          throw std::bad_alloc();
+        } else {
+          throw std::runtime_error(respVal.exception().what().c_str());
+        }
+      }
+      auto rows = std::move(respVal).value();
       if (rows.empty()) {
         continue;
       }

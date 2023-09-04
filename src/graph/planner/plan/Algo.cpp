@@ -19,6 +19,7 @@ PlanNode* AllPaths::clone() const {
 
 void AllPaths::cloneMembers(const AllPaths& path) {
   BinaryInputNode::cloneMembers(path);
+  offset_ = path.offset_;
   limit_ = path.limit_;
   filter_ = path.filter_;
   stepFilter_ = path.stepFilter_;
@@ -96,6 +97,7 @@ std::unique_ptr<PlanNodeDescription> AllPaths::explain() const {
   addDescription("steps", folly::toJson(util::toJson(steps_)), desc.get());
   addDescription("filter", filter_ == nullptr ? "" : filter_->toString(), desc.get());
   addDescription("stepFilter", stepFilter_ == nullptr ? "" : stepFilter_->toString(), desc.get());
+  addDescription("offset", folly::toJson(util::toJson(offset_)), desc.get());
   addDescription("limit", folly::toJson(util::toJson(limit_)), desc.get());
   addDescription(
       "vertexProps", vertexProps_ ? folly::toJson(util::toJson(*vertexProps_)) : "", desc.get());

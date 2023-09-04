@@ -108,6 +108,7 @@ class AllPathsExecutor final : public StorageAccessExecutor {
   const AllPaths* pathNode_{nullptr};
   bool withProp_{false};
   bool noLoop_{false};
+  size_t offset_{0};
   size_t limit_{std::numeric_limits<size_t>::max()};
   std::atomic<size_t> cnt_{0};
   std::atomic<bool> memoryExceeded_{false};
