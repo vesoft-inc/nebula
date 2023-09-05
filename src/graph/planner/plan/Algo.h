@@ -203,6 +203,10 @@ class AllPaths final : public BinaryInputNode {
     return limit_;
   }
 
+  int64_t offset() const {
+    return offset_;
+  }
+
   const std::vector<EdgeProp>* edgeProps() const {
     return edgeProps_.get();
   }
@@ -217,6 +221,10 @@ class AllPaths final : public BinaryInputNode {
 
   GraphSpaceID space() const {
     return space_;
+  }
+
+  void setOffset(int64_t offset) {
+    offset_ = offset;
   }
 
   void setLimit(int64_t limit) {
@@ -267,6 +275,7 @@ class AllPaths final : public BinaryInputNode {
   size_t steps_{0};
   bool noLoop_{false};
   bool withProp_{false};
+  int64_t offset_{0};
   int64_t limit_{-1};
   Expression* filter_{nullptr};
   Expression* stepFilter_{nullptr};

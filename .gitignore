@@ -54,6 +54,7 @@ core.*
 workspace.*
 .metals/
 .cproject
+.ycm_extra_conf.py
 
 #py
 *.egg-info

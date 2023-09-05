@@ -52,6 +52,7 @@ StatusOr<OptRule::TransformResult> PushLimitDownAllPathsRule::transform(
   OptGroupNode *newPathGroupNode = nullptr;
   // Limit<-AllPaths => AllPaths(limit)
   newPathGroupNode = OptGroupNode::create(ctx, newPath, limitGroupNode->group());
+  newPath->setOffset(limit->offset());
   newPath->setLimit(limitRows);
   newPath->setOutputVar(limit->outputVar());
 

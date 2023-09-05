@@ -401,6 +401,42 @@ Feature: Shortest Path
       | p                                           |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")>   |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 0 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 0        |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 0, 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
+    When executing query:
+      """
+      $start = LOOKUP ON player WHERE player.age > 30 YIELD id(vertex) AS id;
+      $end = LOOKUP ON player WHERE player.age <= 30 YIELD id(vertex) AS id;
+      FIND SHORTEST PATH FROM $start.id TO $end.id OVER * BIDIRECT YIELD path AS p | LIMIT 100, 174 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 174      |
 
   Scenario: [1] Shortest Path REVERSELY
     When executing query:
@@ -665,3 +701,10 @@ Feature: Shortest Path
       | <("Tim Duncan")-[:like@0 {}]->("Manu Ginobili")-[:like@0 {}]->("Tim Duncan")> |
       | <("Tim Duncan")<-[:like@0 {}]-("Tony Parker")<-[:like@0 {}]-("Tim Duncan")>   |
       | <("Tim Duncan")-[:like@0 {}]->("Tony Parker")-[:like@0 {}]->("Tim Duncan")>   |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Tim Duncan"  OVER * BIDIRECT YIELD path as p | LIMIT 5 | YIELD count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 5        |

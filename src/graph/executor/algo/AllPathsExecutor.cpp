@@ -25,10 +25,14 @@ folly::Future<Status> AllPathsExecutor::execute() {
   if (pathNode_->limit() != -1) {
     limit_ = pathNode_->limit();
   }
+  if (pathNode_->offset() != 0) {
+    offset_ = pathNode_->offset();
+  }
   buildRequestVids(true);
   buildRequestVids(false);
   result_.colNames = pathNode_->colNames();
-  if (maxStep_ == 0 || leftNextStepVids_.empty() || rightNextStepVids_.empty()) {
+  if (limit_ == 0 || limit_ == offset_ || maxStep_ == 0 || leftNextStepVids_.empty() ||
+      rightNextStepVids_.empty()) {
     return finish(ResultBuilder().value(Value(std::move(result_))).build());
   }
   return doAllPaths();
@@ -555,6 +559,9 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
         }
         if (result_.rows.size() > limit_) {
           result_.rows.resize(limit_);
+        }
+        if (offset_ != 0) {
+          result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
         }
         return Status::OK();
       })
