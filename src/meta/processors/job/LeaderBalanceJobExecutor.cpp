@@ -349,9 +349,28 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
 
   if (dependentOnZone) {
     for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
-      auto min = it->second.size() / replicaFactor;
-      LOG(INFO) << "Host: " << it->first << " Bounds: " << min << " : " << min + 1;
-      hostBounds_[it->first] = std::make_pair(min, min + 1);
+      size_t localParts = it->second.size();
+      size_t localAvg = localParts / replicaFactor;
+      size_t localMin = localAvg;
+      size_t localMax = localAvg;
+      if (localParts % replicaFactor != 0) {
+        localMax += 1;
+      }
+
+      if (useDeviation) {
+        size_t localMinTmp = std::ceil(static_cast<double>(localParts) / replicaFactor *
+                                       (1 - FLAGS_leader_balance_deviation));
+        size_t localMaxTmp = std::floor(static_cast<double>(localParts) / replicaFactor *
+                                        (1 + FLAGS_leader_balance_deviation));
+        if (localMinTmp <= localMaxTmp) {
+          localMin = localMinTmp;
+          localMax = localMaxTmp;
+        }
+      }
+      LOG(INFO) << "Host:" << it->first << "'s leader balance plan, expected min load: " << localMin
+                << ", max load: " << localMax << " avg: " << localAvg;
+
+      hostBounds_[it->first] = std::make_pair(localMin, localMax);
     }
   } else {
     size_t activeSize = activeHosts.size();

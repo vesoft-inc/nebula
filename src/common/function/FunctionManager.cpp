@@ -5,8 +5,10 @@
 
 #include "FunctionManager.h"
 
+#include <float.h>
 #include <folly/json.h>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <cstdint>
 
@@ -68,8 +70,11 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::INT, Value::Type::INT, Value::Type::STRING}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT, Value::Type::STRING},
+                    Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -568,7 +573,7 @@ FunctionManager::FunctionManager() {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 2;
+    attr.maxArity_ = 3;
     attr.isAlwaysPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
@@ -577,10 +582,60 @@ FunctionManager::FunctionManager() {
         }
         case Value::Type::INT:
         case Value::Type::FLOAT: {
-          if (args.size() == 2) {
+          if (args.size() >= 2) {
             if (args[1].get().type() == Value::Type::INT) {
+              auto val = args[0].get().getFloat();
               auto decimal = args[1].get().getInt();
-              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+              auto factor = pow(10.0, decimal);
+
+              string mode = "half_up";
+              if (args.size() == 3 && args[2].get().type() == Value::Type::STRING) {
+                mode = args[2].get().getStr();
+              }
+              if (boost::iequals(mode, "up")) {
+                auto roundedVal = std::round(val * factor) / factor;
+                if ((val < 0) && (roundedVal > val)) {
+                  roundedVal -= 1.0 / factor;
+                } else if ((val > 0) && (roundedVal < val)) {
+                  roundedVal += 1.0 / factor;
+                }
+                return roundedVal;
+              } else if (boost::iequals(mode, "down")) {
+                auto roundedVal = std::round(val * factor) / factor;
+                if ((val < 0) && (roundedVal < val)) {
+                  roundedVal += 1.0 / factor;
+                } else if ((val > 0) && (roundedVal > val)) {
+                  roundedVal -= 1.0 / factor;
+                }
+                return roundedVal;
+              } else if (boost::iequals(mode, "ceiling")) {
+                return std::ceil(val * factor) / factor;
+              } else if (boost::iequals(mode, "floor")) {
+                return std::floor(val * factor) / factor;
+              } else if (boost::iequals(mode, "half_up")) {
+                return std::round(val * factor) / factor;
+              } else if (boost::iequals(mode, "half_down")) {
+                auto val_factor = val * factor;
+                auto integral_part = 0.0;
+                auto fraction_part = std::fabs(std::modf(val_factor, &integral_part));
+                if (((fraction_part <= 0.5) && (val < 0)) || ((fraction_part > 0.5) && (val > 0))) {
+                  return std::ceil(val_factor) / factor;
+                } else {
+                  return std::floor(val_factor) / factor;
+                }
+              } else if (boost::iequals(mode, "half_even")) {
+                auto val_factor = val * factor;
+                auto integral_part = 0.0;
+                auto fraction_part = std::fabs(std::modf(val_factor, &integral_part));
+                if (((fraction_part == 0.5) && (std::fmod(val_factor - 0.5, 2.0) == 1.0)) ||
+                    ((fraction_part > 0.5) && (val > 0)) || ((fraction_part < 0.5) && (val < 0))) {
+                  return std::ceil(val_factor) / factor;
+                } else {
+                  return std::floor(val_factor) / factor;
+                }
+              } else {
+                return Value::kNullBadType;
+              }
             } else {
               return Value::kNullBadType;
             }

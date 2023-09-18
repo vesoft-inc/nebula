@@ -185,11 +185,19 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
       return buildVerticesResult(begin, end, tmpIter);
     };
 
-    auto gather = [this](auto &&results) -> Status {
+    auto gather = [this](std::vector<folly::Try<StatusOr<DataSet>>> &&results) -> Status {
       memory::MemoryCheckGuard guard;
-      for (auto &r : results) {
-        NG_RETURN_IF_ERROR(r);
-        auto &&rows = std::move(r).value();
+      for (auto &respVal : results) {
+        if (respVal.hasException()) {
+          auto ex = respVal.exception().get_exception<std::bad_alloc>();
+          if (ex) {
+            throw std::bad_alloc();
+          } else {
+            throw std::runtime_error(respVal.exception().what().c_str());
+          }
+        }
+        auto res = std::move(respVal).value();
+        auto &&rows = std::move(res).value();
         std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
       }
       return finish(ResultBuilder().value(Value(std::move(result_))).build());
@@ -203,20 +211,38 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
     };
 
     auto gather =
-        [this, inputIterNew = std::move(inputIter)](auto &&prepareResult) -> folly::Future<Status> {
+        [this, inputIterNew = std::move(inputIter)](
+            std::vector<folly::Try<folly::Unit>> &&prepareResult) -> folly::Future<Status> {
       memory::MemoryCheckGuard guard1;
-      UNUSED(prepareResult);
+      for (auto &respVal : prepareResult) {
+        if (respVal.hasException()) {
+          auto ex = respVal.exception().get_exception<std::bad_alloc>();
+          if (ex) {
+            throw std::bad_alloc();
+          } else {
+            throw std::runtime_error(respVal.exception().what().c_str());
+          }
+        }
+      }
 
       auto scatterInput =
           [this](size_t begin, size_t end, Iterator *tmpIter) mutable -> StatusOr<DataSet> {
         return handleJob(begin, end, tmpIter);
       };
 
-      auto gatherFinal = [this](auto &&results) -> Status {
+      auto gatherFinal = [this](std::vector<folly::Try<StatusOr<DataSet>>> &&results) -> Status {
         memory::MemoryCheckGuard guard2;
-        for (auto &r : results) {
-          NG_RETURN_IF_ERROR(r);
-          auto &&rows = std::move(r).value();
+        for (auto &respVal : results) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto res = std::move(respVal).value();
+          auto &&rows = std::move(res).value();
           std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
         }
         return finish(ResultBuilder().value(Value(std::move(result_))).build());

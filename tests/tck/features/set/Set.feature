@@ -254,6 +254,16 @@ Feature: Set Test
       | "Manu Ginobili" | 2002             | "Spurs"      |
       | "Tony Parker"   | 1999             | "Spurs"      |
       | "Tony Parker"   | 2018             | "Hornets"    |
+    When executing query:
+      """
+      fetch prop on player 'Tony Parker' yield player.age AS age
+      UNION
+      go from 'Tim Duncan' over like yield $$.player.age AS age
+      """
+    Then the result should be, in any order:
+      | age |
+      | 36  |
+      | 41  |
 
   Scenario: Minus
     Given a graph with space named "nba"
