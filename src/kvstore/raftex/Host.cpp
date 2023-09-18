@@ -428,7 +428,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(
           auto exWrapper = std::move(t).exception();
           VLOG(2) << self->idStr_ << "Heartbeat: " << exWrapper.what();
           auto exception = exWrapper.get_exception<TransportException>();
-          // If we keeps receiving NOT_OPEN exception after some HB intervals,
+          // If we keeps receiving NOT_OPEN and TIMED_OUT exception after some HB intervals,
           // we can assume that the peer is down so we mark paused_ as true
           if (exception && (exception->getType() == TransportException::NOT_OPEN ||
                             exception->getType() == TransportException::TIMED_OUT)) {
