@@ -11,7 +11,9 @@ concurrency:
 defaults:
   run:
     shell: bash
-
+env:
+  OSS_DIR: minio/nightly-build/nebula-graph
+  
 jobs:
   package:
     name: build package
@@ -50,14 +52,14 @@ jobs:
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output
-      - uses: ./.github/actions/upload-to-oss-action
+      - uses: vesoft-inc/.github/actions/setup-minio@master
         with:
-          key-id: ${{ secrets.OSS_ID }}
-          key-secret: ${{ secrets.OSS_SECRET }}
-          endpoint: ${{ secrets.OSS_ENDPOINT }}
-          bucket: nebula-graph
-          asset-path: pkg-build/cpack_output
-          target-path: package/nightly/${{ steps.vars.outputs.subdir }}
+          minio_url: ${{ secrets.MINIO_ENDPOINT }}
+          access_key: ${{ secrets.MINIO_KEY }}
+          secret_key: ${{ secrets.MINIO_SECRET }}
+      - name: Copy dir to MinIO
+        run: mc cp -r pkg-build/cpack_output/ ${{ env.OSS_DIR }}/${{ steps.vars.outputs.subdir }}/
+
 
   docker:
     name: build docker image
@@ -216,8 +218,7 @@ jobs:
         extra_config:
           - "ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=false"
           - "ENABLE_SSL=false CA_SIGNED=false QUERY_CONCURRENTLY=true"
-    env:
-      OSS_DIR: nebula-graph/package/nightly
+
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     services:
@@ -271,17 +272,17 @@ jobs:
         id: cmake
         run: |
           echo "j=8" >> $GITHUB_OUTPUT
-      - name: download from oss
+      - uses: vesoft-inc/.github/actions/setup-minio@master
+        with:
+          minio_url: ${{ secrets.MINIO_ENDPOINT }}
+          access_key: ${{ secrets.MINIO_KEY }}
+          secret_key: ${{ secrets.MINIO_SECRET }}
+      - name: Copy dir to MinIO
         run: |
-          ossutil64 -e ${{ secrets.OSS_ENDPOINT }} \
-                    -i ${{ secrets.OSS_ID }} \
-                    -k  ${{ secrets.OSS_SECRET }} \
-                    -f cp oss://${{ env.OSS_DIR  }}/${{ steps.vars.outputs.subdir }}/${{ steps.oss_package.outputs.p }} \
-                    build/.
+          mc cp ${{ env.OSS_DIR }}/${{ steps.vars.outputs.subdir }}/${{ steps.oss_package.outputs.p }} build/
           tar zxvf build/${{ steps.oss_package.outputs.p }} -C build
           d=`echo ${{ steps.oss_package.outputs.p }} | sed 's/.tar.gz//'`
           mv build/${d}/* build/.
-
       - name: Setup cluster
         run: |
           make CONTAINERIZED=true ${{ matrix.extra_config }} up
