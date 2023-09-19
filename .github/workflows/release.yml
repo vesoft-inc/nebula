@@ -30,13 +30,13 @@ jobs:
           secret_key: ${{ secrets.MINIO_SECRET }}
       - name: Copy rc to release on MinIO
         run: |
-          files=$(mc ls minio/rc-build/nebula-graph-ent/${{ steps.tag.outputs.tagnum }}/ | awk '{print $6}' | grep -v '/$')
+          files=$(mc ls minio/rc-build/nebula-graph/${{ steps.tag.outputs.tagnum }}/ | awk '{print $6}' | grep -v '/$')
           for file in $files; do
-            mc cp minio/rc-build/nebula-graph-ent/${{ steps.tag.outputs.tagnum }}/$file \
-            minio/release-build/nebula-graph-ent/${{ steps.tag.outputs.tagnum }}/
+            mc cp minio/rc-build/nebula-graph/${{ steps.tag.outputs.tagnum }}/$file \
+            minio/release-build/nebula-graph/${{ steps.tag.outputs.tagnum }}/
           done
-          mc cp -r minio/rc-build/nebula-graph-ent/${{ steps.tag.outputs.tagnum }}/symbols/ \
-          minio/release-build/nebula-graph-ent/${{ steps.tag.outputs.tagnum }}/symbols/
+          mc cp -r minio/rc-build/nebula-graph/${{ steps.tag.outputs.tagnum }}/symbols/ \
+          minio/release-build/nebula-graph/${{ steps.tag.outputs.tagnum }}/symbols/
 
   docker_build:
     name: docker-build
