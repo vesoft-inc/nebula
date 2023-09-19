@@ -185,8 +185,6 @@ jobs:
         extra_config:
           - "ENABLE_SSL=true CA_SIGNED=true QUERY_CONCURRENTLY=false"
           - "ENABLE_SSL=false CA_SIGNED=false QUERY_CONCURRENTLY=true"
-    env:
-      OSS_DIR: nebula-graph/rc
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
