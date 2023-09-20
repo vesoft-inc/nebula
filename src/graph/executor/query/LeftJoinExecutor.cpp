@@ -164,6 +164,7 @@ folly::Future<Status> LeftJoinExecutor::probe(const std::vector<Expression*>& pr
         }
       }
       auto res = std::move(respVal).value();
+      NG_RETURN_IF_ERROR(res);
       auto&& rows = std::move(res).value();
       result.rows.insert(result.rows.end(),
                          std::make_move_iterator(rows.begin()),
@@ -204,6 +205,7 @@ folly::Future<Status> LeftJoinExecutor::singleKeyProbe(Expression* probeKey, Ite
         }
       }
       auto res = std::move(respVal).value();
+      NG_RETURN_IF_ERROR(res);
       auto&& rows = std::move(res).value();
       result.rows.insert(result.rows.end(),
                          std::make_move_iterator(rows.begin()),

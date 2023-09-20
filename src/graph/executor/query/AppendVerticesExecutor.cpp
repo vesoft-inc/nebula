@@ -197,6 +197,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
           }
         }
         auto res = std::move(respVal).value();
+        NG_RETURN_IF_ERROR(res);
         auto &&rows = std::move(res).value();
         std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
       }
@@ -242,6 +243,7 @@ folly::Future<Status> AppendVerticesExecutor::handleRespMultiJobs(
             }
           }
           auto res = std::move(respVal).value();
+          NG_RETURN_IF_ERROR(res);
           auto &&rows = std::move(res).value();
           std::move(rows.begin(), rows.end(), std::back_inserter(result_.rows));
         }
