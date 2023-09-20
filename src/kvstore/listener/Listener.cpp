@@ -34,7 +34,14 @@ Listener::Listener(GraphSpaceID spaceId,
                handlers,
                nullptr,
                nullptr,
-               nullptr) {}
+               nullptr,
+               nullptr) {
+  auto followerAsyncer =
+      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(32);
+  followerAsyncer->setNamePrefix("follower_executor");
+  followerAsyncer->start();
+  setfollowerAsyncer(followerAsyncer);
+}
 
 void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);

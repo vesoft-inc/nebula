@@ -12,6 +12,8 @@
 #include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/RaftPart.h"
 
+DEFINE_int32(follower_async_thread_num, 32, "follower executor async task thread pool size");
+
 namespace nebula {
 namespace raftex {
 
@@ -52,6 +54,13 @@ std::shared_ptr<RaftexService> RaftexService::createService(
     LOG(ERROR) << "Start raft service failed";
     return nullptr;
   }
+}
+
+RaftexService::RaftexService() {
+  followerAsyncer_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
+      FLAGS_follower_async_thread_num);
+  followerAsyncer_->setNamePrefix("followerAsyncer");
+  followerAsyncer_->start();
 }
 
 std::shared_ptr<folly::IOThreadPoolExecutor> RaftexService::getIOThreadPool() const {

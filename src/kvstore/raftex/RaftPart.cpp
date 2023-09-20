@@ -35,6 +35,10 @@ DEFINE_uint32(max_batch_size, 256, "The max number of logs in a batch");
 
 DEFINE_bool(trace_raft, false, "Enable trace one raft request");
 
+DEFINE_int64(follower_batch_commit_log_entry, 0, "follower async commit log entry num each time");
+
+DEFINE_int32(leader_wait_task_s, 5, "leader wait cancle asyncCommitlogs task time");
+
 DECLARE_int32(wal_ttl);
 DECLARE_int64(wal_file_size);
 DECLARE_int32(wal_buffer_size);
@@ -338,7 +342,8 @@ RaftPart::RaftPart(
     std::shared_ptr<folly::Executor> executor,
     std::shared_ptr<SnapshotManager> snapshotMan,
     std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
-    std::shared_ptr<kvstore::DiskManager> diskMan)
+    std::shared_ptr<kvstore::DiskManager> diskMan,
+    std::shared_ptr<apache::thrift::concurrency::ThreadManager> followerAsyncer)
     : idStr_{folly::stringPrintf(
           "[Port: %d, Space: %d, Part: %d] ", localAddr.port, spaceId, partId)},
       clusterId_{clusterId},
@@ -353,7 +358,8 @@ RaftPart::RaftPart(
       executor_(executor),
       snapshot_(snapshotMan),
       clientMan_(clientMan),
-      diskMan_(diskMan) {
+      diskMan_(diskMan),
+      followerAsyncer_(followerAsyncer) {
   FileBasedWalPolicy policy;
   policy.fileSize = FLAGS_wal_file_size;
   policy.bufferSize = FLAGS_wal_buffer_size;
@@ -1392,6 +1398,20 @@ bool RaftPart::handleElectionResponses(const ElectionResponses& resps,
       host->reset();
       host->resume();
     }
+
+    {
+      // wait asyncCommitLogs task cancle
+      // Prevent the number and time of blocking threads from being too long, and set the highest
+      // priority
+      folly::Promise<int> promise;
+      auto future = promise.getFuture();
+      followerAsyncer_->addWithPriority(
+          [this, pro = std::move(promise)]() mutable { this->waitAsyncCommitLogs(std::move(pro)); },
+          apache::thrift::concurrency::PRIORITY::HIGH_IMPORTANT);
+      future.wait(std::chrono::seconds(FLAGS_leader_wait_task_s));
+      CHECK(future.isReady());
+    }
+
     sendHeartbeat();
   }
   inElection_ = false;
@@ -1782,48 +1802,61 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     }
   } while (false);
 
+  resp.committed_log_id_ref() = committedLogId_;
+  resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+
   // If follower found a point where log matches leader's log (lastMatchedLogId), if leader's
   // committed_log_id is greater than lastMatchedLogId, we can commit logs before lastMatchedLogId
-  LogID lastLogIdCanCommit = std::min(lastMatchedLogId, req.get_committed_log_id());
-  // When a node has received snapshot recently, it has no wal and its committedLogId_ may be same
-  // as leader's. In this case, we skip the check of lastLogIdCanCommit
-  if (wal_->lastLogId() != 0) {
-    CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
+  lastLogIdCanCommit_ = std::min(lastMatchedLogId, req.get_committed_log_id());
+  CHECK_LE(lastLogIdCanCommit_, wal_->lastLogId());
+  bool expected = false;
+  if (asyncCommitLogs_.compare_exchange_strong(expected, true)) {
+    followerAsyncer_->add([this]() { this->AsyncCommitLogs(); });
   }
+  // Reset the timeout timer again in case wal longer time than
+  // expected
+  lastMsgRecvDur_.reset();
+}
+
+void RaftPart::AsyncCommitLogs() {
+  SCOPE_EXIT {
+    asyncCommitLogs_ = false;
+  };
+
+  {
+    if (!isRunning() || isLeader()) {
+      return;
+    }
+  }
+
+  LogID lastLogIdCanCommit{lastLogIdCanCommit_};
+
   if (lastLogIdCanCommit > committedLogId_) {
     auto walIt = wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit);
-    // follower do not wait all logs applied to state machine, so second parameter is false. And the
-    // raftLock_ has been acquired, so the third parameter is false as well.
+    // follower do not wait all logs applied to state machine, so second parameter is false
+    auto beforeCommitLogUs = time::WallClock::fastNowInMicroSec();
     auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false, false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      const auto execTime = time::WallClock::fastNowInMicroSec() - beforeCommitLogUs;
+      stats::StatsManager::addValue(kFollowerCommitLogLatencyUs, execTime);
       VLOG(4) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       CHECK_EQ(lastLogIdCanCommit, lastCommitId);
-      committedLogId_ = lastCommitId;
-      committedLogTerm_ = lastCommitTerm;
-      resp.committed_log_id_ref() = lastLogIdCanCommit;
-      resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+      {
+        std::lock_guard lg(raftLock_);
+        committedLogId_ = lastCommitId;
+        committedLogTerm_ = lastCommitTerm;
+      }
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
       VLOG(4) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
-      // Even if log is not applied to state machine, still regard as succeeded:
-      // 1. As a follower, upcoming request will try to commit them
-      // 2. If it is elected as leader later, it will try to commit them as well
-      resp.committed_log_id_ref() = committedLogId_;
-      resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
     } else {
       VLOG(3) << idStr_ << "Failed to commit log " << committedLogId_ + 1 << " to "
-              << req.get_committed_log_id();
-      resp.committed_log_id_ref() = committedLogId_;
-      resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_WAL_FAIL;
+              << lastLogIdCanCommit;
     }
-  } else {
-    resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  // Reset the timeout timer again in case wal and commit takes longer time than
-  // expected
-  lastMsgRecvDur_.reset();
+  // DCHECK(!(isLeader() && commitInThisTerm_));
 }
 
 template <typename REQ>
@@ -2267,5 +2300,18 @@ bool RaftPart::leaseValid() {
          FLAGS_raft_heartbeat_interval_secs * 1000 - lastMsgAcceptedCostMs_;
 }
 
+void RaftPart::waitAsyncCommitLogs(folly::Promise<int>&& promise) {
+  bool expected = false;
+  if (asyncCommitLogs_.compare_exchange_strong(expected, true)) {
+    folly::futures::sleep(std::chrono::milliseconds{10})
+        .via(followerAsyncer_.get())
+        .thenValue([this, pro = std::move(promise)](auto&&) mutable {
+          this->waitAsyncCommitLogs(std::move(pro));
+        });
+  } else {
+    promise.setValue(1);
+    asyncCommitLogs_ = false;
+  }
+}
 }  // namespace raftex
 }  // namespace nebula

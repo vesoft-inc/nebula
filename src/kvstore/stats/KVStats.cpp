@@ -19,6 +19,7 @@ stats::CounterId kTransferLeaderLatencyUs;
 stats::CounterId kNumStartElect;
 stats::CounterId kNumGrantVotes;
 stats::CounterId kNumSendSnapshot;
+stats::CounterId kFollowerCommitLogLatencyUs;
 
 void initKVStats() {
   kCommitLogLatencyUs = stats::StatsManager::registerHisto(
@@ -36,6 +37,8 @@ void initKVStats() {
   kNumStartElect = stats::StatsManager::registerStats("num_start_elect", "rate, sum");
   kNumGrantVotes = stats::StatsManager::registerStats("num_grant_votes", "rate, sum");
   kNumSendSnapshot = stats::StatsManager::registerStats("num_send_snapshot", "rate, sum");
+  kFollowerCommitLogLatencyUs = stats::StatsManager::registerHisto(
+      "follower_commit_log_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
 }
 
 }  // namespace nebula

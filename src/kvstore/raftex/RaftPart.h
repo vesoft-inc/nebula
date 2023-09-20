@@ -393,6 +393,15 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    */
   void reset();
 
+  void AsyncCommitLogs();
+
+  // wait all async commitlogs finised;
+  void waitAsyncCommitLogs(folly::Promise<int>&& promise);
+
+  void setfollowerAsyncer(std::shared_ptr<apache::thrift::concurrency::ThreadManager> follower) {
+    followerAsyncer_ = follower;
+  }
+
  protected:
   /**
    * @brief Construct a new RaftPart
@@ -419,7 +428,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
            std::shared_ptr<folly::Executor> executor,
            std::shared_ptr<SnapshotManager> snapshotMan,
            std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
-           std::shared_ptr<kvstore::DiskManager> diskMan);
+           std::shared_ptr<kvstore::DiskManager> diskMan,
+           std::shared_ptr<apache::thrift::concurrency::ThreadManager> followerAsyncer);
 
   using Status = cpp2::Status;
   using Role = cpp2::Role;
@@ -877,6 +887,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   int64_t lastTotalSize_ = 0;
   time::Duration lastSnapshotRecvDur_;
 
+  std::atomic_int64_t lastLogIdCanCommit_{0};
+
   // Check if disk has enough space before write wal
   std::shared_ptr<kvstore::DiskManager> diskMan_;
 
@@ -884,6 +896,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   int64_t startTimeMs_ = 0;
 
   std::atomic<bool> blocking_{false};
+
+  std::atomic_bool asyncCommitLogs_{false};
+  std::shared_ptr<apache::thrift::concurrency::ThreadManager> followerAsyncer_;
 };
 
 }  // namespace raftex

@@ -53,7 +53,8 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<raftex::SnapshotManager> snapshotMan,
        std::shared_ptr<RaftClient> clientMan,
        std::shared_ptr<DiskManager> diskMan,
-       int32_t vIdLen);
+       int32_t vIdLen,
+       std::shared_ptr<apache::thrift::concurrency::ThreadManager>);
 
   virtual ~Part() {
     LOG(INFO) << idStr_ << "~Part()";

@@ -130,14 +130,20 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
    */
   std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId, PartitionID partId);
 
+  auto getfollowerAsyncer() {
+    return followerAsyncer_;
+  }
+
  private:
-  RaftexService() = default;
+  RaftexService();
 
   std::unique_ptr<apache::thrift::ThriftServer> server_;
   uint32_t serverPort_;
 
   folly::RWSpinLock partsLock_;
   std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts_;
+
+  std::shared_ptr<apache::thrift::concurrency::ThreadManager> followerAsyncer_;
 };
 
 }  // namespace raftex

@@ -122,6 +122,13 @@ std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> get
   return clientMan;
 }
 
+auto getAsyncExector() {
+  static auto followerAsyncer =
+      apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(10);
+  followerAsyncer->start();
+  return followerAsyncer;
+}
+
 TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
@@ -143,7 +150,8 @@ TestShard::TestShard(size_t idx,
                handlersPool,
                snapshotMan,
                getClientMan(),
-               nullptr),
+               nullptr,
+               getAsyncExector()),
       idx_(idx),
       service_(svc),
       leadershipLostCB_(leadershipLostCB),

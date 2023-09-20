@@ -498,7 +498,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                      snapshot_,
                                      clientMan_,
                                      diskMan_,
-                                     getSpaceVidLen(spaceId));
+                                     getSpaceVidLen(spaceId),
+                                     raftService_->getfollowerAsyncer());
   std::vector<HostAddr> peersWithoutMe;
   for (auto& p : raftPeers) {
     if (p != raftAddr_) {
