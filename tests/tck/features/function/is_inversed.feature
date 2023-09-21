@@ -1,7 +1,7 @@
 Feature: is_inversed Function
 
   Background:
-    Test is_inversed function
+    Given a graph with space named "nba"
 
   Scenario: Test this is equivalent to typeid(e) < 0
     When executing query:
