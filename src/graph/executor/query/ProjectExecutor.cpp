@@ -42,6 +42,7 @@ folly::Future<Status> ProjectExecutor::execute() {
           }
         }
         auto res = std::move(respVal).value();
+        NG_RETURN_IF_ERROR(res);
         auto &&rows = std::move(res).value();
         result.rows.insert(result.rows.end(),
                            std::make_move_iterator(rows.begin()),

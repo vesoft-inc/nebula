@@ -141,3 +141,10 @@ Feature: Starts With Expression
     Then the result should be, in any order:
       | $^.player.name  | $$.player.name | like.likeness |
       | 'Manu Ginobili' | 'Tim Duncan'   | 90            |
+
+  Scenario: starts with wrong type
+    When executing query:
+      """
+      MATCH (v:player)-[]->() WHERE v.player.name STARTS WITH 1 RETURN v
+      """
+    Then a ExecutionError should be raised at runtime: Failed to evaluate condition: ($-.v.player.name STARTS WITH 1). For boolean conditions, please write in their full forms like <condition> == <true/false> or <condition> IS [NOT] NULL.
