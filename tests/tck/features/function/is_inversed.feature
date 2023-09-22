@@ -31,6 +31,8 @@ Feature: is_inversed Function
       | result |
       | true   |
       | false  |
+      | true   |
+      | false  |
     When executing query:
       """
       GO FROM "player100" OVER follow REVERSELY YIELD is_inversed(edge) AS result
