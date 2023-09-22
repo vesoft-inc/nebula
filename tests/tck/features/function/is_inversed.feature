@@ -12,6 +12,7 @@ Feature: is_inversed Function
     Then the result should be, in any order:
       | result |
       | true   |
+      | true   |
 
   Scenario: Test Positive Cases
     When executing query:
