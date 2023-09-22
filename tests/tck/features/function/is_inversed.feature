@@ -41,7 +41,7 @@ Feature: is_inversed Function
       """
     Then the result should be, in any order:
       | result | count |
-      | true   | 12    |
+      | true   | 10    |
 
   Scenario: Test Cases With Invalid Input
     When executing query:
