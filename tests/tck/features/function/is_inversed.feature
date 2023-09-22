@@ -7,7 +7,7 @@ Feature: is_inversed Function
     When executing query:
       """
       MATCH (v1:player{name:"Tim Duncan"})-[e]->(v2:player{name:"Tony Parker"})
-      RETURN IS_INVERSED(e) == TYPEID(e) AS result;
+      RETURN IS_INVERSED(e) == (TYPEID(e) < 0) AS result;
       """
     Then the result should be, in any order:
       | result |
@@ -21,7 +21,7 @@ Feature: is_inversed Function
       """
     Then the result should be, in any order:
       | result |
-      | true   |
+      | false  |
     When executing query:
       """
       MATCH (v1:player{name:"Tim Duncan"})-[e]-(v2:player{name:"Tony Parker"})
