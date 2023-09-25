@@ -11,6 +11,13 @@ Feature: join
       """
       $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
       $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e;
+      YIELD $a.vid AS id, $b.e AS e, count(*) FROM $a INNER JOIN $b ON $a.vid == $b.vid
+      """
+    Then a SyntaxError should be raised at runtime:  Invalid use of aggregating function in yield clause. near `$a.vid AS id, $b.e AS e, count(*)'
+    When executing query:
+      """
+      $a = GO FROM 'Tim Duncan' OVER like YIELD id($$) as vid, edge as e;
+      $b = GO FROM 'Tony Parker' OVER like YIELD id($$) as vid, edge as e;
       YIELD $a.vid AS id, $b.e AS e FROM $a INNER JOIN $b ON $a.vid == $b.vid
       """
     Then a SemanticError should be raised at runtime:  column name `e' of $a and column name `e' of $b are the same, please rename it to a non-duplicate column name.
@@ -359,3 +366,17 @@ Feature: join
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+
+  Scenario: join limit
+    When executing query:
+      """
+      $a = GO FROM "Tim Duncan" OVER like YIELD src(edge) AS src, edge AS e1;
+      $b = GO 2 STEPS FROM "Tony Parker" OVER like YIELD edge AS e2, dst(edge) AS dst;
+      YIELD $a.e1 AS e1, $b.e2 AS e2 from $a inner join $b ON $a.src == $b.dst | limit 10
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e1                                                      | e2                                                          |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     |
