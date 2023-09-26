@@ -1696,11 +1696,21 @@ yield_sentence
         $$ = s;
     }
     | KW_YIELD yield_columns join_clause {
+        if ($2->hasAgg()) {
+            delete($2);
+            delete($3);
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in yield clause.");
+        }
         auto *s = new YieldSentence($2);
         s->setJoinClause($3);
         $$ = s;
     }
     | KW_YIELD KW_DISTINCT yield_columns join_clause {
+        if ($3->hasAgg()) {
+            delete($3);
+            delete($4);
+            throw nebula::GraphParser::syntax_error(@2, "Invalid use of aggregating function in yield clause.");
+        }
         auto *s = new YieldSentence($3, true);
         s->setJoinClause($4);
         $$ = s;
