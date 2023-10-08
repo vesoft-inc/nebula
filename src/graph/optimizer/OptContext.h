@@ -9,6 +9,7 @@
 #include <boost/core/noncopyable.hpp>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "common/cpp/helpers.h"
 
@@ -18,11 +19,14 @@ class ObjectPool;
 
 namespace graph {
 class QueryContext;
+class PlanNode;
 }  // namespace graph
 
 namespace opt {
 
 class OptGroupNode;
+class OptGroup;
+class Optimizer;
 
 class OptContext final : private boost::noncopyable, private cpp::NonMovable {
  public:
@@ -48,12 +52,16 @@ class OptContext final : private boost::noncopyable, private cpp::NonMovable {
   const OptGroupNode *findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;
 
  private:
+  friend OptGroup;
+  friend Optimizer;
   // A global flag to record whether this iteration caused a change to the plan
   bool changed_{true};
   graph::QueryContext *qctx_{nullptr};
   // Memo memory management in the Optimizer phase
   std::unique_ptr<ObjectPool> objPool_;
   std::unordered_map<int64_t, const OptGroupNode *> planNodeToOptGroupNodeMap_;
+  std::unordered_set<const OptGroup *> visited_;
+  std::unordered_map<const OptGroup *, const graph::PlanNode *> group2PlanNodeMap_;
 };
 
 }  // namespace opt

@@ -28,6 +28,9 @@ OptGroup *OptGroup::create(OptContext *ctx) {
 }
 
 void OptGroup::setUnexplored(const OptRule *rule) {
+  if (!ctx_->visited_.emplace(this).second) {
+    return;
+  }
   auto iter = std::find(exploredRules_.begin(), exploredRules_.end(), rule);
   if (iter != exploredRules_.end()) {
     exploredRules_.erase(iter);
@@ -100,6 +103,9 @@ Status OptGroup::validate(const OptRule *rule) const {
         rule->toString().c_str(),
         groupNodesReferenced_.size());
   }
+  if (!ctx_->visited_.emplace(this).second) {
+    return Status::OK();
+  }
   for (auto *gn : groupNodes_) {
     NG_RETURN_IF_ERROR(gn->validate(rule));
     if (gn->node()->outputVar() != outputVar_) {
@@ -138,6 +144,9 @@ Status OptGroup::explore(const OptRule *rule) {
     return Status::OK();
   }
   setExplored(rule);
+  if (!ctx_->visited_.emplace(this).second) {
+    return Status::OK();
+  }
 
   // TODO(yee): the opt group maybe in the loop body branch
   // DCHECK(isRootGroup_ || !groupNodesReferenced_.empty())
@@ -241,8 +250,15 @@ double OptGroup::getCost() const {
 }
 
 const PlanNode *OptGroup::getPlan() const {
+  auto &group2PlanNodeMap = ctx_->group2PlanNodeMap_;
+  auto iter = group2PlanNodeMap.find(this);
+  if (iter != group2PlanNodeMap.end()) {
+    return iter->second;
+  }
   const OptGroupNode *minGroupNode = findMinCostGroupNode().second;
-  return DCHECK_NOTNULL(minGroupNode)->getPlan();
+  const auto plan = DCHECK_NOTNULL(minGroupNode)->getPlan();
+  group2PlanNodeMap.emplace(this, plan);
+  return plan;
 }
 
 void OptGroup::deleteRefGroupNode(const OptGroupNode *node) {
