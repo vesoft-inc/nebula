@@ -85,6 +85,7 @@ class PrunePropertiesVisitor final : public PlanNodeVisitor {
   Status status_;
   bool rootNode_{true};
   const int unknownType_ = 0;
+  std::unordered_set<PlanNode *> visitedPlanNode_;
 };
 
 }  // namespace graph
