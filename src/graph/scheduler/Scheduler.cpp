@@ -23,6 +23,7 @@ namespace graph {
 
 /*static*/ void Scheduler::analyzeLifetime(const PlanNode* root, std::size_t loopLayers) {
   std::stack<std::tuple<const PlanNode*, std::size_t>> stack;
+  std::unordered_set<const PlanNode*> visited;
   stack.push(std::make_tuple(root, loopLayers));
   while (!stack.empty()) {
     const auto& current = stack.top();
@@ -36,6 +37,9 @@ namespace graph {
     auto* currentMutNode = const_cast<PlanNode*>(currentNode);
     currentMutNode->setLoopLayers(currentLoopLayers);
     stack.pop();
+    if (!visited.emplace(currentNode).second) {
+      continue;
+    }
 
     for (auto dep : currentNode->dependencies()) {
       stack.push(std::make_tuple(dep, currentLoopLayers));
