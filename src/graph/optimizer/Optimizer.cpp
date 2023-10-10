@@ -52,7 +52,8 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
 
 // Just for Properties Pruning
 Status Optimizer::postprocess(PlanNode *root, graph::QueryContext *qctx, GraphSpaceID spaceID) {
-  NG_RETURN_IF_ERROR(rewriteArgumentInputVar(root));
+  std::unordered_set<const PlanNode *> visitedPlanNode;
+  NG_RETURN_IF_ERROR(rewriteArgumentInputVar(root, visitedPlanNode));
   if (FLAGS_enable_optimizer_property_pruner_rule) {
     graph::PropertyTracker propsUsed;
     graph::PrunePropertiesVisitor visitor(propsUsed, qctx, spaceID);
@@ -81,8 +82,11 @@ Status Optimizer::doExploration(OptContext *octx, OptGroup *rootGroup) {
       for (auto rule : ruleSet->rules()) {
         // Explore until the maximum number of iterations(Rules) is reached
         NG_RETURN_IF_ERROR(rootGroup->exploreUntilMaxRound(rule));
+        octx->visited_.clear();
         NG_RETURN_IF_ERROR(rootGroup->validate(rule));
+        octx->visited_.clear();
         rootGroup->setUnexplored(rule);
+        octx->visited_.clear();
       }
     }
   }
@@ -164,9 +168,14 @@ bool findArgumentRefPlanNodeInPath(const std::vector<const PlanNode *> &path, Pl
 }  // namespace
 
 // static
-Status Optimizer::rewriteArgumentInputVarInternal(PlanNode *root,
-                                                  std::vector<const PlanNode *> &path) {
+Status Optimizer::rewriteArgumentInputVarInternal(
+    PlanNode *root,
+    std::vector<const PlanNode *> &path,
+    std::unordered_set<const PlanNode *> &visitedPlanNode) {
   if (!root) return Status::OK();
+  if (!visitedPlanNode.emplace(root).second) {
+    return Status::OK();
+  }
 
   path.push_back(root);
   switch (root->numDeps()) {
@@ -186,15 +195,15 @@ Status Optimizer::rewriteArgumentInputVarInternal(PlanNode *root,
     }
     case 1: {
       auto *dep = const_cast<PlanNode *>(root->dep());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(dep, path, visitedPlanNode));
       break;
     }
     case 2: {
       auto *bpn = static_cast<BinaryInputNode *>(root);
       auto *left = const_cast<PlanNode *>(bpn->left());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(left, path, visitedPlanNode));
       auto *right = const_cast<PlanNode *>(bpn->right());
-      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, path));
+      NG_RETURN_IF_ERROR(rewriteArgumentInputVarInternal(right, path, visitedPlanNode));
       break;
     }
     default: {
@@ -206,27 +215,33 @@ Status Optimizer::rewriteArgumentInputVarInternal(PlanNode *root,
 
   if (root->kind() == PlanNode::Kind::kLoop) {
     auto loop = static_cast<Loop *>(root);
-    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(loop->body())));
+    NG_RETURN_IF_ERROR(
+        rewriteArgumentInputVar(const_cast<PlanNode *>(loop->body()), visitedPlanNode));
   }
 
   if (root->kind() == PlanNode::Kind::kSelect) {
     auto sel = static_cast<Select *>(root);
-    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(sel->then())));
-    NG_RETURN_IF_ERROR(rewriteArgumentInputVar(const_cast<PlanNode *>(sel->otherwise())));
+    NG_RETURN_IF_ERROR(
+        rewriteArgumentInputVar(const_cast<PlanNode *>(sel->then()), visitedPlanNode));
+    NG_RETURN_IF_ERROR(
+        rewriteArgumentInputVar(const_cast<PlanNode *>(sel->otherwise()), visitedPlanNode));
   }
 
   return Status::OK();
 }
 
 // static
-Status Optimizer::rewriteArgumentInputVar(PlanNode *root) {
+Status Optimizer::rewriteArgumentInputVar(PlanNode *root,
+                                          std::unordered_set<const PlanNode *> &visitedPlanNode) {
   std::vector<const PlanNode *> path;
-  return rewriteArgumentInputVarInternal(root, path);
+  return rewriteArgumentInputVarInternal(root, path, visitedPlanNode);
 }
 
 Status Optimizer::checkPlanDepth(const PlanNode *root) const {
   std::queue<const PlanNode *> queue;
+  std::unordered_set<const PlanNode *> visited;
   queue.push(root);
+  visited.emplace(root);
   size_t depth = 0;
   while (!queue.empty()) {
     size_t size = queue.size();
@@ -234,9 +249,13 @@ Status Optimizer::checkPlanDepth(const PlanNode *root) const {
       const PlanNode *node = queue.front();
       queue.pop();
       for (size_t j = 0; j < node->numDeps(); j++) {
-        queue.push(node->dep(j));
+        const auto *dep = node->dep(j);
+        if (visited.emplace(dep).second) {
+          queue.push(dep);
+        }
       }
     }
+
     ++depth;
     if (depth > FLAGS_max_plan_depth) {
       return Status::Error("The depth of plan tree has exceeded the max %lu level",

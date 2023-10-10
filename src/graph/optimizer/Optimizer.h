@@ -47,9 +47,12 @@ class Optimizer final {
                           OptGroupNode *gnode,
                           std::unordered_map<int64_t, OptGroup *> *visited);
 
-  static Status rewriteArgumentInputVar(graph::PlanNode *root);
-  static Status rewriteArgumentInputVarInternal(graph::PlanNode *root,
-                                                std::vector<const graph::PlanNode *> &path);
+  static Status rewriteArgumentInputVar(
+      graph::PlanNode *root, std::unordered_set<const graph::PlanNode *> &visitedPlanNode);
+  static Status rewriteArgumentInputVarInternal(
+      graph::PlanNode *root,
+      std::vector<const graph::PlanNode *> &path,
+      std::unordered_set<const graph::PlanNode *> &visitedPlanNode);
 
   Status checkPlanDepth(const graph::PlanNode *root) const;
 
