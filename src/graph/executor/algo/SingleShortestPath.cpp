@@ -252,6 +252,9 @@ void SingleShortestPath::buildOddPath(size_t rowNum, const std::vector<Value>& m
         Row path = leftPath;
         auto& steps = path.values.back().mutableList().values;
         steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+        if (hasSameEdge(steps)) {
+          continue;
+        }
         path.emplace_back(rightPath.values.back());
         resultDs_[rowNum].rows.emplace_back(std::move(path));
         if (singleShortest_) {
@@ -285,6 +288,9 @@ folly::Future<bool> SingleShortestPath::buildEvenPath(size_t rowNum,
           auto& steps = path.values.back().mutableList().values;
           steps.emplace_back(meetVertex);
           steps.insert(steps.end(), rightPath.values.begin(), rightPath.values.end() - 1);
+          if (hasSameEdge(steps)) {
+            continue;
+          }
           path.emplace_back(rightPath.values.back());
           resultDs_[rowNum].rows.emplace_back(std::move(path));
           if (singleShortest_) {

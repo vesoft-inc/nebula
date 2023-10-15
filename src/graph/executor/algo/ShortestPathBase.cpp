@@ -48,6 +48,19 @@ folly::Future<std::vector<Value>> ShortestPathBase::getMeetVidsProps(
       });
 }
 
+bool ShortestPathBase::hasSameEdge(const std::vector<Value>& values) {
+  for (size_t i = 0; i < values.size(); ++i) {
+    if (values[i].isEdge()) {
+      for (size_t j = i + 1; j < values.size(); ++j) {
+        if (values[j].isEdge() && values[j].getEdge() == values[i].getEdge()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 std::vector<Value> ShortestPathBase::handlePropResp(PropRpcResponse&& resps) {
   std::vector<Value> vertices;
   auto result = handleCompleteness(resps, FLAGS_accept_partial_success);
