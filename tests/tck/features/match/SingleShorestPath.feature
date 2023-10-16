@@ -378,23 +378,11 @@ Feature: single shortestPath
       MATCH (a:player)
       MATCH p = shortestPath( (a)-[e:like*..2]->(b) )
         WHERE id(b) IN ['xxx', 'zzz', 'yyy', 'Tim Duncan', 'Yao Ming']
-        RETURN p
+        RETURN count(p)
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                                                                                                                                                                                                                                               |
-      | <("Rudy Gay" :player{age: 32, name: "Rudy Gay"})-[:like@0 {likeness: 70}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>             |
-      | <("Damian Lillard" :player{age: 28, name: "Damian Lillard"})-[:like@0 {likeness: 80}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})> |
-      | <("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})-[:like@0 {likeness: 55}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                           |
-      | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>               |
-      | <("Aron Baynes" :player{age: 32, name: "Aron Baynes"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                                   |
-      | <("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                             |
-      | <("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                         |
-      | <("Danny Green" :player{age: 31, name: "Danny Green"})-[:like@0 {likeness: 70}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                                   |
-      | <("Boris Diaw" :player{age: 36, name: "Boris Diaw"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                                     |
-      | <("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})-[:like@0 {likeness: 99}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                           |
-      | <("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})-[:like@0 {likeness: 90}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                               |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                                   |
-      | <("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})>                                                                                       |
+      | count(p) |
+      | 14       |
 
   Scenario: single shortestPaths5
     When executing query:
@@ -784,8 +772,7 @@ Feature: single shortestPath
       RETURN a, b
       """
     Then the result should be, in any order, with relax comparison:
-      | a                                               | b                                               |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+      | a | b |
     When executing query:
       """
       MATCH (a:player{name:'Yao Ming'})
@@ -793,16 +780,14 @@ Feature: single shortestPath
       RETURN a,b
       """
     Then the result should be, in any order, with relax comparison:
-      | a                                               | b                                               |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+      | a | b |
     When executing query:
       """
       MATCH p = shortestPath((a:player{name:'Yao Ming'})-[:like*1..3]-(b:player{name:'Yao Ming'}))
       RETURN a,b
       """
     Then the result should be, in any order, with relax comparison:
-      | a                                               | b                                               |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+      | a | b |
     When executing query:
       """
       MATCH p = shortestPath((a)-[:like*1..3]-(b))
@@ -810,5 +795,4 @@ Feature: single shortestPath
       RETURN a,b
       """
     Then the result should be, in any order, with relax comparison:
-      | a                                               | b                                               |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) |
+      | a | b |

@@ -87,9 +87,7 @@ size_t BatchShortestPath::init(const HashSet& startVids, const HashSet& endVids)
       std::unordered_multimap<StartVid, std::pair<EndVid, bool>> terminationMap;
       for (auto& _startVid : _startVids) {
         for (auto& _endVid : _endVids) {
-          if (_startVid != _endVid) {
-            terminationMap.emplace(_startVid, std::make_pair(_endVid, true));
-          }
+          terminationMap.emplace(_startVid, std::make_pair(_endVid, true));
         }
       }
       terminationMaps_.emplace_back(std::move(terminationMap));
@@ -401,6 +399,9 @@ folly::Future<bool> BatchShortestPath::conjunctPath(size_t rowNum, bool oddStep)
       }
       auto& rightPaths = findCommonVid->second;
       for (const auto& srcPaths : leftPathMap.second) {
+        if (srcPaths.second.empty()) {
+          continue;
+        }
         auto range = terminationMap.equal_range(srcPaths.first);
         if (range.first == range.second) {
           continue;
@@ -440,6 +441,9 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
   auto& resultDs = resultDs_[rowNum];
   if (rightPaths.empty()) {
     for (const auto& leftPath : leftPaths) {
+      if (hasSameEdge(leftPath.values)) {
+        continue;
+      }
       auto forwardPath = leftPath.values;
       auto src = forwardPath.front();
       forwardPath.erase(forwardPath.begin());
@@ -467,6 +471,9 @@ void BatchShortestPath::doConjunctPath(const std::vector<CustomPath>& leftPaths,
                          std::make_move_iterator(backwardPath.end()));
       auto dst = forwardPath.back();
       forwardPath.pop_back();
+      if (hasSameEdge(forwardPath)) {
+        continue;
+      }
       Row row;
       row.emplace_back(std::move(src));
       row.emplace_back(List(std::move(forwardPath)));

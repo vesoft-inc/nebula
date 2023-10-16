@@ -53,6 +53,8 @@ class ShortestPathBase {
 
   void addStats(PropRpcResponse& resp, int64_t timeInUSec) const;
 
+  bool hasSameEdge(const std::vector<Value>& values);
+
   folly::Executor* runner() const;
 
   template <typename Resp>
