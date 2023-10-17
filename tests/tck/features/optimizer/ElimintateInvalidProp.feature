@@ -35,3 +35,13 @@ Feature: Eliminate invalid property filter
       | 0  | Project | 1            |               |
       | 1  | Value   | 2            |               |
       | 2  | Start   |              |               |
+
+  Scenario: Elimintate Empty value
+    When executing query:
+      """
+      MATCH (a2:player) WHERE 28==0.63
+      MATCH (b)-[e4]->(a2) WHERE 18 <= a2.player.age
+      RETURN a2
+      """
+    Then the result should be, in any order:
+      | a2 |
