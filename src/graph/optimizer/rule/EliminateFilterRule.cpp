@@ -53,14 +53,13 @@ StatusOr<OptRule::TransformResult> EliminateFilterRule::transform(
   auto filterGroupNode = matched.node;
   auto filter = static_cast<const Filter*>(filterGroupNode->node());
 
-  auto newValue = ValueNode::make(octx->qctx(), nullptr, DataSet(filter->colNames()));
-  newValue->setOutputVar(filter->outputVar());
-  auto newValueGroupNode = OptGroupNode::create(octx, newValue, filterGroupNode->group());
-
   auto newStart = StartNode::make(octx->qctx());
   auto newStartGroup = OptGroup::create(octx);
   newStartGroup->makeGroupNode(newStart);
 
+  auto newValue = ValueNode::make(octx->qctx(), newStart, DataSet(filter->colNames()));
+  newValue->setOutputVar(filter->outputVar());
+  auto newValueGroupNode = OptGroupNode::create(octx, newValue, filterGroupNode->group());
   newValueGroupNode->dependsOn(newStartGroup);
 
   TransformResult result;

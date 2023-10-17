@@ -1083,5 +1083,9 @@ std::unique_ptr<PlanNodeDescription> FulltextIndexScan::explain() const {
   return desc;
 }
 
+PlanNode* ValueNode::clone() const {
+  return ValueNode::make(qctx_, nullptr, value_);
+}
+
 }  // namespace graph
 }  // namespace nebula

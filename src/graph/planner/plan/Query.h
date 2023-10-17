@@ -2059,6 +2059,8 @@ class ValueNode : public SingleInputNode {
     return qctx->objPool()->makeAndAdd<ValueNode>(qctx, dep, std::move(value));
   }
 
+  PlanNode* clone() const override;
+
   Value value() const {
     return value_;
   }
