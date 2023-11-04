@@ -125,6 +125,16 @@ Feature: Integer Vid All Path
       | <("Tony Parker")-[:like@0]->("Manu Ginobili")-[:like@0]->("Tim Duncan")>                                |
       | <("Tony Parker")-[:like@0]->("Tim Duncan")>                                                             |
       | <("Tony Parker")-[:like@0]->("Tim Duncan")-[:like@0]->("Manu Ginobili")-[:like@0]->("Tim Duncan")>      |
+    When executing query:
+      """
+      lookup on player where player.age>20 YIELD id(vertex) as vid
+      | go 1 step from $-.vid over * where "player" in labels($$) yield distinct id($$) as dst,$-.vid as src
+      | find noloop path  from $-.src  to $-.dst  over *   upto 1 step yield path as p | limit 10,10
+      | yield count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 10       |
 
   Scenario: Integer Vid [1] ALL PATH REVERSELY
     Given a graph with space named "nba_int_vid"
