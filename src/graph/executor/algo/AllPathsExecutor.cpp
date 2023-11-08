@@ -273,6 +273,12 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
       })
       .thenValue([this, conjunctPathTime](auto&& resps) {
         NG_RETURN_IF_ERROR(resps);
+        if (result_.rows.size() > limit_) {
+          result_.rows.resize(limit_);
+        }
+        if (offset_ != 0) {
+          result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
+        }
         addState("conjunct_path_time", conjunctPathTime);
         return Status::OK();
       });
@@ -556,12 +562,6 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           result_.rows.insert(result_.rows.end(),
                               std::make_move_iterator(rows.begin()),
                               std::make_move_iterator(rows.end()));
-        }
-        if (result_.rows.size() > limit_) {
-          result_.rows.resize(limit_);
-        }
-        if (offset_ != 0) {
-          result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
         }
         return Status::OK();
       })
