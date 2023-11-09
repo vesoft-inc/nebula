@@ -538,7 +538,7 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId) {
   }
   if (ok(spaceOr)) {
     auto spaceIt = value(spaceOr);
-    auto& engines = spaceIt->second->engines_;
+    auto& engines = spaceIt->engines_;
     for (auto& engine : engines) {
       auto parts = engine->allParts();
       for (auto& partId : parts) {
