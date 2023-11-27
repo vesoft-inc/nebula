@@ -19,8 +19,6 @@
 --minloglevel=0
 # Verbose log level, 1, 2, 3, 4, the higher of the level, the more verbose of the logging
 --v=0
-# Maximum seconds to buffer the log messages
---logbufsecs=0
 # Whether to redirect stdout and stderr to separate output files
 --redirect_stdout=true
 # Destination filename of stdout and stderr, which will also reside in log_dir.
