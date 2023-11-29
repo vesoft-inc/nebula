@@ -584,7 +584,7 @@ FunctionManager::FunctionManager() {
         case Value::Type::FLOAT: {
           if (args.size() >= 2) {
             if (args[1].get().type() == Value::Type::INT) {
-              auto val = args[0].get().getFloat();
+              auto val = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
               auto decimal = args[1].get().getInt();
               auto factor = pow(10.0, decimal);
 
