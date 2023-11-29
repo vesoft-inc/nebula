@@ -22,43 +22,52 @@ TEST(NetworkUtils, getHostname) {
   EXPECT_EQ(std::string(buffer), hostname);
 }
 
-TEST(NetworkUtils, getIPv4FromDevice) {
+TEST(NetworkUtils, getIPFromDevice) {
   {
-    auto result = NetworkUtils::getIPv4FromDevice("lo");
+    auto result = NetworkUtils::getIPFromDevice("lo");
     ASSERT_TRUE(result.ok()) << result.status();
-    ASSERT_EQ("127.0.0.1", result.value());
+    ASSERT_TRUE(result.value() == "127.0.0.1" || result.value() == "::1");
   }
   {
-    auto result = NetworkUtils::getIPv4FromDevice("any");
+    auto result = NetworkUtils::getIPFromDevice("any");
     ASSERT_TRUE(result.ok()) << result.status();
     ASSERT_EQ("0.0.0.0", result.value());
   }
   {
-    auto result = NetworkUtils::getIPv4FromDevice("nonexistent");
+    auto result = NetworkUtils::getIPFromDevice("nonexistent");
     ASSERT_FALSE(result.ok()) << result.status();
   }
 }
 
-TEST(NetworkUtils, listIPv4s) {
-  auto result = NetworkUtils::listIPv4s();
+TEST(NetworkUtils, listIPs) {
+  auto result = NetworkUtils::listIPs();
   ASSERT_TRUE(result.ok()) << result.status();
   ASSERT_FALSE(result.value().empty());
-  auto found = false;
+  auto foundIPv4 = false;
+  auto foundIPv6 = false;
   for (auto& ip : result.value()) {
     if (ip == "127.0.0.1") {
-      found = true;
+      foundIPv4 = true;
+    }
+    if (ip == "::1") {
+      foundIPv6 = true;
     }
   }
-  ASSERT_TRUE(found);
+  ASSERT_TRUE(foundIPv4);
+  ASSERT_TRUE(foundIPv6); // This may fail on some OS without IPv6 support
 }
 
-TEST(NetworkUtils, listDeviceAndIPv4s) {
-  auto result = NetworkUtils::listDeviceAndIPv4s();
+TEST(NetworkUtils, listDeviceAndIPs) {
+  auto result = NetworkUtils::listDeviceAndIPs();
   ASSERT_TRUE(result.ok()) << result.status();
   ASSERT_FALSE(result.value().empty());
   ASSERT_NE(result.value().end(),
             std::find_if(result.value().begin(), result.value().end(), [](const auto& deviceAndIp) {
               return deviceAndIp.first == "lo";
+            }));
+  ASSERT_NE(result.value().end(),
+            std::find_if(result.value().begin(), result.value().end(), [](const auto& deviceAndIp) {
+              return deviceAndIp.second == "::1";
             }));
 }
 
@@ -86,6 +95,9 @@ TEST(NetworkUtils, toHosts) {
 
   s = NetworkUtils::toHosts("1.1.2.3:123, a.b.c.d:a23");
   ASSERT_FALSE(s.ok());
+
+  s = NetworkUtils::toHosts("[::1]:1200, localhost:1200");
+  ASSERT_TRUE(s.ok());
 }
 
 TEST(NetworkUtils, ValidateHostOrIp) {
@@ -118,6 +130,22 @@ TEST(NetworkUtils, ValidateHostOrIp) {
   EXPECT_TRUE(result.ok());
 
   hostOrIp = "NonvalidHostName";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "lab.vesoft-inc.com";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "::1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "2001:db8::1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "::g";
   result = NetworkUtils::validateHostOrIp(hostOrIp);
   EXPECT_FALSE(result.ok());
 }
