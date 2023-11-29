@@ -50,39 +50,49 @@ StatusOr<std::string> NetworkUtils::getIPFromDevice(const std::string& device) {
 StatusOr<std::vector<std::string>> NetworkUtils::listIPs() {
   auto result = listDeviceAndIPs();
   if (!result.ok()) {
-    return std::move(result).status();
+      return std::move(result).status();
   }
-  auto getval = [](const auto& entry) { return entry.second; };
   std::vector<std::string> ips;
-  ips.resize(result.value().size());
-  std::transform(result.value().begin(), result.value().end(), ips.begin(), getval);
+  ips.reserve(result.value().size());
+  for (const auto& entry : result.value()) {
+      ips.push_back(entry.second);
+  }
   return ips;
 }
 
 StatusOr<std::vector<std::pair<std::string, std::string>>> NetworkUtils::listDeviceAndIPs() {
-  struct ifaddrs* iflist;
-  std::vector<std::pair<std::string, std::string>> dev2ips;
-  if (::getifaddrs(&iflist) != 0) {
-    return Status::Error("%s", ::strerror(errno));
-  }
-  for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
-    char ip[INET6_ADDRSTRLEN];
-    if (ifa->ifa_addr->sa_family == AF_INET) {
-      auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
-      ::inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
-    } else if (ifa->ifa_addr->sa_family == AF_INET6) {
-      auto* addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
-      ::inet_ntop(AF_INET6, &(addr->sin6_addr), ip, INET6_ADDRSTRLEN);
-    } else {
-      continue;
+    struct ifaddrs* iflist;
+    std::vector<std::pair<std::string, std::string>> dev2ips;
+    if (::getifaddrs(&iflist) != 0) {
+        return Status::Error("%s", ::strerror(errno));
     }
-    dev2ips.emplace_back(ifa->ifa_name, ip);
-  }
-  ::freeifaddrs(iflist);
-  if (dev2ips.empty()) {
-    return Status::Error("No IP devices found");
-  }
-  return dev2ips;
+    for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
+        char ip[INET6_ADDRSTRLEN];
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+            ::inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
+        } else if (ifa->ifa_addr->sa_family == AF_INET6) {
+            auto* addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
+            ::inet_ntop(AF_INET6, &(addr->sin6_addr), ip, INET6_ADDRSTRLEN);
+            // Handle scope ID for IPv6 if necessary
+            if (addr->sin6_scope_id) {
+                std::string ipWithScopeId = std::string(ip) + "%" + ifa->ifa_name;
+                dev2ips.emplace_back(ifa->ifa_name, ipWithScopeId);
+                continue;
+            }
+        } else {
+            continue;
+        }
+        dev2ips.emplace_back(ifa->ifa_name, ip);
+    }
+    ::freeifaddrs(iflist);
+    if (dev2ips.empty()) {
+        return Status::Error("No IP devices found");
+    }
+    return dev2ips;
 }
 
 bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
