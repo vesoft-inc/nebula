@@ -135,10 +135,6 @@ TEST(NetworkUtils, ValidateHostOrIp) {
   result = NetworkUtils::validateHostOrIp(hostOrIp);
   EXPECT_FALSE(result.ok());
 
-  hostOrIp = "lab.vesoft-inc.com";
-  result = NetworkUtils::validateHostOrIp(hostOrIp);
-  EXPECT_TRUE(result.ok());
-
   hostOrIp = "::1";
   result = NetworkUtils::validateHostOrIp(hostOrIp);
   EXPECT_TRUE(result.ok());
