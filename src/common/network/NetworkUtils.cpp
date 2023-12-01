@@ -50,49 +50,49 @@ StatusOr<std::string> NetworkUtils::getIPFromDevice(const std::string& device) {
 StatusOr<std::vector<std::string>> NetworkUtils::listIPs() {
   auto result = listDeviceAndIPs();
   if (!result.ok()) {
-      return std::move(result).status();
+    return std::move(result).status();
   }
   std::vector<std::string> ips;
   ips.reserve(result.value().size());
   for (const auto& entry : result.value()) {
-      ips.push_back(entry.second);
+    ips.push_back(entry.second);
   }
   return ips;
 }
 
 StatusOr<std::vector<std::pair<std::string, std::string>>> NetworkUtils::listDeviceAndIPs() {
-    struct ifaddrs* iflist;
-    std::vector<std::pair<std::string, std::string>> dev2ips;
-    if (::getifaddrs(&iflist) != 0) {
-        return Status::Error("%s", ::strerror(errno));
+  struct ifaddrs* iflist;
+  std::vector<std::pair<std::string, std::string>> dev2ips;
+  if (::getifaddrs(&iflist) != 0) {
+    return Status::Error("%s", ::strerror(errno));
+  }
+  for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (!ifa->ifa_addr) {
+      continue;
     }
-    for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
-        if (!ifa->ifa_addr) {
-            continue;
-        }
-        char ip[INET6_ADDRSTRLEN];
-        if (ifa->ifa_addr->sa_family == AF_INET) {
-            auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
-            ::inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
-        } else if (ifa->ifa_addr->sa_family == AF_INET6) {
-            auto* addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
-            ::inet_ntop(AF_INET6, &(addr->sin6_addr), ip, INET6_ADDRSTRLEN);
-            // Handle scope ID for IPv6 if necessary
-            if (addr->sin6_scope_id) {
-                std::string ipWithScopeId = std::string(ip) + "%" + ifa->ifa_name;
-                dev2ips.emplace_back(ifa->ifa_name, ipWithScopeId);
-                continue;
-            }
-        } else {
-            continue;
-        }
-        dev2ips.emplace_back(ifa->ifa_name, ip);
+    char ip[INET6_ADDRSTRLEN];
+    if (ifa->ifa_addr->sa_family == AF_INET) {
+      auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+      ::inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
+    } else if (ifa->ifa_addr->sa_family == AF_INET6) {
+      auto* addr = reinterpret_cast<struct sockaddr_in6*>(ifa->ifa_addr);
+      ::inet_ntop(AF_INET6, &(addr->sin6_addr), ip, INET6_ADDRSTRLEN);
+      // Handle scope ID for IPv6 if necessary
+      if (addr->sin6_scope_id) {
+        std::string ipWithScopeId = std::string(ip) + "%" + ifa->ifa_name;
+        dev2ips.emplace_back(ifa->ifa_name, ipWithScopeId);
+        continue;
+      }
+    } else {
+      continue;
     }
-    ::freeifaddrs(iflist);
-    if (dev2ips.empty()) {
-        return Status::Error("No IP devices found");
-    }
-    return dev2ips;
+    dev2ips.emplace_back(ifa->ifa_name, ip);
+  }
+  ::freeifaddrs(iflist);
+  if (dev2ips.empty()) {
+    return Status::Error("No IP devices found");
+  }
+  return dev2ips;
 }
 
 bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
@@ -359,8 +359,8 @@ Status NetworkUtils::validateHostOrIp(const std::string& hostOrIp) {
       "^::1$|(::)");
   if (std::regex_match(hostOrIp, ipv4) || std::regex_match(hostOrIp, ipv6)) {
     const std::regex loopbackOrAny(
-      "^127(?:\\.[0-9]+){0,2}\\.[0-9]+$|^(?:0*\\:)*?:?0*1$|"
-      "^::1$|((0\\.){3}0)");
+        "^127(?:\\.[0-9]+){0,2}\\.[0-9]+$|^(?:0*\\:)*?:?0*1$|"
+        "^::1$|((0\\.){3}0)");
     if (std::regex_match(hostOrIp, loopbackOrAny)) {
       return Status::OK();
     }
