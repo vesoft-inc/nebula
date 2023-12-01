@@ -67,7 +67,8 @@ TEST(NetworkUtils, listDeviceAndIPs) {
             }));
   // Requires IPv6 env for testing
   // ASSERT_NE(result.value().end(),
-  //           std::find_if(result.value().begin(), result.value().end(), [](const auto& deviceAndIp) {
+  //           std::find_if(
+  //  result.value().begin(), result.value().end(), [](const auto& deviceAndIp) {
   //             return deviceAndIp.second == "::1";
   //           }));
 }
