@@ -43,7 +43,7 @@ void CreateSessionprocessor::process(const cpp2::CreateSessionReq &req) {
 
   auto cb = [this](nebula::cpp2::ErrorCode ec) {
     if (ec != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Put data error on meta server, errorCode: " 
+      LOG(INFO) << "Put data error on meta server, errorCode: "
                 << apache::thrift::util::enumNameSafe(ec);
     }
     handleErrorCode(ec);
@@ -120,7 +120,7 @@ void UpdateSessionsprocessor::process(const cpp2::UpdateSessionsReq &req) {
 
   auto cb = [this](nebula::cpp2::ErrorCode ec) {
     if (ec != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Put data error on meta server, errorCode: " 
+      LOG(INFO) << "Put data error on meta server, errorCode: "
                 << apache::thrift::util::enumNameSafe(ec);
     }
     handleErrorCode(ec);
@@ -273,7 +273,7 @@ void KillQueryprocessor::process(const cpp2::KillQueryReq &req) {
 
   auto cb = [this](nebula::cpp2::ErrorCode ec) {
     if (ec != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Put data error on meta server, errorCode: " 
+      LOG(INFO) << "Put data error on meta server, errorCode: "
                 << apache::thrift::util::enumNameSafe(ec);
     }
     handleErrorCode(ec);
