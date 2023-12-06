@@ -130,8 +130,8 @@ void UpdateSessionsprocessor::process(const cpp2::UpdateSessionsReq &req) {
   kvstore_->asyncAtomicOp(kDefaultSpaceId, kDefaultPartId, std::move(getAtomicOp), std::move(cb));
 }
 
-void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
-  auto& prefix = MetaKeyUtils::sessionPrefix();
+void ListSessionsProcessor::process(const cpp2::ListSessionsReq &) {
+  auto &prefix = MetaKeyUtils::sessionPrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     handleErrorCode(nebula::error(ret));
@@ -153,7 +153,7 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
   onFinished();
 }
 
-void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
+void GetSessionProcessor::process(const cpp2::GetSessionReq &req) {
   auto sessionId = req.get_session_id();
   auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
   auto ret = doGet(sessionKey);
@@ -200,15 +200,14 @@ void RemoveSessionprocessor::process(const cpp2::RemoveSessionReq &req) {
     // Remove session key from kvstore
     folly::Baton<true, std::atomic> baton;
     nebula::cpp2::ErrorCode errorCode;
-    kvstore_->asyncAtomicOp(
-      kDefaultSpaceId,
-      kDefaultPartId,
-      std::move(getAtomicOp),
-      [this, &baton, &errorCode](nebula::cpp2::ErrorCode code) {
-        this->handleErrorCode(code);
-        errorCode = code;
-        baton.post();
-      });
+    kvstore_->asyncAtomicOp(kDefaultSpaceId,
+                            kDefaultPartId,
+                            std::move(getAtomicOp),
+                            [this, &baton, &errorCode](nebula::cpp2::ErrorCode code) {
+                              this->handleErrorCode(code);
+                              errorCode = code;
+                              baton.post();
+                            });
     baton.wait();
 
     // continue if the session is not removed successfully
