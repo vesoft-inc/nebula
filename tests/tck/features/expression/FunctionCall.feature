@@ -10,7 +10,7 @@ Feature: Function Call Expression
     When executing query:
       """
       YIELD sign(38) AS a, sign(-2) AS b, sign(0.421) AS c,
-            sign(-1.0) AS d, sign(0) AS e, sign(abs(-3)) AS f
+      sign(-1.0) AS d, sign(0) AS e, sign(abs(-3)) AS f
       """
     Then the result should be, in any order:
       | a | b  | c | d  | e | f |
@@ -180,6 +180,36 @@ Feature: Function Call Expression
     When executing query:
       """
       YIELD round(35543.14159265359, -5) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 0.0    |
+
+  Scenario: round int
+    When executing query:
+      """
+      YIELD round(12345, 2) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 12345.0 |
+    When executing query:
+      """
+      YIELD round(12345, 0) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 12345.0 |
+    When executing query:
+      """
+      YIELD round(12345, -2) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 12300.0 |
+    When executing query:
+      """
+      YIELD round(12345, -5) as result
       """
     Then the result should be, in any order:
       | result |
