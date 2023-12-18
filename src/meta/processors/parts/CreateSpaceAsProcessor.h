@@ -43,6 +43,9 @@ class CreateSpaceAsProcessor : public BaseProcessor<cpp2::ExecResp> {
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> makeNewIndexes(
       GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId);
 
+  ErrorOr<nebula::cpp2::ErrorCode, kvstore::KV> makeLocalIDKey(GraphSpaceID oldSpaceId,
+                                                               GraphSpaceID newSpaceId);
+
   nebula::cpp2::ErrorCode rc_{nebula::cpp2::ErrorCode::SUCCEEDED};
 
  private:
