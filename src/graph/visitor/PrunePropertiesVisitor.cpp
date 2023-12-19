@@ -27,6 +27,9 @@ void PrunePropertiesVisitor::visit(Filter *node) {
     return;
   }
   visitCurrent(node);  // Filter will use properties in filter expression
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -44,6 +47,9 @@ void PrunePropertiesVisitor::visit(Project *node) {
     return;
   }
   visitCurrent(node);  // Project won't use properties in column expression
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -120,6 +126,9 @@ void PrunePropertiesVisitor::visit(Aggregate *node) {
     return;
   }
   visitCurrent(node);
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -170,6 +179,9 @@ void PrunePropertiesVisitor::visit(ScanEdges *node) {
   }
   rootNode_ = false;
   pruneCurrent(node);
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -228,6 +240,9 @@ void PrunePropertiesVisitor::visit(Traverse *node) {
   }
   rootNode_ = false;
   visitCurrent(node);
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -380,6 +395,9 @@ void PrunePropertiesVisitor::visit(AppendVertices *node) {
     return;
   }
   visitCurrent(node);
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 
@@ -524,6 +542,9 @@ void PrunePropertiesVisitor::visit(Unwind *node) {
     return;
   }
   visitCurrent(node);
+  if (!status_.ok()) {
+    return;
+  }
   status_ = depsPruneProperties(node->dependencies());
 }
 

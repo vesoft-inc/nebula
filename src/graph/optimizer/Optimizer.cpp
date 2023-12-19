@@ -35,8 +35,10 @@ StatusOr<const PlanNode *> Optimizer::findBestPlan(QueryContext *qctx) {
   auto optCtx = std::make_unique<OptContext>(qctx);
 
   auto root = qctx->plan()->root();
-  auto spaceID = qctx->rctx()->session()->space().id;
-
+  auto spaceID = nebula::graph::kInvalidSpaceID;
+  if (qctx->vctx()->spaceChosen()) {
+    spaceID = qctx->vctx()->whichSpace().id;
+  }
   NG_RETURN_IF_ERROR(checkPlanDepth(root));
   auto ret = prepare(optCtx.get(), root);
   NG_RETURN_IF_ERROR(ret);
