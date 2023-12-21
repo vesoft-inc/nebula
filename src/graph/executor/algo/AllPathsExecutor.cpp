@@ -277,7 +277,11 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
           result_.rows.resize(limit_);
         }
         if (offset_ != 0) {
-          result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
+          if (result_.rows.size() <= offset_) {
+            result_.rows.clear();
+          } else {
+            result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
+          }
         }
         addState("conjunct_path_time", conjunctPathTime);
         return Status::OK();
