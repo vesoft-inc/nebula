@@ -92,6 +92,15 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     return;
   }
 
+  auto newLocalIdKey = makeLocalIDKey(nebula::value(oldSpaceId), nebula::value(newSpaceId));
+  if (nebula::ok(newLocalIdKey)) {
+    data.push_back(nebula::value(newLocalIdKey));
+  } else {
+    rc_ = nebula::error(newLocalIdKey);
+    LOG(INFO) << "Make new local id failed, " << apache::thrift::util::enumNameSafe(rc_);
+    return;
+  }
+
   resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
   auto timeInMilliSec = time::WallClock::fastNowInMilliSec();
   LastUpdateTimeMan::update(data, timeInMilliSec);
@@ -229,6 +238,32 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     iter->next();
   }
   return data;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, kvstore::KV> CreateSpaceAsProcessor::makeLocalIDKey(
+    GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
+  auto localIdkey = MetaKeyUtils::localIdKey(oldSpaceId);
+  int32_t id;
+  std::string val;
+  auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, localIdkey, &val);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      return ret;
+    }
+
+    // In order to be compatible with the existing old schema, and simple to implement,
+    // when the local_id record does not exist in space, directly use the smallest
+    // id available globally.
+    auto globalIdRet = getAvailableGlobalId();
+    if (!nebula::ok(globalIdRet)) {
+      return nebula::error(globalIdRet);
+    }
+    id = nebula::value(globalIdRet);
+  } else {
+    id = *reinterpret_cast<const int32_t *>(val.c_str());
+  }
+  auto newLocalIdKey = MetaKeyUtils::localIdKey(newSpaceId);
+  return {newLocalIdKey, std::string(reinterpret_cast<const char *>(&id), sizeof(id))};
 }
 
 }  // namespace meta
