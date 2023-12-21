@@ -457,8 +457,8 @@ void AllPathsExecutor::buildOneWayPath(std::vector<NPath*>& paths, bool reverse)
     auto iter = emptyPropVertices_.find(emptyPropVertex);
     if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(dst);
-      emptyPropVertices_.emplace(emptyPropVertex);
     }
+    emptyPropVertices_.emplace(emptyPropVertex);
     result_.rows.emplace_back(std::move(row));
   }
 }
@@ -506,8 +506,8 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
     auto iter = emptyPropVertices_.find(emptyPropVertex);
     if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(vid);
-      emptyPropVertices_.emplace(emptyPropVertex);
     }
+    emptyPropVertices_.emplace(emptyPropVertex);
   }
   return result;
 }
