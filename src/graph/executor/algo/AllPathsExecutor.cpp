@@ -102,19 +102,29 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
       break;
     }
   }
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      if (!resp.ok()) {
-        return folly::makeFuture<Status>(std::move(resp));
-      }
-    }
-    if (leftSteps_ + rightSteps_ >= maxStep_ || leftNextStepVids_.empty() ||
-        rightNextStepVids_.empty()) {
-      return buildResult();
-    }
-    return doAllPaths();
-  });
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<Status>>&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto resp = std::move(respVal).value();
+          if (!resp.ok()) {
+            return folly::makeFuture<Status>(std::move(resp));
+          }
+        }
+        if (leftSteps_ + rightSteps_ >= maxStep_ || leftNextStepVids_.empty() ||
+            rightNextStepVids_.empty()) {
+          return buildResult();
+        }
+        return doAllPaths();
+      });
 }
 
 folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
@@ -545,12 +555,22 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           runner(), [this, start, end, reverse]() { return probe(start, end, reverse); }));
     }
   }
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this, path = std::move(oneWayPath)](std::vector<std::vector<Row>>&& resps) {
+      .thenValue([this,
+                  path = std::move(oneWayPath)](std::vector<folly::Try<std::vector<Row>>>&& resps) {
         memory::MemoryCheckGuard guard;
         result_.rows = std::move(path);
-        for (auto& rows : resps) {
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto rows = std::move(respVal).value();
           if (rows.empty()) {
             continue;
           }
