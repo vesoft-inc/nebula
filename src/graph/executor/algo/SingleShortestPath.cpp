@@ -37,6 +37,7 @@ folly::Future<Status> SingleShortestPath::execute(const HashSet& startVids,
               throw std::runtime_error(respVal.exception().what().c_str());
             }
           }
+          auto resp = std::move(respVal).value();
           NG_RETURN_IF_ERROR(resp);
         }
         result->colNames = pathNode_->colNames();
