@@ -39,9 +39,13 @@
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
-
+DEFINE_uint32(max_statements,
+              1024,
+              "threshold for maximun number of statements that can be validate");
 namespace nebula {
 namespace graph {
+
+thread_local uint32_t Validator::maxStatements_ = 0;
 
 Validator::Validator(Sentence* sentence, QueryContext* qctx)
     : sentence_(DCHECK_NOTNULL(sentence)),
@@ -49,7 +53,12 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
       vctx_(DCHECK_NOTNULL(qctx->vctx())) {}
 
 // Create validator according to sentence type.
-std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
+StatusOr<std::unique_ptr<Validator>> Validator::makeValidator(Sentence* sentence,
+                                                              QueryContext* context) {
+  if (++maxStatements_ > FLAGS_max_statements) {
+    return Status::SemanticError(
+        "statements is too large (%d > %d).", maxStatements_, FLAGS_max_statements);
+  }
   auto kind = sentence->kind();
   switch (kind) {
     case Sentence::Kind::kExplain:
@@ -281,7 +290,9 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
     qctx->vctx()->switchToSpace(std::move(spaceInfo));
   }
 
-  auto validator = makeValidator(sentence, qctx);
+  auto statusOr = makeValidator(sentence, qctx);
+  NG_RETURN_IF_ERROR(statusOr);
+  auto validator = std::move(statusOr).value();
   NG_RETURN_IF_ERROR(validator->validate());
 
   auto root = validator->root();
@@ -289,6 +300,8 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
     return Status::SemanticError("Get null plan from sequential validator");
   }
   qctx->plan()->setRoot(root);
+  // reset maxStatements
+  maxStatements_ = 0;
   return Status::OK();
 }
 

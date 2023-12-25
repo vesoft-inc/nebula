@@ -13,6 +13,14 @@ namespace graph {
 
 Status AssignmentValidator::validateImpl() {
   auto *assignSentence = static_cast<AssignmentSentence *>(sentence_);
+  auto statusOr = makeValidator(assignSentence->sentence(), qctx_);
+  NG_RETURN_IF_ERROR(statusOr);
+  validator_ = std::move(statusOr).value();
+
+  if (validator_->noSpaceRequired()) {
+    setNoSpaceRequired();
+  }
+
   NG_RETURN_IF_ERROR(validator_->validate());
 
   auto outputs = validator_->outputCols();

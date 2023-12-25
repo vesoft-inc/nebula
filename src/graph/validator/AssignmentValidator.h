@@ -12,14 +12,7 @@ namespace nebula {
 namespace graph {
 class AssignmentValidator final : public Validator {
  public:
-  AssignmentValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-    auto* assignSentence = static_cast<AssignmentSentence*>(sentence_);
-    validator_ = makeValidator(assignSentence->sentence(), qctx_);
-
-    if (validator_->noSpaceRequired()) {
-      setNoSpaceRequired();
-    }
-  }
+  AssignmentValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
   Status validateImpl() override;

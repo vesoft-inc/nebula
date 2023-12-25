@@ -14,6 +14,18 @@ namespace graph {
 // Validate sub-sentences of SET statement.
 // Check columns of sub-sentences are the same.
 Status SetValidator::validateImpl() {
+  auto setSentence = static_cast<SetSentence*>(sentence_);
+  auto statusOr = makeValidator(setSentence->left(), qctx_);
+  NG_RETURN_IF_ERROR(statusOr);
+  lValidator_ = std::move(statusOr).value();
+  statusOr = makeValidator(setSentence->right(), qctx_);
+  NG_RETURN_IF_ERROR(statusOr);
+  rValidator_ = std::move(statusOr).value();
+
+  if (lValidator_->noSpaceRequired() && rValidator_->noSpaceRequired()) {
+    setNoSpaceRequired();
+  }
+
   NG_RETURN_IF_ERROR(lValidator_->validate());
   NG_RETURN_IF_ERROR(rValidator_->validate());
 

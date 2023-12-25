@@ -15,6 +15,18 @@ namespace graph {
 // Validate pipe sentence which combine two sentence by input/output, e.g. GO ... | LIMIT 3
 // Set input, and call validator of sub-sentence.
 Status PipeValidator::validateImpl() {
+  auto pipeSentence = static_cast<PipedSentence*>(sentence_);
+  auto statusOr = makeValidator(pipeSentence->left(), qctx_);
+  NG_RETURN_IF_ERROR(statusOr);
+  lValidator_ = std::move(statusOr).value();
+  statusOr = makeValidator(pipeSentence->right(), qctx_);
+  NG_RETURN_IF_ERROR(statusOr);
+  rValidator_ = std::move(statusOr).value();
+
+  if (lValidator_->noSpaceRequired() && rValidator_->noSpaceRequired()) {
+    setNoSpaceRequired();
+  }
+
   lValidator_->setInputCols(std::move(inputs_));
   lValidator_->setInputVarName(inputVarName_);
   NG_RETURN_IF_ERROR(lValidator_->validate());

@@ -14,15 +14,7 @@ namespace graph {
 
 class SetValidator final : public Validator {
  public:
-  SetValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-    auto setSentence = static_cast<SetSentence*>(sentence_);
-    lValidator_ = makeValidator(setSentence->left(), qctx_);
-    rValidator_ = makeValidator(setSentence->right(), qctx_);
-
-    if (lValidator_->noSpaceRequired() && rValidator_->noSpaceRequired()) {
-      setNoSpaceRequired();
-    }
-  }
+  SetValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
   Status validateImpl() override;
