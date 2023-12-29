@@ -169,16 +169,8 @@ void PropertyTrackerVisitor::visit(LabelTagPropertyExpression *expr) {
 
   auto ret = qctx_->schemaMng()->toTagID(space_, tagName);
   if (!ret.ok()) {
-    // if the we switch space in the query, we need to get the space id from the validation context
-    // use xxx; match xxx
-    if (qctx_->vctx()->spaceChosen()) {
-      space_ = qctx_->vctx()->whichSpace().id;
-      ret = qctx_->schemaMng()->toTagID(qctx_->vctx()->whichSpace().id, tagName);
-      if (!ret.ok()) {
-        status_ = std::move(ret).status();
-        return;
-      }
-    }
+    status_ = std::move(ret).status();
+    return;
   }
 
   auto tagId = ret.value();
