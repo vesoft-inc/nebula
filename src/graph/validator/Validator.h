@@ -23,8 +23,7 @@ class Validator {
  public:
   virtual ~Validator() = default;
 
-  static StatusOr<std::unique_ptr<Validator>> makeValidator(Sentence* sentence,
-                                                            QueryContext* context);
+  static std::unique_ptr<Validator> makeValidator(Sentence* sentence, QueryContext* context);
 
   // validate will call `spaceChosen` -> `validateImpl` -> `checkPermission` ->
   // `toPlan` in order

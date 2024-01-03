@@ -35,9 +35,7 @@ Status SequentialValidator::validateImpl() {
 
   seqAstCtx_->startNode = StartNode::make(seqAstCtx_->qctx);
   for (auto* sentence : sentences) {
-    auto statusOr = makeValidator(sentence, qctx_);
-    NG_RETURN_IF_ERROR(statusOr);
-    auto validator = std::move(statusOr).value();
+    auto validator = makeValidator(sentence, qctx_);
     NG_RETURN_IF_ERROR(validator->validate());
     seqAstCtx_->validators.emplace_back(std::move(validator));
   }

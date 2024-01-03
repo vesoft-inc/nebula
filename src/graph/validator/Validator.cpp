@@ -40,7 +40,7 @@
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
 DEFINE_uint32(max_statements,
-              1024,
+              512,
               "threshold for maximun number of statements that can be validate");
 namespace nebula {
 namespace graph {
@@ -53,11 +53,10 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
       vctx_(DCHECK_NOTNULL(qctx->vctx())) {}
 
 // Create validator according to sentence type.
-StatusOr<std::unique_ptr<Validator>> Validator::makeValidator(Sentence* sentence,
-                                                              QueryContext* context) {
-  if (++maxStatements_ > FLAGS_max_statements) {
-    return Status::SemanticError(
-        "statements is too large (%d > %d).", maxStatements_, FLAGS_max_statements);
+std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
+  if (++maxStatements_ > FLAGS_max_statements * 2) {
+    throw std::runtime_error(
+        fmt::format("the number of statements exceeds max_statements : {}", FLAGS_max_statements));
   }
   auto kind = sentence->kind();
   switch (kind) {
@@ -282,26 +281,27 @@ StatusOr<std::unique_ptr<Validator>> Validator::makeValidator(Sentence* sentence
 Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   DCHECK(sentence != nullptr);
   DCHECK(qctx != nullptr);
-
   // Check if space chosen from session. if chosen, add it to context.
   auto session = qctx->rctx()->session();
   if (session->space().id > kInvalidSpaceID) {
     auto spaceInfo = session->space();
     qctx->vctx()->switchToSpace(std::move(spaceInfo));
   }
+  try {
+    auto validator = makeValidator(sentence, qctx);
+    NG_RETURN_IF_ERROR(validator->validate());
 
-  auto statusOr = makeValidator(sentence, qctx);
-  NG_RETURN_IF_ERROR(statusOr);
-  auto validator = std::move(statusOr).value();
-  NG_RETURN_IF_ERROR(validator->validate());
-
-  auto root = validator->root();
-  if (!root) {
-    return Status::SemanticError("Get null plan from sequential validator");
+    auto root = validator->root();
+    if (!root) {
+      return Status::SemanticError("Get null plan from sequential validator");
+    }
+    qctx->plan()->setRoot(root);
+    // reset maxStatements
+    maxStatements_ = 0;
+  } catch (const std::runtime_error& error) {
+    maxStatements_ = 0;
+    return Status::SemanticError(std::string(error.what()));
   }
-  qctx->plan()->setRoot(root);
-  // reset maxStatements
-  maxStatements_ = 0;
   return Status::OK();
 }
 
