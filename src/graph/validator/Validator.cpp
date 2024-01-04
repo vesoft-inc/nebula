@@ -40,7 +40,7 @@
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
 DEFINE_uint32(max_statements,
-              512,
+              1024,
               "threshold for maximun number of statements that can be validate");
 namespace nebula {
 namespace graph {
@@ -298,7 +298,7 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
     qctx->plan()->setRoot(root);
     // reset maxStatements
     maxStatements_ = 0;
-  } catch (const std::runtime_error& error) {
+  } catch (const std::exception& error) {
     maxStatements_ = 0;
     return Status::SemanticError(std::string(error.what()));
   }
