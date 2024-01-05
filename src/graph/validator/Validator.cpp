@@ -39,9 +39,13 @@
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
-
+DEFINE_uint32(max_statements,
+              1024,
+              "threshold for maximun number of statements that can be validate");
 namespace nebula {
 namespace graph {
+
+thread_local uint32_t Validator::maxStatements_ = 0;
 
 Validator::Validator(Sentence* sentence, QueryContext* qctx)
     : sentence_(DCHECK_NOTNULL(sentence)),
@@ -50,6 +54,10 @@ Validator::Validator(Sentence* sentence, QueryContext* qctx)
 
 // Create validator according to sentence type.
 std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryContext* context) {
+  if (++maxStatements_ > FLAGS_max_statements * 2) {
+    throw std::runtime_error(
+        fmt::format("the number of statements exceeds max_statements : {}", FLAGS_max_statements));
+  }
   auto kind = sentence->kind();
   switch (kind) {
     case Sentence::Kind::kExplain:
@@ -273,22 +281,27 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
 Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   DCHECK(sentence != nullptr);
   DCHECK(qctx != nullptr);
-
   // Check if space chosen from session. if chosen, add it to context.
   auto session = qctx->rctx()->session();
   if (session->space().id > kInvalidSpaceID) {
     auto spaceInfo = session->space();
     qctx->vctx()->switchToSpace(std::move(spaceInfo));
   }
+  try {
+    auto validator = makeValidator(sentence, qctx);
+    NG_RETURN_IF_ERROR(validator->validate());
 
-  auto validator = makeValidator(sentence, qctx);
-  NG_RETURN_IF_ERROR(validator->validate());
-
-  auto root = validator->root();
-  if (!root) {
-    return Status::SemanticError("Get null plan from sequential validator");
+    auto root = validator->root();
+    if (!root) {
+      return Status::SemanticError("Get null plan from sequential validator");
+    }
+    qctx->plan()->setRoot(root);
+    // reset maxStatements
+    maxStatements_ = 0;
+  } catch (const std::exception& error) {
+    maxStatements_ = 0;
+    return Status::SemanticError(std::string(error.what()));
   }
-  qctx->plan()->setRoot(root);
   return Status::OK();
 }
 

@@ -203,6 +203,7 @@ class Validator {
   std::set<std::string> userDefinedVarNameList_;
   // vid's Type
   Value::Type vidType_;
+  static thread_local uint32_t maxStatements_;
 };
 
 }  // namespace graph
