@@ -263,10 +263,8 @@ folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVe
       uniqueWhiteList.append(version);
     });
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
-    resp.error_msg_ref() = folly::stringPrintf(
-        "Graph client version(%s) is not accepted, current graph client white list: %s.",
-        req.get_version().c_str(),
-        uniqueWhiteList.c_str());
+    resp.error_msg_ref() = folly::stringPrintf("Graph client handshakeKey(%s) is not accepted.",
+                                               req.get_version().c_str());
   } else {
     resp.error_code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
