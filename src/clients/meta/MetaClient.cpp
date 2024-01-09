@@ -144,13 +144,6 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
     return false;
   }
 
-  // Verify the graph server version
-  auto status = verifyVersion();
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-    return false;
-  }
-
   // Save graph version to meta
   status = saveVersionToMeta();
   if (!status.ok()) {
@@ -3843,30 +3836,6 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
   }
   folly::rcu_reader guard;
   return metadata_.load()->killedPlans_.count({sessionId, planId});
-}
-
-Status MetaClient::verifyVersion() {
-  memory::MemoryCheckOffGuard g;
-  auto req = cpp2::VerifyClientVersionReq();
-  req.build_version_ref() = getOriginVersion();
-  req.host_ref() = options_.localHost_;
-  folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_verifyClientVersion(request); },
-      [](cpp2::VerifyClientVersionResp&& resp) { return std::move(resp); },
-      std::move(promise));
-
-  auto respStatus = std::move(future).get();
-  if (!respStatus.ok()) {
-    return respStatus.status();
-  }
-  auto resp = std::move(respStatus).value();
-  if (resp.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
-  }
-  return Status::OK();
 }
 
 Status MetaClient::saveVersionToMeta() {
