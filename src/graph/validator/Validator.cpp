@@ -39,9 +39,6 @@
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
-DEFINE_uint32(max_statements,
-              1024,
-              "threshold for maximun number of statements that can be validate");
 namespace nebula {
 namespace graph {
 

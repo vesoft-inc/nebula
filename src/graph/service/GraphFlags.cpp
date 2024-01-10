@@ -54,6 +54,9 @@ DEFINE_string(cloud_http_url, "", "cloud http url including ip, port, url path")
 DEFINE_uint32(max_allowed_statements, 512, "Max allowed sequential statements");
 DEFINE_uint32(max_allowed_query_size, 4194304, "Max allowed sequential query size");
 
+DEFINE_uint32(max_statements,
+              1024,
+              "threshold for maximun number of statements that can be validate");
 DEFINE_int64(max_allowed_connections,
              std::numeric_limits<int64_t>::max(),
              "Max connections of the whole cluster");
