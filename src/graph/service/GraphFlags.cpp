@@ -66,7 +66,7 @@ DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list."
 DEFINE_string(
     handshakeKey,
     "",
-    "set handshakeKey for graph, please make the handshakeKey is in graph's client_white_list");
+    "set handshakeKey for graph, please make the handshakeKey is in meta's client_white_list");
 DEFINE_string(client_white_list,
               nebula::getOriginVersion() + ":3.0.0",
               "A white list for different client handshakeKey, separate with colon.");

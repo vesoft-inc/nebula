@@ -8,7 +8,7 @@
 DEFINE_string(
     handshakeKey,
     "",
-    "set handshakeKey for storage, please make the handshakeKey is in graph's client_white_list");
+    "set handshakeKey for storage, please make the handshakeKey is in meta's client_white_list");
 
 DEFINE_string(store_type,
               "nebula",
