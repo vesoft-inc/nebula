@@ -233,7 +233,7 @@ bool StorageServer::start() {
   }
 #endif
 
-  if (!metaClient_->waitForMetadReady(FLAGS_handshakeKey)) {
+  if (!metaClient_->waitForMetadReady()) {
     LOG(ERROR) << "waitForMetadReady error!";
     return false;
   }

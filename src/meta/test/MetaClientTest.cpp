@@ -1712,23 +1712,23 @@ TEST(MetaClientTest, VerifyClientTest) {
   FLAGS_enable_client_white_list = true;
   {
     FLAGS_client_white_list = nebula::cpp2::common_constants::version();
-    auto status = client->verifyVersion("");
+    auto status = client->verifyVersion();
     EXPECT_TRUE(status.ok());
   }
   {
     FLAGS_client_white_list = "";
-    auto status = client->verifyVersion("");
+    auto status = client->verifyVersion();
     EXPECT_FALSE(status.ok());
   }
   {
     FLAGS_client_white_list = "1.0.0:1.2.0:";
-    auto status = client->verifyVersion("");
+    auto status = client->verifyVersion();
     EXPECT_FALSE(status.ok());
   }
   {
     FLAGS_enable_client_white_list = false;
     FLAGS_client_white_list = "1.0.0:1.2.0:";
-    auto status = client->verifyVersion("");
+    auto status = client->verifyVersion();
     EXPECT_TRUE(status.ok());
   }
   FLAGS_enable_client_white_list = false;
