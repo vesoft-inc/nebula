@@ -5,6 +5,11 @@
 
 #include "storage/StorageFlags.h"
 
+DEFINE_string(
+    handshakeKey,
+    "",
+    "set handshakeKey for storage, please make the handshakeKey is in meta's client_white_list");
+
 DEFINE_string(store_type,
               "nebula",
               "Which type of KVStore to be used by the storage daemon."
