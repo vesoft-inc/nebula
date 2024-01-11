@@ -27,7 +27,7 @@ Status SequentialValidator::validateImpl() {
   auto seqSentence = static_cast<SequentialSentences*>(sentence_);
   auto sentences = seqSentence->sentences();
 
-  if (sentences.size() > static_cast<size_t>(FLAGS_max_statements) + 1) {
+  if (sentences.size() > static_cast<size_t>(FLAGS_max_statements)) {
     return Status::SemanticError("The maximum number of statements has been exceeded");
   }
   if (sentences.size() > static_cast<size_t>(FLAGS_max_allowed_statements)) {
