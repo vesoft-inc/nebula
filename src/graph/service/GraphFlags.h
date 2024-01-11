@@ -62,6 +62,7 @@ DECLARE_bool(enable_experimental_feature);
 DECLARE_bool(enable_data_balance);
 
 DECLARE_bool(enable_client_white_list);
+DECLARE_string(handshakeKey);
 DECLARE_string(client_white_list);
 
 DECLARE_int32(num_rows_to_check_memory);

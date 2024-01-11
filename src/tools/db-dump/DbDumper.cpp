@@ -56,7 +56,7 @@ Status DbDumper::initMeta() {
   meta::MetaClientOptions options;
   options.skipConfig_ = true;
   metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
-  if (!metaClient_->waitForMetadReady(1)) {
+  if (!metaClient_->waitForMetadReady("", 1)) {
     return Status::Error("Meta is not ready: '%s'.", FLAGS_meta_server.c_str());
   }
   schemaMng_ = std::make_unique<meta::ServerBasedSchemaManager>();

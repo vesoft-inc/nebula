@@ -125,7 +125,9 @@ bool MetaClient::isMetadReady() {
   return ready_;
 }
 
-bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
+bool MetaClient::waitForMetadReady(const std::string& handshakeKey,
+                                   int count,
+                                   int retryIntervalSecs) {
   if (!options_.skipConfig_) {
     std::string gflagsJsonPath;
     GflagsManager::getGflagsModule(gflagsModule_);
@@ -145,7 +147,7 @@ bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
   }
 
   // Verify the graph server version
-  auto status = verifyVersion();
+  auto status = verifyVersion(handshakeKey);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return false;
@@ -3845,10 +3847,12 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
   return metadata_.load()->killedPlans_.count({sessionId, planId});
 }
 
-Status MetaClient::verifyVersion() {
+Status MetaClient::verifyVersion(const std::string& handshakeKey) {
   memory::MemoryCheckOffGuard g;
   auto req = cpp2::VerifyClientVersionReq();
-  req.build_version_ref() = getOriginVersion();
+  if (!handshakeKey.empty()) {
+    req.build_version_ref() = handshakeKey;
+  }
   req.host_ref() = options_.localHost_;
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();

@@ -248,7 +248,9 @@ class MetaClient : public BaseMetaClient {
 
   bool isMetadReady();
 
-  bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
+  bool waitForMetadReady(const std::string& handshakeKey = "",
+                         int count = -1,
+                         int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
 
   void notifyStop();
 
@@ -752,7 +754,7 @@ class MetaClient : public BaseMetaClient {
 
   // Checks if the client version is compatible with the server version by checking the
   // whitelist in meta.
-  Status verifyVersion();
+  Status verifyVersion(const std::string& handshakeKey);
 
   // Save the version of the graph service into meta so that it could be looked up.
   // This method should be only called in the internal client.

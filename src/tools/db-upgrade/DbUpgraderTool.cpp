@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
   auto metaClient =
       std::make_unique<nebula::meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
   CHECK_NOTNULL(metaClient);
-  if (!metaClient->waitForMetadReady(1)) {
+  if (!metaClient->waitForMetadReady("", 1)) {
     LOG(ERROR) << "Meta is not ready: " << FLAGS_upgrade_meta_server;
     return EXIT_FAILURE;
   }
