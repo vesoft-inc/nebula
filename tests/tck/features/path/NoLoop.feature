@@ -242,3 +242,40 @@ Feature: NoLoop Path
       | [[:like "Tony Parker"->"Tim Duncan" @0 {}]]                                                         |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}]] |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"Manu Ginobili" @0 {}]]         |
+
+  Scenario: Query with NO LOOP on a node without self-loop
+    When executing query:
+      """
+      CREATE SPACE TestNoLoopSpace(vid_type=fixed_string(20));
+      USE TestNoLoopSpace;
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG Person(name string);
+      CREATE EDGE Link();
+      INSERT VERTEX Person(name) VALUES "nodea":("Node A");
+      INSERT EDGE Link() VALUES "nodea" -> "nodea":();
+      """
+    And wait 1 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      FIND NOLOOP PATH FROM "nodea" TO "nodea" OVER Link YIELD PATH AS p;
+      """
+    Then the result should be, in any order:
+      | p     |
+      | EMPTY |
+    When executing query:
+      """
+      FIND ALL PATH FROM "nodea" TO "nodea" OVER E1 YIELD PATH AS p;
+      """
+    Then the result should be, in any order:
+      | p                                 |
+      | <("nodea")<-[:E1@0 {}]-("nodea")> |
+    When executing query:
+      """
+      DROP SPACE TestNoLoopSpace
+      """
+    Then the execution should be successful
