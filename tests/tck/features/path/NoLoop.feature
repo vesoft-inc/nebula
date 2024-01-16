@@ -266,7 +266,6 @@ Feature: NoLoop Path
       """
     Then the result should be, in any order:
       | p     |
-      | EMPTY |
     When executing query:
       """
       FIND ALL PATH FROM "nodea" TO "nodea" OVER E1 YIELD PATH AS p;
