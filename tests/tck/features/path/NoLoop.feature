@@ -247,6 +247,11 @@ Feature: NoLoop Path
     When executing query:
       """
       CREATE SPACE TestNoLoopSpace(vid_type=fixed_string(20));
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
       USE TestNoLoopSpace;
       """
     And wait 3 seconds
@@ -254,8 +259,23 @@ Feature: NoLoop Path
     When executing query:
       """
       CREATE TAG Person(name string);
+      """
+    And wait 1 seconds
+    Then the execution should be successful
+    When executing query:
+      """
       CREATE EDGE Link();
+      """
+    And wait 1 seconds
+    Then the execution should be successful
+    When executing query:
+      """
       INSERT VERTEX Person(name) VALUES "nodea":("Node A");
+      """
+    And wait 1 seconds
+    Then the execution should be successful
+    When executing query:
+      """
       INSERT EDGE Link() VALUES "nodea" -> "nodea":();
       """
     And wait 1 seconds
@@ -268,13 +288,14 @@ Feature: NoLoop Path
       | p |
     When executing query:
       """
-      FIND ALL PATH FROM "nodea" TO "nodea" OVER E1 YIELD PATH AS p;
+      FIND ALL PATH FROM "nodea" TO "nodea" OVER Link YIELD PATH AS p;
       """
     Then the result should be, in any order:
-      | p                                 |
-      | <("nodea")<-[:E1@0 {}]-("nodea")> |
+      | p                                   |
+      | <("nodea")<-[:Link@0 {}]-("nodea")> |
     When executing query:
       """
       DROP SPACE TestNoLoopSpace
       """
+    And wait 1 seconds
     Then the execution should be successful
