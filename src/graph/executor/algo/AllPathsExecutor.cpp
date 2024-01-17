@@ -336,7 +336,6 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
             continue;
           }
         }
-        auto path = NPath(src, edge);
         threadLocalPtr_->emplace_back(NPath(src, edge));
         newPathsPtr->emplace_back(&threadLocalPtr_->back());
       }
