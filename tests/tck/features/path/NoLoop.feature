@@ -265,7 +265,7 @@ Feature: NoLoop Path
       FIND NOLOOP PATH FROM "nodea" TO "nodea" OVER Link YIELD PATH AS p;
       """
     Then the result should be, in any order:
-      | p     |
+      | p |
     When executing query:
       """
       FIND ALL PATH FROM "nodea" TO "nodea" OVER E1 YIELD PATH AS p;
