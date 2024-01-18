@@ -331,6 +331,11 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
         continue;
       }
       for (auto& edge : adjEdges) {
+        if (noLoop_) {
+          if (edge.getEdge().dst == edge.getEdge().src) {
+            continue;
+          }
+        }
         threadLocalPtr_->emplace_back(NPath(src, edge));
         newPathsPtr->emplace_back(&threadLocalPtr_->back());
       }
