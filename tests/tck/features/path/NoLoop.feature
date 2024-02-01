@@ -260,25 +260,22 @@ Feature: NoLoop Path
       """
       CREATE TAG Person(name string);
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
       CREATE EDGE Link();
       """
-    And wait 1 seconds
     Then the execution should be successful
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX Person(name) VALUES "nodea":("Node A");
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
       INSERT EDGE Link() VALUES "nodea" -> "nodea":();
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
@@ -297,5 +294,4 @@ Feature: NoLoop Path
       """
       DROP SPACE TestNoLoopSpace
       """
-    And wait 1 seconds
     Then the execution should be successful
