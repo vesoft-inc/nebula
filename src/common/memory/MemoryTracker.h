@@ -5,6 +5,7 @@
 #pragma once
 
 #include <atomic>
+#include <new>
 
 #include "common/base/Base.h"
 
@@ -29,7 +30,7 @@ static std::string ReadableSize(double size) {
 
 constexpr size_t
 #if defined(__cpp_lib_hardware_interference_size)
-    CACHE_LINE_SIZE = hardware_destructive_interference_size;
+    CACHE_LINE_SIZE = std::hardware_destructive_interference_size;
 #else
     CACHE_LINE_SIZE = 64;
 #endif

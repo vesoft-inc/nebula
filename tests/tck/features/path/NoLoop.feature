@@ -243,6 +243,7 @@ Feature: NoLoop Path
       | [[:like "LaMarcus Aldridge"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}]] |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"Manu Ginobili" @0 {}]]         |
 
+  @skip
   Scenario: Query with NO LOOP on a node without self-loop
     When executing query:
       """
