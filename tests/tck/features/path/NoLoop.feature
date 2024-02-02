@@ -243,7 +243,6 @@ Feature: NoLoop Path
       | [[:like "LaMarcus Aldridge"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}]] |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"Manu Ginobili" @0 {}]]         |
 
-  @skip
   Scenario: Query with NO LOOP on a node without self-loop
     When executing query:
       """
@@ -261,25 +260,22 @@ Feature: NoLoop Path
       """
       CREATE TAG Person(name string);
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
       CREATE EDGE Link();
       """
-    And wait 1 seconds
     Then the execution should be successful
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX Person(name) VALUES "nodea":("Node A");
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
       INSERT EDGE Link() VALUES "nodea" -> "nodea":();
       """
-    And wait 1 seconds
     Then the execution should be successful
     When executing query:
       """
@@ -298,5 +294,4 @@ Feature: NoLoop Path
       """
       DROP SPACE TestNoLoopSpace
       """
-    And wait 1 seconds
     Then the execution should be successful
