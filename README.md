@@ -103,7 +103,7 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 <img src="https://landscape.cncf.io/images/cncf-landscape-horizontal-color.svg" width="150">
 <br />
 
-[NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/card-mode?category=database&grouping=category).
+[NebulaGraph](https://landscape.cncf.io/?item=app-definition-and-development--database--nebulagraph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/?group=projects-and-products&view-mode=card#app-definition-and-development--database).
 </p>
 
 ## Licensing
