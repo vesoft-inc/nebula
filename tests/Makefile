@@ -48,8 +48,6 @@ install-deps:
 
 install-nebula-py: install-deps
 	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
-	export PIP_EXTRA_INDEX_URL=$(PYPI_MIRROR)
-	export PIP_TRUSTED_HOST=$(PYPI_MIRROR)
 	cd $(CURR_DIR)/nebula-python \
 		&& if [ $(PY_VERSION) -eq 6 ]; then python3 setup.py install; else pip3 install --user . -i $(PYPI_MIRROR) --upgrade; fi
 	rm -rf $(CURR_DIR)/nebula-python
