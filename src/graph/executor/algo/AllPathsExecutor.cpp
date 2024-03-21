@@ -102,19 +102,29 @@ folly::Future<Status> AllPathsExecutor::doAllPaths() {
       break;
     }
   }
-  return folly::collect(futures).via(runner()).thenValue([this](auto&& resps) {
-    memory::MemoryCheckGuard guard;
-    for (auto& resp : resps) {
-      if (!resp.ok()) {
-        return folly::makeFuture<Status>(std::move(resp));
-      }
-    }
-    if (leftSteps_ + rightSteps_ >= maxStep_ || leftNextStepVids_.empty() ||
-        rightNextStepVids_.empty()) {
-      return buildResult();
-    }
-    return doAllPaths();
-  });
+  return folly::collectAll(futures).via(runner()).thenValue(
+      [this](std::vector<folly::Try<Status>>&& resps) {
+        memory::MemoryCheckGuard guard;
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto resp = std::move(respVal).value();
+          if (!resp.ok()) {
+            return folly::makeFuture<Status>(std::move(resp));
+          }
+        }
+        if (leftSteps_ + rightSteps_ >= maxStep_ || leftNextStepVids_.empty() ||
+            rightNextStepVids_.empty()) {
+          return buildResult();
+        }
+        return doAllPaths();
+      });
 }
 
 folly::Future<Status> AllPathsExecutor::getNeighbors(bool reverse) {
@@ -273,6 +283,16 @@ folly::Future<Status> AllPathsExecutor::buildPathMultiJobs() {
       })
       .thenValue([this, conjunctPathTime](auto&& resps) {
         NG_RETURN_IF_ERROR(resps);
+        if (result_.rows.size() > limit_) {
+          result_.rows.resize(limit_);
+        }
+        if (offset_ != 0) {
+          if (result_.rows.size() <= offset_) {
+            result_.rows.clear();
+          } else {
+            result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
+          }
+        }
         addState("conjunct_path_time", conjunctPathTime);
         return Status::OK();
       });
@@ -311,6 +331,11 @@ folly::Future<std::vector<AllPathsExecutor::NPath*>> AllPathsExecutor::doBuildPa
         continue;
       }
       for (auto& edge : adjEdges) {
+        if (noLoop_) {
+          if (edge.getEdge().dst == edge.getEdge().src) {
+            continue;
+          }
+        }
         threadLocalPtr_->emplace_back(NPath(src, edge));
         newPathsPtr->emplace_back(&threadLocalPtr_->back());
       }
@@ -451,8 +476,8 @@ void AllPathsExecutor::buildOneWayPath(std::vector<NPath*>& paths, bool reverse)
     auto iter = emptyPropVertices_.find(emptyPropVertex);
     if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(dst);
-      emptyPropVertices_.emplace(emptyPropVertex);
     }
+    emptyPropVertices_.emplace(emptyPropVertex);
     result_.rows.emplace_back(std::move(row));
   }
 }
@@ -500,8 +525,8 @@ std::vector<Row> AllPathsExecutor::buildOneWayPathFromHashTable(bool reverse) {
     auto iter = emptyPropVertices_.find(emptyPropVertex);
     if (iter == emptyPropVertices_.end()) {
       emptyPropVids_.emplace_back(vid);
-      emptyPropVertices_.emplace(emptyPropVertex);
     }
+    emptyPropVertices_.emplace(emptyPropVertex);
   }
   return result;
 }
@@ -535,12 +560,22 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           runner(), [this, start, end, reverse]() { return probe(start, end, reverse); }));
     }
   }
-  return folly::collect(futures)
+  return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this, path = std::move(oneWayPath)](std::vector<std::vector<Row>>&& resps) {
+      .thenValue([this,
+                  path = std::move(oneWayPath)](std::vector<folly::Try<std::vector<Row>>>&& resps) {
         memory::MemoryCheckGuard guard;
         result_.rows = std::move(path);
-        for (auto& rows : resps) {
+        for (auto& respVal : resps) {
+          if (respVal.hasException()) {
+            auto ex = respVal.exception().get_exception<std::bad_alloc>();
+            if (ex) {
+              throw std::bad_alloc();
+            } else {
+              throw std::runtime_error(respVal.exception().what().c_str());
+            }
+          }
+          auto rows = std::move(respVal).value();
           if (rows.empty()) {
             continue;
           }
@@ -556,12 +591,6 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
           result_.rows.insert(result_.rows.end(),
                               std::make_move_iterator(rows.begin()),
                               std::make_move_iterator(rows.end()));
-        }
-        if (result_.rows.size() > limit_) {
-          result_.rows.resize(limit_);
-        }
-        if (offset_ != 0) {
-          result_.rows.erase(result_.rows.begin(), result_.rows.begin() + offset_);
         }
         return Status::OK();
       })

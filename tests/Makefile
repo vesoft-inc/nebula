@@ -47,7 +47,7 @@ install-deps:
 	pip3 install --user -Ur $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
 
 install-nebula-py: install-deps
-	git clone --branch master https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
+	git clone --branch release-3.5 https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
 		&& pip3 install --user . -i $(PYPI_MIRROR) --upgrade
 	rm -rf $(CURR_DIR)/nebula-python

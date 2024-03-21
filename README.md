@@ -69,7 +69,7 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 
 ## Quick start
 
-Read the [getting started](https://docs.nebula-graph.io/3.2.0/2.quick-start/1.quick-start-workflow/) article for a quick start.
+Read the [getting started](https://docs.nebula-graph.io/3.6.0/2.quick-start/1.quick-start-workflow/) docs for a quick start.
 
 ## Using NebulaGraph
 
@@ -82,13 +82,13 @@ NebulaGraph is a distributed graph database with multiple components. You can [d
 ## Getting help
 
 In case you encounter any problems playing around **NebulaGraph**, please reach out for help:
-* [FAQ](https://docs.nebula-graph.io/3.3.0/20.appendix/0.FAQ/)
+* [FAQ](https://docs.nebula-graph.io/3.6.0/20.appendix/0.FAQ/)
 * [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 * [Documentation](https://docs.nebula-graph.io/)
 
 ## DevTools
 
-NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.3.0/20.appendix/6.eco-tool-version/).
+NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.6.0/20.appendix/6.eco-tool-version/).
 
 ## Contributing
 
@@ -100,10 +100,10 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 ## Landscape
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<img src="https://landscape.cncf.io/images/cncf-landscape-horizontal-color.svg" width="150">
 <br />
 
-[NebulaGraph](https://landscape.cncf.io/?selected=nebula-graph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/card-mode?category=database&grouping=category).
+[NebulaGraph](https://landscape.cncf.io/?item=app-definition-and-development--database--nebulagraph) enriches the [CNCF Database Landscape](https://landscape.cncf.io/?group=projects-and-products&view-mode=card#app-definition-and-development--database).
 </p>
 
 ## Licensing
@@ -116,7 +116,7 @@ You can also freely deploy **NebulaGraph** as a back-end service to support your
 * [Community Chat](https://community-chat.nebula-graph.io/)
 * [Slack Channel](https://join.slack.com/t/nebulagraph/shared_invite/zt-7ybejuqa-NCZBroh~PCh66d9kOQj45g)
 * [Stack Overflow](https://stackoverflow.com/questions/tagged/nebula-graph)
-* Twitter: [@NebulaGraph](https://twitter.com/NebulaGraph)
+* X(Twitter): [@NebulaGraph](https://twitter.com/NebulaGraph)
 * [LinkedIn Page](https://www.linkedin.com/company/nebula-graph/)
 * Email: info@vesoft.com
 

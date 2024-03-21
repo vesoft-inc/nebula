@@ -13,6 +13,7 @@ namespace graph {
 
 Status AssignmentValidator::validateImpl() {
   auto *assignSentence = static_cast<AssignmentSentence *>(sentence_);
+
   NG_RETURN_IF_ERROR(validator_->validate());
 
   auto outputs = validator_->outputCols();

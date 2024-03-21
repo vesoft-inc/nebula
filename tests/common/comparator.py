@@ -295,21 +295,20 @@ class DataSetComparator:
         return False
 
     def compare_node(self, lhs: Vertex, rhs: Vertex):
-        rtags = []
+        rtags = [] if rhs.tags is None else rhs.tags
         if self._strict:
             assert rhs.vid is not None
             if not self.compare_vid(lhs.vid, rhs.vid):
                 return False
-            if rhs.tags is None or len(lhs.tags) != len(rhs.tags):
+            if len(lhs.tags) != len(rtags):
                 return False
-            rtags = rhs.tags
         else:
             if rhs.vid is not None:
                 if not self.compare_vid(lhs.vid, rhs.vid):
                     return False
-            if rhs.tags is not None and len(lhs.tags) < len(rhs.tags):
+            if len(lhs.tags) < len(rtags):
                 return False
-            rtags = [] if rhs.tags is None else rhs.tags
+            
         for tag in rtags:
             ltag = [
                 [lt.name, lt.props] for lt in lhs.tags if self.bstr(tag.name) == lt.name

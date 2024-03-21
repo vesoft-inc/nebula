@@ -279,6 +279,26 @@ Feature: All Path
     Then the result should be, in any order, with relax comparison:
       | count(*) |
       | 0        |
+    When executing query:
+      """
+      lookup on player where player.age>20 YIELD id(vertex) as vid
+      | go 1 step from $-.vid over * where "player" in labels($$) yield distinct id($$) as dst,$-.vid as src
+      | find noloop path  from $-.src  to $-.dst  over *   upto 1 step yield path as p | limit 10,10
+      | yield count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 10       |
+    When executing query:
+      """
+      lookup on player where player.age>20 YIELD id(vertex) as vid
+      | go 1 step from $-.vid over * where "player" in labels($$) yield distinct id($$) as dst,$-.vid as src
+      | find noloop path  from $-.src  to $-.dst  over *   upto 1 step yield path as p | limit 10000,10
+      | yield count(*)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | count(*) |
+      | 0        |
 
   Scenario: [1] ALL PATH REVERSELY
     When executing query:
@@ -361,6 +381,14 @@ Feature: All Path
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                                                                                                                                                           |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})-[:like@0 {likeness: 90}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                               |
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Tony Parker" OVER * UPTO 1 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                                                                                                                                                                     |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                         |
+      | <("Tim Duncan" :player{age: 42, name: "Tim Duncan"} :bachelor{name: "Tim Duncan", speciality: "psychology"})-[:teammate@0 {end_year: 2016, start_year: 2001}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
 
   Scenario: ALL Path constant filter
     When executing query:

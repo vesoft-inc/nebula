@@ -516,13 +516,17 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
 }
 
 void NebulaStore::removeSpace(GraphSpaceID spaceId) {
-  folly::RWSpinLock::WriteHolder wh(&lock_);
-  if (beforeRemoveSpace_) {
-    beforeRemoveSpace_(spaceId);
+  {
+    folly::RWSpinLock::WriteHolder wh(&lock_);
+    if (beforeRemoveSpace_) {
+      beforeRemoveSpace_(spaceId);
+    }
   }
 
-  auto spaceIt = this->spaces_.find(spaceId);
-  if (spaceIt != this->spaces_.end()) {
+  auto spaceOr = space(spaceId);
+  if (ok(spaceOr)) {
+    folly::RWSpinLock::WriteHolder wh(&lock_);
+    auto spaceIt = this->spaces_.find(spaceId);
     for (auto& [partId, part] : spaceIt->second->parts_) {
       // before calling removeSpace, meta client would call removePart to remove all parts in
       // meta cache, which do not contain learners, so we remove them here
@@ -530,7 +534,11 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId) {
         removePart(spaceId, partId, false);
       }
     }
-    auto& engines = spaceIt->second->engines_;
+    this->spaces_.erase(spaceIt);
+  }
+  if (ok(spaceOr)) {
+    auto spaceIt = value(spaceOr);
+    auto& engines = spaceIt->engines_;
     for (auto& engine : engines) {
       auto parts = engine->allParts();
       for (auto& partId : parts) {
@@ -538,14 +546,13 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId) {
       }
       CHECK_EQ(0, engine->totalPartsNum());
     }
-    CHECK(spaceIt->second->parts_.empty());
+    CHECK(spaceIt->parts_.empty());
     std::vector<std::string> enginePaths;
     if (FLAGS_auto_remove_invalid_space) {
       for (auto& engine : engines) {
         enginePaths.emplace_back(engine->getDataRoot());
       }
     }
-    this->spaces_.erase(spaceIt);
     if (FLAGS_auto_remove_invalid_space) {
       for (const auto& path : enginePaths) {
         removeSpaceDir(path);

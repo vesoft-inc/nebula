@@ -242,3 +242,56 @@ Feature: NoLoop Path
       | [[:like "Tony Parker"->"Tim Duncan" @0 {}]]                                                         |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"LaMarcus Aldridge" @0 {}]] |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {}], [:like "Tony Parker"->"Manu Ginobili" @0 {}]]         |
+
+  Scenario: Query with NO LOOP on a node without self-loop
+    When executing query:
+      """
+      CREATE SPACE TestNoLoopSpace(vid_type=fixed_string(20));
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      USE TestNoLoopSpace;
+      """
+    And wait 3 seconds
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE TAG Person(name string);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE Link();
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX Person(name) VALUES "nodea":("Node A");
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT EDGE Link() VALUES "nodea" -> "nodea":();
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FIND NOLOOP PATH FROM "nodea" TO "nodea" OVER Link YIELD PATH AS p;
+      """
+    Then the result should be, in any order:
+      | p |
+    When executing query:
+      """
+      FIND ALL PATH FROM "nodea" TO "nodea" OVER Link YIELD PATH AS p;
+      """
+    Then the result should be, in any order:
+      | p                                   |
+      | <("nodea")<-[:Link@0 {}]-("nodea")> |
+    When executing query:
+      """
+      DROP SPACE TestNoLoopSpace
+      """
+    Then the execution should be successful

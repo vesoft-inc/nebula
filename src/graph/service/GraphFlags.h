@@ -42,6 +42,7 @@ DECLARE_string(cloud_http_url);
 DECLARE_uint32(max_allowed_statements);
 DECLARE_int32(max_sessions_per_ip_per_user);
 
+DECLARE_uint32(max_statements);
 // Failed login attempt
 // value of failed_login_attempts is in the range from 0 to 32767.
 // The deault value is 0. A value of 0 disables the option.
