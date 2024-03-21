@@ -144,6 +144,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
+      stats::StatsManager::addValue(kNumEdgesInserted, data.size());
       if (consistOp_) {
         auto batchHolder = std::make_unique<kvstore::BatchHolder>();
         (*consistOp_)(*batchHolder, &data);
@@ -155,7 +156,6 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
             });
       } else {
         doPut(spaceId_, partId, std::move(data));
-        stats::StatsManager::addValue(kNumEdgesInserted, data.size());
       }
     }
   }

@@ -143,8 +143,8 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
-      doPut(spaceId_, partId, std::move(data));
       stats::StatsManager::addValue(kNumVerticesInserted, data.size());
+      doPut(spaceId_, partId, std::move(data));
     }
   }
 }
@@ -213,7 +213,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
-      stats::StatsManager::addValue(kNumVerticesInserted, verticeData.size());
+      stats::StatsManager::addValue(kNumVerticesInserted, tags.size());
       auto atomicOp = [=, tags = std::move(tags), vertices = std::move(verticeData)]() mutable {
         return addVerticesWithIndex(partId, tags, vertices);
       };
