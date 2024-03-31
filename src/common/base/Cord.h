@@ -6,8 +6,8 @@
 #ifndef COMMON_BASE_CORD_H_
 #define COMMON_BASE_CORD_H_
 
-#include <stdlib.h>
-
+#include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <string>
 
