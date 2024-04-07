@@ -6,6 +6,7 @@
 #ifndef GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
 #define GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
 
+#include <cstdint>
 #include <string>
 
 namespace nebula {
