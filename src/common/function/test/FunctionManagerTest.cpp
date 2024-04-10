@@ -475,9 +475,7 @@ TEST_F(FunctionManagerTest, functionCall) {
                   args_["json_extract4"],
                   Value(Map({{"a", Value("foo")}, {"b", Value(0.2)}, {"c", Value(Map())}})));
   }
-  {
-    TEST_FUNCTION(md5, args_["md5"], "9fc9d606912030dca86582ed62595cf7");
-  }
+  { TEST_FUNCTION(md5, args_["md5"], "9fc9d606912030dca86582ed62595cf7"); }
   {
     auto result = FunctionManager::get("hash", 1);
     ASSERT_TRUE(result.ok());

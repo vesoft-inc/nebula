@@ -3012,8 +3012,8 @@ FunctionManager::FunctionManager() {
           return Value::kNullValue;
         }
         case Value::Type::STRING: {
-           std::string value(args[0].get().getStr());
-           return proxygen::md5Encode(folly::StringPiece(value));
+          std::string value(args[0].get().getStr());
+          return proxygen::md5Encode(folly::StringPiece(value));
         }
         default: {
           return Value::kNullBadType;
