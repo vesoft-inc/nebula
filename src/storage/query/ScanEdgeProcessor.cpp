@@ -66,6 +66,10 @@ nebula::cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::Sca
 
   std::vector<cpp2::EdgeProp> returnProps = *req.return_columns_ref();
   ret = handleEdgeProps(returnProps);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return ret;
+  }
+
   buildEdgeColName(returnProps);
   ret = buildFilter(req, [](const cpp2::ScanEdgeRequest& r, bool onlyTag) -> const std::string* {
     UNUSED(onlyTag);
