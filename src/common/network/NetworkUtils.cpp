@@ -66,7 +66,7 @@ StatusOr<std::vector<std::pair<std::string, std::string>>> NetworkUtils::listDev
   }
   for (auto* ifa = iflist; ifa != nullptr; ifa = ifa->ifa_next) {
     // Skip non-IPv4 devices
-    if (ifa->ifa_addr->sa_family != AF_INET) {
+    if (nullptr == ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) {
       continue;
     }
     auto* addr = reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
