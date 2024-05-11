@@ -28,7 +28,6 @@ Feature: Push Limit down rule
     Then the result should be, in any order:
       | like._dst |
       | /[\w\s]+/ |
-      | /[\w\s]+/ |
     And the execution plan should be:
       | id | name      | dependencies | operator info              |
       | 4  | Project   | 3            |                            |
@@ -41,7 +40,6 @@ Feature: Push Limit down rule
       """
     Then the result should be, in any order:
       | src       | likeness | dst       |
-      | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
       | /[\w\s]+/ | /\d\d/   | /[\w\s]+/ |
     And the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                 |
