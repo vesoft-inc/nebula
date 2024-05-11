@@ -62,8 +62,7 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
   folly::Future<Status> GetDstBySrc();
 
   void getNeighborsFromCache(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
-                             std::unordered_set<Value>& visitedVids,
-                             std::vector<int64_t>& samples);
+                             std::unordered_set<Value>& visitedVids);
 
   folly::Future<Status> expandFromCache();
 
@@ -78,14 +77,12 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
                    const List& eList,
                    bool isLastStep = false);
 
-  Status handleLastStep(GetNeighborsIter* iter, std::vector<int64_t>& samples);
+  Status handleLastStep(GetNeighborsIter* iter);
 
   using RpcResponse = storage::StorageRpcResponse<storage::cpp2::GetNeighborsResponse>;
   folly::Future<Status> handleResponse(RpcResponse&& resps);
 
   void resetNextStepVids(std::unordered_set<Value>& visitedVids);
-
-  bool limitORsample(std::vector<int64_t>& samples);
 
  private:
   const ExpandAll* expand_;
@@ -97,8 +94,6 @@ class ExpandAllExecutor final : public StorageAccessExecutor {
   YieldColumns* vertexColumns_{nullptr};
 
   bool sample_{false};
-  int64_t curLimit_{0};
-  int64_t curMaxLimit_{std::numeric_limits<int64_t>::max()};
   std::vector<int64_t> stepLimits_;
 
   std::unordered_set<Value> nextStepVids_;

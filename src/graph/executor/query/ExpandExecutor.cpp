@@ -141,6 +141,7 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
                                           qctx_->plan()->isProfileEnabled());
   std::vector<Value> vids(nextStepVids_.size());
   std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
+  auto limit = stepLimits_.empty() ? -1 : stepLimits_[currentStep_ - 1];
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -152,9 +153,9 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
                      expand_->edgeProps(),
                      nullptr,
                      false,
-                     false,
+                     sample_,
                      std::vector<storage::cpp2::OrderBy>(),
-                     -1,
+                     limit,
                      nullptr,
                      nullptr)
       .via(runner())
@@ -165,9 +166,6 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
         SCOPED_TIMER(&execTime_);
         addStats(resp);
         time::Duration expandTime;
-        curLimit_ = 0;
-        curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
-                                           : stepLimits_[currentStep_ - 1];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           std::string timeName = "graphExpandTime+" + folly::to<std::string>(currentStep_);
           addState(timeName, expandTime);
@@ -196,24 +194,10 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
     if (qctx()->isKilled()) {
       return Status::Error("Execution had been killed");
     }
-    curLimit_ = 0;
-    curMaxLimit_ =
-        stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 1];
     std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
 
-    std::vector<int64_t> samples;
-    if (sample_) {
-      int64_t size = 0;
-      for (auto& vid : preVisitedVids_) {
-        size += adjDsts_[vid].size();
-      }
-      algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
-      samples = sampler.samples();
-      std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
-    }
-
-    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
     dst2VidsMap.swap(preDst2VidsMap_);
     visitedVids.swap(preVisitedVids_);
     std::string timeName = "graphCacheExpandTime+" + folly::to<std::string>(currentStep_);
@@ -227,8 +211,7 @@ folly::Future<Status> ExpandExecutor::expandFromCache() {
 
 void ExpandExecutor::getNeighborsFromCache(
     std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
-    std::unordered_set<Value>& visitedVids,
-    std::vector<int64_t>& samples) {
+    std::unordered_set<Value>& visitedVids) {
   for (const auto& vid : preVisitedVids_) {
     auto findVid = adjDsts_.find(vid);
     if (findVid == adjDsts_.end()) {
@@ -237,20 +220,6 @@ void ExpandExecutor::getNeighborsFromCache(
     auto& dsts = findVid->second;
 
     for (const auto& dst : dsts) {
-      if (sample_) {
-        if (samples.empty()) {
-          break;
-        }
-        if (curLimit_++ != samples.back()) {
-          continue;
-        } else {
-          samples.pop_back();
-        }
-      } else {
-        if (curLimit_++ >= curMaxLimit_) {
-          break;
-        }
-      }
       updateDst2VidsMap(dst2VidsMap, vid, dst);
       if (currentStep_ >= maxSteps_) {
         continue;
@@ -266,26 +235,12 @@ void ExpandExecutor::getNeighborsFromCache(
 
 // 1、 update adjDsts_, cache vid and the corresponding dsts
 // 2、 get next step's vids
-// 3、 handle the situation when limit OR sample exists
-// 4、 cache already visited vids
-// 5、 get the dsts corresponding to the vid that has been visited in the previous step by adjDsts_
+// 3、 cache already visited vids
+// 4、 get the dsts corresponding to the vid that has been visited in the previous step by adjDsts_
 folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
   NG_RETURN_IF_ERROR(handleCompleteness(resps, FLAGS_accept_partial_success));
   std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
   std::unordered_set<Value> visitedVids;
-  std::vector<int64_t> samples;
-  if (sample_) {
-    size_t size = 0;
-    for (auto& resp : resps.responses()) {
-      auto dataset = resp.get_vertices();
-      if (!dataset) continue;
-      GetNbrsRespDataSetIter iter(dataset);
-      size += iter.size();
-    }
-    algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
-    samples = sampler.samples();
-    std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
-  }
 
   for (auto& resp : resps.responses()) {
     auto dataset = resp.get_vertices();
@@ -304,25 +259,17 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
       }
 
       for (const auto& dst : dsts) {
-        if (sample_) {
-          if (samples.empty()) {
-            break;
-          }
-          if (curLimit_++ != samples.back()) {
-            continue;
-          } else {
-            samples.pop_back();
-          }
-        } else {
-          if (curLimit_++ >= curMaxLimit_) {
-            break;
-          }
-        }
         updateDst2VidsMap(dst2VidsMap, src, dst);
 
         if (currentStep_ >= maxSteps_) {
           continue;
         }
+        if (!stepLimits_.empty()) {
+          // if stepLimits_ is not empty, do not use cache
+          nextStepVids_.emplace(dst);
+          continue;
+        }
+
         if (adjDsts_.find(dst) == adjDsts_.end()) {
           nextStepVids_.emplace(dst);
         } else {
@@ -332,7 +279,7 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
     }
   }
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
   }
   dst2VidsMap.swap(preDst2VidsMap_);
   visitedVids.swap(preVisitedVids_);

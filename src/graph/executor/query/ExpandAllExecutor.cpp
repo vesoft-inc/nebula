@@ -142,6 +142,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
   std::vector<Value> vids(nextStepVids_.size());
   std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
   QueryExpressionContext qec(qctx()->ectx());
+  auto stepLimit =
+      stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 2];
+  auto limit = std::min(stepLimit, expand_->limit(qec));
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -153,9 +156,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                      expand_->edgeProps(),
                      nullptr,
                      false,
-                     false,
+                     sample_,
                      std::vector<storage::cpp2::OrderBy>(),
-                     expand_->limit(qec),
+                     limit,
                      expand_->filter(),
                      nullptr)
       .via(runner())
@@ -166,9 +169,6 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
         SCOPED_TIMER(&execTime_);
         addStats(resp);
         time::Duration expandTime;
-        curLimit_ = 0;
-        curMaxLimit_ = stepLimits_.empty() ? std::numeric_limits<int64_t>::max()
-                                           : stepLimits_[currentStep_ - 2];
         return handleResponse(std::move(resp)).ensure([this, expandTime]() {
           std::string timeName = "graphExpandAllTime+" + folly::to<std::string>(currentStep_);
           addState(timeName, expandTime);
@@ -197,24 +197,9 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
     if (qctx()->isKilled()) {
       return Status::Error("Execution had been killed");
     }
-    curLimit_ = 0;
-    curMaxLimit_ =
-        stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 2];
-
-    std::vector<int64_t> samples;
-    if (sample_) {
-      int64_t size = 0;
-      for (auto& vid : preVisitedVids_) {
-        size += adjList_[vid].size();
-      }
-      algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
-      samples = sampler.samples();
-      std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
-    }
-
     std::unordered_map<Value, std::unordered_set<Value>> dst2VidsMap;
     std::unordered_set<Value> visitedVids;
-    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
     preVisitedVids_.swap(visitedVids);
     preDst2VidsMap_.swap(dst2VidsMap);
     std::string timeName = "graphCacheExpandAllTime+" + folly::to<std::string>(currentStep_);
@@ -228,8 +213,7 @@ folly::Future<Status> ExpandAllExecutor::expandFromCache() {
 
 void ExpandAllExecutor::getNeighborsFromCache(
     std::unordered_map<Value, std::unordered_set<Value>>& dst2VidsMap,
-    std::unordered_set<Value>& visitedVids,
-    std::vector<int64_t>& samples) {
+    std::unordered_set<Value>& visitedVids) {
   for (const auto& vid : preVisitedVids_) {
     auto findVid = adjList_.find(vid);
     if (findVid == adjList_.end()) {
@@ -238,20 +222,6 @@ void ExpandAllExecutor::getNeighborsFromCache(
     auto& adjEdgeProps = findVid->second;
     auto& vertexProps = adjEdgeProps.back();
     for (auto edgeIter = adjEdgeProps.begin(); edgeIter != adjEdgeProps.end() - 1; ++edgeIter) {
-      if (sample_) {
-        if (samples.empty()) {
-          break;
-        }
-        if (curLimit_++ != samples.back()) {
-          continue;
-        } else {
-          samples.pop_back();
-        }
-      } else {
-        if (curLimit_++ >= curMaxLimit_) {
-          break;
-        }
-      }
       auto& dst = (*edgeIter).values.back();
       if (adjList_.find(dst) == adjList_.end()) {
         nextStepVids_.emplace(dst);
@@ -272,7 +242,7 @@ void ExpandAllExecutor::getNeighborsFromCache(
   }
 }
 
-Status ExpandAllExecutor::handleLastStep(GetNeighborsIter* iter, std::vector<int64_t>& samples) {
+Status ExpandAllExecutor::handleLastStep(GetNeighborsIter* iter) {
   QueryExpressionContext ctx(ectx_);
   List curVertexProps;
   Value curVid;
@@ -305,10 +275,6 @@ Status ExpandAllExecutor::handleLastStep(GetNeighborsIter* iter, std::vector<int
       }
     }
 
-    if (limitORsample(samples)) {
-      continue;
-    }
-
     if (joinInput_) {
       auto findVid = preDst2VidsMap_.find(vid);
       buildResult(findVid->second, curVertexProps, edgeProps, true);
@@ -317,7 +283,7 @@ Status ExpandAllExecutor::handleLastStep(GetNeighborsIter* iter, std::vector<int
     }
   }
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
   }
   return Status::OK();
 }
@@ -337,15 +303,8 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     return Status::OK();
   }
 
-  std::vector<int64_t> samples;
-  if (sample_) {
-    auto size = iter->size();
-    algorithm::ReservoirSampling<int64_t> sampler(curMaxLimit_, size);
-    samples = sampler.samples();
-    std::sort(samples.begin(), samples.end(), [](int64_t a, int64_t b) { return a > b; });
-  }
   if (currentStep_ > maxSteps_) {
-    return handleLastStep(iter.get(), samples);
+    return handleLastStep(iter.get());
   }
 
   QueryExpressionContext ctx(ectx_);
@@ -390,16 +349,18 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     }
     adjEdgeProps.emplace_back(edgeProps);
 
-    if (limitORsample(samples)) {
-      continue;
-    }
-
     if (joinInput_) {
       auto findVid = preDst2VidsMap_.find(vid);
       buildResult(findVid->second, curVertexProps, edgeProps);
       updateDst2VidsMap(dst2VidsMap, vid, dst);
     } else {
       buildResult(curVertexProps, edgeProps);
+    }
+
+    if (!stepLimits_.empty()) {
+      // if stepLimits_ is not empty, do not use cache
+      nextStepVids_.emplace(dst);
+      continue;
     }
 
     if (adjList_.find(dst) == adjList_.end()) {
@@ -413,10 +374,12 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     adjList_.emplace(curVid, std::move(adjEdgeProps));
   }
 
-  resetNextStepVids(visitedVids);
+  if (stepLimits_.empty()) {
+    resetNextStepVids(visitedVids);
+  }
 
   if (!preVisitedVids_.empty()) {
-    getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
+    getNeighborsFromCache(dst2VidsMap, visitedVids);
   }
   visitedVids.swap(preVisitedVids_);
   dst2VidsMap.swap(preDst2VidsMap_);
@@ -492,20 +455,6 @@ void ExpandAllExecutor::updateDst2VidsMap(
       findDst->second.insert(findSrc->second.begin(), findSrc->second.end());
     }
   }
-}
-
-bool ExpandAllExecutor::limitORsample(std::vector<int64_t>& samples) {
-  if (sample_) {
-    if (samples.empty() || curLimit_++ != samples.back()) {
-      return true;
-    }
-    samples.pop_back();
-    return false;
-  }
-  if (curLimit_++ >= curMaxLimit_) {
-    return true;
-  }
-  return false;
 }
 
 }  // namespace graph

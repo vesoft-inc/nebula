@@ -44,8 +44,7 @@ class ExpandExecutor final : public StorageAccessExecutor {
   folly::Future<Status> GetDstBySrc();
 
   void getNeighborsFromCache(std::unordered_map<Value, std::unordered_set<Value>>& dst2VidMap,
-                             std::unordered_set<Value>& visitedVids,
-                             std::vector<int64_t>& samples);
+                             std::unordered_set<Value>& visitedVids);
 
   folly::Future<Status> expandFromCache();
 
@@ -64,8 +63,6 @@ class ExpandExecutor final : public StorageAccessExecutor {
   size_t maxSteps_{0};
 
   bool sample_{false};
-  int64_t curLimit_{0};
-  int64_t curMaxLimit_{std::numeric_limits<int64_t>::max()};
   std::vector<int64_t> stepLimits_;
 
   std::unordered_set<Value> nextStepVids_;
