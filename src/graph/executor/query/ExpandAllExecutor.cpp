@@ -142,6 +142,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
   std::vector<Value> vids(nextStepVids_.size());
   std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
   QueryExpressionContext qec(qctx()->ectx());
+  auto stepLimit =
+      stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 2];
+  auto limit = std::min(stepLimit, expand_->limit(qec));
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -153,9 +156,9 @@ folly::Future<Status> ExpandAllExecutor::getNeighbors() {
                      expand_->edgeProps(),
                      nullptr,
                      false,
-                     false,
+                     sample_,
                      std::vector<storage::cpp2::OrderBy>(),
-                     expand_->limit(qec),
+                     limit,
                      expand_->filter(),
                      nullptr)
       .via(runner())
@@ -402,6 +405,12 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
       buildResult(curVertexProps, edgeProps);
     }
 
+    if (!stepLimits_.empty()) {
+      // if stepLimits_ is not empty, do not use cache
+      nextStepVids_.emplace(dst);
+      continue;
+    }
+
     if (adjList_.find(dst) == adjList_.end()) {
       nextStepVids_.emplace(dst);
     } else {
@@ -413,7 +422,9 @@ folly::Future<Status> ExpandAllExecutor::handleResponse(RpcResponse&& resps) {
     adjList_.emplace(curVid, std::move(adjEdgeProps));
   }
 
-  resetNextStepVids(visitedVids);
+  if (stepLimits_.empty()) {
+    resetNextStepVids(visitedVids);
+  }
 
   if (!preVisitedVids_.empty()) {
     getNeighborsFromCache(dst2VidsMap, visitedVids, samples);
