@@ -62,4 +62,3 @@ Feature: Sample and limit
       | like._dst |
       | /[\d\-+]/ |
       | /[\d\-+]/ |
-      | /[\d\-+]/ |

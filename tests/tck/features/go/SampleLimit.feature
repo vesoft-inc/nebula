@@ -72,4 +72,3 @@ Feature: Sample and limit
       | like._dst |
       | /[\s\w+]/ |
       | /[\s\w+]/ |
-      | /[\s\w+]/ |

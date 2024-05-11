@@ -141,6 +141,8 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
                                           qctx_->plan()->isProfileEnabled());
   std::vector<Value> vids(nextStepVids_.size());
   std::move(nextStepVids_.begin(), nextStepVids_.end(), vids.begin());
+  auto stepLimit =
+      stepLimits_.empty() ? std::numeric_limits<int64_t>::max() : stepLimits_[currentStep_ - 1];
   return storageClient
       ->getNeighbors(param,
                      {nebula::kVid},
@@ -152,9 +154,9 @@ folly::Future<Status> ExpandExecutor::getNeighbors() {
                      expand_->edgeProps(),
                      nullptr,
                      false,
-                     false,
+                     sample_,
                      std::vector<storage::cpp2::OrderBy>(),
-                     -1,
+                     stepLimit,
                      nullptr,
                      nullptr)
       .via(runner())
@@ -321,6 +323,11 @@ folly::Future<Status> ExpandExecutor::handleResponse(RpcResponse&& resps) {
         updateDst2VidsMap(dst2VidsMap, src, dst);
 
         if (currentStep_ >= maxSteps_) {
+          continue;
+        }
+        if (!stepLimits_.empty()) {
+          // do not use cache when stepLimits_ is not empty
+          nextStepVids_.emplace(dst);
           continue;
         }
         if (adjDsts_.find(dst) == adjDsts_.end()) {
