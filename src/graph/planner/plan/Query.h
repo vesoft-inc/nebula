@@ -422,7 +422,7 @@ class ExpandAll : public Expand {
     } else if (edgeColumns_) {
       colNames = edgeColumns_->names();
     }
-    setLimit(-1);
+    setLimit(std::numeric_limits<int64_t>::max());
     setColNames(colNames);
   }
 
