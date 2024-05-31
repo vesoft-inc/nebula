@@ -16,7 +16,7 @@ defaults:
 jobs:
   package:
     name: package
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, medium]
     container:
       image: vesoft/nebula-dev:centos7
     steps:

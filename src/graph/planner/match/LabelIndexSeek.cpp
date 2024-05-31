@@ -88,11 +88,18 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
     auto* filter = ExpressionUtils::rewriteInnerInExpr(nodeCtx->bindWhereClause->filter);
     const auto& nodeAlias = nodeCtx->info->alias;
     const auto& schemaName = nodeCtx->scanInfo.schemaNames.back();
-
     if (filter->kind() == Expression::Kind::kLogicalOr) {
-      auto exprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
+      auto exprs = ExpressionUtils::collectAll(
+          filter, {Expression::Kind::kLabelTagProperty, Expression::Kind::kLabelAttribute});
       bool matched = exprs.empty() ? false : true;
       for (auto* expr : exprs) {
+        if (expr->kind() == Expression::Kind::kLabelAttribute) {
+          // The LabelAttributeExpression should not be encoded. For attributes on vertices, they
+          // should be rewritten as LabelTagPropertyExpression, and for attributes on edges, they
+          // should not be embedded into this planNode.
+          matched = false;
+          break;
+        }
         auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
         if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias ||
             tagPropExpr->sym() != schemaName) {
