@@ -1,7 +1,0 @@
-Log file created at: 2024/07/23 13:57:12
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240723 13:57:12.493979 1943795 AddVerticesProcessor.cpp:136] Add field failed
-E20240723 13:59:39.617470 1943798 AddVerticesProcessor.cpp:136] Add field failed
-E20240723 13:59:54.766727 1943779 AddVerticesProcessor.cpp:136] Add field failed

@@ -1,8 +1,0 @@
-Log file created at: 2024/07/20 08:03:28
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240720 08:03:28.446051 4144727 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
-E20240720 08:03:36.867380 4144727 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
-E20240720 08:13:08.299860 4144728 QueryInstance.cpp:151] SyntaxError: syntax error near `EXIT', query: EXIT
-E20240720 08:13:10.807497 4144729 QueryInstance.cpp:151] SyntaxError: syntax error near `EXIT', query: EXIT

@@ -1,6 +1,0 @@
-Log file created at: 2024/07/18 06:55:02
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240718 06:55:02.770778 2879909 QueryInstance.cpp:151] SyntaxError: syntax error near `List', query: CREATE TAG IF NOT EXISTS player(name string, age int, hobby List<string>);
-E20240718 06:55:48.796978 2879909 QueryInstance.cpp:151] SyntaxError: syntax error near `List', query: CREATE TAG IF NOT EXISTS player(name string, age int, hobby List<string>);
