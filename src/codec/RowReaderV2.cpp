@@ -205,15 +205,13 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       }
       return std::move(geogRet).value();
     }
-     // NEW 新建List类型
+     // NEW List
     case PropertyType::LIST_STRING: {
         int32_t listOffset;
         memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
         if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;  // 无效的偏移量
+            return Value::kNullValue;
         }
-
-        // 读取 list 的大小
         int32_t listSize;
         memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
         listOffset += sizeof(int32_t);
@@ -224,7 +222,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
             memcpy(reinterpret_cast<void*>(&strLen), &data_[listOffset], sizeof(int32_t));
             listOffset += sizeof(int32_t);
             if (static_cast<size_t>(listOffset + strLen) > data_.size()) {
-                return Value::kNullValue;  // 无效的字符串长度
+                return Value::kNullValue;
             }
             std::string str(&data_[listOffset], strLen);
             listOffset += strLen;
@@ -237,10 +235,9 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
         int32_t listOffset;
         memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
         if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;  // 无效的偏移量
+            return Value::kNullValue;
         }
 
-        // 读取 list 的大小
         int32_t listSize;
         memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
         listOffset += sizeof(int32_t);
@@ -259,10 +256,8 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
         int32_t listOffset;
         memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
         if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;  // 无效的偏移量
+            return Value::kNullValue;
         }
-
-        // 读取 list 的大小
         int32_t listSize;
         memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
         listOffset += sizeof(int32_t);
@@ -384,15 +379,13 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
         return Value(std::move(outerList));
     }
 
-    // NEW 修改后的反序列化代码，用于处理Set类型
+    // NEW Set
     case PropertyType::SET_STRING: {
       int32_t setOffset;
       memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
       if (static_cast<size_t>(setOffset) >= data_.size()) {
-          return Value::kNullValue;  // 无效的偏移量
+          return Value::kNullValue;
       }
-
-      // 读取 set 的大小
       int32_t setSize;
       memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
       setOffset += sizeof(int32_t);
@@ -404,7 +397,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
           memcpy(reinterpret_cast<void*>(&strLen), &data_[setOffset], sizeof(int32_t));
           setOffset += sizeof(int32_t);
           if (static_cast<size_t>(setOffset + strLen) > data_.size()) {
-              return Value::kNullValue;  // 无效的字符串长度
+              return Value::kNullValue;
           }
           std::string str(&data_[setOffset], strLen);
           setOffset += strLen;
