@@ -3244,5 +3244,4 @@ TEST_F(ParserTest, TestSpecialWhiteSpaceChar) {
   }
 }
 
-
 }  // namespace nebula
