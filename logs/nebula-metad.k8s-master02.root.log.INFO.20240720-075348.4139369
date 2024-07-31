@@ -1,0 +1,239 @@
+Log file created at: 2024/07/20 07:53:48
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240720 07:53:48.128818 4139369 MetaDaemon.cpp:137] localhost = "127.0.0.1":9559
+I20240720 07:53:48.134441 4139369 NebulaStore.cpp:48] Start the raft service...
+I20240720 07:53:48.135234 4139369 NebulaSnapshotManager.cpp:25] Send snapshot is rate limited to 10485760 for each part by default
+I20240720 07:53:48.251466 4139369 RaftexService.cpp:46] Start raft service on 9560
+I20240720 07:53:48.251600 4139369 NebulaStore.cpp:82] Scan the local path, and init the spaces_
+I20240720 07:53:48.251662 4139369 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/meta/nebula/0"
+I20240720 07:53:48.251693 4139369 NebulaStore.cpp:292] Init data from partManager for "127.0.0.1":9559
+I20240720 07:53:48.251715 4139369 NebulaStore.cpp:417] Create data space 0
+I20240720 07:53:48.267220 4139517 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/meta/nebula/0/data
+I20240720 07:53:48.475997 4139369 NebulaStore.cpp:480] Space 0, part 0 has been added, asLearner 0
+I20240720 07:53:48.476029 4139369 NebulaStore.cpp:75] Register handler...
+I20240720 07:53:48.476034 4139369 MetaDaemonInit.cpp:106] Waiting for the leader elected...
+I20240720 07:53:48.476038 4139369 MetaDaemonInit.cpp:118] Leader has not been elected, sleep 1s
+I20240720 07:53:49.476286 4139369 MetaDaemonInit.cpp:153] Get meta version is 4
+I20240720 07:53:49.476361 4139369 MetaDaemonInit.cpp:169] Nebula store init succeeded, clusterId 8324381300924682177
+I20240720 07:53:49.476374 4139369 MetaDaemon.cpp:150] Start http service
+I20240720 07:53:49.476686 4139369 MetaDaemonInit.cpp:226] Starting Meta HTTP Service
+I20240720 07:53:49.480186 4139621 WebService.cpp:124] Web service started on HTTP[19559]
+I20240720 07:53:49.480252 4139369 MetaDaemonInit.cpp:192] Check root user
+I20240720 07:53:49.480381 4139369 RootUserMan.h:35] God user exists
+I20240720 07:53:49.487619 4139369 MetaDaemon.cpp:193] The meta daemon start on "127.0.0.1":9559
+I20240720 07:53:49.487723 4139369 JobManager.cpp:64] JobManager initialized
+I20240720 07:53:49.487756 4139627 JobManager.cpp:150] JobManager::scheduleThread enter
+I20240720 07:53:50.272768 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:53:50.272869 4139672 HBProcessor.cpp:89] Update host "211.65.193.244":9669 dir info, root path: /home/spark/nebula, data path size: 0
+I20240720 07:53:50.305380 4139672 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240720 07:53:50.358961 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359009 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359021 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359033 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359043 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359053 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359062 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359072 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359082 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359091 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359102 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359112 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359120 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359130 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359139 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359163 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359174 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359184 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359194 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359203 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359213 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359223 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359232 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359242 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359252 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359261 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359272 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359282 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359292 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359302 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359311 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359321 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359331 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359340 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359350 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359360 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359369 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359380 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359390 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359398 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359408 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359418 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359427 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359437 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359447 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359457 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359467 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359503 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359515 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359525 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359535 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359544 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359557 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359568 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359586 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359596 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359606 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359616 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359625 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359635 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359645 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359655 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359665 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359674 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359685 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359695 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359705 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359714 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359724 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359735 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359745 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359755 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359764 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359774 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359784 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359794 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359805 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359815 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359825 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359835 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359845 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359855 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359865 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359875 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359884 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359895 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359905 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359915 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359925 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359935 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359946 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359956 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359964 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359975 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359989 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.359999 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360010 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360020 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360030 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360039 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360049 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360060 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360070 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360080 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360090 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360100 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360109 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360119 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360128 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360138 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360148 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360158 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360173 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360184 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360194 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360203 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360213 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360226 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360237 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360247 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360256 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360265 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360275 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360285 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.360296 4139672 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240720 07:53:50.364929 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240720 07:53:50.365005 4139672 HBProcessor.cpp:89] Update host "211.65.193.244":9779 dir info, root path: /home/spark/nebula, data path size: 1
+I20240720 07:53:50.365422 4139672 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240720 07:53:50.371652 4139672 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240720 07:54:00.551090 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240720 07:54:01.119124 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:54:01.122229 4139672 SessionManagerProcessor.cpp:150] resp session size: 1
+I20240720 07:54:11.143747 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:54:21.154927 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:54:31.166020 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:54:41.171404 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:54:51.179417 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:01.187449 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:11.198575 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:21.209926 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:31.220854 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:41.231897 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:55:51.242955 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:01.254033 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:11.265172 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:21.275375 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:31.286440 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:41.297576 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:56:51.308614 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:01.319633 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:11.330729 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:21.341810 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:31.352814 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:41.363912 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:57:51.374976 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:01.386016 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:11.397089 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:21.408198 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:31.419354 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:41.430523 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:58:51.441579 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:01.452697 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:11.463842 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:21.468446 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:31.479598 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:41.484274 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 07:59:51.495254 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:01.506317 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:11.517505 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:21.523505 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:31.534634 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:41.545863 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:00:51.556990 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:01.568082 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:11.579205 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:21.590337 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:31.601475 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:41.612577 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:01:51.623765 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:01.635031 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:11.646190 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:21.657316 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:31.668373 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:41.679541 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:02:51.690642 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:03:01.701691 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:03:11.712867 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:03:21.715533 4139672 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240720 08:03:24.399706 4139369 MetaDaemon.cpp:230] Signal 15(Terminated) received, stopping this server
+I20240720 08:03:24.413219 4139369 JobManager.cpp:138] JobManager::shutDown() begin
+I20240720 08:03:24.416231 4139627 JobManager.cpp:155] Detect shutdown called, exit
+I20240720 08:03:24.416354 4139627 JobDescription.cpp:113] Loading job description failed, error: E_JOB_NOT_IN_SPACE
+I20240720 08:03:24.416431 4139627 JobManager.cpp:175] Load an invalid job from space 0 jodId 0
+I20240720 08:03:24.416566 4139369 JobManager.cpp:146] JobManager::shutDown() end
+I20240720 08:03:24.416584 4139369 NebulaStore.cpp:343] Stop the raft service...
+I20240720 08:03:24.416589 4139369 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240720 08:03:24.416599 4139369 RaftexService.cpp:77] All partitions have stopped
+I20240720 08:03:24.416608 4139369 NebulaStore.cpp:346] Stop kv engine...
+I20240720 08:03:24.416863 4139369 NebulaStore.cpp:343] Stop the raft service...
+I20240720 08:03:24.416872 4139369 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240720 08:03:24.416878 4139369 RaftexService.cpp:77] All partitions have stopped
+I20240720 08:03:24.416884 4139369 NebulaStore.cpp:346] Stop kv engine...
+I20240720 08:03:24.416896 4139369 NebulaStore.cpp:36] Cut off the relationship with meta client
+I20240720 08:03:24.417480 4139369 Part.h:59] [Port: 9560, Space: 0, Part: 0] ~Part()
+I20240720 08:03:24.418102 4139369 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/meta/nebula/0
+I20240720 08:03:24.418756 4139369 NebulaStore.cpp:44] ~NebulaStore()
+I20240720 08:03:24.418823 4139369 MetaDaemon.cpp:215] The meta Daemon stopped
+I20240720 08:03:24.420325 4139369 JobManager.cpp:138] JobManager::shutDown() begin
+I20240720 08:03:24.420341 4139369 JobManager.cpp:141] JobManager not running, exit

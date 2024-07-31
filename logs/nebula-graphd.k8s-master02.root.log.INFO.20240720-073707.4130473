@@ -1,0 +1,52 @@
+Log file created at: 2024/07/20 07:37:07
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240720 07:37:07.312191 4130473 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240720 07:37:07.315124 4130489 WebService.cpp:124] Web service started on HTTP[19669]
+I20240720 07:37:07.315207 4130473 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240720 07:37:07.315234 4130473 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240720 07:37:07.322176 4130473 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240720 07:37:07.322229 4130473 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240720 07:37:09.462677 4130473 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 07:37:09.462729 4130473 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:37:09.462743 4130473 MetaClient.cpp:3269] Load leader ok
+I20240720 07:37:09.465651 4130473 MetaClient.cpp:162] Register time task for heartbeat!
+I20240720 07:37:09.467005 4130473 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240720 07:37:09.467415 4130473 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240720 07:37:09.469015 4130473 Snowflake.cpp:17] WorkerId init success: 1
+I20240720 07:37:09.469419 4130796 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240720 07:37:10.040571 4130549 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:50680
+I20240720 07:37:15.692811 4130547 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240720 07:37:20.341361 4130791 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 07:37:20.341409 4130791 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:37:20.341423 4130791 MetaClient.cpp:3269] Load leader ok
+I20240720 07:37:50.384701 4130791 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 07:37:50.384752 4130791 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:37:50.384766 4130791 MetaClient.cpp:3269] Load leader ok
+I20240720 07:40:20.550262 4130791 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 07:40:20.550316 4130791 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:40:20.550329 4130791 MetaClient.cpp:3269] Load leader ok
+E20240720 07:44:25.361847 4130547 QueryInstance.cpp:151] SemanticError: Missing yield clause., query: FETCH PROP ON player "student100";
+E20240720 07:45:31.845392 4130547 QueryInstance.cpp:151] SemanticError: mismatched tag `student', query: FETCH PROP ON player "student100" YIELD student.name,student.age;
+E20240720 07:47:30.680624 4130548 QueryInstance.cpp:151] SemanticError: mismatched tag `student', query: FETCH PROP ON player "student100" YIELD student.name,student.age, student.hobby;
+E20240720 07:48:51.315207 4130801 StorageClientBase-inl.h:224] Request to "211.65.193.244":9779 time out: TTransportException: Timed out
+E20240720 07:48:51.315388 4130543 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient with timeout: TTransportException: Timed out
+E20240720 07:48:51.315521 4130543 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:48:51.315722 4130547 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.name, student.age, student.hobby;
+E20240720 07:53:20.579996 4130800 StorageClientBase-inl.h:227] Request to "211.65.193.244":9779 failed: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:20.580109 4130547 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:20.580204 4130547 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:53:20.580268 4130543 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.name, student.age, student.hobby;
+E20240720 07:53:28.413709 4130559 StorageClientBase-inl.h:227] Request to "211.65.193.244":9779 failed: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:28.413827 4130543 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:28.413923 4130542 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:53:28.414042 4130548 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.hobby;
+E20240720 07:53:33.974963 4130744 StorageClientBase-inl.h:227] Request to "211.65.193.244":9779 failed: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:33.975075 4130548 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient: Failed to write to remote endpoint. Wrote 0 bytes. AsyncSocketException: AsyncSocketException: connect failed, type = Socket not open, errno = 111 (Connection refused)
+E20240720 07:53:33.975159 4130542 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:53:33.975328 4130548 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
+I20240720 07:53:48.161049 4130473 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240720 07:53:48.169261 4130796 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240720 07:53:48.169631 4130473 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240720 07:53:48.169662 4130473 GraphServer.cpp:109] The graph server has been stopped

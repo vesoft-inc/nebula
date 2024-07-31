@@ -24,6 +24,10 @@ struct List {
   }
   explicit List(const std::vector<Value>& l) : values(l) {}
 
+  // Template static factory method to create a list with specific types
+  template <typename T>
+  static List createFromList(const std::vector<T>& items);
+
   bool empty() const {
     return values.empty();
   }
@@ -100,6 +104,17 @@ struct List {
 
 inline std::ostream& operator<<(std::ostream& os, const List& l) {
   return os << l.toString();
+}
+
+// Define using template static factory method
+template <typename T>
+inline List List::createFromList(const std::vector<T>& items) {
+    std::vector<Value> values;
+    values.reserve(items.size());
+    for (const auto& item : items) {
+        values.emplace_back(Value(item));
+    }
+    return List(std::move(values));
 }
 
 }  // namespace nebula

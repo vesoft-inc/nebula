@@ -22,6 +22,10 @@ struct Set {
     values = std::move(value);
   }
 
+  // Template Static Factory Method Declaration
+  template <typename T>
+  static Set createFromSet(const std::vector<T>& items);
+
   void clear() {
     values.clear();
   }
@@ -68,6 +72,17 @@ struct Set {
 inline std::ostream& operator<<(std::ostream& os, const Set& s) {
   return os << s.toString();
 }
+
+// define using template static factory method
+template <typename T>
+inline Set Set::createFromSet(const std::vector<T>& items) {
+    std::unordered_set<Value> values;
+    for (const auto& item : items) {
+        values.emplace(Value(item));
+    }
+    return Set(std::move(values));
+}
+
 }  // namespace nebula
 
 namespace std {
@@ -75,6 +90,7 @@ template <>
 struct hash<nebula::Set> {
   std::size_t operator()(const nebula::Set& s) const;
 };
+
 
 }  // namespace std
 #endif  // COMMON_DATATYPES_SET_H_

@@ -305,6 +305,22 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
       return Value::Type::GEOGRAPHY;
     case nebula::cpp2::PropertyType::DURATION:
       return Value::Type::DURATION;
+    // NEW
+    case nebula::cpp2::PropertyType::LIST_STRING:
+    case nebula::cpp2::PropertyType::LIST_INT:
+    case nebula::cpp2::PropertyType::LIST_FLOAT:
+    case nebula::cpp2::PropertyType::LIST_LIST_STRING:
+    case nebula::cpp2::PropertyType::LIST_LIST_INT:
+    case nebula::cpp2::PropertyType::LIST_LIST_FLOAT:
+      return Value::Type::LIST;
+    // NEW
+    case nebula::cpp2::PropertyType::SET_STRING:
+    case nebula::cpp2::PropertyType::SET_INT:
+    case nebula::cpp2::PropertyType::SET_FLOAT:
+    case nebula::cpp2::PropertyType::SET_SET_STRING:
+    case nebula::cpp2::PropertyType::SET_SET_INT:
+    case nebula::cpp2::PropertyType::SET_SET_FLOAT:
+      return Value::Type::SET;
     case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }

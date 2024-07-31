@@ -167,6 +167,24 @@ std::size_t NebulaSchemaProvider::fieldSize(PropertyType type, std::size_t fixed
       return 8;  // as same as STRING
     case PropertyType::DURATION:
       return sizeof(int64_t) + sizeof(int32_t) + sizeof(int32_t);
+
+    // NEW
+    case PropertyType::LIST_STRING:
+    case PropertyType::LIST_INT:
+    case PropertyType::LIST_FLOAT:
+    case PropertyType::LIST_LIST_STRING:
+    case PropertyType::LIST_LIST_INT:
+    case PropertyType::LIST_LIST_FLOAT:
+      return 8;
+    // NEW
+    case PropertyType::SET_STRING:
+    case PropertyType::SET_INT:
+    case PropertyType::SET_FLOAT:
+    case PropertyType::SET_SET_STRING:
+    case PropertyType::SET_SET_INT:
+    case PropertyType::SET_SET_FLOAT:
+      return 8;
+
     case PropertyType::UNKNOWN:
       break;
   }

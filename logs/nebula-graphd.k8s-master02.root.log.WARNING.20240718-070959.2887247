@@ -1,0 +1,8 @@
+Log file created at: 2024/07/18 07:09:59
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240718 07:09:59.249722 2887304 QueryInstance.cpp:151] SemanticError: Missing yield clause., query: FETCH PROP ON player "player100";
+E20240718 07:12:10.554699 2887304 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_TAG_PROP_NOT_FOUND, part 7
+E20240718 07:12:10.554925 2887303 QueryInstance.cpp:151] Storage Error: Tag prop not found., query: FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby;
+E20240718 07:13:31.302230 2887303 QueryInstance.cpp:151] SemanticError: Missing yield clause., query: FETCH PROP ON player "player100";

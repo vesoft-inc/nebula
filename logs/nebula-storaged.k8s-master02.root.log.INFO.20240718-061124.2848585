@@ -1,0 +1,469 @@
+Log file created at: 2024/07/18 06:11:24
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240718 06:11:24.365636 2848585 StorageDaemon.cpp:132] localhost = "211.65.193.244":9779
+I20240718 06:11:24.366000 2848585 StorageDaemon.cpp:147] data path= /home/spark/nebula/data/storage
+I20240718 06:11:24.374379 2848585 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240718 06:11:24.374424 2848585 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 1
+I20240718 06:11:24.374470 2848585 FileBasedClusterIdMan.cpp:53] Get clusterId: 8324381300924682177
+I20240718 06:11:26.454870 2848585 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240718 06:11:26.454962 2848585 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 06:11:26.454975 2848585 MetaClient.cpp:3269] Load leader ok
+I20240718 06:11:26.456167 2848585 MetaClient.cpp:162] Register time task for heartbeat!
+I20240718 06:11:26.456219 2848585 StorageServer.cpp:250] Init schema manager
+I20240718 06:11:26.456234 2848585 StorageServer.cpp:253] Init index manager
+I20240718 06:11:26.456248 2848585 StorageServer.cpp:256] Init kvstore
+I20240718 06:11:26.456277 2848585 NebulaStore.cpp:48] Start the raft service...
+I20240718 06:11:26.456948 2848585 NebulaSnapshotManager.cpp:25] Send snapshot is rate limited to 10485760 for each part by default
+I20240718 06:11:26.480628 2848585 RaftexService.cpp:46] Start raft service on 9780
+I20240718 06:11:26.480768 2848585 NebulaStore.cpp:82] Scan the local path, and init the spaces_
+I20240718 06:11:26.480834 2848585 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/storage/nebula/0"
+I20240718 06:11:26.480845 2848585 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/storage/nebula/1"
+I20240718 06:11:26.481365 2848585 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/storage/nebula/2"
+I20240718 06:11:26.481838 2848585 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/storage/nebula/3"
+I20240718 06:11:26.481833 2848866 RocksEngineConfig.cpp:371] Emplace rocksdb option max_bytes_for_level_base=268435456
+I20240718 06:11:26.481882 2848866 RocksEngineConfig.cpp:371] Emplace rocksdb option max_write_buffer_number=4
+I20240718 06:11:26.481892 2848866 RocksEngineConfig.cpp:371] Emplace rocksdb option write_buffer_size=67108864
+I20240718 06:11:26.482059 2848867 RocksEngineConfig.cpp:371] Emplace rocksdb option max_bytes_for_level_base=268435456
+I20240718 06:11:26.482087 2848867 RocksEngineConfig.cpp:371] Emplace rocksdb option max_write_buffer_number=4
+I20240718 06:11:26.482097 2848867 RocksEngineConfig.cpp:371] Emplace rocksdb option write_buffer_size=67108864
+I20240718 06:11:26.482234 2848866 RocksEngineConfig.cpp:371] Emplace rocksdb option block_size=8192
+I20240718 06:11:26.482420 2848867 RocksEngineConfig.cpp:371] Emplace rocksdb option block_size=8192
+I20240718 06:11:26.482595 2848868 RocksEngineConfig.cpp:371] Emplace rocksdb option max_bytes_for_level_base=268435456
+I20240718 06:11:26.482625 2848868 RocksEngineConfig.cpp:371] Emplace rocksdb option max_write_buffer_number=4
+I20240718 06:11:26.482635 2848868 RocksEngineConfig.cpp:371] Emplace rocksdb option write_buffer_size=67108864
+I20240718 06:11:26.482949 2848868 RocksEngineConfig.cpp:371] Emplace rocksdb option block_size=8192
+I20240718 06:11:26.496171 2848868 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/storage/nebula/3/data
+I20240718 06:11:26.499078 2848867 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/storage/nebula/2/data
+I20240718 06:11:26.514369 2848866 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/storage/nebula/1/data
+I20240718 06:11:26.514423 2848585 NebulaStore.cpp:117] Load space 1 from disk
+I20240718 06:11:26.514449 2848585 NebulaStore.cpp:117] Load space 2 from disk
+I20240718 06:11:26.514457 2848585 NebulaStore.cpp:117] Load space 3 from disk
+I20240718 06:11:26.514556 2848585 NebulaStore.cpp:220] Load space 3 from disk
+I20240718 06:11:26.514566 2848585 NebulaStore.cpp:229] Need to open 10 parts of space 3
+I20240718 06:11:26.514964 2848839 NebulaStore.cpp:252] Load part 3, 3 from disk
+I20240718 06:11:26.515141 2848839 NebulaStore.cpp:252] Load part 3, 7 from disk
+I20240718 06:11:26.515265 2848838 NebulaStore.cpp:252] Load part 3, 2 from disk
+I20240718 06:11:26.515333 2848837 NebulaStore.cpp:252] Load part 3, 1 from disk
+I20240718 06:11:26.515625 2848838 NebulaStore.cpp:252] Load part 3, 6 from disk
+I20240718 06:11:26.515734 2848840 NebulaStore.cpp:252] Load part 3, 4 from disk
+I20240718 06:11:26.515779 2848837 NebulaStore.cpp:252] Load part 3, 5 from disk
+I20240718 06:11:26.515961 2848838 NebulaStore.cpp:252] Load part 3, 10 from disk
+I20240718 06:11:26.516157 2848837 NebulaStore.cpp:252] Load part 3, 9 from disk
+I20240718 06:11:26.516362 2848840 NebulaStore.cpp:252] Load part 3, 8 from disk
+I20240718 06:11:26.516446 2848585 NebulaStore.cpp:286] Load space 3 complete
+I20240718 06:11:26.516631 2848585 NebulaStore.cpp:220] Load space 2 from disk
+I20240718 06:11:26.516647 2848585 NebulaStore.cpp:229] Need to open 15 parts of space 2
+I20240718 06:11:26.517714 2848839 NebulaStore.cpp:252] Load part 2, 3 from disk
+I20240718 06:11:26.518756 2848839 NebulaStore.cpp:252] Load part 2, 7 from disk
+I20240718 06:11:26.519390 2848838 NebulaStore.cpp:252] Load part 2, 2 from disk
+I20240718 06:11:26.519615 2848837 NebulaStore.cpp:252] Load part 2, 1 from disk
+I20240718 06:11:26.519812 2848839 NebulaStore.cpp:252] Load part 2, 11 from disk
+I20240718 06:11:26.520128 2848840 NebulaStore.cpp:252] Load part 2, 4 from disk
+I20240718 06:11:26.520850 2848839 NebulaStore.cpp:252] Load part 2, 15 from disk
+I20240718 06:11:26.521529 2848838 NebulaStore.cpp:252] Load part 2, 6 from disk
+I20240718 06:11:26.521771 2848840 NebulaStore.cpp:252] Load part 2, 8 from disk
+I20240718 06:11:26.521939 2848837 NebulaStore.cpp:252] Load part 2, 5 from disk
+I20240718 06:11:26.523437 2848840 NebulaStore.cpp:252] Load part 2, 12 from disk
+I20240718 06:11:26.523684 2848838 NebulaStore.cpp:252] Load part 2, 10 from disk
+I20240718 06:11:26.524260 2848837 NebulaStore.cpp:252] Load part 2, 9 from disk
+I20240718 06:11:26.525833 2848838 NebulaStore.cpp:252] Load part 2, 14 from disk
+I20240718 06:11:26.526563 2848837 NebulaStore.cpp:252] Load part 2, 13 from disk
+I20240718 06:11:26.526638 2848585 NebulaStore.cpp:286] Load space 2 complete
+I20240718 06:11:26.527220 2848585 NebulaStore.cpp:220] Load space 1 from disk
+I20240718 06:11:26.527258 2848585 NebulaStore.cpp:229] Need to open 100 parts of space 1
+I20240718 06:11:26.528769 2848839 NebulaStore.cpp:252] Load part 1, 1 from disk
+I20240718 06:11:26.528972 2848840 NebulaStore.cpp:252] Load part 1, 2 from disk
+I20240718 06:11:26.529458 2848838 NebulaStore.cpp:252] Load part 1, 4 from disk
+I20240718 06:11:26.529614 2848837 NebulaStore.cpp:252] Load part 1, 3 from disk
+I20240718 06:11:26.530248 2848839 NebulaStore.cpp:252] Load part 1, 5 from disk
+I20240718 06:11:26.530655 2848840 NebulaStore.cpp:252] Load part 1, 6 from disk
+I20240718 06:11:26.531302 2848838 NebulaStore.cpp:252] Load part 1, 8 from disk
+I20240718 06:11:26.531410 2848837 NebulaStore.cpp:252] Load part 1, 7 from disk
+I20240718 06:11:26.531697 2848839 NebulaStore.cpp:252] Load part 1, 9 from disk
+I20240718 06:11:26.532352 2848840 NebulaStore.cpp:252] Load part 1, 10 from disk
+I20240718 06:11:26.532371 2848838 NebulaStore.cpp:252] Load part 1, 12 from disk
+I20240718 06:11:26.532459 2848837 NebulaStore.cpp:252] Load part 1, 11 from disk
+I20240718 06:11:26.533140 2848839 NebulaStore.cpp:252] Load part 1, 13 from disk
+I20240718 06:11:26.533432 2848838 NebulaStore.cpp:252] Load part 1, 16 from disk
+I20240718 06:11:26.533510 2848837 NebulaStore.cpp:252] Load part 1, 15 from disk
+I20240718 06:11:26.534032 2848840 NebulaStore.cpp:252] Load part 1, 14 from disk
+I20240718 06:11:26.534488 2848838 NebulaStore.cpp:252] Load part 1, 20 from disk
+I20240718 06:11:26.534556 2848837 NebulaStore.cpp:252] Load part 1, 19 from disk
+I20240718 06:11:26.534584 2848839 NebulaStore.cpp:252] Load part 1, 17 from disk
+I20240718 06:11:26.535537 2848838 NebulaStore.cpp:252] Load part 1, 24 from disk
+I20240718 06:11:26.535606 2848837 NebulaStore.cpp:252] Load part 1, 23 from disk
+I20240718 06:11:26.535706 2848840 NebulaStore.cpp:252] Load part 1, 18 from disk
+I20240718 06:11:26.536032 2848839 NebulaStore.cpp:252] Load part 1, 21 from disk
+I20240718 06:11:26.536582 2848838 NebulaStore.cpp:252] Load part 1, 28 from disk
+I20240718 06:11:26.536649 2848837 NebulaStore.cpp:252] Load part 1, 27 from disk
+I20240718 06:11:26.537460 2848840 NebulaStore.cpp:252] Load part 1, 22 from disk
+I20240718 06:11:26.537492 2848839 NebulaStore.cpp:252] Load part 1, 25 from disk
+I20240718 06:11:26.537640 2848838 NebulaStore.cpp:252] Load part 1, 32 from disk
+I20240718 06:11:26.537693 2848837 NebulaStore.cpp:252] Load part 1, 31 from disk
+I20240718 06:11:26.538583 2848839 NebulaStore.cpp:252] Load part 1, 29 from disk
+I20240718 06:11:26.538686 2848838 NebulaStore.cpp:252] Load part 1, 36 from disk
+I20240718 06:11:26.538738 2848837 NebulaStore.cpp:252] Load part 1, 35 from disk
+I20240718 06:11:26.539215 2848840 NebulaStore.cpp:252] Load part 1, 26 from disk
+I20240718 06:11:26.539645 2848839 NebulaStore.cpp:252] Load part 1, 33 from disk
+I20240718 06:11:26.539739 2848838 NebulaStore.cpp:252] Load part 1, 40 from disk
+I20240718 06:11:26.539803 2848837 NebulaStore.cpp:252] Load part 1, 39 from disk
+I20240718 06:11:26.540689 2848839 NebulaStore.cpp:252] Load part 1, 37 from disk
+I20240718 06:11:26.540783 2848838 NebulaStore.cpp:252] Load part 1, 44 from disk
+I20240718 06:11:26.540849 2848837 NebulaStore.cpp:252] Load part 1, 43 from disk
+I20240718 06:11:26.540974 2848840 NebulaStore.cpp:252] Load part 1, 30 from disk
+I20240718 06:11:26.541733 2848839 NebulaStore.cpp:252] Load part 1, 41 from disk
+I20240718 06:11:26.541832 2848838 NebulaStore.cpp:252] Load part 1, 48 from disk
+I20240718 06:11:26.541910 2848837 NebulaStore.cpp:252] Load part 1, 47 from disk
+I20240718 06:11:26.542722 2848840 NebulaStore.cpp:252] Load part 1, 34 from disk
+I20240718 06:11:26.569808 2848838 NebulaStore.cpp:252] Load part 1, 52 from disk
+I20240718 06:11:26.569885 2848840 NebulaStore.cpp:252] Load part 1, 38 from disk
+I20240718 06:11:26.570045 2848839 NebulaStore.cpp:252] Load part 1, 45 from disk
+I20240718 06:11:26.570127 2848837 NebulaStore.cpp:252] Load part 1, 51 from disk
+I20240718 06:11:26.572758 2848838 NebulaStore.cpp:252] Load part 1, 56 from disk
+I20240718 06:11:26.572860 2848840 NebulaStore.cpp:252] Load part 1, 42 from disk
+I20240718 06:11:26.573107 2848839 NebulaStore.cpp:252] Load part 1, 49 from disk
+I20240718 06:11:26.573200 2848837 NebulaStore.cpp:252] Load part 1, 55 from disk
+I20240718 06:11:26.575433 2848839 NebulaStore.cpp:252] Load part 1, 53 from disk
+I20240718 06:11:26.575886 2848838 NebulaStore.cpp:252] Load part 1, 60 from disk
+I20240718 06:11:26.575955 2848840 NebulaStore.cpp:252] Load part 1, 46 from disk
+I20240718 06:11:26.576256 2848837 NebulaStore.cpp:252] Load part 1, 59 from disk
+I20240718 06:11:26.576618 2848839 NebulaStore.cpp:252] Load part 1, 57 from disk
+I20240718 06:11:26.577782 2848839 NebulaStore.cpp:252] Load part 1, 61 from disk
+I20240718 06:11:26.578960 2848838 NebulaStore.cpp:252] Load part 1, 64 from disk
+I20240718 06:11:26.579034 2848840 NebulaStore.cpp:252] Load part 1, 50 from disk
+I20240718 06:11:26.579063 2848839 NebulaStore.cpp:252] Load part 1, 65 from disk
+I20240718 06:11:26.579134 2848837 NebulaStore.cpp:252] Load part 1, 63 from disk
+I20240718 06:11:26.580188 2848837 NebulaStore.cpp:252] Load part 1, 67 from disk
+I20240718 06:11:26.580236 2848839 NebulaStore.cpp:252] Load part 1, 69 from disk
+I20240718 06:11:26.581238 2848837 NebulaStore.cpp:252] Load part 1, 71 from disk
+I20240718 06:11:26.581399 2848839 NebulaStore.cpp:252] Load part 1, 73 from disk
+I20240718 06:11:26.581996 2848838 NebulaStore.cpp:252] Load part 1, 68 from disk
+I20240718 06:11:26.582114 2848840 NebulaStore.cpp:252] Load part 1, 54 from disk
+I20240718 06:11:26.582298 2848837 NebulaStore.cpp:252] Load part 1, 75 from disk
+I20240718 06:11:26.582561 2848839 NebulaStore.cpp:252] Load part 1, 77 from disk
+I20240718 06:11:26.583351 2848837 NebulaStore.cpp:252] Load part 1, 79 from disk
+I20240718 06:11:26.583725 2848838 NebulaStore.cpp:252] Load part 1, 72 from disk
+I20240718 06:11:26.583755 2848839 NebulaStore.cpp:252] Load part 1, 81 from disk
+I20240718 06:11:26.583779 2848840 NebulaStore.cpp:252] Load part 1, 58 from disk
+I20240718 06:11:26.584401 2848837 NebulaStore.cpp:252] Load part 1, 83 from disk
+I20240718 06:11:26.584782 2848838 NebulaStore.cpp:252] Load part 1, 76 from disk
+I20240718 06:11:26.584834 2848840 NebulaStore.cpp:252] Load part 1, 62 from disk
+I20240718 06:11:26.584933 2848839 NebulaStore.cpp:252] Load part 1, 85 from disk
+I20240718 06:11:26.585456 2848837 NebulaStore.cpp:252] Load part 1, 87 from disk
+I20240718 06:11:26.585857 2848838 NebulaStore.cpp:252] Load part 1, 80 from disk
+I20240718 06:11:26.585891 2848840 NebulaStore.cpp:252] Load part 1, 66 from disk
+I20240718 06:11:26.586093 2848839 NebulaStore.cpp:252] Load part 1, 89 from disk
+I20240718 06:11:26.586516 2848837 NebulaStore.cpp:252] Load part 1, 91 from disk
+I20240718 06:11:26.586915 2848838 NebulaStore.cpp:252] Load part 1, 84 from disk
+I20240718 06:11:26.586947 2848840 NebulaStore.cpp:252] Load part 1, 70 from disk
+I20240718 06:11:26.587246 2848839 NebulaStore.cpp:252] Load part 1, 93 from disk
+I20240718 06:11:26.587579 2848837 NebulaStore.cpp:252] Load part 1, 95 from disk
+I20240718 06:11:26.587992 2848838 NebulaStore.cpp:252] Load part 1, 88 from disk
+I20240718 06:11:26.588027 2848840 NebulaStore.cpp:252] Load part 1, 74 from disk
+I20240718 06:11:26.588291 2848839 NebulaStore.cpp:252] Load part 1, 97 from disk
+I20240718 06:11:26.588634 2848837 NebulaStore.cpp:252] Load part 1, 99 from disk
+I20240718 06:11:26.589058 2848838 NebulaStore.cpp:252] Load part 1, 92 from disk
+I20240718 06:11:26.589085 2848840 NebulaStore.cpp:252] Load part 1, 78 from disk
+I20240718 06:11:26.590121 2848838 NebulaStore.cpp:252] Load part 1, 96 from disk
+I20240718 06:11:26.590147 2848840 NebulaStore.cpp:252] Load part 1, 82 from disk
+I20240718 06:11:26.591183 2848838 NebulaStore.cpp:252] Load part 1, 100 from disk
+I20240718 06:11:26.591220 2848840 NebulaStore.cpp:252] Load part 1, 86 from disk
+I20240718 06:11:26.592283 2848840 NebulaStore.cpp:252] Load part 1, 90 from disk
+I20240718 06:11:26.593327 2848840 NebulaStore.cpp:252] Load part 1, 94 from disk
+I20240718 06:11:26.594372 2848840 NebulaStore.cpp:252] Load part 1, 98 from disk
+I20240718 06:11:26.594458 2848585 NebulaStore.cpp:286] Load space 1 complete
+I20240718 06:11:26.594523 2848585 NebulaStore.cpp:292] Init data from partManager for "211.65.193.244":9779
+I20240718 06:11:26.594594 2848585 NebulaStore.cpp:399] Data space 3 has existed!
+I20240718 06:11:26.594635 2848585 NebulaStore.cpp:451] [Space: 3, Part: 1] has existed!
+I20240718 06:11:26.594646 2848585 NebulaStore.cpp:451] [Space: 3, Part: 2] has existed!
+I20240718 06:11:26.594655 2848585 NebulaStore.cpp:451] [Space: 3, Part: 3] has existed!
+I20240718 06:11:26.594663 2848585 NebulaStore.cpp:451] [Space: 3, Part: 4] has existed!
+I20240718 06:11:26.594671 2848585 NebulaStore.cpp:451] [Space: 3, Part: 5] has existed!
+I20240718 06:11:26.594679 2848585 NebulaStore.cpp:451] [Space: 3, Part: 6] has existed!
+I20240718 06:11:26.594686 2848585 NebulaStore.cpp:451] [Space: 3, Part: 7] has existed!
+I20240718 06:11:26.594694 2848585 NebulaStore.cpp:451] [Space: 3, Part: 8] has existed!
+I20240718 06:11:26.594702 2848585 NebulaStore.cpp:451] [Space: 3, Part: 9] has existed!
+I20240718 06:11:26.594709 2848585 NebulaStore.cpp:451] [Space: 3, Part: 10] has existed!
+I20240718 06:11:26.594717 2848585 NebulaStore.cpp:399] Data space 2 has existed!
+I20240718 06:11:26.594728 2848585 NebulaStore.cpp:451] [Space: 2, Part: 1] has existed!
+I20240718 06:11:26.594736 2848585 NebulaStore.cpp:451] [Space: 2, Part: 2] has existed!
+I20240718 06:11:26.594744 2848585 NebulaStore.cpp:451] [Space: 2, Part: 3] has existed!
+I20240718 06:11:26.594753 2848585 NebulaStore.cpp:451] [Space: 2, Part: 4] has existed!
+I20240718 06:11:26.594759 2848585 NebulaStore.cpp:451] [Space: 2, Part: 5] has existed!
+I20240718 06:11:26.594777 2848585 NebulaStore.cpp:451] [Space: 2, Part: 6] has existed!
+I20240718 06:11:26.594786 2848585 NebulaStore.cpp:451] [Space: 2, Part: 7] has existed!
+I20240718 06:11:26.594794 2848585 NebulaStore.cpp:451] [Space: 2, Part: 8] has existed!
+I20240718 06:11:26.594801 2848585 NebulaStore.cpp:451] [Space: 2, Part: 9] has existed!
+I20240718 06:11:26.594810 2848585 NebulaStore.cpp:451] [Space: 2, Part: 10] has existed!
+I20240718 06:11:26.594817 2848585 NebulaStore.cpp:451] [Space: 2, Part: 11] has existed!
+I20240718 06:11:26.594825 2848585 NebulaStore.cpp:451] [Space: 2, Part: 12] has existed!
+I20240718 06:11:26.594833 2848585 NebulaStore.cpp:451] [Space: 2, Part: 13] has existed!
+I20240718 06:11:26.594841 2848585 NebulaStore.cpp:451] [Space: 2, Part: 14] has existed!
+I20240718 06:11:26.594848 2848585 NebulaStore.cpp:451] [Space: 2, Part: 15] has existed!
+I20240718 06:11:26.594856 2848585 NebulaStore.cpp:399] Data space 1 has existed!
+I20240718 06:11:26.594874 2848585 NebulaStore.cpp:451] [Space: 1, Part: 1] has existed!
+I20240718 06:11:26.594915 2848585 NebulaStore.cpp:451] [Space: 1, Part: 2] has existed!
+I20240718 06:11:26.594945 2848585 NebulaStore.cpp:451] [Space: 1, Part: 3] has existed!
+I20240718 06:11:26.594955 2848585 NebulaStore.cpp:451] [Space: 1, Part: 4] has existed!
+I20240718 06:11:26.594964 2848585 NebulaStore.cpp:451] [Space: 1, Part: 5] has existed!
+I20240718 06:11:26.594970 2848585 NebulaStore.cpp:451] [Space: 1, Part: 6] has existed!
+I20240718 06:11:26.594978 2848585 NebulaStore.cpp:451] [Space: 1, Part: 7] has existed!
+I20240718 06:11:26.594986 2848585 NebulaStore.cpp:451] [Space: 1, Part: 8] has existed!
+I20240718 06:11:26.594995 2848585 NebulaStore.cpp:451] [Space: 1, Part: 9] has existed!
+I20240718 06:11:26.595001 2848585 NebulaStore.cpp:451] [Space: 1, Part: 10] has existed!
+I20240718 06:11:26.595010 2848585 NebulaStore.cpp:451] [Space: 1, Part: 11] has existed!
+I20240718 06:11:26.595017 2848585 NebulaStore.cpp:451] [Space: 1, Part: 12] has existed!
+I20240718 06:11:26.595026 2848585 NebulaStore.cpp:451] [Space: 1, Part: 13] has existed!
+I20240718 06:11:26.595033 2848585 NebulaStore.cpp:451] [Space: 1, Part: 14] has existed!
+I20240718 06:11:26.595041 2848585 NebulaStore.cpp:451] [Space: 1, Part: 15] has existed!
+I20240718 06:11:26.595048 2848585 NebulaStore.cpp:451] [Space: 1, Part: 16] has existed!
+I20240718 06:11:26.595057 2848585 NebulaStore.cpp:451] [Space: 1, Part: 17] has existed!
+I20240718 06:11:26.595063 2848585 NebulaStore.cpp:451] [Space: 1, Part: 18] has existed!
+I20240718 06:11:26.595072 2848585 NebulaStore.cpp:451] [Space: 1, Part: 19] has existed!
+I20240718 06:11:26.595079 2848585 NebulaStore.cpp:451] [Space: 1, Part: 20] has existed!
+I20240718 06:11:26.595088 2848585 NebulaStore.cpp:451] [Space: 1, Part: 21] has existed!
+I20240718 06:11:26.595094 2848585 NebulaStore.cpp:451] [Space: 1, Part: 22] has existed!
+I20240718 06:11:26.595103 2848585 NebulaStore.cpp:451] [Space: 1, Part: 23] has existed!
+I20240718 06:11:26.595110 2848585 NebulaStore.cpp:451] [Space: 1, Part: 24] has existed!
+I20240718 06:11:26.595118 2848585 NebulaStore.cpp:451] [Space: 1, Part: 25] has existed!
+I20240718 06:11:26.595125 2848585 NebulaStore.cpp:451] [Space: 1, Part: 26] has existed!
+I20240718 06:11:26.595134 2848585 NebulaStore.cpp:451] [Space: 1, Part: 27] has existed!
+I20240718 06:11:26.595141 2848585 NebulaStore.cpp:451] [Space: 1, Part: 28] has existed!
+I20240718 06:11:26.595149 2848585 NebulaStore.cpp:451] [Space: 1, Part: 29] has existed!
+I20240718 06:11:26.595157 2848585 NebulaStore.cpp:451] [Space: 1, Part: 30] has existed!
+I20240718 06:11:26.595165 2848585 NebulaStore.cpp:451] [Space: 1, Part: 31] has existed!
+I20240718 06:11:26.595173 2848585 NebulaStore.cpp:451] [Space: 1, Part: 32] has existed!
+I20240718 06:11:26.595181 2848585 NebulaStore.cpp:451] [Space: 1, Part: 33] has existed!
+I20240718 06:11:26.595188 2848585 NebulaStore.cpp:451] [Space: 1, Part: 34] has existed!
+I20240718 06:11:26.595196 2848585 NebulaStore.cpp:451] [Space: 1, Part: 35] has existed!
+I20240718 06:11:26.595204 2848585 NebulaStore.cpp:451] [Space: 1, Part: 36] has existed!
+I20240718 06:11:26.595220 2848585 NebulaStore.cpp:451] [Space: 1, Part: 37] has existed!
+I20240718 06:11:26.595228 2848585 NebulaStore.cpp:451] [Space: 1, Part: 38] has existed!
+I20240718 06:11:26.595235 2848585 NebulaStore.cpp:451] [Space: 1, Part: 39] has existed!
+I20240718 06:11:26.595243 2848585 NebulaStore.cpp:451] [Space: 1, Part: 40] has existed!
+I20240718 06:11:26.595252 2848585 NebulaStore.cpp:451] [Space: 1, Part: 41] has existed!
+I20240718 06:11:26.595259 2848585 NebulaStore.cpp:451] [Space: 1, Part: 42] has existed!
+I20240718 06:11:26.595268 2848585 NebulaStore.cpp:451] [Space: 1, Part: 43] has existed!
+I20240718 06:11:26.595274 2848585 NebulaStore.cpp:451] [Space: 1, Part: 44] has existed!
+I20240718 06:11:26.595283 2848585 NebulaStore.cpp:451] [Space: 1, Part: 45] has existed!
+I20240718 06:11:26.595290 2848585 NebulaStore.cpp:451] [Space: 1, Part: 46] has existed!
+I20240718 06:11:26.595297 2848585 NebulaStore.cpp:451] [Space: 1, Part: 47] has existed!
+I20240718 06:11:26.595306 2848585 NebulaStore.cpp:451] [Space: 1, Part: 48] has existed!
+I20240718 06:11:26.595314 2848585 NebulaStore.cpp:451] [Space: 1, Part: 49] has existed!
+I20240718 06:11:26.595321 2848585 NebulaStore.cpp:451] [Space: 1, Part: 50] has existed!
+I20240718 06:11:26.595329 2848585 NebulaStore.cpp:451] [Space: 1, Part: 51] has existed!
+I20240718 06:11:26.595336 2848585 NebulaStore.cpp:451] [Space: 1, Part: 52] has existed!
+I20240718 06:11:26.595345 2848585 NebulaStore.cpp:451] [Space: 1, Part: 53] has existed!
+I20240718 06:11:26.595352 2848585 NebulaStore.cpp:451] [Space: 1, Part: 54] has existed!
+I20240718 06:11:26.595360 2848585 NebulaStore.cpp:451] [Space: 1, Part: 55] has existed!
+I20240718 06:11:26.595368 2848585 NebulaStore.cpp:451] [Space: 1, Part: 56] has existed!
+I20240718 06:11:26.595376 2848585 NebulaStore.cpp:451] [Space: 1, Part: 57] has existed!
+I20240718 06:11:26.595383 2848585 NebulaStore.cpp:451] [Space: 1, Part: 58] has existed!
+I20240718 06:11:26.595391 2848585 NebulaStore.cpp:451] [Space: 1, Part: 59] has existed!
+I20240718 06:11:26.595398 2848585 NebulaStore.cpp:451] [Space: 1, Part: 60] has existed!
+I20240718 06:11:26.595407 2848585 NebulaStore.cpp:451] [Space: 1, Part: 61] has existed!
+I20240718 06:11:26.595414 2848585 NebulaStore.cpp:451] [Space: 1, Part: 62] has existed!
+I20240718 06:11:26.595422 2848585 NebulaStore.cpp:451] [Space: 1, Part: 63] has existed!
+I20240718 06:11:26.595430 2848585 NebulaStore.cpp:451] [Space: 1, Part: 64] has existed!
+I20240718 06:11:26.595438 2848585 NebulaStore.cpp:451] [Space: 1, Part: 65] has existed!
+I20240718 06:11:26.595446 2848585 NebulaStore.cpp:451] [Space: 1, Part: 66] has existed!
+I20240718 06:11:26.595454 2848585 NebulaStore.cpp:451] [Space: 1, Part: 67] has existed!
+I20240718 06:11:26.595461 2848585 NebulaStore.cpp:451] [Space: 1, Part: 68] has existed!
+I20240718 06:11:26.595469 2848585 NebulaStore.cpp:451] [Space: 1, Part: 69] has existed!
+I20240718 06:11:26.595477 2848585 NebulaStore.cpp:451] [Space: 1, Part: 70] has existed!
+I20240718 06:11:26.595484 2848585 NebulaStore.cpp:451] [Space: 1, Part: 71] has existed!
+I20240718 06:11:26.595492 2848585 NebulaStore.cpp:451] [Space: 1, Part: 72] has existed!
+I20240718 06:11:26.595500 2848585 NebulaStore.cpp:451] [Space: 1, Part: 73] has existed!
+I20240718 06:11:26.595508 2848585 NebulaStore.cpp:451] [Space: 1, Part: 74] has existed!
+I20240718 06:11:26.595516 2848585 NebulaStore.cpp:451] [Space: 1, Part: 75] has existed!
+I20240718 06:11:26.595523 2848585 NebulaStore.cpp:451] [Space: 1, Part: 76] has existed!
+I20240718 06:11:26.595531 2848585 NebulaStore.cpp:451] [Space: 1, Part: 77] has existed!
+I20240718 06:11:26.595539 2848585 NebulaStore.cpp:451] [Space: 1, Part: 78] has existed!
+I20240718 06:11:26.595546 2848585 NebulaStore.cpp:451] [Space: 1, Part: 79] has existed!
+I20240718 06:11:26.595556 2848585 NebulaStore.cpp:451] [Space: 1, Part: 80] has existed!
+I20240718 06:11:26.595562 2848585 NebulaStore.cpp:451] [Space: 1, Part: 81] has existed!
+I20240718 06:11:26.595571 2848585 NebulaStore.cpp:451] [Space: 1, Part: 82] has existed!
+I20240718 06:11:26.595593 2848585 NebulaStore.cpp:451] [Space: 1, Part: 83] has existed!
+I20240718 06:11:26.595602 2848585 NebulaStore.cpp:451] [Space: 1, Part: 84] has existed!
+I20240718 06:11:26.595609 2848585 NebulaStore.cpp:451] [Space: 1, Part: 85] has existed!
+I20240718 06:11:26.595618 2848585 NebulaStore.cpp:451] [Space: 1, Part: 86] has existed!
+I20240718 06:11:26.595624 2848585 NebulaStore.cpp:451] [Space: 1, Part: 87] has existed!
+I20240718 06:11:26.595633 2848585 NebulaStore.cpp:451] [Space: 1, Part: 88] has existed!
+I20240718 06:11:26.595640 2848585 NebulaStore.cpp:451] [Space: 1, Part: 89] has existed!
+I20240718 06:11:26.595647 2848585 NebulaStore.cpp:451] [Space: 1, Part: 90] has existed!
+I20240718 06:11:26.595655 2848585 NebulaStore.cpp:451] [Space: 1, Part: 91] has existed!
+I20240718 06:11:26.595664 2848585 NebulaStore.cpp:451] [Space: 1, Part: 92] has existed!
+I20240718 06:11:26.595671 2848585 NebulaStore.cpp:451] [Space: 1, Part: 93] has existed!
+I20240718 06:11:26.595679 2848585 NebulaStore.cpp:451] [Space: 1, Part: 94] has existed!
+I20240718 06:11:26.595686 2848585 NebulaStore.cpp:451] [Space: 1, Part: 95] has existed!
+I20240718 06:11:26.595695 2848585 NebulaStore.cpp:451] [Space: 1, Part: 96] has existed!
+I20240718 06:11:26.595702 2848585 NebulaStore.cpp:451] [Space: 1, Part: 97] has existed!
+I20240718 06:11:26.595710 2848585 NebulaStore.cpp:451] [Space: 1, Part: 98] has existed!
+I20240718 06:11:26.595718 2848585 NebulaStore.cpp:451] [Space: 1, Part: 99] has existed!
+I20240718 06:11:26.595726 2848585 NebulaStore.cpp:451] [Space: 1, Part: 100] has existed!
+I20240718 06:11:26.595791 2848585 NebulaStore.cpp:75] Register handler...
+I20240718 06:11:26.595801 2848585 StorageServer.cpp:259] Init LogMonitor
+I20240718 06:11:26.595901 2848585 StorageServer.cpp:126] Starting Storage HTTP Service
+I20240718 06:11:26.596263 2848585 StorageServer.cpp:130] Http Thread Pool started
+I20240718 06:11:26.599411 2848922 WebService.cpp:124] Web service started on HTTP[19779]
+I20240718 06:11:26.599563 2848585 RocksEngineConfig.cpp:371] Emplace rocksdb option max_bytes_for_level_base=268435456
+I20240718 06:11:26.599582 2848585 RocksEngineConfig.cpp:371] Emplace rocksdb option max_write_buffer_number=4
+I20240718 06:11:26.599588 2848585 RocksEngineConfig.cpp:371] Emplace rocksdb option write_buffer_size=67108864
+I20240718 06:11:26.599732 2848585 RocksEngineConfig.cpp:371] Emplace rocksdb option block_size=8192
+I20240718 06:11:26.607859 2848869 EventListener.h:21] Rocksdb start compaction column family: default because of LevelL0FilesNum, status: OK, compacted 4 files into 0, base level is 0, output level is 1
+I20240718 06:11:26.607893 2848585 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/storage/nebula/0/data
+I20240718 06:11:26.608007 2848585 AdminTaskManager.cpp:22] max concurrent subtasks: 10
+I20240718 06:11:26.608088 2848585 AdminTaskManager.cpp:40] exit AdminTaskManager::init()
+I20240718 06:11:26.608160 2848943 AdminTaskManager.cpp:224] waiting for incoming task
+I20240718 06:11:26.608425 2848869 EventListener.h:35] Rocksdb compaction completed column family: default because of LevelL0FilesNum, status: OK, compacted 4 files into 4, base level is 0, output level is 1
+I20240718 06:11:26.618046 2848585 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240718 06:11:46.613420 2848836 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240718 06:11:46.613478 2848836 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 06:11:46.613490 2848836 MetaClient.cpp:3269] Load leader ok
+I20240718 06:52:00.994701 2848585 StorageDaemon.cpp:201] Signal 15(Terminated) received, stopping this server
+I20240718 06:52:00.996379 2848585 NebulaStore.cpp:343] Stop the raft service...
+I20240718 06:52:00.996407 2848585 RaftexService.cpp:67] Stopping the raftex service on port 9780
+I20240718 06:52:00.996487 2848585 RaftexService.cpp:77] All partitions have stopped
+I20240718 06:52:00.996506 2848585 NebulaStore.cpp:346] Stop kv engine...
+I20240718 06:52:01.007150 2848585 AdminTaskManager.cpp:176] enter AdminTaskManager::shutdown()
+I20240718 06:52:01.007225 2848944 AdminTaskManager.cpp:146] Unreported-Admin-Thread stopped
+I20240718 06:52:01.019687 2848943 AdminTaskManager.cpp:231] detect AdminTaskManager::shutdown()
+I20240718 06:52:01.019985 2848585 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/storage/nebula/0
+I20240718 06:52:01.021111 2848585 AdminTaskManager.cpp:193] exit AdminTaskManager::shutdown()
+I20240718 06:52:01.021211 2848585 NebulaStore.cpp:343] Stop the raft service...
+I20240718 06:52:01.021222 2848585 RaftexService.cpp:67] Stopping the raftex service on port 9780
+I20240718 06:52:01.021231 2848585 RaftexService.cpp:77] All partitions have stopped
+I20240718 06:52:01.021240 2848585 NebulaStore.cpp:346] Stop kv engine...
+I20240718 06:52:01.021273 2848585 NebulaStore.cpp:36] Cut off the relationship with meta client
+I20240718 06:52:01.022442 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 98] ~Part()
+I20240718 06:52:01.023041 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 94] ~Part()
+I20240718 06:52:01.023465 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 90] ~Part()
+I20240718 06:52:01.023811 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 86] ~Part()
+I20240718 06:52:01.024120 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 100] ~Part()
+I20240718 06:52:01.024406 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 82] ~Part()
+I20240718 06:52:01.024695 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 96] ~Part()
+I20240718 06:52:01.024971 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 78] ~Part()
+I20240718 06:52:01.025246 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 92] ~Part()
+I20240718 06:52:01.025525 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 99] ~Part()
+I20240718 06:52:01.025805 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 97] ~Part()
+I20240718 06:52:01.026083 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 74] ~Part()
+I20240718 06:52:01.026365 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 88] ~Part()
+I20240718 06:52:01.026648 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 95] ~Part()
+I20240718 06:52:01.026960 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 93] ~Part()
+I20240718 06:52:01.027256 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 70] ~Part()
+I20240718 06:52:01.027536 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 84] ~Part()
+I20240718 06:52:01.027829 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 91] ~Part()
+I20240718 06:52:01.028106 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 89] ~Part()
+I20240718 06:52:01.028380 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 66] ~Part()
+I20240718 06:52:01.028657 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 80] ~Part()
+I20240718 06:52:01.028934 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 87] ~Part()
+I20240718 06:52:01.029214 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 85] ~Part()
+I20240718 06:52:01.029505 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 62] ~Part()
+I20240718 06:52:01.029785 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 76] ~Part()
+I20240718 06:52:01.030063 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 83] ~Part()
+I20240718 06:52:01.030340 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 58] ~Part()
+I20240718 06:52:01.030613 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 81] ~Part()
+I20240718 06:52:01.030910 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 72] ~Part()
+I20240718 06:52:01.031227 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 79] ~Part()
+I20240718 06:52:01.031500 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 77] ~Part()
+I20240718 06:52:01.031775 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 75] ~Part()
+I20240718 06:52:01.032042 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 54] ~Part()
+I20240718 06:52:01.032310 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 68] ~Part()
+I20240718 06:52:01.032572 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 73] ~Part()
+I20240718 06:52:01.032840 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 71] ~Part()
+I20240718 06:52:01.033098 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 69] ~Part()
+I20240718 06:52:01.033375 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 67] ~Part()
+I20240718 06:52:01.033641 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 63] ~Part()
+I20240718 06:52:01.033905 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 65] ~Part()
+I20240718 06:52:01.034166 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 50] ~Part()
+I20240718 06:52:01.034426 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 25] ~Part()
+I20240718 06:52:01.034699 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 22] ~Part()
+I20240718 06:52:01.034971 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 27] ~Part()
+I20240718 06:52:01.035239 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 28] ~Part()
+I20240718 06:52:01.035493 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 21] ~Part()
+I20240718 06:52:01.035748 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 18] ~Part()
+I20240718 06:52:01.036001 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 23] ~Part()
+I20240718 06:52:01.036273 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 24] ~Part()
+I20240718 06:52:01.036550 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 17] ~Part()
+I20240718 06:52:01.037003 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 19] ~Part()
+I20240718 06:52:01.037509 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 20] ~Part()
+I20240718 06:52:01.038043 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 14] ~Part()
+I20240718 06:52:01.038499 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 15] ~Part()
+I20240718 06:52:01.038913 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 16] ~Part()
+I20240718 06:52:01.039268 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 1] ~Part()
+I20240718 06:52:01.039525 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 60] ~Part()
+I20240718 06:52:01.039781 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 31] ~Part()
+I20240718 06:52:01.040004 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 2] ~Part()
+I20240718 06:52:01.040212 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 61] ~Part()
+I20240718 06:52:01.040426 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 4] ~Part()
+I20240718 06:52:01.040648 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 32] ~Part()
+I20240718 06:52:01.040867 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 3] ~Part()
+I20240718 06:52:01.041111 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 5] ~Part()
+I20240718 06:52:01.041342 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 64] ~Part()
+I20240718 06:52:01.041572 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 6] ~Part()
+I20240718 06:52:01.041786 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 8] ~Part()
+I20240718 06:52:01.041998 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 7] ~Part()
+I20240718 06:52:01.042218 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 9] ~Part()
+I20240718 06:52:01.042436 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 10] ~Part()
+I20240718 06:52:01.042649 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 12] ~Part()
+I20240718 06:52:01.042876 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 11] ~Part()
+I20240718 06:52:01.043135 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 13] ~Part()
+I20240718 06:52:01.043373 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 29] ~Part()
+I20240718 06:52:01.043584 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 36] ~Part()
+I20240718 06:52:01.043803 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 35] ~Part()
+I20240718 06:52:01.044019 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 26] ~Part()
+I20240718 06:52:01.044240 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 33] ~Part()
+I20240718 06:52:01.044459 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 40] ~Part()
+I20240718 06:52:01.044687 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 39] ~Part()
+I20240718 06:52:01.044924 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 37] ~Part()
+I20240718 06:52:01.045164 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 44] ~Part()
+I20240718 06:52:01.045379 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 43] ~Part()
+I20240718 06:52:01.045596 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 30] ~Part()
+I20240718 06:52:01.045812 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 41] ~Part()
+I20240718 06:52:01.046036 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 48] ~Part()
+I20240718 06:52:01.046247 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 47] ~Part()
+I20240718 06:52:01.046479 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 34] ~Part()
+I20240718 06:52:01.046710 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 52] ~Part()
+I20240718 06:52:01.046948 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 38] ~Part()
+I20240718 06:52:01.047181 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 45] ~Part()
+I20240718 06:52:01.047406 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 51] ~Part()
+I20240718 06:52:01.047636 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 56] ~Part()
+I20240718 06:52:01.047865 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 42] ~Part()
+I20240718 06:52:01.048086 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 49] ~Part()
+I20240718 06:52:01.048324 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 55] ~Part()
+I20240718 06:52:01.048568 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 53] ~Part()
+I20240718 06:52:01.048804 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 46] ~Part()
+I20240718 06:52:01.049028 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 59] ~Part()
+I20240718 06:52:01.049245 2848585 Part.h:59] [Port: 9780, Space: 1, Part: 57] ~Part()
+I20240718 06:52:01.049463 2848585 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/storage/nebula/1
+I20240718 06:52:01.050000 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 13] ~Part()
+I20240718 06:52:01.050346 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 14] ~Part()
+I20240718 06:52:01.050676 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 3] ~Part()
+I20240718 06:52:01.050978 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 7] ~Part()
+I20240718 06:52:01.051259 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 2] ~Part()
+I20240718 06:52:01.051538 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 15] ~Part()
+I20240718 06:52:01.051790 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 1] ~Part()
+I20240718 06:52:01.052037 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 11] ~Part()
+I20240718 06:52:01.052296 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 4] ~Part()
+I20240718 06:52:01.052558 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 6] ~Part()
+I20240718 06:52:01.052822 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 8] ~Part()
+I20240718 06:52:01.053094 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 5] ~Part()
+I20240718 06:52:01.053368 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 12] ~Part()
+I20240718 06:52:01.053642 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 10] ~Part()
+I20240718 06:52:01.053893 2848585 Part.h:59] [Port: 9780, Space: 2, Part: 9] ~Part()
+I20240718 06:52:01.054153 2848585 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/storage/nebula/2
+I20240718 06:52:01.054965 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 8] ~Part()
+I20240718 06:52:01.055328 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 9] ~Part()
+I20240718 06:52:01.055743 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 10] ~Part()
+I20240718 06:52:01.056192 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 5] ~Part()
+I20240718 06:52:01.056571 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 4] ~Part()
+I20240718 06:52:01.056890 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 6] ~Part()
+I20240718 06:52:01.057364 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 1] ~Part()
+I20240718 06:52:01.057839 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 2] ~Part()
+I20240718 06:52:01.058267 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 7] ~Part()
+I20240718 06:52:01.058593 2848585 Part.h:59] [Port: 9780, Space: 3, Part: 3] ~Part()
+I20240718 06:52:01.058863 2848585 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/storage/nebula/3
+I20240718 06:52:01.059592 2848585 NebulaStore.cpp:44] ~NebulaStore()
+I20240718 06:52:01.062065 2848585 StorageDaemon.cpp:186] The storage Daemon stopped

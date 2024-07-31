@@ -1,0 +1,39 @@
+Log file created at: 2024/07/18 05:47:31
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240718 05:47:31.648861 2824918 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240718 05:47:31.652582 2824928 WebService.cpp:124] Web service started on HTTP[19669]
+I20240718 05:47:31.652659 2824918 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240718 05:47:31.652685 2824918 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240718 05:47:31.658859 2824918 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240718 05:47:31.658936 2824918 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240718 05:47:33.749843 2824918 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240718 05:47:33.749900 2824918 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 05:47:33.749913 2824918 MetaClient.cpp:3269] Load leader ok
+I20240718 05:47:33.752997 2824918 MetaClient.cpp:162] Register time task for heartbeat!
+I20240718 05:47:33.755115 2824918 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240718 05:47:33.755551 2824918 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240718 05:47:33.757006 2824918 Snowflake.cpp:17] WorkerId init success: 1
+I20240718 05:47:33.757499 2825221 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240718 05:47:44.458592 2825214 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240718 05:47:44.458648 2825214 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 05:47:44.458662 2825214 MetaClient.cpp:3269] Load leader ok
+I20240718 05:48:38.777419 2824983 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:38292
+I20240718 05:50:01.157577 2824976 SwitchSpaceExecutor.cpp:45] Graph switched to `my_demo', space id: 2
+E20240718 05:54:15.866818 2824978 QueryInstance.cpp:151] SyntaxError: syntax error near `List', query: CREATE TAG IF NOT EXISTS player(name string, age int, hobby List<string>);
+E20240718 06:00:16.784019 2824978 QueryInstance.cpp:151] SyntaxError: syntax error near `exit', query: exit;
+I20240718 06:00:35.278479 2825214 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240718 06:00:35.278532 2825214 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 06:00:35.278544 2825214 MetaClient.cpp:3269] Load leader ok
+I20240718 06:00:45.299991 2825214 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240718 06:00:45.300041 2825214 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 06:00:45.300055 2825214 MetaClient.cpp:3269] Load leader ok
+I20240718 06:02:52.537087 2824978 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:33864
+I20240718 06:03:38.087658 2824980 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+E20240718 06:03:47.769587 2824976 QueryInstance.cpp:151] SyntaxError: syntax error near `List', query: CREATE TAG IF NOT EXISTS player(name string, age int, hobbies List<string>);
+I20240718 06:09:11.500769 2824918 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240718 06:09:11.510284 2825227 Acceptor.cpp:527] Dropping all connections from Acceptor=0x7fe0c7a6e028 in thread 0x7fe0c4202280
+I20240718 06:09:11.512378 2825221 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240718 06:09:11.512825 2824918 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240718 06:09:11.512859 2824918 GraphServer.cpp:109] The graph server has been stopped

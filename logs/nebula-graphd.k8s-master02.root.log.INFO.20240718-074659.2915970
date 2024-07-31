@@ -1,0 +1,32 @@
+Log file created at: 2024/07/18 07:46:59
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240718 07:46:59.054445 2915970 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240718 07:46:59.059929 2915976 WebService.cpp:124] Web service started on HTTP[19669]
+I20240718 07:46:59.060007 2915970 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240718 07:46:59.060031 2915970 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240718 07:46:59.065359 2915970 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240718 07:46:59.065424 2915970 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240718 07:47:01.183351 2915970 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240718 07:47:01.183401 2915970 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 07:47:01.183414 2915970 MetaClient.cpp:3269] Load leader ok
+I20240718 07:47:01.186406 2915970 MetaClient.cpp:162] Register time task for heartbeat!
+I20240718 07:47:01.187789 2915970 GraphSessionManager.cpp:337] Total of 4 sessions are loaded
+I20240718 07:47:01.188256 2915970 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240718 07:47:01.189615 2915970 Snowflake.cpp:17] WorkerId init success: 1
+I20240718 07:47:01.190016 2916273 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240718 07:47:02.758203 2916014 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:58050
+I20240718 07:47:07.548517 2916014 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240718 07:47:22.076399 2916267 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240718 07:47:22.076455 2916267 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240718 07:47:22.076469 2916267 MetaClient.cpp:3269] Load leader ok
+I20240718 15:47:25.326349 2916269 GraphSessionManager.cpp:209] ClientSession 1721283116468803 has expired
+I20240718 15:47:25.326432 2916269 GraphSessionManager.cpp:209] ClientSession 1721285690208877 has expired
+I20240718 15:47:25.326444 2916269 GraphSessionManager.cpp:209] ClientSession 1721286284281217 has expired
+I20240718 15:47:25.326452 2916269 GraphSessionManager.cpp:209] ClientSession 1721282572677302 has expired
+I20240718 15:47:25.326462 2916269 GraphSessionManager.cpp:209] ClientSession 1721288822759400 has expired
+I20240719 11:11:13.469045 2915970 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240719 11:11:13.485203 2916273 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240719 11:11:13.485649 2915970 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240719 11:11:13.485687 2915970 GraphServer.cpp:109] The graph server has been stopped

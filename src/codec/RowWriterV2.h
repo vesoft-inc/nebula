@@ -263,6 +263,9 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Duration& v);
 
   WriteResult write(ssize_t index, const Geography& v);
+  // NEW
+  WriteResult write(ssize_t index, const List& list);
+  WriteResult write(ssize_t index, const Set& set);
 };
 
 }  // namespace nebula

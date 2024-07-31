@@ -1,0 +1,5 @@
+Log file created at: 2024/07/24 03:17:47
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240724 03:17:47.570313 2239882 QueryInstance.cpp:151] SemanticError: Missing yield clause., query: FETCH PROP ON test_flo "test_flo100";

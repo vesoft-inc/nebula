@@ -1,0 +1,36 @@
+Log file created at: 2024/07/20 07:53:48
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240720 07:53:48.242452 4139457 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240720 07:53:48.246423 4139463 WebService.cpp:124] Web service started on HTTP[19669]
+I20240720 07:53:48.246564 4139457 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240720 07:53:48.246610 4139457 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240720 07:53:48.252951 4139457 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240720 07:53:48.252992 4139457 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240720 07:53:50.360882 4139457 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 0 space
+I20240720 07:53:50.360942 4139457 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:53:50.360956 4139457 MetaClient.cpp:3269] Load leader ok
+I20240720 07:53:50.364053 4139457 MetaClient.cpp:162] Register time task for heartbeat!
+I20240720 07:53:50.365540 4139457 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240720 07:53:50.365939 4139457 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240720 07:53:50.367565 4139457 Snowflake.cpp:17] WorkerId init success: 1
+I20240720 07:53:50.367990 4139759 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240720 07:53:52.028079 4139514 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:60140
+I20240720 07:53:57.354600 4139512 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240720 07:54:01.132912 4139752 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 07:54:01.132963 4139752 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 07:54:01.132975 4139752 MetaClient.cpp:3269] Load leader ok
+E20240720 07:55:03.544335 4139743 StorageClientBase-inl.h:224] Request to "211.65.193.244":9779 time out: TTransportException: Timed out
+E20240720 07:55:03.544900 4139510 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient with timeout: TTransportException: Timed out
+E20240720 07:55:03.545023 4139510 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:55:03.545221 4139510 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.hobby;
+E20240720 07:55:39.559682 4139754 StorageClientBase-inl.h:227] Request to "211.65.193.244":9779 failed: AsyncSocketException: recv() failed (peer=211.65.193.244:9779, local=211.65.193.244:46984), type = Internal error, errno = 104 (Connection reset by peer): Connection reset by peer
+E20240720 07:55:39.559820 4139512 StorageClientBase-inl.h:143] There some RPC errors: RPC failure in StorageClient: AsyncSocketException: recv() failed (peer=211.65.193.244:9779, local=211.65.193.244:46984), type = Internal error, errno = 104 (Connection reset by peer): Connection reset by peer
+E20240720 07:55:39.559922 4139512 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_RPC_FAILURE, part 6
+E20240720 07:55:39.560060 4139512 QueryInstance.cpp:151] Storage Error: RPC failure, probably timeout., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
+I20240720 08:03:24.659577 4139457 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240720 08:03:24.669669 4139762 Acceptor.cpp:527] Dropping all connections from Acceptor=0x7f4ae3e6c428 in thread 0x7f4ae2202280
+I20240720 08:03:24.671542 4139759 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240720 08:03:24.671911 4139457 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240720 08:03:24.671942 4139457 GraphServer.cpp:109] The graph server has been stopped

@@ -1,0 +1,35 @@
+Log file created at: 2024/07/23 14:53:25
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240723 14:53:25.388952 1984482 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240723 14:53:25.393041 1984496 WebService.cpp:124] Web service started on HTTP[19669]
+I20240723 14:53:25.393157 1984482 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240723 14:53:25.393186 1984482 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240723 14:53:25.397547 1984482 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240723 14:53:25.397578 1984482 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240723 14:53:27.537357 1984482 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 0 space
+I20240723 14:53:27.537416 1984482 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240723 14:53:27.537428 1984482 MetaClient.cpp:3269] Load leader ok
+I20240723 14:53:27.540642 1984482 MetaClient.cpp:162] Register time task for heartbeat!
+I20240723 14:53:27.542055 1984482 GraphSessionManager.cpp:337] Total of 1 sessions are loaded
+I20240723 14:53:27.542460 1984482 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240723 14:53:27.543996 1984482 Snowflake.cpp:17] WorkerId init success: 1
+I20240723 14:53:27.544489 1984770 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240723 14:53:29.115680 1984547 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:39264
+I20240723 14:53:32.457007 1984535 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240723 14:53:47.938156 1984765 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240723 14:53:47.938215 1984765 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240723 14:53:47.938228 1984765 MetaClient.cpp:3269] Load leader ok
+E20240723 14:56:21.136101 1984537 StorageAccessExecutor.h:47] InsertVerticesExecutor failed, error E_DATA_TYPE_MISMATCH, part 10
+E20240723 14:56:21.136701 1984534 QueryInstance.cpp:151] Storage Error: The data type does not meet the requirements. Use the correct type of data., query: INSERT VERTEX p2(name, age, ids) VALUES "p2101":("Q", 1, ["1", 2, 3]);
+E20240723 14:56:27.795207 1984541 StorageAccessExecutor.h:47] InsertVerticesExecutor failed, error E_DATA_TYPE_MISMATCH, part 10
+E20240723 14:56:27.795393 1984541 QueryInstance.cpp:151] Storage Error: The data type does not meet the requirements. Use the correct type of data., query: INSERT VERTEX p2(name, age, ids) VALUES "p2101":("Q", 1, [1.2, 2.2, 3.3]);
+E20240723 14:59:16.193569 1984535 QueryInstance.cpp:151] SyntaxError: syntax error near `;', query: FETCH PROP ON p3 "p3100" YIELD;
+E20240723 14:59:27.403569 1984535 QueryInstance.cpp:151] SyntaxError: syntax error near `* ;', query: FETCH PROP ON p3 "p3100" * ;
+I20240723 22:53:51.924324 1984766 GraphSessionManager.cpp:209] ClientSession 1721745144615288 has expired
+I20240723 23:00:52.352473 1984766 GraphSessionManager.cpp:209] ClientSession 1721746409116958 has expired
+I20240724 03:00:10.059917 1984482 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240724 03:00:10.075942 1984770 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240724 03:00:10.076385 1984482 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240724 03:00:10.076426 1984482 GraphServer.cpp:109] The graph server has been stopped

@@ -1,0 +1,19 @@
+Log file created at: 2024/07/20 15:23:01
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240720 15:23:01.924382 198680 MutateValidator.cpp:85] Unknown column `ids' in schema
+E20240720 15:23:01.924829 198680 QueryInstance.cpp:151] SemanticError: Unknown column `ids' in schema, query: INSERT VERTEX player(name, age, ids) VALUES "p2100":("jimmy", 27, [1, 2, 3]);
+E20240720 15:23:42.431569 198685 MutateValidator.cpp:85] Unknown column `ids' in schema
+E20240720 15:23:42.431649 198685 QueryInstance.cpp:151] SemanticError: Unknown column `ids' in schema, query: INSERT VERTEX player(name, age, ids) VALUES "p2100":("jimmy", 27, [1, 2, 3]);
+E20240720 15:25:27.358772 198680 QueryInstance.cpp:151] SemanticError: mismatched tag `p1', query: FETCH PROP ON player "p1100" YIELD p1.name,p1.age;
+E20240720 15:29:01.531818 198684 QueryInstance.cpp:151] SemanticError: mismatched tag `p1', query: FETCH PROP ON player "p1100" YIELD p1.name,p1.age;
+E20240720 15:29:29.605918 198687 QueryInstance.cpp:151] SemanticError: Missing yield clause., query: FETCH PROP ON p1 "p1100";
+E20240720 15:30:09.213517 198684 QueryInstance.cpp:151] SyntaxError: syntax error near `*', query: FETCH PROP ON p1 "p1100" YIELD *
+E20240720 15:31:35.620076 198689 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_TAG_PROP_NOT_FOUND, part 10
+E20240720 15:31:35.620317 198686 QueryInstance.cpp:151] Storage Error: Tag prop not found., query: FETCH PROP ON p1 "p1100" YIELD p1.name, p1.age, p1.hobby;
+E20240720 15:39:48.112623 198685 QueryInstance.cpp:151] SyntaxError: syntax error near `<"A", "b', query: INSERT VERTEX t1_(name, age, hobby) VALUES "t1_100":("TD", 11, <"A", "b">);
+E20240720 15:39:48.117978 198689 QueryInstance.cpp:151] SyntaxError: syntax error near `<1, 2, 3', query: INSERT VERTEX t2_(name, age, ids) VALUES "t2_100":("J", 12, <1, 2, 3>);
+E20240720 15:39:57.089505 198687 QueryInstance.cpp:151] SyntaxError: syntax error near `<<1, 2, ', query: INSERT VERTEX t10_(name, age, ids) VALUES "t10_100":("M", 13, <<1, 2, 3>, <4, 5>, <6>>);
+E20240720 15:41:22.684794 198685 StorageAccessExecutor.h:47] InsertVerticesExecutor failed, error E_DATA_TYPE_MISMATCH, part 6
+E20240720 15:41:22.684916 198684 QueryInstance.cpp:151] Storage Error: The data type does not meet the requirements. Use the correct type of data., query: INSERT VERTEX t1_(name, age, hobby) VALUES "t1_100":("TD", 11, {"A", "b"});

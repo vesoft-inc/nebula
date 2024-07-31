@@ -1,0 +1,27 @@
+Log file created at: 2024/07/24 05:41:34
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240724 05:41:34.207964 2306938 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240724 05:41:34.212009 2306944 WebService.cpp:124] Web service started on HTTP[19669]
+I20240724 05:41:34.212109 2306938 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240724 05:41:34.212149 2306938 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240724 05:41:34.219009 2306938 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240724 05:41:34.219064 2306938 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240724 05:41:36.529520 2306938 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240724 05:41:36.529572 2306938 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240724 05:41:36.529585 2306938 MetaClient.cpp:3269] Load leader ok
+I20240724 05:41:36.532341 2306938 MetaClient.cpp:162] Register time task for heartbeat!
+I20240724 05:41:36.533401 2306938 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240724 05:41:36.533823 2306938 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240724 05:41:36.535331 2306938 Snowflake.cpp:17] WorkerId init success: 1
+I20240724 05:41:36.535718 2307295 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240724 05:41:37.355839 2306996 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:59952
+I20240724 05:41:45.200865 2306993 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240724 05:41:47.274238 2307290 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240724 05:41:47.274292 2307290 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240724 05:41:47.274305 2307290 MetaClient.cpp:3269] Load leader ok
+I20240724 05:50:05.581151 2306938 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240724 05:50:05.590366 2307295 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240724 05:50:05.590732 2306938 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240724 05:50:05.590762 2306938 GraphServer.cpp:109] The graph server has been stopped

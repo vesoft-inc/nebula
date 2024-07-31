@@ -1,0 +1,54 @@
+Log file created at: 2024/07/13 12:52:42
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240713 12:52:42.290874 213230 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240713 12:52:42.294697 213244 WebService.cpp:124] Web service started on HTTP[19669]
+I20240713 12:52:42.294829 213230 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240713 12:52:42.294876 213230 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240713 12:52:42.300767 213230 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240713 12:52:42.300817 213230 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240713 12:52:44.360471 213230 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 0 space
+I20240713 12:52:44.360528 213230 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 12:52:44.360540 213230 MetaClient.cpp:3269] Load leader ok
+I20240713 12:52:44.363559 213230 MetaClient.cpp:162] Register time task for heartbeat!
+I20240713 12:52:44.365025 213230 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240713 12:52:44.365406 213230 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240713 12:52:44.366911 213230 Snowflake.cpp:17] WorkerId init success: 1
+I20240713 12:52:44.367343 213509 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240713 12:53:16.387835 213293 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:38308
+E20240713 12:55:05.632165 213295 QueryInstance.cpp:151] SyntaxError: syntax error near `;', query: SHOW CREATE SPACE;
+W20240713 12:55:20.322853 213295 SpaceExecutor.cpp:250] Show create space `my_demo' failed: SpaceNotFound: Space not existed!
+E20240713 12:55:20.323050 213293 QueryInstance.cpp:151] SpaceNotFound: Space not existed!, query: SHOW CREATE SPACE my_demo;
+E20240713 13:24:19.154264 213295 QueryInstance.cpp:151] SyntaxError: syntax error near `SPACE', query: SHOW SPACE;
+I20240713 13:25:37.150334 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 0 space
+I20240713 13:25:37.150419 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:25:37.150434 213502 MetaClient.cpp:3269] Load leader ok
+I20240713 13:25:57.178135 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 1 space
+I20240713 13:25:57.178189 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:25:57.178202 213502 MetaClient.cpp:3269] Load leader ok
+I20240713 13:26:17.205780 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240713 13:26:17.205835 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:26:17.205848 213502 MetaClient.cpp:3269] Load leader ok
+E20240713 13:26:52.163050 213292 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: CREATE TAG IF NOT EXISTS player(name string COMMENT '姓名', age int DEFAULT 20 COMMENT '年龄') COMMENT='人物';
+E20240713 13:26:52.168366 213293 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: CREATE TAG IF NOT EXISTS team(name string COMMENT '团队名') COMMENT='团队';
+E20240713 13:26:52.168996 213292 QueryInstance.cpp:151] SyntaxError: syntax error near `————————————————', query: ————————————————
+E20240713 13:26:52.178006 213292 QueryInstance.cpp:151] SyntaxError: syntax error near `版权声明', query:                             版权声明：本文为博主原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接和本声明。
+E20240713 13:26:52.178625 213295 QueryInstance.cpp:151] StatementEmpty: , query:                         
+I20240713 13:32:11.186410 213295 SwitchSpaceExecutor.cpp:45] Graph switched to `my_demo', space id: 2
+I20240713 13:32:41.685045 213294 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:54266
+I20240713 13:33:20.181488 213292 SwitchSpaceExecutor.cpp:45] Graph switched to `basketballplayer', space id: 1
+E20240713 13:33:33.216939 213295 Serializer.h:43] Thrift serialization is only defined for structs and unions, not containers thereof. Attemping to serialize a value of type `nebula::Value`.
+I20240713 13:33:37.676126 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240713 13:33:37.676177 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:33:37.676189 213502 MetaClient.cpp:3269] Load leader ok
+I20240713 13:33:47.697271 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240713 13:33:47.697327 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:33:47.697340 213502 MetaClient.cpp:3269] Load leader ok
+I20240713 13:34:17.741622 213502 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 2 space
+I20240713 13:34:17.741677 213502 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240713 13:34:17.741690 213502 MetaClient.cpp:3269] Load leader ok
+I20240713 14:58:52.651440 213230 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240713 14:58:52.664100 213509 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240713 14:58:52.664512 213230 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240713 14:58:52.664554 213230 GraphServer.cpp:109] The graph server has been stopped

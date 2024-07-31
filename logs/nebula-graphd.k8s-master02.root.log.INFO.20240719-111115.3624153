@@ -1,0 +1,33 @@
+Log file created at: 2024/07/19 11:11:15
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240719 11:11:15.671905 3624153 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240719 11:11:15.675781 3624167 WebService.cpp:124] Web service started on HTTP[19669]
+I20240719 11:11:15.675858 3624153 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240719 11:11:15.675871 3624153 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240719 11:11:15.682667 3624153 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240719 11:11:15.682729 3624153 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240719 11:11:17.786397 3624153 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240719 11:11:17.786458 3624153 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240719 11:11:17.786471 3624153 MetaClient.cpp:3269] Load leader ok
+I20240719 11:11:17.789312 3624153 MetaClient.cpp:162] Register time task for heartbeat!
+I20240719 11:11:17.790752 3624153 GraphSessionManager.cpp:337] Total of 0 sessions are loaded
+I20240719 11:11:17.791172 3624153 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240719 11:11:17.792685 3624153 Snowflake.cpp:17] WorkerId init success: 1
+I20240719 11:11:17.793071 3624470 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+I20240719 11:11:28.202370 3624465 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240719 11:11:28.202445 3624465 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240719 11:11:28.202466 3624465 MetaClient.cpp:3269] Load leader ok
+I20240719 11:12:41.605631 3624218 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:52876
+I20240719 11:12:52.085909 3624218 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+I20240719 11:14:18.386925 3624465 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240719 11:14:18.386976 3624465 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240719 11:14:18.386988 3624465 MetaClient.cpp:3269] Load leader ok
+E20240719 11:34:32.905319 3624212 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_TAG_PROP_NOT_FOUND, part 7
+E20240719 11:34:32.905898 3624214 QueryInstance.cpp:151] Storage Error: Tag prop not found., query: FETCH PROP ON player "player100" YIELD player.hobby;
+I20240719 11:46:26.607792 3624153 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240719 11:46:26.617535 3624472 Acceptor.cpp:527] Dropping all connections from Acceptor=0x7ff23cc6c428 in thread 0x7ff23b002280
+I20240719 11:46:26.619158 3624470 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240719 11:46:26.619518 3624153 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240719 11:46:26.619545 3624153 GraphServer.cpp:109] The graph server has been stopped

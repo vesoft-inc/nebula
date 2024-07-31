@@ -1,0 +1,69 @@
+Log file created at: 2024/07/18 06:52:04
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240718 06:52:04.728902 2875419 MetaDaemon.cpp:137] localhost = "127.0.0.1":9559
+I20240718 06:52:04.734501 2875419 NebulaStore.cpp:48] Start the raft service...
+I20240718 06:52:04.735239 2875419 NebulaSnapshotManager.cpp:25] Send snapshot is rate limited to 10485760 for each part by default
+I20240718 06:52:04.835356 2875419 RaftexService.cpp:46] Start raft service on 9560
+I20240718 06:52:04.835490 2875419 NebulaStore.cpp:82] Scan the local path, and init the spaces_
+I20240718 06:52:04.835551 2875419 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/meta/nebula/0"
+I20240718 06:52:04.835583 2875419 NebulaStore.cpp:292] Init data from partManager for "127.0.0.1":9559
+I20240718 06:52:04.835599 2875419 NebulaStore.cpp:417] Create data space 0
+I20240718 06:52:04.852412 2875609 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/meta/nebula/0/data
+I20240718 06:52:04.886487 2875419 NebulaStore.cpp:480] Space 0, part 0 has been added, asLearner 0
+I20240718 06:52:04.886512 2875419 NebulaStore.cpp:75] Register handler...
+I20240718 06:52:04.886516 2875419 MetaDaemonInit.cpp:106] Waiting for the leader elected...
+I20240718 06:52:04.886520 2875419 MetaDaemonInit.cpp:118] Leader has not been elected, sleep 1s
+I20240718 06:52:05.886775 2875419 MetaDaemonInit.cpp:153] Get meta version is 4
+I20240718 06:52:05.886866 2875419 MetaDaemonInit.cpp:169] Nebula store init succeeded, clusterId 8324381300924682177
+I20240718 06:52:05.886878 2875419 MetaDaemon.cpp:150] Start http service
+I20240718 06:52:05.887265 2875419 MetaDaemonInit.cpp:226] Starting Meta HTTP Service
+I20240718 06:52:05.890805 2875692 WebService.cpp:124] Web service started on HTTP[19559]
+I20240718 06:52:05.890862 2875419 MetaDaemonInit.cpp:192] Check root user
+I20240718 06:52:05.891028 2875419 RootUserMan.h:35] God user exists
+I20240718 06:52:05.898605 2875419 MetaDaemon.cpp:193] The meta daemon start on "127.0.0.1":9559
+I20240718 06:52:05.898813 2875419 JobManager.cpp:64] JobManager initialized
+I20240718 06:52:05.898880 2875698 JobManager.cpp:150] JobManager::scheduleThread enter
+I20240718 06:52:06.809149 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:06.809247 2875743 HBProcessor.cpp:89] Update host "211.65.193.244":9669 dir info, root path: /home/spark/nebula, data path size: 0
+I20240718 06:52:06.845324 2875743 SessionManagerProcessor.cpp:150] resp session size: 2
+I20240718 06:52:06.856695 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:52:06.856770 2875743 HBProcessor.cpp:89] Update host "211.65.193.244":9779 dir info, root path: /home/spark/nebula, data path size: 1
+I20240718 06:52:06.863795 2875744 SessionManagerProcessor.cpp:150] resp session size: 2
+I20240718 06:52:06.921882 2875743 SessionManagerProcessor.cpp:150] resp session size: 2
+I20240718 06:52:17.188074 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:17.267652 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:52:27.199350 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:27.202430 2875743 SessionManagerProcessor.cpp:150] resp session size: 3
+I20240718 06:52:27.279515 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:52:27.282251 2875743 SessionManagerProcessor.cpp:150] resp session size: 3
+I20240718 06:52:37.223042 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:37.303536 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:52:47.228050 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:47.314999 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:52:57.235379 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:52:57.326400 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:53:07.246304 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240718 06:53:07.337775 2875743 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240718 06:53:13.896235 2875419 MetaDaemon.cpp:230] Signal 15(Terminated) received, stopping this server
+I20240718 06:53:13.908504 2875419 JobManager.cpp:138] JobManager::shutDown() begin
+I20240718 06:53:13.908664 2875698 JobManager.cpp:155] Detect shutdown called, exit
+I20240718 06:53:13.908710 2875698 JobDescription.cpp:113] Loading job description failed, error: E_JOB_NOT_IN_SPACE
+I20240718 06:53:13.908751 2875698 JobManager.cpp:175] Load an invalid job from space 0 jodId 0
+I20240718 06:53:13.908834 2875419 JobManager.cpp:146] JobManager::shutDown() end
+I20240718 06:53:13.908844 2875419 NebulaStore.cpp:343] Stop the raft service...
+I20240718 06:53:13.908849 2875419 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240718 06:53:13.908856 2875419 RaftexService.cpp:77] All partitions have stopped
+I20240718 06:53:13.908864 2875419 NebulaStore.cpp:346] Stop kv engine...
+I20240718 06:53:13.909102 2875419 NebulaStore.cpp:343] Stop the raft service...
+I20240718 06:53:13.909108 2875419 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240718 06:53:13.909112 2875419 RaftexService.cpp:77] All partitions have stopped
+I20240718 06:53:13.909116 2875419 NebulaStore.cpp:346] Stop kv engine...
+I20240718 06:53:13.909125 2875419 NebulaStore.cpp:36] Cut off the relationship with meta client
+I20240718 06:53:13.909739 2875419 Part.h:59] [Port: 9560, Space: 0, Part: 0] ~Part()
+I20240718 06:53:13.910234 2875419 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/meta/nebula/0
+I20240718 06:53:13.910876 2875419 NebulaStore.cpp:44] ~NebulaStore()
+I20240718 06:53:13.911007 2875419 MetaDaemon.cpp:215] The meta Daemon stopped
+I20240718 06:53:13.912567 2875419 JobManager.cpp:138] JobManager::shutDown() begin
+I20240718 06:53:13.912586 2875419 JobManager.cpp:141] JobManager not running, exit

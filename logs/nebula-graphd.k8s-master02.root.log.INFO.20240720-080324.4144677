@@ -1,0 +1,31 @@
+Log file created at: 2024/07/20 08:03:24
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240720 08:03:24.746452 4144677 GraphDaemon.cpp:122] Starting Graph HTTP Service
+I20240720 08:03:24.750305 4144684 WebService.cpp:124] Web service started on HTTP[19669]
+I20240720 08:03:24.750449 4144677 GraphDaemon.cpp:136] Number of networking IO threads: 40
+I20240720 08:03:24.750495 4144677 GraphDaemon.cpp:145] Number of worker threads: 40
+I20240720 08:03:24.755090 4144677 MetaClient.cpp:80] Create meta client to "127.0.0.1":9559
+I20240720 08:03:24.755118 4144677 MetaClient.cpp:81] root path: /home/spark/nebula, data path size: 0
+I20240720 08:03:26.880787 4144677 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 0 space
+I20240720 08:03:26.880851 4144677 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 08:03:26.880864 4144677 MetaClient.cpp:3269] Load leader ok
+I20240720 08:03:26.884186 4144677 MetaClient.cpp:162] Register time task for heartbeat!
+I20240720 08:03:26.886019 4144677 GraphSessionManager.cpp:337] Total of 1 sessions are loaded
+I20240720 08:03:26.886422 4144677 MemoryUtils.cpp:171] MemoryTracker set static ratio: 0.8
+I20240720 08:03:26.888092 4144677 Snowflake.cpp:17] WorkerId init success: 1
+I20240720 08:03:26.888545 4144961 GraphServer.cpp:63] Starting nebula-graphd on 211.65.193.244:9669
+E20240720 08:03:28.446051 4144727 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
+E20240720 08:03:36.867380 4144727 QueryInstance.cpp:151] SemanticError: Space was not chosen., query: FETCH PROP ON student "student100" YIELD student.name, student.age;
+I20240720 08:03:37.602881 4144954 MetaClient.cpp:3263] Load leader of "211.65.193.244":9779 in 3 space
+I20240720 08:03:37.602948 4144954 MetaClient.cpp:3263] Load leader of "127.0.0.1":9779 in 0 space
+I20240720 08:03:37.602964 4144954 MetaClient.cpp:3269] Load leader ok
+I20240720 08:03:40.837749 4144734 GraphService.cpp:77] Authenticating user root from [::ffff:211.65.193.244]:47034
+I20240720 08:03:43.165107 4144734 SwitchSpaceExecutor.cpp:45] Graph switched to `test_space', space id: 3
+E20240720 08:13:08.299860 4144728 QueryInstance.cpp:151] SyntaxError: syntax error near `EXIT', query: EXIT
+E20240720 08:13:10.807497 4144729 QueryInstance.cpp:151] SyntaxError: syntax error near `EXIT', query: EXIT
+I20240720 08:13:21.597251 4144677 GraphDaemon.cpp:176] Signal 15(Terminated) received, stopping this server
+I20240720 08:13:21.608767 4144961 GraphServer.cpp:74] nebula-graphd on 211.65.193.244:9669 has been stopped
+I20240720 08:13:21.609149 4144677 GraphDaemon.cpp:161] The graph Daemon stopped
+I20240720 08:13:21.609176 4144677 GraphServer.cpp:109] The graph server has been stopped

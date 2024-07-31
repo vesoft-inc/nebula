@@ -1,0 +1,348 @@
+Log file created at: 2024/07/21 03:40:37
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20240721 03:40:37.725557 469638 MetaDaemon.cpp:137] localhost = "127.0.0.1":9559
+I20240721 03:40:37.731649 469638 NebulaStore.cpp:48] Start the raft service...
+I20240721 03:40:37.751108 469638 NebulaSnapshotManager.cpp:25] Send snapshot is rate limited to 10485760 for each part by default
+I20240721 03:40:37.843431 469638 RaftexService.cpp:46] Start raft service on 9560
+I20240721 03:40:37.843868 469638 NebulaStore.cpp:82] Scan the local path, and init the spaces_
+I20240721 03:40:37.843945 469638 NebulaStore.cpp:90] Scan path "/home/spark/nebula/data/meta/nebula/0"
+I20240721 03:40:37.843979 469638 NebulaStore.cpp:292] Init data from partManager for "127.0.0.1":9559
+I20240721 03:40:37.843994 469638 NebulaStore.cpp:417] Create data space 0
+I20240721 03:40:37.897275 469828 RocksEngine.cpp:107] open rocksdb on /home/spark/nebula/data/meta/nebula/0/data
+I20240721 03:40:38.145793 469638 NebulaStore.cpp:480] Space 0, part 0 has been added, asLearner 0
+I20240721 03:40:38.145818 469638 NebulaStore.cpp:75] Register handler...
+I20240721 03:40:38.145823 469638 MetaDaemonInit.cpp:106] Waiting for the leader elected...
+I20240721 03:40:38.145825 469638 MetaDaemonInit.cpp:118] Leader has not been elected, sleep 1s
+I20240721 03:40:39.146063 469638 MetaDaemonInit.cpp:153] Get meta version is 4
+I20240721 03:40:39.146137 469638 MetaDaemonInit.cpp:169] Nebula store init succeeded, clusterId 8324381300924682177
+I20240721 03:40:39.146150 469638 MetaDaemon.cpp:150] Start http service
+I20240721 03:40:39.160627 469638 MetaDaemonInit.cpp:226] Starting Meta HTTP Service
+I20240721 03:40:39.164760 469869 WebService.cpp:124] Web service started on HTTP[19559]
+I20240721 03:40:39.164884 469638 MetaDaemonInit.cpp:192] Check root user
+I20240721 03:40:39.165020 469638 RootUserMan.h:35] God user exists
+I20240721 03:40:39.171692 469638 MetaDaemon.cpp:193] The meta daemon start on "127.0.0.1":9559
+I20240721 03:40:39.171811 469638 JobManager.cpp:64] JobManager initialized
+I20240721 03:40:39.171847 469875 JobManager.cpp:150] JobManager::scheduleThread enter
+I20240721 03:40:39.833653 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:40:39.833889 469921 HBProcessor.cpp:89] Update host "211.65.193.244":9669 dir info, root path: /home/spark/nebula, data path size: 0
+I20240721 03:40:39.905587 469921 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240721 03:40:39.957789 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957852 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957868 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957880 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957890 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957901 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957912 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957923 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957933 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957943 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957954 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957964 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957974 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957985 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.957995 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958021 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958032 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958043 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958053 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958063 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958073 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958084 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958096 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958106 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958117 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958127 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958137 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958148 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958158 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958168 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958178 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958189 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958199 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958209 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958221 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958231 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958241 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958251 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958262 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958272 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958282 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958293 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958303 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958313 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958359 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958370 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958380 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958391 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958401 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958411 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958422 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958432 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958443 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958472 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958483 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958500 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958511 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958521 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958532 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958542 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958554 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958563 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958573 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958585 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958595 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958606 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958616 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958626 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958636 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958647 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958657 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958667 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958678 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958688 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958698 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958709 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958719 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958729 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958740 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958750 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958761 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958771 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958782 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958791 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958802 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958813 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958823 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958834 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958844 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958854 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958865 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958875 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958909 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958923 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958938 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958956 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958966 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958976 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958987 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.958997 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959008 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959018 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959029 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959040 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959050 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959060 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959071 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959081 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959092 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959108 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959120 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959131 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959141 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959151 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959162 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959173 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959184 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959200 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959211 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959223 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959233 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959244 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959254 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959265 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.959275 469921 ListHostsProcessor.cpp:249] skip inactive host: "211.65.193.244":9779
+I20240721 03:40:39.964569 469921 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240721 03:40:39.988740 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:40:39.988837 469921 HBProcessor.cpp:89] Update host "211.65.193.244":9779 dir info, root path: /home/spark/nebula, data path size: 1
+I20240721 03:40:40.028980 469921 SessionManagerProcessor.cpp:150] resp session size: 0
+I20240721 03:40:50.424723 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:40:50.527916 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:40:50.531297 469921 SessionManagerProcessor.cpp:150] resp session size: 1
+I20240721 03:41:00.437094 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:00.439955 469921 SessionManagerProcessor.cpp:150] resp session size: 1
+I20240721 03:41:00.551333 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:41:10.461819 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:10.559378 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:41:20.473278 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:20.570318 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:41:30.484730 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:30.581257 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:41:40.496075 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:40.592181 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:41:50.507354 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:41:50.603118 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:00.518787 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:00.613960 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:10.530251 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:10.624861 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:20.541754 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:20.635665 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:30.553046 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:30.646502 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:40.564405 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:40.657438 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:42:50.575953 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:42:50.668391 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:00.587478 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:00.679273 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:10.598918 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:10.683354 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:20.610365 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:20.694223 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:30.622082 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:30.703611 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:40.633846 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:40.711315 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:43:50.645350 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:43:50.722168 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:00.657055 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:00.733083 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:10.668617 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:10.744017 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:20.680025 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:20.751363 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:30.691532 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:30.762306 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:40.703104 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:40.773204 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:44:50.714488 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:44:50.784104 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:00.726056 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:00.795008 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:10.737555 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:10.805887 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:20.747524 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:20.816905 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:30.759004 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:30.827894 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:40.770409 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:40.838799 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:45:50.781921 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:45:50.844098 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:00.793402 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:00.855037 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:10.804983 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:10.865973 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:20.816538 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:20.870056 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:30.827955 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:30.881011 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:40.837792 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:40.891321 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:46:50.849346 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:46:50.896063 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:00.860875 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:00.906956 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:10.867174 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:10.917901 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:20.878233 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:20.928795 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:30.884846 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:30.939620 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:40.895498 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:40.947340 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:47:50.906929 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:47:50.958209 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:00.918386 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:00.967247 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:10.930357 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:10.971361 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:20.942270 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:20.982275 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:30.953953 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:30.993245 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:40.965744 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:41.004144 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:48:50.977485 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:48:51.015045 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:00.983556 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:01.026296 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:10.995131 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:11.037256 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:21.006743 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:21.048116 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:31.018249 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:31.059028 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:41.029765 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:41.069914 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:49:51.041309 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:49:51.081182 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:01.052937 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:01.092104 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:11.058255 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:11.102936 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:21.067625 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:21.111353 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:31.079223 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:31.119251 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:41.090590 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:41.129961 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:50:51.101961 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:50:51.140784 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:01.113441 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:01.151628 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:11.117532 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:11.162532 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:21.129127 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:21.173508 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:31.140663 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:31.184337 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:41.152063 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:41.195204 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:51:51.163451 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:51:51.206240 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:01.174976 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:01.211627 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:11.186578 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:11.215371 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:21.198416 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:21.226372 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:31.209993 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:31.237335 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:41.221469 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:41.248203 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:52:51.232962 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:52:51.259171 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:01.239585 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:01.270084 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:11.251116 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:11.280952 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:21.262660 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:21.291882 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:31.271433 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:31.299235 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:41.279376 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:41.307271 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:53:51.287509 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:53:51.315236 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:54:01.299153 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:54:01.326184 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:54:11.310763 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:54:11.337139 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:54:21.319042 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:54:21.348106 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:54:31.330513 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9779, role = STORAGE
+I20240721 03:54:31.355311 469921 HBProcessor.cpp:33] Receive heartbeat from "211.65.193.244":9669, role = GRAPH
+I20240721 03:54:31.414054 469638 MetaDaemon.cpp:230] Signal 15(Terminated) received, stopping this server
+I20240721 03:54:31.431079 469638 JobManager.cpp:138] JobManager::shutDown() begin
+I20240721 03:54:31.433837 469875 JobManager.cpp:155] Detect shutdown called, exit
+I20240721 03:54:31.433952 469875 JobDescription.cpp:113] Loading job description failed, error: E_JOB_NOT_IN_SPACE
+I20240721 03:54:31.434046 469875 JobManager.cpp:175] Load an invalid job from space 0 jodId 0
+I20240721 03:54:31.434193 469638 JobManager.cpp:146] JobManager::shutDown() end
+I20240721 03:54:31.434206 469638 NebulaStore.cpp:343] Stop the raft service...
+I20240721 03:54:31.434211 469638 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240721 03:54:31.434219 469638 RaftexService.cpp:77] All partitions have stopped
+I20240721 03:54:31.434228 469638 NebulaStore.cpp:346] Stop kv engine...
+I20240721 03:54:31.434504 469638 NebulaStore.cpp:343] Stop the raft service...
+I20240721 03:54:31.434511 469638 RaftexService.cpp:67] Stopping the raftex service on port 9560
+I20240721 03:54:31.434515 469638 RaftexService.cpp:77] All partitions have stopped
+I20240721 03:54:31.434520 469638 NebulaStore.cpp:346] Stop kv engine...
+I20240721 03:54:31.434528 469638 NebulaStore.cpp:36] Cut off the relationship with meta client
+I20240721 03:54:31.435261 469638 Part.h:59] [Port: 9560, Space: 0, Part: 0] ~Part()
+I20240721 03:54:31.437983 469638 RocksEngine.h:247] Release rocksdb on /home/spark/nebula/data/meta/nebula/0
+I20240721 03:54:31.439011 469638 NebulaStore.cpp:44] ~NebulaStore()
+I20240721 03:54:31.439143 469638 MetaDaemon.cpp:215] The meta Daemon stopped
+I20240721 03:54:31.671554 469638 JobManager.cpp:138] JobManager::shutDown() begin
+I20240721 03:54:31.671609 469638 JobManager.cpp:141] JobManager not running, exit

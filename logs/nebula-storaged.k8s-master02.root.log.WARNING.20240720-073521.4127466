@@ -1,0 +1,5 @@
+Log file created at: 2024/07/20 07:35:21
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+F20240720 07:35:21.731976 4127808 RowReaderV2.cpp:139] Check failed: strOffset < data_.size() (1631724123 vs. 52) 

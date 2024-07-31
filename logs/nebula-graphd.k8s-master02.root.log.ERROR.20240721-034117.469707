@@ -1,0 +1,6 @@
+Log file created at: 2024/07/21 03:41:17
+Running on machine: k8s-master02
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20240721 03:41:17.248463 469763 StorageAccessExecutor.h:47] InsertVerticesExecutor failed, error E_DATA_TYPE_MISMATCH, part 3
+E20240721 03:41:17.248883 469762 QueryInstance.cpp:151] Storage Error: The data type does not meet the requirements. Use the correct type of data., query: INSERT VERTEX t2_(name, age, ids) VALUES "t2_100":("J", 12, {1, 2, 3});
