@@ -1,7 +1,0 @@
-Log file created at: 2024/07/13 13:25:31
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240713 13:25:31.543454 213435 CreateSpaceProcessor.cpp:198] Get host "127.0.0.1":9779 failed.
-E20240713 13:25:47.341128 213435 CreateSpaceProcessor.cpp:198] Get host "127.0.0.1":9779 failed.
-E20240713 13:33:33.217752 213435 Serializer.h:43] Thrift serialization is only defined for structs and unions, not containers thereof. Attemping to deserialize a value of type `nebula::Value`.

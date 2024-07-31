@@ -1,6 +1,0 @@
-Log file created at: 2024/07/19 11:34:32
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240719 11:34:32.905319 3624212 StorageAccessExecutor.h:47] GetVerticesExecutor failed, error E_TAG_PROP_NOT_FOUND, part 7
-E20240719 11:34:32.905898 3624214 QueryInstance.cpp:151] Storage Error: Tag prop not found., query: FETCH PROP ON player "player100" YIELD player.hobby;

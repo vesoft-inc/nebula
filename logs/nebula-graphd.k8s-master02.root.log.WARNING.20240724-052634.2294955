@@ -1,8 +1,0 @@
-Log file created at: 2024/07/24 05:26:34
-Running on machine: k8s-master02
-Running duration (h:mm:ss): 0:00:00
-Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
-E20240724 05:26:34.365273 2295010 QueryInstance.cpp:151] SyntaxError: syntax error near `<string>', query: INSERT VERTEX t1_(name, age, hobby) VALUES "t1_100":("TD", 11, Set<string>{"A", "b"});
-E20240724 05:28:29.740918 2295011 QueryInstance.cpp:151] SyntaxError: syntax error near `ETCH', query: ETCH PROP ON t1_ "t1_100" YIELD t1_.name,t1_.age,t1_.ids;
-E20240724 05:28:44.676156 2295011 QueryInstance.cpp:151] SemanticError: `t1_.ids', not found the property `ids'., query: FETCH PROP ON t1_ "t1_100" YIELD t1_.name,t1_.age,t1_.ids;
-E20240724 05:32:12.956836 2295012 QueryInstance.cpp:151] SyntaxError: syntax error near `);', query: CREATE TAG IF NOT EXISTS test_Set(hobby Set);

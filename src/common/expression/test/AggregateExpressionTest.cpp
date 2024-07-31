@@ -223,17 +223,6 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
     TEST_AGG(MAX, true, isConst, vals2_, expected2);
   }
   {
-    /*
-    const std::unordered_map<std::string, Value> expected1 = {
-        {"a", Value(List({1, 3}))}, {"b", Value(List({4}))}, {"c", Value(List({3, 8, 5, 8}))}};
-    TEST_AGG(COLLECT, false, abs, vals1_, expected1);
-    TEST_AGG(COLLECT, false, isConst, vals2_, expected1);
-
-    const std::unordered_map<std::string, Value> expected2 = {
-        {"a", List({1, 3})}, {"b", List({4})}, {"c", List({3, 8, 5})}};
-    TEST_AGG(COLLECT, true, abs, vals1_, expected2);
-    TEST_AGG(COLLECT, true, isConst, vals2_, expected2);
-  }*/
   // Modify the testing of List type
     const std::unordered_map<std::string, nebula::Value> expected1 = {
         {"a", nebula::Value(nebula::List::createFromList(std::vector<int64_t>{1, 3}))},
@@ -252,16 +241,6 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
     TEST_AGG(COLLECT, true, isConst, vals2_, expected2);
   }
   {
-    /*  
-    const std::unordered_map<std::string, Value> expected1 = {
-        {"b", Set({4})}, {"a", Set({1, 3})}, {"c", Set({3, 8, 5})}};
-    TEST_AGG(COLLECT_SET, false, isConst, vals2_, expected1);
-
-    const std::unordered_map<std::string, Value> expected2 = {
-        {"b", Set({4})}, {"a", Set({1, 3})}, {"c", Set({3, 8, 5})}};
-    TEST_AGG(COLLECT_SET, true, abs, vals1_, expected2);
-    TEST_AGG(COLLECT_SET, true, isConst, vals2_, expected2);
-    */
   // Modify the testing of Set type
     const std::unordered_map<std::string, nebula::Value> expected1_set = {
         {"a", nebula::Value(nebula::Set::createFromSet(std::vector<int64_t>{1, 3}))},

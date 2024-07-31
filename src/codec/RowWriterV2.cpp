@@ -236,7 +236,7 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
     // NEW
     case Value::Type::SET:
       return write(index, val.getSet());
-     // [[fallthrough]]; 显式掉落注释
+     // [[fallthrough]];
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -830,7 +830,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   std::string wkb = v.asWKB();
   return write(index, folly::StringPiece(wkb), true);
 }
-// NEW 新增的write方法，用于处理List类型的序列化
+// NEW write List
 WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
@@ -839,11 +839,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
     outOfSpaceStr_ = true;
   }
 
-  // 获取 list 的大小
   int32_t listSize = list.size();
-  // 获取当前 buffer 大小作为 list 的偏移量
   int32_t listOffset = buf_.size();
-  // 序列化 List 的大小
   buf_.append(reinterpret_cast<char*>(&listSize), sizeof(int32_t));
 
   for (const auto& item : list.values) {
@@ -854,9 +851,7 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
         }
         std::string str = item.getStr();
         int32_t strLen = str.size();
-        // 序列化字符串的长度
         buf_.append(reinterpret_cast<char*>(&strLen), sizeof(int32_t));
-        // 序列化字符串的值
         buf_.append(str.data(), strLen);
         break;
       }
@@ -865,7 +860,6 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
           return WriteResult::TYPE_MISMATCH;
         }
         int32_t intVal = item.getInt();
-        // 序列化整数
         buf_.append(reinterpret_cast<char*>(&intVal), sizeof(int32_t));
         break;
       }
@@ -874,7 +868,6 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
               return WriteResult::TYPE_MISMATCH;
           }
           float floatVal = item.getFloat();
-          // 序列化浮点数
           buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
           break;
       }
