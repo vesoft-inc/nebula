@@ -234,6 +234,8 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
     case Value::Type::DURATION:
       return write(index, val.getDuration());
     // NEW
+    case Value::Type::LIST:
+      return write(index, val.getList());
     case Value::Type::SET:
       return write(index, val.getSet());
      // [[fallthrough]];

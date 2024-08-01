@@ -263,6 +263,7 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
 
     const std::unordered_map<std::string, Value> expected2 = {
         {"a", 2.8722813232690143}, {"b", 0.0}, {"c", 1.0}};
+    TEST_AGG(STD, true, abs, vals7_, expected2);
   }
   {
     const std::unordered_map<std::string, Value> expected1 = {{"a", 1}, {"b", 4}, {"c", 0}};

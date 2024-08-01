@@ -58,7 +58,7 @@ enum PropertyType {
     // Geo spatial
     GEOGRAPHY = 31,
     
-    // 新增的列表类型
+    // NEW List
     LIST_STRING = 32,
     LIST_INT = 33,
     LIST_FLOAT = 34,
@@ -66,7 +66,7 @@ enum PropertyType {
     LIST_LIST_INT = 36,
     LIST_LIST_FLOAT = 37,
 
-    // 新增的集合类型
+    // NEW Set
     SET_STRING = 38,
     SET_INT = 39,
     SET_FLOAT = 40,
