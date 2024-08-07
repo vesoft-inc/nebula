@@ -31,7 +31,7 @@ Feature: Test kill queries from same service
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100001 STEPS";
       """
     Then the result should be, in order:
-      | sid   | eid   | dur   |
+      | sid        | eid   | dur   |
       | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "test_permission" and password "test":
       """
@@ -85,7 +85,7 @@ Feature: Test kill queries from same service
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100002 STEPS";
       """
     Then the result should be, in order:
-      | sid   | eid   | dur   |
+      | sid        | eid   | dur   |
       | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "test_permission" and password "test":
       """
