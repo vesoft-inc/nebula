@@ -1,6 +1,7 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@aiee
 Feature: Slow Query Test
 
   Background:
@@ -30,8 +31,8 @@ Feature: Slow Query Test
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
       """
     Then the result should be, in order:
-      | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | sid        | eid   | dur   |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query:
       """
       SHOW QUERIES

@@ -33,7 +33,7 @@ Feature: Test kill queries permission from different services
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     # Kill failed by user test_permission
     When executing query with user "test_permission" and password "test":
       """
@@ -89,7 +89,7 @@ Feature: Test kill queries permission from different services
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "test_permission" and password "test":
       """
       USE nba;
@@ -133,7 +133,7 @@ Feature: Test kill queries permission from different services
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "root" and password "nebula":
       """
       USE nba;

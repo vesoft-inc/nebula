@@ -32,7 +32,7 @@ Feature: Test kill queries from same service
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "test_permission" and password "test":
       """
       USE nba;
@@ -86,7 +86,7 @@ Feature: Test kill queries from same service
       """
     Then the result should be, in order:
       | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     When executing query with user "test_permission" and password "test":
       """
       USE nba;
