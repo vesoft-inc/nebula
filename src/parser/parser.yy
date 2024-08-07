@@ -3886,7 +3886,7 @@ kill_session_sentence
     ;
 
 query_unique_identifier_value
-    : legal_integer {
+    : unary_integer {
         $$ = ConstantExpression::make(qctx->objPool(), $1);
     }
     | input_prop_expression {
@@ -3896,7 +3896,7 @@ query_unique_identifier_value
 
 query_unique_identifier
     : KW_PLAN ASSIGN query_unique_identifier_value {
-        $$ = new QueryUniqueIdentifier($3, ConstantExpression::make(qctx->objPool(), Value(-1)));
+        $$ = new QueryUniqueIdentifier($3, ConstantExpression::make(qctx->objPool(), Value(0)));
     }
     | KW_SESSION ASSIGN query_unique_identifier_value COMMA KW_PLAN ASSIGN query_unique_identifier_value {
         $$ = new QueryUniqueIdentifier($7, $3);
