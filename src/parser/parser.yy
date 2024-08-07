@@ -3497,7 +3497,7 @@ show_sentence
     | KW_SHOW KW_LOCAL KW_SESSIONS {
         $$ = new ShowSessionsSentence(true);
     }
-    | KW_SHOW KW_SESSION legal_integer {
+    | KW_SHOW KW_SESSION unary_integer {
         $$ = new ShowSessionsSentence($3);
     }
     | KW_SHOW KW_META KW_LEADER {
