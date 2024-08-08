@@ -79,7 +79,7 @@ Status KillQueryExecutor::verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQ
 
     auto sessionId = sessionVal.getInt();
     auto epId = epVal.getInt();
-    if (sessionId == session->id() || sessionId < 0) {
+    if (sessionId == session->id() || sessionId == 0) {
       if (!session->findQuery(epId)) {
         return Status::Error("ExecutionPlanId[%ld] does not exist in current Session.", epId);
       }
