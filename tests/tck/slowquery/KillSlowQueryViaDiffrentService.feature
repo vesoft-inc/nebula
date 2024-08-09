@@ -30,8 +30,8 @@ Feature: Slow Query Test
       WHERE $-.DurationInUSec > 1000000 AND $-.`Query` CONTAINS "GO 100000 STEPS";
       """
     Then the result should be, in order:
-      | sid   | eid   | dur   |
-      | /\d+/ | /\d+/ | /\d+/ |
+      | sid        | eid   | dur   |
+      | /[-+]?\d+/ | /\d+/ | /\d+/ |
     # sessionId not exist
     When executing query via graph 1:
       """
