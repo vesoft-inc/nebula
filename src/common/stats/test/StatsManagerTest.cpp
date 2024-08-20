@@ -163,6 +163,36 @@ TEST(StatsManager, ReadAllTest) {
   EXPECT_FALSE(counterExists(stats2, "stat04{space=test}.p95.5", val));
 }
 
+TEST(StatsManager, ConcurrentCountWithLabelTest) {
+  auto statId = StatsManager::registerStats("stat06", "RATE, sum");
+  std::vector<std::thread> threads;
+  for (int i = 0; i < 257; i++) {
+    std::string spaceName = folly::stringPrintf("space%d", i);
+    threads.emplace_back([&statId, &spaceName]() {
+      auto counterId = StatsManager::counterWithLabels(statId, {{"space", spaceName}});
+    });
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
+}
+
+TEST(StatsManager, ConcurrentHistoWithLabelTest) {
+  auto statId = StatsManager::registerHisto("stat07", 1, 1, 100, "sum, p95, p99");
+  std::vector<std::thread> threads;
+  for (int i = 0; i < 257; i++) {
+    std::string spaceName = folly::stringPrintf("space%d", i);
+    threads.emplace_back([&statId, &spaceName]() {
+      auto histoId = StatsManager::histoWithLabels(statId, {{"space", spaceName}});
+    });
+  }
+
+  for (auto& t : threads) {
+    t.join();
+  }
+}
+
 }  // namespace stats
 }  // namespace nebula
 
