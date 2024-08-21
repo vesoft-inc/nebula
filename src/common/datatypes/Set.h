@@ -24,7 +24,7 @@ struct Set {
 
   // Template Static Factory Method Declaration
   template <typename T>
-  static Set createFromSet(const std::vector<T>& items);
+  static Set createFromVector(const std::vector<T>& items);
 
   void clear() {
     values.clear();
@@ -75,7 +75,7 @@ inline std::ostream& operator<<(std::ostream& os, const Set& s) {
 
 // define using template static factory method
 template <typename T>
-inline Set Set::createFromSet(const std::vector<T>& items) {
+inline Set Set::createFromVector(const std::vector<T>& items) {
     std::unordered_set<Value> values;
     for (const auto& item : items) {
         values.emplace(Value(item));

@@ -1207,3 +1207,46 @@ Feature: Update string vid of vertex and edge
       | like.likeness | like.new_field |
       | 1.0           | "111"          |
     Then drop the used space
+
+  Scenario: Update player(name string, age int, hobby List< string >, ids List< int >, score List< float >)'s hobby with new interest
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      """
+    And wait 3 seconds  # Wait for the index to be created
+
+    # Insert vertex data for player100
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":(
+          "Tim Duncan", 42, ["Basketball", "Swimming"], [100, 528], [50.0, 22.0]
+      );
+      """
+    Then the execution should be successful
+
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = hobby + ["Coding"],
+          ids = ids + [37564],
+          score = score + [85.0]
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                                | Ids             | Score                  |
+      | "Tim Duncan" | 42  | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
+
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order:
+      | player.name  | player.age | player.hobby                         | player.ids        | player.score          |
+      | "Tim Duncan" | 42         | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0]    |

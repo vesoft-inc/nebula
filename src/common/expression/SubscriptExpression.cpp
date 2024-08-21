@@ -40,7 +40,13 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
       if (!rvalue.isStr()) {
         break;
       }
-      result_ = lvalue.getMap().at(rvalue.getStr());
+      auto iter = lvalue.getMap().kvs.find(rvalue.getStr());
+      if (iter == lvalue.getMap().kvs.end()) {
+        LOG(ERROR) << "Tag not found in map: " << rvalue.getStr();
+        result_ = Value::kNullValue;
+        break;
+      }
+      result_ = iter->second;
       break;
     }
     if (lvalue.isDataSet()) {
@@ -59,22 +65,32 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
     }
     if (lvalue.isVertex()) {
       if (!rvalue.isStr()) {
+        result_ = Value::kNullBadType;
         break;
       }
       if (rvalue.getStr() == kVid) {
         result_ = lvalue.getVertex().vid;
         return result_;
       }
+      bool tagFound = false;
       for (auto& tag : lvalue.getVertex().tags) {
         auto iter = tag.props.find(rvalue.getStr());
         if (iter != tag.props.end()) {
-          return iter->second;
+          result_ = iter->second;
+          tagFound = true;
+          return result_;
         }
       }
-      return Value::kNullValue;
+      if (!tagFound) {
+        LOG(ERROR) << "Tag not found in vertex: " << rvalue.getStr()
+                   << " for vertex: " << lvalue.getVertex().vid;
+      }
+      result_ = Value::kNullValue;
+      break;
     }
     if (lvalue.isEdge()) {
       if (!rvalue.isStr()) {
+        result_ = Value::kNullBadType;
         break;
       }
       DCHECK(!rvalue.getStr().empty());
@@ -90,11 +106,17 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
         }
         return result_;
       }
-      auto iter = lvalue.getEdge().props.find(rvalue.getStr());
-      if (iter == lvalue.getEdge().props.end()) {
-        return Value::kNullValue;
+      auto& props = lvalue.getEdge().props;
+      auto iter = props.find(rvalue.getStr());
+      if (iter == props.end()) {
+        LOG(ERROR) << "Tag not found in edge: " << rvalue.getStr();
+        result_ = Value::kNullValue;
+        break;
+      result_ = props.at(rvalue.getStr());
+      break;
       }
-      return iter->second;
+      result_ = iter->second;
+      break;
     }
     result_ = Value::kNullBadType;
   } while (false);

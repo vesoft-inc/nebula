@@ -3226,6 +3226,10 @@ update_item
         delete $1;
         delete $3;
     }
+    //NEW
+    | subscript_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
     ;
 
 update_vertex_sentence

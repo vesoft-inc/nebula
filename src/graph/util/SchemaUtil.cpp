@@ -305,7 +305,6 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
       return Value::Type::GEOGRAPHY;
     case nebula::cpp2::PropertyType::DURATION:
       return Value::Type::DURATION;
-    // NEW
     case nebula::cpp2::PropertyType::LIST_STRING:
     case nebula::cpp2::PropertyType::LIST_INT:
     case nebula::cpp2::PropertyType::LIST_FLOAT:
@@ -313,7 +312,6 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
     case nebula::cpp2::PropertyType::LIST_LIST_INT:
     case nebula::cpp2::PropertyType::LIST_LIST_FLOAT:
       return Value::Type::LIST;
-    // NEW
     case nebula::cpp2::PropertyType::SET_STRING:
     case nebula::cpp2::PropertyType::SET_INT:
     case nebula::cpp2::PropertyType::SET_FLOAT:

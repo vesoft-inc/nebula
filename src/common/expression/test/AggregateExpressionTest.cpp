@@ -225,17 +225,17 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
   {
   // Modify the testing of List type
     const std::unordered_map<std::string, nebula::Value> expected1 = {
-        {"a", nebula::Value(nebula::List::createFromList(std::vector<int64_t>{1, 3}))},
-        {"b", nebula::Value(nebula::List::createFromList(std::vector<int64_t>{4}))},
-        {"c", nebula::Value(nebula::List::createFromList(std::vector<int64_t>{3, 8, 5, 8}))}
+        {"a", nebula::Value(nebula::List::createFromVector(std::vector<int64_t>{1, 3}))},
+        {"b", nebula::Value(nebula::List::createFromVector(std::vector<int64_t>{4}))},
+        {"c", nebula::Value(nebula::List::createFromVector(std::vector<int64_t>{3, 8, 5, 8}))}
     };
     TEST_AGG(COLLECT, false, abs, vals1_, expected1);
     TEST_AGG(COLLECT, false, isConst, vals2_, expected1);
 
     const std::unordered_map<std::string, nebula::Value> expected2 = {
-        {"a", nebula::List::createFromList(std::vector<int64_t>{1, 3})},
-        {"b", nebula::List::createFromList(std::vector<int64_t>{4})},
-        {"c", nebula::List::createFromList(std::vector<int64_t>{3, 8, 5})}
+        {"a", nebula::List::createFromVector(std::vector<int64_t>{1, 3})},
+        {"b", nebula::List::createFromVector(std::vector<int64_t>{4})},
+        {"c", nebula::List::createFromVector(std::vector<int64_t>{3, 8, 5})}
     };
     TEST_AGG(COLLECT, true, abs, vals1_, expected2);
     TEST_AGG(COLLECT, true, isConst, vals2_, expected2);
@@ -243,15 +243,15 @@ TEST_F(AggregateExpressionTest, AggregateExpression) {
   {
   // Modify the testing of Set type
     const std::unordered_map<std::string, nebula::Value> expected1_set = {
-        {"a", nebula::Value(nebula::Set::createFromSet(std::vector<int64_t>{1, 3}))},
-        {"b", nebula::Value(nebula::Set::createFromSet(std::vector<int64_t>{4}))},
-        {"c", nebula::Value(nebula::Set::createFromSet(std::vector<int64_t>{3, 8, 5}))}
+        {"a", nebula::Value(nebula::Set::createFromVector(std::vector<int64_t>{1, 3}))},
+        {"b", nebula::Value(nebula::Set::createFromVector(std::vector<int64_t>{4}))},
+        {"c", nebula::Value(nebula::Set::createFromVector(std::vector<int64_t>{3, 8, 5}))}
     };
 
     const std::unordered_map<std::string, nebula::Value> expected2_set = {
-        {"a", nebula::Set::createFromSet(std::vector<int64_t>{1, 3})},
-        {"b", nebula::Set::createFromSet(std::vector<int64_t>{4})},
-        {"c", nebula::Set::createFromSet(std::vector<int64_t>{3, 8, 5})}
+        {"a", nebula::Set::createFromVector(std::vector<int64_t>{1, 3})},
+        {"b", nebula::Set::createFromVector(std::vector<int64_t>{4})},
+        {"c", nebula::Set::createFromVector(std::vector<int64_t>{3, 8, 5})}
     };
     TEST_AGG(COLLECT_SET, true, abs, vals1_, expected2_set);
     TEST_AGG(COLLECT_SET, true, isConst, vals2_, expected2_set);

@@ -687,3 +687,205 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX invalid_vertex VALUES "non_existed_tag":()
       """
     Then a SemanticError should be raised at runtime: No schema found
+  
+  Scenario: insert player(name string, age int, hobby List< string >, ids List< int >, score List< float >)
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      CREATE TAG playerWithDefault(
+          name string DEFAULT "",
+          age int DEFAULT 18, isMarried bool DEFAULT false,
+          BMI double DEFAULT 18.5, department string DEFAULT "engineering",
+          birthday timestamp DEFAULT timestamp("2020-01-10T10:00:00"),
+          number int DEFAULT 0
+      );
+      CREATE TAG school(name string, create_time timestamp);
+      CREATE EDGE schoolmate(likeness int, nickname string);
+      CREATE EDGE schoolmateWithDefault(likeness int DEFAULT 80);
+      CREATE EDGE study(start_time timestamp, end_time timestamp);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    
+    # Insert the initial vertex with specific properties
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming", "Reading"], [1, 2, 3], [10.5, 20.5, 30.5]);
+      """
+    Then the execution should be successful
+    
+    # Insert and update the player vertex to modify only the lists
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Gaming"], [4, 5, 6], [40.5, 50.5, 60.5]);
+      """
+    Then the execution should be successful
+    
+    # Verify that the latest data matches the expected state
+    When executing query:
+      """
+      FETCH PROP ON * "player100" YIELD vertex as node;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node                                                                                                           |
+      | ("player100":player{name:"Tim Duncan", age:42, hobby:["Basketball", "Gaming"], ids:[4, 5, 6], score:[40.5, 50.5, 60.5]}) |
+
+    # Handle the edge cases by inserting incorrect types and handling errors
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2",["Swimming", "Painting"], [10, 11, 12], [100.5, 110.5, 120.5]);
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
+    
+    # Insert edges and fetch results
+    When try to execute query:
+      """
+      INSERT EDGE schoolmate(likeness, nickname) VALUES "player100"->"player200":(85, "Lily");
+      INSERT EDGE schoolmate(likeness, nickname) VALUES "player200"->"player300":("87", "");
+      INSERT EDGE schoolmate(likeness) VALUES "player200"->"player300":("hello", "87");
+      INSERT EDGE schoolmate(likeness, HH) VALUES "player200"->"player300":(88, "");
+      INSERT EDGE study(start_time, end_time) VALUES "player200"->"school1":(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3);
+      """
+    Then the execution should be successful
+    
+    # Insert vertices with default properties
+    When try to execute query:
+      """
+      INSERT VERTEX playerWithDefault() VALUES "player400":();
+      INSERT VERTEX playerWithDefault(age, isMarried, BMI) VALUES "player100":(18, false, 19.5);
+      INSERT VERTEX playerWithDefault(name) VALUES "player100":("Tim Duncan");
+      INSERT VERTEX playerWithDefault(name, age) VALUES "player100":("Tim Duncan", 20);
+      INSERT VERTEX playerWithDefault(name, BMI, number) VALUES "player200":("Laura", 21.5, 20190901008), "player300":("Amber", 22.5, 20180901003);
+      """
+    Then the execution should be successful
+
+    # Fetch properties and validate results
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | player.name   | player.age | player.hobby                            | player.ids | player.score         |
+      | "Tim Duncan"  | 42         | ["Basketball", "Gaming"]                | [4, 5, 6]  | [40.5, 50.5, 60.5]   |  
+    
+    When executing query:
+      """
+      FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;
+      """
+    Then the execution should be successful
+    
+    # Insert and query multi-tagged vertices and edges
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player200":("Laura", 8, ["Basketball", "Reading"], [7, 8, 9], [70.5, 80.5, 90.5]);
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player300":("Amber", 9, ["Swimming", "Painting"], [10, 11, 12], [100.5, 110.5, 120.5]);
+      INSERT EDGE schoolmateWithDefault() VALUES "player100"->"player200":(), "player100"->"player300":();
+      GO FROM "player100" OVER schoolmateWithDefault YIELD $^.player.name, schoolmateWithDefault.likeness, $$.player.name;
+      """
+    Then the execution should be successful
+
+  Scenario: insert player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >)
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      CREATE TAG playerWithDefault(
+          name string DEFAULT "",
+          age int DEFAULT 18, isMarried bool DEFAULT false,
+          BMI double DEFAULT 18.5, department string DEFAULT "engineering",
+          birthday timestamp DEFAULT timestamp("2020-01-10T10:00:00"),
+          number int DEFAULT 0
+      );
+      CREATE TAG school(name string, create_time timestamp);
+      CREATE EDGE schoolmate(likeness int, nickname string);
+      CREATE EDGE schoolmateWithDefault(likeness int DEFAULT 80);
+      CREATE EDGE study(start_time timestamp, end_time timestamp);
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    
+    # Insert the initial vertex with specific properties and duplicates
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2, 3}, {10.5, 20.5, 10.5, 30.5});
+      """
+    Then the execution should be successful
+    
+    # Insert and update the player vertex to modify only the sets
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Gaming"}, {4, 5, 6, 6}, {40.5, 50.5, 60.5});
+      """
+    Then the execution should be successful
+    
+    # Verify that the latest data matches the expected state
+    When executing query:
+      """
+      FETCH PROP ON * "player100" YIELD vertex as node;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node                                                                                                           |
+      | ("player100":player{name:"Tim Duncan", age:42, hobby:{"Basketball", "Gaming"}, ids:{4, 5, 6}, score:{40.5, 50.5, 60.5}}) |
+
+    # Handle the edge cases by inserting incorrect types and handling errors
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2", {"Basketball", "Gaming"}, {4, 5, 6, 6}, {40.5, 50.5, 60.5});
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
+
+    # Insert edges and fetch results
+    When try to execute query:
+      """
+      INSERT EDGE schoolmate(likeness, nickname) VALUES "player100"->"player200":(85, "Lily");
+      INSERT EDGE schoolmate(likeness, nickname) VALUES "player200"->"player300":("87", "");
+      INSERT EDGE schoolmate(likeness) VALUES "player200"->"player300":("hello", "87");
+      INSERT EDGE schoolmate(likeness) VALUES "player200"->"player300":(88, "");
+      INSERT EDGE study(start_time, end_time) VALUES "player200"->"school1":(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3);
+      """
+    Then the execution should be successful
+    
+    # Insert vertices with default properties
+    When try to execute query:
+      """
+      INSERT VERTEX playerWithDefault() VALUES "player400":();
+      INSERT VERTEX playerWithDefault(age, isMarried, BMI) VALUES "player100":(18, false, 19.5);
+      INSERT VERTEX playerWithDefault(name) VALUES "player100":("Tim Duncan");
+      INSERT VERTEX playerWithDefault(name, age) VALUES "player100":("Tim Duncan", 20);
+      INSERT VERTEX playerWithDefault(name, BMI, number) VALUES "player200":("Laura", 21.5, 20190901008), "player300":("Amber", 22.5, 20180901003);
+      """
+    Then the execution should be successful
+
+    # Fetch properties and validate results
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | player.name   | player.age | player.hobby                    | player.ids | player.score         |
+      | "Tim Duncan"  | 42         | {"Basketball", "Gaming"}        | {4, 5, 6}  | {40.5, 50.5, 60.5}   |
+      
+    When executing query:
+      """
+      FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;
+      """
+    Then the execution should be successful
+    
+    # Insert and query multi-tagged vertices and edges
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player200":("Laura", 8, {"Basketball", "Reading"}, {7, 8, 9}, {70.5, 80.5, 90.5});
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player300":("Amber", 9, {"Swimming", "Painting"}, {10, 11, 12}, {100.5, 110.5, 120.5});
+      INSERT EDGE schoolmateWithDefault() VALUES "player100"->"player200":(), "player100"->"player300":();
+      GO FROM "player100" OVER schoolmateWithDefault YIELD $^.player.name, schoolmateWithDefault.likeness, $$.player.name;
+      """
+    Then the execution should be successful

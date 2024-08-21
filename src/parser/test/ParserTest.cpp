@@ -564,6 +564,12 @@ TEST_F(ParserTest, ColumnSpacesTest) {
     auto result = parse(query);
     ASSERT_FALSE(result.ok());
   }
+  {
+    std::string query =
+        "CREATE TAG student(name string, age int, hobby List<string>, ids List<int>);";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
+  }
 }
 
 TEST_F(ParserTest, IndexOperation) {
@@ -889,6 +895,13 @@ TEST_F(ParserTest, InsertVertex) {
     auto result = parse(query);
     ASSERT_TRUE(result.status().isSyntaxError());
   }
+  {
+    std::string query =
+      "INSERT VERTEX person(name, age, hobby) "
+      "VALUES \"Tom\":(\'Tom, 42, [\'Basketball, \'Swimming])";
+    auto result = parse(query);
+    ASSERT_TRUE(result.status().isSyntaxError());
+  }
 }
 
 TEST_F(ParserTest, UpdateVertex) {
@@ -979,6 +992,24 @@ TEST_F(ParserTest, UpdateVertex) {
         "SET name=\"Tom\", age = 30, name =\"CTO\" "
         "WHEN salary > 10000 "
         "YIELD name AS Name, salary AS Salary, create_time AS Time_";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "UPDATE VERTEX ON person \"12345\" "
+        "SET hobby[1]=\"WWW\" "
+        "WHEN name == \"Tom\" "
+        "YIELD name AS Name, age AS Age, hobby AS hobby;";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "UPDATE VERTEX ON person \"12345\" "
+        "SET person.hobby[1]=\"WWW\" "
+        "WHEN name == \"Tom\" "
+        "YIELD name AS Name, age AS Age, hobby AS hobby;";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

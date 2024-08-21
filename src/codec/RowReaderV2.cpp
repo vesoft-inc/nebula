@@ -8,6 +8,38 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
+template <typename T, typename Container>
+Value extractIntOrFloat(const folly::StringPiece& data, size_t& offset) {
+  int32_t containerOffset;
+  memcpy(reinterpret_cast<void*>(&containerOffset), data.data() + offset, sizeof(int32_t));
+  if (static_cast<size_t>(containerOffset) >= data.size()) {
+    LOG(ERROR) << "Container offset out of bounds. Offset: "
+               << containerOffset << ", Data size: " << data.size();
+    return Value::kNullValue;
+  }
+  int32_t containerSize;
+  memcpy(reinterpret_cast<void*>(&containerSize), data.data() + containerOffset, sizeof(int32_t));
+  containerOffset += sizeof(int32_t);
+  Container container;
+  for (int32_t i = 0; i < containerSize; ++i) {
+    T value;
+    if (static_cast<size_t>(containerOffset + sizeof(T)) > data.size()) {
+      LOG(ERROR) << "Reading beyond data bounds. Attempting to read at offset: "
+                 << containerOffset << ", Data size: " << data.size();
+      return Value::kNullValue;
+    }
+    memcpy(reinterpret_cast<void*>(&value), data.data() + containerOffset, sizeof(T));
+    containerOffset += sizeof(T);
+
+    if constexpr (std::is_same_v<Container, List>) {
+        container.values.emplace_back(Value(value));
+    } else if constexpr (std::is_same_v<Container, Set>) {
+        container.values.insert(Value(value));
+    }
+  }
+  return Value(std::move(container));
+}
+
 bool RowReaderV2::resetImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row) {
   schema_ = schema;
   data_ = row;
@@ -205,368 +237,160 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       }
       return std::move(geogRet).value();
     }
-     // NEW List
     case PropertyType::LIST_STRING: {
-        int32_t listOffset;
-        memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
-        if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;
-        }
-        int32_t listSize;
-        memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
-        listOffset += sizeof(int32_t);
-
-        List list;
-        for (int32_t i = 0; i < listSize; ++i) {
-            int32_t strLen;
-            memcpy(reinterpret_cast<void*>(&strLen), &data_[listOffset], sizeof(int32_t));
-            listOffset += sizeof(int32_t);
-            if (static_cast<size_t>(listOffset + strLen) > data_.size()) {
-                return Value::kNullValue;
-            }
-            std::string str(&data_[listOffset], strLen);
-            listOffset += strLen;
-            list.values.emplace_back(str);
-        }
-        return Value(std::move(list));
-    }
-
-    case PropertyType::LIST_INT: {
-        int32_t listOffset;
-        memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
-        if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;
-        }
-
-        int32_t listSize;
-        memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
-        listOffset += sizeof(int32_t);
-
-        List list;
-        for (int32_t i = 0; i < listSize; ++i) {
-            int32_t intValue;
-            memcpy(reinterpret_cast<void*>(&intValue), &data_[listOffset], sizeof(int32_t));
-            listOffset += sizeof(int32_t);
-            list.values.emplace_back(intValue);
-        }
-        return Value(std::move(list));
-    }
-
-    case PropertyType::LIST_FLOAT: {
-        int32_t listOffset;
-        memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
-        if (static_cast<size_t>(listOffset) >= data_.size()) {
-            return Value::kNullValue;
-        }
-        int32_t listSize;
-        memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
-        listOffset += sizeof(int32_t);
-
-        List list;
-        for (int32_t i = 0; i < listSize; ++i) {
-            float floatValue;
-            memcpy(reinterpret_cast<void*>(&floatValue), &data_[listOffset], sizeof(float));
-            listOffset += sizeof(float);
-
-            list.values.emplace_back(Value(floatValue));
-        }
-        return Value(std::move(list));
-    }
-
-    case PropertyType::LIST_LIST_STRING: {
-        int32_t numLists;
-        if (offset + sizeof(int32_t) > data_.size()) {
-            return Value(NullType::BAD_DATA);
-        }
-        memcpy(&numLists, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<List> listOfLists;
-        listOfLists.reserve(numLists);
-        for (int i = 0; i < numLists; ++i) {
-            int32_t listLen;
-            if (offset + sizeof(int32_t) > data_.size()) {
-                return Value(NullType::BAD_DATA);
-            }
-            memcpy(&listLen, &data_[offset], sizeof(int32_t));
-            offset += sizeof(int32_t);
-            std::vector<std::string> strings;
-            strings.reserve(listLen);
-            for (int j = 0; j < listLen; ++j) {
-                int32_t strLen;
-                if (offset + sizeof(int32_t) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&strLen, &data_[offset], sizeof(int32_t));
-                offset += sizeof(int32_t);
-                if (offset + strLen > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                strings.push_back(std::string(&data_[offset], strLen));
-                offset += strLen;
-            }
-            List list = List::createFromList(strings);
-            listOfLists.push_back(std::move(list));
-        }
-        List outerList = List::createFromList(listOfLists);
-        return Value(std::move(outerList));
-    }
-
-    case PropertyType::LIST_LIST_INT: {
-        int32_t numLists;
-        if (offset + sizeof(int32_t) > data_.size()) {
-            return Value(NullType::BAD_DATA);
-        }
-        memcpy(&numLists, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<List> listOfLists;
-        listOfLists.reserve(numLists);
-        for (int i = 0; i < numLists; ++i) {
-            int32_t listLen;
-            if (offset + sizeof(int32_t) > data_.size()) {
-                return Value(NullType::BAD_DATA);
-            }
-            memcpy(&listLen, &data_[offset], sizeof(int32_t));
-            offset += sizeof(int32_t);
-            std::vector<int64_t> ints;
-            ints.reserve(listLen);
-            for (int j = 0; j < listLen; ++j) {
-                int64_t intValue;
-                if (offset + sizeof(int64_t) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&intValue, &data_[offset], sizeof(int64_t));
-                offset += sizeof(int64_t);
-                ints.push_back(intValue);
-            }
-            List list = List::createFromList(ints);
-            listOfLists.push_back(std::move(list));
-        }
-        List outerList = List::createFromList(listOfLists);
-        return Value(std::move(outerList));
-    }
-
-    case PropertyType::LIST_LIST_FLOAT: {
-        int32_t numLists;
-        if (offset + sizeof(int32_t) > data_.size()) {
-            return Value(NullType::BAD_DATA);
-        }
-        memcpy(&numLists, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<List> listOfLists;
-        listOfLists.reserve(numLists);
-        for (int i = 0; i < numLists; ++i) {
-            int32_t listLen;
-            if (offset + sizeof(int32_t) > data_.size()) {
-                return Value(NullType::BAD_DATA);
-            }
-            memcpy(&listLen, &data_[offset], sizeof(int32_t));
-            offset += sizeof(int32_t);
-            std::vector<float> floats;
-            floats.reserve(listLen);
-            for (int j = 0; j < listLen; ++j) {
-                float floatValue;
-                if (offset + sizeof(float) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&floatValue, &data_[offset], sizeof(float));
-                offset += sizeof(float);
-                floats.push_back(floatValue);
-            }
-            List list = List::createFromList(floats);
-            listOfLists.push_back(std::move(list));
-        }
-        List outerList = List::createFromList(listOfLists);
-        return Value(std::move(outerList));
-    }
-
-    // NEW Set
-    case PropertyType::SET_STRING: {
-      int32_t setOffset;
-      memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
-      if (static_cast<size_t>(setOffset) >= data_.size()) {
+      int32_t listOffset;
+      memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
+      if (static_cast<size_t>(listOffset) >= data_.size()) {
+          LOG(ERROR) << "List offset out of bounds for LIST_STRING.";
           return Value::kNullValue;
       }
-      int32_t setSize;
-      memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
-      setOffset += sizeof(int32_t);
+      int32_t listSize;
+      memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
+      listOffset += sizeof(int32_t);
 
-      Set set;
-      std::unordered_set<std::string> uniqueStrings;
-      for (int32_t i = 0; i < setSize; ++i) {
+      List list;
+      for (int32_t i = 0; i < listSize; ++i) {
           int32_t strLen;
-          memcpy(reinterpret_cast<void*>(&strLen), &data_[setOffset], sizeof(int32_t));
-          setOffset += sizeof(int32_t);
-          if (static_cast<size_t>(setOffset + strLen) > data_.size()) {
+          memcpy(reinterpret_cast<void*>(&strLen), &data_[listOffset], sizeof(int32_t));
+          listOffset += sizeof(int32_t);
+          if (static_cast<size_t>(listOffset + strLen) > data_.size()) {
+              LOG(ERROR) << "String length out of bounds for LIST_STRING.";
               return Value::kNullValue;
           }
-          std::string str(&data_[setOffset], strLen);
-          setOffset += strLen;
-          uniqueStrings.insert(std::move(str));
+          std::string str(&data_[listOffset], strLen);
+          listOffset += strLen;
+          list.values.emplace_back(str);
       }
-      for (const auto& str : uniqueStrings) {
-          set.values.insert(Value(str));
-      }
-      return Value(std::move(set));
+      return Value(std::move(list));
     }
-
-    case PropertyType::SET_INT: {
-      int32_t setOffset;
-      memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
-      if (static_cast<size_t>(setOffset) >= data_.size()) {
-          return Value::kNullValue;
+    case PropertyType::LIST_INT:
+        return nebula::extractIntOrFloat<int32_t, List>(data_, offset);
+    case PropertyType::LIST_FLOAT:
+        return nebula::extractIntOrFloat<float, List>(data_, offset);
+    case PropertyType::LIST_LIST_STRING: {
+      int32_t numLists;
+      if (offset + sizeof(int32_t) > data_.size()) {
+          LOG(ERROR) << "Offset out of bounds for LIST_LIST_STRING.";
+          return Value(NullType::BAD_DATA);
       }
-
-      int32_t setSize;
-      memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
-      setOffset += sizeof(int32_t);
-
-      Set set;
-      std::unordered_set<int32_t> uniqueInts;
-      for (int32_t i = 0; i < setSize; ++i) {
-          int32_t intValue;
-          memcpy(reinterpret_cast<void*>(&intValue), &data_[setOffset], sizeof(int32_t));
-          setOffset += sizeof(int32_t);
-          uniqueInts.insert(intValue);
+      memcpy(&numLists, &data_[offset], sizeof(int32_t));
+      offset += sizeof(int32_t);
+      std::vector<List> listOfLists;
+      listOfLists.reserve(numLists);
+      for (int i = 0; i < numLists; ++i) {
+          int32_t listLen;
+          if (offset + sizeof(int32_t) > data_.size()) {
+              LOG(ERROR) << "List length out of bounds for LIST_LIST_STRING.";
+              return Value(NullType::BAD_DATA);
+          }
+          memcpy(&listLen, &data_[offset], sizeof(int32_t));
+          offset += sizeof(int32_t);
+          std::vector<std::string> strings;
+          strings.reserve(listLen);
+          for (int j = 0; j < listLen; ++j) {
+              int32_t strLen;
+              if (offset + sizeof(int32_t) > data_.size()) {
+                  LOG(ERROR) << "String length out of bounds for LIST_LIST_STRING.";
+                  return Value(NullType::BAD_DATA);
+              }
+              memcpy(&strLen, &data_[offset], sizeof(int32_t));
+              offset += sizeof(int32_t);
+              if (offset + strLen > data_.size()) {
+                  LOG(ERROR) << "String offset out of bounds for LIST_LIST_STRING.";
+                  return Value(NullType::BAD_DATA);
+              }
+              strings.push_back(std::string(&data_[offset], strLen));
+              offset += strLen;
+          }
+          List list = List::createFromVector(strings);
+          listOfLists.push_back(std::move(list));
       }
-      for (const auto& intValue : uniqueInts) {
-          set.values.insert(Value(intValue));
-      }
-      return Value(std::move(set));
+      List outerList = List::createFromVector(listOfLists);
+      return Value(std::move(outerList));
     }
+    case PropertyType::LIST_LIST_INT:
+        return nebula::extractIntOrFloat<int64_t, List>(data_, offset);
+    case PropertyType::LIST_LIST_FLOAT:
+        return nebula::extractIntOrFloat<float, List>(data_, offset);
+    case PropertyType::SET_STRING: {
+        int32_t setOffset;
+        memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
+        if (static_cast<size_t>(setOffset) >= data_.size()) {
+            LOG(ERROR) << "Set offset out of bounds for SET_STRING.";
+            return Value::kNullValue;
+        }
+        int32_t setSize;
+        memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
+        setOffset += sizeof(int32_t);
 
-    case PropertyType::SET_FLOAT: {
-      int32_t setOffset;
-      memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
-      if (static_cast<size_t>(setOffset) >= data_.size()) {
-          return Value::kNullValue;
-      }
-
-      int32_t setSize;
-      memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
-      setOffset += sizeof(int32_t);
-
-      Set set;
-      std::unordered_set<float> uniqueFloats;
-      for (int32_t i = 0; i < setSize; ++i) {
-          float floatValue;
-          memcpy(reinterpret_cast<void*>(&floatValue), &data_[setOffset], sizeof(float));
-          setOffset += sizeof(float);
-          uniqueFloats.insert(floatValue);
-      }
-      for (const auto& floatValue : uniqueFloats) {
-          set.values.insert(Value(floatValue));
-      }
-      return Value(std::move(set));
+        Set set;
+        std::unordered_set<std::string> uniqueStrings;
+        for (int32_t i = 0; i < setSize; ++i) {
+            int32_t strLen;
+            memcpy(reinterpret_cast<void*>(&strLen), &data_[setOffset], sizeof(int32_t));
+            setOffset += sizeof(int32_t);
+            if (static_cast<size_t>(setOffset + strLen) > data_.size()) {
+                LOG(ERROR) << "String length out of bounds for SET_STRING.";
+                return Value::kNullValue;
+            }
+            std::string str(&data_[setOffset], strLen);
+            setOffset += strLen;
+            uniqueStrings.insert(std::move(str));
+        }
+        for (const auto& str : uniqueStrings) {
+            set.values.insert(Value(str));
+        }
+        return Value(std::move(set));
     }
-
-
+    case PropertyType::SET_INT:
+        return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
+    case PropertyType::SET_FLOAT:
+        return nebula::extractIntOrFloat<float, Set>(data_, offset);
     case PropertyType::SET_SET_STRING: {
         int32_t numSets;
         if (offset + sizeof(int32_t) > data_.size()) {
-            return Value(NullType::BAD_DATA);
+          LOG(ERROR) << "Offset out of bounds for SET_SET_STRING.";
+          return Value(NullType::BAD_DATA);
         }
         memcpy(&numSets, &data_[offset], sizeof(int32_t));
         offset += sizeof(int32_t);
         std::vector<Set> setsOfSets;
         setsOfSets.reserve(numSets);
         for (int i = 0; i < numSets; ++i) {
-            int32_t setLen;
-            if (offset + sizeof(int32_t) > data_.size()) {
-                return Value(NullType::BAD_DATA);
-            }
-            memcpy(&setLen, &data_[offset], sizeof(int32_t));
-            offset += sizeof(int32_t);
-            std::vector<std::string> strings;
-            strings.reserve(setLen);
-            for (int j = 0; j < setLen; ++j) {
-                int32_t strLen;
-                if (offset + sizeof(int32_t) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&strLen, &data_[offset], sizeof(int32_t));
-                offset += sizeof(int32_t);
-                if (offset + strLen > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                strings.push_back(std::string(&data_[offset], strLen));
-                offset += strLen;
-            }
-            Set innerSet = Set::createFromSet(strings);
-            setsOfSets.push_back(std::move(innerSet));
-        }
-        Set outerSet = Set::createFromSet(setsOfSets);
-        return Value(std::move(outerSet));
-    }
-
-    case PropertyType::SET_SET_INT: {
-        int32_t numSets;
-        if (offset + sizeof(int32_t) > data_.size()) {
+          int32_t setLen;
+          if (offset + sizeof(int32_t) > data_.size()) {
+            LOG(ERROR) << "Set length out of bounds for SET_SET_STRING.";
             return Value(NullType::BAD_DATA);
-        }
-        memcpy(&numSets, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<Set> setsOfSets;
-        setsOfSets.reserve(numSets);
-        for (int i = 0; i < numSets; ++i) {
-            int32_t setLen;
+          }
+          memcpy(&setLen, &data_[offset], sizeof(int32_t));
+          offset += sizeof(int32_t);
+          std::vector<std::string> strings;
+          strings.reserve(setLen);
+          for (int j = 0; j < setLen; ++j) {
+            int32_t strLen;
             if (offset + sizeof(int32_t) > data_.size()) {
+                LOG(ERROR) << "String length out of bounds for SET_SET_STRING.";
                 return Value(NullType::BAD_DATA);
             }
-            memcpy(&setLen, &data_[offset], sizeof(int32_t));
+            memcpy(&strLen, &data_[offset], sizeof(int32_t));
             offset += sizeof(int32_t);
-            std::vector<int64_t> ints;
-            ints.reserve(setLen);
-            for (int j = 0; j < setLen; ++j) {
-                int64_t intValue;
-                if (offset + sizeof(int64_t) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&intValue, &data_[offset], sizeof(int64_t));
-                offset += sizeof(int64_t);
-                ints.push_back(intValue);
-            }
-            Set innerSet = Set::createFromSet(ints);
-            setsOfSets.push_back(std::move(innerSet));
-        }
-        Set outerSet = Set::createFromSet(setsOfSets);
-        return Value(std::move(outerSet));
-    }
-
-    case PropertyType::SET_SET_FLOAT: {
-        int32_t numSets;
-        if (offset + sizeof(int32_t) > data_.size()) {
-            return Value(NullType::BAD_DATA);
-        }
-        memcpy(&numSets, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<Set> setsOfSets;
-        setsOfSets.reserve(numSets);
-        for (int i = 0; i < numSets; ++i) {
-            int32_t setLen;
-            if (offset + sizeof(int32_t) > data_.size()) {
+            if (offset + strLen > data_.size()) {
+                LOG(ERROR) << "String offset out of bounds for SET_SET_STRING.";
                 return Value(NullType::BAD_DATA);
             }
-            memcpy(&setLen, &data_[offset], sizeof(int32_t));
-            offset += sizeof(int32_t);
-            std::vector<float> floats;
-            floats.reserve(setLen);
-            for (int j = 0; j < setLen; ++j) {
-                float floatValue;
-                if (offset + sizeof(float) > data_.size()) {
-                    return Value(NullType::BAD_DATA);
-                }
-                memcpy(&floatValue, &data_[offset], sizeof(float));
-                offset += sizeof(float);
-                floats.push_back(floatValue);
-            }
-            Set innerSet = Set::createFromSet(floats);
-            setsOfSets.push_back(std::move(innerSet));
-        }
-        Set outerSet = Set::createFromSet(setsOfSets);
-        return Value(std::move(outerSet));
-    }
-
-
+            strings.push_back(std::string(&data_[offset], strLen));
+            offset += strLen;
+          }
+        Set innerSet = Set::createFromVector(strings);
+        setsOfSets.push_back(std::move(innerSet));
+      }
+      Set outerSet = Set::createFromVector(setsOfSets);
+      return Value(std::move(outerSet));
+   }
+    case PropertyType::SET_SET_INT:
+        return nebula::extractIntOrFloat<int64_t, Set>(data_, offset);
+    case PropertyType::SET_SET_FLOAT:
+        return nebula::extractIntOrFloat<float, Set>(data_, offset);
     case PropertyType::UNKNOWN:
       break;
   }

@@ -14,6 +14,60 @@ namespace meta {
 
 using nebula::cpp2::PropertyType;
 
+template <typename ContainerType, typename ElementType, typename NestedContainerType = void>
+bool extractIntOrFloat(const Value& value, const std::string& name) {
+  std::vector<Value> elements;
+
+  if constexpr (std::is_same_v<ContainerType, List>) {
+    if (!value.isList()) {
+      LOG(ERROR) << "Invalid default value for `" << name
+                 << "`, expected a List but got " << value.type();
+      return false;
+    }
+    elements = value.getList().values;
+  }
+
+  if constexpr (std::is_same_v<ContainerType, Set>) {
+    if (!value.isSet()) {
+      LOG(ERROR) << "Invalid default value for `" << name
+                 << "`, expected a Set but got " << value.type();
+      return false;
+    }
+    elements = std::vector<Value>(value.getSet().values.begin(), value.getSet().values.end());
+  }
+
+  for (const auto& elem : elements) {
+    if constexpr (!std::is_same_v<NestedContainerType, void>) {
+      if constexpr (std::is_same_v<NestedContainerType, List>) {
+        if (!elem.isList()) {
+          LOG(ERROR) << "Invalid default value for `" << name
+                     << "`, elements must be Lists but got " << elem.type();
+          return false;
+        }
+      }
+
+      if constexpr (std::is_same_v<NestedContainerType, Set>) {
+        if (!elem.isSet()) {
+          LOG(ERROR) << "Invalid default value for `" << name
+                     << "`, elements must be Sets but got " << elem.type();
+          return false;
+        }
+      }
+
+      if (!extractIntOrFloat<NestedContainerType, ElementType>(elem, name)) {
+        return false;
+      }
+    } else {
+      if (!elem.isInt() && !elem.isFloat()) {
+        LOG(ERROR) << "Invalid default value for `" << name
+                   << "`, elements must be integers or floats but got " << elem.type();
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
   DefaultValueContext mContext;
   ObjectPool Objpool;
@@ -180,8 +234,6 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       }
       return true;
     }
-
-    // NEW CREATE LIST
     case PropertyType::LIST_STRING: {
       if (!value.isList()) {
         LOG(INFO) << "Invalid default value for `" << name <<
@@ -198,51 +250,27 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       return true;
     }
     case PropertyType::LIST_INT: {
-      if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a List but got " << value.type();
-        return false;
-      }
-      for (const auto& elem : value.getList().values) {
-        if (!elem.isInt()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, list elements must be integers but got " << elem.type();
-          return false;
-        }
-      }
-      return true;
+        return extractIntOrFloat<List, int64_t>(value, name);
     }
     case PropertyType::LIST_FLOAT: {
-      if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a List but got " << value.type();
-        return false;
-      }
-      for (const auto& elem : value.getList().values) {
-        if (!elem.isFloat()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, list elements must be floats but got " << elem.type();
-          return false;
-        }
-      }
-      return true;
+        return extractIntOrFloat<List, double>(value, name);
     }
     case PropertyType::LIST_LIST_STRING: {
       if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a List but got " << value.type();
+        LOG(INFO) << "Invalid default value for `" << name
+                  <<"`, expected a List but got " << value.type();
         return false;
       }
       for (const auto& listElem : value.getList().values) {
         if (!listElem.isList()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Lists but got " << listElem.type();
+          LOG(INFO) << "Invalid default value for `" << name
+                    <<"`, elements must be Lists but got " << listElem.type();
           return false;
         }
         for (const auto& elem : listElem.getList().values) {
           if (!elem.isStr()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested list elements must be strings but got " << elem.type();
+            LOG(INFO) << "Invalid default value for `" << name
+                      <<"`, nested list elements must be strings but got " << elem.type();
             return false;
           }
         }
@@ -250,111 +278,48 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       return true;
     }
     case PropertyType::LIST_LIST_INT: {
-      if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a List but got " << value.type();
-        return false;
-      }
-      for (const auto& listElem : value.getList().values) {
-        if (!listElem.isList()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Lists but got " << listElem.type();
-          return false;
-        }
-        for (const auto& elem : listElem.getList().values) {
-          if (!elem.isInt()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested list elements must be integers but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
+        return extractIntOrFloat<List, int64_t, List>(value, name);
     }
     case PropertyType::LIST_LIST_FLOAT: {
-      if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a List but got " << value.type();
-        return false;
-      }
-      for (const auto& listElem : value.getList().values) {
-        if (!listElem.isList()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Lists but got " << listElem.type();
-          return false;
-        }
-        for (const auto& elem : listElem.getList().values) {
-          if (!elem.isFloat()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested list elements must be floats but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
+        return extractIntOrFloat<List, double, List>(value, name);
     }
-    // NEW CREATE SET
     case PropertyType::SET_STRING: {
       if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
+        LOG(INFO) << "Invalid default value for `" << name
+                  << "`, expected a Set but got " << value.type();
         return false;
       }
       for (const auto& elem : value.getSet().values) {
         if (!elem.isStr()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, set elements must be strings but got " << elem.type();
+          LOG(INFO) << "Invalid default value for `" << name
+                    << "`, set elements must be strings but got " << elem.type();
           return false;
         }
       }
       return true;
     }
     case PropertyType::SET_INT: {
-      if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
-        return false;
-      }
-      for (const auto& elem : value.getSet().values) {
-        if (!elem.isInt()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, set elements must be integers but got " << elem.type();
-          return false;
-        }
-      }
-      return true;
+        return extractIntOrFloat<Set, int64_t>(value, name);
     }
     case PropertyType::SET_FLOAT: {
-      if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
-        return false;
-      }
-      for (const auto& elem : value.getSet().values) {
-        if (!elem.isFloat()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, set elements must be floats but got " << elem.type();
-          return false;
-        }
-      }
-      return true;
+        return extractIntOrFloat<Set, double>(value, name);
     }
     case PropertyType::SET_SET_STRING: {
       if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
+        LOG(INFO) << "Invalid default value for `" << name
+                  <<"`, expected a Set but got " << value.type();
         return false;
       }
       for (const auto& setElem : value.getSet().values) {
         if (!setElem.isSet()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Sets but got " << setElem.type();
+          LOG(INFO) << "Invalid default value for `" << name
+                    << "`, elements must be Sets but got " << setElem.type();
           return false;
         }
         for (const auto& elem : setElem.getSet().values) {
           if (!elem.isStr()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested set elements must be strings but got " << elem.type();
+            LOG(INFO) << "Invalid default value for `" << name
+                      << "`, nested set elements must be strings but got " << elem.type();
             return false;
           }
         }
@@ -362,48 +327,10 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
       return true;
     }
     case PropertyType::SET_SET_INT: {
-      if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
-        return false;
-      }
-      for (const auto& setElem : value.getSet().values) {
-        if (!setElem.isSet()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Sets but got " << setElem.type();
-          return false;
-        }
-        for (const auto& elem : setElem.getSet().values) {
-          if (!elem.isInt()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested set elements must be integers but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
+        return extractIntOrFloat<Set, int64_t, Set>(value, name);
     }
     case PropertyType::SET_SET_FLOAT: {
-      if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name <<
-        "`, expected a Set but got " << value.type();
-        return false;
-      }
-      for (const auto& setElem : value.getSet().values) {
-        if (!setElem.isSet()) {
-          LOG(INFO) << "Invalid default value for `" << name <<
-          "`, elements must be Sets but got " << setElem.type();
-          return false;
-        }
-        for (const auto& elem : setElem.getSet().values) {
-          if (!elem.isFloat()) {
-            LOG(INFO) << "Invalid default value for `" << name <<
-            "`, nested set elements must be floats but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
+        return extractIntOrFloat<Set, double, Set>(value, name);
     }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:

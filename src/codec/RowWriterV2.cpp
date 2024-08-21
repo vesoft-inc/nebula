@@ -138,7 +138,6 @@ RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchem
       case Value::Type::DURATION:
         set(i, v.moveDuration());
         break;
-      // NEW
       case Value::Type::LIST:
         set(i, v.moveList());
         break;
@@ -233,12 +232,10 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
       return write(index, val.getGeography());
     case Value::Type::DURATION:
       return write(index, val.getDuration());
-    // NEW
     case Value::Type::LIST:
       return write(index, val.getList());
     case Value::Type::SET:
       return write(index, val.getSet());
-     // [[fallthrough]];
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -832,7 +829,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   std::string wkb = v.asWKB();
   return write(index, folly::StringPiece(wkb), true);
 }
-// NEW write List
 WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
@@ -849,6 +845,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
     switch (item.type()) {
       case Value::Type::STRING: {
         if (field->type() != PropertyType::LIST_STRING) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_STRING but got "
+                     << item.type() << " for field " << field->name();
           return WriteResult::TYPE_MISMATCH;
         }
         std::string str = item.getStr();
@@ -859,6 +857,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
       }
       case Value::Type::INT: {
         if (field->type() != PropertyType::LIST_INT) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_INT but got "
+                     << item.type() << " for field " << field->name();
           return WriteResult::TYPE_MISMATCH;
         }
         int32_t intVal = item.getInt();
@@ -866,17 +866,22 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
         break;
       }
       case Value::Type::FLOAT: {
-          if (field->type() != PropertyType::LIST_FLOAT) {
-              return WriteResult::TYPE_MISMATCH;
-          }
-          float floatVal = item.getFloat();
-          buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
-          break;
+        if (field->type() != PropertyType::LIST_FLOAT) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_FLOAT but got "
+                     << item.type() << " for field " << field->name();
+          return WriteResult::TYPE_MISMATCH;
+        }
+        float floatVal = item.getFloat();
+        buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
+        break;
       }
       default:
+        LOG(ERROR) << "Type mismatch: Unexpected type "
+                   << item.type() << " for field " << field->name();
         return WriteResult::TYPE_MISMATCH;
     }
   }
+
   memcpy(&buf_[offset], reinterpret_cast<void*>(&listOffset), sizeof(int32_t));
   if (field->nullable()) {
     clearNullBit(field->nullFlagPos());
@@ -884,8 +889,6 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   isSet_[index] = true;
   return WriteResult::SUCCEEDED;
 }
-
-// NEW
 WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
@@ -999,7 +1002,6 @@ WriteResult RowWriterV2::checkUnsetFields() {
           case Value::Type::DURATION:
             r = write(i, defVal.getDuration());
             break;
-          // NEW
           case Value::Type::LIST:
             r = write(i, defVal.getList());
             break;

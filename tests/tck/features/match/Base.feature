@@ -2389,3 +2389,167 @@ Feature: Basic match
 # Then the result should be, in any order:
 # | cnt |
 # |  0  |
+
+  Scenario: Test MATCH queries on tag with List< string >, List< int >, List< float > data types
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      """
+    Then the execution should be successful
+    # Ensure the tag is successfully created
+    And wait 3 seconds
+    When executing query:
+      """
+      DESCRIBE TAG player;
+      """
+    Then the result should be, in any order:
+      | Field   | Type          | Null  | Default | Comment |
+      | "name"  | "string"      | "YES" |         |         |
+      | "age"   | "int64"       | "YES" |         |         |
+      | "hobby" | "list_string" | "YES" |         |         |
+      | "ids"   | "list_int"    | "YES" |         |         |
+      | "score" | "list_float"  | "YES" |         |         |
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming"], [1, 2, 3], [9.0, 8.5, 7.5]);
+      """
+    Then the execution should be successful
+    # Test matching vertices with specific hobby in the List< string >
+    When executing query:
+      """
+      MATCH (v:player) WHERE ANY(x IN v.player.hobby WHERE x == "Basketball") RETURN v;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                     |
+      | ("player100" :player{age: 42, hobby: ["Basketball", "Swimming"], ids: [1, 2, 3], score: [9.0, 8.5, 7.5], name: "Tim Duncan"}) |
+    # Test returning the list of hobbies for a player
+    When executing query:
+      """
+      MATCH (v:player) RETURN v.player.hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.hobby             |
+      | ["Basketball", "Swimming"] |
+    # Test returning the hobbies of a specific player by ID
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.hobby             |
+      | ["Basketball", "Swimming"] |
+    # Test accessing a specific hobby by index in the List<string>
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.hobby[1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.hobby[1] |
+      | "Swimming"        |
+    # Test returning the list of ids for a player
+    When executing query:
+      """
+      MATCH (v:player) RETURN v.player.ids;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.ids       |
+      | [1, 2, 3]          |
+    # Test accessing a specific id by index in the List<int>
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.ids[2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.ids[2] |
+      | 3               |
+    # Test returning the list of scores for a player
+    When executing query:
+      """
+      MATCH (v:player) RETURN v.player.score;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.score       |
+      | [9.0, 8.5, 7.5]      |
+    # Test accessing a specific score by index in the List<float>
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.score[1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.score[1] |
+      | 8.5               |
+
+  Scenario: Test MATCH queries on tag with Set< string >, Set< int >, Set< float > data types
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      """
+    Then the execution should be successful
+    # Ensure the tag is successfully created
+    And wait 3 seconds
+    When executing query:
+      """
+      DESCRIBE TAG player;
+      """
+    Then the result should be, in any order:
+      | Field   | Type        | Null  | Default | Comment |
+      | "name"  | "string"    | "YES" |         |         |
+      | "age"   | "int64"     | "YES" |         |         |
+      | "hobby" | "set_string"| "YES" |         |         |
+      | "ids"   | "set_int"   | "YES" |         |         |
+      | "score" | "set_float" | "YES" |         |         |
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 3, 2}, {9.0, 8.5, 7.5, 8.5});
+      """
+    Then the execution should be successful
+    # Test matching vertices with specific hobby in the Set< string >
+    When executing query:
+      """
+      MATCH (v:player) WHERE "Basketball" IN v.player.hobby RETURN v;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                                                     |
+      | ("player100" :player{age: 42, hobby: {"Basketball", "Swimming"}, ids: {1, 2, 3}, score: {9.0, 8.5, 7.5}, name: "Tim Duncan"}) |
+    # Test returning the set of hobbies for a player
+    When executing query:
+      """
+      MATCH (v:player) RETURN v.player.hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.hobby               |
+      | {"Basketball", "Swimming"}   |
+    # Test returning the hobbies of a specific player by ID
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.hobby               |
+      | {"Basketball", "Swimming"}   |
+    # Test accessing a specific id in the Set<int> (Note: Sets are unordered, this just tests existence)
+    When executing query:
+      """
+      MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.ids;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.ids       |
+      | {1, 2, 3}          |
+    # Test returning the set of scores for a player
+    When executing query:
+      """
+      MATCH (v:player) RETURN v.player.score;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v.player.score       |
+      | {9.0, 8.5, 7.5}      |

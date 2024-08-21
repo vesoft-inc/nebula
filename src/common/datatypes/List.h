@@ -26,7 +26,7 @@ struct List {
 
   // Template static factory method to create a list with specific types
   template <typename T>
-  static List createFromList(const std::vector<T>& items);
+  static List createFromVector(const std::vector<T>& items);
 
   bool empty() const {
     return values.empty();
@@ -108,7 +108,7 @@ inline std::ostream& operator<<(std::ostream& os, const List& l) {
 
 // Define using template static factory method
 template <typename T>
-inline List List::createFromList(const std::vector<T>& items) {
+inline List List::createFromVector(const std::vector<T>& items) {
     std::vector<Value> values;
     values.reserve(items.size());
     for (const auto& item : items) {
