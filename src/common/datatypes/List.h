@@ -116,7 +116,6 @@ inline List List::createFromVector(const std::vector<T>& items) {
   }
   return List(std::move(values));
 }
-
 }  // namespace nebula
 
 namespace std {

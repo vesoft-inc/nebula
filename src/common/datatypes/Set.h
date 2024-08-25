@@ -82,7 +82,6 @@ inline Set Set::createFromVector(const std::vector<T>& items) {
   }
   return Set(std::move(values));
 }
-
 }  // namespace nebula
 
 namespace std {
