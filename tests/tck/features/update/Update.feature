@@ -1216,7 +1216,7 @@ Feature: Update string vid of vertex and edge
       | vid_type       | FIXED_STRING(20) |
     And having executed:
       """
-      CREATE TAG IF NOT EXISTS player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      CREATE TAG player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
       """
     And wait 3 seconds  # Wait for the index to be created
     # Insert vertex data for player100
@@ -1239,7 +1239,6 @@ Feature: Update string vid of vertex and edge
     Then the result should be, in any order:
       | Name         | Age | Hobby                                | Ids             | Score                  |
       | "Tim Duncan" | 42  | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
-
     When executing query:
       """
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
@@ -1258,3 +1257,85 @@ Feature: Update string vid of vertex and edge
     Then the result should be, in any order:
       | Name         | Age | Hobby                                | Ids               |
       | "Tim Duncan" | 42  | ["Football", "Swimming", "Coding"]   | [100, 528, 12345] |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = ERASE(hobby, "Swimming"),
+          ids = ERASE(ids, 100)
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                            | Ids            |
+      | "Tim Duncan" | 42  | ["Football", "Coding"]           | [528, 12345]   |
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order:
+      | player.name  | player.age | player.hobby                     | player.ids    | player.score          |
+      | "Tim Duncan" | 42         | ["Football", "Coding"]           | [528, 12345]  | [50.0, 22.0, 85.0]    |
+      
+  Scenario: Update player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >)
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      """
+    And wait 3 seconds  # Wait for the index to be created
+    # Insert vertex data for player100
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":(
+          "Tim Duncan", 42, {"Basketball", "Swimming", "Swimming"}, {100, 528, 100}, {50.0, 22.0, 50.0}
+      );
+      """
+    Then the execution should be successful
+    # Test SADD operation on SET
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = SADD(hobby, "Coding"),
+          ids = SADD(ids, 37564),
+          score = SADD(score, 85.0)
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                                | Ids               | Score                  |
+      | "Tim Duncan" | 42  | {"Basketball", "Swimming", "Coding"} | {100, 528, 37564} | {50.0, 22.0, 85.0}     |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = REPLACE(hobby, "Basketball", "Football"),
+          ids = REPLACE(ids, 37564, 12345),
+          score = REPLACE(score, 85.0, 90.0)
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                                | Ids               | Score                  |
+      | "Tim Duncan" | 42  | {"Football", "Swimming", "Coding"}   | {100, 528, 12345} | {50.0, 22.0, 90.0}     |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = ERASE(hobby, "Coding"),
+          ids = ERASE(ids, 100),
+          score = ERASE(score, 22.0)
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                          | Ids          | Score           |
+      | "Tim Duncan" | 42  | {"Football", "Swimming"}       | {528, 12345} | {50.0, 90.0}    |
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order:
+      | player.name  | player.age | player.hobby                     | player.ids     | player.score      |
+      | "Tim Duncan" | 42         | {"Football", "Swimming"}         | {528, 12345}   | {50.0, 90.0}      |

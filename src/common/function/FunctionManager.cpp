@@ -168,6 +168,17 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::SET, Value::Type::STRING, Value::Type::STRING}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::INT, Value::Type::INT}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::SET)}},
+    {"erase",
+     {TypeSignature({Value::Type::LIST, Value::Type::STRING}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::INT}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::FLOAT}, Value::Type::LIST),
+      TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
+    {"sadd",
+     {TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
     {"reverse",
      {TypeSignature({Value::Type::STRING}, Value::Type::STRING),
       TypeSignature({Value::Type::LIST}, Value::Type::LIST)}},
@@ -1410,6 +1421,45 @@ FunctionManager::FunctionManager() {
           }
         }
         return result;
+      }
+      return Value::kNullBadType;
+    };
+  }
+  {
+    auto &attr = functions_["erase"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isList()) {
+        auto list = args[0].get().getList();
+        auto target = args[1].get();
+        list.values.erase(std::remove(list.values.begin(), list.values.end(), target),
+                          list.values.end());
+        return list;
+      }
+      if (args[0].get().isSet()) {
+        auto set = args[0].get().getSet();
+        auto target = args[1].get();
+        set.values.erase(target);
+        return set;
+      }
+      return Value::kNullBadType;
+    };
+  }
+  {
+    auto &attr = functions_["sadd"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isSet()) {
+        auto set = args[0].get().getSet();
+        auto newValue = args[1].get();
+        if (set.values.find(newValue) == set.values.end()) {
+          set.values.insert(newValue);
+        }
+        return set;
       }
       return Value::kNullBadType;
     };
