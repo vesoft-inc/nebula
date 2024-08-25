@@ -229,5 +229,4 @@ Feature: Fetch prop on empty tag/edge
       """
     Then the result should be, in any order, with relax comparison:
       | hobby                      | ids      | score         |
-      | {"Basketball", "Swimming"} | {1, 2}   | {8.0, 9.0}    |  
-      
+      | {"Basketball", "Swimming"} | {1, 2}   | {8.0, 9.0}    |

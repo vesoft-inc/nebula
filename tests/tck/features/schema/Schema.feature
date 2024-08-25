@@ -1042,7 +1042,6 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-
     # Insert data with duplicates
     When executing query:
       """
@@ -1054,7 +1053,6 @@ Feature: Insert string vid of vertex and edge
       );
       """
     Then the execution should be successful
-
     # Fetch the properties and validate unordered and deduplicated results
     When executing query:
       """

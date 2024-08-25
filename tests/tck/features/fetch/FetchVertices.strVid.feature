@@ -594,16 +594,13 @@ Feature: Fetch String Vertices
       CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
       """
     Then the execution should be successful
-    
     # Ensure the tag is successfully created
     And wait 3 seconds
-    
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2}, {9.0, 8.0, 8.0});
       """
     Then the execution should be successful
-    
     When executing query:
       """
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
@@ -611,7 +608,6 @@ Feature: Fetch String Vertices
     Then the result should be, in any order, with relax comparison:
       | player.name  | player.age | player.hobby               | player.ids | player.score  |
       | "Tim Duncan" | 42         | {"Basketball", "Swimming"} | {1, 2}     | {9.0, 8.0}    |
-    
     When executing query:
       """
       FETCH PROP ON * "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score, vertex as node;
@@ -619,7 +615,6 @@ Feature: Fetch String Vertices
     Then the result should be, in any order:
       | player.name  | player.age | player.hobby               | player.ids | player.score  | node                                                                                       |
       | "Tim Duncan" | 42         | {"Basketball", "Swimming"} | {1, 2}     | {9.0, 8.0}    | ("player100" :player{age: 42, hobby: {"Basketball", "Swimming"}, ids: {1, 2}, score: {9.0, 8.0}, name: "Tim Duncan"}) |
-    
     # Fetch vertex ID and properties on player100
     When executing query:
       """
@@ -628,7 +623,6 @@ Feature: Fetch String Vertices
     Then the result should be, in any order:
       | id          | name         | properties(VERTEX)                                                                              |
       | "player100" | "Tim Duncan" | {age: 42, hobby: {"Basketball", "Swimming"}, ids: {1, 2}, score: {9.0, 8.0}, name: "Tim Duncan"} |
-    
     # Fetch vertex ID, keys, tags, and properties on player100
     When executing query:
       """

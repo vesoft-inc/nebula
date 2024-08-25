@@ -711,21 +711,18 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-    
     # Insert the initial vertex with specific properties
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming", "Reading"], [1, 2, 3], [10.5, 20.5, 30.5]);
       """
     Then the execution should be successful
-    
     # Insert and update the player vertex to modify only the lists
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Gaming"], [4, 5, 6], [40.5, 50.5, 60.5]);
       """
     Then the execution should be successful
-    
     # Verify that the latest data matches the expected state
     When executing query:
       """
@@ -734,14 +731,12 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order, with relax comparison:
       | node                                                                                                           |
       | ("player100":player{name:"Tim Duncan", age:42, hobby:["Basketball", "Gaming"], ids:[4, 5, 6], score:[40.5, 50.5, 60.5]}) |
-
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2",["Swimming", "Painting"], [10, 11, 12], [100.5, 110.5, 120.5]);
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
-    
     # Insert edges and fetch results
     When try to execute query:
       """
@@ -752,7 +747,6 @@ Feature: Insert string vid of vertex and edge
       INSERT EDGE study(start_time, end_time) VALUES "player200"->"school1":(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3);
       """
     Then the execution should be successful
-    
     # Insert vertices with default properties
     When try to execute query:
       """
@@ -763,7 +757,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX playerWithDefault(name, BMI, number) VALUES "player200":("Laura", 21.5, 20190901008), "player300":("Amber", 22.5, 20180901003);
       """
     Then the execution should be successful
-
     # Fetch properties and validate results
     When executing query:
       """
@@ -771,14 +764,12 @@ Feature: Insert string vid of vertex and edge
       """
     Then the result should be, in any order, with relax comparison:
       | player.name   | player.age | player.hobby                            | player.ids | player.score         |
-      | "Tim Duncan"  | 42         | ["Basketball", "Gaming"]                | [4, 5, 6]  | [40.5, 50.5, 60.5]   |  
-    
+      | "Tim Duncan"  | 42         | ["Basketball", "Gaming"]                | [4, 5, 6]  | [40.5, 50.5, 60.5]   |
     When executing query:
       """
       FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;
       """
     Then the execution should be successful
-    
     # Insert and query multi-tagged vertices and edges
     When executing query:
       """
@@ -812,21 +803,18 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-    
     # Insert the initial vertex with specific properties and duplicates
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2, 3}, {10.5, 20.5, 10.5, 30.5});
       """
     Then the execution should be successful
-    
     # Insert and update the player vertex to modify only the sets
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Gaming"}, {4, 5, 6, 6}, {40.5, 50.5, 60.5});
       """
     Then the execution should be successful
-    
     # Verify that the latest data matches the expected state
     When executing query:
       """
@@ -835,14 +823,12 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order, with relax comparison:
       | node                                                                                                           |
       | ("player100":player{name:"Tim Duncan", age:42, hobby:{"Basketball", "Gaming"}, ids:{4, 5, 6}, score:{40.5, 50.5, 60.5}}) |
-
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2", {"Basketball", "Gaming"}, {4, 5, 6, 6}, {40.5, 50.5, 60.5});
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
-
     # Insert edges and fetch results
     When try to execute query:
       """
@@ -853,7 +839,6 @@ Feature: Insert string vid of vertex and edge
       INSERT EDGE study(start_time, end_time) VALUES "player200"->"school1":(timestamp("2019-01-01T10:00:00"), now()+3600*24*365*3);
       """
     Then the execution should be successful
-    
     # Insert vertices with default properties
     When try to execute query:
       """
@@ -864,7 +849,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX playerWithDefault(name, BMI, number) VALUES "player200":("Laura", 21.5, 20190901008), "player300":("Amber", 22.5, 20180901003);
       """
     Then the execution should be successful
-
     # Fetch properties and validate results
     When executing query:
       """
@@ -873,13 +857,11 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order, with relax comparison:
       | player.name   | player.age | player.hobby                    | player.ids | player.score         |
       | "Tim Duncan"  | 42         | {"Basketball", "Gaming"}        | {4, 5, 6}  | {40.5, 50.5, 60.5}   |
-      
     When executing query:
       """
       FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;
       """
     Then the execution should be successful
-    
     # Insert and query multi-tagged vertices and edges
     When executing query:
       """
