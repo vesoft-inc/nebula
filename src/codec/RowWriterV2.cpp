@@ -465,7 +465,7 @@ WriteResult RowWriterV2::write(ssize_t index, int8_t v) {
   isSet_[index] = true;
   return WriteResult::SUCCEEDED;
 }
-//
+
 WriteResult RowWriterV2::write(ssize_t index, uint16_t v) {
   return write(index, static_cast<int16_t>(v));
 }
@@ -845,8 +845,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
     switch (item.type()) {
       case Value::Type::STRING: {
         if (field->type() != PropertyType::LIST_STRING) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_STRING but got "
-                     << item.type() << " for field " << field->name();
+          LOG(ERROR) << "Type mismatch: Expected LIST_STRING but got " << item.type()
+                     << " for field " << field->name();
           return WriteResult::TYPE_MISMATCH;
         }
         std::string str = item.getStr();
@@ -857,8 +857,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
       }
       case Value::Type::INT: {
         if (field->type() != PropertyType::LIST_INT) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_INT but got "
-                     << item.type() << " for field " << field->name();
+          LOG(ERROR) << "Type mismatch: Expected LIST_INT but got " << item.type() << " for field "
+                     << field->name();
           return WriteResult::TYPE_MISMATCH;
         }
         int32_t intVal = item.getInt();
@@ -867,8 +867,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
       }
       case Value::Type::FLOAT: {
         if (field->type() != PropertyType::LIST_FLOAT) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_FLOAT but got "
-                     << item.type() << " for field " << field->name();
+          LOG(ERROR) << "Type mismatch: Expected LIST_FLOAT but got " << item.type()
+                     << " for field " << field->name();
           return WriteResult::TYPE_MISMATCH;
         }
         float floatVal = item.getFloat();
@@ -876,8 +876,8 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
         break;
       }
       default:
-        LOG(ERROR) << "Type mismatch: Unexpected type "
-                   << item.type() << " for field " << field->name();
+        LOG(ERROR) << "Type mismatch: Unexpected type " << item.type() << " for field "
+                   << field->name();
         return WriteResult::TYPE_MISMATCH;
     }
   }
@@ -953,7 +953,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   isSet_[index] = true;
   return WriteResult::SUCCEEDED;
 }
-
 
 WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;

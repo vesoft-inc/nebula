@@ -76,11 +76,11 @@ inline std::ostream& operator<<(std::ostream& os, const Set& s) {
 // define using template static factory method
 template <typename T>
 inline Set Set::createFromVector(const std::vector<T>& items) {
-    std::unordered_set<Value> values;
-    for (const auto& item : items) {
-        values.emplace(Value(item));
-    }
-    return Set(std::move(values));
+  std::unordered_set<Value> values;
+  for (const auto& item : items) {
+    values.emplace(Value(item));
+  }
+  return Set(std::move(values));
 }
 
 }  // namespace nebula
@@ -90,7 +90,6 @@ template <>
 struct hash<nebula::Set> {
   std::size_t operator()(const nebula::Set& s) const;
 };
-
 
 }  // namespace std
 #endif  // COMMON_DATATYPES_SET_H_

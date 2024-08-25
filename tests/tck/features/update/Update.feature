@@ -1,6 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@maxtest
 Feature: Update string vid of vertex and edge
 
   Background: Prepare space
@@ -1208,19 +1209,17 @@ Feature: Update string vid of vertex and edge
       | 1.0           | "111"          |
     Then drop the used space
 
-  Scenario: Update player(name string, age int, hobby List< string >, ids List< int >, score List< float >)'s hobby with new interest
+  Scenario: Update player(name string, age int, hobby List< string >, ids List< int >, score List< float >)
     Given an empty graph
     And create a space with following options:
       | partition_num  | 1                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
-
     And having executed:
       """
       CREATE TAG IF NOT EXISTS player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
       """
     And wait 3 seconds  # Wait for the index to be created
-
     # Insert vertex data for player100
     When try to execute query:
       """
@@ -1229,7 +1228,6 @@ Feature: Update string vid of vertex and edge
       );
       """
     Then the execution should be successful
-
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1250,3 +1248,14 @@ Feature: Update string vid of vertex and edge
     Then the result should be, in any order:
       | player.name  | player.age | player.hobby                         | player.ids        | player.score          |
       | "Tim Duncan" | 42         | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0]    |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = REPLACE(hobby, "Basketball", "Football"),
+          ids = REPLACE(ids, 37564, 12345)
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                                | Ids               |
+      | "Tim Duncan" | 42  | ["Football", "Swimming", "Coding"]   | [100, 528, 12345] |

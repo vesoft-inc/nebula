@@ -109,12 +109,12 @@ inline std::ostream& operator<<(std::ostream& os, const List& l) {
 // Define using template static factory method
 template <typename T>
 inline List List::createFromVector(const std::vector<T>& items) {
-    std::vector<Value> values;
-    values.reserve(items.size());
-    for (const auto& item : items) {
-        values.emplace_back(Value(item));
-    }
-    return List(std::move(values));
+  std::vector<Value> values;
+  values.reserve(items.size());
+  for (const auto& item : items) {
+    values.emplace_back(Value(item));
+  }
+  return List(std::move(values));
 }
 
 }  // namespace nebula

@@ -160,7 +160,14 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"right", {TypeSignature({Value::Type::STRING, Value::Type::INT}, Value::Type::STRING)}},
     {"replace",
      {TypeSignature({Value::Type::STRING, Value::Type::STRING, Value::Type::STRING},
-                    Value::Type::STRING)}},
+                    Value::Type::STRING),
+      TypeSignature({Value::Type::LIST, Value::Type::STRING, Value::Type::STRING},
+                    Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::INT, Value::Type::INT}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::LIST),
+      TypeSignature({Value::Type::SET, Value::Type::STRING, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::SET)}},
     {"reverse",
      {TypeSignature({Value::Type::STRING}, Value::Type::STRING),
       TypeSignature({Value::Type::LIST}, Value::Type::LIST)}},
@@ -1375,6 +1382,34 @@ FunctionManager::FunctionManager() {
         std::string search(args[1].get().getStr());
         std::string newStr(args[2].get().getStr());
         return boost::replace_all_copy(origStr, search, newStr);
+      }
+      if (args[0].get().isList()) {
+        auto list = args[0].get().getList();
+        auto search = args[1].get();
+        auto newValue = args[2].get();
+        List result;
+        for (auto &item : list.values) {
+          if (item == search) {
+            result.values.emplace_back(newValue);
+          } else {
+            result.values.emplace_back(item);
+          }
+        }
+        return result;
+      }
+      if (args[0].get().isSet()) {
+        auto set = args[0].get().getSet();
+        auto search = args[1].get();
+        auto newValue = args[2].get();
+        Set result;
+        for (auto &item : set.values) {
+          if (item == search) {
+            result.values.insert(newValue);
+          } else {
+            result.values.insert(item);
+          }
+        }
+        return result;
       }
       return Value::kNullBadType;
     };

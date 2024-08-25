@@ -857,6 +857,14 @@ TEST_F(ParserTest, InsertVertex) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  // Test insert List<string>
+  {
+    std::string query =
+        "INSERT VERTEX person(name, age, hobby) "
+        "VALUES \"Tom\":(\"Tom\", 42, [\"Basketball\", \"Swimming\"])";
+    auto result = parse(query);
+    ASSERT_TRUE(result.status().isSyntaxError());
+  }
   // Test insert empty value
   {
     std::string query =
@@ -892,13 +900,6 @@ TEST_F(ParserTest, InsertVertex) {
     std::string query =
         "INSERT VERTEX person(name, age) "
         "VALUES \"Tom\":(\'Tom, 30)";
-    auto result = parse(query);
-    ASSERT_TRUE(result.status().isSyntaxError());
-  }
-  {
-    std::string query =
-      "INSERT VERTEX person(name, age, hobby) "
-      "VALUES \"Tom\":(\'Tom, 42, [\'Basketball, \'Swimming])";
     auto result = parse(query);
     ASSERT_TRUE(result.status().isSyntaxError());
   }
@@ -998,16 +999,7 @@ TEST_F(ParserTest, UpdateVertex) {
   {
     std::string query =
         "UPDATE VERTEX ON person \"12345\" "
-        "SET hobby[1]=\"WWW\" "
-        "WHEN name == \"Tom\" "
-        "YIELD name AS Name, age AS Age, hobby AS hobby;";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "UPDATE VERTEX ON person \"12345\" "
-        "SET person.hobby[1]=\"WWW\" "
+        "SET hobby = REPLACE(hobby,\"Basketball\", \"Football\") "
         "WHEN name == \"Tom\" "
         "YIELD name AS Name, age AS Age, hobby AS hobby;";
     auto result = parse(query);

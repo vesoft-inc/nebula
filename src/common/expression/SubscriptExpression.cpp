@@ -112,8 +112,8 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
         LOG(ERROR) << "Tag not found in edge: " << rvalue.getStr();
         result_ = Value::kNullValue;
         break;
-      result_ = props.at(rvalue.getStr());
-      break;
+        result_ = props.at(rvalue.getStr());
+        break;
       }
       result_ = iter->second;
       break;
