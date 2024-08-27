@@ -2376,20 +2376,19 @@ Feature: Basic match
       | cnt |
       | 243 |
 
-# Then the result should be, in any order:
-# | cnt |
-# |  0  |
-# When executing query:
-# """
-# MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
-# WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
-# RETURN count(*) AS cnt
-# """
-# FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
-# Then the result should be, in any order:
-# | cnt |
-# |  0  |
-
+  # Then the result should be, in any order:
+  # | cnt |
+  # |  0  |
+  # When executing query:
+  # """
+  # MATCH (v:player{name: 'Tim Duncan'})-[e:like*0..2]-(v2)-[i]-(v3)
+  # WHERE size([i in e WHERE (v)-[i]-(v2) | i])>1
+  # RETURN count(*) AS cnt
+  # """
+  # FIXME(czp): Fix this case after https://github.com/vesoft-inc/nebula/issues/5289 closed
+  # Then the result should be, in any order:
+  # | cnt |
+  # |  0  |
   Scenario: Test MATCH queries on tag with List< string >, List< int >, List< float > data types
     Given an empty graph
     And create a space with following options:
@@ -2425,7 +2424,7 @@ Feature: Basic match
       MATCH (v:player) WHERE ANY(x IN v.player.hobby WHERE x == "Basketball") RETURN v;
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                                                                     |
+      | v                                                                                                                             |
       | ("player100" :player{age: 42, hobby: ["Basketball", "Swimming"], ids: [1, 2, 3], score: [9.0, 8.5, 7.5], name: "Tim Duncan"}) |
     # Test returning the list of hobbies for a player
     When executing query:
@@ -2457,8 +2456,8 @@ Feature: Basic match
       MATCH (v:player) RETURN v.player.ids;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.ids       |
-      | [1, 2, 3]          |
+      | v.player.ids |
+      | [1, 2, 3]    |
     # Test accessing a specific id by index in the List<int>
     When executing query:
       """
@@ -2473,8 +2472,8 @@ Feature: Basic match
       MATCH (v:player) RETURN v.player.score;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.score       |
-      | [9.0, 8.5, 7.5]      |
+      | v.player.score  |
+      | [9.0, 8.5, 7.5] |
     # Test accessing a specific score by index in the List<float>
     When executing query:
       """
@@ -2502,12 +2501,12 @@ Feature: Basic match
       DESCRIBE TAG player;
       """
     Then the result should be, in any order:
-      | Field   | Type        | Null  | Default | Comment |
-      | "name"  | "string"    | "YES" |         |         |
-      | "age"   | "int64"     | "YES" |         |         |
-      | "hobby" | "set_string"| "YES" |         |         |
-      | "ids"   | "set_int"   | "YES" |         |         |
-      | "score" | "set_float" | "YES" |         |         |
+      | Field   | Type         | Null  | Default | Comment |
+      | "name"  | "string"     | "YES" |         |         |
+      | "age"   | "int64"      | "YES" |         |         |
+      | "hobby" | "set_string" | "YES" |         |         |
+      | "ids"   | "set_int"    | "YES" |         |         |
+      | "score" | "set_float"  | "YES" |         |         |
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 3, 2}, {9.0, 8.5, 7.5, 8.5});
@@ -2519,7 +2518,7 @@ Feature: Basic match
       MATCH (v:player) WHERE "Basketball" IN v.player.hobby RETURN v;
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                                                                     |
+      | v                                                                                                                             |
       | ("player100" :player{age: 42, hobby: {"Basketball", "Swimming"}, ids: {1, 2, 3}, score: {9.0, 8.5, 7.5}, name: "Tim Duncan"}) |
     # Test returning the set of hobbies for a player
     When executing query:
@@ -2527,29 +2526,29 @@ Feature: Basic match
       MATCH (v:player) RETURN v.player.hobby;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.hobby               |
-      | {"Basketball", "Swimming"}   |
+      | v.player.hobby             |
+      | {"Basketball", "Swimming"} |
     # Test returning the hobbies of a specific player by ID
     When executing query:
       """
       MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.hobby;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.hobby               |
-      | {"Basketball", "Swimming"}   |
+      | v.player.hobby             |
+      | {"Basketball", "Swimming"} |
     # Test accessing a specific id in the Set<int> (Note: Sets are unordered, this just tests existence)
     When executing query:
       """
       MATCH (v:player) WHERE id(v) == 'player100' RETURN v.player.ids;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.ids       |
-      | {1, 2, 3}          |
+      | v.player.ids |
+      | {1, 2, 3}    |
     # Test returning the set of scores for a player
     When executing query:
       """
       MATCH (v:player) RETURN v.player.score;
       """
     Then the result should be, in any order, with relax comparison:
-      | v.player.score       |
-      | {9.0, 8.5, 7.5}      |
+      | v.player.score  |
+      | {9.0, 8.5, 7.5} |

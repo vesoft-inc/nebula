@@ -687,7 +687,7 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX invalid_vertex VALUES "non_existed_tag":()
       """
     Then a SemanticError should be raised at runtime: No schema found
-  
+
   Scenario: insert player(name string, age int, hobby List< string >, ids List< int >, score List< float >)
     Given an empty graph
     And create a space with following options:
@@ -729,7 +729,7 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON * "player100" YIELD vertex as node;
       """
     Then the result should be, in any order, with relax comparison:
-      | node                                                                                                           |
+      | node                                                                                                                     |
       | ("player100":player{name:"Tim Duncan", age:42, hobby:["Basketball", "Gaming"], ids:[4, 5, 6], score:[40.5, 50.5, 60.5]}) |
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
@@ -763,8 +763,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order, with relax comparison:
-      | player.name   | player.age | player.hobby                            | player.ids | player.score         |
-      | "Tim Duncan"  | 42         | ["Basketball", "Gaming"]                | [4, 5, 6]  | [40.5, 50.5, 60.5]   |
+      | player.name  | player.age | player.hobby             | player.ids | player.score       |
+      | "Tim Duncan" | 42         | ["Basketball", "Gaming"] | [4, 5, 6]  | [40.5, 50.5, 60.5] |
     When executing query:
       """
       FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;
@@ -821,7 +821,7 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON * "player100" YIELD vertex as node;
       """
     Then the result should be, in any order, with relax comparison:
-      | node                                                                                                           |
+      | node                                                                                                                     |
       | ("player100":player{name:"Tim Duncan", age:42, hobby:{"Basketball", "Gaming"}, ids:{4, 5, 6}, score:{40.5, 50.5, 60.5}}) |
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
@@ -855,8 +855,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order, with relax comparison:
-      | player.name   | player.age | player.hobby                    | player.ids | player.score         |
-      | "Tim Duncan"  | 42         | {"Basketball", "Gaming"}        | {4, 5, 6}  | {40.5, 50.5, 60.5}   |
+      | player.name  | player.age | player.hobby             | player.ids | player.score       |
+      | "Tim Duncan" | 42         | {"Basketball", "Gaming"} | {4, 5, 6}  | {40.5, 50.5, 60.5} |
     When executing query:
       """
       FETCH PROP ON playerWithDefault "player200" YIELD playerWithDefault.name, playerWithDefault.birthday, playerWithDefault.department;

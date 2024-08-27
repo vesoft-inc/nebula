@@ -656,7 +656,7 @@ Feature: Insert vertex and edge with if not exists
       GO FROM "player100" over like YIELD like.likeness as like, like._src as src, like._dst as dst;
       """
     Then the result should be, in any order:
-      | like | src        | dst        |
+      | like | src         | dst         |
       | 100  | "player100" | "player101" |
     # Insert multiple player vertices and use multiple tags
     When try to execute query:
@@ -682,7 +682,7 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON player "player105" YIELD player.hobby as hobby;
       """
     Then the result should be, in any order, with relax comparison:
-      | hobby                   |
+      | hobby                      |
       | ["Basketball", "Business"] |
     # Insert multiple edges, indicating associations between player100 and other players
     When try to execute query:
@@ -731,7 +731,7 @@ Feature: Insert vertex and edge with if not exists
       LOOKUP ON player WHERE player.age < 35 YIELD player.name as name, player.age as age;
       """
     Then the result should be, in any order, with relax comparison:
-      | name           | age |
+      | name            | age |
       | "Stephen Curry" | 32  |
       | "Kevin Durant"  | 31  |
     # Lookup player vertices with age greater than 35
@@ -741,15 +741,15 @@ Feature: Insert vertex and edge with if not exists
       """
     Then the result should be, in any order, with relax comparison:
       | name            | age |
-      | "Neal"            | 49  |
-      | "Magic Johnson"   | 60  |
+      | "Neal"          | 49  |
+      | "Magic Johnson" | 60  |
     # Fetch properties for multiple player vertices
     When executing query:
       """
       FETCH PROP ON player "player106", "player107" YIELD player.name as name, player.age as age;
       """
     Then the result should be, in any order, with relax comparison:
-      | name           | age |
+      | name            | age |
       | "Stephen Curry" | 32  |
       | "Kevin Durant"  | 31  |
     # Delete player106 and player107 vertices
@@ -758,6 +758,7 @@ Feature: Insert vertex and edge with if not exists
       DELETE TAG player FROM "player106", "player107";
       """
     Then the execution should be successful
+
   Scenario: insert player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >)
     Given an empty graph
     And create a space with following options:
@@ -873,7 +874,7 @@ Feature: Insert vertex and edge with if not exists
       GO FROM "player100" over like YIELD like.likeness as like, like._src as src, like._dst as dst;
       """
     Then the result should be, in any order:
-      | like | src        | dst        |
+      | like | src         | dst         |
       | 100  | "player100" | "player101" |
     # Insert multiple player vertices and use multiple tags
     When try to execute query:
@@ -899,7 +900,7 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON player "player105" YIELD player.hobby as hobby;
       """
     Then the result should be, in any order, with relax comparison:
-      | hobby                   |
+      | hobby                      |
       | {"Basketball", "Business"} |
     # Insert multiple edges, indicating associations between player100 and other players
     When try to execute query:
@@ -948,7 +949,7 @@ Feature: Insert vertex and edge with if not exists
       LOOKUP ON player WHERE player.age < 35 YIELD player.name as name, player.age as age;
       """
     Then the result should be, in any order, with relax comparison:
-      | name           | age |
+      | name            | age |
       | "Stephen Curry" | 32  |
       | "Kevin Durant"  | 31  |
     # Lookup player vertices with age greater than 35
@@ -958,15 +959,15 @@ Feature: Insert vertex and edge with if not exists
       """
     Then the result should be, in any order, with relax comparison:
       | name            | age |
-      | "Neal"            | 49  |
-      | "Magic Johnson"   | 60  |
+      | "Neal"          | 49  |
+      | "Magic Johnson" | 60  |
     # Fetch properties for multiple player vertices
     When executing query:
       """
       FETCH PROP ON player "player106", "player107" YIELD player.name as name, player.age as age;
       """
     Then the result should be, in any order, with relax comparison:
-      | name           | age |
+      | name            | age |
       | "Stephen Curry" | 32  |
       | "Kevin Durant"  | 31  |
     # Delete player106 and player107 vertices

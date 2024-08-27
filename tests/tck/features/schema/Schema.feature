@@ -1022,8 +1022,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order:
-      | player.name  | player.age | player.hobby                   | player.ids              | player.score                |
-      | "Tim Duncan" | 42         | ["Basketball", "Swimming"]     | [100, 528, 37564]       | [50.0, 22.0, 85.0]          |
+      | player.name  | player.age | player.hobby               | player.ids        | player.score       |
+      | "Tim Duncan" | 42         | ["Basketball", "Swimming"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
     When executing query:
       """
       DELETE VERTEX "player100";
@@ -1046,9 +1046,9 @@ Feature: Insert string vid of vertex and edge
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":(
-          "Tim Duncan", 42, 
-          {"Basketball", "Swimming", "Basketball", "Football", "Basketball", "Swimming"}, 
-          {100, 528, 100, 37564, 528, 37564}, 
+          "Tim Duncan", 42,
+          {"Basketball", "Swimming", "Basketball", "Football", "Basketball", "Swimming"},
+          {100, 528, 100, 37564, 528, 37564},
           {50.0, 22.0, 22.0, 85.0, 85.0, 50.0}
       );
       """
@@ -1059,8 +1059,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should contain:
-      | player.name  | player.age | player.hobby                           | player.ids        | player.score           |
-      | "Tim Duncan" | 42         | {"Basketball", "Swimming", "Football"} | {100, 528, 37564} | {50.0, 22.0, 85.0}     |
+      | player.name  | player.age | player.hobby                           | player.ids        | player.score       |
+      | "Tim Duncan" | 42         | {"Basketball", "Swimming", "Football"} | {100, 528, 37564} | {50.0, 22.0, 85.0} |
     When executing query:
       """
       DELETE VERTEX "player100";

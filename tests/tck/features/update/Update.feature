@@ -1237,15 +1237,15 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                                | Ids             | Score                  |
+      | Name         | Age | Hobby                                | Ids               | Score              |
       | "Tim Duncan" | 42  | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
     When executing query:
       """
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order:
-      | player.name  | player.age | player.hobby                         | player.ids        | player.score          |
-      | "Tim Duncan" | 42         | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0]    |
+      | player.name  | player.age | player.hobby                         | player.ids        | player.score       |
+      | "Tim Duncan" | 42         | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1255,8 +1255,8 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                                | Ids               |
-      | "Tim Duncan" | 42  | ["Football", "Swimming", "Coding"]   | [100, 528, 12345] |
+      | Name         | Age | Hobby                              | Ids               |
+      | "Tim Duncan" | 42  | ["Football", "Swimming", "Coding"] | [100, 528, 12345] |
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1266,16 +1266,16 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                            | Ids            |
-      | "Tim Duncan" | 42  | ["Football", "Coding"]           | [528, 12345]   |
+      | Name         | Age | Hobby                  | Ids          |
+      | "Tim Duncan" | 42  | ["Football", "Coding"] | [528, 12345] |
     When executing query:
       """
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order:
-      | player.name  | player.age | player.hobby                     | player.ids    | player.score          |
-      | "Tim Duncan" | 42         | ["Football", "Coding"]           | [528, 12345]  | [50.0, 22.0, 85.0]    |
-      
+      | player.name  | player.age | player.hobby           | player.ids   | player.score       |
+      | "Tim Duncan" | 42         | ["Football", "Coding"] | [528, 12345] | [50.0, 22.0, 85.0] |
+
   Scenario: Update player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >)
     Given an empty graph
     And create a space with following options:
@@ -1306,8 +1306,8 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                                | Ids               | Score                  |
-      | "Tim Duncan" | 42  | {"Basketball", "Swimming", "Coding"} | {100, 528, 37564} | {50.0, 22.0, 85.0}     |
+      | Name         | Age | Hobby                                | Ids               | Score              |
+      | "Tim Duncan" | 42  | {"Basketball", "Swimming", "Coding"} | {100, 528, 37564} | {50.0, 22.0, 85.0} |
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1318,8 +1318,8 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                                | Ids               | Score                  |
-      | "Tim Duncan" | 42  | {"Football", "Swimming", "Coding"}   | {100, 528, 12345} | {50.0, 22.0, 90.0}     |
+      | Name         | Age | Hobby                              | Ids               | Score              |
+      | "Tim Duncan" | 42  | {"Football", "Swimming", "Coding"} | {100, 528, 12345} | {50.0, 22.0, 90.0} |
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1330,12 +1330,12 @@ Feature: Update string vid of vertex and edge
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
       """
     Then the result should be, in any order:
-      | Name         | Age | Hobby                          | Ids          | Score           |
-      | "Tim Duncan" | 42  | {"Football", "Swimming"}       | {528, 12345} | {50.0, 90.0}    |
+      | Name         | Age | Hobby                    | Ids          | Score        |
+      | "Tim Duncan" | 42  | {"Football", "Swimming"} | {528, 12345} | {50.0, 90.0} |
     When executing query:
       """
       FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
       """
     Then the result should be, in any order:
-      | player.name  | player.age | player.hobby                     | player.ids     | player.score      |
-      | "Tim Duncan" | 42         | {"Football", "Swimming"}         | {528, 12345}   | {50.0, 90.0}      |
+      | player.name  | player.age | player.hobby             | player.ids   | player.score |
+      | "Tim Duncan" | 42         | {"Football", "Swimming"} | {528, 12345} | {50.0, 90.0} |
