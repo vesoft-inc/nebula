@@ -148,7 +148,7 @@ class OptimizerUtils {
                             const std::vector<FilterItem> &items,
                             IndexQueryContextList &iqctx,
                             const Expression *filter = nullptr);
-  static Status appendIQCtx(const IndexItemPtr &index, IndexQueryContextList &iqctx);
+  static Status appendIQCtx(const IndexItemPtr &index, IndexQueryContextList &iqctx,const Expression *filter = nullptr);
   static Status appendColHint(std::vector<storage::cpp2::IndexColumnHint> &hints,
                               const std::vector<FilterItem> &items,
                               const meta::cpp2::ColumnDef &col);

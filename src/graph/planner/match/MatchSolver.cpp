@@ -136,23 +136,27 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       Expression::Kind::kRelGE,
   };
 
-  std::vector<const Expression*> ands;
+  std::vector<Expression*> opnds;
+  auto optr = LogicalExpression::makeAnd;
   auto kind = filter->kind();
   if (kinds.count(kind) == 1) {
-    ands.emplace_back(filter);
+    opnds.emplace_back(filter);
   } else if (kind == Expression::Kind::kLogicalAnd) {
     auto* logic = static_cast<LogicalExpression*>(filter);
     ExpressionUtils::pullAnds(logic);
-    for (auto& operand : logic->operands()) {
-      ands.emplace_back(operand);
-    }
+    opnds = logic->operands();
+  } else if (kind == Expression::Kind::kLogicalOr) {
+    auto* logic = static_cast<LogicalExpression*>(filter);
+    ExpressionUtils::pullOrs(logic);
+    opnds = logic->operands();
+    optr = LogicalExpression::makeOr;
   } else {
     return nullptr;
   }
 
   auto* pool = qctx->objPool();
   std::vector<Expression*> relationals;
-  for (auto* item : ands) {
+  for (auto item : opnds) {
     if (kinds.count(item->kind()) != 1) {
       continue;
     }
@@ -218,7 +222,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
 
   auto* root = relationals[0];
   for (auto i = 1u; i < relationals.size(); i++) {
-    root = LogicalExpression::makeAnd(qctx->objPool(), root, relationals[i]);
+    root = optr(qctx->objPool(), root, relationals[i]);
   }
 
   return root;
