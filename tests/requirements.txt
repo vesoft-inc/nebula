@@ -1,4 +1,4 @@
-setuptools==59.6.0
+setuptools==70.0.0
 wheel==0.37.1
 pytest==5.3.2
 pytest-html==2.0.1
