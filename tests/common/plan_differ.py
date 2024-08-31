@@ -183,10 +183,6 @@ class PlanDiffer:
         # The inner map cannot be empty
         if len(extracted_expected_dict) == 0:
             return None
-        # Unnested dict, push the first key into list
-        if extracted_expected_dict == expect:
-            key_list.append(list(expect.keys())[0])
-
         def _try_convert_json(j):
             try:
               res = json.loads(j)
@@ -202,7 +198,7 @@ class PlanDiffer:
                 return j
 
         extracted_resp_dict = {}
-        if len(key_list) == 1:
+        if not key_list:
           for k in resp:
             extracted_resp_dict[k] = _try_convert_json(resp[k])
         else:
