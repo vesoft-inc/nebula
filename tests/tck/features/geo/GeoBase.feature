@@ -13,7 +13,7 @@ Feature: Geo base
       | collate        | utf8_bin         |
     And having executed:
       """
-      CREATE TAG any_shape(geo geography);
+      CREATE TAG any_shape(geo geography, non_geo_prop int64);
       CREATE TAG only_point(geo geography(point));
       CREATE TAG only_linestring(geo geography(linestring));
       CREATE TAG only_polygon(geo geography(polygon));
@@ -29,8 +29,9 @@ Feature: Geo base
       DESC TAG any_shape;
       """
     Then the result should be, in any order:
-      | Field | Type        | Null  | Default | Comment |
-      | "geo" | "geography" | "YES" | EMPTY   | EMPTY   |
+      | Field          | Type        | Null  | Default | Comment |
+      | "geo"          | "geography" | "YES" | EMPTY   | EMPTY   |
+      | "non_geo_prop" | "int64"     | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
       DESC TAG only_point;
@@ -235,6 +236,11 @@ Feature: Geo base
     Then the execution should be successful
     When executing query:
       """
+      CREATE TAG INDEX non_geo_prop_index ON any_shape(non_geo_prop);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
       CREATE TAG INDEX only_point_geo_index ON only_point(geo) comment "test2";
       """
     Then the execution should be successful
@@ -266,6 +272,11 @@ Feature: Geo base
     When submit a job:
       """
       REBUILD TAG INDEX any_shape_geo_index;
+      """
+    Then wait the job to finish
+    When submit a job:
+      """
+      REBUILD TAG INDEX non_geo_prop_index;
       """
     Then wait the job to finish
     When submit a job:
@@ -754,6 +765,12 @@ Feature: Geo base
     When executing query:
       """
       DROP TAG INDEX any_shape_geo_index;
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      DROP TAG INDEX non_geo_prop_index;
       """
     Then the execution should be successful
     And wait 3 seconds

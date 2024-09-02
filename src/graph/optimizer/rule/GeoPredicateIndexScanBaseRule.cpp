@@ -83,6 +83,8 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     return TransformResult::noTransform();
   }
 
+  const std::string& geoProp = static_cast<PropertyExpression*>(first)->prop();
+
   if (!graph::ExpressionUtils::isEvaluableExpr(second, qctx)) {
     return TransformResult::noTransform();
   }
@@ -94,18 +96,33 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
 
   const auto& geog = secondVal.getGeography();
 
-  auto indexItem = indexItems.back();
-  const auto& fields = indexItem->get_fields();
-  if (fields.size() != 1) {
+  std::shared_ptr<nebula::meta::cpp2::IndexItem> geoIndexItem = nullptr;
+  for (auto& indexItem : indexItems) {
+    auto& fields = indexItem->get_fields();
+    if (fields.size() != 1) {
+      continue;
+    }
+    if (fields[0].get_type().get_type() != nebula::cpp2::PropertyType::GEOGRAPHY) {
+      continue;
+    }
+    if (fields[0].get_name() != geoProp) {
+      continue;
+    }
+    geoIndexItem = indexItem;
+    break;
+  }
+  if (!geoIndexItem) {
     return TransformResult::noTransform();
   }
+  const auto& fields = geoIndexItem->get_fields();
+  DCHECK_EQ(fields.size(), 1);
   auto& geoField = fields.back();
   auto& geoColumnTypeDef = geoField.get_type();
   bool isPointColumn = geoColumnTypeDef.geo_shape_ref().has_value() &&
                        geoColumnTypeDef.geo_shape_ref().value() == meta::cpp2::GeoShape::POINT;
 
   geo::RegionCoverParams rc;
-  const auto* indexParams = indexItem->get_index_params();
+  const auto* indexParams = geoIndexItem->get_index_params();
   if (indexParams) {
     if (indexParams->s2_max_level_ref().has_value()) {
       rc.maxCellLevel_ = indexParams->s2_max_level_ref().value();
@@ -145,7 +162,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     auto indexColumnHint = scanRange.toIndexColumnHint();
     indexColumnHint.column_name_ref() = fieldName;
     ictx.filter_ref() = condition->encode();
-    ictx.index_id_ref() = indexItem->get_index_id();
+    ictx.index_id_ref() = geoIndexItem->get_index_id();
     ictx.column_hints_ref() = {indexColumnHint};
     idxCtxs.emplace_back(std::move(ictx));
   }
