@@ -802,7 +802,7 @@ Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
 
 Status OptimizerUtils::appendIQCtx(const std::shared_ptr<IndexItem>& index,
                                    std::vector<IndexQueryContext>& iqctx,
-                                   const Expression *filter) {
+                                   const Expression* filter) {
   IndexQueryContext ctx;
   ctx.index_id_ref() = index->get_index_id();
   ctx.filter_ref() = (filter) ? Expression::encode(*filter) : "";
