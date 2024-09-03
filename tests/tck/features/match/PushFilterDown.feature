@@ -26,18 +26,19 @@ Feature: Push filter down
       """
     And wait all indexes ready
 
+  @ccc
   Scenario: Single vertex
     When profiling query:
       """
       MATCH (v:player) where v.player.name == "Tim Duncan" and v.player.age > 20 RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                                                                    |
-      | 5  | Project        | 4            |                                                                                  |
-      | 4  | Filter         | 3            | {"condition": "((v.player.name==\\"Tim Duncan\\") AND (v.player.age>20))"}       |
-      | 3  | AppendVertices | 2            |                                                                                  |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.name==\\"Tim Duncan\\") AND (player.age>20))"}} |
-      | 1  | Start          |              |                                                                                  |
+      | id | name           | dependencies | operator info                                                                  |
+      | 5  | Project        | 4            |                                                                                |
+      | 4  | Filter         | 3            | {"condition": "((v.player.name==\"Tim Duncan\") AND (v.player.age>20))"}       |
+      | 3  | AppendVertices | 2            |                                                                                |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.name==\"Tim Duncan\") AND (player.age>20))"}} |
+      | 1  | Start          |              |                                                                                |
     When profiling query:
       """
       MATCH (v:player) where v.player.age > 20 RETURN v
