@@ -12,10 +12,10 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
-#include "common/ssl/SSLConfig.h"
 
 namespace nebula {
 namespace raftex {
