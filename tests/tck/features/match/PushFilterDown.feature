@@ -32,36 +32,34 @@ Feature: Push filter down
       MATCH (v:player) where v.player.name == "Tim Duncan" and v.player.age > 20 RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                                                                   |
-      | 5  | Project        | 4            |                                                                                 |
-      | 4  | Filter         | 3            | {"condition": "((v.player.name==\"Tim Duncan\") AND (v.player.age>20))"}        |
-      | 3  | AppendVertices | 2            |                                                                                 |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.name==\"Tim Duncan\") AND (player.age>20))"}}  |
-      | 1  | Start          |              |                                                                                 |
-
+      | id | name           | dependencies | operator info                                                                    |
+      | 5  | Project        | 4            |                                                                                  |
+      | 4  | Filter         | 3            | {"condition": "((v.player.name==\\"Tim Duncan\\") AND (v.player.age>20))"}       |
+      | 3  | AppendVertices | 2            |                                                                                  |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.name==\\"Tim Duncan\\") AND (player.age>20))"}} |
+      | 1  | Start          |              |                                                                                  |
     When profiling query:
       """
       MATCH (v:player) where v.player.age > 20 RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                               |
-      | 5  | Project        | 4            |                                             |
-      | 4  | Filter         | 3            | {"condition": "(v.player.age>20)"}          |
-      | 3  | AppendVertices | 2            |                                             |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}}  |
-      | 1  | Start          |              |                                             |
-
+      | id | name           | dependencies | operator info                              |
+      | 5  | Project        | 4            |                                            |
+      | 4  | Filter         | 3            | {"condition": "(v.player.age>20)"}         |
+      | 3  | AppendVertices | 2            |                                            |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}} |
+      | 1  | Start          |              |                                            |
     When profiling query:
       """
       MATCH (v:player) where v.player.age < 3 or v.player.age > 20 RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                                                   |
-      | 5  | Project        | 4            |                                                                 |
-      | 4  | Filter         | 3            | {"condition": "((v.player.age<3) OR (v.player.age>20))"}        |
-      | 3  | AppendVertices | 2            |                                                                 |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.age<3) OR (player.age>20))"}}  |
-      | 1  | Start          |              |                                                                 |
+      | id | name           | dependencies | operator info                                                  |
+      | 5  | Project        | 4            |                                                                |
+      | 4  | Filter         | 3            | {"condition": "((v.player.age<3) OR (v.player.age>20))"}       |
+      | 3  | AppendVertices | 2            |                                                                |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"((player.age<3) OR (player.age>20))"}} |
+      | 1  | Start          |              |                                                                |
 
   Scenario: Vertex and edge
     When profiling query:
@@ -69,34 +67,34 @@ Feature: Push filter down
       MATCH (v:player)-[]-() where v.player.age > 20 RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                               |
-      | 6  | Project        | 5            |                                             |
-      | 5  | Filter         | 4            |                                             |
-      | 4  | AppendVertices | 3            |                                             |
-      | 3  | Traverse       | 2            |                                             |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}}  |
-      | 1  | Start          |              |                                             |
+      | id | name           | dependencies | operator info                              |
+      | 6  | Project        | 5            |                                            |
+      | 5  | Filter         | 4            |                                            |
+      | 4  | AppendVertices | 3            |                                            |
+      | 3  | Traverse       | 2            |                                            |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}} |
+      | 1  | Start          |              |                                            |
     When profiling query:
       """
       MATCH (v:player)-[]-(o:player) where v.player.age > 20 or o.player.name == "Yao Ming"  RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                               |
-      | 6  | Project        | 5            |                                             |
-      | 5  | Filter         | 4            |                                             |
-      | 4  | AppendVertices | 3            |                                             |
-      | 3  | Traverse       | 2            |                                             |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":""}}                 |
-      | 1  | Start          |              |                                             |
+      | id | name           | dependencies | operator info               |
+      | 6  | Project        | 5            |                             |
+      | 5  | Filter         | 4            |                             |
+      | 4  | AppendVertices | 3            |                             |
+      | 3  | Traverse       | 2            |                             |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":""}} |
+      | 1  | Start          |              |                             |
     When profiling query:
       """
       MATCH (v:player)-[]-(o:player) where v.player.age > 20 and o.player.name == "Yao Ming"  RETURN v
       """
     Then the execution plan should be:
-      | id | name           | dependencies | operator info                               |
-      | 6  | Project        | 5            |                                             |
-      | 5  | Filter         | 4            |                                             |
-      | 4  | AppendVertices | 3            |                                             |
-      | 3  | Traverse       | 2            |                                             |
-      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}}  |
-      | 1  | Start          |              |                                             |
+      | id | name           | dependencies | operator info                              |
+      | 6  | Project        | 5            |                                            |
+      | 5  | Filter         | 4            |                                            |
+      | 4  | AppendVertices | 3            |                                            |
+      | 3  | Traverse       | 2            |                                            |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}} |
+      | 1  | Start          |              |                                            |
