@@ -188,13 +188,19 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       if (left->kind() == Expression::Kind::kLabelTagProperty &&
           right->kind() == Expression::Kind::kConstant) {
         if (!extractTagPropName(left, alias, label, &propName)) {
-          continue;
+          if (optr == LogicalExpression::makeAnd) {
+            continue;
+          }
+          return nullptr;
         }
         constant = static_cast<const ConstantExpression*>(right);
       } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
                  left->kind() == Expression::Kind::kConstant) {
         if (!extractTagPropName(right, alias, label, &propName)) {
-          continue;
+          if (optr == LogicalExpression::makeAnd) {
+            continue;
+          }
+          return nullptr;
         }
         constant = static_cast<const ConstantExpression*>(left);
       } else {

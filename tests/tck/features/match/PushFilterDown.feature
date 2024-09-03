@@ -66,7 +66,31 @@ Feature: Push filter down
   Scenario: Vertex and edge
     When profiling query:
       """
-      MATCH (v:player)-[e]-() where v.player.age > 20 RETURN v
+      MATCH (v:player)-[]-() where v.player.age > 20 RETURN v
+      """
+    Then the execution plan should be:
+      | id | name           | dependencies | operator info                               |
+      | 6  | Project        | 5            |                                             |
+      | 5  | Filter         | 4            |                                             |
+      | 4  | AppendVertices | 3            |                                             |
+      | 3  | Traverse       | 2            |                                             |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":"(player.age>20)"}}  |
+      | 1  | Start          |              |                                             |
+    When profiling query:
+      """
+      MATCH (v:player)-[]-(o:player) where v.player.age > 20 or o.player.name == "Yao Ming"  RETURN v
+      """
+    Then the execution plan should be:
+      | id | name           | dependencies | operator info                               |
+      | 6  | Project        | 5            |                                             |
+      | 5  | Filter         | 4            |                                             |
+      | 4  | AppendVertices | 3            |                                             |
+      | 3  | Traverse       | 2            |                                             |
+      | 2  | IndexScan      | 1            | {"indexCtx": {"filter":""}}                 |
+      | 1  | Start          |              |                                             |
+    When profiling query:
+      """
+      MATCH (v:player)-[]-(o:player) where v.player.age > 20 and o.player.name == "Yao Ming"  RETURN v
       """
     Then the execution plan should be:
       | id | name           | dependencies | operator info                               |
