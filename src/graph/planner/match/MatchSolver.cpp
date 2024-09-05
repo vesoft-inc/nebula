@@ -158,7 +158,10 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
   std::vector<Expression*> relationals;
   for (auto item : opnds) {
     if (kinds.count(item->kind()) != 1) {
-      continue;
+      if (optr == LogicalExpression::makeAnd) {
+        continue;
+      }
+      return nullptr;
     }
 
     auto* binary = static_cast<const BinaryExpression*>(item);
@@ -178,10 +181,16 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
         la = static_cast<const LabelAttributeExpression*>(right);
         constant = static_cast<const ConstantExpression*>(left);
       } else {
-        continue;
+        if (optr == LogicalExpression::makeAnd) {
+          continue;
+        }
+        return nullptr;
       }
       if (la->left()->name() != alias) {
-        continue;
+        if (optr == LogicalExpression::makeAnd) {
+          continue;
+        }
+        return nullptr;
       }
       propName = la->right()->value().getStr();
     } else {
@@ -204,7 +213,10 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
         }
         constant = static_cast<const ConstantExpression*>(left);
       } else {
-        continue;
+        if (optr == LogicalExpression::makeAnd) {
+          continue;
+        }
+        return nullptr;
       }
     }
 
