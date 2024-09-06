@@ -33,6 +33,8 @@ extern stats::CounterId kOptimizerLatencyUs;
 // Executor
 extern stats::CounterId kNumAggregateExecutors;
 extern stats::CounterId kNumSortExecutors;
+extern stats::CounterId kNumLimitExecutors;
+extern stats::CounterId kLimitExecutorsLatencyUs;
 extern stats::CounterId kNumIndexScanExecutors;
 
 // Server client traffic
