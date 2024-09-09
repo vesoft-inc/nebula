@@ -39,7 +39,7 @@ class MatchSolver final {
                                      bool isEdgeProperties = false);
 
   static bool extractTagPropName(const Expression* expr, const string& alias, string* propName);
-  
+
   static bool extractTagPropName(const Expression* expr,
                                  const std::string& alias,
                                  const std::string& label,
