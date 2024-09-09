@@ -13,7 +13,7 @@ defaults:
 jobs:
   auto-cherry-pick:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
-    runs-on: [self-hosted, nebula-fast, linux]
+    runs-on: [self-hosted, medium, linux]
     container:
       image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
       credentials:
