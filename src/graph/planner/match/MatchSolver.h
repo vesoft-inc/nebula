@@ -38,6 +38,8 @@ class MatchSolver final {
                                      QueryContext* qctx,
                                      bool isEdgeProperties = false);
 
+  static bool extractTagPropName(const Expression* expr, const string& alias, string* propName);
+  
   static bool extractTagPropName(const Expression* expr,
                                  const std::string& alias,
                                  const std::string& label,
@@ -55,6 +57,22 @@ class MatchSolver final {
 
   // Build yield columns for match & shortestPath statement
   static void buildProjectColumns(QueryContext* qctx, const Path& path, SubPlan& plan);
+
+  static bool extractLabelAndConstant(const Expression* left,
+                                      const Expression* right,
+                                      const string& label,
+                                      const string& alias,
+                                      Expression::Kind labelKind,
+                                      const ConstantExpression*& constant,
+                                      string& propName);
+
+  static bool extract(const Expression* left,
+                      const Expression* right,
+                      const string& label,
+                      const string& alias,
+                      Expression::Kind labelKind,
+                      const ConstantExpression*& constant,
+                      string& propName);
 };
 
 }  // namespace graph

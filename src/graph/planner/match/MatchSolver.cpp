@@ -123,6 +123,43 @@ bool MatchSolver::extractTagPropName(const Expression* expr,
   return true;
 }
 
+bool MatchSolver::extractTagPropName(const Expression* expr,
+                                     const std::string& alias,
+                                     std::string* propName) {
+  if (expr->kind() != Expression::Kind::kLabelAttribute) return false;
+  auto laExpr = static_cast<const LabelAttributeExpression*>(expr);
+  if (laExpr->left()->name() != alias) return false;
+  *propName = laExpr->right()->value().getStr();
+  return true;
+}
+
+bool MatchSolver::extract(const Expression* left,
+                          const Expression* right,
+                          const std::string& label,
+                          const std::string& alias,
+                          Expression::Kind labelKind,
+                          const ConstantExpression*& constant,
+                          std::string& propName) {
+  if (left->kind() != labelKind || right->kind() != Expression::Kind::kConstant) {
+    return false;
+  }
+  constant = static_cast<const ConstantExpression*>(right);
+
+  return extractTagPropName(left, alias, label, &propName) ||
+         extractTagPropName(left, alias, &propName);
+}
+
+bool MatchSolver::extractLabelAndConstant(const Expression* left,
+                                          const Expression* right,
+                                          const std::string& label,
+                                          const std::string& alias,
+                                          Expression::Kind labelKind,
+                                          const ConstantExpression*& constant,
+                                          std::string& propName) {
+  return extract(left, right, label, alias, labelKind, constant, propName) ||
+         extract(right, left, label, alias, labelKind, constant, propName);
+}
+
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const std::string& alias,
                                          Expression* filter,
@@ -170,54 +207,13 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     const ConstantExpression* constant = nullptr;
     std::string propName;
     // TODO(aiee) extract the logic that applies to both match and lookup
-    if (isEdgeProperties) {
-      const LabelAttributeExpression* la = nullptr;
-      if (left->kind() == Expression::Kind::kLabelAttribute &&
-          right->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelAttributeExpression*>(left);
-        constant = static_cast<const ConstantExpression*>(right);
-      } else if (right->kind() == Expression::Kind::kLabelAttribute &&
-                 left->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelAttributeExpression*>(right);
-        constant = static_cast<const ConstantExpression*>(left);
-      } else {
-        if (optr == LogicalExpression::makeAnd) {
-          continue;
-        }
-        return nullptr;
+    auto labelkind = (isEdgeProperties) ? Expression::Kind::kLabelAttribute
+                                        : Expression::Kind::kLabelTagProperty;
+    if (!extractLabelAndConstant(left, right, label, alias, labelkind, constant, propName)) {
+      if (optr == LogicalExpression::makeAnd) {
+        continue;
       }
-      if (la->left()->name() != alias) {
-        if (optr == LogicalExpression::makeAnd) {
-          continue;
-        }
-        return nullptr;
-      }
-      propName = la->right()->value().getStr();
-    } else {
-      if (left->kind() == Expression::Kind::kLabelTagProperty &&
-          right->kind() == Expression::Kind::kConstant) {
-        if (!extractTagPropName(left, alias, label, &propName)) {
-          if (optr == LogicalExpression::makeAnd) {
-            continue;
-          }
-          return nullptr;
-        }
-        constant = static_cast<const ConstantExpression*>(right);
-      } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
-                 left->kind() == Expression::Kind::kConstant) {
-        if (!extractTagPropName(right, alias, label, &propName)) {
-          if (optr == LogicalExpression::makeAnd) {
-            continue;
-          }
-          return nullptr;
-        }
-        constant = static_cast<const ConstantExpression*>(left);
-      } else {
-        if (optr == LogicalExpression::makeAnd) {
-          continue;
-        }
-        return nullptr;
-      }
+      return nullptr;
     }
 
     auto* tpExpr =

@@ -26,7 +26,6 @@ Feature: Push filter down
       """
     And wait all indexes ready
 
-
   Scenario: Single vertex
     When profiling query:
       """
