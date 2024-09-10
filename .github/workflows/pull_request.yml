@@ -231,7 +231,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
