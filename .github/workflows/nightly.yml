@@ -48,7 +48,7 @@ jobs:
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "subdir=$subdir" >> $GITHUB_OUTPUT
-      # - uses: actions/upload-artifact@v3
+      # - uses: actions/upload-artifact@v4
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output
@@ -197,7 +197,7 @@ jobs:
           files: fastcov.info
           fail_ci_if_error: false
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -235,10 +235,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: output some vars
         id: vars
         env:
@@ -304,7 +304,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -329,10 +329,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Prepare environment
         id: prepare
         run: |
@@ -394,7 +394,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
