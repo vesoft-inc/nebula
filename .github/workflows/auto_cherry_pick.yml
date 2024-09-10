@@ -14,15 +14,10 @@ jobs:
   auto-cherry-pick:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
-    container:
-      image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
-      credentials:
-        username: ${{ secrets.HARBOR_USERNAME }}
-        password: ${{ secrets.HARBOR_PASSWORD }}
     steps:
-      - uses: webiny/action-post-run@3.1.0
+      - uses: actions/setup-python@v5
         with:
-          run: sh -c "find . -mindepth 1 -delete"
+          python-version: '3.8' 
       - name: git config set
         env:
           GH_BOT_PAT: ${{ secrets.GITHUB_TOKEN }}
