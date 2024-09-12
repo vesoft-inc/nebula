@@ -30,7 +30,7 @@ class VariableExpression final : public Expression {
     return isInner_;
   }
 
-  void setInner(bool inner){
+  void setInner(bool inner) {
     isInner_ = inner;
   }
 
