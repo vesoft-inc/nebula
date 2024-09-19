@@ -1,105 +1,55 @@
-name: "CodeQL"
+name: "CodeQL Advanced"
 
 on:
-  pull_request:
-    types: [synchronize, reopened, labeled]
-    branches:
-      - master
-      - 'release-**'
+  workflow_dispatch:
   schedule:
-    - cron: '45 22 * * 5'
-
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
-
-defaults:
-  run:
-    shell: bash
+    - cron: '23 12 * * *'
 
 jobs:
   analyze:
-    name: CodeQL Scan (${{ matrix.language }})
-    # Runner size impacts CodeQL analysis time. To learn more, please see:
-    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
-    #   - https://gh.io/supported-runners-and-hardware-resources
-    #   - https://gh.io/using-larger-runners (GitHub.com only)
-    # Consider using larger runners or machines with greater resources for possible analysis time improvements.
-    runs-on: [self-hosted, nebula]
-    timeout-minutes: 60
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
     permissions:
-      # required for all workflows
       security-events: write
-
-      # required to fetch internal or private CodeQL packs
-      packages: read
-
-      # only required for workflows in private repositories
       actions: read
       contents: read
+
+    container:
+      image: vesoft/nebula-dev:centos7
+      options: --cap-add=SYS_PTRACE
 
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu2004
-        compiler:
-          - gcc-9.3
-        include:
-          - language: c-cpp
-            build-mode: "manual"
-    env:
-      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      CCACHE_MAXSIZE: 8G
-    container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
-      volumes:
-        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      options: --cap-add=SYS_PTRACE
+        language: [ 'cpp' ]
+
     steps:
-      - uses: webiny/action-post-run@3.0.0
-        with:
-          run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
-      - name: Prepare environment
-        id: prepare
-        run: |
-          [ -d build/ ] && rm -rf build/* || mkdir -p build
-          make init -C tests
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        working-directory: build/
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-          # If you wish to specify custom queries, you can do so here or in a config file.
-          # By default, queries listed here will override any specified in a config file.
-          # Prefix the list here with "+" to use these queries and those in the config file.
+    - uses: webiny/action-post-run@3.1.0
+      with:
+        run: sh -c "find . -mindepth 1 -delete"
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-          # queries: security-extended,security-and-quality
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
 
-      - name: CMake
-        id: cmake
-        run: |
-              cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
-                  -DNEBULA_USE_LINKER=gold \
-                  -DCMAKE_BUILD_TYPE=Debug \
-                  -DENABLE_TESTING=on \
-                  -GNinja \
-                  -B build
-      - name: Make
-        run: |
-              ccache -z
-              ninja -j $(nproc)
-              ccache -s
-        working-directory: build/
+    - name: Build project
+      run: |
+        [ -d build/ ] && rm -rf build/* || mkdir -p build && cd build
+        cmake \
+          -DCOMPILER_LAUNCHER_OPTION=sccache \
+          -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+          -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
+          -DNEBULA_USE_LINKER=mold \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_TESTING=on \
+          -GNinja \
+          ..
+        ninja -j $(nproc)
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{matrix.language}}"
-        working-directory: build/
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
