@@ -307,6 +307,18 @@ std::string NetworkUtils::toHostsStr(const std::vector<HostAddr>& hosts) {
   return hostsString;
 }
 
+Status NetworkUtils::validateIP(const std::string& ip) {
+  if (ip.empty()) {
+    return Status::Error("ip is empty.");
+  }
+  static const std::regex ipv4(
+      R"(^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}$)");
+  if (!std::regex_match(ip, ipv4)) {
+    return Status::Error("%s is not a valid IP", ip.c_str());
+  }
+  return Status::OK();
+}
+
 Status NetworkUtils::validateHostOrIp(const std::string& hostOrIp) {
   if (hostOrIp.empty()) {
     return Status::Error("local_ip is empty, need to config it through config file.");
