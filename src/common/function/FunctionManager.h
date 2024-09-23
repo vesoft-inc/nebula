@@ -63,6 +63,19 @@ class FunctionManager final {
   static StatusOr<Value::Type> getReturnType(const std::string &funcName,
                                              const std::vector<Value::Type> &argsType);
 
+  // The function register functions
+  void registerTrigonometricFunctions();
+  void registerMathFunctions();
+  void registerBitwiseAndHashFunctions();
+  void registerStringFunctions();
+  void registerCastFunctions();
+  void registerDateTimeFunctions();
+  void registerGeoFunctions();
+  void registerInternalFunctions();
+  void registerListFunctions();
+  void registerScalarFunctions();
+  void registerGraphElementFunctions();
+
   // The attributes of the function call
   struct FunctionAttributes final {
     size_t minArity_{0};
