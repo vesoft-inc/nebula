@@ -209,6 +209,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->makeAndAdd<FulltextIndexScanExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLimit: {
+      stats::StatsManager::addValue(kNumLimitExecutors);
+      if (FLAGS_enable_space_level_metrics && spaceName != "") {
+        stats::StatsManager::addValue(
+            stats::StatsManager::counterWithLabels(kNumLimitExecutors, {{"space", spaceName}}));
+      }
       return pool->makeAndAdd<LimitExecutor>(node, qctx);
     }
     case PlanNode::Kind::kSample: {
