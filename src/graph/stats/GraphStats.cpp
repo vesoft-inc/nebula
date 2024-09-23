@@ -32,6 +32,8 @@ stats::CounterId kOptimizerLatencyUs;
 
 stats::CounterId kNumAggregateExecutors;
 stats::CounterId kNumSortExecutors;
+stats::CounterId kNumLimitExecutors;
+stats::CounterId kLimitExecutorsLatencyUs;
 stats::CounterId kNumIndexScanExecutors;
 
 stats::CounterId kNumOpenedSessions;
@@ -65,6 +67,10 @@ void initGraphStats() {
   kNumSortExecutors = stats::StatsManager::registerStats("num_sort_executors", "rate, sum");
   kNumIndexScanExecutors =
       stats::StatsManager::registerStats("num_indexscan_executors", "rate, sum");
+
+  kNumLimitExecutors = stats::StatsManager::registerStats("num_Limit_executors", "rate, sum");
+  kLimitExecutorsLatencyUs = stats::StatsManager::registerHisto(
+      "limit_executors_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
 
   kNumOpenedSessions = stats::StatsManager::registerStats("num_opened_sessions", "rate, sum");
   kNumAuthFailedSessions =
