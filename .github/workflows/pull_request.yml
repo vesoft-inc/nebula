@@ -21,10 +21,10 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ready-for-testing') && github.event.pull_request.merged != true }}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           clean: false
       - name: Check License Header
@@ -40,7 +40,7 @@ jobs:
         run: |
           git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
@@ -51,7 +51,7 @@ jobs:
   build:
     name: build
     needs: lint
-    runs-on: [self-hosted, nebula]
+    runs-on: [self-hosted, nebula, linux]
     strategy:
       fail-fast: false
       matrix:
@@ -86,10 +86,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Prepare environment
         id: prepare
         run: |
@@ -231,7 +231,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs

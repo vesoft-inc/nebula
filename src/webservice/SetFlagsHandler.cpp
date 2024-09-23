@@ -79,6 +79,14 @@ void SetFlagsHandler::onEOM() noexcept {
   for (auto &item : flags.items()) {
     try {
       const std::string &name = item.first.asString();
+      if (name == "enable_authorize") {
+        LOG(ERROR) << "Modifying enable_authorize is not allowed";
+        ResponseBuilder(downstream_)
+            .status(WebServiceUtils::to(HttpStatusCode::BAD_REQUEST),
+                    WebServiceUtils::toString(HttpStatusCode::BAD_REQUEST))
+            .sendWithEOM();
+        return;
+      }
       const std::string &value = item.second.asString();
       const std::string &newValue = gflags::SetCommandLineOption(name.c_str(), value.c_str());
       if (newValue.empty()) {

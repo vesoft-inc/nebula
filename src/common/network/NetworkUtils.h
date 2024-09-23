@@ -50,6 +50,8 @@ class NetworkUtils final {
   static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
   static std::string toHostsStr(const std::vector<HostAddr>& hosts);
 
+  static Status validateIP(const std::string& ip);
+
   static Status validateHostOrIp(const std::string& HostOrIp);
 
  private:
