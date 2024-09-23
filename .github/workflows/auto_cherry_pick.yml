@@ -13,16 +13,11 @@ defaults:
 jobs:
   auto-cherry-pick:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
-    runs-on: [self-hosted, nebula-fast]
-    container:
-      image: reg.vesoft-inc.com/dashboard/dashboard-dev:centos7
-      credentials:
-        username: ${{ secrets.HARBOR_USERNAME }}
-        password: ${{ secrets.HARBOR_PASSWORD }}
+    runs-on: ubuntu-latest
     steps:
-      - name: keep workspace empty  
-        run: |
-          rm -rf *
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8' 
       - name: git config set
         env:
           GH_BOT_PAT: ${{ secrets.GITHUB_TOKEN }}
