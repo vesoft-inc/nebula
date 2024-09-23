@@ -12,6 +12,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
@@ -93,7 +94,7 @@ class SnapshotManager {
  private:
   std::unique_ptr<folly::IOThreadPoolExecutor> executor_;
   std::unique_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-  thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient> connManager_;
+  std::unique_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> connManager_;
 };
 
 }  // namespace raftex
