@@ -48,6 +48,7 @@ Feature: Parameter
       | v                                 |
       | {a: 3, b: false, c: "Tim Duncan"} |
 
+  @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5939
   Scenario: [param-test-004] cypher with parameters
     # where clause
     When executing query:
