@@ -14,16 +14,13 @@ jobs:
   auto-cherry-pick:
       #if: ${{ startsWith(github.event.pull_request.labels.*.name, 'cherry-pick-') && github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.8' 
       - name: git config set
         env:
-          GH_BOT_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_BOT_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config --global url."https://${GH_BOT_PAT}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
             export GOPRIVATE="github.com/vesoft-inc"
