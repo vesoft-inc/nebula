@@ -8,6 +8,7 @@
 #include "common/hdfs/HdfsHelper.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "meta/MetaServiceUtils.h"
+#include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
@@ -34,20 +35,30 @@ nebula::cpp2::ErrorCode DownloadJobExecutor::check() {
   }
 
   auto u = url.substr(hdfsPrefix.size(), url.size());
-  std::vector<folly::StringPiece> tokens;
+  std::vector<std::string> tokens;
   folly::split(":", u, tokens);
   if (tokens.size() == 2) {
+    if (!NetworkUtils::validateIP(tokens[0]).ok()) {
+      LOG(ERROR) << "Illegal hdfs host: " << url;
+      return nebula::cpp2::ErrorCode::E_INVALID_JOB;
+    }
     host_ = std::make_unique<std::string>(tokens[0]);
-    int32_t position = tokens[1].find_first_of("/");
-    if (position != -1) {
+    auto position = tokens[1].find_first_of("/");
+    if (position != std::string::npos) {
       try {
-        port_ = folly::to<int32_t>(tokens[1].toString().substr(0, position).c_str());
+        port_ = folly::to<int32_t>(tokens[1].substr(0, position).c_str());
       } catch (const std::exception& ex) {
         LOG(ERROR) << "URL's port parse failed: " << url;
         return nebula::cpp2::ErrorCode::E_INVALID_JOB;
       }
-      path_ =
-          std::make_unique<std::string>(tokens[1].toString().substr(position, tokens[1].size()));
+      auto path = tokens[1].substr(position, tokens[1].size());
+      // A valid hdfs path must start with /, and only regular characters allow for now
+      const std::regex pattern("^/[-_/0-9a-zA-Z]*$");
+      if (!std::regex_match(path, pattern)) {
+        LOG(ERROR) << "Illegal hdfs path: " << url;
+        return nebula::cpp2::ErrorCode::E_INVALID_JOB;
+      }
+      path_ = std::make_unique<std::string>(path);
     } else {
       LOG(ERROR) << "URL Parse Failed: " << url;
       return nebula::cpp2::ErrorCode::E_INVALID_JOB;
