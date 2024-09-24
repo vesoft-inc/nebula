@@ -20,7 +20,7 @@ jobs:
           python-version: '3.8' 
       - name: git config set
         env:
-          GH_BOT_PAT: ${{ secrets.GH_PAT }}
+          GH_BOT_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global url."https://${GH_BOT_PAT}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
             export GOPRIVATE="github.com/vesoft-inc"
