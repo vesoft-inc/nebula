@@ -219,6 +219,61 @@ std::string UpdateVertexSentence::toString() const {
   return buf;
 }
 
+std::string UpdateMultiVertexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  if (insertable_) {
+    buf += "UPSERT ";
+  } else {
+    buf += "UPDATE ";
+  }
+  buf += "VERTEX ";
+  if (name_ != nullptr) {
+    buf += "ON " + *name_ + " ";
+  }
+  buf += vertices_->toString();
+  buf += " SET ";
+  buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
+    buf += " ";
+    buf += whenClause_->toString();
+  }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
+  }
+
+  return buf;
+}
+
+std::string UpdateRefVertexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  if (insertable_) {
+    buf += "UPSERT ";
+  } else {
+    buf += "UPDATE ";
+  }
+  buf += "VERTEX ";
+  if (name_ != nullptr) {
+    buf += "ON " + *name_ + " ";
+  }
+  buf += vertices_->toString();
+  buf += " SET ";
+  buf += updateList_->toString();
+    if (whenClause_ != nullptr) {
+    buf += " ";
+    buf += whenClause_->toString();
+  }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
+  }
+
+  return buf;
+}
+
+
 std::string UpdateEdgeSentence::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -246,6 +301,58 @@ std::string UpdateEdgeSentence::toString() const {
 
   return buf;
 }
+
+std::string UpdateMultiEdgeSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  if (insertable_) {
+    buf += "UPSERT ";
+  } else {
+    buf += "UPDATE ";
+  }
+  buf += "EDGE ";
+  buf += edgeKeys_->toString();
+  buf += " OF " + *name_;
+  buf += " SET ";
+  buf += updateList_->toString();
+  if (whenClause_ != nullptr) {
+    buf += " ";
+    buf += whenClause_->toString();
+  }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
+  }
+
+  return buf;
+}
+
+
+std::string UpdateRefEdgeSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  if (insertable_) {
+    buf += "UPSERT ";
+  } else {
+    buf += "UPDATE ";
+  }
+  buf += "EDGE ";
+  buf += edgeKeyRef_->toString();
+  buf += " OF " + *name_;
+  buf += " SET ";
+  buf += updateList_->toString();
+  if (whenClause_ != nullptr) {
+    buf += " ";
+    buf += whenClause_->toString();
+  }
+  if (yieldClause_ != nullptr) {
+    buf += " ";
+    buf += yieldClause_->toString();
+  }
+
+  return buf;
+}
+
 
 std::string DeleteVerticesSentence::toString() const {
   std::string buf;

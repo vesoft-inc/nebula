@@ -466,6 +466,110 @@ class UpdateVertexSentence final : public UpdateBaseSentence {
   Expression *vid_{nullptr};
 };
 
+class UpdateMultiVertexSentence final : public UpdateBaseSentence {
+  public:
+  UpdateMultiVertexSentence(VertexIDList *vidList,
+                       std::string *tagName,
+                       UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable),
+        vertices_(new VerticesClause(vidList)) {
+    kind_ = Kind::kUpdateMultiVertex;
+  }
+
+  // UpdateMultiVertexSentence(VertexIDList *vidList,
+  //                      UpdateList *updateList,
+  //                      WhenClause *whenClause,
+  //                      YieldClause *yieldClause,
+  //                      bool isInsertable = false)
+  //     : UpdateBaseSentence(updateList, whenClause, yieldClause, nullptr, isInsertable),
+  //       vertices_(new VerticesClause(vidList)) {
+  //   kind_ = Kind::kUpdateMultiVertex;
+  // }
+
+  ~UpdateMultiVertexSentence() {}
+
+  bool getInsertable() const {
+    return insertable_;
+  }
+
+  const VerticesClause *getVertices() const {
+    return vertices_.get();
+  }
+
+  const UpdateList *updateList() const {
+    return updateList_.get();
+  }
+
+  const WhenClause *whenClause() const {
+    return whenClause_.get();
+  }
+
+  const YieldClause *yieldClause() const {
+    return yieldClause_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<VerticesClause> vertices_;
+};
+
+
+class UpdateRefVertexSentence final : public UpdateBaseSentence {
+  public:
+  UpdateRefVertexSentence(Expression *vid_ref,
+                       std::string *tagName,
+                       UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable),
+        vertices_(new VerticesClause(vid_ref)) {
+    kind_ = Kind::kUpdateRefVertex;
+  }
+
+  // UpdateRefVertexSentence(Expression *vid_ref,
+  //                      UpdateList *updateList,
+  //                      WhenClause *whenClause,
+  //                      YieldClause *yieldClause,
+  //                      bool isInsertable = false)
+  //     : UpdateBaseSentence(updateList, whenClause, yieldClause, nullptr, isInsertable),
+  //       vertices_(new VerticesClause(vid_ref)) {
+  //   kind_ = Kind::kUpdateRefVertex;
+  // }
+
+  ~UpdateRefVertexSentence() {}
+
+  bool getInsertable() const {
+    return insertable_;
+  }
+
+  const VerticesClause *getVertices() const {
+    return vertices_.get();
+  }
+
+  const UpdateList *updateList() const {
+    return updateList_.get();
+  }
+
+  const WhenClause *whenClause() const {
+    return whenClause_.get();
+  }
+
+  const YieldClause *yieldClause() const {
+    return yieldClause_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<VerticesClause> vertices_;
+};
+
+
 class UpdateEdgeSentence final : public UpdateBaseSentence {
  public:
   UpdateEdgeSentence(Expression *srcId,
@@ -501,6 +605,55 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
   Expression *srcId_{nullptr};
   Expression *dstId_{nullptr};
   int64_t rank_{0L};
+};
+
+
+class UpdateMultiEdgeSentence final : public UpdateBaseSentence {
+  public:
+  UpdateMultiEdgeSentence(EdgeKeys *edge_keys,
+                     std::string *edgeName,
+                     UpdateList *updateList,
+                     WhenClause *whenClause,
+                     YieldClause *yieldClause,
+                     bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
+    edgeKeys_.reset(edge_keys);
+    kind_ = Kind::kUpdateMultiEdge;
+  }
+
+  EdgeKeys *getEdgeKeys() const {
+    return edgeKeys_.get();
+  }
+
+  std::string toString() const override;
+
+   private:
+  std::unique_ptr<EdgeKeys> edgeKeys_;
+};
+
+
+class UpdateRefEdgeSentence final : public UpdateBaseSentence {
+  public:
+  UpdateRefEdgeSentence(EdgeKeyRef *ref,
+                     std::string *edgeName,
+                     UpdateList *updateList,
+                     WhenClause *whenClause,
+                     YieldClause *yieldClause,
+                     bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
+    // LOG(INFO) << "UpdateRefEdgeSentence::UpdateRefEdgeSentence()" << "edgeName " << *edgeName;
+    edgeKeyRef_.reset(ref);
+    kind_ = Kind::kUpdateRefEdge;
+  }
+
+  EdgeKeyRef *edgeKeyRef() const {
+    return edgeKeyRef_.get();
+  }
+
+  std::string toString() const override;
+
+   private:
+  std::unique_ptr<EdgeKeyRef> edgeKeyRef_;
 };
 
 class DeleteVerticesSentence final : public Sentence {

@@ -110,6 +110,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "EDGE"                      { return TokenType::KW_EDGE; }
 "EDGES"                     { return TokenType::KW_EDGES; }
 "UPDATE"                    { return TokenType::KW_UPDATE; }
+"MULTIUPDATE"               { return TokenType::KW_MULTIUPDATE; }
 "UPSERT"                    { return TokenType::KW_UPSERT; }
 "WHEN"                      { return TokenType::KW_WHEN; }
 "DELETE"                    { return TokenType::KW_DELETE; }

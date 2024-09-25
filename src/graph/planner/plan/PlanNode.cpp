@@ -217,8 +217,16 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DeleteEdges";
     case Kind::kUpdateVertex:
       return "UpdateVertex";
+    case Kind::kUpdateMultiVertex:
+      return "UpdateMultiVertex";
+    case Kind::kUpdateRefVertex:
+      return "UpdateRefVertex";
     case Kind::kUpdateEdge:
       return "UpdateEdge";
+    case Kind::kUpdateMultiEdge:
+      return "kUpdateMultiEdge";
+    case Kind::kUpdateRefEdge:
+      return "UpdateRefEdge";
     case Kind::kShowHosts:
       return "ShowHosts";
     case Kind::kShowMetaLeader:
