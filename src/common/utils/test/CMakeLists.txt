@@ -40,6 +40,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
@@ -80,6 +81,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
@@ -123,6 +125,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
