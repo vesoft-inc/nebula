@@ -801,10 +801,11 @@ Status OptimizerUtils::appendColHint(std::vector<IndexColumnHint>& hints,
 }
 
 Status OptimizerUtils::appendIQCtx(const std::shared_ptr<IndexItem>& index,
-                                   std::vector<IndexQueryContext>& iqctx) {
+                                   std::vector<IndexQueryContext>& iqctx,
+                                   const Expression* filter) {
   IndexQueryContext ctx;
   ctx.index_id_ref() = index->get_index_id();
-  ctx.filter_ref() = "";
+  ctx.filter_ref() = (filter) ? Expression::encode(*filter) : "";
   iqctx.emplace_back(std::move(ctx));
   return Status::OK();
 }
@@ -940,7 +941,10 @@ Status OptimizerUtils::createIndexQueryCtx(std::vector<IndexQueryContext>& iqctx
   if (index == nullptr) {
     return Status::IndexNotFound("No valid index found");
   }
-  return appendIQCtx(index, iqctx);
+  auto in = static_cast<const IndexScan*>(node);
+  auto* filter = Expression::decode(qctx->objPool(), in->queryContext().begin()->get_filter());
+  auto* newFilter = ExpressionUtils::rewriteParameter(filter, qctx);
+  return appendIQCtx(index, iqctx, newFilter);
 }
 
 }  // namespace graph

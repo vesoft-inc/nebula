@@ -16,11 +16,14 @@ defaults:
 jobs:
   package:
     name: package
-    runs-on: [self-hosted, medium]
+    runs-on: [self-hosted, linux]
     container:
       image: vesoft/nebula-dev:centos7
     steps:
-      - uses: actions/checkout@v3
+      - uses: webiny/action-post-run@3.1.0
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/tagname-action
         id: tag
       - uses: vesoft-inc/.github/actions/setup-minio@master
@@ -40,7 +43,7 @@ jobs:
 
   docker_build:
     name: docker-build
-    runs-on: [self-hosted, nebula]
+    runs-on: [self-hosted, linux]
     strategy:
       fail-fast: false
       matrix:
@@ -50,10 +53,10 @@ jobs:
           - storaged
           - tools
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/tagname-action
         id: tagname
       - id: docker

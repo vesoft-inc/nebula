@@ -123,6 +123,43 @@ bool MatchSolver::extractTagPropName(const Expression* expr,
   return true;
 }
 
+bool MatchSolver::extractTagPropName(const Expression* expr,
+                                     const std::string& alias,
+                                     std::string* propName) {
+  if (expr->kind() != Expression::Kind::kLabelAttribute) return false;
+  auto laExpr = static_cast<const LabelAttributeExpression*>(expr);
+  if (laExpr->left()->name() != alias) return false;
+  *propName = laExpr->right()->value().getStr();
+  return true;
+}
+
+bool MatchSolver::extract(const Expression* left,
+                          const Expression* right,
+                          const std::string& label,
+                          const std::string& alias,
+                          Expression::Kind labelKind,
+                          const ConstantExpression*& constant,
+                          std::string& propName) {
+  if (left->kind() != labelKind || right->kind() != Expression::Kind::kConstant) {
+    return false;
+  }
+  constant = static_cast<const ConstantExpression*>(right);
+
+  return extractTagPropName(left, alias, label, &propName) ||
+         extractTagPropName(left, alias, &propName);
+}
+
+bool MatchSolver::extractLabelAndConstant(const Expression* left,
+                                          const Expression* right,
+                                          const std::string& label,
+                                          const std::string& alias,
+                                          Expression::Kind labelKind,
+                                          const ConstantExpression*& constant,
+                                          std::string& propName) {
+  return extract(left, right, label, alias, labelKind, constant, propName) ||
+         extract(right, left, label, alias, labelKind, constant, propName);
+}
+
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
                                          const std::string& alias,
                                          Expression* filter,
@@ -136,25 +173,32 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       Expression::Kind::kRelGE,
   };
 
-  std::vector<const Expression*> ands;
+  std::vector<Expression*> opnds;
+  auto optr = LogicalExpression::makeAnd;
   auto kind = filter->kind();
   if (kinds.count(kind) == 1) {
-    ands.emplace_back(filter);
+    opnds.emplace_back(filter);
   } else if (kind == Expression::Kind::kLogicalAnd) {
     auto* logic = static_cast<LogicalExpression*>(filter);
     ExpressionUtils::pullAnds(logic);
-    for (auto& operand : logic->operands()) {
-      ands.emplace_back(operand);
-    }
+    opnds = logic->operands();
+  } else if (kind == Expression::Kind::kLogicalOr) {
+    auto* logic = static_cast<LogicalExpression*>(filter);
+    ExpressionUtils::pullOrs(logic);
+    opnds = logic->operands();
+    optr = LogicalExpression::makeOr;
   } else {
     return nullptr;
   }
 
   auto* pool = qctx->objPool();
   std::vector<Expression*> relationals;
-  for (auto* item : ands) {
+  for (auto item : opnds) {
     if (kinds.count(item->kind()) != 1) {
-      continue;
+      if (optr == LogicalExpression::makeAnd) {
+        continue;
+      }
+      return nullptr;
     }
 
     auto* binary = static_cast<const BinaryExpression*>(item);
@@ -163,39 +207,13 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     const ConstantExpression* constant = nullptr;
     std::string propName;
     // TODO(aiee) extract the logic that applies to both match and lookup
-    if (isEdgeProperties) {
-      const LabelAttributeExpression* la = nullptr;
-      if (left->kind() == Expression::Kind::kLabelAttribute &&
-          right->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelAttributeExpression*>(left);
-        constant = static_cast<const ConstantExpression*>(right);
-      } else if (right->kind() == Expression::Kind::kLabelAttribute &&
-                 left->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const LabelAttributeExpression*>(right);
-        constant = static_cast<const ConstantExpression*>(left);
-      } else {
+    auto labelkind = (isEdgeProperties) ? Expression::Kind::kLabelAttribute
+                                        : Expression::Kind::kLabelTagProperty;
+    if (!extractLabelAndConstant(left, right, label, alias, labelkind, constant, propName)) {
+      if (optr == LogicalExpression::makeAnd) {
         continue;
       }
-      if (la->left()->name() != alias) {
-        continue;
-      }
-      propName = la->right()->value().getStr();
-    } else {
-      if (left->kind() == Expression::Kind::kLabelTagProperty &&
-          right->kind() == Expression::Kind::kConstant) {
-        if (!extractTagPropName(left, alias, label, &propName)) {
-          continue;
-        }
-        constant = static_cast<const ConstantExpression*>(right);
-      } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
-                 left->kind() == Expression::Kind::kConstant) {
-        if (!extractTagPropName(right, alias, label, &propName)) {
-          continue;
-        }
-        constant = static_cast<const ConstantExpression*>(left);
-      } else {
-        continue;
-      }
+      return nullptr;
     }
 
     auto* tpExpr =
@@ -218,7 +236,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
 
   auto* root = relationals[0];
   for (auto i = 1u; i < relationals.size(); i++) {
-    root = LogicalExpression::makeAnd(qctx->objPool(), root, relationals[i]);
+    root = optr(qctx->objPool(), root, relationals[i]);
   }
 
   return root;

@@ -24,6 +24,8 @@ SnapshotManager::SnapshotManager() {
   ioThreadPool_.reset(new folly::IOThreadPoolExecutor(
       FLAGS_snapshot_io_threads,
       std::make_shared<folly::NamedThreadFactory>("snapshot-ioexecutor")));
+  connManager_.reset(
+      new thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>(FLAGS_enable_ssl));
 }
 
 folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
@@ -131,7 +133,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
   req.done_ref() = finished;
   auto* evb = ioThreadPool_->getEventBase();
   return folly::via(evb, [this, addr, evb, req = std::move(req)]() mutable {
-    auto client = connManager_.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);
+    auto client = connManager_->client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);
     return client->future_sendSnapshot(req);
   });
 }

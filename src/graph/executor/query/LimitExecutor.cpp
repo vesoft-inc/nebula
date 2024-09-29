@@ -5,11 +5,13 @@
 #include "graph/executor/query/LimitExecutor.h"
 
 #include "graph/planner/plan/Query.h"
-
+#include "graph/stats/GraphStats.h"
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> LimitExecutor::execute() {
+  auto start_ts = std::chrono::steady_clock::now();
+  auto& spaceName = qctx()->rctx() ? qctx()->rctx()->session()->spaceName() : "";
   SCOPED_TIMER(&execTime_);
 
   auto* limit = asNode<Limit>(node());
@@ -31,6 +33,14 @@ folly::Future<Status> LimitExecutor::execute() {
     builder.value(result.valuePtr());
     iter->select(offset, count);
     builder.iter(std::move(result).iter());
+    auto diff = std::chrono::steady_clock::now() - start_ts;
+    stats::StatsManager::addValue(
+        kLimitExecutorsLatencyUs,
+        std::chrono::duration_cast<std::chrono::milliseconds>(diff).count());
+    if (FLAGS_enable_space_level_metrics && spaceName != "") {
+      stats::StatsManager::addValue(
+          stats::StatsManager::histoWithLabels(kLimitExecutorsLatencyUs, {{"space", spaceName}}));
+    }
     return finish(builder.build());
   } else {
     DataSet ds;

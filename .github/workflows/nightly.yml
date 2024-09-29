@@ -17,7 +17,7 @@ env:
 jobs:
   package:
     name: build package
-    runs-on: [self-hosted, nebula]
+    runs-on: [self-hosted, nebula, linux]
     strategy:
       fail-fast: false
       matrix:
@@ -31,11 +31,11 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: "^1.16.7"
       - name: package
@@ -48,7 +48,7 @@ jobs:
           find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "subdir=$subdir" >> $GITHUB_OUTPUT
-      # - uses: actions/upload-artifact@v3
+      # - uses: actions/upload-artifact@v4
       #   with:
       #     name: ${{ matrix.os }}-nightly
       #     path: pkg-build/cpack_output
@@ -64,19 +64,19 @@ jobs:
   docker:
     name: build docker image
     needs: package
-    runs-on: [self-hosted, nebula]
+    runs-on: [self-hosted, nebula, linux]
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
-      - uses: docker/login-action@v2
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v2
-      - uses: docker/build-push-action@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -86,7 +86,7 @@ jobs:
           target: graphd
           cache-to: type=local,dest=/tmp/buildx-cache,mode=max
           push: true
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -96,7 +96,7 @@ jobs:
           target: storaged
           cache-from: type=local,src=/tmp/buildx-cache
           push: true
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -106,7 +106,7 @@ jobs:
           target: metad
           cache-from: type=local,src=/tmp/buildx-cache
           push: true
-      - uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/Dockerfile
@@ -122,7 +122,7 @@ jobs:
 
   coverage:
     name: coverage
-    runs-on: [self-hosted, nebula]
+    runs-on: [self-hosted, nebula, linux]
     strategy:
       fail-fast: false
       matrix:
@@ -139,10 +139,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Prepare environment
         run: |
           [ -d build/ ] && rm -rf build/* || mkdir -p build
@@ -197,7 +197,7 @@ jobs:
           files: fastcov.info
           fail_ci_if_error: false
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -235,10 +235,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: output some vars
         id: vars
         env:
@@ -304,7 +304,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
@@ -329,10 +329,10 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - uses: webiny/action-post-run@3.0.0
+      - uses: webiny/action-post-run@3.1.0
         with:
           run: sh -c "find . -mindepth 1 -delete"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Prepare environment
         id: prepare
         run: |
@@ -394,7 +394,7 @@ jobs:
         working-directory: tests/
         timeout-minutes: 2
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
