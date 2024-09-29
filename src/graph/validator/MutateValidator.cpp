@@ -714,24 +714,12 @@ Status UpdateValidator::getUpdateProps() {
       symNames.emplace(name_);
     }
     if (item->getFieldExpr() != nullptr) {
-      if (item->getFieldExpr()->kind() == Expression::Kind::kLabelAttribute) {
-        auto laExpr = static_cast<const LabelAttributeExpression *>(item->getFieldExpr());
-        symNames.emplace(laExpr->left()->name());
-        symName = laExpr->left()->name();
-        const auto &value = laExpr->right()->value();
-        fieldName = value.getStr();
-      } else if (item->getFieldExpr()->kind() == Expression::Kind::kSubscript) {
-        auto subExpr = static_cast<const SubscriptExpression *>(item->getFieldExpr());
-        DCHECK(subExpr->left()->kind() == Expression::Kind::kLabel);
-        auto labelExpr = static_cast<const LabelExpression *>(subExpr->left());
-        symNames.emplace(labelExpr->name());
-        symName = labelExpr->name();
-        fieldName = subExpr->toString();
-      } else {
-        LOG(ERROR) << "Unsupported field expression kind: "
-                   << static_cast<int>(item->getFieldExpr()->kind());
-        return Status::SyntaxError("Unsupported field expression kind.");
-      }
+      DCHECK(item->getFieldExpr()->kind() == Expression::Kind::kLabelAttribute);
+      auto laExpr = static_cast<const LabelAttributeExpression *>(item->getFieldExpr());
+      symNames.emplace(laExpr->left()->name());
+      symName = laExpr->left()->name();
+      const auto &value = laExpr->right()->value();
+      fieldName = value.getStr();
     }
     auto valueExpr = item->value();
     if (valueExpr == nullptr) {
@@ -814,7 +802,6 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
     switch (e->kind()) {
       case Expression::Kind::kLabel:
       case Expression::Kind::kLabelAttribute:
-      case Expression::Kind::kSubscript:
         return true;
       default:
         return false;
@@ -838,17 +825,6 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
         } else {
           return nullptr;
         }
-      }
-      case Expression::Kind::kSubscript: {
-        auto subExpr = static_cast<const SubscriptExpression *>(e);
-        if (subExpr->left()->kind() == Expression::Kind::kLabel) {
-          auto labelExpr = static_cast<const LabelExpression *>(subExpr->left());
-          return SubscriptExpression::make(
-              pool,
-              SourcePropertyExpression::make(pool, sym, labelExpr->name()),
-              subExpr->right()->clone());
-        }
-        return nullptr;
       }
       default:
         return nullptr;
