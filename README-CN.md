@@ -68,7 +68,7 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 
 ## 快速使用
 
-您可以在[云上](https://docs.nebula-graph.com.cn/3.3.0/2.quick-start/1.quick-start-overview/#_2)或[本地](https://docs.nebula-graph.com.cn/3.3.0/2.quick-start/1.quick-start-overview/#_6)快速体验 **NebulaGraph**。
+您可以在[云上](https://cloud.nebula-graph.io/login)或[本地](https://docs.nebula-graph.com.cn/3.8.0/2.quick-start/3.quick-start-on-premise/2.install-nebula-graph/)快速体验 **NebulaGraph**。
 
 <!--
 在开始使用 **NebulaGraph** 之前，必须通过[编译源码](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/1.build-source-code/)或者 [docker compose](https://docs.nebula-graph.com.cn/manual-CN/3.build-develop-and-administration/1.build/2.build-by-docker/) 方式安装 **NebulaGraph**。您也可以观看[视频](https://space.bilibili.com/472621355)学习如何安装 **NebulaGraph**。
@@ -76,13 +76,13 @@ NebulaGraph内核 1.x 与 2.x 数据格式、通信协议、客户端等均双�
 
 ## 安装方式
 
-您可以通过[下载](https://www.nebula-graph.com.cn/download)安装包或者[源码编译](https://docs.nebula-graph.com.cn/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)安装 **NebulaGraph**：
+您可以通过[下载](https://www.nebula-graph.com.cn/download)安装包或者[源码编译](https://docs.nebula-graph.com.cn/3.8.0/2.quick-start/3.quick-start-on-premise/2.install-nebula-graph/)安装 **NebulaGraph**：
 
 ## 获取帮助
 
 在使用 **NebulaGraph** 过程中遇到任何问题，都可以通过下面的方式寻求帮助：
 
-* [FAQ](https://docs.nebula-graph.com.cn/3.3.0/20.appendix/0.FAQ/)
+* [FAQ](https://docs.nebula-graph.com.cn/3.8.0/20.appendix/0.FAQ/)
 * [访问论坛](https://discuss.nebula-graph.com.cn/)
 * [查看文档](https://docs.nebula-graph.com.cn/)
   
