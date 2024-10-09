@@ -23,7 +23,8 @@ namespace graph {
  *             kYield, kOrderBy, kFetchVertices, kFind
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
  * Write data: kBuildTagIndex, kBuildEdgeIndex,
- *             kInsertVertex, kUpdateVertex, kInsertEdge,
+ *             kInsertVertex, kUpdateVertex, kUpdateMultiVertex,
+ *             kInsertEdge,
  *             kUpdateEdge, kDeleteVertex, kDeleteEdges, kAdminJob(other)
  * Special operation : kShow, kChangePassword
  */
@@ -105,7 +106,11 @@ namespace graph {
     }
     case Sentence::Kind::kInsertVertices:
     case Sentence::Kind::kUpdateVertex:
+    case Sentence::Kind::kUpdateMultiVertex:
+    case Sentence::Kind::kUpdateRefVertex:
     case Sentence::Kind::kInsertEdges:
+    case Sentence::Kind::kUpdateMultiEdge:
+    case Sentence::Kind::kUpdateRefEdge:
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
     case Sentence::Kind::kDeleteTags:

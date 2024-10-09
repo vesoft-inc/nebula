@@ -147,8 +147,12 @@ class PlanNode {
     kDeleteVertices,
     kDeleteEdges,
     kUpdateVertex,
+    kUpdateMultiVertex,
+    kUpdateRefVertex,
     kDeleteTags,
     kUpdateEdge,
+    kUpdateMultiEdge,
+    kUpdateRefEdge,
 
     // Show
     kShowParts,

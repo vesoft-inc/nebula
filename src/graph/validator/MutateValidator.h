@@ -185,6 +185,37 @@ class UpdateVertexValidator final : public UpdateValidator {
   TagID tagId_{-1};
 };
 
+
+class UpdateMultiVertexValidator final : public UpdateValidator {
+  public:
+  UpdateMultiVertexValidator(Sentence* sentence, QueryContext* context)
+      : UpdateValidator(sentence, context) {}
+
+  private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+  private:
+  std::vector<Value> vertices_;
+  TagID tagId_{-1};
+};
+
+class UpdateRefVertexValidator final : public UpdateValidator {
+  public:
+  UpdateRefVertexValidator(Sentence* sentence, QueryContext* context)
+      : UpdateValidator(sentence, context) {}
+
+  private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+  private:
+  Expression* vidRef_{nullptr};
+  TagID tagId_{-1};
+};
+
 class UpdateEdgeValidator final : public UpdateValidator {
  public:
   UpdateEdgeValidator(Sentence* sentence, QueryContext* context)
@@ -201,6 +232,44 @@ class UpdateEdgeValidator final : public UpdateValidator {
   EdgeRanking rank_{0};
   EdgeType edgeType_{-1};
 };
+
+
+class UpdateMultiEdgeValidator final : public UpdateValidator {
+  public:
+    UpdateMultiEdgeValidator(Sentence* sentence, QueryContext* context)
+        : UpdateValidator(sentence, context, true) {}
+
+  private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+  private:
+    std::vector<EdgeId> edgeIds_;
+    EdgeType edgeType_{-1};
+};
+
+
+class UpdateRefEdgeValidator final : public UpdateValidator {
+  public:
+    UpdateRefEdgeValidator(Sentence* sentence, QueryContext* context)
+        : UpdateValidator(sentence, context, true) {}
+
+  private:
+    Status validateImpl() override;
+
+    Status toPlan() override;
+
+    Status checkInput();
+
+  private:
+    std::vector<EdgeKeyRef*> edgeKeyRefs_;
+    std::string edgeKeyVar_;
+    ExpressionProps exprProps_;
+    EdgeType edgeType_{-1};
+};
+
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_VALIDATOR_MUTATEVALIDATOR_H_

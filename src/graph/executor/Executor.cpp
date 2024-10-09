@@ -404,8 +404,20 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kUpdateVertex: {
       return pool->makeAndAdd<UpdateVertexExecutor>(node, qctx);
     }
+    case PlanNode::Kind::kUpdateMultiVertex: {
+      return pool->makeAndAdd<UpdateMultiVertexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kUpdateRefVertex: {
+      return pool->makeAndAdd<UpdateRefVertexExecutor>(node, qctx);
+    }
     case PlanNode::Kind::kUpdateEdge: {
       return pool->makeAndAdd<UpdateEdgeExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kUpdateMultiEdge: {
+      return pool->makeAndAdd<UpdateMultiEdgeExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kUpdateRefEdge: {
+      return pool->makeAndAdd<UpdateRefEdgeExecutor>(node, qctx);
     }
     case PlanNode::Kind::kCreateUser: {
       return pool->makeAndAdd<CreateUserExecutor>(node, qctx);

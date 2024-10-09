@@ -184,7 +184,7 @@ using namespace nebula;
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
-%token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
+%token KW_FETCH KW_PROP KW_UPDATE KW_MULTIUPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
 %token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
@@ -388,8 +388,10 @@ using namespace nebula;
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
 %type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence delete_vertex_with_edge_sentence
-%type <sentence> update_vertex_sentence update_edge_sentence
+%type <sentence> update_vertex_sentence update_multi_vertex_sentence update_ref_vertex_sentence
+%type <sentence> update_edge_sentence update_multi_edge_sentence update_ref_edge_sentence
 %type <sentence> download_sentence ingest_sentence
+%type <sentence> lookup_pipe_update_sentence
 
 %type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
@@ -578,6 +580,7 @@ unreserved_keyword
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
+    | KW_MULTIUPDATE        { $$ = new std::string("multiupdate"); }
     ;
 
 expression
@@ -2172,6 +2175,80 @@ lookup_sentence
     }
     ;
 
+lookup_pipe_update_sentence
+    : KW_LOOKUP PIPE KW_UPDATE KW_VERTEX KW_ON name_label lookup_where_clause KW_SET update_list when_clause yield_clause {
+        // yield_clause for lookup_sentence is only `id(vertex) as id`
+        ArgumentList* optArgList = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool());
+        optArgList->addArgument(arg);
+        Expression* idExpr = FunctionCallExpression::make(qctx->objPool(), "id", optArgList);
+        YieldColumn* idYieldColumn = new YieldColumn(idExpr, "id");
+
+        auto fields = new YieldColumns();
+        fields->addColumn(idYieldColumn);
+        auto vid_yield_clause = new YieldClause(fields, true);
+
+        std::string* name_label_copy = new std::string(*$6);
+
+        // look up
+        auto lookup_sentence = new LookupSentence($6, $7, vid_yield_clause);
+
+        // input_ref `$-.id`
+        auto vid_input_ref = InputPropertyExpression::make(qctx->objPool(), "id");
+
+        // multiupdate
+        auto ref_update_sentence = new UpdateRefVertexSentence(vid_input_ref, name_label_copy, $9, $10, $11);
+
+        $$ = new PipedSentence(lookup_sentence, ref_update_sentence);
+    }
+    | lookup_sentence PIPE update_ref_vertex_sentence {
+        $$ = new PipedSentence($1, $3);
+    }
+    | KW_LOOKUP PIPE KW_UPDATE KW_EDGE KW_ON name_label lookup_where_clause KW_SET update_list when_clause yield_clause {
+        // yield_clause for lookup_sentence is `src(edge) as src, dst(edge) as dst, rank(edge) as rank`
+        ArgumentList* arg_list_src = ArgumentList::make(qctx->objPool());
+        Expression *arg_src = EdgeExpression::make(qctx->objPool());
+        arg_list_src->addArgument(arg_src);
+        Expression* srcExpr = FunctionCallExpression::make(qctx->objPool(), "src", arg_list_src);
+        YieldColumn* srcYieldColumn = new YieldColumn(srcExpr, "src");
+
+        ArgumentList* arg_list_dst = ArgumentList::make(qctx->objPool());
+        Expression *arg_dst = EdgeExpression::make(qctx->objPool());
+        arg_list_dst->addArgument(arg_dst);
+        Expression* dstExpr = FunctionCallExpression::make(qctx->objPool(), "dst", arg_list_dst);
+        YieldColumn* dstYieldColumn = new YieldColumn(dstExpr, "dst");
+
+        ArgumentList* arg_list_rank = ArgumentList::make(qctx->objPool());
+        Expression *arg_rank = EdgeExpression::make(qctx->objPool());
+        arg_list_rank->addArgument(arg_rank);
+        Expression* rankExpr = FunctionCallExpression::make(qctx->objPool(), "rank", arg_list_rank);
+        YieldColumn* rankYieldColumn = new YieldColumn(rankExpr, "rank");
+
+        auto fields = new YieldColumns();
+        fields->addColumn(srcYieldColumn);
+        fields->addColumn(dstYieldColumn);
+        fields->addColumn(rankYieldColumn);
+        auto edge_yield_clause = new YieldClause(fields, true);
+
+        std::string* name_label_copy = new std::string(*$6);
+        auto lookup_sentence = new LookupSentence($6, $7, edge_yield_clause);
+
+        // input_ref `$-.src -> $-.dst @ $-.rank`
+        auto src_input_ref = InputPropertyExpression::make(qctx->objPool(), "src");
+        auto dst_input_ref = InputPropertyExpression::make(qctx->objPool(), "dst");
+        auto rank_input_ref = InputPropertyExpression::make(qctx->objPool(), "rank");
+
+        auto edge_key_ref = new EdgeKeyRef(src_input_ref, dst_input_ref, rank_input_ref);
+
+        auto update_ref_edge_sentence = new UpdateRefEdgeSentence(edge_key_ref, name_label_copy, $9, $10, $11);
+
+        $$ = new PipedSentence(lookup_sentence, update_ref_edge_sentence);
+    }
+    | lookup_sentence PIPE update_ref_edge_sentence {
+        $$ = new PipedSentence($1, $3);
+    }
+    ;
+
 order_factor
     : expression {
         $$ = new OrderFactor($1, OrderFactor::ASCEND);
@@ -3184,12 +3261,31 @@ update_vertex_sentence
         $$ = sentence;
     }
      // ======== End: Compatible with 1.0 =========
+    
     | KW_UPDATE KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
     | KW_UPSERT KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
+        $$ = sentence;
+    }
+    ;
+
+// Follow the syntax of 3.0+
+update_multi_vertex_sentence 
+    : KW_MULTIUPDATE KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateMultiVertexSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    ;
+
+update_ref_vertex_sentence
+    : KW_MULTIUPDATE KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
+        if(graph::ExpressionUtils::findAny($5,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@5, "Parameter is not supported in update clause");
+        }
+        auto sentence = new UpdateRefVertexSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
     ;
@@ -3238,6 +3334,24 @@ update_edge_sentence
         $$ = sentence;
     }
     ;
+
+update_multi_edge_sentence
+    : KW_MULTIUPDATE KW_EDGE KW_ON name_label edge_keys
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateMultiEdgeSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    ;
+
+
+update_ref_edge_sentence
+    : KW_MULTIUPDATE KW_EDGE KW_ON name_label edge_key_ref
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateRefEdgeSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    ;
+
 
 delete_vertex_sentence
     : KW_DELETE KW_VERTEX vid_list {
@@ -3912,10 +4026,14 @@ mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
     | update_vertex_sentence { $$ = $1; }
+    | update_multi_vertex_sentence { $$ = $1; }
     | update_edge_sentence { $$ = $1; }
+    | update_multi_edge_sentence { $$ = $1; }
+    | update_ref_vertex_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_job_sentence { $$ = $1; }
+    | lookup_pipe_update_sentence { $$ = $1; }
     ;
 
 maintain_sentence

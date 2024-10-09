@@ -49,6 +49,26 @@ std::unique_ptr<PlanNodeDescription> Update::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> UpdateRef::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("spaceId", folly::to<std::string>(spaceId_), desc.get());
+  addDescription("schemaName", schemaName_, desc.get());
+  addDescription("insertable", folly::to<std::string>(insertable_), desc.get());
+  addDescription("updatedProps", folly::toJson(util::toJson(updatedProps_)), desc.get());
+  addDescription("returnProps", folly::toJson(util::toJson(returnProps_)), desc.get());
+  addDescription("condition", condition_, desc.get());
+  addDescription("yieldNames", folly::toJson(util::toJson(yieldNames_)), desc.get());
+  return desc;
+}
+
+
+std::unique_ptr<PlanNodeDescription> UpdateRefVertex::explain() const {
+  auto desc = UpdateRef::explain();
+  addDescription("vidRef", vidRef_ ? vidRef_->toString() : "", desc.get());
+  addDescription("tagId", folly::to<std::string>(tagId_), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> UpdateVertex::explain() const {
   auto desc = Update::explain();
   addDescription("vid", vId_.toString(), desc.get());
@@ -56,11 +76,36 @@ std::unique_ptr<PlanNodeDescription> UpdateVertex::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> UpdateMultiVertex::explain() const {
+  auto desc = Update::explain();
+  addDescription("vertices", folly::toJson(util::toJson(vIds_)), desc.get());
+  addDescription("tagId", folly::to<std::string>(tagId_), desc.get());
+  return desc;
+}
+
+
 std::unique_ptr<PlanNodeDescription> UpdateEdge::explain() const {
   auto desc = Update::explain();
   addDescription("srcId", srcId_.toString(), desc.get());
   addDescription("dstId", dstId_.toString(), desc.get());
   addDescription("rank", folly::to<std::string>(rank_), desc.get());
+  addDescription("edgeType", folly::to<std::string>(edgeType_), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> UpdateMultiEdge::explain() const {
+  auto desc = Update::explain();
+  for (auto &edgeId : edgeIds_) {
+    addDescription("edgeId", edgeId.toString(), desc.get());
+  }
+  addDescription("edgeType", folly::to<std::string>(edgeType_), desc.get());
+  addDescription("isReverse", folly::to<std::string>(isReverse_), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> UpdateRefEdge::explain() const {
+  auto desc = UpdateRef::explain();
+  addDescription("edgeKeyRef", edgeKeyRef_ ? edgeKeyRef_->toString() : "", desc.get());
   addDescription("edgeType", folly::to<std::string>(edgeType_), desc.get());
   return desc;
 }

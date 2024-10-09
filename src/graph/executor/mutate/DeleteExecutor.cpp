@@ -147,7 +147,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   DCHECK(!inputVar.empty());
   auto& inputResult = ectx_->getResult(inputVar);
   auto iter = inputResult.iter();
-  edgeKeys.reserve(iter->size());
+  edgeKeys.reserve(iter->size());  // TODO(zhijie): the reserve size should be doubled
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     storage::cpp2::EdgeKey edgeKey;

@@ -160,8 +160,16 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<DeleteEdgesValidator>(sentence, context);
     case Sentence::Kind::kUpdateVertex:
       return std::make_unique<UpdateVertexValidator>(sentence, context);
+    case Sentence::Kind::kUpdateMultiVertex:
+      return std::make_unique<UpdateMultiVertexValidator>(sentence, context);
+    case Sentence::Kind::kUpdateRefVertex:
+      return std::make_unique<UpdateRefVertexValidator>(sentence, context);
     case Sentence::Kind::kUpdateEdge:
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
+    case Sentence::Kind::kUpdateMultiEdge:
+      return std::make_unique<UpdateMultiEdgeValidator>(sentence, context);
+    case Sentence::Kind::kUpdateRefEdge:
+      return std::make_unique<UpdateRefEdgeValidator>(sentence, context);
     case Sentence::Kind::kAddHosts:
       return std::make_unique<AddHostsValidator>(sentence, context);
     case Sentence::Kind::kDropHosts:
