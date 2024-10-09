@@ -37,11 +37,11 @@ Status SetValidator::validateImpl() {
 
 // Combine two sub-plans by parallel dependencies.
 Status SetValidator::toPlan() {
-  auto setSentence = static_cast<const SetSentence *>(sentence_);
+  auto setSentence = static_cast<const SetSentence*>(sentence_);
   auto lRoot = DCHECK_NOTNULL(lValidator_->root());
   auto rRoot = DCHECK_NOTNULL(rValidator_->root());
   auto colNames = lRoot->colNames();
-  BinaryInputNode *bNode = nullptr;
+  BinaryInputNode* bNode = nullptr;
   switch (setSentence->op()) {
     case SetSentence::Operator::UNION: {
       bNode = Union::make(qctx_, lRoot, rRoot);

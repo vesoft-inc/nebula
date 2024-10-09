@@ -540,3 +540,439 @@ Feature: Insert vertex and edge with if not exists
       | "wang"  | "li"    | 18       |
       | "wang"  | "zhang" | 41       |
     And drop the used space
+
+  Scenario: insert player(name string, age int, hobby List< string >, ids List< int >, score List< float >)
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      CREATE EDGE IF NOT EXISTS like(likeness int);
+      CREATE TAG INDEX IF NOT EXISTS index_player_age ON player(age);
+      """
+    And wait 6 seconds  # Wait for the index to be created
+    # Insert vertex data for player100
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming"], [1, 2, 3], [10.0, 20.0]);
+      """
+    Then the execution should be successful
+    # Insert multiple player vertices, using IF NOT EXISTS to avoid duplicate entries
+    When executing query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player101":("Michael Jordan", 35, ["Basketball", "Baseball"], [4, 5, 6], [30.0, 40.0]),
+        "player102":("LeBron James", 36, ["Basketball", "Football"], [7, 8, 9], [50.0, 60.0]),
+        "player103":("Kobe Bryant", 34, ["Basketball", "Soccer"], [10, 11, 12], [70.0, 80.0]),
+        "player100":("Tim Duncan", 40, ["Basketball", "Golf"], [13, 14, 15], [90.0, 100.0]);
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 42  |
+    # Insert an existing player vertex using IF NOT EXISTS
+    When executing query:
+      """
+      INSERT VERTEX IF NOT EXISTS player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 45, ["Basketball", "Tennis"], [16, 17, 18], [110.0, 120.0]);
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100 again to verify data
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 42  |
+    # Directly insert the existing player100 vertex and update its data
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 50, ["Basketball", "Table Tennis"], [19, 20, 21], [130.0, 140.0]);
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100 again to verify the updated data
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 50  |
+    # Insert an edge 'like', indicating that player100 likes player101
+    When try to execute query:
+      """
+      INSERT EDGE like(likeness) VALUES "player100"->"player101":(95);
+      """
+    Then the execution should be successful
+    # Fetch the edge property
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 95            |
+    # Insert an edge using IF NOT EXISTS
+    When executing query:
+      """
+      INSERT EDGE IF NOT EXISTS like(likeness) VALUES "player100"->"player101":(50);
+      """
+    Then the execution should be successful
+    # Fetch the edge property again to verify data
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 95            |
+    # Directly insert an existing edge and update its property
+    When executing query:
+      """
+      INSERT EDGE like(likeness) VALUES "player100"->"player101":(100);
+      """
+    Then the execution should be successful
+    # Fetch the edge property again to verify the updated data
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 100           |
+    # Query destination vertices starting from player100 using the like edge
+    When executing query:
+      """
+      GO FROM "player100" over like YIELD like.likeness as like, like._src as src, like._dst as dst;
+      """
+    Then the result should be, in any order:
+      | like | src         | dst         |
+      | 100  | "player100" | "player101" |
+    # Insert multiple player vertices and use multiple tags
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player104":("Neal", 49, ["Basketball", "Acting"], [22, 23, 24], [150.0, 160.0]),
+        "player105":("Magic Johnson", 60, ["Basketball", "Business"], [25, 26, 27], [170.0, 180.0]);
+      """
+    Then the execution should be successful
+    # Fetch the age property of player104
+    When executing query:
+      """
+      FETCH PROP ON player "player104" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 49  |
+    # Fetch the hobby property of player105
+    When executing query:
+      """
+      FETCH PROP ON player "player105" YIELD player.hobby as hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | hobby                      |
+      | ["Basketball", "Business"] |
+    # Insert multiple edges, indicating associations between player100 and other players
+    When try to execute query:
+      """
+      INSERT EDGE IF NOT EXISTS
+        like(likeness)
+      VALUES
+        "player100"->"player102":(85),
+        "player100"->"player103":(88);
+      """
+    Then the execution should be successful
+    # Fetch the edge property
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player102" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 85            |
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player103" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 88            |
+    # Delete player vertices
+    When try to execute query:
+      """
+      DELETE TAG player FROM "player100", "player101", "player102", "player103";
+      """
+    Then the execution should be successful
+    # Reinsert previously deleted player vertices
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player106":("Stephen Curry", 32, ["Basketball", "Golf"], [28, 29, 30], [190.0, 200.0]),
+        "player107":("Kevin Durant", 31, ["Basketball", "Video Games"], [31, 32, 33], [210.0, 220.0]);
+      """
+    Then the execution should be successful
+    # Lookup player vertices with age less than 35
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age < 35 YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Stephen Curry" | 32  |
+      | "Kevin Durant"  | 31  |
+    # Lookup player vertices with age greater than 35
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age > 35 YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Neal"          | 49  |
+      | "Magic Johnson" | 60  |
+    # Fetch properties for multiple player vertices
+    When executing query:
+      """
+      FETCH PROP ON player "player106", "player107" YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Stephen Curry" | 32  |
+      | "Kevin Durant"  | 31  |
+    # Delete player106 and player107 vertices
+    When try to execute query:
+      """
+      DELETE TAG player FROM "player106", "player107";
+      """
+    Then the execution should be successful
+
+  Scenario: insert player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >)
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      CREATE EDGE IF NOT EXISTS like(likeness int);
+      CREATE TAG INDEX IF NOT EXISTS index_player_age ON player(age);
+      """
+    And wait 6 seconds  # Wait for the index to be created
+    # Insert vertex data for player100 with duplicate items
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2, 3}, {10.0, 10.0, 20.0});
+      """
+    Then the execution should be successful
+    # Insert multiple player vertices, using IF NOT EXISTS to avoid duplicate entries
+    When executing query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player101":("Michael Jordan", 35, {"Basketball", "Baseball"}, {4, 5, 5, 6}, {30.0, 40.0}),
+        "player102":("LeBron James", 36, {"Basketball", "Football"}, {7, 8, 8, 9}, {50.0, 60.0}),
+        "player103":("Kobe Bryant", 34, {"Basketball", "Soccer"}, {10, 11, 11, 12}, {70.0, 80.0}),
+        "player100":("Tim Duncan", 40, {"Basketball", "Golf"}, {13, 14, 14, 15}, {90.0, 100.0});
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 42  |
+    # Insert an existing player vertex using IF NOT EXISTS
+    When executing query:
+      """
+      INSERT VERTEX IF NOT EXISTS player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 45, {"Basketball", "Tennis"}, {16, 17, 17, 18}, {110.0, 120.0});
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100 again to verify data
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 42  |
+    # Directly insert the existing player100 vertex and update its data
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 50, {"Basketball", "Table Tennis"}, {19, 20, 20, 21}, {130.0, 140.0});
+      """
+    Then the execution should be successful
+    # Fetch the age property of player100 again to verify the updated data
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 50  |
+    # Insert an edge 'like', indicating that player100 likes player101
+    When try to execute query:
+      """
+      INSERT EDGE like(likeness) VALUES "player100"->"player101":(95);
+      """
+    Then the execution should be successful
+    # Fetch the edge property
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 95            |
+    # Insert an edge using IF NOT EXISTS
+    When executing query:
+      """
+      INSERT EDGE IF NOT EXISTS like(likeness) VALUES "player100"->"player101":(50);
+      """
+    Then the execution should be successful
+    # Fetch the edge property again to verify data
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 95            |
+    # Directly insert an existing edge and update its property
+    When executing query:
+      """
+      INSERT EDGE like(likeness) VALUES "player100"->"player101":(100);
+      """
+    Then the execution should be successful
+    # Fetch the edge property again to verify the updated data
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player101" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 100           |
+    # Query destination vertices starting from player100 using the like edge
+    When executing query:
+      """
+      GO FROM "player100" over like YIELD like.likeness as like, like._src as src, like._dst as dst;
+      """
+    Then the result should be, in any order:
+      | like | src         | dst         |
+      | 100  | "player100" | "player101" |
+    # Insert multiple player vertices and use multiple tags
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player104":("Neal", 49, {"Basketball", "Acting"}, {22, 23, 23, 24}, {150.0, 160.0}),
+        "player105":("Magic Johnson", 60, {"Basketball", "Business"}, {25, 26, 26, 27}, {170.0, 180.0});
+      """
+    Then the execution should be successful
+    # Fetch the age property of player104
+    When executing query:
+      """
+      FETCH PROP ON player "player104" YIELD player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | age |
+      | 49  |
+    # Fetch the hobby property of player105
+    When executing query:
+      """
+      FETCH PROP ON player "player105" YIELD player.hobby as hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | hobby                      |
+      | {"Basketball", "Business"} |
+    # Insert multiple edges, indicating associations between player100 and other players
+    When try to execute query:
+      """
+      INSERT EDGE IF NOT EXISTS
+        like(likeness)
+      VALUES
+        "player100"->"player102":(85),
+        "player100"->"player103":(88);
+      """
+    Then the execution should be successful
+    # Fetch the edge property
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player102" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 85            |
+    When executing query:
+      """
+      FETCH PROP ON like "player100"->"player103" YIELD like.likeness;
+      """
+    Then the result should be, in any order:
+      | like.likeness |
+      | 88            |
+    # Delete player vertices
+    When try to execute query:
+      """
+      DELETE TAG player FROM "player100", "player101", "player102", "player103";
+      """
+    Then the execution should be successful
+    # Reinsert previously deleted player vertices
+    When try to execute query:
+      """
+      INSERT VERTEX IF NOT EXISTS
+        player(name, age, hobby, ids, score)
+      VALUES
+        "player106":("Stephen Curry", 32, {"Basketball", "Golf"}, {28, 29, 29, 30}, {190.0, 200.0}),
+        "player107":("Kevin Durant", 31, {"Basketball", "Video Games"}, {31, 32, 32, 33}, {210.0, 220.0});
+      """
+    Then the execution should be successful
+    # Lookup player vertices with age less than 35
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age < 35 YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Stephen Curry" | 32  |
+      | "Kevin Durant"  | 31  |
+    # Lookup player vertices with age greater than 35
+    When executing query:
+      """
+      LOOKUP ON player WHERE player.age > 35 YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Neal"          | 49  |
+      | "Magic Johnson" | 60  |
+    # Fetch properties for multiple player vertices
+    When executing query:
+      """
+      FETCH PROP ON player "player106", "player107" YIELD player.name as name, player.age as age;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | name            | age |
+      | "Stephen Curry" | 32  |
+      | "Kevin Durant"  | 31  |
+    # Delete player106 and player107 vertices
+    When try to execute query:
+      """
+      DELETE TAG player FROM "player106", "player107";
+      """
+    Then the execution should be successful

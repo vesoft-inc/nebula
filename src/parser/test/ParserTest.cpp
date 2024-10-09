@@ -513,6 +513,12 @@ TEST_F(ParserTest, ColumnSpacesTest) {
   }
   {
     std::string query =
+        "CREATE TAG player(name string, age int, hobby List<string>, ids List<int>);";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    std::string query =
         "CREATE TAG man(name string, age)"
         "ttl_duration = 100";
     auto result = parse(query);
@@ -979,6 +985,15 @@ TEST_F(ParserTest, UpdateVertex) {
         "SET name=\"Tom\", age = 30, name =\"CTO\" "
         "WHEN salary > 10000 "
         "YIELD name AS Name, salary AS Salary, create_time AS Time_";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "UPDATE VERTEX ON player \"12345\" "
+        "SET hobby = REPLACE(hobby,\"Basketball\", \"Football\") "
+        "WHEN name == \"Tom\" "
+        "YIELD name AS Name, age AS Age, hobby AS hobby;";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

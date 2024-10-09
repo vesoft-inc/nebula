@@ -562,38 +562,38 @@ folly::Future<Status> AllPathsExecutor::conjunctPath(std::vector<NPath*>& leftPa
   }
   return folly::collectAll(futures)
       .via(runner())
-      .thenValue([this,
-                  path = std::move(oneWayPath)](std::vector<folly::Try<std::vector<Row>>>&& resps) {
-        memory::MemoryCheckGuard guard;
-        result_.rows = std::move(path);
-        for (auto& respVal : resps) {
-          if (respVal.hasException()) {
-            auto ex = respVal.exception().get_exception<std::bad_alloc>();
-            if (ex) {
-              throw std::bad_alloc();
-            } else {
-              throw std::runtime_error(respVal.exception().what().c_str());
+      .thenValue(
+          [this, path = std::move(oneWayPath)](std::vector<folly::Try<std::vector<Row>>>&& resps) {
+            memory::MemoryCheckGuard guard;
+            result_.rows = std::move(path);
+            for (auto& respVal : resps) {
+              if (respVal.hasException()) {
+                auto ex = respVal.exception().get_exception<std::bad_alloc>();
+                if (ex) {
+                  throw std::bad_alloc();
+                } else {
+                  throw std::runtime_error(respVal.exception().what().c_str());
+                }
+              }
+              auto rows = std::move(respVal).value();
+              if (rows.empty()) {
+                continue;
+              }
+              auto& emptyPropVerticesRow = rows.back();
+              for (auto& emptyPropVertex : emptyPropVerticesRow.values) {
+                auto iter = emptyPropVertices_.find(emptyPropVertex);
+                if (iter == emptyPropVertices_.end()) {
+                  emptyPropVids_.emplace_back(emptyPropVertex.getVertex().vid);
+                }
+                emptyPropVertices_.emplace(emptyPropVertex);
+              }
+              rows.pop_back();
+              result_.rows.insert(result_.rows.end(),
+                                  std::make_move_iterator(rows.begin()),
+                                  std::make_move_iterator(rows.end()));
             }
-          }
-          auto rows = std::move(respVal).value();
-          if (rows.empty()) {
-            continue;
-          }
-          auto& emptyPropVerticesRow = rows.back();
-          for (auto& emptyPropVertex : emptyPropVerticesRow.values) {
-            auto iter = emptyPropVertices_.find(emptyPropVertex);
-            if (iter == emptyPropVertices_.end()) {
-              emptyPropVids_.emplace_back(emptyPropVertex.getVertex().vid);
-            }
-            emptyPropVertices_.emplace(emptyPropVertex);
-          }
-          rows.pop_back();
-          result_.rows.insert(result_.rows.end(),
-                              std::make_move_iterator(rows.begin()),
-                              std::make_move_iterator(rows.end()));
-        }
-        return Status::OK();
-      })
+            return Status::OK();
+          })
       .thenError(folly::tag_t<std::bad_alloc>{},
                  [this](const std::bad_alloc&) {
                    memoryExceeded_ = true;

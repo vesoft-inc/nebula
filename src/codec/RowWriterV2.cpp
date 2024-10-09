@@ -138,6 +138,12 @@ RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchem
       case Value::Type::DURATION:
         set(i, v.moveDuration());
         break;
+      case Value::Type::LIST:
+        set(i, v.moveList());
+        break;
+      case Value::Type::SET:
+        set(i, v.moveSet());
+        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
         isSet_[i] = false;
@@ -226,11 +232,14 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
       return write(index, val.getGeography());
     case Value::Type::DURATION:
       return write(index, val.getDuration());
+    case Value::Type::LIST:
+      return write(index, val.getList());
+    case Value::Type::SET:
+      return write(index, val.getSet());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
 }
-
 WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) {
   CHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
@@ -820,6 +829,130 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   std::string wkb = v.asWKB();
   return write(index, folly::StringPiece(wkb), true);
 }
+WriteResult RowWriterV2::write(ssize_t index, const List& list) {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+
+  if (isSet_[index]) {
+    outOfSpaceStr_ = true;
+  }
+
+  int32_t listSize = list.size();
+  int32_t listOffset = buf_.size();
+  buf_.append(reinterpret_cast<char*>(&listSize), sizeof(int32_t));
+
+  for (const auto& item : list.values) {
+    switch (item.type()) {
+      case Value::Type::STRING: {
+        if (field->type() != PropertyType::LIST_STRING) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_STRING but got " << item.type()
+                     << " for field " << field->name();
+          return WriteResult::TYPE_MISMATCH;
+        }
+        std::string str = item.getStr();
+        int32_t strLen = str.size();
+        buf_.append(reinterpret_cast<char*>(&strLen), sizeof(int32_t));
+        buf_.append(str.data(), strLen);
+        break;
+      }
+      case Value::Type::INT: {
+        if (field->type() != PropertyType::LIST_INT) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_INT but got " << item.type() << " for field "
+                     << field->name();
+          return WriteResult::TYPE_MISMATCH;
+        }
+        int32_t intVal = item.getInt();
+        buf_.append(reinterpret_cast<char*>(&intVal), sizeof(int32_t));
+        break;
+      }
+      case Value::Type::FLOAT: {
+        if (field->type() != PropertyType::LIST_FLOAT) {
+          LOG(ERROR) << "Type mismatch: Expected LIST_FLOAT but got " << item.type()
+                     << " for field " << field->name();
+          return WriteResult::TYPE_MISMATCH;
+        }
+        float floatVal = item.getFloat();
+        buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
+        break;
+      }
+      default:
+        LOG(ERROR) << "Type mismatch: Unexpected type " << item.type() << " for field "
+                   << field->name();
+        return WriteResult::TYPE_MISMATCH;
+    }
+  }
+
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&listOffset), sizeof(int32_t));
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+
+  if (isSet_[index]) {
+    outOfSpaceStr_ = true;
+  }
+
+  int32_t setSize = set.size();
+  int32_t setOffset = buf_.size();
+  buf_.append(reinterpret_cast<char*>(&setSize), sizeof(int32_t));
+
+  std::unordered_set<std::string> serializedStrings;
+  std::unordered_set<int32_t> serializedInts;
+  std::unordered_set<float> serializedFloats;
+
+  for (const auto& item : set.values) {
+    switch (item.type()) {
+      case Value::Type::STRING: {
+        if (field->type() != PropertyType::SET_STRING) {
+          return WriteResult::TYPE_MISMATCH;
+        }
+        std::string str = item.getStr();
+        if (serializedStrings.find(str) == serializedStrings.end()) {
+          int32_t strLen = str.size();
+          buf_.append(reinterpret_cast<char*>(&strLen), sizeof(int32_t));
+          buf_.append(str.data(), strLen);
+          serializedStrings.insert(str);
+        }
+        break;
+      }
+      case Value::Type::INT: {
+        if (field->type() != PropertyType::SET_INT) {
+          return WriteResult::TYPE_MISMATCH;
+        }
+        int32_t intVal = item.getInt();
+        if (serializedInts.find(intVal) == serializedInts.end()) {
+          buf_.append(reinterpret_cast<char*>(&intVal), sizeof(int32_t));
+          serializedInts.insert(intVal);
+        }
+        break;
+      }
+      case Value::Type::FLOAT: {
+        if (field->type() != PropertyType::SET_FLOAT) {
+          return WriteResult::TYPE_MISMATCH;
+        }
+        float floatVal = item.getFloat();
+        if (serializedFloats.find(floatVal) == serializedFloats.end()) {
+          buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
+          serializedFloats.insert(floatVal);
+        }
+        break;
+      }
+      default:
+        return WriteResult::TYPE_MISMATCH;
+    }
+  }
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&setOffset), sizeof(int32_t));
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
 
 WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;
@@ -867,6 +1000,12 @@ WriteResult RowWriterV2::checkUnsetFields() {
             break;
           case Value::Type::DURATION:
             r = write(i, defVal.getDuration());
+            break;
+          case Value::Type::LIST:
+            r = write(i, defVal.getList());
+            break;
+          case Value::Type::SET:
+            r = write(i, defVal.getSet());
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

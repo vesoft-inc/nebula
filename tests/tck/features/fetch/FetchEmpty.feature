@@ -172,3 +172,55 @@ Feature: Fetch prop on empty tag/edge
       | col1 |
       | "🐏" |
     And drop the used space
+
+  Scenario: Fetch hobby property from player tag
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      """
+    Then the execution should be successful
+    # Ensure the tag is successfully created
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming"], [1, 2], [9.0, 8.0]);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD properties(vertex).hobby AS hobby;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | hobby                      |
+      | ["Basketball", "Swimming"] |
+
+  Scenario: Fetch hobby property from player tag
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      """
+    Then the execution should be successful
+    # Ensure the tag is successfully created
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 1}, {9.0, 8.0, 9.0});
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD properties(vertex).hobby AS hobby, properties(vertex).ids AS ids, properties(vertex).score AS score;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | hobby                      | ids    | score      |
+      | {"Basketball", "Swimming"} | {1, 2} | {8.0, 9.0} |
