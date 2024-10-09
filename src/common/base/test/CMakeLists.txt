@@ -120,6 +120,7 @@ nebula_add_executable(
     LIBRARIES
         follybenchmark
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(

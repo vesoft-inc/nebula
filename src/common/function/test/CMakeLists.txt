@@ -19,6 +19,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         gtest_main
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
@@ -37,6 +38,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         gtest
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
@@ -52,5 +54,6 @@ nebula_add_test(
     LIBRARIES
         gtest
         gtest_main
+        ${PROXYGEN_LIBRARIES}
 )
 
