@@ -274,7 +274,6 @@ Feature: Matching paths
       | count(p) | count(p2) |
       | 94       | 94        |
 
-  @skip #bug to fix: https://github.com/vesoft-inc/nebula/issues/5187
   Scenario: edge directions in paths
     When executing query:
       """
