@@ -1388,43 +1388,41 @@ FunctionManager::FunctionManager() {
       if (args[0].get().isNull() || args[1].get().isNull() || args[2].get().isNull()) {
         return Value::kNullValue;
       }
+
       if (args[0].get().isStr() && args[1].get().isStr() && args[2].get().isStr()) {
-        std::string origStr(args[0].get().getStr());
-        std::string search(args[1].get().getStr());
-        std::string newStr(args[2].get().getStr());
-        return boost::replace_all_copy(origStr, search, newStr);
+        std::string &origStr = const_cast<std::string &>(args[0].get().getStr());
+        std::string search = args[1].get().getStr();
+        std::string newStr = args[2].get().getStr();
+        boost::replace_all(origStr, search, newStr);
+        return origStr;
       }
+
       if (args[0].get().isList()) {
-        auto list = args[0].get().getList();
+        auto &list = const_cast<List &>(args[0].get().getList());
         auto search = args[1].get();
         auto newValue = args[2].get();
-        List result;
         for (auto &item : list.values) {
           if (item == search) {
-            result.values.emplace_back(newValue);
-          } else {
-            result.values.emplace_back(item);
+            item = newValue;
           }
         }
-        return result;
+        return list;
       }
+
       if (args[0].get().isSet()) {
-        auto set = args[0].get().getSet();
+        auto &set = const_cast<Set &>(args[0].get().getSet());
         auto search = args[1].get();
         auto newValue = args[2].get();
-        Set result;
-        for (auto &item : set.values) {
-          if (item == search) {
-            result.values.insert(newValue);
-          } else {
-            result.values.insert(item);
-          }
+        if (set.values.erase(search)) {
+          set.values.insert(newValue);
         }
-        return result;
+        return set;
       }
+
       return Value::kNullBadType;
     };
   }
+
   {
     auto &attr = functions_["erase"];
     attr.minArity_ = 2;

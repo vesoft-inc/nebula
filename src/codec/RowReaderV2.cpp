@@ -267,51 +267,6 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       return nebula::extractIntOrFloat<int32_t, List>(data_, offset);
     case PropertyType::LIST_FLOAT:
       return nebula::extractIntOrFloat<float, List>(data_, offset);
-    case PropertyType::LIST_LIST_STRING: {
-      int32_t numLists;
-      if (offset + sizeof(int32_t) > data_.size()) {
-        LOG(ERROR) << "Offset out of bounds for LIST_LIST_STRING.";
-        return Value(NullType::BAD_DATA);
-      }
-      memcpy(&numLists, &data_[offset], sizeof(int32_t));
-      offset += sizeof(int32_t);
-      std::vector<List> listOfLists;
-      listOfLists.reserve(numLists);
-      for (int i = 0; i < numLists; ++i) {
-        int32_t listLen;
-        if (offset + sizeof(int32_t) > data_.size()) {
-          LOG(ERROR) << "List length out of bounds for LIST_LIST_STRING.";
-          return Value(NullType::BAD_DATA);
-        }
-        memcpy(&listLen, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<std::string> strings;
-        strings.reserve(listLen);
-        for (int j = 0; j < listLen; ++j) {
-          int32_t strLen;
-          if (offset + sizeof(int32_t) > data_.size()) {
-            LOG(ERROR) << "String length out of bounds for LIST_LIST_STRING.";
-            return Value(NullType::BAD_DATA);
-          }
-          memcpy(&strLen, &data_[offset], sizeof(int32_t));
-          offset += sizeof(int32_t);
-          if (offset + strLen > data_.size()) {
-            LOG(ERROR) << "String offset out of bounds for LIST_LIST_STRING.";
-            return Value(NullType::BAD_DATA);
-          }
-          strings.push_back(std::string(&data_[offset], strLen));
-          offset += strLen;
-        }
-        List list = List::createFromVector(strings);
-        listOfLists.push_back(std::move(list));
-      }
-      List outerList = List::createFromVector(listOfLists);
-      return Value(std::move(outerList));
-    }
-    case PropertyType::LIST_LIST_INT:
-      return nebula::extractIntOrFloat<int64_t, List>(data_, offset);
-    case PropertyType::LIST_LIST_FLOAT:
-      return nebula::extractIntOrFloat<float, List>(data_, offset);
     case PropertyType::SET_STRING: {
       int32_t setOffset;
       memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
@@ -345,51 +300,6 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
     case PropertyType::SET_INT:
       return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
     case PropertyType::SET_FLOAT:
-      return nebula::extractIntOrFloat<float, Set>(data_, offset);
-    case PropertyType::SET_SET_STRING: {
-      int32_t numSets;
-      if (offset + sizeof(int32_t) > data_.size()) {
-        LOG(ERROR) << "Offset out of bounds for SET_SET_STRING.";
-        return Value(NullType::BAD_DATA);
-      }
-      memcpy(&numSets, &data_[offset], sizeof(int32_t));
-      offset += sizeof(int32_t);
-      std::vector<Set> setsOfSets;
-      setsOfSets.reserve(numSets);
-      for (int i = 0; i < numSets; ++i) {
-        int32_t setLen;
-        if (offset + sizeof(int32_t) > data_.size()) {
-          LOG(ERROR) << "Set length out of bounds for SET_SET_STRING.";
-          return Value(NullType::BAD_DATA);
-        }
-        memcpy(&setLen, &data_[offset], sizeof(int32_t));
-        offset += sizeof(int32_t);
-        std::vector<std::string> strings;
-        strings.reserve(setLen);
-        for (int j = 0; j < setLen; ++j) {
-          int32_t strLen;
-          if (offset + sizeof(int32_t) > data_.size()) {
-            LOG(ERROR) << "String length out of bounds for SET_SET_STRING.";
-            return Value(NullType::BAD_DATA);
-          }
-          memcpy(&strLen, &data_[offset], sizeof(int32_t));
-          offset += sizeof(int32_t);
-          if (offset + strLen > data_.size()) {
-            LOG(ERROR) << "String offset out of bounds for SET_SET_STRING.";
-            return Value(NullType::BAD_DATA);
-          }
-          strings.push_back(std::string(&data_[offset], strLen));
-          offset += strLen;
-        }
-        Set innerSet = Set::createFromVector(strings);
-        setsOfSets.push_back(std::move(innerSet));
-      }
-      Set outerSet = Set::createFromVector(setsOfSets);
-      return Value(std::move(outerSet));
-    }
-    case PropertyType::SET_SET_INT:
-      return nebula::extractIntOrFloat<int64_t, Set>(data_, offset);
-    case PropertyType::SET_SET_FLOAT:
       return nebula::extractIntOrFloat<float, Set>(data_, offset);
     case PropertyType::UNKNOWN:
       break;

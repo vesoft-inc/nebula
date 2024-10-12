@@ -255,34 +255,6 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     case PropertyType::LIST_FLOAT: {
       return extractIntOrFloat<List, double>(value, name);
     }
-    case PropertyType::LIST_LIST_STRING: {
-      if (!value.isList()) {
-        LOG(INFO) << "Invalid default value for `" << name << "`, expected a List but got "
-                  << value.type();
-        return false;
-      }
-      for (const auto& listElem : value.getList().values) {
-        if (!listElem.isList()) {
-          LOG(INFO) << "Invalid default value for `" << name << "`, elements must be Lists but got "
-                    << listElem.type();
-          return false;
-        }
-        for (const auto& elem : listElem.getList().values) {
-          if (!elem.isStr()) {
-            LOG(INFO) << "Invalid default value for `" << name
-                      << "`, nested list elements must be strings but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-    case PropertyType::LIST_LIST_INT: {
-      return extractIntOrFloat<List, int64_t, List>(value, name);
-    }
-    case PropertyType::LIST_LIST_FLOAT: {
-      return extractIntOrFloat<List, double, List>(value, name);
-    }
     case PropertyType::SET_STRING: {
       if (!value.isSet()) {
         LOG(INFO) << "Invalid default value for `" << name << "`, expected a Set but got "
@@ -303,34 +275,6 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
     }
     case PropertyType::SET_FLOAT: {
       return extractIntOrFloat<Set, double>(value, name);
-    }
-    case PropertyType::SET_SET_STRING: {
-      if (!value.isSet()) {
-        LOG(INFO) << "Invalid default value for `" << name << "`, expected a Set but got "
-                  << value.type();
-        return false;
-      }
-      for (const auto& setElem : value.getSet().values) {
-        if (!setElem.isSet()) {
-          LOG(INFO) << "Invalid default value for `" << name << "`, elements must be Sets but got "
-                    << setElem.type();
-          return false;
-        }
-        for (const auto& elem : setElem.getSet().values) {
-          if (!elem.isStr()) {
-            LOG(INFO) << "Invalid default value for `" << name
-                      << "`, nested set elements must be strings but got " << elem.type();
-            return false;
-          }
-        }
-      }
-      return true;
-    }
-    case PropertyType::SET_SET_INT: {
-      return extractIntOrFloat<Set, int64_t, Set>(value, name);
-    }
-    case PropertyType::SET_SET_FLOAT: {
-      return extractIntOrFloat<Set, double, Set>(value, name);
     }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:

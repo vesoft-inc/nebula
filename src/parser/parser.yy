@@ -1308,18 +1308,6 @@ type_spec
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->type_ref() = nebula::cpp2::PropertyType::LIST_FLOAT;
     }
-    | KW_LIST LT KW_LIST LT KW_STRING GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::LIST_LIST_STRING;
-    }
-    | KW_LIST LT KW_LIST LT KW_INT GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::LIST_LIST_INT;
-    }
-    | KW_LIST LT KW_LIST LT KW_FLOAT GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::LIST_LIST_FLOAT;
-    }
     //NEW CREATE SET
     | KW_SET LT KW_STRING GT {
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -1332,18 +1320,6 @@ type_spec
     | KW_SET LT KW_FLOAT GT {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->type_ref() = nebula::cpp2::PropertyType::SET_FLOAT;
-    }
-    | KW_SET LT KW_SET LT KW_STRING GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::SET_SET_STRING;
-    }
-    | KW_SET LT KW_SET LT KW_INT GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::SET_SET_INT;
-    }
-    | KW_SET LT KW_SET LT KW_FLOAT GT GT {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->type_ref() = nebula::cpp2::PropertyType::SET_SET_FLOAT;
     }
     ;
 

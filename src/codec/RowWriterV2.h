@@ -263,7 +263,11 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Duration& v);
 
   WriteResult write(ssize_t index, const Geography& v);
+  // Supports storing ordered lists of strings, integers, and floats,
+  // including LIST_STRING, LIST_INT, and LIST_FLOAT.
   WriteResult write(ssize_t index, const List& list);
+  // Supports storing unordered sets of strings, integers, and floats,
+  // including SET_STRING, SET_INT, and SET_FLOAT
   WriteResult write(ssize_t index, const Set& set);
 };
 

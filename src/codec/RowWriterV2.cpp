@@ -16,6 +16,61 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
+// Template functions for handling different types (e.g. strings, ints, floats) in lists and
+// collections
+template <typename Container>
+WriteResult writeContainer(const Container& container,
+                           Value::Type valueType,
+                           bool isSetType,
+                           std::unordered_set<std::string>& serializedStrings,
+                           std::unordered_set<int32_t>& serializedInts,
+                           std::unordered_set<float>& serializedFloats,
+                           std::string& buffer) {
+  for (const auto& item : container.values) {
+    if (item.type() != valueType) {
+      LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
+                 << static_cast<int>(item.type());
+      return WriteResult::TYPE_MISMATCH;
+    }
+    switch (valueType) {
+      case Value::Type::STRING: {
+        std::string str = item.getStr();
+        if (isSetType && serializedStrings.find(str) != serializedStrings.end()) {
+          continue;
+        }
+        int32_t strLen = str.size();
+        buffer.append(reinterpret_cast<const char*>(&strLen), sizeof(int32_t));
+        buffer.append(str.data(), strLen);
+        serializedStrings.insert(str);
+        break;
+      }
+      case Value::Type::INT: {
+        int32_t intVal = item.getInt();
+        if (isSetType && serializedInts.find(intVal) != serializedInts.end()) {
+          continue;
+        }
+        buffer.append(reinterpret_cast<const char*>(&intVal), sizeof(int32_t));
+        serializedInts.insert(intVal);
+        break;
+      }
+      case Value::Type::FLOAT: {
+        float floatVal = item.getFloat();
+        if (isSetType && serializedFloats.find(floatVal) != serializedFloats.end()) {
+          continue;
+        }
+        buffer.append(reinterpret_cast<const char*>(&floatVal), sizeof(float));
+        serializedFloats.insert(floatVal);
+        break;
+      }
+      default:
+        LOG(ERROR) << "Unsupported value type: " << static_cast<int>(valueType);
+        return WriteResult::TYPE_MISMATCH;
+    }
+  }
+
+  return WriteResult::SUCCEEDED;
+}
+
 RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema)
     : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
   CHECK(!!schema_);
@@ -829,57 +884,34 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   std::string wkb = v.asWKB();
   return write(index, folly::StringPiece(wkb), true);
 }
+
 WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
-
   if (isSet_[index]) {
     outOfSpaceStr_ = true;
   }
-
   int32_t listSize = list.size();
   int32_t listOffset = buf_.size();
-  buf_.append(reinterpret_cast<char*>(&listSize), sizeof(int32_t));
-
-  for (const auto& item : list.values) {
-    switch (item.type()) {
-      case Value::Type::STRING: {
-        if (field->type() != PropertyType::LIST_STRING) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_STRING but got " << item.type()
-                     << " for field " << field->name();
-          return WriteResult::TYPE_MISMATCH;
-        }
-        std::string str = item.getStr();
-        int32_t strLen = str.size();
-        buf_.append(reinterpret_cast<char*>(&strLen), sizeof(int32_t));
-        buf_.append(str.data(), strLen);
-        break;
-      }
-      case Value::Type::INT: {
-        if (field->type() != PropertyType::LIST_INT) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_INT but got " << item.type() << " for field "
-                     << field->name();
-          return WriteResult::TYPE_MISMATCH;
-        }
-        int32_t intVal = item.getInt();
-        buf_.append(reinterpret_cast<char*>(&intVal), sizeof(int32_t));
-        break;
-      }
-      case Value::Type::FLOAT: {
-        if (field->type() != PropertyType::LIST_FLOAT) {
-          LOG(ERROR) << "Type mismatch: Expected LIST_FLOAT but got " << item.type()
-                     << " for field " << field->name();
-          return WriteResult::TYPE_MISMATCH;
-        }
-        float floatVal = item.getFloat();
-        buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
-        break;
-      }
-      default:
-        LOG(ERROR) << "Type mismatch: Unexpected type " << item.type() << " for field "
-                   << field->name();
-        return WriteResult::TYPE_MISMATCH;
-    }
+  buf_.append(reinterpret_cast<const char*>(&listSize), sizeof(int32_t));
+  std::unordered_set<std::string> serializedStrings;
+  std::unordered_set<int32_t> serializedInts;
+  std::unordered_set<float> serializedFloats;
+  Value::Type valueType;
+  if (field->type() == PropertyType::LIST_STRING) {
+    valueType = Value::Type::STRING;
+  } else if (field->type() == PropertyType::LIST_INT) {
+    valueType = Value::Type::INT;
+  } else if (field->type() == PropertyType::LIST_FLOAT) {
+    valueType = Value::Type::FLOAT;
+  } else {
+    LOG(ERROR) << "Unsupported list type: " << static_cast<int>(field->type());
+    return WriteResult::TYPE_MISMATCH;
+  }
+  auto result = writeContainer(
+      list, valueType, false, serializedStrings, serializedInts, serializedFloats, buf_);
+  if (result != WriteResult::SUCCEEDED) {
+    return result;
   }
 
   memcpy(&buf_[offset], reinterpret_cast<void*>(&listOffset), sizeof(int32_t));
@@ -889,63 +921,36 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   isSet_[index] = true;
   return WriteResult::SUCCEEDED;
 }
+
 WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
-
   if (isSet_[index]) {
     outOfSpaceStr_ = true;
   }
-
   int32_t setSize = set.size();
   int32_t setOffset = buf_.size();
-  buf_.append(reinterpret_cast<char*>(&setSize), sizeof(int32_t));
-
+  buf_.append(reinterpret_cast<const char*>(&setSize), sizeof(int32_t));
   std::unordered_set<std::string> serializedStrings;
   std::unordered_set<int32_t> serializedInts;
   std::unordered_set<float> serializedFloats;
-
-  for (const auto& item : set.values) {
-    switch (item.type()) {
-      case Value::Type::STRING: {
-        if (field->type() != PropertyType::SET_STRING) {
-          return WriteResult::TYPE_MISMATCH;
-        }
-        std::string str = item.getStr();
-        if (serializedStrings.find(str) == serializedStrings.end()) {
-          int32_t strLen = str.size();
-          buf_.append(reinterpret_cast<char*>(&strLen), sizeof(int32_t));
-          buf_.append(str.data(), strLen);
-          serializedStrings.insert(str);
-        }
-        break;
-      }
-      case Value::Type::INT: {
-        if (field->type() != PropertyType::SET_INT) {
-          return WriteResult::TYPE_MISMATCH;
-        }
-        int32_t intVal = item.getInt();
-        if (serializedInts.find(intVal) == serializedInts.end()) {
-          buf_.append(reinterpret_cast<char*>(&intVal), sizeof(int32_t));
-          serializedInts.insert(intVal);
-        }
-        break;
-      }
-      case Value::Type::FLOAT: {
-        if (field->type() != PropertyType::SET_FLOAT) {
-          return WriteResult::TYPE_MISMATCH;
-        }
-        float floatVal = item.getFloat();
-        if (serializedFloats.find(floatVal) == serializedFloats.end()) {
-          buf_.append(reinterpret_cast<char*>(&floatVal), sizeof(float));
-          serializedFloats.insert(floatVal);
-        }
-        break;
-      }
-      default:
-        return WriteResult::TYPE_MISMATCH;
-    }
+  Value::Type valueType;
+  if (field->type() == PropertyType::SET_STRING) {
+    valueType = Value::Type::STRING;
+  } else if (field->type() == PropertyType::SET_INT) {
+    valueType = Value::Type::INT;
+  } else if (field->type() == PropertyType::SET_FLOAT) {
+    valueType = Value::Type::FLOAT;
+  } else {
+    LOG(ERROR) << "Unsupported set type: " << static_cast<int>(field->type());
+    return WriteResult::TYPE_MISMATCH;
   }
+  auto result = writeContainer(
+      set, valueType, true, serializedStrings, serializedInts, serializedFloats, buf_);
+  if (result != WriteResult::SUCCEEDED) {
+    return result;
+  }
+
   memcpy(&buf_[offset], reinterpret_cast<void*>(&setOffset), sizeof(int32_t));
   if (field->nullable()) {
     clearNullBit(field->nullFlagPos());
