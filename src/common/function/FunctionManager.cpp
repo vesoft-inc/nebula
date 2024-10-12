@@ -7,6 +7,7 @@
 
 #include <float.h>
 #include <folly/json.h>
+#include <proxygen/lib/utils/CryptUtil.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -460,9 +461,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {TypeSignature({Value::Type::STRING}, Value::Type::MAP),
       TypeSignature({Value::Type::STRING}, Value::Type::NULLVALUE)}},
     {"score", {TypeSignature({}, Value::Type::__EMPTY__)}},
+    {"md5", {TypeSignature({Value::Type::STRING}, Value::Type::STRING)}},
 };
 
-// static
 StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName,
                                                      const std::vector<Value::Type> &argsType) {
   auto func = funcName;
@@ -3081,6 +3082,26 @@ FunctionManager::FunctionManager() {
     attr.body_ = [](const auto &) -> Value {
       // Only placeholder, will be replaced by actual expression and need not to be evaluated
       return Value::kNullValue;
+    };
+  }
+  {
+    auto &attr = functions_["md5"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::STRING: {
+          std::string value(args[0].get().getStr());
+          return proxygen::md5Encode(folly::StringPiece(value));
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
     };
   }
 }  // NOLINT

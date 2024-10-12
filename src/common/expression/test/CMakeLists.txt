@@ -138,6 +138,7 @@ nebula_add_executable(
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_executable(
@@ -163,4 +164,5 @@ nebula_add_executable(
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
 )
