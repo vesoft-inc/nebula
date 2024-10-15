@@ -1388,17 +1388,14 @@ FunctionManager::FunctionManager() {
       if (args[0].get().isNull() || args[1].get().isNull() || args[2].get().isNull()) {
         return Value::kNullValue;
       }
-
       if (args[0].get().isStr() && args[1].get().isStr() && args[2].get().isStr()) {
-        std::string &origStr = const_cast<std::string &>(args[0].get().getStr());
-        std::string search = args[1].get().getStr();
-        std::string newStr = args[2].get().getStr();
-        boost::replace_all(origStr, search, newStr);
-        return origStr;
+        std::string origStr(args[0].get().getStr());
+        std::string search(args[1].get().getStr());
+        std::string newStr(args[2].get().getStr());
+        return boost::replace_all_copy(origStr, search, newStr);
       }
-
       if (args[0].get().isList()) {
-        auto &list = const_cast<List &>(args[0].get().getList());
+        List list = args[0].get().getList();
         auto search = args[1].get();
         auto newValue = args[2].get();
         for (auto &item : list.values) {
@@ -1408,9 +1405,8 @@ FunctionManager::FunctionManager() {
         }
         return list;
       }
-
       if (args[0].get().isSet()) {
-        auto &set = const_cast<Set &>(args[0].get().getSet());
+        Set set = args[0].get().getSet();
         auto search = args[1].get();
         auto newValue = args[2].get();
         if (set.values.erase(search)) {
@@ -1418,11 +1414,9 @@ FunctionManager::FunctionManager() {
         }
         return set;
       }
-
       return Value::kNullBadType;
     };
   }
-
   {
     auto &attr = functions_["erase"];
     attr.minArity_ = 2;

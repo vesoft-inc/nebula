@@ -1042,7 +1042,17 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-    # Insert data with duplicates
+    When executing query:
+      """
+      DESCRIBE TAG player;
+      """
+    Then the result should be, in any order:
+      | Field   | Type         | Null  | Default | Comment |
+      | "name"  | "string"     | "YES" |         |         |
+      | "age"   | "int64"      | "YES" |         |         |
+      | "hobby" | "set_string" | "YES" |         |         |
+      | "ids"   | "set_int"    | "YES" |         |         |
+      | "score" | "set_float"  | "YES" |         |         |
     When executing query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":(

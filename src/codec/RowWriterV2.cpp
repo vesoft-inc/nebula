@@ -16,58 +16,47 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
-// Template functions for handling different types (e.g. strings, ints, floats) in lists and
-// collections
+// Template functions implement support for list and set data types
 template <typename Container>
-WriteResult writeContainer(const Container& container,
-                           Value::Type valueType,
-                           bool isSetType,
-                           std::unordered_set<std::string>& serializedStrings,
-                           std::unordered_set<int32_t>& serializedInts,
-                           std::unordered_set<float>& serializedFloats,
-                           std::string& buffer) {
+WriteResult writeContainer(const Container& container, Value::Type valueType, std::string& buffer) {
+  std::unordered_set<Value> serialized;
   for (const auto& item : container.values) {
     if (item.type() != valueType) {
       LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
                  << static_cast<int>(item.type());
       return WriteResult::TYPE_MISMATCH;
     }
+    if constexpr (std::is_same_v<Container, Set>) {
+      if (serialized.find(item) != serialized.end()) {
+        continue;
+      }
+    }
     switch (valueType) {
       case Value::Type::STRING: {
         std::string str = item.getStr();
-        if (isSetType && serializedStrings.find(str) != serializedStrings.end()) {
-          continue;
-        }
         int32_t strLen = str.size();
         buffer.append(reinterpret_cast<const char*>(&strLen), sizeof(int32_t));
         buffer.append(str.data(), strLen);
-        serializedStrings.insert(str);
         break;
       }
       case Value::Type::INT: {
         int32_t intVal = item.getInt();
-        if (isSetType && serializedInts.find(intVal) != serializedInts.end()) {
-          continue;
-        }
         buffer.append(reinterpret_cast<const char*>(&intVal), sizeof(int32_t));
-        serializedInts.insert(intVal);
         break;
       }
       case Value::Type::FLOAT: {
         float floatVal = item.getFloat();
-        if (isSetType && serializedFloats.find(floatVal) != serializedFloats.end()) {
-          continue;
-        }
         buffer.append(reinterpret_cast<const char*>(&floatVal), sizeof(float));
-        serializedFloats.insert(floatVal);
         break;
       }
       default:
         LOG(ERROR) << "Unsupported value type: " << static_cast<int>(valueType);
         return WriteResult::TYPE_MISMATCH;
     }
+    if constexpr (std::is_same_v<Container, Set>) {
+      serialized.insert(item);
+    }
   }
-
   return WriteResult::SUCCEEDED;
 }
 
@@ -894,9 +883,6 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   int32_t listSize = list.size();
   int32_t listOffset = buf_.size();
   buf_.append(reinterpret_cast<const char*>(&listSize), sizeof(int32_t));
-  std::unordered_set<std::string> serializedStrings;
-  std::unordered_set<int32_t> serializedInts;
-  std::unordered_set<float> serializedFloats;
   Value::Type valueType;
   if (field->type() == PropertyType::LIST_STRING) {
     valueType = Value::Type::STRING;
@@ -908,12 +894,10 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
     LOG(ERROR) << "Unsupported list type: " << static_cast<int>(field->type());
     return WriteResult::TYPE_MISMATCH;
   }
-  auto result = writeContainer(
-      list, valueType, false, serializedStrings, serializedInts, serializedFloats, buf_);
+  auto result = writeContainer(list, valueType, buf_);
   if (result != WriteResult::SUCCEEDED) {
     return result;
   }
-
   memcpy(&buf_[offset], reinterpret_cast<void*>(&listOffset), sizeof(int32_t));
   if (field->nullable()) {
     clearNullBit(field->nullFlagPos());
@@ -931,9 +915,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   int32_t setSize = set.size();
   int32_t setOffset = buf_.size();
   buf_.append(reinterpret_cast<const char*>(&setSize), sizeof(int32_t));
-  std::unordered_set<std::string> serializedStrings;
-  std::unordered_set<int32_t> serializedInts;
-  std::unordered_set<float> serializedFloats;
   Value::Type valueType;
   if (field->type() == PropertyType::SET_STRING) {
     valueType = Value::Type::STRING;
@@ -945,12 +926,10 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
     LOG(ERROR) << "Unsupported set type: " << static_cast<int>(field->type());
     return WriteResult::TYPE_MISMATCH;
   }
-  auto result = writeContainer(
-      set, valueType, true, serializedStrings, serializedInts, serializedFloats, buf_);
+  auto result = writeContainer(set, valueType, buf_);
   if (result != WriteResult::SUCCEEDED) {
     return result;
   }
-
   memcpy(&buf_[offset], reinterpret_cast<void*>(&setOffset), sizeof(int32_t));
   if (field->nullable()) {
     clearNullBit(field->nullFlagPos());
