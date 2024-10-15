@@ -1041,7 +1041,7 @@ Feature: Insert string vid of vertex and edge
       CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 4 seconds
     When executing query:
       """
       DESCRIBE TAG player;

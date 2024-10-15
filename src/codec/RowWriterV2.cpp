@@ -16,46 +16,72 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
-// Template functions implement support for list and set data types
-template <typename Container>
-WriteResult writeContainer(const Container& container, Value::Type valueType, std::string& buffer) {
-  std::unordered_set<Value> serialized;
+// Function used to identify the data type written
+WriteResult writeItem(const Value& item, Value::Type valueType, std::string& buffer) {
+  switch (valueType) {
+    case Value::Type::STRING: {
+      std::string str = item.getStr();
+      int32_t strLen = str.size();
+      buffer.append(reinterpret_cast<const char*>(&strLen), sizeof(int32_t));
+      buffer.append(str.data(), strLen);
+      break;
+    }
+    case Value::Type::INT: {
+      int32_t intVal = item.getInt();
+      buffer.append(reinterpret_cast<const char*>(&intVal), sizeof(int32_t));
+      break;
+    }
+    case Value::Type::FLOAT: {
+      float floatVal = item.getFloat();
+      buffer.append(reinterpret_cast<const char*>(&floatVal), sizeof(float));
+      break;
+    }
+    default:
+      LOG(ERROR) << "Unsupported value type: " << static_cast<int>(valueType);
+      return WriteResult::TYPE_MISMATCH;
+  }
+  return WriteResult::SUCCEEDED;
+}
+
+// Function used to identify List data types (List<string>, List<int>, List<float>)
+template <typename List>
+WriteResult writeList(const List& container, Value::Type valueType, std::string& buffer) {
   for (const auto& item : container.values) {
     if (item.type() != valueType) {
       LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
                  << static_cast<int>(item.type());
       return WriteResult::TYPE_MISMATCH;
     }
-    if constexpr (std::is_same_v<Container, Set>) {
-      if (serialized.find(item) != serialized.end()) {
-        continue;
-      }
+  }
+  for (const auto& item : container.values) {
+    auto result = writeItem(item, valueType, buffer);
+    if (result != WriteResult::SUCCEEDED) {
+      return result;
     }
-    switch (valueType) {
-      case Value::Type::STRING: {
-        std::string str = item.getStr();
-        int32_t strLen = str.size();
-        buffer.append(reinterpret_cast<const char*>(&strLen), sizeof(int32_t));
-        buffer.append(str.data(), strLen);
-        break;
-      }
-      case Value::Type::INT: {
-        int32_t intVal = item.getInt();
-        buffer.append(reinterpret_cast<const char*>(&intVal), sizeof(int32_t));
-        break;
-      }
-      case Value::Type::FLOAT: {
-        float floatVal = item.getFloat();
-        buffer.append(reinterpret_cast<const char*>(&floatVal), sizeof(float));
-        break;
-      }
-      default:
-        LOG(ERROR) << "Unsupported value type: " << static_cast<int>(valueType);
-        return WriteResult::TYPE_MISMATCH;
+  }
+  return WriteResult::SUCCEEDED;
+}
+
+// Function used to identify Set data types (Set<string>, Set<int>, Set<float>)
+template <typename Set>
+WriteResult writeSet(const Set& container, Value::Type valueType, std::string& buffer) {
+  for (const auto& item : container.values) {
+    if (item.type() != valueType) {
+      LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
+                 << static_cast<int>(item.type());
+      return WriteResult::TYPE_MISMATCH;
     }
-    if constexpr (std::is_same_v<Container, Set>) {
-      serialized.insert(item);
+  }
+  std::unordered_set<Value> serialized;
+  for (const auto& item : container.values) {
+    if (serialized.find(item) != serialized.end()) {
+      continue;
     }
+    auto result = writeItem(item, valueType, buffer);
+    if (result != WriteResult::SUCCEEDED) {
+      return result;
+    }
+    serialized.insert(item);
   }
   return WriteResult::SUCCEEDED;
 }
@@ -894,7 +920,7 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
     LOG(ERROR) << "Unsupported list type: " << static_cast<int>(field->type());
     return WriteResult::TYPE_MISMATCH;
   }
-  auto result = writeContainer(list, valueType, buf_);
+  auto result = writeList(list, valueType, buf_);
   if (result != WriteResult::SUCCEEDED) {
     return result;
   }
@@ -926,7 +952,7 @@ WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
     LOG(ERROR) << "Unsupported set type: " << static_cast<int>(field->type());
     return WriteResult::TYPE_MISMATCH;
   }
-  auto result = writeContainer(set, valueType, buf_);
+  auto result = writeSet(set, valueType, buf_);
   if (result != WriteResult::SUCCEEDED) {
     return result;
   }
