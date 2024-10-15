@@ -18,6 +18,7 @@ nebula_add_test(
     LIBRARIES
         gtest
         gtest_main
+        ${PROXYGEN_LIBRARIES}
 )
 
 nebula_add_test(
