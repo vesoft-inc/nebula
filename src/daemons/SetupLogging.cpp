@@ -18,6 +18,7 @@ DECLARE_string(log_dir);
 DEFINE_bool(redirect_stdout, true, "Whether to redirect stdout and stderr to separate files");
 DEFINE_string(stdout_log_file, "stdout.log", "Destination filename of stdout");
 DEFINE_string(stderr_log_file, "stderr.log", "Destination filename of stderr");
+DEFINE_int32(log_clean_days, 7, "clean log files older than the specified days");
 
 using nebula::Status;
 using nebula::fs::FileUtils;
@@ -41,6 +42,10 @@ Status setupLogging(const std::string &exe) {
 
   if (!FLAGS_redirect_stdout) {
     return Status::OK();
+  }
+
+  if (FLAGS_log_clean_days > 0) {
+    google::EnableLogCleaner(FLAGS_log_clean_days);
   }
 
   auto dup = [](const std::string &filename, FILE *stream) -> Status {
