@@ -429,6 +429,20 @@ class KillQueryValidator final : public Validator {
 
   Status toPlan() override;
 };
+
+class TransferLeaderValidator final : public Validator {
+ public:
+  TransferLeaderValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_VALIDATOR_ADMINVALIDATOR_H_

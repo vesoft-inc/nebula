@@ -215,6 +215,7 @@ using namespace nebula;
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
 %token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
+%token KW_TRANSFER
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
@@ -345,7 +346,7 @@ using namespace nebula;
 %type <service_client_item> service_client_item
 %type <service_client_list> service_client_list
 
-%type <intval> legal_integer unary_integer rank port
+%type <intval> legal_integer unary_integer rank port job_concurrency
 
 %type <strval>         comment_prop_assignment comment_prop opt_comment_prop
 %type <col_property>   column_property
@@ -384,6 +385,7 @@ using namespace nebula;
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
 %type <sentence> show_queries_sentence kill_query_sentence kill_session_sentence
 %type <sentence> show_sentence
+%type <sentence> transfer_leader_sentence
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
@@ -3312,6 +3314,13 @@ delete_edge_sentence
     }
     ;
 
+transfer_leader_sentence
+    : KW_TRANSFER KW_LEADER KW_FROM host_item KW_ON name_label job_concurrency {
+        $$ = new TransferLeaderSentence($4, $6, $7);
+    }
+    ;
+
+
 admin_job_sentence
     : KW_SUBMIT KW_JOB KW_COMPACT {
         auto sentence = new AdminJobSentence(meta::cpp2::JobOp::ADD,
@@ -3387,6 +3396,15 @@ admin_job_sentence
          }
          delete hl;
          $$ = sentence;
+    }
+    ;
+
+job_concurrency
+    : %empty {
+        $$ = 0;
+    }
+    | legal_integer {
+        $$ = $1;
     }
     ;
 
@@ -3966,6 +3984,7 @@ maintain_sentence
     | drop_snapshot_sentence { $$ = $1; }
     | sign_in_service_sentence { $$ = $1; }
     | sign_out_service_sentence { $$ = $1; }
+    | transfer_leader_sentence { $$ = $1; }
     ;
 
 sentence

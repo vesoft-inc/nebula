@@ -18,7 +18,7 @@ namespace graph {
  *                kAlterEdge, kDropTag, kDropEdge,
  *                kCreateTagIndex, kCreateEdgeIndex, kDropTagIndex,
  * kDropEdgeIndex, Read user : Write user : kCreateUser, kDropUser, kAlterUser,
- * Write role : kGrant, kRevoke,
+ * Write role : kGrant, kRevoke, kTransferLeader
  * Read data : kGo , kSet, kPipe, kMatch, kAssignment, kLookup,
  *             kYield, kOrderBy, kFetchVertices, kFind
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
@@ -65,6 +65,7 @@ namespace graph {
     case Sentence::Kind::kDescribeZone:
     case Sentence::Kind::kListZones:
     case Sentence::Kind::kAddHostsIntoZone:
+    case Sentence::Kind::kTransferLeader:
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
