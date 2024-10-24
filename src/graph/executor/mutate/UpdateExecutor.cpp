@@ -73,6 +73,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
           NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
         }
         if (value.props_ref().has_value()) {
+          LOG(INFO) << "props exist";
           auto status = handleResult(std::move(*value.props_ref()));
           if (!status.ok()) {
             return status.status();
@@ -152,7 +153,6 @@ folly::Future<Status> UpdateMultiVertexExecutor::execute() {
           memory::MemoryCheckGuard guard;
           SCOPED_TIMER(&execTime_);
           DataSet finalResult;
-          bool propsExist = false;
           for (auto& result : results) {
             if (result.hasException()) {
               LOG(WARNING) << "Update vertex request threw an exception.";
@@ -170,7 +170,7 @@ folly::Future<Status> UpdateMultiVertexExecutor::execute() {
             }
 
             if (value.props_ref().has_value()) {
-              propsExist = true;
+              LOG(INFO) << "props exist";   // 使用 value.props_ref().has_value() 不准确
               auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
               if (!status.ok()) {
                 return status;
@@ -179,7 +179,7 @@ folly::Future<Status> UpdateMultiVertexExecutor::execute() {
           }
 
           // print the final result
-          if (!propsExist) {
+          if (finalResult.colNames.empty()) {
             return Status::OK();
           } else {
             return finish(ResultBuilder()
@@ -266,7 +266,6 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
           memory::MemoryCheckGuard guard;
           SCOPED_TIMER(&execTime_);
           DataSet finalResult;
-          bool propsExist = false;
           for (auto& result : results) {
             if (result.hasException()) {
               LOG(WARNING) << "Update vertex request threw an exception.";
@@ -284,7 +283,6 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
             }
 
             if (value.props_ref().has_value()) {
-              propsExist = true;
               auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
               if (!status.ok()) {
                 return status;
@@ -293,7 +291,7 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
           }
 
           // print the final result
-          if (!propsExist) {
+          if (finalResult.colNames.empty()) {
             return Status::OK();
           } else {
             return finish(ResultBuilder()
@@ -422,7 +420,6 @@ folly::Future<Status> UpdateMultiEdgeExecutor::execute() {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         DataSet finalResult;
-        bool propsExist = false;
         for (auto& result : results) {
           if (result.hasException()) {
             LOG(WARNING) << "Update edge request threw an exception.";
@@ -440,7 +437,6 @@ folly::Future<Status> UpdateMultiEdgeExecutor::execute() {
           }
 
           if (value.props_ref().has_value()) {
-            propsExist = true;
             auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
             if (!status.ok()) {
               return status;
@@ -449,7 +445,7 @@ folly::Future<Status> UpdateMultiEdgeExecutor::execute() {
         }
 
         // print the final result
-        if (!propsExist) {
+        if (finalResult.colNames.empty()) {
           return Status::OK();
         } else {
           return finish(ResultBuilder()
@@ -579,7 +575,6 @@ folly::Future<Status> UpdateRefEdgeExecutor::execute() {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         DataSet finalResult;
-        bool propsExist = false;
         for (auto& result : results) {
           // LOG(INFO) << "Update edge result";
           if (result.hasException()) {
@@ -599,7 +594,6 @@ folly::Future<Status> UpdateRefEdgeExecutor::execute() {
 
           // skip the edge result
           if (value.props_ref().has_value() && value.props_ref()->colNames.size() > 1) {
-            propsExist = true;
             auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
             if (!status.ok()) {
               return status;
@@ -608,7 +602,7 @@ folly::Future<Status> UpdateRefEdgeExecutor::execute() {
         }
 
         // print the final result
-        if (!propsExist) {
+        if (finalResult.colNames.empty()) {
           return Status::OK();
         } else {
           return finish(ResultBuilder()

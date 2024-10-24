@@ -44,21 +44,21 @@ test_j_sa = $(test_without_skip_sa) -n$(J)
 
 
 install-deps:
-	pip3 install --user -Ur $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
+	pip3 install  -Ur $(CURR_DIR)/requirements.txt -i $(PYPI_MIRROR)
 
 install-nebula-py: install-deps
 	git clone --branch release-3.5 https://github.com/vesoft-inc/nebula-python $(CURR_DIR)/nebula-python
 	cd $(CURR_DIR)/nebula-python \
-		&& pip3 install --user . -i $(PYPI_MIRROR) --upgrade
+		&& pip3 install  . -i $(PYPI_MIRROR) --upgrade
 	rm -rf $(CURR_DIR)/nebula-python
 
 gherkin-fmt: install-deps
 	@if [ $(PY_VERSION) -lt 7 ]; then echo 'Python version must >= 3.7'; exit 1; fi
-	pip3 install --user poetry
+	pip3 install  poetry
 	git clone --branch master https://github.com/OneContainer/reformat-gherkin $(CURR_DIR)/reformat-gherkin
 	cd $(CURR_DIR)/reformat-gherkin && python3 -m poetry build
 	pip3 uninstall -y reformat-gherkin
-	pip3 install --user $(CURR_DIR)/reformat-gherkin/dist/reformat_gherkin*.whl
+	pip3 install  $(CURR_DIR)/reformat-gherkin/dist/reformat_gherkin*.whl
 	rm -rf $(CURR_DIR)/reformat-gherkin
 
 init: clean install-nebula-py
