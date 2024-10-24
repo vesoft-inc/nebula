@@ -176,7 +176,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
-    {"sadd",
+    {"setadd",
      {TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
       TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
@@ -1441,7 +1441,7 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    auto &attr = functions_["sadd"];
+    auto &attr = functions_["setadd"];
     attr.minArity_ = 2;
     attr.maxArity_ = 2;
     attr.isAlwaysPure_ = true;

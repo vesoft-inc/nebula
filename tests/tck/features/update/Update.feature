@@ -1230,6 +1230,28 @@ Feature: Update string vid of vertex and edge
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
+      SET hobby = hobby + [3525],
+          ids = ids + ["Coding"],
+          score = score + ["85.0"]
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = hobby + [],
+          ids = ids + [],
+          score = score + []
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
+      """
+    Then the result should be, in any order:
+      | Name         | Age | Hobby                      | Ids        | Score        |
+      | "Tim Duncan" | 42  | ["Basketball", "Swimming"] | [100, 528] | [50.0, 22.0] |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
       SET hobby = hobby + ["Coding"],
           ids = ids + [37564],
           score = score + [85.0]
@@ -1246,6 +1268,15 @@ Feature: Update string vid of vertex and edge
     Then the result should be, in any order:
       | player.name  | player.age | player.hobby                         | player.ids        | player.score       |
       | "Tim Duncan" | 42         | ["Basketball", "Swimming", "Coding"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
+    When executing query:
+      """
+      UPDATE VERTEX ON player "player100"
+      SET hobby = REPLACE(hobby, "Basketball", 9528),
+          ids = REPLACE(ids, 37564, "12345")
+      WHEN name == "Tim Duncan"
+      YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids;
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
@@ -1295,13 +1326,13 @@ Feature: Update string vid of vertex and edge
       );
       """
     Then the execution should be successful
-    # Test SADD operation on SET
+    # Test SETADD operation on SET
     When executing query:
       """
       UPDATE VERTEX ON player "player100"
-      SET hobby = SADD(hobby, "Coding"),
-          ids = SADD(ids, 37564),
-          score = SADD(score, 85.0)
+      SET hobby = SETADD(hobby, "Coding"),
+          ids = SETADD(ids, 37564),
+          score = SETADD(score, 85.0)
       WHEN name == "Tim Duncan"
       YIELD name AS Name, age AS Age, hobby AS Hobby, ids AS Ids, score AS Score;
       """

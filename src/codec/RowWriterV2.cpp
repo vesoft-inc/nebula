@@ -46,6 +46,10 @@ WriteResult writeItem(const Value& item, Value::Type valueType, std::string& buf
 // Function used to identify List data types (List<string>, List<int>, List<float>)
 template <typename List>
 WriteResult writeList(const List& container, Value::Type valueType, std::string& buffer) {
+  int32_t listSize = container.values.size();
+  if (listSize == 0) {
+    return WriteResult::SUCCEEDED;
+  }
   for (const auto& item : container.values) {
     if (item.type() != valueType) {
       LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
@@ -903,11 +907,16 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
 WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
+  int32_t kMaxArraySize = 65535;
+  int32_t listSize = list.size();
+  int32_t listOffset = buf_.size();
+  if (listSize > kMaxArraySize) {
+    LOG(ERROR) << "List size exceeds the maximum allowed length of " << kMaxArraySize;
+    return WriteResult::OUT_OF_RANGE;
+  }
   if (isSet_[index]) {
     outOfSpaceStr_ = true;
   }
-  int32_t listSize = list.size();
-  int32_t listOffset = buf_.size();
   buf_.append(reinterpret_cast<const char*>(&listSize), sizeof(int32_t));
   Value::Type valueType;
   if (field->type() == PropertyType::LIST_STRING) {
@@ -935,11 +944,16 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
 WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
+  int32_t kMaxArraySize = 65535;
+  int32_t setSize = set.size();
+  int32_t setOffset = buf_.size();
+  if (setSize > kMaxArraySize) {
+    LOG(ERROR) << "Set size exceeds the maximum allowed length of " << kMaxArraySize;
+    return WriteResult::OUT_OF_RANGE;
+  }
   if (isSet_[index]) {
     outOfSpaceStr_ = true;
   }
-  int32_t setSize = set.size();
-  int32_t setOffset = buf_.size();
   buf_.append(reinterpret_cast<const char*>(&setSize), sizeof(int32_t));
   Value::Type valueType;
   if (field->type() == PropertyType::SET_STRING) {

@@ -711,7 +711,19 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-    # Insert the initial vertex with specific properties
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, [], [], []);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON * "player100" YIELD vertex as node;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node                                                                        |
+      | ("player100":player{name:"Tim Duncan", age:42, hobby:[], ids:[], score:[]}) |
+    # Handle the edge cases by inserting incorrect types and handling errors
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming", "Reading"], [1, 2, 3], [10.5, 20.5, 30.5]);
@@ -734,7 +746,7 @@ Feature: Insert string vid of vertex and edge
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
       """
-      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2",["Swimming", "Painting"], [10, 11, 12], [100.5, 110.5, 120.5]);
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 2, [10, 11, 12], ["Swimming", "Painting"], {100.5, 110.5, 120.5});
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
     # Insert edges and fetch results
@@ -803,7 +815,12 @@ Feature: Insert string vid of vertex and edge
       """
     Then the execution should be successful
     And wait 3 seconds
-    # Insert the initial vertex with specific properties and duplicates
+    When try to execute query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, set{}, set{}, set{});
+      """
+    Then the execution should be successful
+    # Handle the edge cases by inserting incorrect types and handling errors
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2, 3}, {10.5, 20.5, 10.5, 30.5});
@@ -826,7 +843,7 @@ Feature: Insert string vid of vertex and edge
     # Handle the edge cases by inserting incorrect types and handling errors
     When executing query:
       """
-      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", "2", {"Basketball", "Gaming"}, {4, 5, 6, 6}, {40.5, 50.5, 60.5});
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 2, ["Basketball", "Gaming"], {40.5, 50.5, 60.5}, {4, 5, 6, 6});
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The data type does not meet the requirements. Use the correct type of data.
     # Insert edges and fetch results

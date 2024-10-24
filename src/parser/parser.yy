@@ -1337,7 +1337,7 @@ container_expression
     ;
 
 list_expression
-    : L_BRACKET expression_list R_BRACKET {
+    : L_BRACKET opt_expression_list R_BRACKET {
         $$ = ListExpression::make(qctx->objPool(), $2);
     }
     | KW_LIST L_BRACKET opt_expression_list R_BRACKET {
