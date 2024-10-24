@@ -723,7 +723,6 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order, with relax comparison:
       | node                                                                        |
       | ("player100":player{name:"Tim Duncan", age:42, hobby:[], ids:[], score:[]}) |
-    # Handle the edge cases by inserting incorrect types and handling errors
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming", "Reading"], [1, 2, 3], [10.5, 20.5, 30.5]);
@@ -820,7 +819,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, set{}, set{}, set{});
       """
     Then the execution should be successful
-    # Handle the edge cases by inserting incorrect types and handling errors
     When try to execute query:
       """
       INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, {"Basketball", "Swimming", "Basketball"}, {1, 2, 2, 3}, {10.5, 20.5, 10.5, 30.5});
