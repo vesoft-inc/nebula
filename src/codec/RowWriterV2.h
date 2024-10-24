@@ -221,6 +221,8 @@ class RowWriterV2 {
   size_t numNullBytes_;
   size_t approxStrLen_;
   bool finished_;
+  // Limit array length
+  static constexpr int32_t kMaxArraySize = 65535;
 
   // When outOfSpaceStr_ is true, variant length string fields
   // could hold an index, referring to the strings in the strList_

@@ -907,7 +907,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
 WriteResult RowWriterV2::write(ssize_t index, const List& list) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
-  int32_t kMaxArraySize = 65535;
   int32_t listSize = list.size();
   int32_t listOffset = buf_.size();
   if (listSize > kMaxArraySize) {
@@ -944,7 +943,6 @@ WriteResult RowWriterV2::write(ssize_t index, const List& list) {
 WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
-  int32_t kMaxArraySize = 65535;
   int32_t setSize = set.size();
   int32_t setOffset = buf_.size();
   if (setSize > kMaxArraySize) {

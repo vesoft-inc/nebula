@@ -246,7 +246,13 @@ Feature: DDL test
         name string NOT NULL,
         createDate DATETIME, location geography(polygon),
         isVisited bool COMMENT "kHop search flag",
-        nickName TIME DEFAULT time()
+        nickName TIME DEFAULT time(),
+        listString List< string >,
+        listInt List< int >,
+        listFloat List< float >,
+        setString Set< string >,
+        setInt Set< int >,
+        setFloat Set< float >
         )
         TTL_DURATION = 100, TTL_COL = "id", COMMENT = "EDGE E2";
       """
@@ -269,6 +275,12 @@ Feature: DDL test
       | "location"   | "geography(polygon)" | "YES" |          |                    |
       | "isVisited"  | "bool"               | "YES" |          | "kHop search flag" |
       | "nickName"   | "time"               | "YES" | "time()" |                    |
+      | "listString" | "list_string"        | "YES" |          |                    |
+      | "listInt"    | "list_int"           | "YES" |          |                    |
+      | "listFloat"  | "list_float"         | "YES" |          |                    |
+      | "setString"  | "set_string"         | "YES" |          |                    |
+      | "setInt"     | "set_int"            | "YES" |          |                    |
+      | "setFloat"   | "set_float"          | "YES" |          |                    |
     When executing query:
       """
       ALTER EDGE E2 DROP (name)
@@ -369,3 +381,63 @@ Feature: DDL test
       CREATE EDGE INDEX  idx_E2_1 on E2(isVisited, id, nickName, namex(1), createDate);
       """
     Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_listString ON E2(listString);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_listInt ON E2(listInt);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_listFloat ON E2(listFloat);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_setString ON E2(setString);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_setInt ON E2(setInt);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      CREATE EDGE INDEX idx_setFloat ON E2(setFloat);
+      """
+    Then a ExecutionError should be raised at runtime: Invalid param!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (listString string)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (listString Set< string >)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (listString List< int >)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (setString string)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (setString List< string >)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
+    When executing query:
+      """
+      ALTER EDGE E2 CHANGE (setString Set< int >)
+      """
+    Then a ExecutionError should be raised at runtime: Unsupported!
