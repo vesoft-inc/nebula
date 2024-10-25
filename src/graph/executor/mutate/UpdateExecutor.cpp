@@ -39,6 +39,7 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
   return result;
 }
 
+/*
 folly::Future<Status> UpdateVertexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *uvNode = asNode<UpdateVertex>(node());
@@ -86,6 +87,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
         return Status::OK();
       });
 }
+*/
 
 Status UpdateBaseExecutor::handleMultiResult(DataSet &result, DataSet &&data) {
     if (data.colNames.size() <= 1) {
@@ -112,90 +114,12 @@ Status UpdateBaseExecutor::handleMultiResult(DataSet &result, DataSet &&data) {
     return Status::OK();
 }
 
-
-folly::Future<Status> UpdateMultiVertexExecutor::execute() {
+folly::Future<Status> UpdateVertexExecutor::execute() {
     SCOPED_TIMER(&execTime_);
-    auto *umvNode = asNode<UpdateMultiVertex>(node());
-    yieldNames_ = umvNode->getYieldNames();
-    time::Duration updateMultiVertTime;
-    auto plan = qctx()->plan();
-    auto sess = qctx()->rctx()->session();
-    StorageClient::CommonRequestParam param(
-        umvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
-    auto VIds = umvNode->getVIds();
-
-    std::vector<folly::Future<StatusOr<storage::cpp2::UpdateResponse>>> futures;
-    futures.reserve(VIds.size());
-
-    for (auto &vId : VIds) {
-      // update request for each vertex
-      futures.emplace_back(
-            qctx()
-          ->getStorageClient()
-          ->updateVertex(param,
-                         vId,
-                         umvNode->getTagId(),
-                         umvNode->getUpdatedProps(),
-                         umvNode->getInsertable(),
-                         umvNode->getReturnProps(),
-                         umvNode->getCondition())
-          .via(runner()));
-    }
-
-    // collect all responses
-    return folly::collectAll(futures)
-        .via(runner())
-        .ensure([updateMultiVertTime]() {
-          VLOG(1) << "updateMultiVertTime: " << updateMultiVertTime.elapsedInUSec() << "us";
-        })
-        .thenValue([this](
-                  std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
-          memory::MemoryCheckGuard guard;
-          SCOPED_TIMER(&execTime_);
-          DataSet finalResult;
-          for (auto& result : results) {
-            if (result.hasException()) {
-              LOG(WARNING) << "Update vertex request threw an exception.";
-              return Status::Error("Exception occurred during update.");
-            }
-
-            if (!result.value().ok()) {
-              LOG(WARNING) << "Update vertex failed: " << result.value().status();
-              return result.value().status();  // if fail, return the error
-            }
-
-            auto value = std::move(result.value()).value();
-            for (auto& code : value.get_result().get_failed_parts()) {
-              NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
-            }
-
-            if (value.props_ref().has_value()) {
-              LOG(INFO) << "props exist";   // 使用 value.props_ref().has_value() 不准确
-              auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
-              if (!status.ok()) {
-                return status;
-              }
-            }
-          }
-
-          // print the final result
-          if (finalResult.colNames.empty()) {
-            return Status::OK();
-          } else {
-            return finish(ResultBuilder()
-                .value(std::move(finalResult))
-                .iter(Iterator::Kind::kDefault)
-                .build());
-          }
-        });
-}
-
-
-folly::Future<Status> UpdateRefVertexExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    auto *urvNode = asNode<UpdateRefVertex>(node());
+    auto *urvNode = asNode<UpdateVertex>(node());
 
     auto vidRef = urvNode->getVidRef();
+    LOG(INFO) << "Update vertex id: " << vidRef->toString();
     std::vector<Value> vertices;
     const auto& spaceInfo = qctx()->rctx()->session()->space();
 
@@ -235,14 +159,14 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
     futures.reserve(vertices.size());
 
     yieldNames_ = urvNode->getYieldNames();
-    time::Duration updateRefVertTime;
+    time::Duration updateVertTime;
     auto plan = qctx()->plan();
     auto sess = qctx()->rctx()->session();
     StorageClient::CommonRequestParam param(
         urvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
 
     for (auto &vId : vertices) {
-      // LOG(INFO) << "Update vertex id: " << vId.toString();
+      LOG(INFO) << "Update vertex id: " << vId.toString();
       futures.emplace_back(
             qctx()
           ->getStorageClient()
@@ -258,8 +182,8 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
 
     return folly::collectAll(futures)
         .via(runner())
-        .ensure([updateRefVertTime]() {
-          VLOG(1) << "updateMultiVertTime: " << updateRefVertTime.elapsedInUSec() << "us";
+        .ensure([updateVertTime]() {
+          VLOG(1) << "updateVertTime: " << updateVertTime.elapsedInUSec() << "us";
         })
         .thenValue([this](
                   std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
@@ -305,169 +229,12 @@ folly::Future<Status> UpdateRefVertexExecutor::execute() {
 
 folly::Future<Status> UpdateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *ueNode = asNode<UpdateEdge>(node());
-  storage::cpp2::EdgeKey edgeKey;
-  edgeKey.src_ref() = ueNode->getSrcId();
-  edgeKey.ranking_ref() = ueNode->getRank();
-  edgeKey.edge_type_ref() = ueNode->getEdgeType();
-  edgeKey.dst_ref() = ueNode->getDstId();
-  yieldNames_ = ueNode->getYieldNames();
-
-  LOG(INFO) << "Update edge: " << ueNode->getSrcId() << " -> " << ueNode->getDstId()
-            << " @ " << ueNode->getRank() << " ON " << ueNode->getEdgeType();
-
-  time::Duration updateEdgeTime;
-  auto plan = qctx()->plan();
-  StorageClient::CommonRequestParam param(
-      ueNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = false;
-  return qctx()
-      ->getStorageClient()
-      ->updateEdge(param,
-                   edgeKey,
-                   ueNode->getUpdatedProps(),
-                   ueNode->getInsertable(),
-                   ueNode->getReturnProps(),
-                   ueNode->getCondition())
-      .via(runner())
-      .ensure([updateEdgeTime]() {
-        VLOG(1) << "Update edge time: " << updateEdgeTime.elapsedInUSec() << "us";
-      })
-      .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
-        memory::MemoryCheckGuard guard;
-        SCOPED_TIMER(&execTime_);
-        if (!resp.ok()) {
-          LOG(WARNING) << "Update edge failed: " << resp.status();
-          return resp.status();
-        }
-        auto value = std::move(resp).value();
-        for (auto &code : value.get_result().get_failed_parts()) {
-          NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
-        }
-        if (value.props_ref().has_value()) {
-          auto status = handleResult(std::move(*value.props_ref()));
-          if (!status.ok()) {
-            return status.status();
-          }
-          return finish(ResultBuilder()
-                            .value(std::move(status).value())
-                            .iter(Iterator::Kind::kDefault)
-                            .build());
-        }
-        return Status::OK();
-      });
-}
-
-folly::Future<Status> UpdateMultiEdgeExecutor::execute() {
-  SCOPED_TIMER(&execTime_);
-  auto *umeNode = asNode<UpdateMultiEdge>(node());
-  time::Duration updateMultiEdgeTime;
-  auto plan = qctx()->plan();
-  // TODO(zhijie): param 可以在多个请求间共用吗
-  StorageClient::CommonRequestParam param(
-      umeNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
-  param.useExperimentalFeature = false;
-
-  yieldNames_ = umeNode->getYieldNames();
-
-  bool isReverse = umeNode->isReverse();
-
-  std::vector<storage::cpp2::EdgeKey> edgeKeys;
-  if (!isReverse) {
-      for (auto & edgeid : umeNode->getEdgeIds()) {
-        storage::cpp2::EdgeKey edgeKey;
-        edgeKey.src_ref() = edgeid.srcid();
-        edgeKey.dst_ref() = edgeid.dstid();
-        edgeKey.ranking_ref() = edgeid.rank();
-        edgeKey.edge_type_ref() = umeNode->getEdgeType();
-        edgeKeys.emplace_back(std::move(edgeKey));
-      }
-  } else {
-      for (auto & edgeid : umeNode->getEdgeIds()) {
-        storage::cpp2::EdgeKey edgeKey;
-        edgeKey.src_ref() = edgeid.dstid();
-        edgeKey.dst_ref() = edgeid.srcid();
-        edgeKey.ranking_ref() = edgeid.rank();
-        edgeKey.edge_type_ref() = umeNode->getEdgeType();
-        edgeKeys.emplace_back(std::move(edgeKey));
-      }
-  }
-
-
-  std::vector<folly::Future<StatusOr<storage::cpp2::UpdateResponse>>> futures;
-  futures.reserve(edgeKeys.size());
-
-  for (auto &edgeKey : edgeKeys) {
-    futures.emplace_back(
-          qctx()
-        ->getStorageClient()
-        ->updateEdge(param,
-                     edgeKey,
-                     umeNode->getUpdatedProps(),
-                     umeNode->getInsertable(),
-                     umeNode->getReturnProps(),
-                     umeNode->getCondition())
-        .via(runner()));
-  }
-
-  return folly::collectAll(futures)
-      .via(runner())
-      .ensure([updateMultiEdgeTime]() {
-        VLOG(1) << "updateMultiEdgeTime: " << updateMultiEdgeTime.elapsedInUSec() << "us";
-      })
-      .thenValue([this](
-                std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
-        memory::MemoryCheckGuard guard;
-        SCOPED_TIMER(&execTime_);
-        DataSet finalResult;
-        for (auto& result : results) {
-          if (result.hasException()) {
-            LOG(WARNING) << "Update edge request threw an exception.";
-            return Status::Error("Exception occurred during update.");
-          }
-
-          if (!result.value().ok()) {
-            LOG(WARNING) << "Update edge failed: " << result.value().status();
-            return result.value().status();  // if fail, return the error
-          }
-
-          auto value = std::move(result.value()).value();
-          for (auto& code : value.get_result().get_failed_parts()) {
-            NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
-          }
-
-          if (value.props_ref().has_value()) {
-            auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
-            if (!status.ok()) {
-              return status;
-            }
-          }
-        }
-
-        // print the final result
-        if (finalResult.colNames.empty()) {
-          return Status::OK();
-        } else {
-          return finish(ResultBuilder()
-              .value(std::move(finalResult))
-              .iter(Iterator::Kind::kDefault)
-              .build());
-        }
-      });
-}
-
-folly::Future<Status> UpdateRefEdgeExecutor::execute() {
-  SCOPED_TIMER(&execTime_);
-  auto *ureNode = asNode<UpdateRefEdge>(node());
+  auto *ureNode = asNode<UpdateEdge>(node());
   auto *edgeKeyRef = DCHECK_NOTNULL(ureNode->getEdgeKeyRef());
   auto edgeType = ureNode->getEdgeType();
-  time::Duration updateRefEdgeTime;
+  time::Duration updateEdgeTime;
 
   yieldNames_ = ureNode->getYieldNames();
-  // print yield_name
-  // for (auto &name : yieldNames_) {
-  //   LOG(INFO) << "yield_name: " << name;
-  // }
 
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   auto inputVar = ureNode->inputVar();
@@ -567,8 +334,8 @@ folly::Future<Status> UpdateRefEdgeExecutor::execute() {
 
   return folly::collectAll(futures)
       .via(runner())
-      .ensure([updateRefEdgeTime]() {
-        VLOG(1) << "updateRefEdgeTime: " << updateRefEdgeTime.elapsedInUSec() << "us";
+      .ensure([updateEdgeTime]() {
+        VLOG(1) << "updateEdgeTime: " << updateEdgeTime.elapsedInUSec() << "us";
       })
       .thenValue([this](
                 std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {

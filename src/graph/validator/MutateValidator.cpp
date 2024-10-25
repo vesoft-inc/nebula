@@ -836,106 +836,40 @@ Expression *UpdateValidator::rewriteSymExpr(Expression *expr,
 
 Status UpdateVertexValidator::validateImpl() {
   auto sentence = static_cast<UpdateVertexSentence *>(sentence_);
-  auto idRet = SchemaUtil::toVertexID(sentence->getVid(), vidType_);
-  if (!idRet.ok()) {
-    LOG(ERROR) << idRet.status();
-    return std::move(idRet).status();
-  }
-  vId_ = std::move(idRet).value();
-  NG_RETURN_IF_ERROR(initProps());
-  auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
-  if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
-    return Status::SemanticError("No schema found for `%s'", name_.c_str());
-  }
-  tagId_ = ret.value();
-  return Status::OK();
-}
-
-Status UpdateVertexValidator::toPlan() {
-  auto *update = UpdateVertex::make(qctx_,
-                                    nullptr,
-                                    spaceId_,
-                                    std::move(name_),
-                                    vId_,
-                                    tagId_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_));
-  root_ = update;
-  tail_ = root_;
-  return Status::OK();
-}
-
-
-Status UpdateMultiVertexValidator::validateImpl() {
-  auto sentence = static_cast<UpdateMultiVertexSentence *>(sentence_);
-
-  // validate each vid in vidList
-  for (auto &vid : sentence->getVertices()->vidList()) {
-    auto idRet = SchemaUtil::toVertexID(vid, vidType_);
+  // vid != nullptr
+  if (sentence->getVid() != nullptr) {
+    auto idRet = SchemaUtil::toVertexID(sentence->getVid(), vidType_);
     if (!idRet.ok()) {
       LOG(ERROR) << idRet.status();
       return std::move(idRet).status();
     }
-    vertices_.emplace_back(std::move(idRet).value());
+    vId_ = std::move(idRet).value();
+    vertices_.emplace_back(vId_);
+  } else if (sentence->vertices()->isRef()) {
+    vidRef_ = sentence->vertices()->ref();
+    auto type = deduceExprType(vidRef_);
+    NG_RETURN_IF_ERROR(type);
+    if (type.value() != vidType_) {
+      std::stringstream ss;
+      ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
+        << "', but was`" << type.value() << "'";
+      return Status::SemanticError(ss.str());
+    }
+  } else {
+    // get vertices
+    for (auto &vid : sentence->vertices()->vidList()) {
+      auto idRet = SchemaUtil::toVertexID(vid, vidType_);
+      if (!idRet.ok()) {
+        LOG(ERROR) << idRet.status();
+        return std::move(idRet).status();
+      }
+      vertices_.emplace_back(std::move(idRet).value());
+    }
+    // unique vidList
+    std::sort(vertices_.begin(), vertices_.end());
+    auto last = std::unique(vertices_.begin(), vertices_.end());
+    vertices_.erase(last, vertices_.end());
   }
-
-  // unique vidList
-  std::sort(vertices_.begin(), vertices_.end());
-  auto last = std::unique(vertices_.begin(), vertices_.end());
-  vertices_.erase(last, vertices_.end());
-
-  NG_RETURN_IF_ERROR(initProps());
-
-  // validate tag
-  auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
-  if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
-    return Status::SemanticError("No schema found for `%s'", name_.c_str());
-  }
-  tagId_ = ret.value();
-
-  return Status::OK();
-}
-
-Status UpdateMultiVertexValidator::toPlan() {
-  // toPlan
-  auto update = UpdateMultiVertex::make(qctx_,
-                                    nullptr,
-                                    spaceId_,
-                                    std::move(name_),
-                                    vertices_,
-                                    tagId_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_));
-  root_ = update;
-  tail_ = root_;
-  return Status::OK();
-}
-
-
-Status UpdateRefVertexValidator::validateImpl() {
-  auto sentence = static_cast<UpdateRefVertexSentence *>(sentence_);
-  spaceId_ = vctx_->whichSpace().id;
-
-  assert(sentence->getVertices()->isRef());
-
-  vidRef_ = sentence->getVertices()->ref();
-  auto type = deduceExprType(vidRef_);
-  NG_RETURN_IF_ERROR(type);
-  if (type.value() != vidType_) {
-    std::stringstream ss;
-    ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
-       << "', but was`" << type.value() << "'";
-    return Status::SemanticError(ss.str());
-  }
-
   NG_RETURN_IF_ERROR(initProps());
   auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
   if (!ret.ok()) {
@@ -943,13 +877,32 @@ Status UpdateRefVertexValidator::validateImpl() {
     return Status::SemanticError("No schema found for `%s'", name_.c_str());
   }
   tagId_ = ret.value();
-
   return Status::OK();
 }
 
-Status UpdateRefVertexValidator::toPlan() {
+// same as DeleteVerticesValidator
+std::string UpdateVertexValidator::buildVIds() {
+  auto input = vctx_->anonVarGen()->getVar();
+  DataSet ds;
+  ds.colNames.emplace_back(kVid);
+  for (auto &vid : vertices_) {
+    Row row;
+    row.values.emplace_back(vid);
+    ds.rows.emplace_back(std::move(row));
+  }
+  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).build());
+  auto *pool = qctx_->objPool();
+  auto *vIds = VariablePropertyExpression::make(pool, input, kVid);
+  vidRef_ = vIds;
+  return input;
+}
+
+
+Status UpdateVertexValidator::toPlan() {
   std::string vidVar;
-  if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
+  if (!vertices_.empty() && vidRef_ == nullptr) {
+    vidVar = buildVIds();
+  } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kVarProperty) {
     vidVar = static_cast<PropertyExpression *>(vidRef_)->sym();
   } else if (vidRef_ != nullptr && vidRef_->kind() == Expression::Kind::kInputProperty) {
     vidVar = inputVarName_;
@@ -957,39 +910,28 @@ Status UpdateRefVertexValidator::toPlan() {
 
   auto *dedupVid = Dedup::make(qctx_, nullptr);
   dedupVid->setInputVar(vidVar);
-  auto urvNode = UpdateRefVertex::make(qctx_,
-                                 dedupVid,
-                                 spaceId_,
-                                 std::move(name_),
-                                 vidRef_,
-                                 tagId_,
-                                 insertable_,
-                                 std::move(updatedProps_),
-                                 std::move(returnProps_),
-                                 std::move(condition_),
-                                 std::move(yieldColNames_));
-  root_ = urvNode;
-  tail_ = dedupVid;
 
+  auto *update = UpdateVertex::make(qctx_,
+                                    dedupVid,
+                                    spaceId_,
+                                    std::move(name_),
+                                    vidRef_,
+                                    tagId_,
+                                    insertable_,
+                                    std::move(updatedProps_),
+                                    std::move(returnProps_),
+                                    std::move(condition_),
+                                    std::move(yieldColNames_));
+  root_ = update;
+  tail_ = dedupVid;
   return Status::OK();
 }
 
 
 Status UpdateEdgeValidator::validateImpl() {
   auto sentence = static_cast<UpdateEdgeSentence *>(sentence_);
-  auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId(), vidType_);
-  if (!srcIdRet.ok()) {
-    LOG(ERROR) << srcIdRet.status();
-    return srcIdRet.status();
-  }
-  srcId_ = std::move(srcIdRet).value();
-  auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId(), vidType_);
-  if (!dstIdRet.ok()) {
-    LOG(ERROR) << dstIdRet.status();
-    return dstIdRet.status();
-  }
-  dstId_ = std::move(dstIdRet).value();
-  rank_ = sentence->getRank();
+  spaceId_ = vctx_->whichSpace().id;
+
   NG_RETURN_IF_ERROR(initProps());
   auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, name_);
   if (!ret.ok()) {
@@ -997,104 +939,102 @@ Status UpdateEdgeValidator::validateImpl() {
     return Status::SemanticError("No schema found for `%s'", name_.c_str());
   }
   edgeType_ = ret.value();
+
+  if (sentence->getSrcId() != nullptr && sentence->getDstId() != nullptr) {
+    auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId(), vidType_);
+    if (!srcIdRet.ok()) {
+      LOG(ERROR) << srcIdRet.status();
+      return srcIdRet.status();
+    }
+    srcId_ = std::move(srcIdRet).value();
+    auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId(), vidType_);
+    if (!dstIdRet.ok()) {
+      LOG(ERROR) << dstIdRet.status();
+      return dstIdRet.status();
+    }
+    dstId_ = std::move(dstIdRet).value();
+    rank_ = sentence->getRank();
+    EdgeId edgeId = EdgeId(srcId_, dstId_, rank_);
+    edgeIds_.emplace_back(std::move(edgeId));
+  } else if (sentence->isRef()) {
+    auto *pool = qctx_->objPool();
+    edgeKeyRefs_.emplace_back(sentence->edgeKeyRef());
+    (*edgeKeyRefs_.begin())->setType(ConstantExpression::make(pool, edgeType_));
+    NG_RETURN_IF_ERROR(checkInput());
+  } else {
+    for (auto &edgekey : sentence->getEdgeKeys()->keys()) {
+      auto srcIdRet = SchemaUtil::toVertexID(edgekey->srcid(), vidType_);
+      if (!srcIdRet.ok()) {
+        LOG(ERROR) << srcIdRet.status();
+        return srcIdRet.status();
+      }
+      auto dstIdRet = SchemaUtil::toVertexID(edgekey->dstid(), vidType_);
+      if (!dstIdRet.ok()) {
+          LOG(ERROR) << dstIdRet.status();
+          return dstIdRet.status();
+      }
+      auto rank = edgekey->rank();
+      EdgeId edgeId = EdgeId(std::move(srcIdRet).value(), std::move(dstIdRet).value(), rank);
+
+      edgeIds_.emplace_back(std::move(edgeId));
+    }
+  }
+
+  if (!sentence->isRef()) {
+    assert(!edgeIds_.empty());
+    buildEdgeKeyRef();
+  }
+
+  return Status::OK();
+}
+
+
+Status UpdateEdgeValidator::buildEdgeKeyRef() {
+  edgeKeyVar_ = vctx_->anonVarGen()->getVar();
+  DataSet ds({kSrc, kType, kRank, kDst});
+  for (auto &edgeId : edgeIds_) {
+    Row row;
+    row.emplace_back(edgeId.srcid());
+    row.emplace_back(edgeType_);
+    row.emplace_back(edgeId.rank());
+    row.emplace_back(edgeId.dstid());
+    ds.emplace_back(std::move(row));
+  }
+
+  qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).build());
+  auto *pool = qctx_->objPool();
+  auto *srcIdExpr = InputPropertyExpression::make(pool, kSrc);
+  auto *typeExpr = InputPropertyExpression::make(pool, kType);
+  auto *rankExpr = InputPropertyExpression::make(pool, kRank);
+  auto *dstIdExpr = InputPropertyExpression::make(pool, kDst);
+  auto *edgeKeyRef = qctx_->objPool()->makeAndAdd<EdgeKeyRef>(srcIdExpr, dstIdExpr, rankExpr);
+  edgeKeyRef->setType(typeExpr);
+
+  edgeKeyRefs_.emplace_back(edgeKeyRef);
   return Status::OK();
 }
 
 Status UpdateEdgeValidator::toPlan() {
-  auto *outNode = UpdateEdge::make(qctx_,
-                                   nullptr,
-                                   spaceId_,
-                                   name_,
-                                   srcId_,
-                                   dstId_,
-                                   edgeType_,
-                                   rank_,
-                                   insertable_,
-                                   updatedProps_,
-                                   {},
-                                   condition_,
-                                   {});
-  auto *inNode = UpdateEdge::make(qctx_,
-                                  outNode,
+  auto *dedup = Dedup::make(qctx_, nullptr);
+  dedup->setInputVar(edgeKeyVar_);
+
+  auto *ureNode = UpdateEdge::make(qctx_,
+                                  dedup,
                                   spaceId_,
                                   std::move(name_),
-                                  std::move(dstId_),
-                                  std::move(srcId_),
-                                  -edgeType_,
-                                  rank_,
+                                  edgeKeyRefs_.front(),
+                                  edgeType_,
                                   insertable_,
-                                  std::move(updatedProps_),
-                                  std::move(returnProps_),
-                                  std::move(condition_),
-                                  std::move(yieldColNames_));
-  root_ = inNode;
-  tail_ = outNode;
+                                  updatedProps_,
+                                  returnProps_,
+                                  condition_,
+                                  yieldColNames_);
+  root_ = ureNode;
+  tail_ = dedup;
   return Status::OK();
 }
 
-Status UpdateMultiEdgeValidator::validateImpl() {
-  auto sentence = static_cast<UpdateMultiEdgeSentence *>(sentence_);
-  for (auto &edgekey : sentence->getEdgeKeys()->keys()) {
-     auto srcIdRet = SchemaUtil::toVertexID(edgekey->srcid(), vidType_);
-     if (!srcIdRet.ok()) {
-       LOG(ERROR) << srcIdRet.status();
-       return srcIdRet.status();
-     }
-     auto dstIdRet = SchemaUtil::toVertexID(edgekey->dstid(), vidType_);
-     if (!dstIdRet.ok()) {
-        LOG(ERROR) << dstIdRet.status();
-        return dstIdRet.status();
-    }
-     auto rank = edgekey->rank();
-     EdgeId edgeId = EdgeId(std::move(srcIdRet).value(), std::move(dstIdRet).value(), rank);
-
-     edgeIds_.emplace_back(std::move(edgeId));
-  }
-  NG_RETURN_IF_ERROR(initProps());
-  auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, name_);
-  if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
-    return Status::SemanticError("No schema found for `%s'", name_.c_str());
-  }
-  // LOG(INFO) << "edgeType_ = " << ret.value();
-  edgeType_ = ret.value();
-  return Status::OK();
-}
-
-Status UpdateMultiEdgeValidator::toPlan() {
-    // TODO(Zhijie): Implement UpdateMultiEdgeValidator::toPlan
-
-    auto *outNode = UpdateMultiEdge::make(qctx_,
-                                   nullptr,
-                                   spaceId_,
-                                   name_,
-                                   edgeIds_,
-                                   edgeType_,
-                                   insertable_,
-                                   updatedProps_,
-                                   {},
-                                   condition_,
-                                   {},
-                                   false);
-    auto *inNode = UpdateMultiEdge::make(qctx_,
-                                    outNode,
-                                    spaceId_,
-                                    std::move(name_),
-                                    std::move(edgeIds_),
-                                    -edgeType_,
-                                    insertable_,
-                                    std::move(updatedProps_),
-                                    std::move(returnProps_),
-                                    std::move(condition_),
-                                    std::move(yieldColNames_),
-                                    true);
-    root_ = inNode;
-    tail_ = outNode;
-    return Status::OK();
-}
-
-
-Status UpdateRefEdgeValidator::checkInput() {
+Status UpdateEdgeValidator::checkInput() {
   CHECK(!edgeKeyRefs_.empty());
   auto &edgeKeyRef = *edgeKeyRefs_.begin();
   NG_LOG_AND_RETURN_IF_ERROR(deduceProps(edgeKeyRef->srcid(), exprProps_));
@@ -1128,48 +1068,6 @@ Status UpdateRefEdgeValidator::checkInput() {
   } else if (edgeKeyRef->srcid()->kind() == Expression::Kind::kInputProperty) {
     edgeKeyVar_ = inputVarName_;
   }
-  return Status::OK();
-}
-
-Status UpdateRefEdgeValidator::validateImpl() {
-  auto sentence = static_cast<UpdateRefEdgeSentence *>(sentence_);
-  spaceId_ = vctx_->whichSpace().id;
-
-  NG_RETURN_IF_ERROR(initProps());
-  auto ret = qctx_->schemaMng()->toEdgeType(spaceId_, name_);
-  if (!ret.ok()) {
-    LOG(ERROR) << "No schema found for " << name_ << " : " << ret.status();
-    return Status::SemanticError("No schema found for `%s'", name_.c_str());
-  }
-  edgeType_ = ret.value();
-
-  auto *pool = qctx_->objPool();
-  edgeKeyRefs_.emplace_back(sentence->edgeKeyRef());
-  (*edgeKeyRefs_.begin())->setType(ConstantExpression::make(pool, edgeType_));
-  // TODO(zhijie): what is the purpose of checkInput?
-  NG_RETURN_IF_ERROR(checkInput());
-
-  return Status::OK();
-}
-
-
-Status UpdateRefEdgeValidator::toPlan() {
-  auto *dedup = Dedup::make(qctx_, nullptr);
-  dedup->setInputVar(edgeKeyVar_);
-
-  auto *ureNode = UpdateRefEdge::make(qctx_,
-                                    dedup,
-                                    spaceId_,
-                                    std::move(name_),
-                                    edgeKeyRefs_.front(),
-                                    edgeType_,
-                                    insertable_,
-                                    updatedProps_,
-                                    returnProps_,
-                                    condition_,
-                                    yieldColNames_);
-  root_ = ureNode;
-  tail_ = dedup;
   return Status::OK();
 }
 

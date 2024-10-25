@@ -388,8 +388,8 @@ using namespace nebula;
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
 %type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence delete_vertex_with_edge_sentence
-%type <sentence> update_vertex_sentence update_multi_vertex_sentence update_ref_vertex_sentence
-%type <sentence> update_edge_sentence update_multi_edge_sentence update_ref_edge_sentence
+%type <sentence> update_vertex_sentence
+%type <sentence> update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 %type <sentence> lookup_pipe_update_sentence
 
@@ -2175,10 +2175,10 @@ lookup_sentence
     ;
 
 lookup_pipe_update_sentence
-    : lookup_sentence PIPE update_ref_vertex_sentence {
+    : lookup_sentence PIPE update_vertex_sentence {
         $$ = new PipedSentence($1, $3);
     }
-    | lookup_sentence PIPE update_ref_edge_sentence {
+    | lookup_sentence PIPE update_edge_sentence {
         $$ = new PipedSentence($1, $3);
     }
     ;
@@ -3186,6 +3186,7 @@ update_item
 
 update_vertex_sentence
     // ======== Begin: Compatible with 1.0 =========
+    // keep the syntex with 1.0
     : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($3, $5, $6, $7);
         $$ = sentence;
@@ -3196,30 +3197,26 @@ update_vertex_sentence
     }
      // ======== End: Compatible with 1.0 =========
     
-    | KW_UPDATE KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+    | KW_UPDATE KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
-    | KW_UPSERT KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+    | KW_UPSERT KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
         $$ = sentence;
     }
-    ;
-
-// Follow the syntax of 3.0+
-update_multi_vertex_sentence 
-    : KW_UPDATE KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateMultiVertexSentence($5, $4, $7, $8, $9);
-        $$ = sentence;
-    }
-    ;
-
-update_ref_vertex_sentence
-    :  KW_UPDATE KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
+    | KW_UPDATE KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
         if(graph::ExpressionUtils::findAny($5,{Expression::Kind::kVar})) {
             throw nebula::GraphParser::syntax_error(@5, "Parameter is not supported in update clause");
         }
-        auto sentence = new UpdateRefVertexSentence($5, $4, $7, $8, $9);
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
+        if(graph::ExpressionUtils::findAny($5,{Expression::Kind::kVar})) {
+           throw nebula::GraphParser::syntax_error(@5, "Parameter is not supported in update clause");
+        }
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
         $$ = sentence;
     }
     ;
@@ -3267,21 +3264,14 @@ update_edge_sentence
         auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13, true);
         $$ = sentence;
     }
-    ;
-
-update_multi_edge_sentence
-    : KW_UPDATE KW_EDGE KW_ON name_label edge_keys 
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_keys 
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateMultiEdgeSentence($5, $4, $7, $8, $9);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
         $$ = sentence; 
     }
-    ;
-
-
-update_ref_edge_sentence
-    : KW_UPDATE KW_EDGE KW_ON name_label edge_key_ref 
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_key_ref 
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateRefEdgeSentence($5, $4, $7, $8, $9);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
         $$ = sentence; 
     }
     ;
@@ -3960,10 +3950,7 @@ mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
     | update_vertex_sentence { $$ = $1; }
-    | update_multi_vertex_sentence { $$ = $1; }
     | update_edge_sentence { $$ = $1; }
-    | update_multi_edge_sentence { $$ = $1; }
-    | update_ref_vertex_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_job_sentence { $$ = $1; }

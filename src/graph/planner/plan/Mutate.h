@@ -152,7 +152,7 @@ class InsertEdges final : public SingleDependencyNode {
   bool useChainInsert_{false};
 };
 
-class Update : public SingleDependencyNode {
+class Update : public SingleInputNode {
  public:
   bool getInsertable() const {
     return insertable_;
@@ -196,70 +196,6 @@ class Update : public SingleDependencyNode {
          std::vector<std::string> returnProps,
          std::string condition,
          std::vector<std::string> yieldNames)
-      : SingleDependencyNode(qctx, kind, input),
-        spaceId_(spaceId),
-        schemaName_(std::move(name)),
-        insertable_(insertable),
-        updatedProps_(std::move(updatedProps)),
-        returnProps_(std::move(returnProps)),
-        condition_(std::move(condition)),
-        yieldNames_(std::move(yieldNames)) {}
-
- protected:
-  GraphSpaceID spaceId_{-1};
-  std::string schemaName_;
-  bool insertable_;
-  std::vector<storage::cpp2::UpdatedProp> updatedProps_;
-  std::vector<std::string> returnProps_;
-  std::string condition_;
-  std::vector<std::string> yieldNames_;
-};
-
-// Compared with Update, change the base class to SingleInputNode
-class UpdateRef : public SingleInputNode {
-public:
-  bool getInsertable() const {
-    return insertable_;
-  }
-
-  const std::vector<std::string>& getReturnProps() const {
-    return returnProps_;
-  }
-
-  const std::string getCondition() const {
-    return condition_;
-  }
-
-  const std::vector<std::string>& getYieldNames() const {
-    return yieldNames_;
-  }
-
-  GraphSpaceID getSpaceId() const {
-    return spaceId_;
-  }
-
-  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
-    return updatedProps_;
-  }
-
-  const std::string& getName() const {
-    return schemaName_;
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-protected:
-  friend ObjectPool;
-  UpdateRef(QueryContext* qctx,
-         Kind kind,
-         PlanNode* input,
-         GraphSpaceID spaceId,
-         std::string name,
-         bool insertable,
-         std::vector<storage::cpp2::UpdatedProp> updatedProps,
-         std::vector<std::string> returnProps,
-         std::string condition,
-         std::vector<std::string> yieldNames)
       : SingleInputNode(qctx, kind, input),
         spaceId_(spaceId),
         schemaName_(std::move(name)),
@@ -269,7 +205,7 @@ protected:
         condition_(std::move(condition)),
         yieldNames_(std::move(yieldNames)) {}
 
-protected:
+ protected:
   GraphSpaceID spaceId_{-1};
   std::string schemaName_;
   bool insertable_;
@@ -305,10 +241,39 @@ class UpdateVertex final : public Update {
                                                      std::move(yieldNames));
   }
 
+  static UpdateVertex* make(QueryContext* qctx,
+                            PlanNode* input,
+                            GraphSpaceID spaceId,
+                            std::string name,
+                            Expression* vidRef,
+                            TagID tagId,
+                            bool insertable,
+                            std::vector<storage::cpp2::UpdatedProp> updatedProps,
+                            std::vector<std::string> returnProps,
+                            std::string condition,
+                            std::vector<std::string> yieldNames) {
+    return qctx->objPool()->makeAndAdd<UpdateVertex>(qctx,
+                                                     input,
+                                                     spaceId,
+                                                     std::move(name),
+                                                     vidRef,
+                                                     tagId,
+                                                     insertable,
+                                                     std::move(updatedProps),
+                                                     std::move(returnProps),
+                                                     std::move(condition),
+                                                     std::move(yieldNames));
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  // no used any more
   const Value& getVId() const {
     return vId_;
+  }
+
+  Expression* getVidRef() const {
+    return vidRef_;
   }
 
   TagID getTagId() const {
@@ -341,118 +306,7 @@ class UpdateVertex final : public Update {
         vId_(std::move(vId)),
         tagId_(tagId) {}
 
- private:
-  Value vId_;
-  TagID tagId_{-1};
-};
-
-class UpdateMultiVertex final : public Update {
-    public:
-    static UpdateMultiVertex* make(QueryContext* qctx,
-                            PlanNode* input,
-                            GraphSpaceID spaceId,
-                            std::string name,
-                            std::vector<Value> vIds,
-                            TagID tagId,
-                            bool insertable,
-                            std::vector<storage::cpp2::UpdatedProp> updatedProps,
-                            std::vector<std::string> returnProps,
-                            std::string condition,
-                            std::vector<std::string> yieldNames) {
-    return qctx->objPool()->makeAndAdd<UpdateMultiVertex>(qctx,
-                                                     input,
-                                                     spaceId,
-                                                     std::move(name),
-                                                     std::move(vIds),
-                                                     tagId,
-                                                     insertable,
-                                                     std::move(updatedProps),
-                                                     std::move(returnProps),
-                                                     std::move(condition),
-                                                     std::move(yieldNames));
-    }
-
-    std::unique_ptr<PlanNodeDescription> explain() const override;
-
-    const std::vector<Value>& getVIds() const {
-        return vIds_;
-    }
-
-    TagID getTagId() const {
-        return tagId_;
-    }
-
-  private:
-    friend ObjectPool;
-    UpdateMultiVertex(QueryContext* qctx,
-                         PlanNode* input,
-                         GraphSpaceID spaceId,
-                         std::string name,
-                         std::vector<Value> vIds,
-                         TagID tagId,
-                         bool insertable,
-                         std::vector<storage::cpp2::UpdatedProp> updatedProps,
-                         std::vector<std::string> returnProps,
-                         std::string condition,
-                         std::vector<std::string> yieldNames)
-    : Update(qctx,
-              Kind::kUpdateMultiVertex,
-              input,
-              spaceId,
-              std::move(name),
-              insertable,
-              std::move(updatedProps),
-              std::move(returnProps),
-              std::move(condition),
-              std::move(yieldNames)),
-      vIds_(std::move(vIds)),
-      tagId_(tagId) {}
-
-
-    private:
-    std::vector<Value> vIds_;
-    TagID tagId_;
-};
-
-class UpdateRefVertex final : public UpdateRef {
-public:
-  static UpdateRefVertex* make(QueryContext* qctx,
-                            PlanNode* input,
-                            GraphSpaceID spaceId,
-                            std::string name,
-                            Expression* vidRef,
-                            TagID tagId,
-                            bool insertable,
-                            std::vector<storage::cpp2::UpdatedProp> updatedProps,
-                            std::vector<std::string> returnProps,
-                            std::string condition,
-                            std::vector<std::string> yieldNames) {
-    return qctx->objPool()->makeAndAdd<UpdateRefVertex>(qctx,
-                                                     input,
-                                                     spaceId,
-                                                     std::move(name),
-                                                     vidRef,
-                                                     tagId,
-                                                     insertable,
-                                                     std::move(updatedProps),
-                                                     std::move(returnProps),
-                                                     std::move(condition),
-                                                     std::move(yieldNames));
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-  Expression* getVidRef() const {
-    return vidRef_;
-  }
-
-  TagID getTagId() const {
-    return tagId_;
-  }
-
-private:
-  friend ObjectPool;
-  UpdateRefVertex(QueryContext* qctx,
+    UpdateVertex(QueryContext* qctx,
                PlanNode* input,
                GraphSpaceID spaceId,
                std::string name,
@@ -463,8 +317,8 @@ private:
                std::vector<std::string> returnProps,
                std::string condition,
                std::vector<std::string> yieldNames)
-      : UpdateRef(qctx,
-               Kind::kUpdateRefVertex,
+      : Update(qctx,
+               Kind::kUpdateVertex,
                input,
                spaceId,
                std::move(name),
@@ -476,185 +330,16 @@ private:
         vidRef_(vidRef),
         tagId_(tagId) {}
 
-private:
-    Expression* vidRef_{nullptr};
-    TagID tagId_{-1};
+
+ private:
+  Value vId_;
+  Expression* vidRef_{nullptr};
+  TagID tagId_{-1};
 };
 
 class UpdateEdge final : public Update {
  public:
   static UpdateEdge* make(QueryContext* qctx,
-                          PlanNode* input,
-                          GraphSpaceID spaceId,
-                          std::string name,
-                          Value srcId,
-                          Value dstId,
-                          EdgeType edgeType,
-                          int64_t rank,
-                          bool insertable,
-                          std::vector<storage::cpp2::UpdatedProp> updatedProps,
-                          std::vector<std::string> returnProps,
-                          std::string condition,
-                          std::vector<std::string> yieldNames) {
-    return qctx->objPool()->makeAndAdd<UpdateEdge>(qctx,
-                                                   input,
-                                                   spaceId,
-                                                   std::move(name),
-                                                   std::move(srcId),
-                                                   std::move(dstId),
-                                                   edgeType,
-                                                   rank,
-                                                   insertable,
-                                                   std::move(updatedProps),
-                                                   std::move(returnProps),
-                                                   std::move(condition),
-                                                   std::move(yieldNames));
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-  const Value& getSrcId() const {
-    return srcId_;
-  }
-
-  const Value& getDstId() const {
-    return dstId_;
-  }
-
-  int64_t getRank() const {
-    return rank_;
-  }
-
-  int64_t getEdgeType() const {
-    return edgeType_;
-  }
-
-  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
-    return updatedProps_;
-  }
-
- private:
-  friend ObjectPool;
-  UpdateEdge(QueryContext* qctx,
-             PlanNode* input,
-             GraphSpaceID spaceId,
-             std::string name,
-             Value srcId,
-             Value dstId,
-             EdgeType edgeType,
-             int64_t rank,
-             bool insertable,
-             std::vector<storage::cpp2::UpdatedProp> updatedProps,
-             std::vector<std::string> returnProps,
-             std::string condition,
-             std::vector<std::string> yieldNames)
-      : Update(qctx,
-               Kind::kUpdateEdge,
-               input,
-               spaceId,
-               std::move(name),
-               insertable,
-               std::move(updatedProps),
-               std::move(returnProps),
-               std::move(condition),
-               std::move(yieldNames)),
-        srcId_(std::move(srcId)),
-        dstId_(std::move(dstId)),
-        rank_(rank),
-        edgeType_(edgeType) {}
-
- private:
-  Value srcId_;
-  Value dstId_;
-  int64_t rank_{0};
-  EdgeType edgeType_{-1};
-};
-
-class UpdateMultiEdge final : public Update {
-public:
-  static UpdateMultiEdge* make(QueryContext* qctx,
-                          PlanNode* input,
-                          GraphSpaceID spaceId,
-                          std::string name,
-                          std::vector<EdgeId> edgeIds,
-                          EdgeType edgeType,
-                          bool insertable,
-                          std::vector<storage::cpp2::UpdatedProp> updatedProps,
-                          std::vector<std::string> returnProps,
-                          std::string condition,
-                          std::vector<std::string> yieldNames,
-                          bool isReverse = false) {
-    LOG(INFO) << "UpdateMultiEdge::make() " << "edgeType " << edgeType;
-    return qctx->objPool()->makeAndAdd<UpdateMultiEdge>(qctx,
-                                                   input,
-                                                   spaceId,
-                                                   std::move(name),
-                                                   std::move(edgeIds),
-                                                   edgeType,
-                                                   insertable,
-                                                   std::move(updatedProps),
-                                                   std::move(returnProps),
-                                                   std::move(condition),
-                                                   std::move(yieldNames),
-                                                   isReverse);
-    }
-
-    std::unique_ptr<PlanNodeDescription> explain() const override;
-
-    const std::vector<EdgeId>& getEdgeIds() const {
-        return edgeIds_;
-    }
-
-    int64_t getEdgeType() const {
-        return edgeType_;
-    }
-
-    const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
-        return updatedProps_;
-    }
-
-    bool isReverse() const {
-        return isReverse_;
-    }
-
-private:
-  friend ObjectPool;
-  UpdateMultiEdge(QueryContext* qctx,
-             PlanNode* input,
-             GraphSpaceID spaceId,
-             std::string name,
-             std::vector<EdgeId> edgeIds,
-             EdgeType edgeType,
-             bool insertable,
-             std::vector<storage::cpp2::UpdatedProp> updatedProps,
-             std::vector<std::string> returnProps,
-             std::string condition,
-             std::vector<std::string> yieldNames,
-             bool isReverse = false)
-      : Update(qctx,
-               Kind::kUpdateMultiEdge,
-               input,
-               spaceId,
-               std::move(name),
-               insertable,
-               std::move(updatedProps),
-               std::move(returnProps),
-               std::move(condition),
-               std::move(yieldNames)),
-        edgeIds_(std::move(edgeIds)),
-        edgeType_(edgeType),
-        isReverse_(isReverse) {}
-
-private:
-  std::vector<EdgeId> edgeIds_;
-  EdgeType edgeType_{-1};
-  bool isReverse_{false};
-};
-
-
-class UpdateRefEdge final : public UpdateRef {
-public:
-  static UpdateRefEdge* make(QueryContext* qctx,
                           PlanNode* input,
                           GraphSpaceID spaceId,
                           std::string name,
@@ -665,7 +350,7 @@ public:
                           std::vector<std::string> returnProps,
                           std::string condition,
                           std::vector<std::string> yieldNames) {
-    return qctx->objPool()->makeAndAdd<UpdateRefEdge>(qctx,
+    return qctx->objPool()->makeAndAdd<UpdateEdge>(qctx,
                                                    input,
                                                    spaceId,
                                                    std::move(name),
@@ -684,13 +369,17 @@ public:
     return edgeKeyRef_;
   }
 
-  EdgeType getEdgeType() const {
+  int64_t getEdgeType() const {
     return edgeType_;
   }
 
-private:
+  const std::vector<storage::cpp2::UpdatedProp>& getUpdatedProps() const {
+    return updatedProps_;
+  }
+
+ private:
   friend ObjectPool;
-  UpdateRefEdge(QueryContext* qctx,
+  UpdateEdge(QueryContext* qctx,
              PlanNode* input,
              GraphSpaceID spaceId,
              std::string name,
@@ -701,8 +390,8 @@ private:
              std::vector<std::string> returnProps,
              std::string condition,
              std::vector<std::string> yieldNames)
-      : UpdateRef(qctx,
-               Kind::kUpdateRefEdge,
+      : Update(qctx,
+               Kind::kUpdateEdge,
                input,
                spaceId,
                std::move(name),
@@ -714,12 +403,10 @@ private:
         edgeKeyRef_(edgeKeyRef),
         edgeType_(edgeType) {}
 
-private:
+ private:
   EdgeKeyRef* edgeKeyRef_{nullptr};
   EdgeType edgeType_{-1};
 };
-
-
 
 class DeleteVertices final : public SingleInputNode {
  public:
