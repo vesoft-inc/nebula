@@ -987,3 +987,92 @@ Feature: Insert string vid of vertex and edge
       ALTER TAG person ADD (age int);
       """
     Then a ExecutionError should be raised at runtime: Schema exisited before!
+
+  Scenario: Create and test a tag with List< string >, List< int >, and List< float > data types
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby List< string >, ids List< int >, score List< float >);
+      """
+    Then the execution should be successful
+    # Ensure the tag is successfully created
+    And wait 3 seconds
+    When executing query:
+      """
+      DESCRIBE TAG player;
+      """
+    Then the result should be, in any order:
+      | Field   | Type          | Null  | Default | Comment |
+      | "name"  | "string"      | "YES" |         |         |
+      | "age"   | "int64"       | "YES" |         |         |
+      | "hobby" | "list_string" | "YES" |         |         |
+      | "ids"   | "list_int"    | "YES" |         |         |
+      | "score" | "list_float"  | "YES" |         |         |
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":("Tim Duncan", 42, ["Basketball", "Swimming"], [100, 528, 37564], [50.0, 22.0, 85.0]);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should be, in any order:
+      | player.name  | player.age | player.hobby               | player.ids        | player.score       |
+      | "Tim Duncan" | 42         | ["Basketball", "Swimming"] | [100, 528, 37564] | [50.0, 22.0, 85.0] |
+    When executing query:
+      """
+      DELETE VERTEX "player100";
+      """
+    Then the execution should be successful
+
+  Scenario: Validate that Set<string>, Set<int>, and Set<float> types are unordered and remove duplicates
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 1                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    When executing query:
+      """
+      CREATE TAG player(name string, age int, hobby Set< string >, ids Set< int >, score Set< float >);
+      """
+    Then the execution should be successful
+    And wait 4 seconds
+    When executing query:
+      """
+      DESCRIBE TAG player;
+      """
+    Then the result should be, in any order:
+      | Field   | Type         | Null  | Default | Comment |
+      | "name"  | "string"     | "YES" |         |         |
+      | "age"   | "int64"      | "YES" |         |         |
+      | "hobby" | "set_string" | "YES" |         |         |
+      | "ids"   | "set_int"    | "YES" |         |         |
+      | "score" | "set_float"  | "YES" |         |         |
+    When executing query:
+      """
+      INSERT VERTEX player(name, age, hobby, ids, score) VALUES "player100":(
+          "Tim Duncan", 42,
+          {"Basketball", "Swimming", "Basketball", "Football", "Basketball", "Swimming"},
+          {100, 528, 100, 37564, 528, 37564},
+          {50.0, 22.0, 22.0, 85.0, 85.0, 50.0}
+      );
+      """
+    Then the execution should be successful
+    # Fetch the properties and validate unordered and deduplicated results
+    When executing query:
+      """
+      FETCH PROP ON player "player100" YIELD player.name, player.age, player.hobby, player.ids, player.score;
+      """
+    Then the result should contain:
+      | player.name  | player.age | player.hobby                           | player.ids        | player.score       |
+      | "Tim Duncan" | 42         | {"Basketball", "Swimming", "Football"} | {100, 528, 37564} | {50.0, 22.0, 85.0} |
+    When executing query:
+      """
+      DELETE VERTEX "player100";
+      """
+    Then the execution should be successful

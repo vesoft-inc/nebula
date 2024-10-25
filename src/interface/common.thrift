@@ -291,6 +291,17 @@ enum PropertyType {
 
     // Geo spatial
     GEOGRAPHY = 31,
+
+    //NEW LIST
+    LIST_STRING = 32,
+    LIST_INT = 33,
+    LIST_FLOAT = 34,
+
+    // NEW SET 
+    SET_STRING = 35,
+    SET_INT = 36,
+    SET_FLOAT = 37,
+
 } (cpp.enum_strict)
 
 /*
