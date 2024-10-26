@@ -16,6 +16,80 @@ namespace nebula {
 
 using nebula::cpp2::PropertyType;
 
+// Function used to identify the data type written
+WriteResult writeItem(const Value& item, Value::Type valueType, std::string& buffer) {
+  switch (valueType) {
+    case Value::Type::STRING: {
+      std::string str = item.getStr();
+      int32_t strLen = str.size();
+      buffer.append(reinterpret_cast<const char*>(&strLen), sizeof(int32_t));
+      buffer.append(str.data(), strLen);
+      break;
+    }
+    case Value::Type::INT: {
+      int32_t intVal = item.getInt();
+      buffer.append(reinterpret_cast<const char*>(&intVal), sizeof(int32_t));
+      break;
+    }
+    case Value::Type::FLOAT: {
+      float floatVal = item.getFloat();
+      buffer.append(reinterpret_cast<const char*>(&floatVal), sizeof(float));
+      break;
+    }
+    default:
+      LOG(ERROR) << "Unsupported value type: " << static_cast<int>(valueType);
+      return WriteResult::TYPE_MISMATCH;
+  }
+  return WriteResult::SUCCEEDED;
+}
+
+// Function used to identify List data types (List<string>, List<int>, List<float>)
+template <typename List>
+WriteResult writeList(const List& container, Value::Type valueType, std::string& buffer) {
+  int32_t listSize = container.values.size();
+  if (listSize == 0) {
+    return WriteResult::SUCCEEDED;
+  }
+  for (const auto& item : container.values) {
+    if (item.type() != valueType) {
+      LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
+                 << static_cast<int>(item.type());
+      return WriteResult::TYPE_MISMATCH;
+    }
+  }
+  for (const auto& item : container.values) {
+    auto result = writeItem(item, valueType, buffer);
+    if (result != WriteResult::SUCCEEDED) {
+      return result;
+    }
+  }
+  return WriteResult::SUCCEEDED;
+}
+
+// Function used to identify Set data types (Set<string>, Set<int>, Set<float>)
+template <typename Set>
+WriteResult writeSet(const Set& container, Value::Type valueType, std::string& buffer) {
+  for (const auto& item : container.values) {
+    if (item.type() != valueType) {
+      LOG(ERROR) << "Type mismatch: Expected " << static_cast<int>(valueType) << " but got "
+                 << static_cast<int>(item.type());
+      return WriteResult::TYPE_MISMATCH;
+    }
+  }
+  std::unordered_set<Value> serialized;
+  for (const auto& item : container.values) {
+    if (serialized.find(item) != serialized.end()) {
+      continue;
+    }
+    auto result = writeItem(item, valueType, buffer);
+    if (result != WriteResult::SUCCEEDED) {
+      return result;
+    }
+    serialized.insert(item);
+  }
+  return WriteResult::SUCCEEDED;
+}
+
 RowWriterV2::RowWriterV2(const meta::NebulaSchemaProvider* schema)
     : schema_(schema), numNullBytes_(0), approxStrLen_(0), finished_(false), outOfSpaceStr_(false) {
   CHECK(!!schema_);
@@ -138,6 +212,12 @@ RowWriterV2::RowWriterV2(RowReaderWrapper& reader) : RowWriterV2(reader.getSchem
       case Value::Type::DURATION:
         set(i, v.moveDuration());
         break;
+      case Value::Type::LIST:
+        set(i, v.moveList());
+        break;
+      case Value::Type::SET:
+        set(i, v.moveSet());
+        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
         isSet_[i] = false;
@@ -226,11 +306,14 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) {
       return write(index, val.getGeography());
     case Value::Type::DURATION:
       return write(index, val.getDuration());
+    case Value::Type::LIST:
+      return write(index, val.getList());
+    case Value::Type::SET:
+      return write(index, val.getSet());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
 }
-
 WriteResult RowWriterV2::setValue(const std::string& name, const Value& val) {
   CHECK(!finished_) << "You have called finish()";
   int64_t index = schema_->getFieldIndex(name);
@@ -821,6 +904,78 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) {
   return write(index, folly::StringPiece(wkb), true);
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const List& list) {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+  int32_t listSize = list.size();
+  int32_t listOffset = buf_.size();
+  if (listSize > kMaxArraySize) {
+    LOG(ERROR) << "List size exceeds the maximum allowed length of " << kMaxArraySize;
+    return WriteResult::OUT_OF_RANGE;
+  }
+  if (isSet_[index]) {
+    outOfSpaceStr_ = true;
+  }
+  buf_.append(reinterpret_cast<const char*>(&listSize), sizeof(int32_t));
+  Value::Type valueType;
+  if (field->type() == PropertyType::LIST_STRING) {
+    valueType = Value::Type::STRING;
+  } else if (field->type() == PropertyType::LIST_INT) {
+    valueType = Value::Type::INT;
+  } else if (field->type() == PropertyType::LIST_FLOAT) {
+    valueType = Value::Type::FLOAT;
+  } else {
+    LOG(ERROR) << "Unsupported list type: " << static_cast<int>(field->type());
+    return WriteResult::TYPE_MISMATCH;
+  }
+  auto result = writeList(list, valueType, buf_);
+  if (result != WriteResult::SUCCEEDED) {
+    return result;
+  }
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&listOffset), sizeof(int32_t));
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+
+WriteResult RowWriterV2::write(ssize_t index, const Set& set) {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+  int32_t setSize = set.size();
+  int32_t setOffset = buf_.size();
+  if (setSize > kMaxArraySize) {
+    LOG(ERROR) << "Set size exceeds the maximum allowed length of " << kMaxArraySize;
+    return WriteResult::OUT_OF_RANGE;
+  }
+  if (isSet_[index]) {
+    outOfSpaceStr_ = true;
+  }
+  buf_.append(reinterpret_cast<const char*>(&setSize), sizeof(int32_t));
+  Value::Type valueType;
+  if (field->type() == PropertyType::SET_STRING) {
+    valueType = Value::Type::STRING;
+  } else if (field->type() == PropertyType::SET_INT) {
+    valueType = Value::Type::INT;
+  } else if (field->type() == PropertyType::SET_FLOAT) {
+    valueType = Value::Type::FLOAT;
+  } else {
+    LOG(ERROR) << "Unsupported set type: " << static_cast<int>(field->type());
+    return WriteResult::TYPE_MISMATCH;
+  }
+  auto result = writeSet(set, valueType, buf_);
+  if (result != WriteResult::SUCCEEDED) {
+    return result;
+  }
+  memcpy(&buf_[offset], reinterpret_cast<void*>(&setOffset), sizeof(int32_t));
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+
 WriteResult RowWriterV2::checkUnsetFields() {
   DefaultValueContext expCtx;
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -867,6 +1022,12 @@ WriteResult RowWriterV2::checkUnsetFields() {
             break;
           case Value::Type::DURATION:
             r = write(i, defVal.getDuration());
+            break;
+          case Value::Type::LIST:
+            r = write(i, defVal.getList());
+            break;
+          case Value::Type::SET:
+            r = write(i, defVal.getSet());
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

@@ -28,6 +28,8 @@
 --stderr_log_file=standalone-stderr.log
 # Copy log messages at or above this level to stderr in addition to logfiles. The numbers of severity levels INFO, WARNING, ERROR, and FATAL are 0, 1, 2, and 3, respectively.
 --stderrthreshold=3
+# use max_log_size or log_clean_days to control the log file size and log file clean days. Set log_clean_days to 0 to disable log file cleaning.
+--log_clean_days=0
 
 ########## query ##########
 # Whether to treat partial success as an error.

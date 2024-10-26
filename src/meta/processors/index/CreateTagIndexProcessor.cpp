@@ -144,6 +144,19 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       onFinished();
       return;
     }
+    // Add checks for list and set types that cannot be indexed
+    if (col.type.get_type() == nebula::cpp2::PropertyType::LIST_STRING ||
+        col.type.get_type() == nebula::cpp2::PropertyType::LIST_INT ||
+        col.type.get_type() == nebula::cpp2::PropertyType::LIST_FLOAT ||
+        col.type.get_type() == nebula::cpp2::PropertyType::SET_STRING ||
+        col.type.get_type() == nebula::cpp2::PropertyType::SET_INT ||
+        col.type.get_type() == nebula::cpp2::PropertyType::SET_FLOAT) {
+      LOG(INFO) << "Field " << field.get_name() << " in Tag " << tagName
+                << " is of a list or set type that cannot be indexed.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (field.get_type_length() != nullptr) {
         LOG(INFO) << "Length should not be specified of fixed_string index :" << field.get_name();
