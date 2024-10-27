@@ -209,7 +209,6 @@ std::string UpdateVertexSentence::toString() const {
   } else {
     buf += vertices_->toString();
   }
-  buf += vid_->toString();
   buf += " SET ";
   buf += updateList_->toString();
   if (whenClause_ != nullptr) {

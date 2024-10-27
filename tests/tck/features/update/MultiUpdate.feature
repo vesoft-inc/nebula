@@ -1,7 +1,6 @@
 # Copyright (c) 2024 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@multi_update
 Feature: Multi Update string vid of vertex and edge
 
   Background: Prepare space

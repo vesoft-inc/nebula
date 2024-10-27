@@ -3966,8 +3966,6 @@ query_unique_identifier
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
-    | update_vertex_sentence { $$ = $1; }
-    | update_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_job_sentence { $$ = $1; }
