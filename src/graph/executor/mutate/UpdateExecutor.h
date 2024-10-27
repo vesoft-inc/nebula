@@ -34,7 +34,6 @@ class UpdateVertexExecutor final : public UpdateBaseExecutor {
   folly::Future<Status> execute() override;
 };
 
-
 class UpdateEdgeExecutor final : public UpdateBaseExecutor {
  public:
   UpdateEdgeExecutor(const PlanNode *node, QueryContext *qctx)
@@ -42,7 +41,6 @@ class UpdateEdgeExecutor final : public UpdateBaseExecutor {
 
   folly::Future<Status> execute() override;
 };
-
 
 }  // namespace graph
 }  // namespace nebula

@@ -1,3 +1,6 @@
+# Copyright (c) 2024 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
 @lookup_update
 Feature: lookup and update
 
@@ -50,6 +53,31 @@ Feature: lookup and update
       | id    |
       | "200" |
       | "201" |
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 == 201 YIELD id(vertex) as id | UPDATE VERTEX ON lookup_tag_1 $-.id SET col2 = col2 - 1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 == 200 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "200" |
+      | "201" |
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 == 202 YIELD id(vertex) as id | UPSERT VERTEX ON lookup_tag_1 $-.id SET col2 = col2 + 1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col2 == 203 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "202" |
 
   Scenario: LookupTest lookup and update edge
     Given having executed:
@@ -85,4 +113,21 @@ Feature: lookup and update
       | col1 | col2 | lookup_edge_1.col3 |
       | 201  | 201  | 203                |
       | 202  | 202  | 203                |
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col2 > 200 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank |
+      UPSERT EDGE ON lookup_edge_1 $-.src ->$-.dst@$-.rank SET col3 = 204
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON lookup_edge_1 YIELD
+        lookup_edge_1.col1 AS col1,
+        lookup_edge_1.col2 AS col2,
+        lookup_edge_1.col3
+      """
+    Then the result should be, in any order:
+      | col1 | col2 | lookup_edge_1.col3 |
+      | 201  | 201  | 204                |
+      | 202  | 202  | 204                |
     Then drop the used space

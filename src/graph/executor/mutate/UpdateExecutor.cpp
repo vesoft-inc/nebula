@@ -1,4 +1,4 @@
-// Copyright (c) 2020 vesoft inc. All rights reserved.
+// Copyright (c) 2024 vesoft inc. All rights reserved.
 //
 // This source code is licensed under Apache 2.0 License.
 
@@ -28,7 +28,6 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
   }
   DataSet result;
   result.colNames = yieldNames_;
-  // result.colNames = std::move(yieldNames_);
   for (auto &row : data.rows) {
     std::vector<Value> columns;
     for (auto i = 1u; i < row.values.size(); i++) {
@@ -39,193 +38,132 @@ StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
   return result;
 }
 
-/*
+Status UpdateBaseExecutor::handleMultiResult(DataSet &result, DataSet &&data) {
+  if (data.colNames.size() <= 1) {
+    if (yieldNames_.empty()) {
+      return Status::OK();
+    }
+    return Status::Error("Empty return props");
+  }
+
+  if (yieldNames_.size() != data.colNames.size() - 1) {
+    LOG(WARNING) << "Expect colName size is " << yieldNames_.size() << ", return colName size is "
+                 << data.colNames.size() - 1;
+    return Status::Error("Wrong return prop size");
+  }
+  result.colNames = yieldNames_;
+  for (auto &row : data.rows) {
+    std::vector<Value> columns;
+    for (auto i = 1u; i < row.values.size(); i++) {
+      columns.emplace_back(std::move(row.values[i]));
+    }
+    result.rows.emplace_back(std::move(columns));
+  }
+  return Status::OK();
+}
+
 folly::Future<Status> UpdateVertexExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *uvNode = asNode<UpdateVertex>(node());
-  yieldNames_ = uvNode->getYieldNames();
+  auto *urvNode = asNode<UpdateVertex>(node());
+
+  auto vidRef = urvNode->getVidRef();
+  std::vector<Value> vertices;
+  const auto &spaceInfo = qctx()->rctx()->session()->space();
+
+  if (vidRef != nullptr) {
+    auto inputVar = urvNode->inputVar();
+    if (inputVar.empty()) {
+      DCHECK(urvNode->dep() != nullptr);
+      auto *gn = static_cast<const SingleInputNode *>(urvNode->dep())->dep();
+      DCHECK(gn != nullptr);
+      inputVar = static_cast<const SingleInputNode *>(gn)->inputVar();
+    }
+    DCHECK(!inputVar.empty());
+    auto &inputResult = ectx_->getResult(inputVar);
+    auto iter = inputResult.iter();
+    vertices.reserve(iter->size());
+    QueryExpressionContext ctx(ectx_);
+    for (; iter->valid(); iter->next()) {
+      auto val = Expression::eval(vidRef, ctx(iter.get()));
+      if (val.isNull() || val.empty()) {
+        continue;
+      }
+      if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
+        auto errorMsg = fmt::format("Wrong vid type `{}`, value `{}`", val.type(), val.toString());
+        return Status::Error(errorMsg);
+      }
+      vertices.emplace_back(std::move(val));
+    }
+  }
+
+  if (vertices.empty()) {
+    return Status::OK();
+  }
+
+  std::vector<folly::Future<StatusOr<storage::cpp2::UpdateResponse>>> futures;
+  futures.reserve(vertices.size());
+
+  yieldNames_ = urvNode->getYieldNames();
   time::Duration updateVertTime;
   auto plan = qctx()->plan();
   auto sess = qctx()->rctx()->session();
   StorageClient::CommonRequestParam param(
-      uvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
-  return qctx()
-      ->getStorageClient()
-      ->updateVertex(param,
-                     uvNode->getVId(),
-                     uvNode->getTagId(),
-                     uvNode->getUpdatedProps(),
-                     uvNode->getInsertable(),
-                     uvNode->getReturnProps(),
-                     uvNode->getCondition())
+      urvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
+
+  for (auto &vId : vertices) {
+    futures.emplace_back(qctx()
+                             ->getStorageClient()
+                             ->updateVertex(param,
+                                            vId,
+                                            urvNode->getTagId(),
+                                            urvNode->getUpdatedProps(),
+                                            urvNode->getInsertable(),
+                                            urvNode->getReturnProps(),
+                                            urvNode->getCondition())
+                             .via(runner()));
+  }
+
+  return folly::collectAll(futures)
       .via(runner())
       .ensure([updateVertTime]() {
-        VLOG(1) << "Update vertice time: " << updateVertTime.elapsedInUSec() << "us";
+        VLOG(1) << "updateVertTime: " << updateVertTime.elapsedInUSec() << "us";
       })
-      .thenValue([this](StatusOr<storage::cpp2::UpdateResponse> resp) {
+      .thenValue([this](std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
-        if (!resp.ok()) {
-          LOG(WARNING) << "Update vertices fail: " << resp.status();
-          return resp.status();
-        }
-        auto value = std::move(resp).value();
-        for (auto &code : value.get_result().get_failed_parts()) {
-          NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
-        }
-        if (value.props_ref().has_value()) {
-          LOG(INFO) << "props exist";
-          auto status = handleResult(std::move(*value.props_ref()));
-          if (!status.ok()) {
-            return status.status();
+        DataSet finalResult;
+        for (auto &result : results) {
+          if (result.hasException()) {
+            LOG(WARNING) << "Update vertex request threw an exception.";
+            return Status::Error("Exception occurred during update.");
           }
-          return finish(ResultBuilder()
-                            .value(std::move(status).value())
-                            .iter(Iterator::Kind::kDefault)
-                            .build());
+
+          if (!result.value().ok()) {
+            LOG(WARNING) << "Update vertex failed: " << result.value().status();
+            return result.value().status();
+          }
+
+          auto value = std::move(result.value()).value();
+          for (auto &code : value.get_result().get_failed_parts()) {
+            NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
+          }
+
+          if (value.props_ref().has_value()) {
+            auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
+            if (!status.ok()) {
+              return status;
+            }
+          }
         }
-        return Status::OK();
+
+        if (finalResult.colNames.empty()) {
+          return Status::OK();
+        } else {
+          return finish(
+              ResultBuilder().value(std::move(finalResult)).iter(Iterator::Kind::kDefault).build());
+        }
       });
 }
-*/
-
-Status UpdateBaseExecutor::handleMultiResult(DataSet &result, DataSet &&data) {
-    if (data.colNames.size() <= 1) {
-      if (yieldNames_.empty()) {
-        return Status::OK();
-      }
-      return Status::Error("Empty return props");
-    }
-
-    if (yieldNames_.size() != data.colNames.size() - 1) {
-      LOG(WARNING) << "Expect colName size is " << yieldNames_.size() << ", return colName size is "
-                  << data.colNames.size() - 1;
-      return Status::Error("Wrong return prop size");
-    }
-    result.colNames = yieldNames_;
-    // result.colNames = std::move(yieldNames_);
-    for (auto &row : data.rows) {
-      std::vector<Value> columns;
-      for (auto i = 1u; i < row.values.size(); i++) {
-        columns.emplace_back(std::move(row.values[i]));
-      }
-      result.rows.emplace_back(std::move(columns));
-    }
-    return Status::OK();
-}
-
-folly::Future<Status> UpdateVertexExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    auto *urvNode = asNode<UpdateVertex>(node());
-
-    auto vidRef = urvNode->getVidRef();
-    LOG(INFO) << "Update vertex id: " << vidRef->toString();
-    std::vector<Value> vertices;
-    const auto& spaceInfo = qctx()->rctx()->session()->space();
-
-    if (vidRef != nullptr) {
-      auto inputVar = urvNode->inputVar();
-      if (inputVar.empty()) {
-        DCHECK(urvNode->dep() != nullptr);
-        auto* gn = static_cast<const SingleInputNode*>(urvNode->dep())->dep();
-        DCHECK(gn != nullptr);
-        inputVar = static_cast<const SingleInputNode*>(gn)->inputVar();
-      }
-      DCHECK(!inputVar.empty());
-      auto& inputResult = ectx_->getResult(inputVar);
-      auto iter = inputResult.iter();
-      vertices.reserve(iter->size());
-      QueryExpressionContext ctx(ectx_);
-      for (; iter->valid(); iter->next()) {
-        auto val = Expression::eval(vidRef, ctx(iter.get()));
-        if (val.isNull() || val.empty()) {
-          continue;
-        }
-        if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
-        std::stringstream ss;
-        ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
-        return Status::Error(ss.str());
-        }
-        vertices.emplace_back(std::move(val));
-      }
-    }
-
-    if (vertices.empty()) {
-      LOG(INFO) << "No vertices to update";
-      return Status::OK();
-    }
-
-    std::vector<folly::Future<StatusOr<storage::cpp2::UpdateResponse>>> futures;
-    futures.reserve(vertices.size());
-
-    yieldNames_ = urvNode->getYieldNames();
-    time::Duration updateVertTime;
-    auto plan = qctx()->plan();
-    auto sess = qctx()->rctx()->session();
-    StorageClient::CommonRequestParam param(
-        urvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
-
-    for (auto &vId : vertices) {
-      LOG(INFO) << "Update vertex id: " << vId.toString();
-      futures.emplace_back(
-            qctx()
-          ->getStorageClient()
-          ->updateVertex(param,
-                         vId,
-                         urvNode->getTagId(),
-                         urvNode->getUpdatedProps(),
-                         urvNode->getInsertable(),
-                         urvNode->getReturnProps(),
-                         urvNode->getCondition())
-          .via(runner()));
-    }
-
-    return folly::collectAll(futures)
-        .via(runner())
-        .ensure([updateVertTime]() {
-          VLOG(1) << "updateVertTime: " << updateVertTime.elapsedInUSec() << "us";
-        })
-        .thenValue([this](
-                  std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
-          memory::MemoryCheckGuard guard;
-          SCOPED_TIMER(&execTime_);
-          DataSet finalResult;
-          for (auto& result : results) {
-            if (result.hasException()) {
-              LOG(WARNING) << "Update vertex request threw an exception.";
-              return Status::Error("Exception occurred during update.");
-            }
-
-            if (!result.value().ok()) {
-              LOG(WARNING) << "Update vertex failed: " << result.value().status();
-              return result.value().status();  // if fail, return the error
-            }
-
-            auto value = std::move(result.value()).value();
-            for (auto& code : value.get_result().get_failed_parts()) {
-              NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
-            }
-
-            if (value.props_ref().has_value()) {
-              auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
-              if (!status.ok()) {
-                return status;
-              }
-            }
-          }
-
-          // print the final result
-          if (finalResult.colNames.empty()) {
-            return Status::OK();
-          } else {
-            return finish(ResultBuilder()
-                .value(std::move(finalResult))
-                .iter(Iterator::Kind::kDefault)
-                .build());
-          }
-        });
-}
-
 
 folly::Future<Status> UpdateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
@@ -236,10 +174,10 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
 
   yieldNames_ = ureNode->getYieldNames();
 
-  const auto& spaceInfo = qctx()->rctx()->session()->space();
+  const auto &spaceInfo = qctx()->rctx()->session()->space();
   auto inputVar = ureNode->inputVar();
   DCHECK(!inputVar.empty());
-  auto& inputResult = ectx_->getResult(inputVar);
+  auto &inputResult = ectx_->getResult(inputVar);
   auto iter = inputResult.iter();
 
   std::vector<storage::cpp2::EdgeKey> edgeKeys;
@@ -302,34 +240,31 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
       ureNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   param.useExperimentalFeature = false;
 
-
   std::vector<folly::Future<StatusOr<storage::cpp2::UpdateResponse>>> futures;
   futures.reserve(edgeKeys.size() + reverse_edgeKeys.size());
 
   for (auto &edgeKey : edgeKeys) {
-    futures.emplace_back(
-          qctx()
-        ->getStorageClient()
-        ->updateEdge(param,
-                     edgeKey,
-                     ureNode->getUpdatedProps(),
-                     ureNode->getInsertable(),
-                     {},
-                     ureNode->getCondition())
-        .via(runner()));
+    futures.emplace_back(qctx()
+                             ->getStorageClient()
+                             ->updateEdge(param,
+                                          edgeKey,
+                                          ureNode->getUpdatedProps(),
+                                          ureNode->getInsertable(),
+                                          {},
+                                          ureNode->getCondition())
+                             .via(runner()));
   }
 
   for (auto &edgeKey : reverse_edgeKeys) {
-    futures.emplace_back(
-          qctx()
-        ->getStorageClient()
-        ->updateEdge(param,
-                     edgeKey,
-                     ureNode->getUpdatedProps(),
-                     ureNode->getInsertable(),
-                     ureNode->getReturnProps(),
-                     ureNode->getCondition())
-        .via(runner()));
+    futures.emplace_back(qctx()
+                             ->getStorageClient()
+                             ->updateEdge(param,
+                                          edgeKey,
+                                          ureNode->getUpdatedProps(),
+                                          ureNode->getInsertable(),
+                                          ureNode->getReturnProps(),
+                                          ureNode->getCondition())
+                             .via(runner()));
   }
 
   return folly::collectAll(futures)
@@ -337,13 +272,11 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
       .ensure([updateEdgeTime]() {
         VLOG(1) << "updateEdgeTime: " << updateEdgeTime.elapsedInUSec() << "us";
       })
-      .thenValue([this](
-                std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
+      .thenValue([this](std::vector<folly::Try<StatusOr<storage::cpp2::UpdateResponse>>> results) {
         memory::MemoryCheckGuard guard;
         SCOPED_TIMER(&execTime_);
         DataSet finalResult;
-        for (auto& result : results) {
-          // LOG(INFO) << "Update edge result";
+        for (auto &result : results) {
           if (result.hasException()) {
             LOG(WARNING) << "Update edge request threw an exception.";
             return Status::Error("Exception occurred during update.");
@@ -351,15 +284,14 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
 
           if (!result.value().ok()) {
             LOG(WARNING) << "Update edge failed: " << result.value().status();
-            return result.value().status();  // if fail, return the error
+            return result.value().status();
           }
 
           auto value = std::move(result.value()).value();
-          for (auto& code : value.get_result().get_failed_parts()) {
+          for (auto &code : value.get_result().get_failed_parts()) {
             NG_RETURN_IF_ERROR(handleErrorCode(code.get_code(), code.get_part_id()));
           }
 
-          // skip the edge result
           if (value.props_ref().has_value() && value.props_ref()->colNames.size() > 1) {
             auto status = handleMultiResult(finalResult, std::move(*value.props_ref()));
             if (!status.ok()) {
@@ -368,14 +300,11 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
           }
         }
 
-        // print the final result
         if (finalResult.colNames.empty()) {
           return Status::OK();
         } else {
-          return finish(ResultBuilder()
-              .value(std::move(finalResult))
-              .iter(Iterator::Kind::kDefault)
-              .build());
+          return finish(
+              ResultBuilder().value(std::move(finalResult)).iter(Iterator::Kind::kDefault).build());
         }
       });
 }

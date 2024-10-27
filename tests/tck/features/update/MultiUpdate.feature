@@ -1,4 +1,4 @@
-# Copyright (c) 2020 vesoft inc. All rights reserved.
+# Copyright (c) 2024 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
 @multi_update
@@ -246,3 +246,38 @@ Feature: Multi Update string vid of vertex and edge
       YIELD name AS Name, credits AS Credits
       """
     Then a ExecutionError should be raised at runtime: Storage Error: Vertex or edge not found.
+    # Insertable failed, "111" is nonexistent, name and age without default value
+    When executing query:
+      """
+      UPSERT VERTEX ON student_default "111", "112"
+      SET name = "Tom", age = age + 8
+      YIELD name AS Name, age AS Age
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid field value: may be the filed is not NULL or without default value or wrong schema.
+    # Insertable failed, "111" is nonexistent, name without default value
+    When executing query:
+      """
+      UPSERT VERTEX ON student_default "111", "112"
+      SET gender = "two", age = 10
+      YIELD name AS Name, gender AS Gender
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid field value: may be the filed is not NULL or without default value or wrong schema.
+    # update student_default.age with string value
+    When executing query:
+      """
+      UPSERT VERTEX ON student_default "113", "114"
+      SET name = "Ann", age = "10"
+      YIELD name AS Name, gender AS Gender
+      """
+    Then a ExecutionError should be raised at runtime: Storage Error: Invalid data, may be wrong value type.
+    When executing query:
+      """
+      UPSERT VERTEX ON student_default "115", "116"
+      SET name = "Kate", age = 12
+      WHEN gender == "two"
+      YIELD name AS Name, age AS Age, gender AS gender
+      """
+    Then the result should be, in any order:
+      | Name   | Age | gender |
+      | 'Kate' | 12  | 'one'  |
+      | 'Kate' | 12  | 'one'  |

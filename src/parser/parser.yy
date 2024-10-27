@@ -396,7 +396,6 @@ using namespace nebula;
 %type <sentence> update_vertex_sentence
 %type <sentence> update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
-%type <sentence> lookup_pipe_update_sentence
 
 %type <sentence> traverse_sentence unwind_sentence
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
@@ -2205,14 +2204,6 @@ lookup_sentence
     }
     ;
 
-lookup_pipe_update_sentence
-    : lookup_sentence PIPE update_vertex_sentence {
-        $$ = new PipedSentence($1, $3);
-    }
-    | lookup_sentence PIPE update_edge_sentence {
-        $$ = new PipedSentence($1, $3);
-    }
-    ;
 
 order_factor
     : expression {
@@ -2993,6 +2984,8 @@ traverse_sentence
     | unwind_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | kill_session_sentence { $$ = $1; }
+    | update_vertex_sentence { $$ = $1; }
+    | update_edge_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -3278,35 +3271,25 @@ update_edge_sentence
         $$ = sentence;
     }
     // ======== End: Compatible with 1.0 =========
-    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid
-      KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11);
-        $$ = sentence;
-    }
-    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid
-      KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11, true);
-        $$ = sentence;
-    }
-    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
-      KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13);
-        $$ = sentence;
-    }
-    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
-      KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13, true);
-        $$ = sentence;
-    }
-    | KW_UPDATE KW_EDGE KW_ON name_label edge_keys 
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_keys
       KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
-        $$ = sentence; 
+        $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE KW_ON name_label edge_key_ref 
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_key_ref
       KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
-        $$ = sentence; 
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_EDGE KW_ON name_label edge_keys
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9, true);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_EDGE KW_ON name_label edge_key_ref
+      KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9, true);
+        $$ = sentence;
     }
     ;
 
@@ -3988,7 +3971,6 @@ mutate_sentence
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_job_sentence { $$ = $1; }
-    | lookup_pipe_update_sentence { $$ = $1; }
     ;
 
 maintain_sentence

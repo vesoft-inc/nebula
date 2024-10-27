@@ -125,12 +125,11 @@ bool QueryInstance::explainOrContinue() {
 
 void QueryInstance::onFinish() {
   auto rctx = qctx()->rctx();
-  LOG(INFO) << "Finish query: " << rctx->query();
+  VLOG(1) << "Finish query: " << rctx->query();
   auto &spaceName = rctx->session()->space().name;
   rctx->resp().spaceName = std::make_unique<std::string>(spaceName);
 
   fillRespData(&rctx->resp());
-  LOG(INFO) << "fillRespData";
 
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;

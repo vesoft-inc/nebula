@@ -224,9 +224,6 @@ std::string UpdateVertexSentence::toString() const {
   return buf;
 }
 
-
-
-
 std::string UpdateEdgeSentence::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -260,7 +257,6 @@ std::string UpdateEdgeSentence::toString() const {
 
   return buf;
 }
-
 
 std::string DeleteVerticesSentence::toString() const {
   std::string buf;

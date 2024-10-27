@@ -201,6 +201,8 @@ class UpdateEdgeValidator final : public UpdateValidator {
 
   Status checkInput();
 
+  Status processEdgeKeys(Expression* src_id, Expression* dst_id, const EdgeRanking& rank);
+
   Status buildEdgeKeyRef();
 
  private:
@@ -214,8 +216,6 @@ class UpdateEdgeValidator final : public UpdateValidator {
   std::string edgeKeyVar_;
   ExpressionProps exprProps_;
 };
-
-
 
 }  // namespace graph
 }  // namespace nebula

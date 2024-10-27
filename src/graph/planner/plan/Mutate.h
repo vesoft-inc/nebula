@@ -306,7 +306,7 @@ class UpdateVertex final : public Update {
         vId_(std::move(vId)),
         tagId_(tagId) {}
 
-    UpdateVertex(QueryContext* qctx,
+  UpdateVertex(QueryContext* qctx,
                PlanNode* input,
                GraphSpaceID spaceId,
                std::string name,
@@ -329,7 +329,6 @@ class UpdateVertex final : public Update {
                std::move(yieldNames)),
         vidRef_(vidRef),
         tagId_(tagId) {}
-
 
  private:
   Value vId_;

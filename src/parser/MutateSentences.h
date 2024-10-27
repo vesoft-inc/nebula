@@ -443,7 +443,7 @@ class UpdateVertexSentence final : public UpdateBaseSentence {
                        std::string *tagName,
                        UpdateList *updateList,
                        WhenClause *whenClause,
-                       YieldClause   *yieldClause,
+                       YieldClause *yieldClause,
                        bool isInsertable = false)
       : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable),
         vertices_(new VerticesClause(vid_ref)) {
@@ -507,10 +507,9 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
                      YieldClause *yieldClause,
                      bool isInsertable = false)
       : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
-      edgeKeys_.reset(edge_keys);
-      kind_ = Kind::kUpdateEdge;
+    edgeKeys_.reset(edge_keys);
+    kind_ = Kind::kUpdateEdge;
   }
-
 
   UpdateEdgeSentence(EdgeKeyRef *ref,
                      std::string *edgeName,
@@ -557,7 +556,6 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
   std::unique_ptr<EdgeKeys> edgeKeys_;
   std::unique_ptr<EdgeKeyRef> edgeKeyRef_;
 };
-
 
 class DeleteVerticesSentence final : public Sentence {
  public:

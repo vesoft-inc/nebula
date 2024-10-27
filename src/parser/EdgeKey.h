@@ -13,8 +13,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Value.h"
+#include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
 
@@ -49,7 +49,7 @@ class EdgeKey final {
 };
 
 class EdgeId final {
-public:
+ public:
   EdgeId(Value srcid, Value dstid, EdgeRanking rank) {
     srcid_ = std::move(srcid);
     dstid_ = std::move(dstid);
@@ -72,10 +72,10 @@ public:
     return srcid_.toString() + "->" + dstid_.toString() + "@" + std::to_string(rank_);
   }
 
-  private:
-    Value srcid_;
-    Value dstid_;
-    EdgeRanking rank_;
+ private:
+  Value srcid_;
+  Value dstid_;
+  EdgeRanking rank_;
 };
 
 class EdgeKeys final {

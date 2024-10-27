@@ -49,7 +49,6 @@ std::unique_ptr<PlanNodeDescription> Update::explain() const {
   return desc;
 }
 
-
 std::unique_ptr<PlanNodeDescription> UpdateVertex::explain() const {
   auto desc = Update::explain();
   addDescription("vid", vId_.toString(), desc.get());

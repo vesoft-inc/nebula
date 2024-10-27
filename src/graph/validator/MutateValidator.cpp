@@ -318,10 +318,11 @@ Status DeleteVerticesValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      std::stringstream ss;
-      ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
-         << "', but was`" << type.value() << "'";
-      return Status::SemanticError(ss.str());
+      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+                                  vidRef_->toString(),
+                                  vidType_,
+                                  type.value());
+      return Status::SemanticError(errorMsg);
     }
   } else {
     auto vIds = sentence->vertices()->vidList();
@@ -460,10 +461,11 @@ Status DeleteTagsValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      std::stringstream ss;
-      ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
-         << "', but was`" << type.value() << "'";
-      return Status::SemanticError(ss.str());
+      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+                                  vidRef_->toString(),
+                                  vidType_,
+                                  type.value());
+      return Status::SemanticError(errorMsg);
     }
   } else {
     auto vIds = sentence->vertices()->vidList();
@@ -673,9 +675,8 @@ Status UpdateValidator::getCondition() {
     auto type = typeStatus.value();
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
         type != Value::Type::__EMPTY__) {
-      std::stringstream ss;
-      ss << "`" << filter->toString() << "', expected Boolean, but was `" << type << "'";
-      return Status::SemanticError(ss.str());
+      auto errorMsg = fmt::format("`{}`, expected Boolean, but was `{}`", filter->toString(), type);
+      return Status::SemanticError(errorMsg);
     }
     condition_ = filter->encode();
   }
@@ -850,10 +851,11 @@ Status UpdateVertexValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      std::stringstream ss;
-      ss << "The vid `" << vidRef_->toString() << "' should be type of `" << vidType_
-        << "', but was`" << type.value() << "'";
-      return Status::SemanticError(ss.str());
+      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+                                  vidRef_->toString(),
+                                  vidType_,
+                                  type.value());
+      return Status::SemanticError(errorMsg);
     }
   } else {
     // get vertices
@@ -865,10 +867,6 @@ Status UpdateVertexValidator::validateImpl() {
       }
       vertices_.emplace_back(std::move(idRet).value());
     }
-    // unique vidList
-    std::sort(vertices_.begin(), vertices_.end());
-    auto last = std::unique(vertices_.begin(), vertices_.end());
-    vertices_.erase(last, vertices_.end());
   }
   NG_RETURN_IF_ERROR(initProps());
   auto ret = qctx_->schemaMng()->toTagID(spaceId_, name_);
@@ -896,7 +894,6 @@ std::string UpdateVertexValidator::buildVIds() {
   vidRef_ = vIds;
   return input;
 }
-
 
 Status UpdateVertexValidator::toPlan() {
   std::string vidVar;
@@ -927,7 +924,6 @@ Status UpdateVertexValidator::toPlan() {
   return Status::OK();
 }
 
-
 Status UpdateEdgeValidator::validateImpl() {
   auto sentence = static_cast<UpdateEdgeSentence *>(sentence_);
   spaceId_ = vctx_->whichSpace().id;
@@ -941,21 +937,8 @@ Status UpdateEdgeValidator::validateImpl() {
   edgeType_ = ret.value();
 
   if (sentence->getSrcId() != nullptr && sentence->getDstId() != nullptr) {
-    auto srcIdRet = SchemaUtil::toVertexID(sentence->getSrcId(), vidType_);
-    if (!srcIdRet.ok()) {
-      LOG(ERROR) << srcIdRet.status();
-      return srcIdRet.status();
-    }
-    srcId_ = std::move(srcIdRet).value();
-    auto dstIdRet = SchemaUtil::toVertexID(sentence->getDstId(), vidType_);
-    if (!dstIdRet.ok()) {
-      LOG(ERROR) << dstIdRet.status();
-      return dstIdRet.status();
-    }
-    dstId_ = std::move(dstIdRet).value();
-    rank_ = sentence->getRank();
-    EdgeId edgeId = EdgeId(srcId_, dstId_, rank_);
-    edgeIds_.emplace_back(std::move(edgeId));
+    NG_RETURN_IF_ERROR(
+        processEdgeKeys(sentence->getSrcId(), sentence->getDstId(), sentence->getRank()));
   } else if (sentence->isRef()) {
     auto *pool = qctx_->objPool();
     edgeKeyRefs_.emplace_back(sentence->edgeKeyRef());
@@ -963,20 +946,7 @@ Status UpdateEdgeValidator::validateImpl() {
     NG_RETURN_IF_ERROR(checkInput());
   } else {
     for (auto &edgekey : sentence->getEdgeKeys()->keys()) {
-      auto srcIdRet = SchemaUtil::toVertexID(edgekey->srcid(), vidType_);
-      if (!srcIdRet.ok()) {
-        LOG(ERROR) << srcIdRet.status();
-        return srcIdRet.status();
-      }
-      auto dstIdRet = SchemaUtil::toVertexID(edgekey->dstid(), vidType_);
-      if (!dstIdRet.ok()) {
-          LOG(ERROR) << dstIdRet.status();
-          return dstIdRet.status();
-      }
-      auto rank = edgekey->rank();
-      EdgeId edgeId = EdgeId(std::move(srcIdRet).value(), std::move(dstIdRet).value(), rank);
-
-      edgeIds_.emplace_back(std::move(edgeId));
+      NG_RETURN_IF_ERROR(processEdgeKeys(edgekey->srcid(), edgekey->dstid(), edgekey->rank()));
     }
   }
 
@@ -988,6 +958,24 @@ Status UpdateEdgeValidator::validateImpl() {
   return Status::OK();
 }
 
+Status UpdateEdgeValidator::processEdgeKeys(Expression *src_id,
+                                            Expression *dst_id,
+                                            const EdgeRanking &rank) {
+  auto srcIdRet = SchemaUtil::toVertexID(src_id, vidType_);
+  if (!srcIdRet.ok()) {
+    LOG(ERROR) << srcIdRet.status();
+    return srcIdRet.status();
+  }
+  auto dstIdRet = SchemaUtil::toVertexID(dst_id, vidType_);
+  if (!dstIdRet.ok()) {
+    LOG(ERROR) << dstIdRet.status();
+    return dstIdRet.status();
+  }
+  EdgeId edgeId = EdgeId(std::move(srcIdRet).value(), std::move(dstIdRet).value(), rank);
+
+  edgeIds_.emplace_back(std::move(edgeId));
+  return Status::OK();
+}
 
 Status UpdateEdgeValidator::buildEdgeKeyRef() {
   edgeKeyVar_ = vctx_->anonVarGen()->getVar();
@@ -1019,16 +1007,16 @@ Status UpdateEdgeValidator::toPlan() {
   dedup->setInputVar(edgeKeyVar_);
 
   auto *ureNode = UpdateEdge::make(qctx_,
-                                  dedup,
-                                  spaceId_,
-                                  std::move(name_),
-                                  edgeKeyRefs_.front(),
-                                  edgeType_,
-                                  insertable_,
-                                  updatedProps_,
-                                  returnProps_,
-                                  condition_,
-                                  yieldColNames_);
+                                   dedup,
+                                   spaceId_,
+                                   std::move(name_),
+                                   edgeKeyRefs_.front(),
+                                   edgeType_,
+                                   insertable_,
+                                   updatedProps_,
+                                   returnProps_,
+                                   condition_,
+                                   yieldColNames_);
   root_ = ureNode;
   tail_ = dedup;
   return Status::OK();

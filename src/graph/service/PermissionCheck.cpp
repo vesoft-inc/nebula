@@ -23,7 +23,7 @@ namespace graph {
  *             kYield, kOrderBy, kFetchVertices, kFind
  *             kFetchEdges, kFindPath, kLimit, KGroupBy, kReturn
  * Write data: kBuildTagIndex, kBuildEdgeIndex,
- *             kInsertVertex, kUpdateVertex, 
+ *             kInsertVertex, kUpdateVertex,
  *             kInsertEdge,
  *             kUpdateEdge, kDeleteVertex, kDeleteEdges, kAdminJob(other)
  * Special operation : kShow, kChangePassword
