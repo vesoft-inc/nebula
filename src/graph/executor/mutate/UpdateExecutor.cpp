@@ -58,7 +58,8 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
         continue;
       }
       if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
-        auto errorMsg = fmt::format("Wrong vid type `{}`, value `{}`", val.type(), val.toString());
+        auto errorMsg = fmt::format(
+            "Wrong vid type `{}', value `{}'", Value::toString(val.type()), val.toString());
         return Status::Error(errorMsg);
       }
       vertices.emplace_back(std::move(val));

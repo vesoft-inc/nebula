@@ -260,11 +260,12 @@ Feature: Delete int vid of vertex
       | like._dst |
 
   Scenario: delete with pipe failed, because of the wrong vid type
+    Given load "nba_int_vid" csv data to a new space
     When executing query:
       """
-      USE nba_int_vid;YIELD "Tom" as id | DELETE VERTEX $-.id WITH EDGE;
+      YIELD "Tom" as id | DELETE VERTEX $-.id WITH EDGE;
       """
-    Then a SemanticError should be raised at runtime: The vid `$-.id' should be type of `INT', but was`STRING'
+    Then a SemanticError should be raised at runtime: The vid `$-.id' should be type of `INT', but was `STRING'
     Then drop the used space
 
   Scenario: delete with var, get result by go

@@ -318,10 +318,10 @@ Status DeleteVerticesValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+      auto errorMsg = fmt::format("The vid `{}' should be type of `{}', but was `{}'",
                                   vidRef_->toString(),
-                                  vidType_,
-                                  type.value());
+                                  Value::toString(vidType_),
+                                  Value::toString(type.value()));
       return Status::SemanticError(errorMsg);
     }
   } else {
@@ -461,10 +461,10 @@ Status DeleteTagsValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+      auto errorMsg = fmt::format("The vid `{}' should be type of `{}', but was `{}'",
                                   vidRef_->toString(),
-                                  vidType_,
-                                  type.value());
+                                  Value::toString(vidType_),
+                                  Value::toString(type.value()));
       return Status::SemanticError(errorMsg);
     }
   } else {
@@ -675,7 +675,8 @@ Status UpdateValidator::getCondition() {
     auto type = typeStatus.value();
     if (type != Value::Type::BOOL && type != Value::Type::NULLVALUE &&
         type != Value::Type::__EMPTY__) {
-      auto errorMsg = fmt::format("`{}`, expected Boolean, but was `{}`", filter->toString(), type);
+      auto errorMsg = fmt::format(
+          "`{}', expected Boolean, but was `{}'", filter->toString(), Value::toString(type));
       return Status::SemanticError(errorMsg);
     }
     condition_ = filter->encode();
@@ -851,10 +852,10 @@ Status UpdateVertexValidator::validateImpl() {
     auto type = deduceExprType(vidRef_);
     NG_RETURN_IF_ERROR(type);
     if (type.value() != vidType_) {
-      auto errorMsg = fmt::format("The vid `{}` should be type of `{}`, but was `{}`",
+      auto errorMsg = fmt::format("The vid `{}' should be type of `{}', but was `{}'",
                                   vidRef_->toString(),
-                                  vidType_,
-                                  type.value());
+                                  Value::toString(vidType_),
+                                  Value::toString(type.value()));
       return Status::SemanticError(errorMsg);
     }
   } else {
