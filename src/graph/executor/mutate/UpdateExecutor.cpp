@@ -13,31 +13,6 @@ using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
-StatusOr<DataSet> UpdateBaseExecutor::handleResult(DataSet &&data) {
-  if (data.colNames.size() <= 1) {
-    if (yieldNames_.empty()) {
-      return Status::OK();
-    }
-    return Status::Error("Empty return props");
-  }
-
-  if (yieldNames_.size() != data.colNames.size() - 1) {
-    LOG(WARNING) << "Expect colName size is " << yieldNames_.size() << ", return colName size is "
-                 << data.colNames.size() - 1;
-    return Status::Error("Wrong return prop size");
-  }
-  DataSet result;
-  result.colNames = yieldNames_;
-  for (auto &row : data.rows) {
-    std::vector<Value> columns;
-    for (auto i = 1u; i < row.values.size(); i++) {
-      columns.emplace_back(std::move(row.values[i]));
-    }
-    result.rows.emplace_back(std::move(columns));
-  }
-  return result;
-}
-
 Status UpdateBaseExecutor::handleMultiResult(DataSet &result, DataSet &&data) {
   if (data.colNames.size() <= 1) {
     if (yieldNames_.empty()) {
@@ -72,12 +47,6 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
 
   if (vidRef != nullptr) {
     auto inputVar = urvNode->inputVar();
-    if (inputVar.empty()) {
-      DCHECK(urvNode->dep() != nullptr);
-      auto *gn = static_cast<const SingleInputNode *>(urvNode->dep())->dep();
-      DCHECK(gn != nullptr);
-      inputVar = static_cast<const SingleInputNode *>(gn)->inputVar();
-    }
     DCHECK(!inputVar.empty());
     auto &inputResult = ectx_->getResult(inputVar);
     auto iter = inputResult.iter();
@@ -188,9 +157,6 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     auto srcId = Expression::eval(edgeKeyRef->srcid(), ctx(iter.get()));
-    if (srcId.isNull() || srcId.empty()) {
-      continue;
-    }
     if (!SchemaUtil::isValidVid(srcId, *spaceInfo.spaceDesc.vid_type_ref())) {
       std::stringstream ss;
       ss << "Wrong srcId type `" << srcId.type() << "`, value `" << srcId.toString() << "'";

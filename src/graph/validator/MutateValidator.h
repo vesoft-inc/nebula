@@ -206,9 +206,6 @@ class UpdateEdgeValidator final : public UpdateValidator {
   Status buildEdgeKeyRef();
 
  private:
-  Value srcId_;
-  Value dstId_;
-  EdgeRanking rank_{0};
   EdgeType edgeType_{-1};
 
   std::vector<EdgeId> edgeIds_;
