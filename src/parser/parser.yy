@@ -217,12 +217,17 @@ using namespace nebula;
 %token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
 %token KW_TRANSFER
 
+
+
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
        MINUS_L_BRACKET R_BRACKET_MINUS L_ARROW_L_BRACKET R_BRACKET_R_ARROW PIPE
        MINUS_MINUS MINUS_R_ARROW L_ARROW_MINUS L_ARROW_R_ARROW ASSIGN DOT DOT_DOT
        COLON QM SEMICOLON L_ARROW R_ARROW AT ID_PROP TYPE_PROP 
        SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
+//NEW CREATE
+%token LT GT
+
 
 /* token type specification */
 %token <boolval> BOOL
@@ -1292,6 +1297,32 @@ type_spec
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->type_ref() = nebula::cpp2::PropertyType::DURATION;
     }
+    //NEW CREATE LIST
+    | KW_LIST LT KW_STRING GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_STRING;
+    }
+    | KW_LIST LT KW_INT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_INT;
+    }
+    | KW_LIST LT KW_FLOAT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_FLOAT;
+    }
+    //NEW CREATE SET
+    | KW_SET LT KW_STRING GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_STRING;
+    }
+    | KW_SET LT KW_INT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_INT;
+    }
+    | KW_SET LT KW_FLOAT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_FLOAT;
+    }
     ;
 
 
@@ -1308,7 +1339,7 @@ container_expression
     ;
 
 list_expression
-    : L_BRACKET expression_list R_BRACKET {
+    : L_BRACKET opt_expression_list R_BRACKET {
         $$ = ListExpression::make(qctx->objPool(), $2);
     }
     | KW_LIST L_BRACKET opt_expression_list R_BRACKET {
@@ -3172,6 +3203,9 @@ update_item
         $$ = new UpdateItem(expr, $5);
         delete $1;
         delete $3;
+    }
+    | subscript_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
     }
     ;
 

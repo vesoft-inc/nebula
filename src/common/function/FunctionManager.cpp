@@ -161,7 +161,25 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"right", {TypeSignature({Value::Type::STRING, Value::Type::INT}, Value::Type::STRING)}},
     {"replace",
      {TypeSignature({Value::Type::STRING, Value::Type::STRING, Value::Type::STRING},
-                    Value::Type::STRING)}},
+                    Value::Type::STRING),
+      TypeSignature({Value::Type::LIST, Value::Type::STRING, Value::Type::STRING},
+                    Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::INT, Value::Type::INT}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::LIST),
+      TypeSignature({Value::Type::SET, Value::Type::STRING, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::SET)}},
+    {"erase",
+     {TypeSignature({Value::Type::LIST, Value::Type::STRING}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::INT}, Value::Type::LIST),
+      TypeSignature({Value::Type::LIST, Value::Type::FLOAT}, Value::Type::LIST),
+      TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
+    {"setadd",
+     {TypeSignature({Value::Type::SET, Value::Type::STRING}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::INT}, Value::Type::SET),
+      TypeSignature({Value::Type::SET, Value::Type::FLOAT}, Value::Type::SET)}},
     {"reverse",
      {TypeSignature({Value::Type::STRING}, Value::Type::STRING),
       TypeSignature({Value::Type::LIST}, Value::Type::LIST)}},
@@ -1376,6 +1394,65 @@ FunctionManager::FunctionManager() {
         std::string search(args[1].get().getStr());
         std::string newStr(args[2].get().getStr());
         return boost::replace_all_copy(origStr, search, newStr);
+      }
+      if (args[0].get().isList()) {
+        List list = args[0].get().getList();
+        auto search = args[1].get();
+        auto newValue = args[2].get();
+        for (auto &item : list.values) {
+          if (item == search) {
+            item = newValue;
+          }
+        }
+        return list;
+      }
+      if (args[0].get().isSet()) {
+        Set set = args[0].get().getSet();
+        auto search = args[1].get();
+        auto newValue = args[2].get();
+        if (set.values.erase(search)) {
+          set.values.insert(newValue);
+        }
+        return set;
+      }
+      return Value::kNullBadType;
+    };
+  }
+  {
+    auto &attr = functions_["erase"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isList()) {
+        auto list = args[0].get().getList();
+        auto target = args[1].get();
+        list.values.erase(std::remove(list.values.begin(), list.values.end(), target),
+                          list.values.end());
+        return list;
+      }
+      if (args[0].get().isSet()) {
+        auto set = args[0].get().getSet();
+        auto target = args[1].get();
+        set.values.erase(target);
+        return set;
+      }
+      return Value::kNullBadType;
+    };
+  }
+  {
+    auto &attr = functions_["setadd"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isAlwaysPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isSet()) {
+        auto set = args[0].get().getSet();
+        auto newValue = args[1].get();
+        if (set.values.find(newValue) == set.values.end()) {
+          set.values.insert(newValue);
+        }
+        return set;
       }
       return Value::kNullBadType;
     };

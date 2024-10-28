@@ -54,6 +54,14 @@ class IndexKeyUtils final {
         return Value::Type::GEOGRAPHY;
       case PropertyType::DURATION:
         return Value::Type::DURATION;
+      case PropertyType::LIST_STRING:
+      case PropertyType::LIST_INT:
+      case PropertyType::LIST_FLOAT:
+        return Value::Type::LIST;
+      case PropertyType::SET_STRING:
+      case PropertyType::SET_INT:
+      case PropertyType::SET_FLOAT:
+        return Value::Type::SET;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }

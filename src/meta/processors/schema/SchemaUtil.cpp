@@ -14,6 +14,60 @@ namespace meta {
 
 using nebula::cpp2::PropertyType;
 
+template <typename ContainerType, typename ElementType, typename NestedContainerType = void>
+bool extractIntOrFloat(const Value& value, const std::string& name) {
+  std::vector<Value> elements;
+
+  if constexpr (std::is_same_v<ContainerType, List>) {
+    if (!value.isList()) {
+      LOG(ERROR) << "Invalid default value for `" << name << "`, expected a List but got "
+                 << value.type();
+      return false;
+    }
+    elements = value.getList().values;
+  }
+
+  if constexpr (std::is_same_v<ContainerType, Set>) {
+    if (!value.isSet()) {
+      LOG(ERROR) << "Invalid default value for `" << name << "`, expected a Set but got "
+                 << value.type();
+      return false;
+    }
+    elements = std::vector<Value>(value.getSet().values.begin(), value.getSet().values.end());
+  }
+
+  for (const auto& elem : elements) {
+    if constexpr (!std::is_same_v<NestedContainerType, void>) {
+      if constexpr (std::is_same_v<NestedContainerType, List>) {
+        if (!elem.isList()) {
+          LOG(ERROR) << "Invalid default value for `" << name
+                     << "`, elements must be Lists but got " << elem.type();
+          return false;
+        }
+      }
+
+      if constexpr (std::is_same_v<NestedContainerType, Set>) {
+        if (!elem.isSet()) {
+          LOG(ERROR) << "Invalid default value for `" << name << "`, elements must be Sets but got "
+                     << elem.type();
+          return false;
+        }
+      }
+
+      if (!extractIntOrFloat<NestedContainerType, ElementType>(elem, name)) {
+        return false;
+      }
+    } else {
+      if (!elem.isInt() && !elem.isFloat()) {
+        LOG(ERROR) << "Invalid default value for `" << name
+                   << "`, elements must be integers or floats but got " << elem.type();
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
   DefaultValueContext mContext;
   ObjectPool Objpool;
@@ -179,6 +233,48 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
         return false;
       }
       return true;
+    }
+    case PropertyType::LIST_STRING: {
+      if (!value.isList()) {
+        LOG(INFO) << "Invalid default value for `" << name << "`, expected a List but got "
+                  << value.type();
+        return false;
+      }
+      for (const auto& elem : value.getList().values) {
+        if (!elem.isStr()) {
+          LOG(INFO) << "Invalid default value for `" << name
+                    << "`, list elements must be strings but got " << elem.type();
+          return false;
+        }
+      }
+      return true;
+    }
+    case PropertyType::LIST_INT: {
+      return extractIntOrFloat<List, int64_t>(value, name);
+    }
+    case PropertyType::LIST_FLOAT: {
+      return extractIntOrFloat<List, double>(value, name);
+    }
+    case PropertyType::SET_STRING: {
+      if (!value.isSet()) {
+        LOG(INFO) << "Invalid default value for `" << name << "`, expected a Set but got "
+                  << value.type();
+        return false;
+      }
+      for (const auto& elem : value.getSet().values) {
+        if (!elem.isStr()) {
+          LOG(INFO) << "Invalid default value for `" << name
+                    << "`, set elements must be strings but got " << elem.type();
+          return false;
+        }
+      }
+      return true;
+    }
+    case PropertyType::SET_INT: {
+      return extractIntOrFloat<Set, int64_t>(value, name);
+    }
+    case PropertyType::SET_FLOAT: {
+      return extractIntOrFloat<Set, double>(value, name);
     }
     case PropertyType::UNKNOWN:
     case PropertyType::VID:

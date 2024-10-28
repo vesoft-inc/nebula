@@ -2,12 +2,43 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-
 #include "codec/RowReaderV2.h"
 
 namespace nebula {
 
 using nebula::cpp2::PropertyType;
+
+template <typename T, typename Container>
+Value extractIntOrFloat(const folly::StringPiece& data, size_t& offset) {
+  int32_t containerOffset;
+  memcpy(reinterpret_cast<void*>(&containerOffset), data.data() + offset, sizeof(int32_t));
+  if (static_cast<size_t>(containerOffset) >= data.size()) {
+    LOG(ERROR) << "Container offset out of bounds. Offset: " << containerOffset
+               << ", Data size: " << data.size();
+    return Value::kNullValue;
+  }
+  int32_t containerSize;
+  memcpy(reinterpret_cast<void*>(&containerSize), data.data() + containerOffset, sizeof(int32_t));
+  containerOffset += sizeof(int32_t);
+  Container container;
+  for (int32_t i = 0; i < containerSize; ++i) {
+    T value;
+    if (static_cast<size_t>(containerOffset + sizeof(T)) > data.size()) {
+      LOG(ERROR) << "Reading beyond data bounds. Attempting to read at offset: " << containerOffset
+                 << ", Data size: " << data.size();
+      return Value::kNullValue;
+    }
+    memcpy(reinterpret_cast<void*>(&value), data.data() + containerOffset, sizeof(T));
+    containerOffset += sizeof(T);
+
+    if constexpr (std::is_same_v<Container, List>) {
+      container.values.emplace_back(Value(value));
+    } else if constexpr (std::is_same_v<Container, Set>) {
+      container.values.insert(Value(value));
+    }
+  }
+  return Value(std::move(container));
+}
 
 bool RowReaderV2::resetImpl(meta::NebulaSchemaProvider const* schema, folly::StringPiece row) {
   schema_ = schema;
@@ -206,6 +237,70 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const {
       }
       return std::move(geogRet).value();
     }
+    case PropertyType::LIST_STRING: {
+      int32_t listOffset;
+      memcpy(reinterpret_cast<void*>(&listOffset), &data_[offset], sizeof(int32_t));
+      if (static_cast<size_t>(listOffset) >= data_.size()) {
+        LOG(ERROR) << "List offset out of bounds for LIST_STRING.";
+        return Value::kNullValue;
+      }
+      int32_t listSize;
+      memcpy(reinterpret_cast<void*>(&listSize), &data_[listOffset], sizeof(int32_t));
+      listOffset += sizeof(int32_t);
+
+      List list;
+      for (int32_t i = 0; i < listSize; ++i) {
+        int32_t strLen;
+        memcpy(reinterpret_cast<void*>(&strLen), &data_[listOffset], sizeof(int32_t));
+        listOffset += sizeof(int32_t);
+        if (static_cast<size_t>(listOffset + strLen) > data_.size()) {
+          LOG(ERROR) << "String length out of bounds for LIST_STRING.";
+          return Value::kNullValue;
+        }
+        std::string str(&data_[listOffset], strLen);
+        listOffset += strLen;
+        list.values.emplace_back(str);
+      }
+      return Value(std::move(list));
+    }
+    case PropertyType::LIST_INT:
+      return nebula::extractIntOrFloat<int32_t, List>(data_, offset);
+    case PropertyType::LIST_FLOAT:
+      return nebula::extractIntOrFloat<float, List>(data_, offset);
+    case PropertyType::SET_STRING: {
+      int32_t setOffset;
+      memcpy(reinterpret_cast<void*>(&setOffset), &data_[offset], sizeof(int32_t));
+      if (static_cast<size_t>(setOffset) >= data_.size()) {
+        LOG(ERROR) << "Set offset out of bounds for SET_STRING.";
+        return Value::kNullValue;
+      }
+      int32_t setSize;
+      memcpy(reinterpret_cast<void*>(&setSize), &data_[setOffset], sizeof(int32_t));
+      setOffset += sizeof(int32_t);
+
+      Set set;
+      std::unordered_set<std::string> uniqueStrings;
+      for (int32_t i = 0; i < setSize; ++i) {
+        int32_t strLen;
+        memcpy(reinterpret_cast<void*>(&strLen), &data_[setOffset], sizeof(int32_t));
+        setOffset += sizeof(int32_t);
+        if (static_cast<size_t>(setOffset + strLen) > data_.size()) {
+          LOG(ERROR) << "String length out of bounds for SET_STRING.";
+          return Value::kNullValue;
+        }
+        std::string str(&data_[setOffset], strLen);
+        setOffset += strLen;
+        uniqueStrings.insert(std::move(str));
+      }
+      for (const auto& str : uniqueStrings) {
+        set.values.insert(Value(str));
+      }
+      return Value(std::move(set));
+    }
+    case PropertyType::SET_INT:
+      return nebula::extractIntOrFloat<int32_t, Set>(data_, offset);
+    case PropertyType::SET_FLOAT:
+      return nebula::extractIntOrFloat<float, Set>(data_, offset);
     case PropertyType::UNKNOWN:
       break;
   }
