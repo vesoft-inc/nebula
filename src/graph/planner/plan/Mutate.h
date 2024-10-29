@@ -152,7 +152,7 @@ class InsertEdges final : public SingleDependencyNode {
   bool useChainInsert_{false};
 };
 
-class Update : public SingleDependencyNode {
+class Update : public SingleInputNode {
  public:
   bool getInsertable() const {
     return insertable_;
@@ -196,7 +196,7 @@ class Update : public SingleDependencyNode {
          std::vector<std::string> returnProps,
          std::string condition,
          std::vector<std::string> yieldNames)
-      : SingleDependencyNode(qctx, kind, input),
+      : SingleInputNode(qctx, kind, input),
         spaceId_(spaceId),
         schemaName_(std::move(name)),
         insertable_(insertable),
@@ -241,10 +241,39 @@ class UpdateVertex final : public Update {
                                                      std::move(yieldNames));
   }
 
+  static UpdateVertex* make(QueryContext* qctx,
+                            PlanNode* input,
+                            GraphSpaceID spaceId,
+                            std::string name,
+                            Expression* vidRef,
+                            TagID tagId,
+                            bool insertable,
+                            std::vector<storage::cpp2::UpdatedProp> updatedProps,
+                            std::vector<std::string> returnProps,
+                            std::string condition,
+                            std::vector<std::string> yieldNames) {
+    return qctx->objPool()->makeAndAdd<UpdateVertex>(qctx,
+                                                     input,
+                                                     spaceId,
+                                                     std::move(name),
+                                                     vidRef,
+                                                     tagId,
+                                                     insertable,
+                                                     std::move(updatedProps),
+                                                     std::move(returnProps),
+                                                     std::move(condition),
+                                                     std::move(yieldNames));
+  }
+
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
+  // no used any more
   const Value& getVId() const {
     return vId_;
+  }
+
+  Expression* getVidRef() const {
+    return vidRef_;
   }
 
   TagID getTagId() const {
@@ -277,8 +306,33 @@ class UpdateVertex final : public Update {
         vId_(std::move(vId)),
         tagId_(tagId) {}
 
+  UpdateVertex(QueryContext* qctx,
+               PlanNode* input,
+               GraphSpaceID spaceId,
+               std::string name,
+               Expression* vidRef,
+               TagID tagId,
+               bool insertable,
+               std::vector<storage::cpp2::UpdatedProp> updatedProps,
+               std::vector<std::string> returnProps,
+               std::string condition,
+               std::vector<std::string> yieldNames)
+      : Update(qctx,
+               Kind::kUpdateVertex,
+               input,
+               spaceId,
+               std::move(name),
+               insertable,
+               std::move(updatedProps),
+               std::move(returnProps),
+               std::move(condition),
+               std::move(yieldNames)),
+        vidRef_(vidRef),
+        tagId_(tagId) {}
+
  private:
   Value vId_;
+  Expression* vidRef_{nullptr};
   TagID tagId_{-1};
 };
 
@@ -288,10 +342,8 @@ class UpdateEdge final : public Update {
                           PlanNode* input,
                           GraphSpaceID spaceId,
                           std::string name,
-                          Value srcId,
-                          Value dstId,
+                          EdgeKeyRef* edgeKeyRef,
                           EdgeType edgeType,
-                          int64_t rank,
                           bool insertable,
                           std::vector<storage::cpp2::UpdatedProp> updatedProps,
                           std::vector<std::string> returnProps,
@@ -301,10 +353,8 @@ class UpdateEdge final : public Update {
                                                    input,
                                                    spaceId,
                                                    std::move(name),
-                                                   std::move(srcId),
-                                                   std::move(dstId),
+                                                   edgeKeyRef,
                                                    edgeType,
-                                                   rank,
                                                    insertable,
                                                    std::move(updatedProps),
                                                    std::move(returnProps),
@@ -314,16 +364,8 @@ class UpdateEdge final : public Update {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const Value& getSrcId() const {
-    return srcId_;
-  }
-
-  const Value& getDstId() const {
-    return dstId_;
-  }
-
-  int64_t getRank() const {
-    return rank_;
+  EdgeKeyRef* getEdgeKeyRef() const {
+    return edgeKeyRef_;
   }
 
   int64_t getEdgeType() const {
@@ -340,10 +382,8 @@ class UpdateEdge final : public Update {
              PlanNode* input,
              GraphSpaceID spaceId,
              std::string name,
-             Value srcId,
-             Value dstId,
+             EdgeKeyRef* edgeKeyRef,
              EdgeType edgeType,
-             int64_t rank,
              bool insertable,
              std::vector<storage::cpp2::UpdatedProp> updatedProps,
              std::vector<std::string> returnProps,
@@ -359,15 +399,11 @@ class UpdateEdge final : public Update {
                std::move(returnProps),
                std::move(condition),
                std::move(yieldNames)),
-        srcId_(std::move(srcId)),
-        dstId_(std::move(dstId)),
-        rank_(rank),
+        edgeKeyRef_(edgeKeyRef),
         edgeType_(edgeType) {}
 
  private:
-  Value srcId_;
-  Value dstId_;
-  int64_t rank_{0};
+  EdgeKeyRef* edgeKeyRef_{nullptr};
   EdgeType edgeType_{-1};
 };
 

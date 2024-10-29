@@ -417,17 +417,7 @@ class UpdateBaseSentence : public Sentence {
 
 class UpdateVertexSentence final : public UpdateBaseSentence {
  public:
-  UpdateVertexSentence(Expression *vid,
-                       std::string *tagName,
-                       UpdateList *updateList,
-                       WhenClause *whenClause,
-                       YieldClause *yieldClause,
-                       bool isInsertable = false)
-      : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable) {
-    kind_ = Kind::kUpdateVertex;
-    vid_ = vid;
-  }
-
+  // compatible with 1.0
   UpdateVertexSentence(Expression *vid,
                        UpdateList *updateList,
                        WhenClause *whenClause,
@@ -438,6 +428,28 @@ class UpdateVertexSentence final : public UpdateBaseSentence {
     vid_ = vid;
   }
 
+  UpdateVertexSentence(VertexIDList *vidList,
+                       std::string *tagName,
+                       UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable),
+        vertices_(new VerticesClause(vidList)) {
+    kind_ = Kind::kUpdateVertex;
+  }
+
+  UpdateVertexSentence(Expression *vid_ref,
+                       std::string *tagName,
+                       UpdateList *updateList,
+                       WhenClause *whenClause,
+                       YieldClause *yieldClause,
+                       bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, tagName, isInsertable),
+        vertices_(new VerticesClause(vid_ref)) {
+    kind_ = Kind::kUpdateVertex;
+  }
+
   ~UpdateVertexSentence() {}
 
   bool getInsertable() const {
@@ -446,6 +458,10 @@ class UpdateVertexSentence final : public UpdateBaseSentence {
 
   Expression *getVid() const {
     return vid_;
+  }
+
+  const VerticesClause *vertices() const {
+    return vertices_.get();
   }
 
   const UpdateList *updateList() const {
@@ -464,6 +480,7 @@ class UpdateVertexSentence final : public UpdateBaseSentence {
 
  private:
   Expression *vid_{nullptr};
+  std::unique_ptr<VerticesClause> vertices_;
 };
 
 class UpdateEdgeSentence final : public UpdateBaseSentence {
@@ -483,6 +500,36 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
     rank_ = rank;
   }
 
+  UpdateEdgeSentence(EdgeKeys *edge_keys,
+                     std::string *edgeName,
+                     UpdateList *updateList,
+                     WhenClause *whenClause,
+                     YieldClause *yieldClause,
+                     bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
+    edgeKeys_.reset(edge_keys);
+    kind_ = Kind::kUpdateEdge;
+  }
+
+  UpdateEdgeSentence(EdgeKeyRef *ref,
+                     std::string *edgeName,
+                     UpdateList *updateList,
+                     WhenClause *whenClause,
+                     YieldClause *yieldClause,
+                     bool isInsertable = false)
+      : UpdateBaseSentence(updateList, whenClause, yieldClause, edgeName, isInsertable) {
+    edgeKeyRef_.reset(ref);
+    kind_ = Kind::kUpdateEdge;
+  }
+
+  EdgeKeys *getEdgeKeys() const {
+    return edgeKeys_.get();
+  }
+
+  EdgeKeyRef *edgeKeyRef() const {
+    return edgeKeyRef_.get();
+  }
+
   Expression *getSrcId() const {
     return srcId_;
   }
@@ -495,12 +542,19 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
     return rank_;
   }
 
+  bool isRef() const {
+    return edgeKeyRef_ != nullptr;
+  }
+
   std::string toString() const override;
 
  private:
   Expression *srcId_{nullptr};
   Expression *dstId_{nullptr};
   int64_t rank_{0L};
+
+  std::unique_ptr<EdgeKeys> edgeKeys_;
+  std::unique_ptr<EdgeKeyRef> edgeKeyRef_;
 };
 
 class DeleteVerticesSentence final : public Sentence {
