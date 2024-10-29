@@ -178,10 +178,14 @@ class UpdateVertexValidator final : public UpdateValidator {
  private:
   Status validateImpl() override;
 
+  std::string buildVIds();
+
   Status toPlan() override;
 
  private:
   Value vId_;
+  std::vector<Value> vertices_;
+  Expression* vidRef_{nullptr};
   TagID tagId_{-1};
 };
 
@@ -195,12 +199,21 @@ class UpdateEdgeValidator final : public UpdateValidator {
 
   Status toPlan() override;
 
+  Status checkInput();
+
+  Status processEdgeKeys(Expression* src_id, Expression* dst_id, const EdgeRanking& rank);
+
+  Status buildEdgeKeyRef();
+
  private:
-  Value srcId_;
-  Value dstId_;
-  EdgeRanking rank_{0};
   EdgeType edgeType_{-1};
+
+  std::vector<EdgeId> edgeIds_;
+  std::vector<EdgeKeyRef*> edgeKeyRefs_;
+  std::string edgeKeyVar_;
+  ExpressionProps exprProps_;
 };
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_VALIDATOR_MUTATEVALIDATOR_H_

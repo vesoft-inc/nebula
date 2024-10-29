@@ -45,9 +45,9 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
         continue;
       }
       if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
-        std::stringstream ss;
-        ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
-        return Status::Error(ss.str());
+        auto errorMsg = fmt::format(
+            "Wrong vid type `{}', value `{}'", Value::toString(val.type()), val.toString());
+        return Status::Error(errorMsg);
       }
       vertices.emplace_back(std::move(val));
     }
@@ -103,9 +103,9 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
       continue;
     }
     if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
-      std::stringstream ss;
-      ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
-      return Status::Error(ss.str());
+      auto errorMsg = fmt::format(
+          "Wrong vid type `{}', value `{}'", Value::toString(val.type()), val.toString());
+      return Status::Error(errorMsg);
     }
     delTag.id_ref() = val;
     delTag.tags_ref() = dtNode->tagIds();
@@ -147,7 +147,7 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   DCHECK(!inputVar.empty());
   auto& inputResult = ectx_->getResult(inputVar);
   auto iter = inputResult.iter();
-  edgeKeys.reserve(iter->size());
+  edgeKeys.reserve(iter->size() * 2);
   QueryExpressionContext ctx(ectx_);
   for (; iter->valid(); iter->next()) {
     storage::cpp2::EdgeKey edgeKey;

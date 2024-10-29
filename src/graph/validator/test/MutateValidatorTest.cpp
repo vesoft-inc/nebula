@@ -186,7 +186,7 @@ TEST_F(MutateValidatorTest, UpdateVertexTest) {
         "SET person.age = $^.person.age + 1 "
         "WHEN $^.person.age == 18 "
         "YIELD $^.person.name AS name, $^.person.age AS age";
-    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateVertex, PK::kStart}));
+    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateVertex, PK::kDedup, PK::kStart}));
   }
   // 2.0 syntax succeed
   {
@@ -195,7 +195,7 @@ TEST_F(MutateValidatorTest, UpdateVertexTest) {
         "SET age = age + 1 "
         "WHEN age == 18 "
         "YIELD name AS name, age AS age";
-    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateVertex, PK::kStart}));
+    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateVertex, PK::kDedup, PK::kStart}));
   }
 }
 
@@ -221,7 +221,7 @@ TEST_F(MutateValidatorTest, UpdateEdgeTest) {
         "SET end = like.end + 1 "
         "WHEN like.start >= 2010 "
         "YIELD like.start AS start, like.end AS end";
-    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateEdge, PK::kUpdateEdge, PK::kStart}));
+    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateEdge, PK::kDedup, PK::kStart}));
   }
   // 2.0 syntax succeed
   {
@@ -230,7 +230,7 @@ TEST_F(MutateValidatorTest, UpdateEdgeTest) {
         "SET end = end + 1 "
         "WHEN start >= 2010 "
         "YIELD start AS start, end AS end";
-    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateEdge, PK::kUpdateEdge, PK::kStart}));
+    ASSERT_TRUE(checkResult(cmd, {PK::kUpdateEdge, PK::kDedup, PK::kStart}));
   }
 }
 }  // namespace graph
