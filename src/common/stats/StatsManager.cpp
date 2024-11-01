@@ -177,18 +177,24 @@ CounterId StatsManager::counterWithLabels(const CounterId& id,
   }
   newIndex.back() = '}';
 
-  auto it = sm.nameMap_.find(newIndex);
-  // Get the counter if it already exists
-  if (it != sm.nameMap_.end()) {
-    return it->second.id_;
-  }
+  std::vector<StatsMethod> methods;
+  {
+    folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+    // Check if the counter already exists
+    auto it = sm.nameMap_.find(newIndex);
+    if (it != sm.nameMap_.end()) {
+      // fast path if the counter already exists
+      return it->second.id_;
+    }
+    
+    // Register a new counter if it doesn't exist
+    // Fetch the counter indexed by the parent index and get the methods
+    auto it2 = sm.nameMap_.find(index);
+    DCHECK(it2 != sm.nameMap_.end());
+    methods = it2->second.methods_;
+  }  
 
-  // Register a new counter if it doesn't exist
-  auto it2 = sm.nameMap_.find(index);
-  DCHECK(it2 != sm.nameMap_.end());
-  auto& methods = it2->second.methods_;
-
-  return registerStats(newIndex, methods);
+  return registerStats(newIndex, *methods);
 }
 
 // static
@@ -205,19 +211,35 @@ CounterId StatsManager::histoWithLabels(const CounterId& id, const std::vector<L
     newIndex.append(k).append("=").append(v).append(",");
   }
   newIndex.back() = '}';
-  auto it = sm.nameMap_.find(newIndex);
-  // Get the counter if it already exists
-  if (it != sm.nameMap_.end()) {
-    return it->second.id_;
+
+  std::vector<StatsMethod> methods;
+  std::vector<std::pair<std::string, double>> percentiles;
+  StatsManager::VT bucketSize, min, max;
+  {
+    folly::RWSpinLock::ReadHolder rh(sm.nameMapLock_);
+    // Check if the counter already exists
+    auto it = sm.nameMap_.find(newIndex);
+    if (it != sm.nameMap_.end()) {
+      // fast path if the counter already exists
+      return it->second.id_;
+    }
+    // Register a new counter if it doesn't exist
+    // Fetch the counter indexed by the parent index and get the methods
+    auto it2 = sm.nameMap_.find(index);
+    DCHECK(it2 != sm.nameMap_.end());
+    methods = it2->second.methods_;
+    percentiles = it2->second.percentiles_;
+    bucketSize = it2->second.bucketSize_;
+    min = it2->second.min_;
+    max = it2->second.max_;
   }
 
-  auto it2 = sm.nameMap_.find(index);
-  DCHECK(it2 != sm.nameMap_.end());
-  auto& methods = it2->second.methods_;
-  auto& percentiles = it2->second.percentiles_;
-
-  return registerHisto(
-      newIndex, it2->second.bucketSize_, it2->second.min_, it2->second.max_, methods, percentiles);
+  return registerHisto(/* counterName */  newIndex,
+                       /* bucketSize */   bucketSize,
+                       /* min */          min,
+                       /* max */          max,
+                       /* methods */      *methods,
+                       /* percentiles */  *percentiles);
 }
 
 // static
