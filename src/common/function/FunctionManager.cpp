@@ -659,7 +659,12 @@ FunctionManager::FunctionManager() {
               return Value::kNullBadType;
             }
           }
-          return std::round(args[0].get().getFloat());
+          if (args[0].get().type() == Value::Type::INT) {
+            return std::round(args[0].get().getInt());
+          } else if (args[0].get().type() == Value::Type::FLOAT) {
+            return std::round(args[0].get().getFloat());
+          }
+          return Value::kNullBadType;
         }
         default: {
           return Value::kNullBadType;
