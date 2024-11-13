@@ -30,6 +30,10 @@ class VariableExpression final : public Expression {
     return isInner_;
   }
 
+  void setInner(bool inner) {
+    isInner_ = inner;
+  }
+
   const Value& eval(ExpressionContext& ctx) override;
 
   bool operator==(const Expression& rhs) const override {
