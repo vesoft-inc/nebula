@@ -168,6 +168,7 @@ class PlanNode {
     kDivideZone,
     kAddHosts,
     kDropHosts,
+    kTransferLeader,
     kDescribeZone,
     kAddHostsIntoZone,
 
