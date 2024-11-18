@@ -249,7 +249,9 @@ Expression *ExpressionUtils::rewriteParameter(const Expression *expr, QueryConte
   };
   auto rewriter = [qctx](const Expression *e) -> Expression * {
     DCHECK_EQ(e->kind(), Expression::Kind::kVar);
-    auto &v = const_cast<Expression *>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+    auto exp = static_cast<VariableExpression *>(const_cast<Expression *>(e));
+    exp->setInner(false);
+    auto &v = exp->eval(graph::QueryExpressionContext(qctx->ectx())());
     return ConstantExpression::make(qctx->objPool(), v);
   };
 
