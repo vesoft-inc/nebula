@@ -170,8 +170,8 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"json_extract1", {"{\"a\": 1, \"b\": 0.2, \"c\": {\"d\": true}}"}},
     {"json_extract2", {"_"}},
     {"json_extract3", {"{a: 1, \"b\": 0.2}"}},
-    {"json_extract4", {"{\"a\": \"foo\", \"b\": 0.2, \"c\": {\"d\": {\"e\": 0.1}}}"}}};
-
+    {"json_extract4", {"{\"a\": \"foo\", \"b\": 0.2, \"c\": {\"d\": {\"e\": 0.1}}}"}},
+    {"md5", {"abcdefghijkl"}}};
 #define TEST_FUNCTION(expr, ...)                   \
   do {                                             \
     EXPECT_TRUE(testFunction(#expr, __VA_ARGS__)); \
@@ -248,6 +248,7 @@ TEST_F(FunctionManagerTest, testNull) {
   TEST_FUNCTION(concat, args_["nullvalue"], Value::kNullValue);
   TEST_FUNCTION(concat_ws, std::vector<Value>({Value::kNullValue, 1, 2}), Value::kNullValue);
   TEST_FUNCTION(concat_ws, std::vector<Value>({1, 1, 2}), Value::kNullValue);
+  TEST_FUNCTION(md5, args_["nullvalue"], Value::kNullValue);
 }
 
 TEST_F(FunctionManagerTest, functionCall) {
@@ -474,6 +475,7 @@ TEST_F(FunctionManagerTest, functionCall) {
                   args_["json_extract4"],
                   Value(Map({{"a", Value("foo")}, {"b", Value(0.2)}, {"c", Value(Map())}})));
   }
+  { TEST_FUNCTION(md5, args_["md5"], "9fc9d606912030dca86582ed62595cf7"); }
   {
     auto result = FunctionManager::get("hash", 1);
     ASSERT_TRUE(result.ok());

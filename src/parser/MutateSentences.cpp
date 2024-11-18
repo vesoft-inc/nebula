@@ -204,7 +204,11 @@ std::string UpdateVertexSentence::toString() const {
   if (name_ != nullptr) {
     buf += "ON " + *name_ + " ";
   }
-  buf += vid_->toString();
+  if (vid_ != nullptr) {
+    buf += vid_->toString();
+  } else {
+    buf += vertices_->toString();
+  }
   buf += " SET ";
   buf += updateList_->toString();
   if (whenClause_ != nullptr) {
@@ -228,10 +232,16 @@ std::string UpdateEdgeSentence::toString() const {
     buf += "UPDATE ";
   }
   buf += "EDGE ";
-  buf += srcId_->toString();
-  buf += "->";
-  buf += dstId_->toString();
-  buf += "@" + std::to_string(rank_);
+  if (srcId_ != nullptr) {
+    buf += srcId_->toString();
+    buf += "->";
+    buf += dstId_->toString();
+    buf += "@" + std::to_string(rank_);
+  } else if (isRef()) {
+    buf += edgeKeyRef_->toString();
+  } else {
+    buf += edgeKeys_->toString();
+  }
   buf += " OF " + *name_;
   buf += " SET ";
   buf += updateList_->toString();

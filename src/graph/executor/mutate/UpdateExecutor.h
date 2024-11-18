@@ -18,7 +18,7 @@ class UpdateBaseExecutor : public StorageAccessExecutor {
   virtual ~UpdateBaseExecutor() {}
 
  protected:
-  StatusOr<DataSet> handleResult(DataSet &&data);
+  Status handleMultiResult(DataSet &result, DataSet &&data);
 
  protected:
   std::vector<std::string> yieldNames_;

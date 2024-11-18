@@ -25,6 +25,8 @@
 --stderrthreshold=3
 # Wether logging files' name contain timestamp.
 --timestamp_in_logfile_name=true
+# use max_log_size or log_clean_days to control the log file size and log file clean days. Set log_clean_days to 0 to disable log file cleaning.
+--log_clean_days=0
 
 ########## networking ##########
 # Meta server address

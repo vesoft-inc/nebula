@@ -216,12 +216,17 @@ using namespace nebula;
 %token KW_MERGE KW_DIVIDE KW_RENAME
 %token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
 
+
+
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA 
        MINUS_L_BRACKET R_BRACKET_MINUS L_ARROW_L_BRACKET R_BRACKET_R_ARROW PIPE
        MINUS_MINUS MINUS_R_ARROW L_ARROW_MINUS L_ARROW_R_ARROW ASSIGN DOT DOT_DOT
        COLON QM SEMICOLON L_ARROW R_ARROW AT ID_PROP TYPE_PROP 
        SRC_ID_PROP DST_ID_PROP RANK_PROP INPUT_REF DST_REF SRC_REF
+//NEW CREATE
+%token LT GT
+
 
 /* token type specification */
 %token <boolval> BOOL
@@ -388,7 +393,8 @@ using namespace nebula;
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
 %type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence delete_vertex_with_edge_sentence
-%type <sentence> update_vertex_sentence update_edge_sentence
+%type <sentence> update_vertex_sentence
+%type <sentence> update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 
 %type <sentence> traverse_sentence unwind_sentence
@@ -1290,6 +1296,32 @@ type_spec
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->type_ref() = nebula::cpp2::PropertyType::DURATION;
     }
+    //NEW CREATE LIST
+    | KW_LIST LT KW_STRING GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_STRING;
+    }
+    | KW_LIST LT KW_INT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_INT;
+    }
+    | KW_LIST LT KW_FLOAT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::LIST_FLOAT;
+    }
+    //NEW CREATE SET
+    | KW_SET LT KW_STRING GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_STRING;
+    }
+    | KW_SET LT KW_INT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_INT;
+    }
+    | KW_SET LT KW_FLOAT GT {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->type_ref() = nebula::cpp2::PropertyType::SET_FLOAT;
+    }
     ;
 
 
@@ -1306,7 +1338,7 @@ container_expression
     ;
 
 list_expression
-    : L_BRACKET expression_list R_BRACKET {
+    : L_BRACKET opt_expression_list R_BRACKET {
         $$ = ListExpression::make(qctx->objPool(), $2);
     }
     | KW_LIST L_BRACKET opt_expression_list R_BRACKET {
@@ -2172,6 +2204,7 @@ lookup_sentence
     }
     ;
 
+
 order_factor
     : expression {
         $$ = new OrderFactor($1, OrderFactor::ASCEND);
@@ -2951,6 +2984,8 @@ traverse_sentence
     | unwind_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | kill_session_sentence { $$ = $1; }
+    | update_vertex_sentence { $$ = $1; }
+    | update_edge_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -3171,10 +3206,14 @@ update_item
         delete $1;
         delete $3;
     }
+    | subscript_expression ASSIGN expression {
+        $$ = new UpdateItem($1, $3);
+    }
     ;
 
 update_vertex_sentence
     // ======== Begin: Compatible with 1.0 =========
+    // keep the syntex with 1.0
     : KW_UPDATE KW_VERTEX vid KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($3, $5, $6, $7);
         $$ = sentence;
@@ -3184,11 +3223,26 @@ update_vertex_sentence
         $$ = sentence;
     }
      // ======== End: Compatible with 1.0 =========
-    | KW_UPDATE KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+    
+    | KW_UPDATE KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
-    | KW_UPSERT KW_VERTEX KW_ON name_label vid KW_SET update_list when_clause yield_clause {
+    | KW_UPSERT KW_VERTEX KW_ON name_label vid_list KW_SET update_list when_clause yield_clause {
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
+        $$ = sentence;
+    }
+    | KW_UPDATE KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
+        if(graph::ExpressionUtils::findAny($5,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@5, "Parameter is not supported in update clause");
+        }
+        auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9);
+        $$ = sentence;
+    }
+    | KW_UPSERT KW_VERTEX KW_ON name_label vid_ref_expression KW_SET update_list when_clause yield_clause {
+        if(graph::ExpressionUtils::findAny($5,{Expression::Kind::kVar})) {
+           throw nebula::GraphParser::syntax_error(@5, "Parameter is not supported in update clause");
+        }
         auto sentence = new UpdateVertexSentence($5, $4, $7, $8, $9, true);
         $$ = sentence;
     }
@@ -3217,27 +3271,28 @@ update_edge_sentence
         $$ = sentence;
     }
     // ======== End: Compatible with 1.0 =========
-    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_keys
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
-    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid
+    | KW_UPDATE KW_EDGE KW_ON name_label edge_key_ref
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, 0, $4, $9, $10, $11, true);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9);
         $$ = sentence;
     }
-    | KW_UPDATE KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
+    | KW_UPSERT KW_EDGE KW_ON name_label edge_keys
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9, true);
         $$ = sentence;
     }
-    | KW_UPSERT KW_EDGE KW_ON name_label vid R_ARROW vid AT rank
+    | KW_UPSERT KW_EDGE KW_ON name_label edge_key_ref
       KW_SET update_list when_clause yield_clause {
-        auto sentence = new UpdateEdgeSentence($5, $7, $9, $4, $11, $12, $13, true);
+        auto sentence = new UpdateEdgeSentence($5, $4, $7, $8, $9, true);
         $$ = sentence;
     }
     ;
+
 
 delete_vertex_sentence
     : KW_DELETE KW_VERTEX vid_list {
@@ -3911,8 +3966,6 @@ query_unique_identifier
 mutate_sentence
     : insert_vertex_sentence { $$ = $1; }
     | insert_edge_sentence { $$ = $1; }
-    | update_vertex_sentence { $$ = $1; }
-    | update_edge_sentence { $$ = $1; }
     | download_sentence { $$ = $1; }
     | ingest_sentence { $$ = $1; }
     | admin_job_sentence { $$ = $1; }

@@ -69,26 +69,26 @@ See our [Roadmap](https://github.com/vesoft-inc/nebula/wiki/Nebula-Graph-Roadmap
 
 ## Quick start
 
-Read the [getting started](https://docs.nebula-graph.io/3.6.0/2.quick-start/1.quick-start-workflow/) docs for a quick start.
+Read the [getting started](https://docs.nebula-graph.io/3.8.0/2.quick-start/1.quick-start-workflow/) docs for a quick start.
 
 ## Using NebulaGraph
 
 NebulaGraph is a distributed graph database with multiple components. You can [download](https://www.nebula-graph.io/download) or try in following ways:
 
-- [Build from source](https://docs.nebula-graph.io/3.3.0/4.deployment-and-installation/2.compile-and-install-nebula-graph/1.install-nebula-graph-by-compiling-the-source-code/)
+- [Build from source](https://docs.nebula-graph.io/3.8.0/2.quick-start/2.install-nebula-graph/)
 
-- In the cloud: [AWS](https://docs.nebula-graph.io/3.1.3/nebula-cloud/nebula-cloud-on-aws/1.aws-overview/) and [Azure](https://docs.nebula-graph.io/3.1.3/nebula-cloud/nebula-cloud-on-azure/azure-self-managed/1.azure-overview/)
+- In the cloud: [AWS](https://cloud.nebula-graph.io/login)
   
 ## Getting help
 
 In case you encounter any problems playing around **NebulaGraph**, please reach out for help:
-* [FAQ](https://docs.nebula-graph.io/3.6.0/20.appendix/0.FAQ/)
+* [FAQ](https://docs.nebula-graph.io/3.8.0/20.appendix/0.FAQ/)
 * [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 * [Documentation](https://docs.nebula-graph.io/)
 
 ## DevTools
 
-NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.6.0/20.appendix/6.eco-tool-version/).
+NebulaGraph comes with a set of tools to help you manage and monitor your graph database. See [Ecosystem](https://docs.nebula-graph.io/3.8.0/20.appendix/6.eco-tool-version/).
 
 ## Contributing
 
