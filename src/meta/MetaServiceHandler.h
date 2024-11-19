@@ -237,6 +237,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::GetSegmentIdResp> future_getSegmentId(
       const cpp2::GetSegmentIdReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_leaderTransfer(const cpp2::LeaderTransferReq& req) override;
+
  private:
   kvstore::KVStore* kvstore_ = nullptr;
   ClusterID clusterId_{0};
