@@ -411,6 +411,10 @@ class MetaClient : public BaseMetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> getUserRoles(std::string account);
 
+  folly::Future<StatusOr<bool>> transferLeader(const HostAddr& host,
+                                               GraphSpaceID spaceId,
+                                               int32_t concurrency);
+
   // Operations for config
   folly::Future<StatusOr<bool>> regConfig(const std::vector<cpp2::ConfigItem>& items);
 

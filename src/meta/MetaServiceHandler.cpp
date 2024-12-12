@@ -70,6 +70,7 @@
 #include "meta/processors/zone/ListZonesProcessor.h"
 #include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
+#include "meta/processors/job/LeaderTransferProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -561,5 +562,13 @@ folly::Future<cpp2::GetSegmentIdResp> MetaServiceHandler::future_getSegmentId(
   auto* processor = GetSegmentIdProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
+
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_leaderTransfer(
+    const cpp2::LeaderTransferReq& req) {
+  auto* processor = LeaderTransferProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 }  // namespace meta
 }  // namespace nebula

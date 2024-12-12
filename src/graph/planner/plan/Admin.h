@@ -939,6 +939,42 @@ class SubmitJob final : public SingleDependencyNode {
   const std::vector<std::string> params_;
 };
 
+class TransferLeader final : public SingleDependencyNode {
+ public:
+  static TransferLeader* make(QueryContext* qctx,
+                              PlanNode* input,
+                              HostAddr address,
+                              std::string spaceName,
+                              int32_t concurrency) {
+    return qctx->objPool()->add(
+        new TransferLeader(qctx, input, std::move(address), std::move(spaceName), concurrency));
+  }
+
+  const std::string& spaceName() const { return spaceName_; }
+
+  const HostAddr& address() const { return address_; }
+
+  int32_t concurrency() const { return concurrency_; }
+
+ private:
+  TransferLeader(QueryContext* qctx,
+                 PlanNode* input,
+                 HostAddr address,
+                 std::string spaceName,
+                 int32_t concurrency)
+      : SingleDependencyNode(qctx, Kind::kTransferLeader, input) {
+    spaceName_ = std::move(spaceName);
+    address_ = std::move(address);
+    concurrency_ = concurrency;
+  }
+
+ private:
+  std::string spaceName_;
+  HostAddr address_;
+  int32_t concurrency_;
+};
+
+
 class ShowCharset final : public SingleDependencyNode {
  public:
   static ShowCharset* make(QueryContext* qctx, PlanNode* input) {

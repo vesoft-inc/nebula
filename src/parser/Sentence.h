@@ -134,6 +134,7 @@ class Sentence {
     kAlterSpace,
     kClearSpace,
     kUnwind,
+    kTransferLeader,
   };
 
   Kind kind() const {
