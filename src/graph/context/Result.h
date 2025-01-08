@@ -28,7 +28,7 @@ class Result final {
   static const Result& EmptyResult();
   static const std::vector<Result>& EmptyResultList();
 
-  std::shared_ptr<Value> valuePtr() const {
+  const std::shared_ptr<Value> valuePtr() const {
     return core_.value;
   }
 
