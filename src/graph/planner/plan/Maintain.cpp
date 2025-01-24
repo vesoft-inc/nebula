@@ -85,5 +85,17 @@ std::unique_ptr<PlanNodeDescription> CreateFTIndexNode::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> CreateVectorIndexNode::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("indexName", indexName_, desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> DropVectorIndexNode::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("name", name_, desc.get());
+  return desc;
+}
+
 }  // namespace graph
 }  // namespace nebula

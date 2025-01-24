@@ -134,6 +134,8 @@ class Sentence {
     kAlterSpace,
     kClearSpace,
     kUnwind,
+    kCreateVectorIndex,
+    kDropVectorIndex,
   };
 
   Kind kind() const {

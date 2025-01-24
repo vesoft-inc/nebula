@@ -730,6 +730,85 @@ class ShowFTIndexes final : public SingleInputNode {
       : SingleInputNode(qctx, Kind::kShowFTIndexes, input) {}
 };
 
+class CreateVectorIndexNode : public SingleInputNode {
+ protected:
+  CreateVectorIndexNode(QueryContext* qctx,
+                        Kind kind,
+                        PlanNode* input,
+                        std::string indexName,
+                        meta::cpp2::VectorIndex index)
+      : SingleInputNode(qctx, kind, input),
+        indexName_(std::move(indexName)),
+        index_(std::move(index)) {}
+
+ public:
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
+
+  const meta::cpp2::VectorIndex& getIndex() const {
+    return index_;
+  }
+
+  const std::string& getName() const {
+    return indexName_;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  std::string indexName_;
+  meta::cpp2::VectorIndex index_;
+};
+
+class CreateVectorIndex final : public CreateVectorIndexNode {
+ public:
+  static CreateVectorIndex* make(QueryContext* qctx,
+                                 PlanNode* input,
+                                 std::string name,
+                                 meta::cpp2::VectorIndex index) {
+    return qctx->objPool()->makeAndAdd<CreateVectorIndex>(
+        qctx, input, std::move(name), std::move(index));
+  }
+
+ private:
+  friend ObjectPool;
+  CreateVectorIndex(QueryContext* qctx,
+                    PlanNode* input,
+                    std::string name,
+                    meta::cpp2::VectorIndex index)
+      : CreateVectorIndexNode(
+            qctx, Kind::kCreateVectorIndex, input, std::move(name), std::move(index)) {}
+};
+
+class DropVectorIndexNode : public SingleInputNode {
+ protected:
+  DropVectorIndexNode(QueryContext* qctx, Kind kind, PlanNode* input, std::string name)
+      : SingleInputNode(qctx, kind, input), name_(std::move(name)) {}
+
+ public:
+  const std::string& getName() const {
+    return name_;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  std::string name_;
+};
+
+class DropVectorIndex final : public DropVectorIndexNode {
+ public:
+  static DropVectorIndex* make(QueryContext* qctx, PlanNode* input, std::string name) {
+    return qctx->objPool()->makeAndAdd<DropVectorIndex>(qctx, input, std::move(name));
+  }
+
+ private:
+  friend ObjectPool;
+  DropVectorIndex(QueryContext* qctx, PlanNode* input, std::string name)
+      : DropVectorIndexNode(qctx, Kind::kDropVectorIndex, input, std::move(name)) {}
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_MAINTAIN_H_

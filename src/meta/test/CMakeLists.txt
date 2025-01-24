@@ -318,3 +318,22 @@ nebula_add_test(
         gtest
         curl
 )
+
+nebula_add_test(
+    NAME
+        vector_index_test
+    SOURCES
+        VectorIndexTest.cpp
+    OBJECTS
+        ${meta_test_deps}
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:meta_obj>
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+        curl
+        ${NEBULA_GFLAGS_LIBS}
+)

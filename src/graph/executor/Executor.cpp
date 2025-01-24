@@ -61,6 +61,7 @@
 #include "graph/executor/maintain/FTIndexExecutor.h"
 #include "graph/executor/maintain/TagExecutor.h"
 #include "graph/executor/maintain/TagIndexExecutor.h"
+#include "graph/executor/maintain/VectorIndexExecutor.h"
 #include "graph/executor/mutate/DeleteExecutor.h"
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
@@ -574,6 +575,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kShortestPath: {
       return pool->makeAndAdd<ShortestPathExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kCreateVectorIndex: {
+      return pool->makeAndAdd<CreateVectorIndexExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kDropVectorIndex: {
+      return pool->makeAndAdd<DropVectorIndexExecutor>(node, qctx);
     }
     case PlanNode::Kind::kUnknown: {
       DLOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

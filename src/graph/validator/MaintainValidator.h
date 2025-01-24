@@ -442,6 +442,30 @@ class ShowFTIndexesValidator final : public Validator {
   Status toPlan() override;
 };
 
+class CreateVectorIndexValidator final : public Validator {
+ public:
+  CreateVectorIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+  Status toPlan() override;
+
+ private:
+  meta::cpp2::VectorIndex index_;
+  const size_t kVectorIndexNameLength = 256;
+};
+
+class DropVectorIndexValidator final : public Validator {
+ public:
+  DropVectorIndexValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+  Status toPlan() override;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_

@@ -242,6 +242,11 @@ namespace graph {
     case Sentence::Kind::kShowQueries: {
       return Status::OK();
     }
+    case Sentence::Kind::kCreateVectorIndex:
+    case Sentence::Kind::kDropVectorIndex:
+      return PermissionManager::canWriteSchema(session, vctx);
+    default:
+      break;
   }
   LOG(ERROR) << "Impossible permission checking for sentence " << sentence->kind();
   return Status::Error("Impossible permission checking for sentence %d.",

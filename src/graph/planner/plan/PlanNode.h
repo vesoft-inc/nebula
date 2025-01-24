@@ -187,6 +187,9 @@ class PlanNode {
 
     kShowQueries,
     kKillQuery,
+
+    kCreateVectorIndex,
+    kDropVectorIndex,
   };
 
   bool isQueryNode() const {

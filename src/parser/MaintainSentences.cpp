@@ -510,4 +510,25 @@ std::string ShowFTIndexesSentence::toString() const {
   return "SHOW FULLTEXT INDEXES";
 }
 
+std::string CreateVectorIndexSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "CREATE VECTOR INDEX ";
+  buf += *indexName_;
+  buf += " ON ";
+  buf += *schemaName_;
+  buf += "(";
+  buf += *fieldName_;
+  buf += ") WITH DIMENSION = ";
+  buf += std::to_string(dimension_);
+  buf += ", MODEL = \"";
+  buf += *modelEndpoint_;
+  buf += "\"";
+  return buf;
+}
+
+std::string DropVectorIndexSentence::toString() const {
+  return "DROP VECTOR INDEX " + *indexName_;
+}
+
 }  // namespace nebula

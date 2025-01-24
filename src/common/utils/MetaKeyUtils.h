@@ -486,6 +486,18 @@ class MetaKeyUtils final {
    */
   static std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t, nebula::cpp2::ErrorCode>
   parseTaskVal(folly::StringPiece rawVal);
+
+  static constexpr char kVectorIndexesTable[] = "__vector_indexes__";  // New table
+
+  static const std::string& vectorIndexPrefix();
+
+  static std::string vectorIndexKey(const std::string& name);
+
+  static std::string vectorIndexVal(const meta::cpp2::VectorIndex& index);
+
+  static std::string parseVectorIndexName(folly::StringPiece key);
+
+  static meta::cpp2::VectorIndex parseVectorIndex(folly::StringPiece val);
 };
 
 }  // namespace nebula

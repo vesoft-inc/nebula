@@ -56,7 +56,8 @@ static const std::unordered_map<
                  {"ft_index", {"__ft_index__", nullptr}},
                  {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}},
                  {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}},
-                 {"job_manager", {"__job_mgr__", nullptr}}};
+                 {"job_manager", {"__job_mgr__", nullptr}},
+                 {"vector_index", {"__vector_indexes__", nullptr}}};
 
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
@@ -102,8 +103,9 @@ static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").fir
 static const std::string kLocalIdTable        = tableMaps.at("local_id").first;         // NOLINT
 
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
-const std::string kServicesTable  = systemTableMaps.at("services").first;        // NOLINT
-const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
+const std::string kServicesTable       = systemTableMaps.at("services").first;   // NOLINT
+const std::string kSessionsTable       = systemTableMaps.at("sessions").first;   // NOLINT
+const std::string kVectorIndexTable    = tableMaps.at("vector_index").first;    // NOLINT
 
 const std::string kIdKey = systemInfoMaps.at("autoIncrementId").first;                // NOLINT
 const std::string kLastUpdateTimeTable = systemInfoMaps.at("lastUpdateTime").first;   // NOLINT
@@ -1545,6 +1547,33 @@ MetaKeyUtils::parseTaskVal(folly::StringPiece rawVal) {
   offset += sizeof(int64_t);
   auto errCode = *reinterpret_cast<const nebula::cpp2::ErrorCode*>(rawVal.data() + offset);
   return std::make_tuple(host, status, tStart, tStop, errCode);
+}
+
+const std::string& MetaKeyUtils::vectorIndexPrefix() {
+  return kVectorIndexTable;
+}
+
+std::string MetaKeyUtils::vectorIndexKey(const std::string& name) {
+  std::string key;
+  key.reserve(kVectorIndexTable.size() + name.size());
+  key.append(kVectorIndexTable.data(), kVectorIndexTable.size()).append(name);
+  return key;
+}
+
+std::string MetaKeyUtils::vectorIndexVal(const meta::cpp2::VectorIndex& index) {
+  std::string val;
+  apache::thrift::CompactSerializer::serialize(index, &val);
+  return val;
+}
+
+std::string MetaKeyUtils::parseVectorIndexName(folly::StringPiece key) {
+  return key.subpiece(kVectorIndexTable.size(), key.size()).toString();
+}
+
+meta::cpp2::VectorIndex MetaKeyUtils::parseVectorIndex(folly::StringPiece val) {
+  meta::cpp2::VectorIndex index;
+  apache::thrift::CompactSerializer::deserialize(val, index);
+  return index;
 }
 
 }  // namespace nebula

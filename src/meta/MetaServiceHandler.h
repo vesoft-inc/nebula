@@ -237,6 +237,15 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::GetSegmentIdResp> future_getSegmentId(
       const cpp2::GetSegmentIdReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_createVectorIndex(
+      const cpp2::CreateVectorIndexReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_dropVectorIndex(
+      const cpp2::DropVectorIndexReq& req) override;
+
+  folly::Future<cpp2::ListVectorIndexesResp> future_listVectorIndexes(
+      const cpp2::ListVectorIndexesReq& req) override;
+
  private:
   kvstore::KVStore* kvstore_ = nullptr;
   ClusterID clusterId_{0};

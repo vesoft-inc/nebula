@@ -19,6 +19,7 @@
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/IndexUtil.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/ValidateUtil.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
@@ -669,6 +670,62 @@ Status ShowFTIndexesValidator::validateImpl() {
 
 Status ShowFTIndexesValidator::toPlan() {
   auto *doNode = ShowFTIndexes::make(qctx_, nullptr);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status CreateVectorIndexValidator::validateImpl() {
+  auto *sentence = static_cast<CreateVectorIndexSentence *>(sentence_);
+  folly::StringPiece name = folly::StringPiece(*sentence->indexName());
+
+  if (name.size() > kVectorIndexNameLength) {
+    return Status::SyntaxError(
+        fmt::format("Vector index name's length must less equal than {}", kVectorIndexNameLength));
+  }
+
+  bool ok = true;
+  for (auto c : name) {
+    if (std::islower(c) || std::isdigit(c) || c == '_') {
+      continue;
+    }
+    ok = false;
+    break;
+  }
+  if (!ok) {
+    return Status::SyntaxError("Vector index name can only contain [_0-9a-z].");
+  }
+
+  auto space = vctx_->whichSpace();
+  auto status = qctx_->schemaMng()->toTagID(space.id, *sentence->schemaName());
+  NG_RETURN_IF_ERROR(status);
+
+  nebula::cpp2::SchemaID id;
+  id.tag_id_ref() = status.value();
+  index_.space_id_ref() = space.id;
+  index_.depend_schema_ref() = std::move(id);
+  index_.field_ref() = *sentence->fieldName();
+  index_.dimension_ref() = sentence->dimension();
+  index_.model_endpoint_ref() = *sentence->modelEndpoint();
+
+  return Status::OK();
+}
+
+Status DropVectorIndexValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status CreateVectorIndexValidator::toPlan() {
+  auto *sentence = static_cast<CreateVectorIndexSentence *>(sentence_);
+  auto *doNode = CreateVectorIndex::make(qctx_, nullptr, *sentence->indexName(), index_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropVectorIndexValidator::toPlan() {
+  auto *sentence = static_cast<DropVectorIndexSentence *>(sentence_);
+  auto *doNode = DropVectorIndex::make(qctx_, nullptr, *sentence->indexName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

@@ -666,6 +666,28 @@ class MetaClient : public BaseMetaClient {
     return options_.localHost_.toString();
   }
 
+  folly::Future<StatusOr<IndexID>> createVectorIndex(const std::string& name,
+                                                     const cpp2::VectorIndex& index);
+
+  folly::Future<StatusOr<bool>> dropVectorIndex(GraphSpaceID space, const std::string& name);
+
+  folly::Future<StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>>> listVectorIndexes();
+
+  // Cache related methods like FTIndex
+  StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>> getVectorIndexesFromCache();
+
+  StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>> getVectorIndexBySpaceFromCache(
+      GraphSpaceID spaceId);
+
+  StatusOr<std::pair<std::string, cpp2::VectorIndex>> getVectorIndexFromCache(
+      GraphSpaceID spaceId, int32_t schemaId, const std::string& field);
+
+  StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>> getVectorIndexFromCache(
+      GraphSpaceID spaceId, int32_t schemaId);
+
+  StatusOr<cpp2::VectorIndex> getVectorIndexByNameFromCache(GraphSpaceID spaceId,
+                                                            const std::string& name);
+
  protected:
   // Return true if load succeeded.
   bool loadData();
@@ -813,6 +835,7 @@ class MetaClient : public BaseMetaClient {
     folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
 
     ServiceClientsList serviceClientList_;
+    std::unordered_map<std::string, cpp2::VectorIndex> vectorIndexMap_;
   };
 
   void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col);

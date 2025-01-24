@@ -215,6 +215,7 @@ using namespace nebula;
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
 %token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
+%token KW_VECTOR KW_DIMENSION KW_MODEL
 
 
 
@@ -376,6 +377,7 @@ using namespace nebula;
 %type <sentence> drop_tag_sentence drop_edge_sentence
 %type <sentence> describe_tag_sentence describe_edge_sentence
 %type <sentence> create_tag_index_sentence create_edge_index_sentence create_fulltext_index_sentence
+%type <sentence> create_vector_index_sentence drop_vector_index_sentence
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence drop_fulltext_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
@@ -420,9 +422,9 @@ using namespace nebula;
 // Define precedence and associativity of tokens.
 // Associativity:
 // The associativity of an operator op determines how repeated uses of the operator nest:
-// whether ‘x op y op z’ is parsed by grouping x with y first or by grouping y with z first.
+// whether 'x op y op z' is parsed by grouping x with y first or by grouping y with z first.
 // %left specifies left-associativity (grouping x with y first) and %right specifies right-associativity (grouping y with z first).
-// %nonassoc specifies no associativity, which means that ‘x op y op z’ is considered a syntax error.
+// %nonassoc specifies no associativity, which means that 'x op y op z' is considered a syntax error.
 //
 // Precedence:
 // The precedence of an operator determines how it nests with other operators.
@@ -584,6 +586,9 @@ unreserved_keyword
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_CLEAR              { $$ = new std::string("clear"); }
     | KW_ANALYZER           { $$ = new std::string("analyzer"); }
+    | KW_VECTOR             { $$ = new std::string("vector"); }
+    | KW_DIMENSION          { $$ = new std::string("dimension"); }
+    | KW_MODEL              { $$ = new std::string("model"); }
     ;
 
 expression
@@ -4019,6 +4024,8 @@ maintain_sentence
     | drop_snapshot_sentence { $$ = $1; }
     | sign_in_service_sentence { $$ = $1; }
     | sign_out_service_sentence { $$ = $1; }
+    | create_vector_index_sentence { $$ = $1; }
+    | drop_vector_index_sentence { $$ = $1; }
     ;
 
 sentence
@@ -4088,6 +4095,25 @@ sentences
     | explain_sentence {
         $$ = $1;
         *sentences = $$;
+    }
+    ;
+
+create_vector_index_sentence
+    : KW_CREATE KW_VECTOR KW_INDEX name_label 
+      KW_ON name_label L_PAREN name_label R_PAREN
+      KW_WITH KW_DIMENSION ASSIGN INTEGER COMMA
+      KW_MODEL ASSIGN STRING {
+        auto sentence = new CreateVectorIndexSentence($4, $6, $8);
+        sentence->setDimension($13);
+        sentence->setModelEndpoint($17);
+        $$ = sentence;
+    }
+    ;
+
+
+drop_vector_index_sentence 
+    : KW_DROP KW_VECTOR KW_INDEX name_label {
+        $$ = new DropVectorIndexSentence($4);
     }
     ;
 

@@ -38,6 +38,7 @@ nebula_add_library(
     processors/index/ListEdgeIndexesProcessor.cpp
     processors/service/ServiceProcessor.cpp
     processors/index/FTIndexProcessor.cpp
+    processors/index/VectorIndexProcessor.cpp
     processors/admin/HBProcessor.cpp
     processors/admin/AgentHBProcessor.cpp
     processors/admin/ClearSpaceProcessor.cpp

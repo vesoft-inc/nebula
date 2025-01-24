@@ -134,6 +134,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropEdgeIndex";
     case Kind::kDropFTIndex:
       return "DropFTIndex";
+    case Kind::kCreateVectorIndex:
+      return "CreateVectorIndex";
+    case Kind::kDropVectorIndex:
+      return "DropVectorIndex";
     case Kind::kDescTagIndex:
       return "DescTagIndex";
     case Kind::kDescEdgeIndex:

@@ -1118,6 +1118,7 @@ class AddHostsIntoZoneSentence : public Sentence {
   std::unique_ptr<HostList> address_;
   bool isNew_;
 };
+
 class CreateFTIndexSentence final : public Sentence {
  public:
   CreateFTIndexSentence(bool isEdge,
@@ -1167,6 +1168,7 @@ class CreateFTIndexSentence final : public Sentence {
   std::vector<std::string> fields_;
   std::unique_ptr<std::string> analyzer_;
 };
+
 class DropFTIndexSentence final : public Sentence {
  public:
   explicit DropFTIndexSentence(std::string *indexName) {
@@ -1190,6 +1192,69 @@ class ShowFTIndexesSentence final : public Sentence {
     kind_ = Kind::kShowFTIndexes;
   }
   std::string toString() const override;
+};
+
+class CreateVectorIndexSentence final : public Sentence {
+ public:
+  CreateVectorIndexSentence(std::string *indexName, std::string *schemaName, std::string *fieldName)
+      : Sentence(Kind::kCreateVectorIndex) {
+    indexName_.reset(indexName);
+    schemaName_.reset(schemaName);
+    fieldName_.reset(fieldName);
+  }
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+  const std::string *schemaName() const {
+    return schemaName_.get();
+  }
+
+  const std::string *fieldName() const {
+    return fieldName_.get();
+  }
+
+  void setDimension(int32_t dimension) {
+    dimension_ = dimension;
+  }
+
+  int32_t dimension() const {
+    return dimension_;
+  }
+
+  void setModelEndpoint(std::string *endpoint) {
+    modelEndpoint_.reset(endpoint);
+  }
+
+  const std::string *modelEndpoint() const {
+    return modelEndpoint_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> indexName_;
+  std::unique_ptr<std::string> schemaName_;
+  std::unique_ptr<std::string> fieldName_;
+  std::unique_ptr<std::string> modelEndpoint_;
+  int32_t dimension_{128};  // Default dimension
+};
+
+class DropVectorIndexSentence final : public Sentence {
+ public:
+  explicit DropVectorIndexSentence(std::string *indexName) : Sentence(Kind::kDropVectorIndex) {
+    indexName_.reset(indexName);
+  }
+
+  const std::string *indexName() const {
+    return indexName_.get();
+  }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> indexName_;
 };
 
 }  // namespace nebula

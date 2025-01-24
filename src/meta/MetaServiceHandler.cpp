@@ -33,6 +33,7 @@
 #include "meta/processors/index/GetTagIndexProcessor.h"
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
 #include "meta/processors/index/ListTagIndexesProcessor.h"
+#include "meta/processors/index/VectorIndexProcessor.h"
 #include "meta/processors/job/AdminJobProcessor.h"
 #include "meta/processors/job/GetStatsProcessor.h"
 #include "meta/processors/job/ListEdgeIndexStatusProcessor.h"
@@ -559,6 +560,24 @@ folly::Future<cpp2::GetWorkerIdResp> MetaServiceHandler::future_getWorkerId(
 folly::Future<cpp2::GetSegmentIdResp> MetaServiceHandler::future_getSegmentId(
     const cpp2::GetSegmentIdReq& req) {
   auto* processor = GetSegmentIdProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createVectorIndex(
+    const cpp2::CreateVectorIndexReq& req) {
+  auto* processor = CreateVectorIndexProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropVectorIndex(
+    const cpp2::DropVectorIndexReq& req) {
+  auto* processor = DropVectorIndexProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ListVectorIndexesResp> MetaServiceHandler::future_listVectorIndexes(
+    const cpp2::ListVectorIndexesReq& req) {
+  auto* processor = ListVectorIndexesProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 }  // namespace meta

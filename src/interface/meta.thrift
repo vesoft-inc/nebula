@@ -1067,6 +1067,34 @@ struct ListFTIndexesResp {
     3: map<binary, FTIndex> (cpp.template = "std::unordered_map") indexes,
 }
 
+struct VectorIndex {
+    1: common.GraphSpaceID  space_id,
+    2: common.SchemaID      depend_schema,
+    3: string              field,
+    4: i32                 dimension,
+    5: string              model_endpoint,
+    6: optional string     similarity_metric = "cosine"  // cosine, dot_product, euclidean
+}
+
+struct CreateVectorIndexReq {
+    1: binary              vector_index_name,
+    2: VectorIndex         index,
+}
+
+struct DropVectorIndexReq {
+    1: common.GraphSpaceID space_id,
+    2: binary              vector_index_name,
+}
+
+struct ListVectorIndexesReq {
+}
+
+struct ListVectorIndexesResp {
+    1: common.ErrorCode     code,
+    2: common.HostAddr      leader,
+    3: map<binary, VectorIndex> (cpp.template = "std::unordered_map") indexes,
+}
+
 enum QueryStatus {
     RUNNING         = 0x01,
     KILLING         = 0x02,
@@ -1312,4 +1340,8 @@ service MetaService {
     SaveGraphVersionResp saveGraphVersion(1: SaveGraphVersionReq req)
 
     GetSegmentIdResp getSegmentId(1: GetSegmentIdReq req);
+
+    ExecResp createVectorIndex(1: CreateVectorIndexReq req);
+    ExecResp dropVectorIndex(1: DropVectorIndexReq req);
+    ListVectorIndexesResp listVectorIndexes(1: ListVectorIndexesReq req);
 }

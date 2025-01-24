@@ -262,6 +262,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ClearSpaceValidator>(sentence, context);
     case Sentence::Kind::kUnwind:
       return std::make_unique<UnwindValidator>(sentence, context);
+    case Sentence::Kind::kCreateVectorIndex:
+      return std::make_unique<CreateVectorIndexValidator>(sentence, context);
+    case Sentence::Kind::kDropVectorIndex:
+      return std::make_unique<DropVectorIndexValidator>(sentence, context);
     case Sentence::Kind::kUnknown:
     case Sentence::Kind::kReturn: {
       // nothing

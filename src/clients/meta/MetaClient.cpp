@@ -3894,5 +3894,145 @@ Status MetaClient::saveVersionToMeta() {
   return Status::OK();
 }
 
+folly::Future<StatusOr<IndexID>> MetaClient::createVectorIndex(const std::string& name,
+                                                               const cpp2::VectorIndex& index) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::CreateVectorIndexReq req;
+  req.vector_index_name_ref() = name;
+  req.index_ref() = index;
+
+  folly::Promise<StatusOr<IndexID>> promise;
+  auto future = promise.getFuture();
+
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_createVectorIndex(request); },
+      [](cpp2::ExecResp&& resp) -> IndexID { return resp.get_id().get_index_id(); },
+      std::move(promise),
+      true);  // Added true for toLeader parameter like FTIndex
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::dropVectorIndex(GraphSpaceID space,
+                                                          const std::string& name) {
+  memory::MemoryCheckOffGuard g;
+  cpp2::DropVectorIndexReq req;
+  req.space_id_ref() = space;
+  req.vector_index_name_ref() = name;
+
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_dropVectorIndex(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise),
+      true);  // Added true for toLeader parameter like FTIndex
+  return future;
+}
+
+folly::Future<StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>>>
+MetaClient::listVectorIndexes() {
+  memory::MemoryCheckOffGuard g;
+  cpp2::ListVectorIndexesReq req;
+  folly::Promise<StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>>> promise;
+  auto future = promise.getFuture();
+
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_listVectorIndexes(request); },
+      [](cpp2::ListVectorIndexesResp&& resp) -> decltype(auto) {
+        return std::move(*resp.indexes_ref());
+      },
+      std::move(promise));
+  return future;
+}
+
+// Cache related implementations
+StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>>
+MetaClient::getVectorIndexesFromCache() {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  return metadata.vectorIndexMap_;
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>>
+MetaClient::getVectorIndexBySpaceFromCache(GraphSpaceID spaceId) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  std::unordered_map<std::string, cpp2::VectorIndex> indexes;
+  for (const auto& it : metadata.vectorIndexMap_) {
+    if (it.second.get_space_id() == spaceId) {
+      indexes[it.first] = it.second;
+    }
+  }
+  return indexes;
+}
+
+StatusOr<std::pair<std::string, cpp2::VectorIndex>> MetaClient::getVectorIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId, const std::string& field) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  for (auto& it : metadata.vectorIndexMap_) {
+    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it.second.get_depend_schema().get_edge_type()
+                  : it.second.get_depend_schema().get_tag_id();
+    if (it.second.get_space_id() == spaceId && id == schemaId && it.second.get_field() == field) {
+      return std::make_pair(it.first, it.second);
+    }
+  }
+  return Status::IndexNotFound();
+}
+
+StatusOr<std::unordered_map<std::string, cpp2::VectorIndex>> MetaClient::getVectorIndexFromCache(
+    GraphSpaceID spaceId, int32_t schemaId) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  std::unordered_map<std::string, cpp2::VectorIndex> ret;
+  for (auto& it : metadata.vectorIndexMap_) {
+    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it.second.get_depend_schema().get_edge_type()
+                  : it.second.get_depend_schema().get_tag_id();
+    if (it.second.get_space_id() == spaceId && id == schemaId) {
+      ret[it.first] = it.second;
+    }
+  }
+  return ret;
+}
+
+StatusOr<cpp2::VectorIndex> MetaClient::getVectorIndexByNameFromCache(GraphSpaceID spaceId,
+                                                                      const std::string& name) {
+  memory::MemoryCheckOffGuard g;
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  const auto& metadata = *metadata_.load();
+  if (metadata.vectorIndexMap_.find(name) != metadata.vectorIndexMap_.end() &&
+      metadata.vectorIndexMap_.at(name).get_space_id() != spaceId) {
+    return Status::IndexNotFound();
+  }
+  return metadata.vectorIndexMap_.at(name);
+}
+
 }  // namespace meta
 }  // namespace nebula
