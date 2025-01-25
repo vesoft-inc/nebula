@@ -73,13 +73,12 @@ YIELD id(vertex), score() as similarity;
    - [ ] Test edge cases (invalid space, missing field, etc)
    - [ ] Integration tests
 
-### Phase 2 (In Progress)
+### Phase 2
 1. Expression Support:
    - [x] Add VectorQueryExpression type
    - [x] Add VectorQueryArgument class
    - [x] Add parser support for VECTOR_QUERY
-   - [x] Add expression visitor support
-   - [ ] Add expression rewrite support
+
 
 2. Parser Integration:
    - [x] Add VECTOR_QUERY token
@@ -88,26 +87,36 @@ YIELD id(vertex), score() as similarity;
    - [x] Add lookup_where_clause support
    - [x] Add test cases
 
-3. Elasticsearch Integration:
-   - [ ] Update ES mapping creation for dense_vector
+### Phase 3 (In Progress)
+1. Configuration & Embedding Client (Current)
+   - [ ] Add vector embedding gflags to listener configuration
+   - [ ] Create EmbeddingClient interface
+   - [ ] Implement basic HTTP embedding client
+   - [ ] Add unit tests for embedding client
+
+2. Index Creation Enhancement
+   - [ ] Add dense_vector mapping support in ESAdapter
+   - [ ] Update createIndex flow for vector indexes
+   - [ ] Add vector-specific ES configurations
+   - [ ] Add tests for vector mapping creation
+
+3. ESAdapter Vector Operations
    - [ ] Add script_score query support
-   - [ ] Test ES7 vector similarity search
-   - [ ] Add error handling for ES operations
+   - [ ] Add vector search methods
+   - [ ] Add bulk operation support for vectors
+   - [ ] Add tests for vector operations
 
-4. Listener Enhancement:
-   - [ ] Add embedding model configuration support
-   - [ ] Implement model profile loading
-   - [ ] Add vector conversion in listener
-   - [ ] Add metrics for embedding operations
+4. Listener Enhancement
+   - [ ] Update pickTagAndEdgeData for vector indexes
+   - [ ] Add vector conversion in data pipeline
+   - [ ] Add error handling for embedding operations
+   - [ ] Add tests for vector data writing
 
-5. Configuration:
-   - [ ] Add listener gflags for vector embedding:
-     - [ ] vector_embedding_url
-     - [ ] vector_embedding_auth_token
-     - [ ] vector_embedding_timeout_ms
-     - [ ] vector_embedding_retry_times
-     - [ ] vector_embedding_batch_size
-     - [ ] vector_embedding_concurrency
+5. Query Implementation
+   - [ ] Implement vector similarity search
+   - [ ] Add score normalization
+   - [ ] Add query optimization
+   - [ ] Add integration tests
 
 ### Implementation Notes
 
