@@ -66,6 +66,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ScanEdges";
     case Kind::kFulltextIndexScan:
       return "FulltextIndexScan";
+    case Kind::kVectorIndexScan:
+      return "VectorIndexScan";
     case Kind::kFilter:
       return "Filter";
     case Kind::kUnion:

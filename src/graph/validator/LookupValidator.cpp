@@ -12,6 +12,7 @@
 #include "graph/util/Constants.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/FTIndexUtils.h"
+#include "graph/util/VectorIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/ValidateUtil.h"
 #include "parser/TraverseSentences.h"
@@ -156,7 +157,23 @@ Status LookupValidator::validateWhere() {
   }
 
   auto* filter = whereClause->filter();
-  if (FTIndexUtils::needTextSearch(filter)) {
+  if (VectorIndexUtils::needVectorSearch(filter)) {
+    lookupCtx_->isVectorIndex = true;
+    lookupCtx_->vectorExpr = filter;
+    auto vqExpr = static_cast<VectorQueryExpression*>(filter);
+    auto arg = vqExpr->arg();
+    std::string& index = arg->index();
+    auto metaClient = qctx_->getMetaClient();
+    meta::cpp2::VectorIndex vectorIndex;
+    auto result = metaClient->getVectorIndexFromCache(spaceId(), schemaId());
+    NG_RETURN_IF_ERROR(result);
+    auto indexes = std::move(result).value();
+    auto iter = indexes.find(index);
+    if (iter == indexes.end()) {
+      return Status::Error("Index %s is not found", index.c_str());
+    }
+    vectorIndex = iter->second;
+  } else if (FTIndexUtils::needTextSearch(filter)) {
     lookupCtx_->isFulltextIndex = true;
     lookupCtx_->fulltextExpr = filter;
     auto tsExpr = static_cast<TextSearchExpression*>(filter);

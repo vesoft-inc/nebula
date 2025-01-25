@@ -245,6 +245,25 @@ StatusOr<ESQueryResult> ESAdapter::query(const std::string& index,
   return Status::Error(folly::toJson(resp));
 }
 
+StatusOr<ESQueryResult> ESAdapter::vectorQuery(const std::string& index,
+                                              const std::string& field,
+                                              int64_t topk) {
+  folly::dynamic body = folly::dynamic::object();
+  body["query"] = folly::dynamic::object();
+  body["query"]["script_score"] = folly::dynamic::object();
+  body["query"]["script_score"]["query"] = folly::dynamic::object("match_all", folly::dynamic::object());
+  body["query"]["script_score"]["script"] = folly::dynamic::object();
+  body["query"]["script_score"]["script"]["source"] = 
+      "cosineSimilarity(params.query_vector, '" + field + "') + 1.0";
+  body["query"]["script_score"]["script"]["params"] = folly::dynamic::object();
+  // TODO(weygu): Add vector data to params.query_vector
+  
+  if (topk > 0) {
+    body["size"] = topk;
+  }
+  return ESAdapter::query(index, body, 2000);
+}
+
 std::string ESAdapter::genDocID(const std::string& vid,
                                 const std::string& src,
                                 const std::string& dst,

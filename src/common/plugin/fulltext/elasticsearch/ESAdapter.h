@@ -88,6 +88,10 @@ class ESAdapter {
                                 const folly::dynamic& query,
                                 int64_t timeout);
 
+  virtual StatusOr<ESQueryResult> vectorQuery(const std::string& index,
+                                            const std::string& field,
+                                            int64_t topk);
+
  protected:
   static std::string genDocID(const std::string& vid,
                               const std::string& src,

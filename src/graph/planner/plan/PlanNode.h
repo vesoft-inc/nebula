@@ -45,6 +45,7 @@ class PlanNode {
     kScanVertices,
     kScanEdges,
     kFulltextIndexScan,
+    kVectorIndexScan,
     // direct value
     kValue,
 

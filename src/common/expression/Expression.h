@@ -107,6 +107,8 @@ class Expression {
     kSubscriptRange,
 
     kMatchPathPattern,
+
+    kVectorQuery,
   };
 
   Expression(ObjectPool* pool, Kind kind);

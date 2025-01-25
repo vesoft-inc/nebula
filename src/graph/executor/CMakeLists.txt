@@ -15,6 +15,7 @@ nebula_add_library(
     query/DedupExecutor.cpp
     query/FilterExecutor.cpp
     query/FulltextIndexScanExecutor.cpp
+    query/VectorIndexScanExecutor.cpp
     query/GetEdgesExecutor.cpp
     query/GetNeighborsExecutor.cpp
     query/GetVerticesExecutor.cpp

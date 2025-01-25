@@ -6,7 +6,7 @@ about: Basic vector similarity search using Elasticsearch KNN
 
 # Summary
 
-Add basic vector similarity search support to NebulaGraph by leveraging Elasticsearch's KNN capabilities and existing ES integration infrastructure.
+Add basic vector similarity search support to NebulaGraph by leveraging Elasticsearch's Brute Force and/or KNN capabilities and existing ES integration infrastructure.
 
 # Motivation
 
@@ -22,15 +22,17 @@ Enable simple vector similarity search on string properties by:
 ```ngql
 -- Create vector index on tag/edge property
 CREATE VECTOR INDEX <index_name> ON <tag/edge_name>(<prop_name>) 
-WITH DIMENSION = 128, MODEL = "remote_model_endpoint";
+WITH DIMENSION = <dimension>, MODEL = "<model_profile_name>";
 ```
+
+> Note: we'll have model endpoint, credential, name, etc in config file, and we'll use model name to find the endpoint and credential.
 
 ## Vector Search 
 
 ```ngql
 -- Basic vector similarity search
-LOOKUP ON tag_name
-WHERE VECTOR_QUERY(index_name, "text to convert to vector") 
+LOOKUP ON <tag/edge_name>
+WHERE VECTOR_QUERY(<index_name>, "text to convert to vector") 
 YIELD id(vertex), score() as similarity;
 ```
 
@@ -72,21 +74,28 @@ YIELD id(vertex), score() as similarity;
    - [ ] Integration tests
 
 ### Phase 2 (In Progress)
-1. Storage Service:
-   - [ ] Extend ESListener for vector conversion
-   - [ ] Store vectors in ES dense_vector field
-   - [ ] Basic error handling
+1. Expression Support:
+   - [x] Add VectorQueryExpression type
+   - [x] Add VectorQueryArgument class
+   - [x] Add parser support for VECTOR_QUERY
+   - [x] Add expression visitor support
+   - [ ] Add expression rewrite support
 
-2. Query Processing:
-   - [ ] Add VECTOR_QUERY predicate
-   - [ ] Basic KNN search via ES
-   - [ ] Reuse existing score handling
+2. Parser Integration:
+   - [x] Add VECTOR_QUERY token
+   - [x] Add vector_query_argument grammar
+   - [x] Add vector_query_expression grammar
+   - [x] Add lookup_where_clause support
+   - [x] Add test cases
 
-3. Documentation:
-   - [ ] Add detailed comments explaining VectorIndex fields
-   - [ ] Document similarity metrics options and usage
-   - [ ] Provide example usage in comments
-   - [ ] Update user manual with vector index operations
+3. Parser Tests:
+   - [x] Add tests for CREATE VECTOR INDEX syntax
+   - [x] Add tests for DROP VECTOR INDEX syntax
+   - [x] Add tests for LOOKUP with VECTOR_QUERY syntax
+
+4. Next Steps:
+   - [ ] Add configuration for model endpoints
+   - [ ] Add integration tests
 
 ### Phase 3 (Planned)
 1. Vector Type Support:
@@ -140,6 +149,61 @@ The implementation follows existing index patterns (particularly FTIndex) to mai
 ## Background
 
 To support vector similarity search in Nebula Graph, we need to add vector index functionality. This will allow users to create indexes on vector fields and perform similarity searches efficiently.
+
+## Embedding Service Requirements
+
+### API Compatibility
+- The embedding service must provide an OpenAI-compatible API endpoint
+- The endpoint should accept text input and return vector embeddings
+- The service should support batch processing for efficiency
+
+### API Format
+Request format:
+```json
+{
+  "input": "text to embed",
+  "model": "text-embedding-ada-002",  // Or compatible model
+  "encoding_format": "float"
+}
+```
+
+Response format:
+```json
+{
+  "data": [{
+    "embedding": [0.1, -0.05, ...],  // Vector of floats
+    "index": 0
+  }],
+  "model": "text-embedding-ada-002",
+  "usage": {
+    "prompt_tokens": 5,
+    "total_tokens": 5
+  }
+}
+```
+
+### Configuration
+The following configuration options will be required:
+- `--vector_embedding_url`: URL of the embedding service endpoint
+- `--vector_embedding_key`: API key for authentication (optional)
+- `--vector_embedding_batch_size`: Maximum batch size for embedding requests
+- `--vector_embedding_timeout_ms`: Timeout for embedding requests
+- `--vector_embedding_retry_times`: Number of retries for failed requests
+
+### Error Handling
+The embedding client should handle:
+1. Connection errors (retry with backoff)
+2. Authentication errors
+3. Rate limiting
+4. Invalid input errors
+5. Timeout errors
+
+### Implementation Plan
+1. Create an EmbeddingClient class similar to ESClient
+2. Implement vector conversion in VectorIndexUtils using the client
+3. Add configuration options to nebula-graphd
+4. Add error handling and retry logic
+5. Add metrics for embedding service calls
 
 ## Design Details
 
@@ -261,5 +325,6 @@ The implementation follows existing index patterns (particularly FTIndex) to mai
 
 - Implementation closely follows FTIndex pattern for consistency
 - Current implementation uses STRING type, will be updated to VECTOR type, this is not that important also due to we treat Vector as Index rather than Data.
+- In Elasticsearch 7.17, Brute Force is the only KNN implementation(no ANN), so we cannot use KNN_QUERY but only script_score.
 - Error handling matches existing NebulaGraph patterns
 - Cache implementation aligns with other index types

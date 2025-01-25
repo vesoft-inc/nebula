@@ -17,6 +17,7 @@ nebula_add_library(
     ValidateUtil.cpp
     Utils.cpp
     OptimizerUtils.cpp
+    VectorIndexUtils.cpp
 )
 
 nebula_add_library(

@@ -15,6 +15,7 @@ const char* kVertexID = "VertexID";
 const char* kVertices = "_vertices";
 const char* kEdges = "_edges";
 const char* kScore = "score";
+const char* kDistance = "distance";
 
 }  // namespace graph
 }  // namespace nebula

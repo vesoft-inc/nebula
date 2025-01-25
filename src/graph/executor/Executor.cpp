@@ -74,6 +74,7 @@
 #include "graph/executor/query/ExpandExecutor.h"
 #include "graph/executor/query/FilterExecutor.h"
 #include "graph/executor/query/FulltextIndexScanExecutor.h"
+#include "graph/executor/query/VectorIndexScanExecutor.h"
 #include "graph/executor/query/GetEdgesExecutor.h"
 #include "graph/executor/query/GetNeighborsExecutor.h"
 #include "graph/executor/query/GetVerticesExecutor.h"
@@ -208,6 +209,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kFulltextIndexScan: {
       return pool->makeAndAdd<FulltextIndexScanExecutor>(node, qctx);
+    }
+    case PlanNode::Kind::kVectorIndexScan: {
+      return pool->makeAndAdd<VectorIndexScanExecutor>(node, qctx);
     }
     case PlanNode::Kind::kLimit: {
       stats::StatsManager::addValue(kNumLimitExecutors);

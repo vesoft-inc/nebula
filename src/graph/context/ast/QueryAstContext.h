@@ -127,6 +127,10 @@ struct LookupContext final : public AstContext {
   bool hasScore{false};
   Expression* fulltextExpr{nullptr};
 
+  // vector index
+  bool isVectorIndex{false};
+  Expression* vectorExpr{nullptr};
+
   // order by
 };
 

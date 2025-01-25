@@ -65,6 +65,7 @@ DEFINE_bool(enable_optimizer, false, "Whether to enable optimizer");
 
 #ifndef BUILD_STANDALONE
 DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
+// TODO(weygu): revisit this conf for vector
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
 DEFINE_string(client_white_list,
               nebula::getOriginVersion() + ":3.0.0",

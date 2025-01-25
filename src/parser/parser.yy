@@ -25,6 +25,7 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/CaseExpression.h"
 #include "common/expression/TextSearchExpression.h"
+#include "common/expression/VectorQueryExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
@@ -155,6 +156,7 @@ using namespace nebula;
     nebula::IndexFieldList                 *index_field_list;
     CaseList                               *case_list;
     nebula::TextSearchArgument             *text_search_argument;
+    nebula::VectorQueryArgument            *vector_query_argument;
     nebula::meta::cpp2::ServiceClient      *service_client_item;
     nebula::ServiceClientList              *service_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
@@ -215,7 +217,7 @@ using namespace nebula;
 %token KW_LIST KW_MAP
 %token KW_MERGE KW_DIVIDE KW_RENAME
 %token KW_JOIN KW_LEFT KW_RIGHT KW_OUTER KW_INNER KW_SEMI KW_ANTI
-%token KW_VECTOR KW_DIMENSION KW_MODEL
+%token KW_VECTOR KW_DIMENSION KW_MODEL KW_VECTOR_QUERY
 
 
 
@@ -260,6 +262,8 @@ using namespace nebula;
 %type <expr> list_comprehension_expression
 %type <expr> reduce_expression
 %type <expr> compound_expression
+%type <vector_query_argument> vector_query_argument
+%type <expr> vector_query_expression
 %type <expr> text_search_expression
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
@@ -589,6 +593,7 @@ unreserved_keyword
     | KW_VECTOR             { $$ = new std::string("vector"); }
     | KW_DIMENSION          { $$ = new std::string("dimension"); }
     | KW_MODEL              { $$ = new std::string("model"); }
+    | KW_VECTOR_QUERY       { $$ = new std::string("vector_query"); }
     ;
 
 expression
@@ -2200,7 +2205,23 @@ text_search_expression
 lookup_where_clause
     : %empty { $$ = nullptr; }
     | KW_WHERE text_search_expression { $$ = new WhereClause($2); }
+    | KW_WHERE vector_query_expression { $$ = new WhereClause($2); }
     | KW_WHERE expression { $$ = new WhereClause($2); }
+    ;
+
+vector_query_argument
+    : name_label COMMA STRING {
+        auto args = VectorQueryArgument::make(qctx->objPool(), *$1, *$3);
+        delete $1;
+        delete $3;
+        $$ = args;
+    }
+    ;
+
+vector_query_expression
+    : KW_VECTOR_QUERY L_PAREN vector_query_argument R_PAREN {
+        $$ = VectorQueryExpression::makeQuery(qctx->objPool(), $3);
+    }
     ;
 
 lookup_sentence

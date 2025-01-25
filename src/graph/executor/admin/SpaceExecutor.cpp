@@ -103,6 +103,9 @@ folly::Future<Status> DropSpaceExecutor::execute() {
 
   auto *dsNode = asNode<DropSpace>(node());
 
+  // prepare vector index before drop meta data.
+  // TODO(weygu): implement this
+
   // prepare text search index before drop meta data.
   std::vector<std::string> ftIndexes;
   auto spaceIdRet = qctx()->getMetaClient()->getSpaceIdByNameFromCache(dsNode->getSpaceName());
@@ -188,6 +191,7 @@ folly::Future<Status> ClearSpaceExecutor::execute() {
                        << "' failed: " << resp.status();
           return resp.status();
         }
+        // TODO(weygu): add vector index clear logic here.
         if (!ftIndexes.empty()) {
           auto esAdapterRet = FTIndexUtils::getESAdapter(qctx()->getMetaClient());
           if (!esAdapterRet.ok()) {

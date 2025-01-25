@@ -3259,4 +3259,37 @@ TEST_F(ParserTest, TestSpecialWhiteSpaceChar) {
   }
 }
 
+TEST_F(ParserTest, VectorIndex) {
+  {
+    // Basic create vector index
+    std::string query = "CREATE VECTOR INDEX i1 ON t1(str) WITH DIMENSION = 1536, MODEL = \"foo\"";
+    auto result = parse(query);
+    EXPECT_TRUE(result.ok()) << result.status();
+  }
+  {
+    // Create with invalid dimension
+    std::string query = "CREATE VECTOR INDEX i1 ON t1(str) WITH DIMENSION = -1, MODEL = \"bar\"";
+    auto result = parse(query);
+    EXPECT_FALSE(result.ok()) << result.status();
+  }
+  {
+    // Create without required MODEL
+    std::string query = "CREATE VECTOR INDEX i1 ON t1(str) WITH DIMENSION = 1536";
+    auto result = parse(query);
+    EXPECT_FALSE(result.ok()) << result.status();
+  }
+  {
+    // Drop vector index
+    std::string query = "DROP VECTOR INDEX i1";
+    auto result = parse(query);
+    EXPECT_TRUE(result.ok()) << result.status();
+  }
+  {
+    // Basic lookup with vector query
+    std::string query = "LOOKUP ON t1 WHERE VECTOR_QUERY(abc, \"sample text\")";
+    auto result = parse(query);
+    EXPECT_TRUE(result.ok()) << result.status();
+  }
+}
+
 }  // namespace nebula

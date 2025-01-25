@@ -1087,5 +1087,18 @@ PlanNode* ValueNode::clone() const {
   return ValueNode::make(qctx_, nullptr, value_);
 }
 
+PlanNode* VectorIndexScan::clone() const {
+  auto* newVectorIndexScan = VectorIndexScan::make(qctx_, searchExpr_, isEdge_, schemaId_);
+  newVectorIndexScan->setOffset(offset_);
+  return newVectorIndexScan;
+}
+
+std::unique_ptr<PlanNodeDescription> VectorIndexScan::explain() const {
+  auto desc = Explore::explain();
+  addDescription("isEdge", folly::to<std::string>(isEdge_), desc.get());
+  addDescription("schemaId", folly::to<std::string>(schemaId_), desc.get());
+  return desc;
+}
+
 }  // namespace graph
 }  // namespace nebula

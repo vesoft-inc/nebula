@@ -25,6 +25,7 @@ namespace graph {
 //  GetEdges,
 //  IndexScan
 //  FulltextIndexScan
+//  VectorIndexScan
 class Explore : public SingleInputNode {
  public:
   GraphSpaceID space() const {
@@ -2074,6 +2075,60 @@ class ValueNode : public SingleInputNode {
 
  private:
   DataSet value_;
+};
+
+class VectorIndexScan : public Explore {
+ public:
+  static VectorIndexScan* make(QueryContext* qctx,
+                              VectorQueryExpression* searchExpr,
+                              bool isEdge,
+                              int32_t schemaId) {
+    return qctx->objPool()->makeAndAdd<VectorIndexScan>(qctx, searchExpr, isEdge, schemaId);
+  }
+
+  VectorQueryExpression* searchExpression() const {
+    return searchExpr_;
+  }
+
+  bool isEdge() const {
+    return isEdge_;
+  }
+
+  int64_t getValidOffset() const {
+    return offset_ >= 0 ? offset_ : 0;
+  }
+
+  int64_t offset() const {
+    return offset_;
+  }
+
+  void setOffset(int64_t offset) {
+    offset_ = offset;
+  }
+
+  int32_t schemaId() const {
+    return schemaId_;
+  }
+
+  PlanNode* clone() const override;
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ protected:
+  friend ObjectPool;
+  VectorIndexScan(QueryContext* qctx,
+                  VectorQueryExpression* searchExpr,
+                  bool isEdge,
+                  int32_t schemaId)
+      : Explore(qctx, Kind::kVectorIndexScan, nullptr, 0, false, -1, nullptr, {}),
+        searchExpr_(searchExpr),
+        isEdge_(isEdge),
+        schemaId_(schemaId) {}
+
+  VectorQueryExpression* searchExpr_{nullptr};
+  bool isEdge_{false};
+  int64_t offset_{-1};
+  int32_t schemaId_;
 };
 
 }  // namespace graph

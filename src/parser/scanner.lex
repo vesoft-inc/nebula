@@ -299,6 +299,10 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "SIGN"                      { return TokenType::KW_SIGN; }
 "SERVICE"                   { return TokenType::KW_SERVICE; }
 "TEXT_SEARCH"               { return TokenType::KW_TEXT_SEARCH; }
+"VECTOR"                    { return TokenType::KW_VECTOR; }
+"DIMENSION"                 { return TokenType::KW_DIMENSION; }
+"MODEL"                     { return TokenType::KW_MODEL; }
+"VECTOR_QUERY"              { return TokenType::KW_VECTOR_QUERY; }
 "RESET"                     { return TokenType::KW_RESET; }
 "PLAN"                      { return TokenType::KW_PLAN; }
 "COMMENT"                   { return TokenType::KW_COMMENT; }
@@ -584,10 +588,6 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
                                  */
                                 // throw GraphParser::syntax_error(*yylloc, "char illegal");
                             }
-
-"VECTOR"                    { return TokenType::KW_VECTOR; }
-"DIMENSION"                 { return TokenType::KW_DIMENSION; }
-"MODEL"                     { return TokenType::KW_MODEL; }
 
 %%
 /* Flex user code section */

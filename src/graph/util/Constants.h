@@ -16,6 +16,7 @@ extern const char* kVertexID;
 extern const char* kVertices;
 extern const char* kEdges;
 extern const char* kScore;
+extern const char* kDistance;
 
 }  // namespace graph
 }  // namespace nebula
