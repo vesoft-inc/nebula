@@ -88,14 +88,119 @@ YIELD id(vertex), score() as similarity;
    - [x] Add lookup_where_clause support
    - [x] Add test cases
 
-3. Parser Tests:
-   - [x] Add tests for CREATE VECTOR INDEX syntax
-   - [x] Add tests for DROP VECTOR INDEX syntax
-   - [x] Add tests for LOOKUP with VECTOR_QUERY syntax
+3. Elasticsearch Integration:
+   - [ ] Update ES mapping creation for dense_vector
+   - [ ] Add script_score query support
+   - [ ] Test ES7 vector similarity search
+   - [ ] Add error handling for ES operations
 
-4. Next Steps:
-   - [ ] Add configuration for model endpoints
-   - [ ] Add integration tests
+4. Listener Enhancement:
+   - [ ] Add embedding model configuration support
+   - [ ] Implement model profile loading
+   - [ ] Add vector conversion in listener
+   - [ ] Add metrics for embedding operations
+
+5. Configuration:
+   - [ ] Add listener gflags for vector embedding:
+     - [ ] vector_embedding_url
+     - [ ] vector_embedding_auth_token
+     - [ ] vector_embedding_timeout_ms
+     - [ ] vector_embedding_retry_times
+     - [ ] vector_embedding_batch_size
+     - [ ] vector_embedding_concurrency
+
+### Implementation Notes
+
+1. ESListener Enhancement:
+```cpp
+// Key changes to ESListener
+class ESListener {
+private:
+    // Add vector index support to existing pickTagAndEdgeData
+    void pickTagAndEdgeData(BatchLogType type,
+                           const std::string& key,
+                           const std::string& value,
+                           const PickFunc& callback) {
+        // Existing fulltext index handling...
+        auto ftIndexes = getFTIndexes(...);
+        
+        // Add vector index handling
+        auto vectorIndexes = getVectorIndexes(...);
+        for (auto& index : vectorIndexes) {
+            if (type == BatchLogType::OP_BATCH_PUT) {
+                // Get text value from field
+                auto text = reader->getValueByName(index.second.get_field());
+                if (text.type() != Value::Type::STRING) {
+                    continue;
+                }
+                
+                // Get embedding from model service
+                auto embedding = getEmbedding(text.getStr(), 
+                                           index.second.get_model_name(),
+                                           index.second.get_dimension());
+                
+                // Add to ES bulk request
+                data["vector_field"] = embedding;
+                data["text_field"] = text.getStr();  // Store original text too
+            }
+            callback(type, indexName, vid, src, dst, rank, std::move(data));
+        }
+    }
+
+    // Add embedding client support
+    StatusOr<std::vector<float>> getEmbedding(
+        const std::string& text,
+        const std::string& modelName,
+        int32_t dimension) {
+        // Use configured embedding service
+        return embeddingClient_->getEmbedding(text);
+    }
+
+private:
+    // Add new member for embedding client
+    std::unique_ptr<EmbeddingClient> embeddingClient_;
+};
+
+// New embedding client interface
+class EmbeddingClient {
+public:
+    virtual ~EmbeddingClient() = default;
+    
+    virtual StatusOr<std::vector<float>> getEmbedding(
+        const std::string& text) = 0;
+        
+    virtual StatusOr<std::vector<std::vector<float>>> batchGetEmbeddings(
+        const std::vector<std::string>& texts) = 0;
+};
+```
+
+2. ESAdapter Enhancement:
+```cpp
+class ESAdapter {
+public:
+    // Add vector mapping support
+    Status createIndex(const std::string& index, 
+                      const meta::cpp2::VectorIndex* vectorIndex = nullptr) {
+        if (vectorIndex != nullptr) {
+            // Create mapping with dense_vector
+            return createVectorMapping(index, 
+                                    vectorIndex->get_dimension(),
+                                    vectorIndex->get_similarity_metric());
+        }
+        // Existing fulltext mapping creation
+        return createFulltextMapping(index);
+    }
+
+    // Add vector search support
+    Status vectorSearch(const std::string& index,
+                       const std::string& field,
+                       const std::vector<float>& vector,
+                       int32_t topK = 10) {
+        // Use script_score query
+        return scriptScoreQuery(index, field, vector, topK);
+    }
+};
+```
 
 ### Phase 3 (Planned)
 1. Vector Type Support:
@@ -297,8 +402,6 @@ The implementation follows existing index patterns (particularly FTIndex) to mai
 - [x] ListAndDropVectorIndexTest
 
 ### Future Tests
-- [ ] Performance tests
-- [ ] Stress tests
 - [ ] Integration tests with storage service
 - [ ] Compatibility tests
 

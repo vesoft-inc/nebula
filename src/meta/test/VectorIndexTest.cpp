@@ -66,7 +66,7 @@ TEST_F(VectorIndexTest, CreateVectorIndexTest) {
     cpp2::VectorIndex index;
     index.space_id_ref() = spaceId;
     index.dimension_ref() = 128;
-    index.model_endpoint_ref() = "http://embedding-model:8000";
+    index.model_name_ref() = "openai-ada";
     index.field_ref() = "col_text";
     nebula::cpp2::SchemaID schemaId;
     schemaId.tag_id_ref() = tagId;
@@ -97,7 +97,7 @@ TEST_F(VectorIndexTest, CreateVectorIndexWithInvalidFieldTest) {
     cpp2::VectorIndex index;
     index.space_id_ref() = spaceId;
     index.dimension_ref() = 128;
-    index.model_endpoint_ref() = "http://embedding-model:8000";
+    index.model_name_ref() = "openai-ada";
     index.field_ref() = "non_existent_field";  // Invalid field
     nebula::cpp2::SchemaID schemaId;
     schemaId.tag_id_ref() = tagId;
@@ -146,7 +146,7 @@ TEST_F(VectorIndexTest, ListAndDropVectorIndexTest) {
     cpp2::VectorIndex index;
     index.space_id_ref() = spaceId;
     index.dimension_ref() = 128;
-    index.model_endpoint_ref() = "http://embedding-model:8000";
+    index.model_name_ref() = "openai-ada";
     index.field_ref() = "col_text";
     nebula::cpp2::SchemaID schemaId;
     schemaId.tag_id_ref() = tagId;

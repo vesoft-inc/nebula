@@ -522,7 +522,7 @@ std::string CreateVectorIndexSentence::toString() const {
   buf += ") WITH DIMENSION = ";
   buf += std::to_string(dimension_);
   buf += ", MODEL = \"";
-  buf += *modelEndpoint_;
+  buf += *modelName_;
   buf += "\"";
   return buf;
 }

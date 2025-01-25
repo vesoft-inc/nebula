@@ -1072,7 +1072,7 @@ struct VectorIndex {
     2: common.SchemaID      depend_schema,
     3: string              field,
     4: i32                 dimension,
-    5: string              model_endpoint,
+    5: string              model_name,
     6: optional string     similarity_metric = "cosine"  // cosine, dot_product, euclidean
 }
 

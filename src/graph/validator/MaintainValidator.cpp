@@ -706,7 +706,7 @@ Status CreateVectorIndexValidator::validateImpl() {
   index_.depend_schema_ref() = std::move(id);
   index_.field_ref() = *sentence->fieldName();
   index_.dimension_ref() = sentence->dimension();
-  index_.model_endpoint_ref() = *sentence->modelEndpoint();
+  index_.model_name_ref() = *sentence->modelName();
 
   return Status::OK();
 }

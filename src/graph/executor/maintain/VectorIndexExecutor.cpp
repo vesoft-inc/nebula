@@ -61,7 +61,7 @@ folly::Future<Status> ShowVectorIndexesExecutor::execute() {
         auto indexes = std::move(resp).value();
         DataSet dataSet;
         dataSet.colNames = {
-            "Name", "Schema Type", "Schema Name", "Field", "Dimension", "Model Endpoint"};
+            "Name", "Schema Type", "Schema Name", "Field", "Dimension", "Model Name"};
         for (auto& index : indexes) {
           if (index.second.get_space_id() != spaceId) {
             continue;
@@ -82,7 +82,7 @@ folly::Future<Status> ShowVectorIndexesExecutor::execute() {
           row.values.emplace_back(std::move(shmNameRet).value());      // Schema Name
           row.values.emplace_back(index.second.get_field());           // Field
           row.values.emplace_back(index.second.get_dimension());       // Dimension
-          row.values.emplace_back(index.second.get_model_endpoint());  // Model Endpoint
+          row.values.emplace_back(index.second.get_model_name());  // Model Name
           dataSet.rows.emplace_back(std::move(row));
         }
         return finish(ResultBuilder()

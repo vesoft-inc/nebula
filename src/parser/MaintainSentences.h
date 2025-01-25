@@ -1223,12 +1223,12 @@ class CreateVectorIndexSentence final : public Sentence {
     return dimension_;
   }
 
-  void setModelEndpoint(std::string *endpoint) {
-    modelEndpoint_.reset(endpoint);
+  void setModelName(std::string *name) {
+    modelName_.reset(name);
   }
 
-  const std::string *modelEndpoint() const {
-    return modelEndpoint_.get();
+  const std::string *modelName() const {
+    return modelName_.get();
   }
 
   std::string toString() const override;
@@ -1237,7 +1237,7 @@ class CreateVectorIndexSentence final : public Sentence {
   std::unique_ptr<std::string> indexName_;
   std::unique_ptr<std::string> schemaName_;
   std::unique_ptr<std::string> fieldName_;
-  std::unique_ptr<std::string> modelEndpoint_;
+  std::unique_ptr<std::string> modelName_;
   int32_t dimension_{128};  // Default dimension
 };
 

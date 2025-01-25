@@ -4126,7 +4126,7 @@ create_vector_index_sentence
       KW_MODEL ASSIGN STRING {
         auto sentence = new CreateVectorIndexSentence($4, $6, $8);
         sentence->setDimension($13);
-        sentence->setModelEndpoint($17);
+        sentence->setModelName($17);
         $$ = sentence;
     }
     ;
