@@ -41,6 +41,7 @@ YIELD id(vertex), score() as similarity;
 ## Implementation Status
 
 ### Phase 1 (Completed)
+
 1. Meta Service:
    - [x] Add vector index metadata to MetaKeyUtils
      - [x] Add to tableMaps
@@ -74,6 +75,7 @@ YIELD id(vertex), score() as similarity;
    - [ ] Integration tests
 
 ### Phase 2
+
 1. Expression Support:
    - [x] Add VectorQueryExpression type
    - [x] Add VectorQueryArgument class
@@ -88,13 +90,16 @@ YIELD id(vertex), score() as similarity;
    - [x] Add test cases
 
 ### Phase 3 (In Progress)
-1. Configuration & Embedding Client (Current)
-   - [ ] Add vector embedding gflags to listener configuration
-   - [ ] Create EmbeddingClient interface
-   - [ ] Implement basic HTTP embedding client
-   - [ ] Add unit tests for embedding client
 
-2. Index Creation Enhancement
+1. Configuration & Embedding Client (Completed)
+   - [x] Add vector embedding gflags to listener configuration
+   - [x] Create EmbeddingClient interface
+   - [x] Implement basic HTTP embedding client with token-based auth
+   - [x] Add comprehensive unit tests for embedding client
+   - [x] Add proper error handling and response validation
+   - [x] Add batch processing support
+
+2. Index Creation Enhancement (Next)
    - [ ] Add dense_vector mapping support in ESAdapter
    - [ ] Update createIndex flow for vector indexes
    - [ ] Add vector-specific ES configurations
@@ -120,7 +125,56 @@ YIELD id(vertex), score() as similarity;
 
 ### Implementation Notes
 
-1. ESListener Enhancement:
+1. Embedding Client Implementation:
+
+```cpp
+// Abstract embedding client interface
+class EmbeddingClient {
+public:
+    virtual ~EmbeddingClient() = default;
+    
+    // Get embedding for single text
+    virtual StatusOr<std::vector<float>> getEmbedding(
+        const std::string& text,
+        const std::string& modelName) = 0;
+        
+    // Get embeddings for multiple texts in batch
+    virtual StatusOr<std::vector<std::vector<float>>> batchGetEmbeddings(
+        const std::vector<std::string>& texts,
+        const std::string& modelName) = 0;
+};
+
+// HTTP-based implementation with token auth
+class HttpEmbeddingClient : public EmbeddingClient {
+public:
+    explicit HttpEmbeddingClient(std::shared_ptr<HttpClient> client,
+                                const std::string& url = FLAGS_vector_embedding_url,
+                                const std::string& authToken = FLAGS_vector_embedding_auth_token)
+        : client_(client)
+        , url_(url)
+        , authToken_(authToken) {}
+
+protected:
+    // Helper method to prepare headers with auth token
+    std::vector<std::string> prepareHeaders() const {
+        std::vector<std::string> headers{"Content-Type: application/json"};
+        if (!authToken_.empty()) {
+            headers.emplace_back("Authorization: Bearer " + authToken_);
+        }
+        return headers;
+    }
+
+private:
+    std::shared_ptr<HttpClient> client_;
+    std::string url_;
+    std::string authToken_;
+};
+```
+
+
+
+2. ESListener Enhancement:
+
 ```cpp
 // Key changes to ESListener
 class ESListener {
@@ -162,28 +216,17 @@ private:
         const std::string& modelName,
         int32_t dimension) {
         // Use configured embedding service
-        return embeddingClient_->getEmbedding(text);
+        return embeddingClient_->getEmbedding(text, modelName);
     }
 
 private:
     // Add new member for embedding client
     std::unique_ptr<EmbeddingClient> embeddingClient_;
 };
-
-// New embedding client interface
-class EmbeddingClient {
-public:
-    virtual ~EmbeddingClient() = default;
-    
-    virtual StatusOr<std::vector<float>> getEmbedding(
-        const std::string& text) = 0;
-        
-    virtual StatusOr<std::vector<std::vector<float>>> batchGetEmbeddings(
-        const std::vector<std::string>& texts) = 0;
-};
 ```
 
-2. ESAdapter Enhancement:
+3. ESAdapter Enhancement:
+
 ```cpp
 class ESAdapter {
 public:
@@ -211,7 +254,26 @@ public:
 };
 ```
 
+### Configuration
+
+The following configuration options are now implemented:
+- `--vector_embedding_url`: URL of the embedding service endpoint
+- `--vector_embedding_auth_token`: Bearer token for authentication
+- `--vector_embedding_batch_size`: Maximum batch size for embedding requests
+- `--vector_embedding_timeout_ms`: Timeout for embedding requests
+- `--vector_embedding_retry_times`: Number of retries for failed requests
+
+### Testing Status
+- [x] Basic embedding client tests
+- [x] Error handling tests
+- [x] Authentication header verification
+- [x] Batch processing tests
+- [x] Mock HTTP client implementation
+- [x] JSON response parsing tests
+
+
 ### Phase 3 (Planned)
+
 1. Vector Type Support:
    - [ ] Add native VECTOR type
    - [ ] Update schema validation for vector fields

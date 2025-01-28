@@ -629,6 +629,7 @@ nebula::cpp2::ErrorCode QueryBaseProcessor<REQ, RESP>::checkExp(
     case Expression::Kind::kPathBuild:
     case Expression::Kind::kColumn:
     case Expression::Kind::kESQUERY:
+    case Expression::Kind::kVectorQuery:
     case Expression::Kind::kAggregate:
     case Expression::Kind::kSubscriptRange:
     case Expression::Kind::kVersionedVar:

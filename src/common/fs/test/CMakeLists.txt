@@ -5,8 +5,8 @@
 nebula_add_test(
     NAME file_utils_test
     SOURCES FileUtilsTest.cpp
-    OBJECTS $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:base_obj>
-    LIBRARIES gtest
+    OBJECTS $<TARGET_OBJECTS:base_obj> $<TARGET_OBJECTS:fs_obj> $<TARGET_OBJECTS:conf_obj>
+    LIBRARIES gtest gtest_main
 )
 
 nebula_add_test(
