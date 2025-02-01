@@ -277,26 +277,5 @@ Status Configuration::forEachItem(
   return Status::OK();
 }
 
-// Vector embedding service configurations
-DEFINE_string(vector_embedding_url,
-              "http://localhost:8000",
-              "URL for embedding service endpoint");
-
-DEFINE_string(vector_embedding_auth_token,
-              "",
-              "Auth token for embedding service");
-
-DEFINE_int32(vector_embedding_timeout_ms,
-             5000,
-             "Timeout in milliseconds for embedding requests");
-
-DEFINE_int32(vector_embedding_retry_times,
-             3,
-             "Number of retry attempts for failed requests");
-
-DEFINE_int32(vector_embedding_batch_size,
-             32,
-             "Maximum batch size for embedding requests");
-
 }  // namespace conf
 }  // namespace nebula

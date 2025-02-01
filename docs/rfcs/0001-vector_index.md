@@ -99,166 +99,31 @@ YIELD id(vertex), score() as similarity;
    - [x] Add proper error handling and response validation
    - [x] Add batch processing support
 
-2. Index Creation Enhancement (Next)
+2. Index Creation Enhancement (Completed)
    - [x] Add createVectorIndex interface with dense_vector in ESAdapter
-   - [ ] Add vector-specific ES configurations
+   - [x] Add vector-specific ES configurations
    - [ ] Add tests for vector mapping creation
 
-3. ESAdapter Vector Operations
+3. ESAdapter Vector Operations(Completed)
    - [x] Add script_score query support
    - [x] Add vector search methods
    - [x] Add bulk operation support for vectors
    - [ ] Add tests for vector operations
 
-4. Listener Enhancement
+4. Listener Enhancement upon fulltext listener(On going)
    - [x] Update pickTagAndEdgeData for vector indexes
    - [x] Add vector conversion in data pipeline
-   - [ ] Add error handling for embedding operations
    - [ ] Add tests for vector data writing
 
-5. Query Implementation
+5. Query Implementation(On going)
    - [x] Implement vector similarity search
    - [ ] Add score normalization
    - [ ] Add query optimization
    - [ ] Add integration tests
 
-### Implementation Notes
-
-1. Embedding Client Implementation:
-
-```cpp
-// Abstract embedding client interface
-class EmbeddingClient {
-public:
-    virtual ~EmbeddingClient() = default;
-    
-    // Get embedding for single text
-    virtual StatusOr<std::vector<float>> getEmbedding(
-        const std::string& text,
-        const std::string& modelName) = 0;
-        
-    // Get embeddings for multiple texts in batch
-    virtual StatusOr<std::vector<std::vector<float>>> batchGetEmbeddings(
-        const std::vector<std::string>& texts,
-        const std::string& modelName) = 0;
-};
-
-// HTTP-based implementation with token auth
-class HttpEmbeddingClient : public EmbeddingClient {
-public:
-    explicit HttpEmbeddingClient(std::shared_ptr<HttpClient> client,
-                                const std::string& url = FLAGS_vector_embedding_url,
-                                const std::string& authToken = FLAGS_vector_embedding_auth_token)
-        : client_(client)
-        , url_(url)
-        , authToken_(authToken) {}
-
-protected:
-    // Helper method to prepare headers with auth token
-    std::vector<std::string> prepareHeaders() const {
-        std::vector<std::string> headers{"Content-Type: application/json"};
-        if (!authToken_.empty()) {
-            headers.emplace_back("Authorization: Bearer " + authToken_);
-        }
-        return headers;
-    }
-
-private:
-    std::shared_ptr<HttpClient> client_;
-    std::string url_;
-    std::string authToken_;
-};
-```
-
-2. ESListener Enhancement:
-
-```cpp
-// Key changes to ESListener
-class ESListener {
-private:
-    // Add vector index support to existing pickTagAndEdgeData
-    void pickTagAndEdgeData(BatchLogType type,
-                           const std::string& key,
-                           const std::string& value,
-                           const PickFunc& callback) {
-        // Existing fulltext index handling...
-        auto ftIndexes = getFTIndexes(...);
-        
-        // Add vector index handling
-        auto vectorIndexes = getVectorIndexes(...);
-        for (auto& index : vectorIndexes) {
-            if (type == BatchLogType::OP_BATCH_PUT) {
-                // Get text value from field
-                auto text = reader->getValueByName(index.second.get_field());
-                if (text.type() != Value::Type::STRING) {
-                    continue;
-                }
-                
-                // Get embedding from model service
-                auto embedding = getEmbedding(text.getStr(), 
-                                           index.second.get_model_name(),
-                                           index.second.get_dimension());
-                
-                // Add to ES bulk request
-                data["vector_field"] = embedding;
-                data["text_field"] = text.getStr();  // Store original text too
-            }
-            callback(type, indexName, vid, src, dst, rank, std::move(data));
-        }
-    }
-
-    // Add embedding client support
-    StatusOr<std::vector<float>> getEmbedding(
-        const std::string& text,
-        const std::string& modelName,
-        int32_t dimension) {
-        // Use configured embedding service
-        return embeddingClient_->getEmbedding(text, modelName);
-    }
-
-private:
-    // Add new member for embedding client
-    std::unique_ptr<EmbeddingClient> embeddingClient_;
-};
-```
-
-3. ESAdapter Enhancement:
-
-```cpp
-class ESAdapter {
-public:
-    // Add vector mapping support
-    Status createIndex(const std::string& index, 
-                      const meta::cpp2::VectorIndex* vectorIndex = nullptr) {
-        if (vectorIndex != nullptr) {
-            // Create mapping with dense_vector
-            return createVectorMapping(index, 
-                                    vectorIndex->get_dimension(),
-                                    vectorIndex->get_similarity_metric());
-        }
-        // Existing fulltext mapping creation
-        return createFulltextMapping(index);
-    }
-
-    // Add vector search support
-    Status vectorSearch(const std::string& index,
-                       const std::string& field,
-                       const std::vector<float>& vector,
-                       int32_t topK = 10) {
-        // Use script_score query
-        return scriptScoreQuery(index, field, vector, topK);
-    }
-};
-```
-
 ### Configuration
 
-The following configuration options are now implemented:
-- `--vector_embedding_url`: URL of the embedding service endpoint
-- `--vector_embedding_auth_token`: Bearer token for authentication
-- `--vector_embedding_batch_size`: Maximum batch size for embedding requests
-- `--vector_embedding_timeout_ms`: Timeout for embedding requests
-- `--vector_embedding_retry_times`: Number of retries for failed requests
+<TODO>
 
 ### Testing Status
 - [x] Basic embedding client tests
@@ -355,23 +220,8 @@ Response format:
 }
 ```
 
-### Configuration
-The following configuration options will be required:
-- `--vector_embedding_url`: URL of the embedding service endpoint
-- `--vector_embedding_key`: API key for authentication (optional)
-- `--vector_embedding_batch_size`: Maximum batch size for embedding requests
-- `--vector_embedding_timeout_ms`: Timeout for embedding requests
-- `--vector_embedding_retry_times`: Number of retries for failed requests
-
-### Error Handling
-The embedding client should handle:
-1. Connection errors (retry with backoff)
-2. Authentication errors
-3. Rate limiting
-4. Invalid input errors
-5. Timeout errors
-
 ### Implementation Plan
+
 1. Create an EmbeddingClient class similar to ESClient
 2. Implement vector conversion in VectorIndexUtils using the client
 3. Add configuration options to nebula-graphd
@@ -432,31 +282,6 @@ struct ListVectorIndexesResp {
 - [x] Basic CRUD operation tests
 - [x] Error case testing
 - [x] Full workflow testing
-
-### TODO
-
-#### Documentation
-- [ ] Add detailed comments explaining VectorIndex fields
-- [ ] Document similarity metrics options and usage
-- [ ] Provide example usage in comments
-- [ ] Update user manual with vector index operations
-
-#### Future Enhancements
-1. Vector Type Support
-   - [ ] Add native VECTOR type
-   - [ ] Update schema validation for vector fields
-   - [ ] Add dimension validation
-
-2. Index Features
-   - [ ] Add more similarity metrics
-   - [ ] Support configurable index parameters
-   - [ ] Add bulk operations
-   - [ ] Add index status tracking
-
-3. Performance
-   - [ ] Add benchmarking tests
-   - [ ] Optimize similarity search
-   - [ ] Add caching strategies
 
 ## Compatibility
 
