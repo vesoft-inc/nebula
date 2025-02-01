@@ -100,25 +100,24 @@ YIELD id(vertex), score() as similarity;
    - [x] Add batch processing support
 
 2. Index Creation Enhancement (Next)
-   - [ ] Add dense_vector mapping support in ESAdapter
-   - [ ] Update createIndex flow for vector indexes
+   - [x] Add createVectorIndex interface with dense_vector in ESAdapter
    - [ ] Add vector-specific ES configurations
    - [ ] Add tests for vector mapping creation
 
 3. ESAdapter Vector Operations
-   - [ ] Add script_score query support
-   - [ ] Add vector search methods
-   - [ ] Add bulk operation support for vectors
+   - [x] Add script_score query support
+   - [x] Add vector search methods
+   - [x] Add bulk operation support for vectors
    - [ ] Add tests for vector operations
 
 4. Listener Enhancement
-   - [ ] Update pickTagAndEdgeData for vector indexes
-   - [ ] Add vector conversion in data pipeline
+   - [x] Update pickTagAndEdgeData for vector indexes
+   - [x] Add vector conversion in data pipeline
    - [ ] Add error handling for embedding operations
    - [ ] Add tests for vector data writing
 
 5. Query Implementation
-   - [ ] Implement vector similarity search
+   - [x] Implement vector similarity search
    - [ ] Add score normalization
    - [ ] Add query optimization
    - [ ] Add integration tests
@@ -170,8 +169,6 @@ private:
     std::string authToken_;
 };
 ```
-
-
 
 2. ESListener Enhancement:
 

@@ -63,6 +63,7 @@ set(tools_test_deps
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:embedding_client_obj>
 )
 
 if(NOT ENABLE_STANDALONE_VERSION)

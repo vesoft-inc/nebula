@@ -113,6 +113,8 @@ class SchemaManager {
 
   virtual StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::FTIndex>> getFTIndex(
       GraphSpaceID spaceId, int32_t schemaId) = 0;
+  virtual StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::VectorIndex>> getVectorIndex(
+      GraphSpaceID spaceId, int32_t schemaId) = 0;
 
  protected:
   SchemaManager() = default;

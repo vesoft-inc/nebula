@@ -47,6 +47,7 @@ set(LISTENER_TEST_LIBS
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:es_adapter_obj>
+    $<TARGET_OBJECTS:embedding_client_obj>
 )
 
 nebula_add_test(
@@ -60,7 +61,10 @@ nebula_add_test(
         ${THRIFT_LIBRARIES}
         ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${NEBULA_GFLAGS_LIBS}
         wangle
         gtest
+        gtest_main
+        gmock
         curl
 )

@@ -13,6 +13,13 @@ nebula_add_library(
     RateLimiter.cpp
 )
 
+target_link_libraries(kvstore_obj
+    PUBLIC
+        base_obj
+        fs_obj
+        embedding_client_obj
+)
+
 nebula_add_library(
     disk_man_obj OBJECT
     DiskManager.cpp

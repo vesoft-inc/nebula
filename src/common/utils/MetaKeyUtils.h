@@ -487,7 +487,8 @@ class MetaKeyUtils final {
   static std::tuple<HostAddr, meta::cpp2::JobStatus, int64_t, int64_t, nebula::cpp2::ErrorCode>
   parseTaskVal(folly::StringPiece rawVal);
 
-  static constexpr char kVectorIndexesTable[] = "__vector_indexes__";  // New table
+  // Vector index related methods and constants
+  static constexpr char kVectorIndexesTable[] = "__vector_indexes__";  // NOLINT
 
   static const std::string& vectorIndexPrefix();
 

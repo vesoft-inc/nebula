@@ -8,4 +8,14 @@ nebula_add_library(
     elasticsearch/ESListener.cpp
 )
 
+target_link_libraries(listener_obj
+    PUBLIC
+        base_obj
+        kvstore_obj
+        es_adapter_obj
+        http_client_obj
+        embedding_client_obj
+        ${NEBULA_GFLAGS_LIBS}
+)
+
 nebula_add_subdirectory(test)

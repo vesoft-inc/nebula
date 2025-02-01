@@ -57,6 +57,41 @@ void ESBulk::delete_(const std::string& indexName,
   documents_[indexName].emplace_back(std::move(action));
 }
 
+void ESBulk::putVector(const std::string& indexName,
+                      const std::string& vid,
+                      const std::string& src,
+                      const std::string& dst,
+                      int64_t rank,
+                      const std::string& field,
+                      const std::string& text,
+                      const std::vector<float>& vector) {
+    folly::dynamic action = folly::dynamic::object();
+    folly::dynamic metadata = folly::dynamic::object();
+    folly::dynamic body = folly::dynamic::object();
+
+    auto docId = ESAdapter::genDocID(vid, src, dst, rank);
+    metadata["_id"] = docId;
+    metadata["_type"] = "_doc";
+    metadata["_index"] = indexName;
+    action["index"] = std::move(metadata);
+
+    body["vid"] = vid;
+    body["src"] = src;
+    body["dst"] = dst;
+    body["rank"] = rank;
+    body[field] = text;  // Store original text
+
+    // Convert vector to dynamic array
+    folly::dynamic vectorArray = folly::dynamic::array;
+    for (const auto& value : vector) {
+        vectorArray.push_back(value);
+    }
+    body[field + "_vector"] = std::move(vectorArray);
+
+    documents_[indexName].emplace_back(std::move(action));
+    documents_[indexName].emplace_back(std::move(body));
+}
+
 bool ESBulk::empty() {
   return documents_.empty();
 }
@@ -251,13 +286,14 @@ StatusOr<ESQueryResult> ESAdapter::vectorQuery(const std::string& index,
   folly::dynamic body = folly::dynamic::object();
   body["query"] = folly::dynamic::object();
   body["query"]["script_score"] = folly::dynamic::object();
-  body["query"]["script_score"]["query"] = folly::dynamic::object("match_all", folly::dynamic::object());
+  body["query"]["script_score"]["query"] = folly::dynamic::object(
+    "match_all", folly::dynamic::object());
   body["query"]["script_score"]["script"] = folly::dynamic::object();
-  body["query"]["script_score"]["script"]["source"] = 
+  body["query"]["script_score"]["script"]["source"] =
       "cosineSimilarity(params.query_vector, '" + field + "') + 1.0";
   body["query"]["script_score"]["script"]["params"] = folly::dynamic::object();
   // TODO(weygu): Add vector data to params.query_vector
-  
+
   if (topk > 0) {
     body["size"] = topk;
   }
@@ -288,5 +324,59 @@ ESClient& ESAdapter::randomClient() {
   static thread_local std::default_random_engine engine;
   static thread_local std::uniform_int_distribution<size_t> d(0, clients_.size() - 1);
   return clients_[d(engine)];
+}
+
+Status ESAdapter::createVectorIndex(const std::string& name,
+                                    const std::string& field,
+                                    int32_t dimension,
+                                    const std::string& metric) {
+  folly::dynamic obj = folly::parseJson(R"(
+        {
+            "mappings": {
+              "properties": {
+                "vid": {
+                  "type": "keyword"
+                },
+                "src": {
+                  "type": "keyword"
+                },
+                "dst": {
+                  "type": "keyword"
+                },
+                "rank": {
+                  "type": "long"
+                }
+              }
+            }
+        }
+    )");
+
+  auto& mappings = obj["mappings"];
+  // Add vector field mapping
+  folly::dynamic vectorField = folly::dynamic::object();
+  vectorField["type"] = "dense_vector";
+  vectorField["dims"] = dimension;
+  vectorField["index"] = true;
+  vectorField["similarity"] = metric;
+  mappings["properties"][field + "_vector"] = std::move(vectorField);
+
+  // Add original text field
+  folly::dynamic textField = folly::dynamic::object();
+  textField["type"] = "text";
+  mappings["properties"][field] = std::move(textField);
+
+  auto result = randomClient().createIndex(name, obj);
+  if (!result.ok()) {
+    return result.status();
+  }
+  auto resp = std::move(result).value();
+  if (resp.count("acknowledged") && resp["acknowledged"].isBool() &&
+      resp["acknowledged"].getBool()) {
+    return Status::OK();
+  }
+  if (resp.count("error")) {
+    return Status::Error(folly::toJson(resp["error"]));
+  }
+  return Status::Error(folly::toJson(resp));
 }
 }  // namespace nebula::plugin

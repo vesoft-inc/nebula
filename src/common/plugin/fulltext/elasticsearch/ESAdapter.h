@@ -45,6 +45,14 @@ class ESBulk {
            const std::string& dst,
            int64_t rank,
            std::map<std::string, std::string> data);
+  void putVector(const std::string& indexName,
+                const std::string& vid,
+                const std::string& src,
+                const std::string& dst,
+                int64_t rank,
+                const std::string& field,
+                const std::string& text,
+                const std::vector<float>& vector);
   void delete_(const std::string& indexName,
                const std::string& vid,
                const std::string& src,
@@ -89,8 +97,13 @@ class ESAdapter {
                                 int64_t timeout);
 
   virtual StatusOr<ESQueryResult> vectorQuery(const std::string& index,
-                                            const std::string& field,
-                                            int64_t topk);
+                                              const std::string& field,
+                                              int64_t topk);
+
+  virtual Status createVectorIndex(const std::string& name,
+                                   const std::string& field,
+                                   int32_t dimension,
+                                   const std::string& metric = "cosine");
 
  protected:
   static std::string genDocID(const std::string& vid,

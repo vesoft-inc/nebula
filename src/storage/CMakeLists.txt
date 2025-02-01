@@ -26,6 +26,7 @@ nebula_add_library(
     admin/RebuildTagIndexTask.cpp
     admin/RebuildEdgeIndexTask.cpp
     admin/RebuildFTIndexTask.cpp
+    admin/RebuildVectorIndexTask.cpp
     admin/StatsTask.cpp
     admin/GetLeaderProcessor.cpp
     admin/ClearSpaceProcessor.cpp

@@ -5,12 +5,35 @@
 
 #include "kvstore/listener/elasticsearch/ESListener.h"
 
+#include "common/plugin/vector/HttpEmbeddingClient.h"
 #include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "common/plugin/vector/VectorEmbeddingFlags.h"
 
 DECLARE_uint32(ft_request_retry_times);
 DECLARE_int32(ft_bulk_batch_size);
 DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener commit");
+
+// Vector embedding service configurations
+DEFINE_string(vector_embedding_url,
+              "http://127.0.0.1:8000/embeddings",
+              "URL for vector embedding service");
+
+DEFINE_string(vector_embedding_auth_token,
+              "",
+              "Authentication token for vector embedding service");
+
+DEFINE_int32(vector_embedding_timeout_ms,
+             1000,
+             "Timeout in milliseconds for vector embedding requests");
+
+DEFINE_int32(vector_embedding_retry_times,
+             3,
+             "Number of retries for vector embedding requests");
+
+DEFINE_int32(vector_embedding_batch_size,
+             100,
+             "Batch size for vector embedding requests");
 
 namespace nebula {
 namespace kvstore {
@@ -31,6 +54,10 @@ void ESListener::init() {
     LOG(FATAL) << "space name error";
   }
   spaceName_ = std::make_unique<std::string>(sRet.value());
+  embeddingClient_ = std::make_unique<nebula::plugin::HttpEmbeddingClient>(
+      nebula::HttpClient::instance(),
+      FLAGS_vector_embedding_url,
+      FLAGS_vector_embedding_auth_token);
 }
 
 bool ESListener::apply(const BatchHolder& batch) {
@@ -78,21 +105,33 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
   if (!(isTag || isEdge)) {
     return;
   }
+
   std::unordered_map<std::string, nebula::meta::cpp2::FTIndex> ftIndexes;
+  std::unordered_map<std::string, nebula::meta::cpp2::VectorIndex> vectorIndexes;
   nebula::RowReaderWrapper reader;
 
   std::string vid;
   std::string src;
   std::string dst;
   int rank = 0;
+
   if (nebula::NebulaKeyUtils::isTag(vIdLen_, key)) {
     auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
+    
+    // Get fulltext indexes
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, tagId);
     if (!ftIndexRes.ok()) {
-      LOG(ERROR) << ftIndexRes.status().message();
+      LOG(ERROR) << "Failed to get fulltext index: " << ftIndexRes.status().message();
       return;
     }
     ftIndexes = std::move(ftIndexRes).value();
+    // Get vector indexes
+    auto vectorIndexRes = schemaMan_->getVectorIndex(spaceId_, tagId);
+    if (!vectorIndexRes.ok()) {
+      LOG(ERROR) << "Failed to get vector index: " << vectorIndexRes.status().message();
+      return;
+    }
+    vectorIndexes = std::move(vectorIndexRes).value();
     if (type == BatchLogType::OP_BATCH_PUT) {
       reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, value);
       if (reader == nullptr) {
@@ -100,18 +139,16 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
         return;
       }
     }
-    vid = NebulaKeyUtils::getVertexId(vIdLen_, key).toString();
-    vid = normalizeVid(vid);
+    vid = normalizeVid(NebulaKeyUtils::getVertexId(vIdLen_, key).toString());
   } else {
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen_, key);
     if (edgeType < 0) {
       return;
     }
     auto ftIndexRes = schemaMan_->getFTIndex(spaceId_, edgeType);
-    if (!ftIndexRes.ok()) {
-      return;
+    if (ftIndexRes.ok()) {
+      ftIndexes = std::move(ftIndexRes).value();
     }
-    ftIndexes = std::move(ftIndexRes).value();
     if (type == BatchLogType::OP_BATCH_PUT) {
       reader = RowReaderWrapper::getEdgePropReader(schemaMan_, spaceId_, edgeType, value);
       if (reader == nullptr) {
@@ -126,10 +163,13 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
     src = normalizeVid(src);
     dst = normalizeVid(dst);
   }
-  if (ftIndexes.empty()) {
+
+  // Skip if no indexes found
+  if (ftIndexes.empty() && vectorIndexes.empty()) {
     return;
   }
 
+  // Handle fulltext indexes
   for (auto& index : ftIndexes) {
     std::map<std::string, std::string> data;
     std::string indexName = index.first;
@@ -149,6 +189,43 @@ void ESListener::pickTagAndEdgeData(BatchLogType type,
       }
     }
     callback(type, indexName, vid, src, dst, rank, std::move(data));
+  }
+
+  // Handle vector indexes
+  nebula::plugin::ESBulk bulk;
+  for (auto& index : vectorIndexes) {
+    std::string indexName = index.first;
+    if (type == BatchLogType::OP_BATCH_PUT) {
+      auto field = index.second.get_field();
+      auto v = reader->getValueByName(field);
+
+      // Handle null values
+      if (v.type() == Value::Type::NULLVALUE) {
+        LOG(ERROR) << "Cannot create vector embedding for NULL value";
+        continue;
+      }
+
+      // Handle non-string types
+      if (v.type() != Value::Type::STRING) {
+        LOG(ERROR) << "Cannot create vector embedding for non-string type " << v.type();
+        continue;
+      }
+
+      // Get vector from embedding service
+      auto text = v.getStr();
+      auto embeddingResult = embeddingClient_->getEmbedding(
+          text, index.second.get_model_name());
+      if (!embeddingResult.ok()) {
+        LOG(ERROR) << "Failed to get embedding: " << embeddingResult.status();
+        continue;
+      }
+
+      // Store both text and vector
+      auto vector = std::move(embeddingResult).value();
+      bulk.putVector(indexName, vid, src, dst, rank, field, text, vector);
+    } else if (type == BatchLogType::OP_BATCH_REMOVE) {
+      bulk.delete_(indexName, vid, src, dst, rank);
+    }
   }
 }
 

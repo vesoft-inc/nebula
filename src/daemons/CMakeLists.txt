@@ -79,6 +79,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:embedding_client_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
@@ -100,6 +101,7 @@ nebula_add_executable(
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:meta_http_handler>
+        $<TARGET_OBJECTS:embedding_client_obj>
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
@@ -251,6 +253,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v2_thrift_obj>
         $<TARGET_OBJECTS:gc_obj>
+        $<TARGET_OBJECTS:embedding_client_obj>
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES

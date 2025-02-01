@@ -9,8 +9,12 @@
 #include "codec/RowReaderWrapper.h"
 #include "common/plugin/fulltext/elasticsearch/ESAdapter.h"
 #include "kvstore/listener/Listener.h"
+#include "common/plugin/vector/HttpEmbeddingClient.h"
 
 namespace nebula {
+namespace plugin {
+class HttpEmbeddingClient;
+}  // namespace plugin
 namespace kvstore {
 
 class ESListener : public Listener {
@@ -126,6 +130,7 @@ class ESListener : public Listener {
   std::unique_ptr<std::string> spaceName_{nullptr};
   int32_t vIdLen_;
   bool isIntVid_{false};
+  std::unique_ptr<nebula::plugin::HttpEmbeddingClient> embeddingClient_;
 };
 
 }  // namespace kvstore

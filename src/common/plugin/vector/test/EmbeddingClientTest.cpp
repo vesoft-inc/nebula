@@ -4,7 +4,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "common/plugin/vector/EmbeddingClient.h"
+#include "common/plugin/vector/HttpEmbeddingClient.h"
 #include "common/http/test/MockHttpClient.h"
 
 namespace nebula {
@@ -13,11 +13,11 @@ namespace plugin {
 class EmbeddingClientTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        mockClient_ = std::make_shared<MockHttpClient>();
+        mockClient_ = std::make_unique<MockHttpClient>();
         client_ = std::make_unique<HttpEmbeddingClient>(
-            mockClient_,
-            "http://test-server:8000",  // Test URL
-            "test-token");              // Test auth token
+            *mockClient_,  // Pass by reference
+            "http://localhost:8000",  // Test URL
+            "test-token");            // Test auth token
     }
 
     void verifyAuthHeader(const MockHttpClient* client) {
@@ -38,7 +38,7 @@ protected:
         ASSERT_TRUE(hasContentType) << "Content-Type header not found";
     }
 
-    std::shared_ptr<MockHttpClient> mockClient_;
+    std::unique_ptr<MockHttpClient> mockClient_;  // Own the mock client
     std::unique_ptr<HttpEmbeddingClient> client_;
 };
 

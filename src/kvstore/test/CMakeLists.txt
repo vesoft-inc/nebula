@@ -48,6 +48,7 @@ set(KVSTORE_TEST_LIBS
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:embedding_client_obj>
 )
 
 nebula_add_test(

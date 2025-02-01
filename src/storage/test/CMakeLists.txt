@@ -63,6 +63,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_client_stats_obj>
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:embedding_client_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)

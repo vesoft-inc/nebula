@@ -1,0 +1,75 @@
+// Copyright (c) 2024 vesoft inc. All rights reserved.
+//
+// This source code is licensed under Apache 2.0 License.
+
+#include "storage/admin/RebuildVectorIndexTask.h"
+
+#include "common/base/Logging.h"
+
+DECLARE_uint32(raft_heartbeat_interval_secs);
+
+namespace nebula {
+namespace storage {
+
+bool RebuildVectorIndexTask::check() {
+  return env_->kvstore_ != nullptr;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildVectorIndexTask::genSubTasks() {
+  std::vector<AdminSubTask> tasks;
+  VLOG(1) << "Begin rebuild vector indexes, space : " << *ctx_.parameters_.space_id_ref();
+  auto parts = *ctx_.parameters_.parts_ref();
+  auto* store = dynamic_cast<kvstore::NebulaStore*>(env_->kvstore_);
+  auto listenerRet = store->spaceListener(*ctx_.parameters_.space_id_ref());
+  if (!ok(listenerRet)) {
+    return error(listenerRet);
+  }
+  
+  auto space = nebula::value(listenerRet);
+  for (const auto& part : parts) {
+    nebula::kvstore::Listener* listener = nullptr;
+    for (auto& lMap : space->listeners_) {
+      if (part != lMap.first) {
+        continue;
+      }
+      for (auto& l : lMap.second) {
+        if (l.first != meta::cpp2::ListenerType::ELASTICSEARCH) {
+          continue;
+        }
+        listener = l.second.get();
+        break;
+      }
+    }
+    if (listener == nullptr) {
+      return nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND;
+    }
+    if (!listener->isRunning()) {
+      LOG(WARNING) << "listener not ready, may be starting or waiting snapshot";
+      return nebula::cpp2::ErrorCode::E_LISTENER_NOT_FOUND;
+    }
+    VLOG(1) << folly::sformat("Processing vector index rebuild subtask, space={}, part={}",
+                             *ctx_.parameters_.space_id_ref(),
+                             part);
+    TaskFunction task = std::bind(&RebuildVectorIndexTask::taskByPart, this, listener);
+    tasks.emplace_back(std::move(task));
+  }
+  return tasks;
+}
+
+nebula::cpp2::ErrorCode RebuildVectorIndexTask::taskByPart(nebula::kvstore::Listener* listener) {
+  auto part = listener->partitionId();
+  listener->resetListener();
+  while (true) {
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    if (listener->pursueLeaderDone()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
+    VLOG(1) << folly::sformat("Processing vector index rebuild subtask, part={}, rebuild_log={}",
+                             part,
+                             listener->getApplyId());
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+}  // namespace storage
+}  // namespace nebula 

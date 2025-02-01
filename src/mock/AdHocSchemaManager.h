@@ -112,6 +112,12 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
     return partNum_;
   }
 
+  StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::VectorIndex>> getVectorIndex(
+      GraphSpaceID, int32_t) override {
+    LOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
+
  protected:
   folly::RWSpinLock tagLock_;
 

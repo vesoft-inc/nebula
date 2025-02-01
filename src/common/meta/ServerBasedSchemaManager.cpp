@@ -168,6 +168,15 @@ ServerBasedSchemaManager::getFTIndex(GraphSpaceID spaceId, int32_t schemaId) {
   return std::move(ret).value();
 }
 
+StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::VectorIndex>>
+ServerBasedSchemaManager::getVectorIndex(GraphSpaceID spaceId, int32_t schemaId) {
+  auto ret = metaClient_->getVectorIndexFromCache(spaceId, schemaId);
+  if (!ret.ok()) {
+    return ret.status();
+    }
+    return std::move(ret).value();
+  }
+
 std::unique_ptr<ServerBasedSchemaManager> ServerBasedSchemaManager::create(MetaClient *client) {
   auto mgr = std::make_unique<ServerBasedSchemaManager>();
   mgr->init(client);

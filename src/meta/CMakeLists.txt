@@ -176,6 +176,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:storage_stats_obj>
     $<TARGET_OBJECTS:http_client_obj>
+    $<TARGET_OBJECTS:embedding_client_obj>
 )
 
 if(ENABLE_STANDALONE_VERSION)

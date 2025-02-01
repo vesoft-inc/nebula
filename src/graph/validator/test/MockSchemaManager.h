@@ -121,6 +121,12 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return Status::Error("Unimplemented");
   }
 
+  StatusOr<std::unordered_map<std::string, nebula::meta::cpp2::VectorIndex>> getVectorIndex(
+      GraphSpaceID, int32_t) override {
+    LOG(FATAL) << "Unimplemented";
+    return Status::Error("Unimplemented");
+  }
+
  private:
   std::unordered_map<std::string, GraphSpaceID> spaceNameIds_;
   std::unordered_map<std::string, TagID> tagNameIds_;
