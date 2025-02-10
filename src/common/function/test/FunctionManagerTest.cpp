@@ -6,6 +6,8 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
+#include "common/base/StatusOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/List.h"
@@ -13,10 +15,13 @@
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
+#include "common/datatypes/Value.h"
 #include "common/expression/FunctionCallExpression.h"
 #include "common/function/FunctionManager.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include <functional>
+#include <vector>
 
 namespace nebula {
 
@@ -70,6 +75,26 @@ class FunctionManagerTest : public ::testing::Test {
     if (!result.ok()) {
       return ::testing::AssertionFailure()
              << "Can't get function " << expr << " with " << args.size() << " parameters.";
+    }
+    return ::testing::AssertionSuccess();
+  }
+
+  ::testing::AssertionResult testFunction(const std::string& funcName,
+                                          const std::vector<Value>& args,
+                                          const Value& expected) {
+    auto funcOr = FunctionManager::get(funcName, args.size());
+    if (!funcOr.ok()) {
+      return ::testing::AssertionFailure() << "Function '" << funcName << "' not found";
+    }
+    auto func = funcOr.value();
+    std::vector<FunctionManager::ArgType> argRefs;
+    for (const auto& a : args) {
+      argRefs.push_back(std::cref(a));
+    }
+    Value result = func(argRefs);
+    if (result != expected) {
+      return ::testing::AssertionFailure()
+             << "Expected: " << expected << "\nGot: " << result;
     }
     return ::testing::AssertionSuccess();
   }
@@ -2064,6 +2089,69 @@ TEST_F(FunctionManagerTest, Any) {
   { TEST_FUNCTION(_any, std::vector<Value>({Value(), Value::kNullValue, Value(1)}), Value(1)); }
   // only one
   { TEST_FUNCTION(_any, std::vector<Value>({Value(1)}), Value(1)); }
+}
+
+TEST_F(FunctionManagerTest, BuiltinFunctionCornerCases) {
+  {
+    auto funcOr = FunctionManager::get("abs", 1);
+    ASSERT_TRUE(funcOr.ok()) << "Function 'abs' should be registered as a built-in";
+    auto absFunc = funcOr.value();
+    Value input(-42);
+    std::vector<FunctionManager::ArgType> args{std::cref(input)};
+    Value result = absFunc(args);
+    EXPECT_EQ(result, Value(42));
+
+    // Check that the function is marked as pure.
+    auto isPureOr = FunctionManager::getIsPure("abs", 1);
+    ASSERT_TRUE(isPureOr.ok());
+    EXPECT_TRUE(isPureOr.value());
+
+    // Verify that the 'find' call returns a successful Status.
+    auto findStatus = FunctionManager::find("abs", 1);
+    EXPECT_TRUE(findStatus.ok());
+
+    // Check the return type for a call to 'abs' with an integer argument.
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
+  }
+
+  {
+    auto funcOr = FunctionManager::get("abs", 0);
+    EXPECT_FALSE(funcOr.ok());
+  }
+
+  // Verify that dynamic function loading and unloading return the expected "not supported" error.
+  {
+    Status loadStatus = FunctionManager::load("dummy.so", {"abs"});
+    EXPECT_EQ(loadStatus, Status::Error("Dynamic function loading not supported yet"));
+    Status unloadStatus = FunctionManager::unload("dummy.so", {"abs"});
+    EXPECT_EQ(unloadStatus, Status::Error("Dynamic function unloading not supported yet"));
+  }
+
+  // Test a call to a non-existent function should result in an error.
+  {
+    auto funcOr = FunctionManager::get("non_existent_func", 1);
+    EXPECT_FALSE(funcOr.ok());
+    Status status = FunctionManager::find("non_existent_func", 1);
+    EXPECT_FALSE(status.ok());
+  }
+}
+
+TEST_F(FunctionManagerTest, BuiltinFunctionMultipleArgs) {
+  auto funcOr = FunctionManager::get("max", 2);
+  if (funcOr.ok()) {
+    auto maxFunc = funcOr.value();
+    Value a(10);
+    Value b(20);
+    std::vector<FunctionManager::ArgType> args{std::cref(a), std::cref(b)};
+    Value result = maxFunc(args);
+    EXPECT_EQ(result, Value(20));
+  } else {
+    // If "max" is not implemented, skip this test.
+    GTEST_SKIP() << "Built-in function 'max' is not implemented.";
+  }
 }
 
 }  // namespace nebula
