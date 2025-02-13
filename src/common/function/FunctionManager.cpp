@@ -251,7 +251,8 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"date",
      {TypeSignature({}, Value::Type::DATE),
       TypeSignature({Value::Type::STRING}, Value::Type::DATE),
-      TypeSignature({Value::Type::MAP}, Value::Type::DATE)}},
+      TypeSignature({Value::Type::MAP}, Value::Type::DATE),
+      TypeSignature({Value::Type::INT}, Value::Type::DATE)}},
     {"datetime",
      {TypeSignature({}, Value::Type::DATETIME),
       TypeSignature({Value::Type::STRING}, Value::Type::DATETIME),
@@ -1820,6 +1821,8 @@ FunctionManager::FunctionManager() {
               return Value::kNullBadData;
             }
             return result.value();
+          } else if (args[0].get().isInt()) {
+            return time::TimeConversion::unixSecondsToDate(args[0].get().getInt());
           } else {
             return Value::kNullBadType;
           }
