@@ -1552,10 +1552,12 @@ FunctionManager::FunctionManager() {
           return args[0].get().getDate().toString();
         }
         case Value::Type::TIME: {
-          return args[0].get().getTime().toString();
+          Time utcTime = args[0].get().getTime();
+          return time::TimeUtils::utcToTime(utcTime).toString();
         }
         case Value::Type::DATETIME: {
-          return args[0].get().getDateTime().toString();
+          DateTime dt = args[0].get().getDateTime();
+          return time::TimeUtils::utcToDateTime(dt).toString();
         }
         default:
           LOG(ERROR) << "toString has not been implemented for " << args[0].get().type();
@@ -1801,11 +1803,8 @@ FunctionManager::FunctionManager() {
     attr.body_ = [](const auto &args) -> Value {
       switch (args.size()) {
         case 0: {
-          auto result = time::TimeUtils::utcDate();
-          if (!result.ok()) {
-            return Value::kNullBadData;
-          }
-          return Value(std::move(result).value());
+          DateTime dt = time::TimeUtils::utcDateTime();
+          return time::TimeUtils::utcToDateTime(dt).date();
         }
         case 1: {
           if (args[0].get().isStr()) {
