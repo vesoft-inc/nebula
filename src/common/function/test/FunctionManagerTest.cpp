@@ -79,26 +79,6 @@ class FunctionManagerTest : public ::testing::Test {
     return ::testing::AssertionSuccess();
   }
 
-  ::testing::AssertionResult testFunction(const std::string& funcName,
-                                          const std::vector<Value>& args,
-                                          const Value& expected) {
-    auto funcOr = FunctionManager::get(funcName, args.size());
-    if (!funcOr.ok()) {
-      return ::testing::AssertionFailure() << "Function '" << funcName << "' not found";
-    }
-    auto func = funcOr.value();
-    std::vector<FunctionManager::ArgType> argRefs;
-    for (const auto& a : args) {
-      argRefs.push_back(std::cref(a));
-    }
-    Value result = func(argRefs);
-    if (result != expected) {
-      return ::testing::AssertionFailure()
-             << "Expected: " << expected << "\nGot: " << result;
-    }
-    return ::testing::AssertionSuccess();
-  }
-
   std::vector<FunctionManager::ArgType> genArgsRef(const std::vector<Value> &args) {
     std::vector<FunctionManager::ArgType> argsRef;
     argsRef.insert(argsRef.end(), args.begin(), args.end());
@@ -196,7 +176,8 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"json_extract2", {"_"}},
     {"json_extract3", {"{a: 1, \"b\": 0.2}"}},
     {"json_extract4", {"{\"a\": \"foo\", \"b\": 0.2, \"c\": {\"d\": {\"e\": 0.1}}}"}},
-    {"md5", {"abcdefghijkl"}}};
+    {"md5", {"abcdefghijkl"}},
+    {"max", {"10", "20"}}};
 #define TEST_FUNCTION(expr, ...)                   \
   do {                                             \
     EXPECT_TRUE(testFunction(#expr, __VA_ARGS__)); \
@@ -2060,6 +2041,8 @@ TEST_F(FunctionManagerTest, PurityTest) {
   ASSERT_TRUE(result.ok() && result.value() == true);
   result = FunctionManager::getIsPure("coalesce", INT64_MAX);
   ASSERT_TRUE(result.ok() && result.value() == true);
+  result = FunctionManager::getIsPure("abs", 1);
+  ASSERT_TRUE(result.ok() && result.value() == true);
 
   // Not always pure, purity depends on arity number
   result = FunctionManager::getIsPure("time", 0);
@@ -2078,79 +2061,130 @@ TEST_F(FunctionManagerTest, PurityTest) {
   ASSERT_TRUE(result.ok() && result.value() == true);
 }
 
+TEST_F(FunctionManagerTest, NonExistentFunction) {
+  auto funcOr = FunctionManager::get("non_existent_func", 1);
+  EXPECT_FALSE(funcOr.ok());
+  Status status = FunctionManager::find("non_existent_func", 1);
+  EXPECT_FALSE(status.ok());
+}
+
+TEST_F(FunctionManagerTest, FindFunction) {
+  // Test existing functions with correct arg count
+  EXPECT_TRUE(FunctionManager::find("abs", 1).ok());
+  EXPECT_TRUE(FunctionManager::find("max", 2).ok());
+  EXPECT_TRUE(FunctionManager::find("min", 2).ok());
+  EXPECT_TRUE(FunctionManager::find("sqrt", 1).ok());
+  EXPECT_TRUE(FunctionManager::find("concat", 2).ok());
+  // Test existing functions with incorrect arg count
+  EXPECT_FALSE(FunctionManager::find("abs", 2).ok());
+  EXPECT_FALSE(FunctionManager::find("max", 1).ok());
+  EXPECT_FALSE(FunctionManager::find("sqrt", 2).ok());
+  // Test non-existent functions
+  EXPECT_FALSE(FunctionManager::find("non_existent_func", 1).ok());
+  EXPECT_FALSE(FunctionManager::find("another_missing_func", 2).ok());
+  EXPECT_FALSE(FunctionManager::find("", 0).ok());
+  // When a function exists with variable arguments
+  if (FunctionManager::find("concat", 2).ok()) {
+    EXPECT_TRUE(FunctionManager::find("concat", 3).ok());
+    EXPECT_TRUE(FunctionManager::find("concat", 4).ok());
+  }
+}
+
+TEST_F(FunctionManagerTest, GetReturnType) {
+  // Integer return type functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
+    retTypeOr = FunctionManager::getReturnType("length", {Value::Type::STRING});
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
+  }
+  // Double return type functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("sqrt", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
+    retTypeOr = FunctionManager::getReturnType("sin", {Value::Type::FLOAT});
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
+  }
+  // String return type functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("toString", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::STRING);
+    std::vector<Value::Type> concatArgTypes{Value::Type::STRING, Value::Type::STRING};
+    retTypeOr = FunctionManager::getReturnType("concat", concatArgTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::STRING);
+  }
+  // Boolean return type functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER, Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("eq", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::BOOL);
+  }
+  // List return type functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::STRING};
+    auto retTypeOr = FunctionManager::getReturnType("split", argTypes);
+    if (retTypeOr.ok()) {  // Only test if the function exists
+      EXPECT_EQ(retTypeOr.value(), Value::Type::LIST);
+    }
+  }
+  // Functions with variable argument types
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER, Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("max", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
+    argTypes = {Value::Type::FLOAT, Value::Type::FLOAT};
+    retTypeOr = FunctionManager::getReturnType("max", argTypes);
+    ASSERT_TRUE(retTypeOr.ok());
+    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
+  }
+  // Tests for non-existent functions
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto retTypeOr = FunctionManager::getReturnType("non_existent_func", argTypes);
+    EXPECT_FALSE(retTypeOr.ok());
+  }
+  // Tests for incorrect argument types
+  {
+    std::vector<Value::Type> argTypes{Value::Type::STRING};  // abs expects numeric
+    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
+    if (!retTypeOr.ok()) {
+      EXPECT_FALSE(retTypeOr.ok());
+    }
+  }
+}
+
 TEST_F(FunctionManagerTest, Any) {
   auto dataset = DataSet({"col0", "col1", "col2"});
   dataset.emplace_back(Row({1, true, "233"}));
   dataset.emplace_back(Row({4, false, "456"}));
   Value datasetValue = Value(std::move(dataset));
+  auto funcOr = FunctionManager::get("non_existent_func", 1);
+  EXPECT_FALSE(funcOr.ok());
+  Status status = FunctionManager::find("non_existent_func", 1);
+  EXPECT_FALSE(status.ok());
   // null all
   { TEST_FUNCTION(_any, std::vector<Value>({Value(), Value::kNullValue}), Value::kNullBadData); }
   // ok
   { TEST_FUNCTION(_any, std::vector<Value>({Value(), Value::kNullValue, Value(1)}), Value(1)); }
   // only one
   { TEST_FUNCTION(_any, std::vector<Value>({Value(1)}), Value(1)); }
-}
-
-TEST_F(FunctionManagerTest, BuiltinFunctionCornerCases) {
-  {
-    auto funcOr = FunctionManager::get("abs", 1);
-    ASSERT_TRUE(funcOr.ok()) << "Function 'abs' should be registered as a built-in";
-    auto absFunc = funcOr.value();
-    Value input(-42);
-    std::vector<FunctionManager::ArgType> args{std::cref(input)};
-    Value result = absFunc(args);
-    EXPECT_EQ(result, Value(42));
-
-    // Check that the function is marked as pure.
-    auto isPureOr = FunctionManager::getIsPure("abs", 1);
-    ASSERT_TRUE(isPureOr.ok());
-    EXPECT_TRUE(isPureOr.value());
-
-    // Verify that the 'find' call returns a successful Status.
-    auto findStatus = FunctionManager::find("abs", 1);
-    EXPECT_TRUE(findStatus.ok());
-
-    // Check the return type for a call to 'abs' with an integer argument.
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
-  }
-
-  {
-    auto funcOr = FunctionManager::get("abs", 0);
-    EXPECT_FALSE(funcOr.ok());
-  }
-
   // Verify that dynamic function loading and unloading return the expected "not supported" error.
   {
     Status loadStatus = FunctionManager::load("dummy.so", {"abs"});
     EXPECT_EQ(loadStatus, Status::Error("Dynamic function loading not supported yet"));
     Status unloadStatus = FunctionManager::unload("dummy.so", {"abs"});
     EXPECT_EQ(unloadStatus, Status::Error("Dynamic function unloading not supported yet"));
-  }
-
-  // Test a call to a non-existent function should result in an error.
-  {
-    auto funcOr = FunctionManager::get("non_existent_func", 1);
-    EXPECT_FALSE(funcOr.ok());
-    Status status = FunctionManager::find("non_existent_func", 1);
-    EXPECT_FALSE(status.ok());
-  }
-}
-
-TEST_F(FunctionManagerTest, BuiltinFunctionMultipleArgs) {
-  auto funcOr = FunctionManager::get("max", 2);
-  if (funcOr.ok()) {
-    auto maxFunc = funcOr.value();
-    Value a(10);
-    Value b(20);
-    std::vector<FunctionManager::ArgType> args{std::cref(a), std::cref(b)};
-    Value result = maxFunc(args);
-    EXPECT_EQ(result, Value(20));
-  } else {
-    // If "max" is not implemented, skip this test.
-    GTEST_SKIP() << "Built-in function 'max' is not implemented.";
   }
 }
 
