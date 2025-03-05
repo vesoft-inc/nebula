@@ -10,6 +10,8 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7
 
+RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
 
@@ -18,6 +20,8 @@ WORKDIR /usr/local/nebula
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
   && rm -rf *.rpm
+
+USER nebula
 
 EXPOSE 9777 9778 9779 9780 19779 19780
 
