@@ -10,12 +10,17 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7
 
+RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
 
 WORKDIR /usr/local/nebula
 
 RUN rpm -ivh *.rpm \
-  && rm -rf *.rpm
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
+
+USER nebula
 
 # default entrypoint
 ENTRYPOINT ["/usr/local/nebula/bin/db_dump"]
