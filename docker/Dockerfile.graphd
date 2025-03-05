@@ -19,7 +19,8 @@ WORKDIR /usr/local/nebula
 
 RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
-  && rm -rf *.rpm
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
 
 USER nebula
 
