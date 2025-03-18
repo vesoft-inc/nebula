@@ -946,6 +946,7 @@ TEST_F(FunctionManagerTest, time) {
 }
 
 TEST_F(FunctionManagerTest, returnType) {
+  // Integer return type functions
   {
     auto result = FunctionManager::getReturnType("abs", {Value::Type::INT});
     ASSERT_TRUE(result.ok());
@@ -966,6 +967,120 @@ TEST_F(FunctionManagerTest, returnType) {
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::INT);
   }
+  // Double return type functions
+  {
+    auto result = FunctionManager::getReturnType("sqrt", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("ceil", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("floor", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("round", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("cbrt", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::INT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::FLOAT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("sin", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("asin", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("hypot", {Value::Type::INT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+
+  // String return type functions
+  {
+    auto result = FunctionManager::getReturnType("toString", {Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::STRING);
+  }
+  {
+    std::vector<Value::Type> argTypes{Value::Type::STRING, Value::Type::STRING};
+    auto result = FunctionManager::getReturnType("concat", argTypes);
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::STRING);
+  }
+
+  // Boolean return type functions
+  {
+    auto result = FunctionManager::getReturnType(
+        "eq", {Value::Type::INTEGER, Value::Type::INTEGER});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::BOOL);
+  }
+
+  // List return type functions
+  {
+    auto result = FunctionManager::getReturnType("split", {Value::Type::STRING});
+    if (result.ok()) {  // Only test if the function exists
+      EXPECT_EQ(result.value(), Value::Type::LIST);
+    }
+  }
+
+  // Functions with variable argument types
+  {
+    auto result = FunctionManager::getReturnType(
+        "max", {Value::Type::INTEGER, Value::Type::INTEGER});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::INTEGER);
+  }
+  {
+    auto result = FunctionManager::getReturnType("max", {Value::Type::FLOAT, Value::Type::FLOAT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+
+  // Tests for non-existent functions
+  {
+    auto result = FunctionManager::get("abs", 0);
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
+    auto result = FunctionManager::getReturnType("non_existent_func", argTypes);
+    EXPECT_FALSE(result.ok());
+  }
+
+  // Tests for incorrect argument types
+  {
+    auto result = FunctionManager::getReturnType(
+      "abs", {Value::Type::STRING});  // abs expects numeric
+    if (!result.ok()) {
+      EXPECT_FALSE(result.ok());
+    }
+  }
+
   {
     auto result = FunctionManager::getReturnType("abs", {Value::Type::FLOAT});
     ASSERT_TRUE(result.ok());
@@ -1007,17 +1122,7 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
   }
   {
-    auto result = FunctionManager::getReturnType("sqrt", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
     auto result = FunctionManager::getReturnType("sqrt", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("ceil", {Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
@@ -1032,19 +1137,9 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
-    auto result = FunctionManager::getReturnType("floor", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
     auto result = FunctionManager::getReturnType("floor", {Value::Type::STRING});
     ASSERT_FALSE(result.ok());
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("round", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
     auto result = FunctionManager::getReturnType("round", {Value::Type::INT, Value::Type::INT});
@@ -1062,22 +1157,7 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
-    auto result = FunctionManager::getReturnType("cbrt", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
     auto result = FunctionManager::getReturnType("cbrt", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::FLOAT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
@@ -1097,12 +1177,7 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
-    auto result = FunctionManager::getReturnType("sin", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("asin", {Value::Type::INT});
+    auto result = FunctionManager::getReturnType("sin", {Value::Type::FLOAT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
@@ -1118,11 +1193,6 @@ TEST_F(FunctionManagerTest, returnType) {
   }
   {
     auto result = FunctionManager::getReturnType("hypot", {Value::Type::FLOAT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hypot", {Value::Type::INT, Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
@@ -1197,15 +1267,16 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::STRING);
   }
   {
-    auto result = FunctionManager::getReturnType(
-        "replace", {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
+    auto result =
+        FunctionManager::getReturnType(
+          "replace", {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::STRING);
   }
   {
     auto result = FunctionManager::getReturnType(
-        "replace",
-        {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
+        "replace", {
+          Value::Type::STRING, Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
     ASSERT_FALSE(result.ok());
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
   }
@@ -1231,19 +1302,15 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.status().toString(), "Parameter's type error");
   }
   {
-    auto result = FunctionManager::getReturnType(
-        "substring", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
+    auto result =
+        FunctionManager::getReturnType(
+          "substring", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::STRING);
   }
   {
     auto result =
         FunctionManager::getReturnType("substring", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toString", {Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::STRING);
   }
@@ -2085,82 +2152,17 @@ TEST_F(FunctionManagerTest, FindFunction) {
   EXPECT_FALSE(FunctionManager::find("", 0).ok());
   // When a function exists with variable arguments
   if (FunctionManager::find("concat", 2).ok()) {
-    EXPECT_TRUE(FunctionManager::find("concat", 3).ok());
-    EXPECT_TRUE(FunctionManager::find("concat", 4).ok());
+      EXPECT_TRUE(FunctionManager::find("concat", 3).ok());
+      EXPECT_TRUE(FunctionManager::find("concat", 4).ok());
   }
-}
 
-TEST_F(FunctionManagerTest, GetReturnType) {
-  // Integer return type functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
-    retTypeOr = FunctionManager::getReturnType("length", {Value::Type::STRING});
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
-  }
-  // Double return type functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("sqrt", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
-    retTypeOr = FunctionManager::getReturnType("sin", {Value::Type::FLOAT});
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
-  }
-  // String return type functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("toString", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::STRING);
-    std::vector<Value::Type> concatArgTypes{Value::Type::STRING, Value::Type::STRING};
-    retTypeOr = FunctionManager::getReturnType("concat", concatArgTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::STRING);
-  }
-  // Boolean return type functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER, Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("eq", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::BOOL);
-  }
-  // List return type functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::STRING};
-    auto retTypeOr = FunctionManager::getReturnType("split", argTypes);
-    if (retTypeOr.ok()) {  // Only test if the function exists
-      EXPECT_EQ(retTypeOr.value(), Value::Type::LIST);
-    }
-  }
-  // Functions with variable argument types
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER, Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("max", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::INTEGER);
-    argTypes = {Value::Type::FLOAT, Value::Type::FLOAT};
-    retTypeOr = FunctionManager::getReturnType("max", argTypes);
-    ASSERT_TRUE(retTypeOr.ok());
-    EXPECT_EQ(retTypeOr.value(), Value::Type::FLOAT);
-  }
-  // Tests for non-existent functions
-  {
-    std::vector<Value::Type> argTypes{Value::Type::INTEGER};
-    auto retTypeOr = FunctionManager::getReturnType("non_existent_func", argTypes);
-    EXPECT_FALSE(retTypeOr.ok());
-  }
-  // Tests for incorrect argument types
-  {
-    std::vector<Value::Type> argTypes{Value::Type::STRING};  // abs expects numeric
-    auto retTypeOr = FunctionManager::getReturnType("abs", argTypes);
-    if (!retTypeOr.ok()) {
-      EXPECT_FALSE(retTypeOr.ok());
-    }
+  // Extend the test for all functions in FunctionManagerTest array
+  for (const auto& func : FunctionManagerTest::args_) {
+      EXPECT_TRUE(FunctionManager::find(func.first, func.second.size()).ok());
+      EXPECT_FALSE(FunctionManager::find(func.first, func.second.size() + 1).ok());
+      if (func.second.size() > 0) {
+          EXPECT_FALSE(FunctionManager::find(func.first, func.second.size() - 1).ok());
+      }
   }
 }
 
