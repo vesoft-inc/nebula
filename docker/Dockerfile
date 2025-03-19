@@ -10,73 +10,77 @@ RUN cd /home/nebula/BUILD/package \
   
 FROM centos:7 as graphd
 
-RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
 
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /tmp/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /tmp/nebula-graphd.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
 
 WORKDIR /usr/local/nebula
 
-RUN rpm -ivh /tmp/*.rpm \
+RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
-  && chown -R nebula:nebula /usr/local/nebula \
-  && rm -rf /tmp/*.rpm
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
 
 EXPOSE 9669 19669 19670
 
 USER nebula
+
 ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as metad
 
-RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
 
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /tmp/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /tmp/nebula-metad.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
 
 WORKDIR /usr/local/nebula
 
-RUN rpm -ivh /tmp/*.rpm \
+RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
-  && chown -R nebula:nebula /usr/local/nebula \
-  && rm -rf /tmp/*.rpm
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
 
 EXPOSE 9559 9560 19559 19560
 
 USER nebula
+
 ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/etc/nebula-metad.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as storaged
 
-RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
 
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /tmp/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /tmp/nebula-storaged.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
 
 WORKDIR /usr/local/nebula
 
-RUN rpm -ivh /tmp/*.rpm \
+RUN rpm -ivh *.rpm \
   && mkdir -p ./{logs,data,pids} \
-  && chown -R nebula:nebula /usr/local/nebula \
-  && rm -rf /tmp/*.rpm
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
 
 EXPOSE 9777 9778 9779 9780 19779 19780
 
 USER nebula
+
 ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebula/etc/nebula-storaged.conf", "--daemonize=false", "--containerized=true"]
 
 FROM centos:7 as tools
 
-RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
 
-COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /tmp/nebula-tool.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
 
 WORKDIR /usr/local/nebula
 
-RUN rpm -ivh /tmp/*.rpm \
-  && chown -R nebula:nebula /usr/local/nebula \
-  && rm -rf /tmp/*.rpm
+RUN rpm -ivh *.rpm \
+  && rm -rf *.rpm \
+  && chown -R nebula:nebula /usr/local/nebula
 
 USER nebula
+
 # default entrypoint
 ENTRYPOINT ["/usr/local/nebula/bin/db_dump"]

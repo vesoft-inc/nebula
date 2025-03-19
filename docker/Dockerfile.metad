@@ -10,7 +10,7 @@ RUN cd /home/nebula/BUILD/package \
 
 FROM centos:7
 
-RUN groupadd -r nebula && useradd -r -g nebula -m -d /home/nebula nebula
+RUN groupadd -r nebula && useradd -r -g nebula -d /usr/local/nebula nebula
 
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
 COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
