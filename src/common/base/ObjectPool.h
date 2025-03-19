@@ -51,6 +51,13 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
     return objects_.empty();
   }
 
+  template <typename T>
+  T *add(T *obj) {
+    SLGuard g(lock_);
+    objects_.emplace_back(obj);
+    return obj;
+  }
+
  private:
   // Holder the ownership of the any object
   class OwnershipHolder {
@@ -67,13 +74,6 @@ class ObjectPool final : private boost::noncopyable, private cpp::NonMovable {
     void *obj_;
     std::function<void(void *)> deleteFn_;
   };
-
-  template <typename T>
-  T *add(T *obj) {
-    SLGuard g(lock_);
-    objects_.emplace_back(obj);
-    return obj;
-  }
 
   std::list<OwnershipHolder> objects_;
   Arena arena_;

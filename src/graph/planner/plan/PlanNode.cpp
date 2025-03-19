@@ -249,6 +249,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "AddHosts";
     case Kind::kDropHosts:
       return "DropHosts";
+    case Kind::kTransferLeader:
+      return "TransferLeader";
     // Zone
     case Kind::kMergeZone:
       return "MergeZone";
