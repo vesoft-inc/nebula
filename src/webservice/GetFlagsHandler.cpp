@@ -64,7 +64,7 @@ void GetFlagsHandler::onEOM() noexcept {
     ResponseBuilder(downstream_)
         .status(WebServiceUtils::to(HttpStatusCode::OK),
                 WebServiceUtils::toString(HttpStatusCode::OK))
-        .body(folly::toPrettyJson(res))
+        .body(folly::toPrettyJson(res) + "\n")
         .sendWithEOM();
   } else {
     ResponseBuilder(downstream_)
