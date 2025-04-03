@@ -587,6 +587,27 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                          p.setValue(Status::Error("Leader changed!"));
                          return;
                        }
+                       case nebula::cpp2::ErrorCode::E_RETRY_EXHAUSTED: {
+                         // Retry exceeds storage limit, keep retrying
+                         if (retry < retryLimit) {
+                           LOG(INFO) << folly::sformat(
+                               "The request exceeds the retry limit"
+                               " inside {}, continue to retry {}, limit {}.",
+                               hosts[index].toString(),
+                               retry,
+                               retryLimit);
+                           getResponseFromLeader(std::move(hosts),
+                                                 index,
+                                                 std::move(req),
+                                                 std::move(remoteFunc),
+                                                 retry + 1,
+                                                 std::move(p),
+                                                 retryLimit);
+                           return;
+                         }
+                         p.setValue(Status::Error("Retries exceeded limit!"));
+                         return;
+                       }
                        default: {
                          if (retry < retryLimit) {
                            LOG(INFO) << "Unknown code " << static_cast<int32_t>(resp.get_code())
