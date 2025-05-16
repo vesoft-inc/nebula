@@ -1382,7 +1382,7 @@ void Value::setU(const Set& v) {
 }
 
 void Value::setU(Set&& v) {
-  new (std::addressof(value_.vVal)) std::unique_ptr<Set>(new Set(std::move(v)));
+  new (std::addressof(value_.uVal)) std::unique_ptr<Set>(new Set(std::move(v)));
   type_ = Type::SET;
 }
 
